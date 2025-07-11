@@ -21,7 +21,7 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 //此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
 @Mod(TYPE_MOON_WORLD.MOD_ID)
 public class TYPE_MOON_WORLD {
-    public static final String MOD_ID = "type moon world";
+    public static final String MOD_ID = "typemoonworld";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
