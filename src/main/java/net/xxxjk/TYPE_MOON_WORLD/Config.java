@@ -13,7 +13,10 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
+// 一个示例配置类，这不是必需的，但最好有一个，以便让你的配置保持条理。
+
 // Demonstrates how to use Neo's config APIs
+// 演示如何使用 Neo 的配置 API。
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class Config
 {
