@@ -1,4 +1,7 @@
 {
-  "item.typemoonworld.magicfragments": "Magic Fragments",
-  "item.typemoonworld.holyshroud": "Holy Shroud"
+  "item.typemoonworld.magic_fragments": "Magic Fragments",
+  "item.typemoonworld.holy_shroud": "Holy Shroud",
+
+  "block.typemoonworld.spirit_vein_node": "Spirit Vein Node",
+  "block.typemoonworld.spirit_vein_block": "Spirit Vein Block"
 }

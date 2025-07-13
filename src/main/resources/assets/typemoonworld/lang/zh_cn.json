@@ -1,4 +1,7 @@
 {
-  "item.typemoonworld.magicfragments": "魔力碎片",
-  "item.typemoonworld.holyshroud": "圣骸布"
+  "item.typemoonworld.magic_fragments": "魔力碎片",
+  "item.typemoonworld.holy_shroud": "圣骸布",
+
+  "block.typemoonworld.spirit_vein_node": "灵脉节点",
+  "block.typemoonworld.spirit_vein_block": "魔力结晶"
 }

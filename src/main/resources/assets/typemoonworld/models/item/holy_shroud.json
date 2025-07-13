@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "typemoonworld:item/magicfragments"
+    "layer0": "typemoonworld:item/holy_shroud"
   }
 }

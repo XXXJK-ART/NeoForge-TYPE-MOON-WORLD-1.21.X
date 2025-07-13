@@ -14,8 +14,11 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
+
+import static net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks.SPIRIT_VEIN_BLOCK;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file.
 //此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
@@ -39,7 +42,8 @@ public class TYPE_MOON_WORLD {
         //如果此类中没有 @SubscribeEvent 注释的函数（如下面的 onServerStarting()），请不要添加此行。
         NeoForge.EVENT_BUS.register(this);
 
-        ModItems.register(modEventBus);
+        ModItems.register(modEventBus);//添加物品
+        ModBlocks.register(modEventBus);//添加方块
 
         // Register the item to a creative tab
         //将物品注册到创意标签。
@@ -60,7 +64,14 @@ public class TYPE_MOON_WORLD {
             event.accept(ModItems.MAGIC_FRAGMENTS);
             event.accept(ModItems.HOLY_SHROUD);
         }
+
+        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
+            event.accept(ModBlocks.SPIRIT_VEIN_NODE);
+            event.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
+        }
     }
+
+
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     //您可以使用 SubscribeEvent 并让事件总线发现要调用的方法。

@@ -7,11 +7,12 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 public class ModItems {
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(TYPE_MOON_WORLD.MOD_ID);
+    public static final DeferredRegister.Items ITEMS =
+            DeferredRegister.createItems(TYPE_MOON_WORLD.MOD_ID);
 
-    public static final DeferredItem<Item> MAGIC_FRAGMENTS = ITEMS.register("magicfragments",
+    public static final DeferredItem<Item> MAGIC_FRAGMENTS = ITEMS.register("magic_fragments",
             () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> HOLY_SHROUD = ITEMS.register("holyshroud",
+    public static final DeferredItem<Item> HOLY_SHROUD = ITEMS.register("holy_shroud",
             () -> new Item(new Item.Properties()));
 
 
