@@ -3,5 +3,7 @@
   "item.typemoonworld.holy_shroud": "Holy Shroud",
 
   "block.typemoonworld.spirit_vein_node": "Spirit Vein Node",
-  "block.typemoonworld.spirit_vein_block": "Spirit Vein Block"
+  "block.typemoonworld.spirit_vein_block": "Spirit Vein Block",
+
+  "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

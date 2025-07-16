@@ -15,6 +15,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
 
@@ -42,6 +43,8 @@ public class TYPE_MOON_WORLD {
         //如果此类中没有 @SubscribeEvent 注释的函数（如下面的 onServerStarting()），请不要添加此行。
         NeoForge.EVENT_BUS.register(this);
 
+        ModCreativeModeTabs.register(modEventBus);//添加创造页
+
         ModItems.register(modEventBus);//添加物品
         ModBlocks.register(modEventBus);//添加方块
 
@@ -60,15 +63,7 @@ public class TYPE_MOON_WORLD {
     // Add the example block item to the building blocks tab
     //将示例块项目添加到构建块选项卡。
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            event.accept(ModItems.MAGIC_FRAGMENTS);
-            event.accept(ModItems.HOLY_SHROUD);
-        }
 
-        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
-            event.accept(ModBlocks.SPIRIT_VEIN_NODE);
-            event.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
-        }
     }
 
 
