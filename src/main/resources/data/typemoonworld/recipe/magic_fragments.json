@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "typemoonworld:spirit_vein_block"
+    }
+  ],
+  "result":{
+    "count": 9,
+    "id": "typemoonworld:magic_fragments"
+  }
+}
