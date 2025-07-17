@@ -1,9 +1,29 @@
 {
   "item.typemoonworld.magic_fragments": "Magic Fragments",
   "item.typemoonworld.holy_shroud": "Holy Shroud",
+  "item.typemoonworld.carved_emerald": "Carved Emerald",
+  "item.typemoonworld.carved_ruby": "Carved Ruby",
+  "item.typemoonworld.carved_sapphire": "Carved Sapphire",
+  "item.typemoonworld.carved_topaz": "Carved Topaz",
+  "item.typemoonworld.carved_white_gemstone": "Carved White Gemstone",
+  "item.typemoonworld.raw_emerald": "Raw Emerald",
+  "item.typemoonworld.raw_ruby": "Raw Ruby",
+  "item.typemoonworld.raw_sapphire": "Raw Sapphire",
+  "item.typemoonworld.raw_topaz": "Raw Topaz",
+  "item.typemoonworld.raw_white_gemstone": "Raw White Gemstone",
 
   "block.typemoonworld.spirit_vein_node": "Spirit Vein Node",
   "block.typemoonworld.spirit_vein_block": "Spirit Vein Block",
+  "block.typemoonworld.emerald_block": "Emerald Block",
+  "block.typemoonworld.emerald_mine": "Emerald Mine",
+  "block.typemoonworld.ruby_block": "Ruby Block",
+  "block.typemoonworld.ruby_mine": "Ruby Mine",
+  "block.typemoonworld.sapphire_block": "Sapphire Block",
+  "block.typemoonworld.sapphire_mine": "Sapphire Mine",
+  "block.typemoonworld.topaz_block": "Topaz Block",
+  "block.typemoonworld.topaz_mine": "Topaz Mine",
+  "block.typemoonworld.white_gemstone_block": "White Gemstone Block",
+  "block.typemoonworld.white_gemstone_mine": "White Gemstone Mine",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

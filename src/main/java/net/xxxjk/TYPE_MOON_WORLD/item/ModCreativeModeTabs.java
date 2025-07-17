@@ -22,6 +22,30 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
                         output.accept(ModItems.HOLY_SHROUD);
+
+                        output.accept(ModItems.RAW_EMERALD);
+                        output.accept(ModItems.RAW_RUBY);
+                        output.accept(ModItems.RAW_SAPPHIRE);
+                        output.accept(ModItems.RAW_TOPAZ);
+                        output.accept(ModItems.RAW_WHITE_GEMSTONE);
+
+                        output.accept(ModItems.CARVED_EMERALD);
+                        output.accept(ModItems.CARVED_RUBY);
+                        output.accept(ModItems.CARVED_SAPPHIRE);
+                        output.accept(ModItems.CARVED_TOPAZ);
+                        output.accept(ModItems.CARVED_WHITE_GEMSTONE);
+
+                        output.accept(ModBlocks.EMERALD_BLOCK);
+                        output.accept(ModBlocks.EMERALD_MINE);
+                        output.accept(ModBlocks.RUBY_BLOCK);
+                        output.accept(ModBlocks.RUBY_MINE);
+                        output.accept(ModBlocks.SAPPHIRE_BLOCK);
+                        output.accept(ModBlocks.SAPPHIRE_MINE);
+                        output.accept(ModBlocks.TOPAZ_BLOCK);
+                        output.accept(ModBlocks.TOPAZ_MINE);
+                        output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK);
+                        output.accept(ModBlocks.WHITE_GEMSTONE_MINE);
+
                         output.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
                         output.accept(ModBlocks.SPIRIT_VEIN_NODE);
                     }).build());
