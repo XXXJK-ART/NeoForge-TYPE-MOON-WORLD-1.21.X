@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients":[
+    {
+      "item": "typemoonworld:raw_emerald"
+    },
+    {
+      "item": "typemoonworld:chisel"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "typemoonworld:carved_emerald"
+  }
+}

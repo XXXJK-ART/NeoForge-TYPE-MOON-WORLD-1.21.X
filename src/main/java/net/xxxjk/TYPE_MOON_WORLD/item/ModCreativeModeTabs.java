@@ -23,6 +23,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
                         output.accept(ModItems.HOLY_SHROUD);
 
+                        output.accept(ModItems.CHISEL);
+
                         output.accept(ModItems.RAW_EMERALD);
                         output.accept(ModItems.RAW_RUBY);
                         output.accept(ModItems.RAW_SAPPHIRE);

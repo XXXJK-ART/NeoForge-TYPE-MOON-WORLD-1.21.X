@@ -6,6 +6,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChiselItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -15,6 +16,9 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> HOLY_SHROUD = ITEMS.register("holy_shroud",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
+
+    public static final DeferredItem<Item> CHISEL = ITEMS.register("chisel",
+            () -> new ChiselItem(new Item.Properties().durability(100)));
 
     public static final DeferredItem<Item> CARVED_EMERALD = ITEMS.register("carved_emerald",
             () -> new Item(new Item.Properties()));
