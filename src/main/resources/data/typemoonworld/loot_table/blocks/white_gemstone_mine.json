@@ -26,7 +26,7 @@
                   }
                 }
               ],
-              "name": "typemoonworld:spirit_vein_node"
+              "name": "typemoonworld:white_gemstone_mine"
             },
             {
               "type": "minecraft:item",
@@ -35,7 +35,7 @@
                   "add": false,
                   "count": {
                     "type": "minecraft:uniform",
-                    "max": 5.0,
+                    "max": 3.0,
                     "min": 1.0
                   },
                   "function": "minecraft:set_count"
@@ -49,7 +49,7 @@
                   "function": "minecraft:explosion_decay"
                 }
               ],
-              "name": "typemoonworld:magic_fragments"
+              "name": "typemoonworld:raw_white_gemstone"
             }
           ]
         }
@@ -57,5 +57,5 @@
       "rolls": 1.0
     }
   ],
-  "random_sequence": "typemoonworld:blocks/spirit_vein_node"
+  "random_sequence": "typemoonworld:blocks/white_gemstone_mine"
 }

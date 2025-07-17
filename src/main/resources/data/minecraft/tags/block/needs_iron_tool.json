@@ -2,6 +2,17 @@
   "replace": false,
   "values": [
     "typemoonworld:spirit_vein_block",
-    "typemoonworld:spirit_vein_node"
+    "typemoonworld:spirit_vein_node",
+
+    "typemoonworld:emerald_block",
+    "typemoonworld:emerald_mine",
+    "typemoonworld:ruby_block",
+    "typemoonworld:ruby_mine",
+    "typemoonworld:sapphire_block",
+    "typemoonworld:sapphire_mine",
+    "typemoonworld:topaz_block",
+    "typemoonworld:topaz_mine",
+    "typemoonworld:white_gemstone_block",
+    "typemoonworld:white_gemstone_mine"
   ]
 }

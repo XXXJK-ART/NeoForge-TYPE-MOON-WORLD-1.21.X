@@ -1,9 +1,29 @@
 {
   "item.typemoonworld.magic_fragments": "魔力碎片",
   "item.typemoonworld.holy_shroud": "圣骸布",
+  "item.typemoonworld.carved_emerald": "精雕绿宝石",
+  "item.typemoonworld.carved_ruby": "精雕红宝石",
+  "item.typemoonworld.carved_sapphire": "精雕蓝宝石",
+  "item.typemoonworld.carved_topaz": "精雕黄宝石",
+  "item.typemoonworld.carved_white_gemstone": "精雕白宝石",
+  "item.typemoonworld.raw_emerald": "绿宝石原矿",
+  "item.typemoonworld.raw_ruby": "红宝石原矿",
+  "item.typemoonworld.raw_sapphire": "蓝宝石原矿",
+  "item.typemoonworld.raw_topaz": "黄宝石原矿",
+  "item.typemoonworld.raw_white_gemstone": "白宝石原矿",
 
   "block.typemoonworld.spirit_vein_node": "灵脉节点",
   "block.typemoonworld.spirit_vein_block": "魔力结晶",
+  "block.typemoonworld.emerald_block": "绿宝石块",
+  "block.typemoonworld.emerald_mine": "绿宝石矿",
+  "block.typemoonworld.ruby_block": "红宝石块",
+  "block.typemoonworld.ruby_mine": "红宝石矿",
+  "block.typemoonworld.sapphire_block": "蓝宝石块",
+  "block.typemoonworld.sapphire_mine": "蓝宝石矿",
+  "block.typemoonworld.topaz_block": "黄宝石块",
+  "block.typemoonworld.topaz_mine": "黄宝石矿",
+  "block.typemoonworld.white_gemstone_block": "白宝石块",
+  "block.typemoonworld.white_gemstone_mine": "白宝石矿",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }
