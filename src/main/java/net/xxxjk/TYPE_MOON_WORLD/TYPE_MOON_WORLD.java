@@ -1,7 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.util.Tuple;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -11,15 +14,22 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.util.thread.SidedThreadGroups;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.slf4j.Logger;
 
-import static net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks.SPIRIT_VEIN_BLOCK;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file.
 //此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
@@ -29,9 +39,10 @@ public class TYPE_MOON_WORLD {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
-        // Register the commonSetup method for mod loading
-        //注册 commonSetup 方法用于 mod 加载。
-        modEventBus.addListener(this::commonSetup);
+        // Register the registerNetworking method for mod loading
+        //注册 registerNetworking 方法用于 mod 加载。
+        modEventBus.addListener(this::registerNetworking);
+        TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in.
         //注册我们感兴趣的服务器和其他游戏活动。
@@ -56,7 +67,7 @@ public class TYPE_MOON_WORLD {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {
+        private void commonSetup(final FMLCommonSetupEvent event) {
 
     }
 
@@ -66,7 +77,47 @@ public class TYPE_MOON_WORLD {
 
     }
 
+    // 用户代码块修改方法开始(以下都是mcr代码模块)
+    // 用户代码块修改方法结束
+    private static boolean networkingRegistered = false;
+    private static final Map<CustomPacketPayload.Type<?>, NetworkMessage<?>> MESSAGES = new HashMap<>();
 
+    private record NetworkMessage<T extends CustomPacketPayload>(StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {
+    }
+
+    public static <T extends CustomPacketPayload> void addNetworkMessage(CustomPacketPayload.Type<T> id, StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {
+        if (networkingRegistered)
+            throw new IllegalStateException("Cannot register new network messages after networking has been registered");
+        MESSAGES.put(id, new NetworkMessage<>(reader, handler));
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void registerNetworking(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar(MOD_ID);
+        MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),
+                ((NetworkMessage) networkMessage).handler()));
+        networkingRegistered = true;
+    }
+
+    private static final Collection<Tuple<Runnable, Integer>> workQueue = new ConcurrentLinkedQueue<>();
+
+    public static void queueServerWork(int tick, Runnable action) {
+        if (Thread.currentThread().getThreadGroup() == SidedThreadGroups.SERVER)
+            workQueue.add(new Tuple<>(action, tick));
+    }
+
+    @SubscribeEvent
+    public void tick(ServerTickEvent.Post event) {
+        List<Tuple<Runnable, Integer>> actions = new ArrayList<>();
+        workQueue.forEach(work -> {
+            work.setB(work.getB() - 1);
+            if (work.getB() == 0)
+                actions.add(work);
+        });
+        actions.forEach(e -> e.getA().run());
+        workQueue.removeAll(actions);
+    }
+    //以上都是mcr代码模块存放区域
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     //您可以使用 SubscribeEvent 并让事件总线发现要调用的方法。
