@@ -43,6 +43,55 @@ public class Initialization_of_entering_the_world {
                 _vars.player_restore_magic_moment = Mth.nextInt(RandomSource.create(), 20, 100);
                 _vars.syncPlayerVariables(entity);
             }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 50) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_earth = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 50) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_water = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 50) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_fire = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 50) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_wind = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 50) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_ether = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 80) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_none = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
+            if (Mth.nextInt(RandomSource.create(), 1, 100) >= 80) {
+                {
+                    TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    _vars.player_magic_attributes_imaginary_number = true;
+                    _vars.syncPlayerVariables(entity);
+                }
+            }
         }
     }
 }

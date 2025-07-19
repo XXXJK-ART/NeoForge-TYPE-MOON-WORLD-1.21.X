@@ -66,6 +66,14 @@ public class TypeMoonWorldModVariables {
             clone.player_max_mana = original.player_max_mana;
             clone.player_mana_egenerated_every_moment = original.player_mana_egenerated_every_moment;
             clone.player_restore_magic_moment = original.player_restore_magic_moment;
+            clone.player_magic_attributes_earth = original.player_magic_attributes_earth;
+            clone.player_magic_attributes_water = original.player_magic_attributes_water;
+            clone.player_magic_attributes_fire = original.player_magic_attributes_fire;
+            clone.player_magic_attributes_wind = original.player_magic_attributes_wind;
+            clone.player_magic_attributes_ether = original.player_magic_attributes_ether;
+            clone.player_magic_attributes_none = original.player_magic_attributes_none;
+            clone.player_magic_attributes_imaginary_number = original.player_magic_attributes_imaginary_number;
+            clone.player_magic_attributes_sword = original.player_magic_attributes_sword;
             if (!event.isWasDeath()) {
                 clone.player_mana = original.player_mana;
             }
@@ -78,6 +86,14 @@ public class TypeMoonWorldModVariables {
         public double player_max_mana = 0;
         public double player_mana_egenerated_every_moment = 0;
         public double player_restore_magic_moment = 0;
+        public boolean player_magic_attributes_earth = false;
+        public boolean player_magic_attributes_water = false;
+        public boolean player_magic_attributes_fire = false;
+        public boolean player_magic_attributes_wind = false;
+        public boolean player_magic_attributes_ether = false;
+        public boolean player_magic_attributes_none = false;
+        public boolean player_magic_attributes_imaginary_number = false;
+        public boolean player_magic_attributes_sword = false;
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -86,6 +102,14 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("player_max_mana", player_max_mana);
             nbt.putDouble("player_mana_egenerated_every_moment", player_mana_egenerated_every_moment);
             nbt.putDouble("player_restore_magic_moment", player_restore_magic_moment);
+            nbt.putBoolean("player_magic_attributes_earth", player_magic_attributes_earth);
+            nbt.putBoolean("player_magic_attributes_water", player_magic_attributes_water);
+            nbt.putBoolean("player_magic_attributes_fire", player_magic_attributes_fire);
+            nbt.putBoolean("player_magic_attributes_wind", player_magic_attributes_wind);
+            nbt.putBoolean("player_magic_attributes_ether", player_magic_attributes_ether);
+            nbt.putBoolean("player_magic_attributes_none", player_magic_attributes_none);
+            nbt.putBoolean("player_magic_attributes_imaginary_number", player_magic_attributes_imaginary_number);
+            nbt.putBoolean("player_magic_attributes_sword", player_magic_attributes_sword);
             return nbt;
         }
 
@@ -95,6 +119,14 @@ public class TypeMoonWorldModVariables {
             player_max_mana = nbt.getDouble("player_max_mana");
             player_mana_egenerated_every_moment = nbt.getDouble("player_mana_egenerated_every_moment");
             player_restore_magic_moment = nbt.getDouble("player_restore_magic_moment");
+            player_magic_attributes_earth = nbt.getBoolean("player_magic_attributes_earth");
+            player_magic_attributes_water = nbt.getBoolean("player_magic_attributes_water");
+            player_magic_attributes_fire = nbt.getBoolean("player_magic_attributes_fire");
+            player_magic_attributes_wind = nbt.getBoolean("player_magic_attributes_wind");
+            player_magic_attributes_ether = nbt.getBoolean("player_magic_attributes_ether");
+            player_magic_attributes_none = nbt.getBoolean("player_magic_attributes_none");
+            player_magic_attributes_imaginary_number = nbt.getBoolean("player_magic_attributes_imaginary_number");
+            player_magic_attributes_sword = nbt.getBoolean("player_magic_attributes_sword");
         }
 
         public void syncPlayerVariables(Entity entity) {
