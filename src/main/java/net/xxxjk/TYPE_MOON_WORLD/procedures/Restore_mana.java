@@ -47,7 +47,7 @@ public class Restore_mana {
                         _vars.syncPlayerVariables(entity);
                     }
                     LivingEntity _entity = (LivingEntity) entity;
-                    _entity.setHealth((float) (_entity.getHealth() - 1));
+                    _entity.setHealth((float) (_entity.getHealth() - 2));
                 } else {
                     if (entity instanceof Player _player && !_player.level().isClientSide())
                         _player.displayClientMessage(Component.literal("生命力已耗尽......"), false);
