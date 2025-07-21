@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.item;
+package net.xxxjk.TYPE_MOON_WORLD.init;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -8,6 +8,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 import java.util.function.Supplier;
 

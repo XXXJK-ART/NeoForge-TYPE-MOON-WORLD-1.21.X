@@ -12,11 +12,11 @@ public class Manually_deduct_health_to_restore_mana {
         if (entity == null)
             return;
         if (entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana != entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana) {
-            if ((entity instanceof LivingEntity _livEnt ? _livEnt.getHealth() : -1) > 2) {
+            if ((entity instanceof LivingEntity _livEnt ? _livEnt.getHealth() : -1) > 1) {
                 {
                     TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                     _vars.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
-                            + 20, entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
+                            + 10, entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
                     _vars.syncPlayerVariables(entity);
                 }
                 LivingEntity _entity = (LivingEntity) entity;

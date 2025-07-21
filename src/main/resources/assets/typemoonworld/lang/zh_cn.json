@@ -1,5 +1,5 @@
 {
-  "item.typemoonworld.magic_fragments": "魔力碎片",
+  "item.typemoonworld.magic_fragments": "玛那",
   "item.typemoonworld.holy_shroud": "圣骸布",
   "item.typemoonworld.chisel": "凿子",
   "item.typemoonworld.carved_emerald": "精雕绿宝石",
@@ -13,8 +13,8 @@
   "item.typemoonworld.raw_topaz": "黄宝石原矿",
   "item.typemoonworld.raw_white_gemstone": "白宝石原矿",
 
-  "block.typemoonworld.spirit_vein_node": "灵脉节点",
-  "block.typemoonworld.spirit_vein_block": "魔力结晶",
+  "block.typemoonworld.spirit_vein_node": "灵脉矿",
+  "block.typemoonworld.spirit_vein_block": "玛那结晶",
   "block.typemoonworld.emerald_block": "绿宝石块",
   "block.typemoonworld.emerald_mine": "绿宝石矿",
   "block.typemoonworld.ruby_block": "红宝石块",
