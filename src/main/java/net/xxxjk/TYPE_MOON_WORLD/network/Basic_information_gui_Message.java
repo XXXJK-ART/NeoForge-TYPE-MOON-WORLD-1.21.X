@@ -14,49 +14,51 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
-import net.xxxjk.TYPE_MOON_WORLD.procedures.Manually_deduct_health_to_restore_mana;
+import net.xxxjk.TYPE_MOON_WORLD.procedures.Open_basic_information;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
-public record Lose_health_regain_mana_Message(int eventType, int pressed) implements CustomPacketPayload {
-    public static final Type<Lose_health_regain_mana_Message> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
-            "key_losehealthregainmana"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, Lose_health_regain_mana_Message> STREAM_CODEC
-            = StreamCodec.of((RegistryFriendlyByteBuf buffer, Lose_health_regain_mana_Message message) -> {
+public record Basic_information_gui_Message(int eventType, int pressedms) implements CustomPacketPayload {
+    public static final Type<Basic_information_gui_Message> TYPE
+            = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "key_basicinformationgui"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, Basic_information_gui_Message> STREAM_CODEC
+            = StreamCodec.of((RegistryFriendlyByteBuf buffer, Basic_information_gui_Message message) -> {
         buffer.writeInt(message.eventType);
-        buffer.writeInt(message.pressed);
+        buffer.writeInt(message.pressedms);
     }, (RegistryFriendlyByteBuf buffer)
-            -> new Lose_health_regain_mana_Message(buffer.readInt(), buffer.readInt()));
+            -> new Basic_information_gui_Message(buffer.readInt(), buffer.readInt()));
 
     @Override
-    public @NotNull Type<Lose_health_regain_mana_Message> type() {
+    public @NotNull Type<Basic_information_gui_Message> type() {
         return TYPE;
     }
 
-    public static void handleData(final Lose_health_regain_mana_Message message, final IPayloadContext context) {
+    public static void handleData(final Basic_information_gui_Message message, final IPayloadContext context) {
         if (context.flow() == PacketFlow.SERVERBOUND) {
             context.enqueueWork(() ->
-                    pressAction(context.player(), message.eventType, message.pressed)).exceptionally(e -> {
+                    pressAction(context.player(), message.eventType, message.pressedms)).exceptionally(e -> {
                 context.connection().disconnect(Component.literal(e.getMessage()));
                 return null;
             });
         }
     }
 
-    public static void pressAction(Player entity, int type, int pressed) {
+    public static void pressAction(Player entity, int type, int pressedms) {
         Level world = entity.level();
         double x = entity.getX();
         double y = entity.getY();
         double z = entity.getZ();
         // security measure to prevent arbitrary chunk generation
         if (world.isLoaded(entity.blockPosition())) if (type == 0) {
-            Manually_deduct_health_to_restore_mana.execute(entity);
+            Open_basic_information.execute(world, x, y, z, entity);
         }
     }
 
     @SubscribeEvent
     public static void registerMessage(FMLCommonSetupEvent event) {
-        TYPE_MOON_WORLD.addNetworkMessage(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
+        TYPE_MOON_WORLD.addNetworkMessage(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC,
+                Basic_information_gui_Message::handleData);
     }
 }

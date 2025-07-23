@@ -4,6 +4,7 @@ package net.xxxjk.TYPE_MOON_WORLD.init;
  *	MCreator note: This file will be REGENERATED on each build.
  */
 
+import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import org.lwjgl.glfw.GLFW;
 
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -21,7 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = {Dist.CLIENT})
 public class TypeMoonWorldModKeyMappings {
     public static final KeyMapping LOSE_HEALTH_REGAIN_MANA
-            = new KeyMapping("key.typemoonworld.losehealthregainmana", GLFW.GLFW_KEY_X, "key.categories.gameplay") {
+            = new KeyMapping("key.typemoonworld.lose_healthregainmana", GLFW.GLFW_KEY_X, "key.categories.gameplay") {
         private boolean isDownOld = false;
 
         @Override
@@ -37,9 +38,27 @@ public class TypeMoonWorldModKeyMappings {
         }
     };
 
+    public static final KeyMapping BASIC_INFORMATION_GUI
+            = new KeyMapping("key.typemoonworld.basicinformationgui", GLFW.GLFW_KEY_R, "key.categories.gameplay") {
+        private boolean isDownOld = false;
+
+        @Override
+        public void setDown(boolean isDown) {
+            super.setDown(isDown);
+            if (isDownOld != isDown && isDown) {
+                PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0));
+                if (Minecraft.getInstance().player != null) {
+                    Basic_information_gui_Message.pressAction(Minecraft.getInstance().player, 0, 0);
+                }
+            }
+            isDownOld = isDown;
+        }
+    };
+
     @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(LOSE_HEALTH_REGAIN_MANA);
+        event.register(BASIC_INFORMATION_GUI);
     }
 
     @EventBusSubscriber({Dist.CLIENT})
@@ -48,6 +67,7 @@ public class TypeMoonWorldModKeyMappings {
         public static void onClientTick(ClientTickEvent.Post event) {
             if (Minecraft.getInstance().screen == null) {
                 LOSE_HEALTH_REGAIN_MANA.consumeClick();
+                BASIC_INFORMATION_GUI.consumeClick();
             }
         }
     }
