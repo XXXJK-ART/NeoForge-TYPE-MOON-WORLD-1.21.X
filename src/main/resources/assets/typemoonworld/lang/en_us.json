@@ -26,7 +26,8 @@
   "block.typemoonworld.white_gemstone_block": "White Gemstone Block",
   "block.typemoonworld.white_gemstone_mine": "White Gemstone Mine",
 
-  "key.typemoonworld.losehealthregainmana": "Lose health regain mana",
+  "key.typemoonworld.lose_health_regain_mana": "Lose health regain mana",
+  "key.typemoonworld.basic_information_gui": "Basic information",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

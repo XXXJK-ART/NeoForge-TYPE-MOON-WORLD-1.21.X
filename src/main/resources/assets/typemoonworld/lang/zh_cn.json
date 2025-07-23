@@ -26,7 +26,8 @@
   "block.typemoonworld.white_gemstone_block": "白宝石块",
   "block.typemoonworld.white_gemstone_mine": "白宝石矿",
 
-  "key.typemoonworld.losehealthregainmana": "扣血回魔",
+  "key.typemoonworld.lose_health_regain_mana": "扣血回魔",
+  "key.typemoonworld.basic_information_gui": "基础界面",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

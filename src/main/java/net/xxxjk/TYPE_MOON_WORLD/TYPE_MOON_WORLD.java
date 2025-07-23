@@ -24,6 +24,7 @@ import net.neoforged.neoforge.network.handling.IPayloadHandler;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
+import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.slf4j.Logger;
@@ -58,6 +59,8 @@ public class TYPE_MOON_WORLD {
 
         ModItems.register(modEventBus);//添加物品
         ModBlocks.register(modEventBus);//添加方块
+
+        TypeMoonWorldModMenus.REGISTRY.register(modEventBus);//添加菜单
 
         // Register the item to a creative tab
         //将物品注册到创意标签。
