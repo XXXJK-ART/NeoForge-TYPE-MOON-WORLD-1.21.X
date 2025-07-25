@@ -5,8 +5,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.network.chat.Component;
 
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public class Using_mana {
     public static void execute(Entity entity) {
@@ -21,8 +21,8 @@ public class Using_mana {
             }
             if (entity instanceof Player _player) {
                 ItemStack _stktoremove = new ItemStack(ModItems.MAGIC_FRAGMENTS.get());
-                _player.getInventory().clearOrCountMatchingItems(p
-                        -> _stktoremove.getItem() == p.getItem(), 1, _player.inventoryMenu.getCraftSlots());
+                _player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem()
+                        == p.getItem(), 1, _player.inventoryMenu.getCraftSlots());
             }
         } else {
             if (entity instanceof Player _player && !_player.level().isClientSide())
