@@ -1,32 +1,29 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.WidgetSprites;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
-import net.xxxjk.TYPE_MOON_WORLD.procedures.*;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
-import org.joml.Quaternionf;
-
-import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.network.chat.Component;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.GuiGraphics;
-
-import net.xxxjk.TYPE_MOON_WORLD.world.inventory.BasicInformationMenu;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
+import net.xxxjk.TYPE_MOON_WORLD.procedures.Basic_information_back_player_self;
+import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.HashMap;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
-public class Basic_information_Screen extends AbstractContainerScreen<BasicInformationMenu> {
-    private final static HashMap<String, Object> guistate = BasicInformationMenu.guistate;
+public class Magical_attributes_Screen extends AbstractContainerScreen<MagicalattributesMenu> {
+    private final static HashMap<String, Object> guistate = MagicalattributesMenu.guistate;
     private final Level world;
     private final int x, y, z;
     private final Player entity;
@@ -34,7 +31,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
     ImageButton imagebutton_magical_attributes;
     ImageButton imagebutton_magical_properties;
 
-    public Basic_information_Screen(BasicInformationMenu container, Inventory inventory, Component text) {
+    public Magical_attributes_Screen(MagicalattributesMenu container, Inventory inventory, Component text) {
         super(container, inventory, text);
         this.world = container.world;
         this.x = container.x;
@@ -45,7 +42,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         this.imageHeight = 160;
     }
 
-    private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/basic_information.png");
+    private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes0.png");
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
@@ -81,19 +78,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font,
-
-                Back_mana.execute(entity), 71, 24, -13408513, false);
-        guiGraphics.drawString(this.font,
-
-                Back_max_mana.execute(entity), 71, 44, -13408513, false);
-        guiGraphics.drawString(this.font,
-
-                Back_player_mana_egenerated_every_moment.execute(entity), 71, 63, -13408513, false);
-        guiGraphics.drawString(this.font,
-
-                Back_player_restore_magic_moment.execute(entity), 71, 84, -13408513, false);
+    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
     }
 
     @Override
@@ -102,6 +87,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         imagebutton_basic_attributes = new ImageButton(this.leftPos + 4, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes02.png")), e -> {
+            PacketDistributor.sendToServer(new Magical_attributes_Button_Message(0, x, y, z));
+            Magical_attributes_Button_Message.handleButtonAction(entity, 0, x, y, z);
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
@@ -113,8 +100,6 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         imagebutton_magical_attributes = new ImageButton(this.leftPos + 38, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes02.png")), e -> {
-            PacketDistributor.sendToServer(new Basic_information_Button_Message(1, x, y, z));
-            Basic_information_Button_Message.handleButtonAction(entity, 1, x, y, z);
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {

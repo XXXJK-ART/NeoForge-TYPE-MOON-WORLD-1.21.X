@@ -9,10 +9,15 @@ import net.minecraft.core.registries.Registries;
 
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.BasicInformationMenu;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 
 public class TypeMoonWorldModMenus {
     public static final DeferredRegister<MenuType<?>> REGISTRY = DeferredRegister.create(Registries.MENU, TYPE_MOON_WORLD.MOD_ID);
     public static final DeferredHolder<MenuType<?>, MenuType<BasicInformationMenu>> BASIC_INFORMATION
             = REGISTRY.register("basicinformation",
             () -> IMenuTypeExtension.create(BasicInformationMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<MagicalattributesMenu>> MAGICAL_ATTRIBUTES
+            = REGISTRY.register("magicalattributes",
+            () -> IMenuTypeExtension.create(MagicalattributesMenu::new));
+
 }
