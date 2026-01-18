@@ -1,13 +1,13 @@
 {
     "java.compile.nullAnalysis.mode": "automatic",
     "java.debug.settings.onBuildFailureProceed": true,
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.import.gradle.java.home": "C:\\Program Files\\Java\\jdk-21",
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-21",
-            "path": "F:\\JAVA",
+            "path": "C:\\Program Files\\Java\\jdk-21",
             "default": true
         }
-    ],
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "java.import.gradle.java.home": "F:\\JAVA"
+    ]
 }
