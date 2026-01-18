@@ -18,7 +18,6 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.Open_basic_information;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public record Basic_information_gui_Message(int eventType, int pressedms) implements CustomPacketPayload {
     public static final Type<Basic_information_gui_Message> TYPE
             = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
@@ -54,11 +53,5 @@ public record Basic_information_gui_Message(int eventType, int pressedms) implem
         if (world.isLoaded(entity.blockPosition())) if (type == 0) {
             Open_basic_information.execute(world, x, y, z, entity);
         }
-    }
-
-    @SubscribeEvent
-    public static void registerMessage(FMLCommonSetupEvent event) {
-        TYPE_MOON_WORLD.addNetworkMessage(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC,
-                Basic_information_gui_Message::handleData);
     }
 }

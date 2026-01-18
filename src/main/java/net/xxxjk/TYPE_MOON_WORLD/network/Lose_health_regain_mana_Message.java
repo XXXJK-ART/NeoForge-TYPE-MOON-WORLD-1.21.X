@@ -18,7 +18,6 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.Manually_deduct_health_to_restore_ma
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public record Lose_health_regain_mana_Message(int eventType, int pressed) implements CustomPacketPayload {
     public static final Type<Lose_health_regain_mana_Message> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "key_losehealthregainmana"));
@@ -53,10 +52,5 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
         if (world.isLoaded(entity.blockPosition())) if (type == 0) {
             Manually_deduct_health_to_restore_mana.execute(entity);
         }
-    }
-
-    @SubscribeEvent
-    public static void registerMessage(FMLCommonSetupEvent event) {
-        TYPE_MOON_WORLD.addNetworkMessage(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
     }
 }

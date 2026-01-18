@@ -16,6 +16,9 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+
 @EventBusSubscriber
 public class Restore_mana {
     @SubscribeEvent
@@ -31,30 +34,65 @@ public class Restore_mana {
         if (entity == null)
             return;
         if (entity.isAlive()) {
-            {
-                TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                _vars.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
-                                + entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana_egenerated_every_moment,
-                        entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
-                _vars.syncPlayerVariables(entity);
+            TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            double manaRegen = _vars.player_mana_egenerated_every_moment;
+            
+            // 基础回魔间隔（tick）
+            double regenInterval = _vars.player_restore_magic_moment;
+
+            if (_vars.is_magic_circuit_open) {
+                // 开启魔术回路时，回魔间隔减半（速度翻倍）
+                regenInterval /= 2;
+                
+                // 每次回魔调用时增加计时器（因为现在调用频率可能变了，但这里逻辑需要稍微调整，见下文分析）
+                // 实际上 execute 是被 queueServerWork 调用的，delay 决定了频率。
+                // 所以我们只需要在这里计算 delay 即可。
+                
+                // 计时器累加逻辑：需要更精确的 tick 计数，或者近似处理。
+                // 既然 execute 是每隔 delay tick 运行一次，那么计时器加上 delay 即可。
+                _vars.magic_circuit_open_timer += regenInterval; 
+                
+                // 24000 ticks = 1 day. Check if timer exceeded limit
+                if (_vars.magic_circuit_open_timer >= 24000) {
+                     _vars.is_magic_circuit_open = false;
+                     _vars.magic_circuit_open_timer = 0;
+                     if (entity instanceof LivingEntity _entity) {
+                         _entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 600, 1)); // Nausea
+                         _entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 1200, 1)); // Weakness
+                         _entity.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 1200, 1)); // Mining Fatigue
+                     }
+                     if (entity instanceof Player _player && !_player.level().isClientSide()) {
+                         _player.displayClientMessage(Component.literal("魔术回路因过载而强制关闭！"), true);
+                     }
+                }
+            } else {
+                _vars.magic_circuit_open_timer = 0;
             }
+
+            _vars.player_mana = Math.min(_vars.player_mana + manaRegen, _vars.player_max_mana);
+            _vars.syncPlayerVariables(entity);
+
             if (entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana < 20) {
                 if ((entity instanceof LivingEntity _livEnt ? _livEnt.getHealth() : -1) > 2) {
                     {
-                        TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                        _vars.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
+                        TypeMoonWorldModVariables.PlayerVariables _varsInner = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                        _varsInner.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
                                 + 20, entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
-                        _vars.syncPlayerVariables(entity);
+                        _varsInner.syncPlayerVariables(entity);
                     }
                     LivingEntity _entity = (LivingEntity) entity;
                     _entity.setHealth((float) (_entity.getHealth() - 2));
                 } else {
                     if (entity instanceof Player _player && !_player.level().isClientSide())
-                        _player.displayClientMessage(Component.literal("生命力已耗尽......"), false);
+                        _player.displayClientMessage(Component.literal("生命力已耗尽......"), true);
                 }
             }
 
-            TYPE_MOON_WORLD.queueServerWork((int) entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_restore_magic_moment, () -> {
+            int delay = (int) regenInterval;
+            if (delay < 1) { // 允许更快的频率，只要不小于1
+                delay = 1;
+            }
+            TYPE_MOON_WORLD.queueServerWork(delay, () -> {
                 Restore_mana.execute(world, entity);
             });
         }

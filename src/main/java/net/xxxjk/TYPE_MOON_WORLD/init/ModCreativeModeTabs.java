@@ -38,6 +38,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CARVED_TOPAZ);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE);
 
+                        output.accept(ModItems.CARVED_EMERALD_FULL);
+                        output.accept(ModItems.CARVED_RUBY_FULL);
+                        output.accept(ModItems.CARVED_SAPPHIRE_FULL);
+                        output.accept(ModItems.CARVED_TOPAZ_FULL);
+                        output.accept(ModItems.CARVED_WHITE_GEMSTONE_FULL);
+
                         output.accept(ModBlocks.EMERALD_BLOCK);
                         output.accept(ModBlocks.EMERALD_MINE);
                         output.accept(ModBlocks.RUBY_BLOCK);

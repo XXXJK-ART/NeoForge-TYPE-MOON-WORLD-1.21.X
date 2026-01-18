@@ -26,7 +26,12 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -96,6 +101,13 @@ public class TYPE_MOON_WORLD {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void registerNetworking(final RegisterPayloadHandlersEvent event) {
+        addNetworkMessage(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
+        addNetworkMessage(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
+        addNetworkMessage(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
+        addNetworkMessage(Magical_attributes_Button_Message.TYPE, Magical_attributes_Button_Message.STREAM_CODEC, Magical_attributes_Button_Message::handleData);
+        addNetworkMessage(TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE, TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData);
+        addNetworkMessage(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
+
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),
                 ((NetworkMessage) networkMessage).handler()));

@@ -8,6 +8,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChiselItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -22,16 +25,29 @@ public class ModItems {
     public static final DeferredItem<Item> CHISEL = ITEMS.register("chisel",
             () -> new ChiselItem(new Item.Properties().durability(100)));
 
+    public static final double GEM_MANA_AMOUNT = 100.0;
+
     public static final DeferredItem<Item> CARVED_EMERALD = ITEMS.register("carved_emerald",
-            () -> new Item(new Item.Properties()));
+            () -> new CarvedGemItem(new Item.Properties(), GemType.EMERALD, GEM_MANA_AMOUNT));
     public static final DeferredItem<Item> CARVED_RUBY = ITEMS.register("carved_ruby",
-            () -> new Item(new Item.Properties()));
+            () -> new CarvedGemItem(new Item.Properties(), GemType.RUBY, GEM_MANA_AMOUNT));
     public static final DeferredItem<Item> CARVED_SAPPHIRE = ITEMS.register("carved_sapphire",
-            () -> new Item(new Item.Properties()));
+            () -> new CarvedGemItem(new Item.Properties(), GemType.SAPPHIRE, GEM_MANA_AMOUNT));
     public static final DeferredItem<Item> CARVED_TOPAZ = ITEMS.register("carved_topaz",
-            () -> new Item(new Item.Properties()));
+            () -> new CarvedGemItem(new Item.Properties(), GemType.TOPAZ, GEM_MANA_AMOUNT));
     public static final DeferredItem<Item> CARVED_WHITE_GEMSTONE = ITEMS.register("carved_white_gemstone",
-            () -> new Item(new Item.Properties()));
+            () -> new CarvedGemItem(new Item.Properties(), GemType.WHITE_GEMSTONE, GEM_MANA_AMOUNT));
+
+    public static final DeferredItem<Item> CARVED_EMERALD_FULL = ITEMS.register("carved_emerald_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> CARVED_EMERALD.get(), GEM_MANA_AMOUNT));
+    public static final DeferredItem<Item> CARVED_RUBY_FULL = ITEMS.register("carved_ruby_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> CARVED_RUBY.get(), GEM_MANA_AMOUNT));
+    public static final DeferredItem<Item> CARVED_SAPPHIRE_FULL = ITEMS.register("carved_sapphire_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> CARVED_SAPPHIRE.get(), GEM_MANA_AMOUNT));
+    public static final DeferredItem<Item> CARVED_TOPAZ_FULL = ITEMS.register("carved_topaz_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> CARVED_TOPAZ.get(), GEM_MANA_AMOUNT));
+    public static final DeferredItem<Item> CARVED_WHITE_GEMSTONE_FULL = ITEMS.register("carved_white_gemstone_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> CARVED_WHITE_GEMSTONE.get(), GEM_MANA_AMOUNT));
 
     public static final DeferredItem<Item> RAW_EMERALD = ITEMS.register("raw_emerald",
             () -> new Item(new Item.Properties()));

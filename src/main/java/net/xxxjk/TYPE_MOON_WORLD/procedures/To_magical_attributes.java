@@ -15,7 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 import org.jetbrains.annotations.NotNull;
 
 public class To_magical_attributes {
-    public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
+    public static void execute(LevelAccessor world, double x, double y, double z, Entity entity, int pageMode) {
         if (entity == null)
             return;
         if (entity instanceof ServerPlayer _ent) {
@@ -33,9 +33,12 @@ public class To_magical_attributes {
 
                 @Override
                 public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
-                    return new MagicalattributesMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(_bpos));
+                    return new MagicalattributesMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(_bpos).writeInt(pageMode));
                 }
-            }, _bpos);
+            }, buf -> {
+                buf.writeBlockPos(_bpos);
+                buf.writeInt(pageMode);
+            });
         }
     }
 }

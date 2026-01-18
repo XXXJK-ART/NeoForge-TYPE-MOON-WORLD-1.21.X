@@ -17,6 +17,8 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.Returns_the_current_mana;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.platform.GlStateManager;
 
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+
 @EventBusSubscriber({Dist.CLIENT})
 public class Magic_display_Overlay {
     @SubscribeEvent(priority = EventPriority.NORMAL)
@@ -46,6 +48,13 @@ public class Magic_display_Overlay {
             event.getGuiGraphics().drawString(Minecraft.getInstance().font,
 
                     Returns_the_current_mana.execute(entity), 12, h - 9, -10040065, false);
+
+            if (entity != null) {
+                TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                if (vars.is_magic_circuit_open) {
+                    event.getGuiGraphics().drawString(Minecraft.getInstance().font, "当前魔术：", 2, h - 22, -10040065, false);
+                }
+            }
         }
         RenderSystem.depthMask(true);
         RenderSystem.defaultBlendFunc();

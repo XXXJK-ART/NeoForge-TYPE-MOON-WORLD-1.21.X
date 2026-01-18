@@ -7,6 +7,11 @@
   "item.typemoonworld.carved_sapphire": "Carved Sapphire",
   "item.typemoonworld.carved_topaz": "Carved Topaz",
   "item.typemoonworld.carved_white_gemstone": "Carved White Gemstone",
+  "item.typemoonworld.carved_emerald_full": "Full Mana Carved Emerald",
+  "item.typemoonworld.carved_ruby_full": "Full Mana Carved Ruby",
+  "item.typemoonworld.carved_sapphire_full": "Full Mana Carved Sapphire",
+  "item.typemoonworld.carved_topaz_full": "Full Mana Carved Topaz",
+  "item.typemoonworld.carved_white_gemstone_full": "Full Mana Carved White Gemstone",
   "item.typemoonworld.raw_emerald": "Raw Emerald",
   "item.typemoonworld.raw_ruby": "Raw Ruby",
   "item.typemoonworld.raw_sapphire": "Raw Sapphire",
@@ -26,8 +31,9 @@
   "block.typemoonworld.white_gemstone_block": "White Gemstone Block",
   "block.typemoonworld.white_gemstone_mine": "White Gemstone Mine",
 
-  "key.typemoonworld.lose_health_regain_mana": "Lose health regain mana",
-  "key.typemoonworld.basic_information_gui": "Basic information",
+  "key.typemoonworld.lose_health_regain_mana": "以血换蓝",
+  "key.typemoonworld.basic_information_gui": "基础信息界面",
+  "key.typemoonworld.magic_circuit_switch": "魔术回路开关",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

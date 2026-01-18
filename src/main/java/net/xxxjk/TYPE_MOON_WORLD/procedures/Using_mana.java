@@ -26,7 +26,7 @@ public class Using_mana {
             }
         } else {
             if (entity instanceof Player _player && !_player.level().isClientSide())
-                _player.displayClientMessage(Component.literal("魔力已满"), false);
+                _player.displayClientMessage(Component.literal("魔力已满"), true);
         }
     }
 }

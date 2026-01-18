@@ -27,6 +27,7 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
     public final Level world;
     public final Player entity;
     public int x, y, z;
+    public final int pageMode;
     private ContainerLevelAccess access = ContainerLevelAccess.NULL;
     private final IItemHandler internal;
     private final Map<Integer, Slot> customSlots = new HashMap<>();
@@ -41,13 +42,16 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
         this.world = inv.player.level();
         this.internal = new ItemStackHandler(0);
         BlockPos pos;
+        int pageModeFromBuf = 0;
         if (extraData != null) {
             pos = extraData.readBlockPos();
             this.x = pos.getX();
             this.y = pos.getY();
             this.z = pos.getZ();
             access = ContainerLevelAccess.create(world, pos);
+            pageModeFromBuf = extraData.readInt();
         }
+        this.pageMode = pageModeFromBuf;
     }
 
     @Override

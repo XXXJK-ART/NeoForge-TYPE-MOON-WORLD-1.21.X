@@ -4,6 +4,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.*;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -94,6 +95,11 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         guiGraphics.drawString(this.font,
 
                 Back_player_restore_magic_moment.execute(entity), 71, 84, -13408513, false);
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        String baseAttributes = buildBaseAttributes(vars);
+        String extraAttributes = buildExtraAttributes(vars);
+        guiGraphics.drawString(this.font, baseAttributes, 71, 104, -13408513, false);
+        guiGraphics.drawString(this.font, extraAttributes, 71, 124, -13408513, false);
     }
 
     @Override
@@ -113,8 +119,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         imagebutton_magical_attributes = new ImageButton(this.leftPos + 38, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes02.png")), e -> {
-            PacketDistributor.sendToServer(new Basic_information_Button_Message(1, x, y, z));
-            Basic_information_Button_Message.handleButtonAction(entity, 1, x, y, z);
+            PacketDistributor.sendToServer(new Basic_information_Button_Message(0, x, y, z));
+            Basic_information_Button_Message.handleButtonAction(entity, 0, x, y, z);
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
@@ -126,6 +132,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         imagebutton_magical_properties = new ImageButton(this.leftPos + 72, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_properties.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_properties02.png")), e -> {
+            PacketDistributor.sendToServer(new Basic_information_Button_Message(1, x, y, z));
+            Basic_information_Button_Message.handleButtonAction(entity, 1, x, y, z);
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
@@ -134,6 +142,74 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         };
         guistate.put("button:imagebutton_magical_properties", imagebutton_magical_properties);
         this.addRenderableWidget(imagebutton_magical_properties);
+    }
+
+    private String buildBaseAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {
+        StringBuilder builder = new StringBuilder("基础属性：");
+        boolean has = false;
+        if (vars.player_magic_attributes_earth) {
+            builder.append("地");
+            has = true;
+        }
+        if (vars.player_magic_attributes_water) {
+            if (has) {
+                builder.append("·");
+            }
+            builder.append("水");
+            has = true;
+        }
+        if (vars.player_magic_attributes_fire) {
+            if (has) {
+                builder.append("·");
+            }
+            builder.append("火");
+            has = true;
+        }
+        if (vars.player_magic_attributes_wind) {
+            if (has) {
+                builder.append("·");
+            }
+            builder.append("风");
+            has = true;
+        }
+        if (vars.player_magic_attributes_ether) {
+            if (has) {
+                builder.append("·");
+            }
+            builder.append("以太");
+            has = true;
+        }
+        if (!has) {
+            builder.append("/");
+        }
+        return builder.toString();
+    }
+
+    private String buildExtraAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {
+        StringBuilder builder = new StringBuilder("扩展属性：");
+        boolean has = false;
+        if (vars.player_magic_attributes_none) {
+            builder.append("无属性");
+            has = true;
+        }
+        if (vars.player_magic_attributes_imaginary_number) {
+            if (has) {
+                builder.append("·");
+            }
+            builder.append("虚数");
+            has = true;
+        }
+        if (vars.player_magic_attributes_sword) {
+            if (has) {
+                builder.append("·");
+            }
+            builder.append("剑");
+            has = true;
+        }
+        if (!has) {
+            builder.append("/");
+        }
+        return builder.toString();
     }
 
     private void renderEntityInInventoryFollowsAngle(GuiGraphics guiGraphics, int x, int y,

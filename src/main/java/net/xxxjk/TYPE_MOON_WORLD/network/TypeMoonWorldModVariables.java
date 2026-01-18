@@ -28,16 +28,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public class TypeMoonWorldModVariables {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, TYPE_MOON_WORLD.MOD_ID);
     public static final Supplier<AttachmentType<PlayerVariables>> PLAYER_VARIABLES = ATTACHMENT_TYPES.register("player_variables",
             () -> AttachmentType.serializable(PlayerVariables::new).build());
-
-    @SubscribeEvent
-    public static void init(FMLCommonSetupEvent event) {
-        TYPE_MOON_WORLD.addNetworkMessage(PlayerVariablesSyncMessage.TYPE, PlayerVariablesSyncMessage.STREAM_CODEC, PlayerVariablesSyncMessage::handleData);
-    }
 
     @EventBusSubscriber
     public static class EventBusVariableHandlers {
@@ -74,6 +68,8 @@ public class TypeMoonWorldModVariables {
             clone.player_magic_attributes_none = original.player_magic_attributes_none;
             clone.player_magic_attributes_imaginary_number = original.player_magic_attributes_imaginary_number;
             clone.player_magic_attributes_sword = original.player_magic_attributes_sword;
+            clone.is_magic_circuit_open = original.is_magic_circuit_open;
+            clone.magic_circuit_open_timer = original.magic_circuit_open_timer;
             if (!event.isWasDeath()) {
                 clone.player_mana = original.player_mana;
             }
@@ -94,6 +90,8 @@ public class TypeMoonWorldModVariables {
         public boolean player_magic_attributes_none = false;
         public boolean player_magic_attributes_imaginary_number = false;
         public boolean player_magic_attributes_sword = false;
+        public boolean is_magic_circuit_open = false;
+        public double magic_circuit_open_timer = 0;
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -110,6 +108,8 @@ public class TypeMoonWorldModVariables {
             nbt.putBoolean("player_magic_attributes_none", player_magic_attributes_none);
             nbt.putBoolean("player_magic_attributes_imaginary_number", player_magic_attributes_imaginary_number);
             nbt.putBoolean("player_magic_attributes_sword", player_magic_attributes_sword);
+            nbt.putBoolean("is_magic_circuit_open", is_magic_circuit_open);
+            nbt.putDouble("magic_circuit_open_timer", magic_circuit_open_timer);
             return nbt;
         }
 
@@ -127,6 +127,8 @@ public class TypeMoonWorldModVariables {
             player_magic_attributes_none = nbt.getBoolean("player_magic_attributes_none");
             player_magic_attributes_imaginary_number = nbt.getBoolean("player_magic_attributes_imaginary_number");
             player_magic_attributes_sword = nbt.getBoolean("player_magic_attributes_sword");
+            is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
+            magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
         }
 
         public void syncPlayerVariables(Entity entity) {

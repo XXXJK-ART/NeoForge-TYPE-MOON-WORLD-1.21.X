@@ -27,6 +27,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     private final Level world;
     private final int x, y, z;
     private final Player entity;
+    private int pageMode;
     ImageButton imagebutton_basic_attributes;
     ImageButton imagebutton_magical_attributes;
     ImageButton imagebutton_magical_properties;
@@ -38,11 +39,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         this.y = container.y;
         this.z = container.z;
         this.entity = container.entity;
+        this.pageMode = container.pageMode;
         this.imageWidth = 300;
         this.imageHeight = 160;
     }
 
-    private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes0.png");
+    private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/basic_information.png");
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
@@ -79,6 +81,15 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (pageMode == 0) {
+            guiGraphics.drawString(this.font, Component.literal("魔眼与改造"), 71, 24, -13408513, false);
+            guiGraphics.drawString(this.font, Component.literal("在这里可以装载魔眼与相关改造"), 71, 44, -13408513, false);
+            guiGraphics.drawString(this.font, Component.literal("功能开发中"), 71, 63, -13408513, false);
+        } else {
+            guiGraphics.drawString(this.font, Component.literal("已学魔术"), 71, 24, -13408513, false);
+            guiGraphics.drawString(this.font, Component.literal("在这里可以查看已经学会的魔术"), 71, 44, -13408513, false);
+            guiGraphics.drawString(this.font, Component.literal("功能开发中"), 71, 63, -13408513, false);
+        }
     }
 
     @Override
@@ -100,6 +111,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         imagebutton_magical_attributes = new ImageButton(this.leftPos + 38, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes02.png")), e -> {
+            this.pageMode = 0;
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
@@ -111,6 +123,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         imagebutton_magical_properties = new ImageButton(this.leftPos + 72, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_properties.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_properties02.png")), e -> {
+            this.pageMode = 1;
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {

@@ -19,7 +19,6 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.To_magical_attributes;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public record Basic_information_Button_Message(int buttonID, int x, int y, int z) implements CustomPacketPayload {
     public static final Type<Basic_information_Button_Message> TYPE
             = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
@@ -58,14 +57,10 @@ public record Basic_information_Button_Message(int buttonID, int x, int y, int z
         if (!world.isLoaded(pos)) {
             return;
         }
-        if (buttonID == 0 && !world.isClientSide()) {
-            To_magical_attributes.execute(world, x, y, z, entity);
+        if (!world.isClientSide()) {
+            if (buttonID == 0 || buttonID == 1) {
+                To_magical_attributes.execute(world, x, y, z, entity, buttonID);
+            }
         }
-    }
-
-    @SubscribeEvent
-    public static void registerMessage(FMLCommonSetupEvent event) {
-        TYPE_MOON_WORLD.addNetworkMessage(Basic_information_Button_Message.TYPE,
-                Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
     }
 }

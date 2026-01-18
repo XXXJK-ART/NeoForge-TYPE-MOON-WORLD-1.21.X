@@ -1,0 +1,13 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "typemoonworld:ore_emerald_mine_placed",
+    "typemoonworld:ore_ruby_mine_placed",
+    "typemoonworld:ore_sapphire_mine_placed",
+    "typemoonworld:ore_topaz_mine_placed",
+    "typemoonworld:ore_white_gemstone_mine_placed"
+  ],
+  "step": "underground_ores"
+}
+
