@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 // Demonstrates how to use Neo's config APIs
 // 演示如何使用 Neo 的配置 API。
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@SuppressWarnings("null")
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 

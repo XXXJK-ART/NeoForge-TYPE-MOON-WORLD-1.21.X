@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings("null")
 public class FullManaCarvedGemItem extends Item {
     private final Supplier<Item> emptyGemSupplier;
     private final double manaAmount;

@@ -7,7 +7,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
 
@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+@SuppressWarnings("null")
 public class TypeMoonWorldModVariables {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, TYPE_MOON_WORLD.MOD_ID);
     public static final Supplier<AttachmentType<PlayerVariables>> PLAYER_VARIABLES = ATTACHMENT_TYPES.register("player_variables",
@@ -70,6 +71,8 @@ public class TypeMoonWorldModVariables {
             clone.player_magic_attributes_sword = original.player_magic_attributes_sword;
             clone.is_magic_circuit_open = original.is_magic_circuit_open;
             clone.magic_circuit_open_timer = original.magic_circuit_open_timer;
+            clone.selected_magics = new java.util.ArrayList<>(original.selected_magics);
+            clone.current_magic_index = original.current_magic_index;
             if (!event.isWasDeath()) {
                 clone.player_mana = original.player_mana;
             }
@@ -92,6 +95,8 @@ public class TypeMoonWorldModVariables {
         public boolean player_magic_attributes_sword = false;
         public boolean is_magic_circuit_open = false;
         public double magic_circuit_open_timer = 0;
+        public java.util.List<String> selected_magics = new java.util.ArrayList<>();
+        public int current_magic_index = 0;
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -110,6 +115,14 @@ public class TypeMoonWorldModVariables {
             nbt.putBoolean("player_magic_attributes_sword", player_magic_attributes_sword);
             nbt.putBoolean("is_magic_circuit_open", is_magic_circuit_open);
             nbt.putDouble("magic_circuit_open_timer", magic_circuit_open_timer);
+            
+            net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
+            for (String magic : selected_magics) {
+                magicList.add(net.minecraft.nbt.StringTag.valueOf(magic));
+            }
+            nbt.put("selected_magics", magicList);
+            nbt.putInt("current_magic_index", current_magic_index);
+            
             return nbt;
         }
 
@@ -129,6 +142,15 @@ public class TypeMoonWorldModVariables {
             player_magic_attributes_sword = nbt.getBoolean("player_magic_attributes_sword");
             is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
             magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
+            
+            selected_magics.clear();
+            if (nbt.contains("selected_magics")) {
+                net.minecraft.nbt.ListTag magicList = nbt.getList("selected_magics", 8); // 8 is StringTag type
+                for (int i = 0; i < magicList.size(); i++) {
+                    selected_magics.add(magicList.getString(i));
+                }
+            }
+            current_magic_index = nbt.getInt("current_magic_index");
         }
 
         public void syncPlayerVariables(Entity entity) {

@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import javax.annotation.Nullable;
 
 @EventBusSubscriber
+@SuppressWarnings("null")
 public class Initialization_of_entering_the_world {
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {

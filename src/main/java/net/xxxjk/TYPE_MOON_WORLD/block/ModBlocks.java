@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings("null")
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(TYPE_MOON_WORLD.MOD_ID);
@@ -67,6 +68,12 @@ public class ModBlocks {
     public static final DeferredBlock<Block> WHITE_GEMSTONE_MINE = registerBlock("white_gemstone_mine",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
                     BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
+
+    public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock("green_transparent_block",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(50f, 1200f).sound(SoundType.GLASS).noOcclusion()
+                    .isViewBlocking((s, l, p) -> false).isValidSpawn((s, l, p, e) -> false)
+                    .isSuffocating((s, l, p) -> false).isRedstoneConductor((s, l, p) -> false)));
 
     private static <T extends Block> DeferredBlock<T> registerBlock (String name, Supplier<T> block){
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);

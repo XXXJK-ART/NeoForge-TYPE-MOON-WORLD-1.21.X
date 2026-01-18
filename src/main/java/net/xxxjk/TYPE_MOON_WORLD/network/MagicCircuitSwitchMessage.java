@@ -9,6 +9,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.ToggleMagicCircuit;
 
+@SuppressWarnings("null")
 public record MagicCircuitSwitchMessage(int eventType, int pressedms) implements CustomPacketPayload {
     public static final Type<MagicCircuitSwitchMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "magic_circuit_switch"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicCircuitSwitchMessage> STREAM_CODEC = StreamCodec.of(

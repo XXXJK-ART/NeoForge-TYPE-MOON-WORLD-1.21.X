@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings("null")
 public class ModCreativeModeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TAB =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, TYPE_MOON_WORLD.MOD_ID);
@@ -54,6 +55,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.TOPAZ_MINE);
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK);
                         output.accept(ModBlocks.WHITE_GEMSTONE_MINE);
+                        output.accept(ModBlocks.GREEN_TRANSPARENT_BLOCK);
 
                         output.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
                         output.accept(ModBlocks.SPIRIT_VEIN_NODE);

@@ -32,8 +32,36 @@
   "block.typemoonworld.white_gemstone_mine": "White Gemstone Mine",
 
   "key.typemoonworld.lose_health_regain_mana": "以血换蓝",
-  "key.typemoonworld.basic_information_gui": "基础信息界面",
-  "key.typemoonworld.magic_circuit_switch": "魔术回路开关",
+  "key.typemoonworld.basic_information_gui": "Basic information",
+  "key.typemoonworld.magic_circuit_switch": "Magic Circuit Switch",
+  "key.typemoonworld.cast_magic": "Cast Magic",
+
+  "gui.typemoonworld.magic.ruby_throw": "Ruby Throw",
+  "gui.typemoonworld.magic.ruby_throw.selected": "Ruby [Selected]",
+  "gui.typemoonworld.magic.ruby_throw.short": "Ruby",
+  "message.typemoonworld.magic.ruby_throw.need_gem": "Requires Full Mana Ruby",
+
+  "gui.typemoonworld.magic.sapphire_throw": "Sapphire Throw",
+  "gui.typemoonworld.magic.sapphire_throw.selected": "Sapphire [Selected]",
+  "gui.typemoonworld.magic.sapphire_throw.short": "Sapphire",
+  "message.typemoonworld.magic.sapphire_throw.need_gem": "Requires Full Mana Sapphire",
+
+  "gui.typemoonworld.magic.emerald_use": "Emerald Use",
+  "gui.typemoonworld.magic.emerald_use.selected": "Emerald [Selected]",
+  "gui.typemoonworld.magic.emerald_use.short": "Emerald",
+  "message.typemoonworld.magic.emerald_use.need_gem": "Requires Full Mana Emerald",
+
+  "gui.typemoonworld.magic.topaz_throw": "Topaz Throw",
+  "gui.typemoonworld.magic.topaz_throw.selected": "Topaz [Selected]",
+  "gui.typemoonworld.magic.topaz_throw.short": "Topaz",
+  "message.typemoonworld.magic.topaz_throw.need_gem": "Requires Full Mana Topaz",
+
+  "block.typemoonworld.green_transparent_block": "Green Transparent Block",
+
+  "gui.typemoonworld.screen.magic_eyes_and_modification": "Magic Eyes & Mod",
+  "gui.typemoonworld.screen.load_magic_eyes": "Equip Magic Eyes and Modifications Here",
+  "gui.typemoonworld.screen.wip": "Work In Progress",
+  "gui.typemoonworld.screen.learned_magic": "Learned Magic",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

@@ -1,9 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.bus.api.SubscribeEvent;
+
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
@@ -19,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.To_basic_information;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("null")
 public record Magical_attributes_Button_Message(int buttonID, int x, int y, int z) implements CustomPacketPayload {
     public static final Type<Magical_attributes_Button_Message> TYPE
             = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,

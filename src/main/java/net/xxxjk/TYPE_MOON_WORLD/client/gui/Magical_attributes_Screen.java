@@ -22,6 +22,12 @@ import org.joml.Vector3f;
 
 import java.util.HashMap;
 
+import net.minecraft.client.gui.components.Button;
+import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
+
+@SuppressWarnings("null")
 public class Magical_attributes_Screen extends AbstractContainerScreen<MagicalattributesMenu> {
     private final static HashMap<String, Object> guistate = MagicalattributesMenu.guistate;
     private final Level world;
@@ -31,6 +37,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     ImageButton imagebutton_basic_attributes;
     ImageButton imagebutton_magical_attributes;
     ImageButton imagebutton_magical_properties;
+    Button rubyThrowButton;
+    Button sapphireThrowButton;
+    Button emeraldUseButton;
+    Button topazThrowButton;
 
     public Magical_attributes_Screen(MagicalattributesMenu container, Inventory inventory, Component text) {
         super(container, inventory, text);
@@ -54,11 +64,48 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             this.renderEntityInInventoryFollowsAngle(guiGraphics, this.leftPos + 37, this.topPos + 136, 0f
                     + (float) Math.atan((this.leftPos + 37 - mouseX) / 40.0), (float) Math.atan((this.topPos + 87 - mouseY) / 40.0), livingEntity);
         }
+        
+        if (this.pageMode == 1) {
+            updateButtonLabels();
+        }
+        
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+    
+    private void updateButtonLabels() {
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        
+        if (rubyThrowButton != null) {
+            boolean selected = vars.selected_magics.contains("ruby_throw");
+            rubyThrowButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_RUBY_THROW_SELECTED : MagicConstants.KEY_MAGIC_RUBY_THROW_SHORT));
+        }
+        
+        if (sapphireThrowButton != null) {
+            boolean selected = vars.selected_magics.contains("sapphire_throw");
+            sapphireThrowButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_SAPPHIRE_THROW_SELECTED : MagicConstants.KEY_MAGIC_SAPPHIRE_THROW_SHORT));
+        }
+        
+        if (emeraldUseButton != null) {
+            boolean selected = vars.selected_magics.contains("emerald_use");
+            emeraldUseButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_EMERALD_USE_SELECTED : MagicConstants.KEY_MAGIC_EMERALD_USE_SHORT));
+        }
+        
+        if (topazThrowButton != null) {
+            boolean selected = vars.selected_magics.contains("topaz_throw");
+            topazThrowButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_TOPAZ_THROW_SELECTED : MagicConstants.KEY_MAGIC_TOPAZ_THROW_SHORT));
+        }
+    }
+    
+    private void updateVisibility() {
+        boolean visible = (this.pageMode == 1);
+        if (rubyThrowButton != null) rubyThrowButton.visible = visible;
+        if (sapphireThrowButton != null) sapphireThrowButton.visible = visible;
+        if (emeraldUseButton != null) emeraldUseButton.visible = visible;
+        if (topazThrowButton != null) topazThrowButton.visible = visible;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -82,19 +129,61 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (pageMode == 0) {
-            guiGraphics.drawString(this.font, Component.literal("魔眼与改造"), 71, 24, -13408513, false);
-            guiGraphics.drawString(this.font, Component.literal("在这里可以装载魔眼与相关改造"), 71, 44, -13408513, false);
-            guiGraphics.drawString(this.font, Component.literal("功能开发中"), 71, 63, -13408513, false);
+            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_MAGIC_EYES_AND_MODIFICATION), 71, 24, MagicConstants.UI_COLOR_TEXT, false);
+            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_LOAD_MAGIC_EYES), 71, 44, MagicConstants.UI_COLOR_TEXT, false);
+            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_WIP), 71, 63, MagicConstants.UI_COLOR_TEXT, false);
         } else {
-            guiGraphics.drawString(this.font, Component.literal("已学魔术"), 71, 24, -13408513, false);
-            guiGraphics.drawString(this.font, Component.literal("在这里可以查看已经学会的魔术"), 71, 44, -13408513, false);
-            guiGraphics.drawString(this.font, Component.literal("功能开发中"), 71, 63, -13408513, false);
+            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_LEARNED_MAGIC), 71, 24, MagicConstants.UI_COLOR_TEXT, false);
         }
     }
 
     @Override
     public void init() {
         super.init();
+        
+        // 2x2 Grid Layout
+        // Column 1: x = 71, Column 2: x = 141 (71 + 60 + 10)
+        // Row 1: y = 40, Row 2: y = 60
+        
+        int col1 = this.leftPos + 71;
+        int col2 = this.leftPos + 141;
+        int row1 = this.topPos + 40;
+        int row2 = this.topPos + 60;
+        int btnWidth = 60;
+        int btnHeight = 16;
+        
+        rubyThrowButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_RUBY_THROW), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("ruby_throw");
+            PacketDistributor.sendToServer(new SelectMagicMessage("ruby_throw", !isSelected));
+        }).bounds(col1, row1, btnWidth, btnHeight).build();
+        rubyThrowButton.visible = false;
+        this.addRenderableWidget(rubyThrowButton);
+
+        sapphireThrowButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_SAPPHIRE_THROW), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("sapphire_throw");
+            PacketDistributor.sendToServer(new SelectMagicMessage("sapphire_throw", !isSelected));
+        }).bounds(col2, row1, btnWidth, btnHeight).build(); 
+        sapphireThrowButton.visible = false;
+        this.addRenderableWidget(sapphireThrowButton);
+
+        emeraldUseButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_EMERALD_USE), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("emerald_use");
+            PacketDistributor.sendToServer(new SelectMagicMessage("emerald_use", !isSelected));
+        }).bounds(col1, row2, btnWidth, btnHeight).build(); 
+        emeraldUseButton.visible = false;
+        this.addRenderableWidget(emeraldUseButton);
+
+        topazThrowButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_TOPAZ_THROW), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("topaz_throw");
+            PacketDistributor.sendToServer(new SelectMagicMessage("topaz_throw", !isSelected));
+        }).bounds(col2, row2, btnWidth, btnHeight).build(); 
+        topazThrowButton.visible = false;
+        this.addRenderableWidget(topazThrowButton);
+
         imagebutton_basic_attributes = new ImageButton(this.leftPos + 4, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes02.png")), e -> {
@@ -108,10 +197,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         };
         guistate.put("button:imagebutton_basic_attributes", imagebutton_basic_attributes);
         this.addRenderableWidget(imagebutton_basic_attributes);
+        
         imagebutton_magical_attributes = new ImageButton(this.leftPos + 38, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes02.png")), e -> {
             this.pageMode = 0;
+            updateVisibility();
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
@@ -120,10 +211,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         };
         guistate.put("button:imagebutton_magical_attributes", imagebutton_magical_attributes);
         this.addRenderableWidget(imagebutton_magical_attributes);
+        
         imagebutton_magical_properties = new ImageButton(this.leftPos + 72, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_properties.png"),
                         ResourceLocation.parse("typemoonworld:textures/screens/magical_properties02.png")), e -> {
             this.pageMode = 1;
+            updateVisibility();
         }) {
             @Override
             public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
@@ -132,6 +225,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         };
         guistate.put("button:imagebutton_magical_properties", imagebutton_magical_properties);
         this.addRenderableWidget(imagebutton_magical_properties);
+        
+        // Initial update
+        updateVisibility();
     }
 
     private void renderEntityInInventoryFollowsAngle(GuiGraphics guiGraphics, int x, int y,

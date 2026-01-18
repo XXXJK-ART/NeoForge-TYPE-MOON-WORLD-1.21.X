@@ -25,6 +25,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
@@ -32,7 +33,14 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import org.slf4j.Logger;
+
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -64,6 +72,7 @@ public class TYPE_MOON_WORLD {
 
         ModItems.register(modEventBus);//添加物品
         ModBlocks.register(modEventBus);//添加方块
+        ModEntities.register(modEventBus);
 
         TypeMoonWorldModMenus.REGISTRY.register(modEventBus);//添加菜单
 
@@ -107,6 +116,9 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(Magical_attributes_Button_Message.TYPE, Magical_attributes_Button_Message.STREAM_CODEC, Magical_attributes_Button_Message::handleData);
         addNetworkMessage(TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE, TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData);
         addNetworkMessage(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
+        addNetworkMessage(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
+        addNetworkMessage(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
+        addNetworkMessage(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
 
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),
@@ -149,5 +161,14 @@ public class TYPE_MOON_WORLD {
         public static void onClientSetup(FMLClientSetupEvent event) {
 
         }
+        
+        @SubscribeEvent
+        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+            event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), ThrownItemRenderer::new);
+            event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), ThrownItemRenderer::new);
+            event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), ThrownItemRenderer::new);
+        }
+
+
     }
 }

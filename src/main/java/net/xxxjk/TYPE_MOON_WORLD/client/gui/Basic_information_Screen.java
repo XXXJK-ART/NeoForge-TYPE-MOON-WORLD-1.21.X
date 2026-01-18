@@ -26,6 +26,7 @@ import java.util.HashMap;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
+@SuppressWarnings("null")
 public class Basic_information_Screen extends AbstractContainerScreen<BasicInformationMenu> {
     private final static HashMap<String, Object> guistate = BasicInformationMenu.guistate;
     private final Level world;
@@ -60,7 +61,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -82,7 +83,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font,
 
                 Back_mana.execute(entity), 71, 24, -13408513, false);

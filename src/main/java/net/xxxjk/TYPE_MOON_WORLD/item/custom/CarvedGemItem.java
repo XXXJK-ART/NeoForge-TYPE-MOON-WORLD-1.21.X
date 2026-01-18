@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("null")
 public class CarvedGemItem extends Item {
     private final GemType type;
     private final double manaAmount;
