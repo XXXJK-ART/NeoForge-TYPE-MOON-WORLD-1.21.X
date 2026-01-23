@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.procedures;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -176,7 +177,16 @@ public class MagicSapphireWinterFrost {
                                 // Only revert if the current block matches the ice we placed.
                                 // If it's different (air, or other block), it means it was broken/changed.
                                 if (currentState.getBlock() == data.placedState.getBlock()) {
-                                    level.levelEvent(2001, data.pos, Block.getId(currentState));
+                                    boolean exposed = false;
+                                    for (Direction dir : Direction.values()) {
+                                        if (level.getBlockState(data.pos.relative(dir)).isAir()) {
+                                            exposed = true;
+                                            break;
+                                        }
+                                    }
+                                    if (exposed) {
+                                        level.levelEvent(2001, data.pos, Block.getId(currentState));
+                                    }
                                     level.setBlock(data.pos, data.originalState, 2);
                                 }
                             }
