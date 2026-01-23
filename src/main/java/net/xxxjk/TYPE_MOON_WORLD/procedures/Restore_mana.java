@@ -102,6 +102,13 @@ public class Restore_mana {
                 _vars.player_mana = Math.min(_vars.player_mana + manaRegen, _vars.player_max_mana);
             }
             
+            // Cooldown Logic
+            if (_vars.magic_cooldown > 0) {
+                // Decrease cooldown by the elapsed time (approx regenInterval)
+                // Since this loop runs every 'delay' ticks, we subtract 'delay'
+                _vars.magic_cooldown = Math.max(0, _vars.magic_cooldown - regenInterval);
+            }
+            
             _vars.syncPlayerVariables(entity);
 
             if (entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana < 20) {

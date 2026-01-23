@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.procedures;
+package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -111,7 +111,8 @@ public class MagicEmeraldWinterRiver {
                                     
                                     if (distSq > 1.5) { 
                                         BlockPos pos = center.offset(x, y, z);
-                                        if (level.getBlockState(pos).isAir()) {
+                                        // Force replace any breakable block
+                                        if (level.getBlockState(pos).getDestroySpeed(level, pos) >= 0) {
                                             if (level.setBlock(pos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState(), 2)) {
                                                 // Add to restore bucket
                                                 int delay = 160 + random.nextInt(41); // 160-200 ticks

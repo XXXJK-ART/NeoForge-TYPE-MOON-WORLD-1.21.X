@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
-import net.minecraft.client.gui.components.ImageButton;
-import net.minecraft.client.gui.components.WidgetSprites;
+import net.minecraft.client.gui.components.Button;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -18,6 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.BasicInformationMenu;
@@ -32,9 +32,9 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
     private final Level world;
     private final int x, y, z;
     private final Player entity;
-    ImageButton imagebutton_basic_attributes;
-    ImageButton imagebutton_magical_attributes;
-    ImageButton imagebutton_magical_properties;
+    Button imagebutton_basic_attributes;
+    Button imagebutton_magical_attributes;
+    Button imagebutton_magical_properties;
 
     public Basic_information_Screen(BasicInformationMenu container, Inventory inventory, Component text) {
         super(container, inventory, text);
@@ -43,8 +43,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         this.y = container.y;
         this.z = container.z;
         this.entity = container.entity;
-        this.imageWidth = 300;
-        this.imageHeight = 160;
+        this.imageWidth = 360;
+        this.imageHeight = 200;
     }
 
     private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/basic_information.png");
@@ -54,8 +54,13 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         if (Basic_information_back_player_self.execute(entity) instanceof LivingEntity livingEntity) {
-            this.renderEntityInInventoryFollowsAngle(guiGraphics, this.leftPos + 37, this.topPos + 136, 0f
-                    + (float) Math.atan((this.leftPos + 37 - mouseX) / 40.0), (float) Math.atan((this.topPos + 87 - mouseY) / 40.0), livingEntity);
+            // Reposition entity to align with new larger UI (Left side)
+            // Left Panel is roughly from x+10 to x+110
+            // Center of that is x+60
+            // Top is y+35, height 150 -> bottom y+185.
+            // Entity feet at y+170
+            this.renderEntityInInventoryFollowsAngle(guiGraphics, this.leftPos + 60, this.topPos + 170, 0f
+                    + (float) Math.atan((this.leftPos + 60 - mouseX) / 40.0), (float) Math.atan((this.topPos + 87 - mouseY) / 40.0), livingEntity);
         }
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
@@ -65,83 +70,130 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        guiGraphics.blit(texture, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight, this.imageWidth, this.imageHeight);
+        
+        // --- Modern Custom Background ---
+        int x = this.leftPos;
+        int y = this.topPos;
+        int w = this.imageWidth;
+        int h = this.imageHeight;
+        
+        // 1. Main Background (Gradient: Dark Blue/Purple to Black)
+        guiGraphics.fillGradient(x, y, x + w, y + h, 0xF0101020, 0xF0050510);
+        
+        // 2. Cyber/Magic Border (Cyan/Neon Blue)
+        int borderColor = 0xFF00FFFF;
+        int borderWidth = 1;
+        
+        guiGraphics.fill(x - borderWidth, y - borderWidth, x + w + borderWidth, y, borderColor); // Top
+        guiGraphics.fill(x - borderWidth, y + h, x + w + borderWidth, y + h + borderWidth, borderColor); // Bottom
+        guiGraphics.fill(x - borderWidth, y, x, y + h, borderColor); // Left
+        guiGraphics.fill(x + w, y, x + w + borderWidth, y + h, borderColor); // Right
+        
+        // 3. Header Separator
+        guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, 0x8000FFFF);
+        
+        // 4. Character Panel Background (Left side)
+        guiGraphics.fill(x + 10, y + 35, x + 110, y + 185, 0x40000000); 
+        guiGraphics.renderOutline(x + 10, y + 35, 100, 150, 0x6000FFFF);
+        
+        // 5. Enhanced Magic Circuit Decorations (PCB Style) - REDESIGNED
+        // REMOVED all circuits and connecting lines as requested
+        // Keeping only subtle background watermark if needed, or remove completely?
+        // User said "remove all magic circuit designs and the connecting line in the middle"
+        // So I will remove everything under section 5.
+        
+        // (Empty)
+
         RenderSystem.disableBlend();
     }
 
     @Override
-    public boolean keyPressed(int key, int b, int c) {
-        if (key == 256) {
-            if (this.minecraft != null) {
-                if (this.minecraft.player != null) {
-                    this.minecraft.player.closeContainer();
-                }
-            }
-            return true;
-        }
-        return super.keyPressed(key, b, c);
+    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Title (Removed Basic Information text)
+        // guiGraphics.drawCenteredString(this.font, this.title, this.imageWidth / 2, 8, 0xFF00FFFF);
+
+        // Right Column Stats (Starting x = 120)
+        int startX = 125;
+        int startY = 40;
+        int spacing = 15;
+        
+        // Helper to draw label: value
+        drawStat(guiGraphics, "当前魔力:", Back_mana.execute(entity), startX, startY);
+        drawStat(guiGraphics, "魔力上限:", Back_max_mana.execute(entity).replace("魔力值上限：", ""), startX, startY + spacing);
+        drawStat(guiGraphics, "魔力回复:", Back_player_mana_egenerated_every_moment.execute(entity), startX, startY + spacing * 2);
+        drawStat(guiGraphics, "回复间隔:", Back_player_restore_magic_moment.execute(entity), startX, startY + spacing * 3);
+        
+        // Attributes Section
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        
+        guiGraphics.drawString(this.font, "基础属性:", startX, startY + spacing * 5, 0xFF00E0E0, false);
+        String baseAttr = buildBaseAttributes(vars).replace("基础属性：", "");
+        guiGraphics.drawWordWrap(this.font, Component.literal(baseAttr), startX, startY + spacing * 6, 160, 0xFFCCCCCC);
+        
+        guiGraphics.drawString(this.font, "扩展属性:", startX, startY + spacing * 8, 0xFF00E0E0, false);
+        String extraAttr = buildExtraAttributes(vars).replace("扩展属性：", "");
+        guiGraphics.drawWordWrap(this.font, Component.literal(extraAttr), startX, startY + spacing * 9, 160, 0xFFCCCCCC);
+    }
+    
+    private void drawStat(GuiGraphics gui, String label, String value, int x, int y) {
+        gui.drawString(this.font, label, x, y, 0xFFAAAAAA, false);
+        gui.drawString(this.font, value, x + 60, y, 0xFFFFFFFF, false);
     }
 
-    @Override
-    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font,
+    // Custom Neon Button Class
+    class NeonButton extends Button {
+        public NeonButton(int x, int y, int width, int height, Component message, OnPress onPress) {
+            super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
+        }
 
-                Back_mana.execute(entity), 71, 24, -13408513, false);
-        guiGraphics.drawString(this.font,
-
-                Back_max_mana.execute(entity), 71, 44, -13408513, false);
-        guiGraphics.drawString(this.font,
-
-                Back_player_mana_egenerated_every_moment.execute(entity), 71, 63, -13408513, false);
-        guiGraphics.drawString(this.font,
-
-                Back_player_restore_magic_moment.execute(entity), 71, 84, -13408513, false);
-        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        String baseAttributes = buildBaseAttributes(vars);
-        String extraAttributes = buildExtraAttributes(vars);
-        guiGraphics.drawString(this.font, baseAttributes, 71, 104, -13408513, false);
-        guiGraphics.drawString(this.font, extraAttributes, 71, 124, -13408513, false);
+        @Override
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            int borderColor = isHoveredOrFocused() ? 0xFF00FFFF : 0xFF00AAAA;
+            int fillColor = isHoveredOrFocused() ? 0x80000050 : 0x80000000;
+            int textColor = isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA;
+            
+            // Fill
+            guiGraphics.fill(getX(), getY(), getX() + width, getY() + height, fillColor);
+            
+            // Border
+            guiGraphics.renderOutline(getX(), getY(), width, height, borderColor);
+            
+            // Text
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, getMessage(), getX() + width / 2, getY() + (height - 8) / 2, textColor);
+        }
     }
 
     @Override
     public void init() {
         super.init();
-        imagebutton_basic_attributes = new ImageButton(this.leftPos + 4, this.topPos - 31, 32, 32,
-                new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes.png"),
-                        ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes02.png")), e -> {
-        }) {
-            @Override
-            public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
-                guiGraphics.blit(sprites.get(isActive(), isHoveredOrFocused()), getX(), getY(), 0, 0, width, height, width, height);
-            }
-        };
-        guistate.put("button:imagebutton_basic_attributes", imagebutton_basic_attributes);
+        
+        // Reposition buttons to top right or aligned with new layout
+        // Let's place them as tabs at the top right of the panel
+        // Panel starts at x+10, y+35.
+        // Let's put buttons above the header line (y+25).
+        
+        int btnY = this.topPos + 5;
+        int btnWidth = 80;
+        int btnHeight = 16;
+        int startX = this.leftPos + this.imageWidth - (btnWidth * 3) - 10;
+        
+        imagebutton_basic_attributes = new NeonButton(startX, btnY, btnWidth, btnHeight, Component.literal("基础属性"), e -> {
+            // Already here
+        });
+        // Highlight active tab
+        // imagebutton_basic_attributes.active = false; 
         this.addRenderableWidget(imagebutton_basic_attributes);
-        imagebutton_magical_attributes = new ImageButton(this.leftPos + 38, this.topPos - 31, 32, 32,
-                new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes.png"),
-                        ResourceLocation.parse("typemoonworld:textures/screens/magical_attributes02.png")), e -> {
+
+        imagebutton_magical_attributes = new NeonButton(startX + btnWidth + 2, btnY, btnWidth, btnHeight, Component.literal("身体改造"), e -> {
             PacketDistributor.sendToServer(new Basic_information_Button_Message(0, x, y, z));
             Basic_information_Button_Message.handleButtonAction(entity, 0, x, y, z);
-        }) {
-            @Override
-            public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
-                guiGraphics.blit(sprites.get(isActive(), isHoveredOrFocused()), getX(), getY(), 0, 0, width, height, width, height);
-            }
-        };
-        guistate.put("button:imagebutton_magical_attributes", imagebutton_magical_attributes);
+        });
         this.addRenderableWidget(imagebutton_magical_attributes);
-        imagebutton_magical_properties = new ImageButton(this.leftPos + 72, this.topPos - 31, 32, 32,
-                new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/magical_properties.png"),
-                        ResourceLocation.parse("typemoonworld:textures/screens/magical_properties02.png")), e -> {
+
+        imagebutton_magical_properties = new NeonButton(startX + (btnWidth + 2) * 2, btnY, btnWidth, btnHeight, Component.literal("魔术知识"), e -> {
             PacketDistributor.sendToServer(new Basic_information_Button_Message(1, x, y, z));
             Basic_information_Button_Message.handleButtonAction(entity, 1, x, y, z);
-        }) {
-            @Override
-            public void renderWidget(@NotNull GuiGraphics guiGraphics, int x, int y, float partialTicks) {
-                guiGraphics.blit(sprites.get(isActive(), isHoveredOrFocused()), getX(), getY(), 0, 0, width, height, width, height);
-            }
-        };
-        guistate.put("button:imagebutton_magical_properties", imagebutton_magical_properties);
+        });
         this.addRenderableWidget(imagebutton_magical_properties);
     }
 

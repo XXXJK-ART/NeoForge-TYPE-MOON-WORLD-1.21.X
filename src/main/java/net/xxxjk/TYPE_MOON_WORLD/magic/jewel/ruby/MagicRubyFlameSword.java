@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.procedures;
+package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.ruby;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;

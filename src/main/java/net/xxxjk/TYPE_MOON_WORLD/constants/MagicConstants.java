@@ -51,18 +51,22 @@ public class MagicConstants {
     public static final String KEY_MAGIC_RUBY_FLAME_SWORD = "gui.typemoonworld.magic.ruby_flame_sword";
     public static final String KEY_MAGIC_RUBY_FLAME_SWORD_SELECTED = "gui.typemoonworld.magic.ruby_flame_sword.selected";
     public static final String KEY_MAGIC_RUBY_FLAME_SWORD_SHORT = "gui.typemoonworld.magic.ruby_flame_sword.short";
+    public static final String MSG_MAGIC_RUBY_FLAME_SWORD_NEED_GEM = "message.typemoonworld.magic.ruby_flame_sword.need_gem";
 
     public static final String KEY_MAGIC_SAPPHIRE_WINTER_FROST = "gui.typemoonworld.magic.sapphire_winter_frost";
     public static final String KEY_MAGIC_SAPPHIRE_WINTER_FROST_SELECTED = "gui.typemoonworld.magic.sapphire_winter_frost.selected";
     public static final String KEY_MAGIC_SAPPHIRE_WINTER_FROST_SHORT = "gui.typemoonworld.magic.sapphire_winter_frost.short";
+    public static final String MSG_MAGIC_SAPPHIRE_WINTER_FROST_NEED_GEM = "message.typemoonworld.magic.sapphire_winter_frost.need_gem";
 
     public static final String KEY_MAGIC_EMERALD_WINTER_RIVER = "gui.typemoonworld.magic.emerald_winter_river";
     public static final String KEY_MAGIC_EMERALD_WINTER_RIVER_SELECTED = "gui.typemoonworld.magic.emerald_winter_river.selected";
     public static final String KEY_MAGIC_EMERALD_WINTER_RIVER_SHORT = "gui.typemoonworld.magic.emerald_winter_river.short";
+    public static final String MSG_MAGIC_EMERALD_WINTER_RIVER_NEED_GEM = "message.typemoonworld.magic.emerald_winter_river.need_gem";
 
     public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT = "gui.typemoonworld.magic.topaz_reinforcement";
     public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT_SELECTED = "gui.typemoonworld.magic.topaz_reinforcement.selected";
     public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT = "gui.typemoonworld.magic.topaz_reinforcement.short";
+    public static final String MSG_MAGIC_TOPAZ_REINFORCEMENT_NEED_GEM = "message.typemoonworld.magic.topaz_reinforcement.need_gem";
 
     public static final String GUI_MAGIC_EYES_AND_MODIFICATION = "gui.typemoonworld.screen.magic_eyes_and_modification";
     public static final String GUI_LOAD_MAGIC_EYES = "gui.typemoonworld.screen.load_magic_eyes";

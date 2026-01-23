@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.procedures;
+package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -125,7 +125,7 @@ public class MagicEmeraldUse {
                             // Calculate position based on "Right" vector
                             BlockPos targetPos = startPos.offset(rx * w, 0, rz * w).relative(up, h);
                             
-                            if (level.getBlockState(targetPos).canBeReplaced()) {
+                            if (level.getBlockState(targetPos).getDestroySpeed(level, targetPos) >= 0) {
                                 if (level.setBlock(targetPos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState(), 3)) {
                                     placedBlocks.add(targetPos);
                                     

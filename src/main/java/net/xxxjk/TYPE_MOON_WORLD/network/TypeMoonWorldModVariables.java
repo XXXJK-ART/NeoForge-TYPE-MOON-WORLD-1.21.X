@@ -97,6 +97,7 @@ public class TypeMoonWorldModVariables {
         public double magic_circuit_open_timer = 0;
         public java.util.List<String> selected_magics = new java.util.ArrayList<>();
         public int current_magic_index = 0;
+        public double magic_cooldown = 0;
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -115,6 +116,7 @@ public class TypeMoonWorldModVariables {
             nbt.putBoolean("player_magic_attributes_sword", player_magic_attributes_sword);
             nbt.putBoolean("is_magic_circuit_open", is_magic_circuit_open);
             nbt.putDouble("magic_circuit_open_timer", magic_circuit_open_timer);
+            nbt.putDouble("magic_cooldown", magic_cooldown);
             
             net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
             for (String magic : selected_magics) {
@@ -142,6 +144,7 @@ public class TypeMoonWorldModVariables {
             player_magic_attributes_sword = nbt.getBoolean("player_magic_attributes_sword");
             is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
             magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
+            magic_cooldown = nbt.getDouble("magic_cooldown");
             
             selected_magics.clear();
             if (nbt.contains("selected_magics")) {

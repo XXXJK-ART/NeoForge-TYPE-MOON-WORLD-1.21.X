@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.procedures;
+package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;

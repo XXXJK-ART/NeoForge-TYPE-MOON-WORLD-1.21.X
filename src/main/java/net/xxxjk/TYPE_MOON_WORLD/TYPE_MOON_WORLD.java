@@ -13,7 +13,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.util.thread.SidedThreadGroups;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -123,8 +122,7 @@ public class TYPE_MOON_WORLD {
     private static final Collection<Tuple<Runnable, Integer>> workQueue = new ConcurrentLinkedQueue<>();
 
     public static void queueServerWork(int tick, Runnable action) {
-        if (Thread.currentThread().getThreadGroup() == SidedThreadGroups.SERVER)
-            workQueue.add(new Tuple<>(action, tick));
+        workQueue.add(new Tuple<>(action, tick));
     }
 
     @SubscribeEvent
@@ -144,7 +142,12 @@ public class TYPE_MOON_WORLD {
     //您可以使用 SubscribeEvent 并让事件总线发现要调用的方法。
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        workQueue.clear();
+    }
 
+    @SubscribeEvent
+    public void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
+        workQueue.clear();
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent

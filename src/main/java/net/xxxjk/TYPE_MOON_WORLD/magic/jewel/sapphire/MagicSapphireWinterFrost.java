@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.procedures;
+package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.sapphire;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

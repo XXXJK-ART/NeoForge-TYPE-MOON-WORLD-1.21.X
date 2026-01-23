@@ -26,73 +26,10 @@ import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = {Dist.CLIENT})
 public class TypeMoonWorldModKeyMappings {
-    public static final KeyMapping MAGIC_CIRCUIT_SWITCH
-            = new KeyMapping("key.typemoonworld.magic_circuit_switch", GLFW.GLFW_KEY_Z, "key.categories.gameplay") {
-        private boolean isDownOld = false;
-
-        @Override
-        public void setDown(boolean isDown) {
-            super.setDown(isDown);
-            if (isDownOld != isDown && isDown) {
-                PacketDistributor.sendToServer(new MagicCircuitSwitchMessage(0, 0));
-                if (Minecraft.getInstance().player != null) {
-                    MagicCircuitSwitchMessage.pressAction(Minecraft.getInstance().player, 0, 0);
-                }
-            }
-            isDownOld = isDown;
-        }
-    };
-
-    public static final KeyMapping CAST_MAGIC
-            = new KeyMapping("key.typemoonworld.cast_magic", GLFW.GLFW_KEY_C, "key.categories.gameplay") {
-        private boolean isDownOld = false;
-
-        @Override
-        public void setDown(boolean isDown) {
-            super.setDown(isDown);
-            if (isDownOld != isDown && isDown) {
-                PacketDistributor.sendToServer(new CastMagicMessage());
-                if (Minecraft.getInstance().player != null) {
-                    CastMagicMessage.pressAction(Minecraft.getInstance().player);
-                }
-            }
-            isDownOld = isDown;
-        }
-    };
-
-    public static final KeyMapping LOSE_HEALTH_REGAIN_MANA
-            = new KeyMapping("key.typemoonworld.lose_health_regain_mana", GLFW.GLFW_KEY_X, "key.categories.gameplay") {
-        private boolean isDownOld = false;
-
-        @Override
-        public void setDown(boolean isDown) {
-            super.setDown(isDown);
-            if (isDownOld != isDown && isDown) {
-                PacketDistributor.sendToServer(new Lose_health_regain_mana_Message(0, 0));
-                if (Minecraft.getInstance().player != null) {
-                    Lose_health_regain_mana_Message.pressAction(Minecraft.getInstance().player, 0, 0);
-                }
-            }
-            isDownOld = isDown;
-        }
-    };
-
-    public static final KeyMapping BASIC_INFORMATION_GUI
-            = new KeyMapping("key.typemoonworld.basic_information_gui", GLFW.GLFW_KEY_R, "key.categories.gameplay") {
-        private boolean isDownOld = false;
-
-        @Override
-        public void setDown(boolean isDown) {
-            super.setDown(isDown);
-            if (isDownOld != isDown && isDown) {
-                PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0));
-                if (Minecraft.getInstance().player != null) {
-                    Basic_information_gui_Message.pressAction(Minecraft.getInstance().player, 0, 0);
-                }
-            }
-            isDownOld = isDown;
-        }
-    };
+    public static final KeyMapping MAGIC_CIRCUIT_SWITCH = new KeyMapping("key.typemoonworld.magic_circuit_switch", GLFW.GLFW_KEY_Z, "key.categories.gameplay");
+    public static final KeyMapping CAST_MAGIC = new KeyMapping("key.typemoonworld.cast_magic", GLFW.GLFW_KEY_C, "key.categories.gameplay");
+    public static final KeyMapping LOSE_HEALTH_REGAIN_MANA = new KeyMapping("key.typemoonworld.lose_health_regain_mana", GLFW.GLFW_KEY_X, "key.categories.gameplay");
+    public static final KeyMapping BASIC_INFORMATION_GUI = new KeyMapping("key.typemoonworld.basic_information_gui", GLFW.GLFW_KEY_R, "key.categories.gameplay");
 
     @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
@@ -107,10 +44,24 @@ public class TypeMoonWorldModKeyMappings {
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Post event) {
             if (Minecraft.getInstance().screen == null) {
-                MAGIC_CIRCUIT_SWITCH.consumeClick();
-                CAST_MAGIC.consumeClick();
-                LOSE_HEALTH_REGAIN_MANA.consumeClick();
-                BASIC_INFORMATION_GUI.consumeClick();
+                if (MAGIC_CIRCUIT_SWITCH.consumeClick()) {
+                    PacketDistributor.sendToServer(new MagicCircuitSwitchMessage(0, 0));
+                    MagicCircuitSwitchMessage.pressAction(Minecraft.getInstance().player, 0, 0);
+                }
+                if (CAST_MAGIC.consumeClick()) {
+                    PacketDistributor.sendToServer(new CastMagicMessage());
+                    CastMagicMessage.pressAction(Minecraft.getInstance().player);
+                }
+                if (LOSE_HEALTH_REGAIN_MANA.consumeClick()) {
+                    PacketDistributor.sendToServer(new Lose_health_regain_mana_Message(0, 0));
+                    Lose_health_regain_mana_Message.pressAction(Minecraft.getInstance().player, 0, 0);
+                }
+                if (BASIC_INFORMATION_GUI.consumeClick()) {
+                    PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0));
+                    if (Minecraft.getInstance().player != null) {
+                        Basic_information_gui_Message.pressAction(Minecraft.getInstance().player, 0, 0);
+                    }
+                }
             }
         }
         
