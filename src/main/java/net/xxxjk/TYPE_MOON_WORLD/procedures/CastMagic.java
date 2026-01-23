@@ -37,6 +37,14 @@ public class CastMagic {
                 MagicEmeraldUse.execute(entity);
             } else if ("topaz_throw".equals(magicId)) {
                 MagicTopazThrow.execute(entity);
+            } else if ("ruby_flame_sword".equals(magicId)) {
+                MagicRubyFlameSword.execute(entity);
+            } else if ("sapphire_winter_frost".equals(magicId)) {
+                MagicSapphireWinterFrost.execute(entity);
+            } else if ("emerald_winter_river".equals(magicId)) {
+                MagicEmeraldWinterRiver.execute(entity);
+            } else if ("topaz_reinforcement".equals(magicId)) {
+                MagicTopazReinforcement.execute(entity);
             }
         }
     }

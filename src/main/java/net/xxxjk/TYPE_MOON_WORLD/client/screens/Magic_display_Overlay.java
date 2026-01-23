@@ -51,6 +51,14 @@ public class Magic_display_Overlay {
                              magicName = "绿宝石展开";
                         } else if ("topaz_throw".equals(magicId)) {
                              magicName = "黄宝石投掷";
+                        } else if ("ruby_flame_sword".equals(magicId)) {
+                             magicName = "炎之剑";
+                        } else if ("sapphire_winter_frost".equals(magicId)) {
+                             magicName = "冬之霜";
+                        } else if ("emerald_winter_river".equals(magicId)) {
+                             magicName = "冬之河";
+                        } else if ("topaz_reinforcement".equals(magicId)) {
+                             magicName = "三 强化";
                         }
                     }
                     event.getGuiGraphics().drawString(Minecraft.getInstance().font, "当前魔术：" + magicName, 2, h - 22, -10040065, false);

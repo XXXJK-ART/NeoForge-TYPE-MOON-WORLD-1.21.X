@@ -1,7 +1,7 @@
 {
     "java.compile.nullAnalysis.mode": "automatic",
     "java.debug.settings.onBuildFailureProceed": true,
-    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.configuration.updateBuildConfiguration": "automatic",
     "java.import.gradle.java.home": "C:\\Program Files\\Java\\jdk-21",
     "java.configuration.runtimes": [
         {

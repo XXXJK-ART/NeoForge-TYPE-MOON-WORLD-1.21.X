@@ -69,7 +69,39 @@ public class Restore_mana {
                 _vars.magic_circuit_open_timer = 0;
             }
 
-            _vars.player_mana = Math.min(_vars.player_mana + manaRegen, _vars.player_max_mana);
+            // Mana Overload Mechanic
+            double maxMana = _vars.player_max_mana;
+            double currentMana = _vars.player_mana;
+            
+            if (currentMana > maxMana) {
+                // Overload: No natural regeneration
+                // Warning logic
+                if (entity instanceof Player _player && !_player.level().isClientSide()) {
+                    String color = "\u00A7e"; // Yellow
+                    if (currentMana > maxMana * 1.25) {
+                         color = "\u00A74"; // Dark Red
+                    } else if (currentMana > maxMana * 1.2) {
+                         color = "\u00A7c"; // Red
+                    }
+                    
+                    _player.displayClientMessage(Component.literal(color + "警告：魔力过载！ (" + (int)currentMana + "/" + (int)maxMana + ")"), true);
+                }
+
+                // Explosion logic (130%)
+                if (currentMana > maxMana * 1.3) {
+                     if (entity instanceof LivingEntity _living) {
+                         // Explode/Die
+                         _living.hurt(_living.damageSources().magic(), Float.MAX_VALUE);
+                         if (entity instanceof Player _player) {
+                             _player.sendSystemMessage(Component.literal("\u00A74你因无法承受过量的魔力而爆体身亡！"));
+                         }
+                     }
+                }
+            } else {
+                // Normal Regeneration
+                _vars.player_mana = Math.min(_vars.player_mana + manaRegen, _vars.player_max_mana);
+            }
+            
             _vars.syncPlayerVariables(entity);
 
             if (entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana < 20) {

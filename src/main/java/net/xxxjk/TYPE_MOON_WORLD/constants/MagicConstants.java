@@ -18,7 +18,7 @@ public class MagicConstants {
     public static final int EMERALD_WALL_DURATION = 160; // 8 seconds (range 8-10s)
     public static final int EMERALD_WALL_WIDTH = 3;
     public static final int EMERALD_WALL_HEIGHT = 3;
-    public static final int EMERALD_WALL_DISTANCE = 2;
+    public static final int EMERALD_WALL_DISTANCE = 4; // Moved from 2 to 4 (2 blocks further)
 
     // Topaz Throw Magic
     public static final float TOPAZ_THROW_VELOCITY = 3.0F;
@@ -46,6 +46,23 @@ public class MagicConstants {
     public static final String KEY_MAGIC_TOPAZ_THROW_SELECTED = "gui.typemoonworld.magic.topaz_throw.selected";
     public static final String KEY_MAGIC_TOPAZ_THROW_SHORT = "gui.typemoonworld.magic.topaz_throw.short";
     public static final String MSG_MAGIC_TOPAZ_THROW_NEED_GEM = "message.typemoonworld.magic.topaz_throw.need_gem";
+
+    // Advanced Magic Keys
+    public static final String KEY_MAGIC_RUBY_FLAME_SWORD = "gui.typemoonworld.magic.ruby_flame_sword";
+    public static final String KEY_MAGIC_RUBY_FLAME_SWORD_SELECTED = "gui.typemoonworld.magic.ruby_flame_sword.selected";
+    public static final String KEY_MAGIC_RUBY_FLAME_SWORD_SHORT = "gui.typemoonworld.magic.ruby_flame_sword.short";
+
+    public static final String KEY_MAGIC_SAPPHIRE_WINTER_FROST = "gui.typemoonworld.magic.sapphire_winter_frost";
+    public static final String KEY_MAGIC_SAPPHIRE_WINTER_FROST_SELECTED = "gui.typemoonworld.magic.sapphire_winter_frost.selected";
+    public static final String KEY_MAGIC_SAPPHIRE_WINTER_FROST_SHORT = "gui.typemoonworld.magic.sapphire_winter_frost.short";
+
+    public static final String KEY_MAGIC_EMERALD_WINTER_RIVER = "gui.typemoonworld.magic.emerald_winter_river";
+    public static final String KEY_MAGIC_EMERALD_WINTER_RIVER_SELECTED = "gui.typemoonworld.magic.emerald_winter_river.selected";
+    public static final String KEY_MAGIC_EMERALD_WINTER_RIVER_SHORT = "gui.typemoonworld.magic.emerald_winter_river.short";
+
+    public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT = "gui.typemoonworld.magic.topaz_reinforcement";
+    public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT_SELECTED = "gui.typemoonworld.magic.topaz_reinforcement.selected";
+    public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT = "gui.typemoonworld.magic.topaz_reinforcement.short";
 
     public static final String GUI_MAGIC_EYES_AND_MODIFICATION = "gui.typemoonworld.screen.magic_eyes_and_modification";
     public static final String GUI_LOAD_MAGIC_EYES = "gui.typemoonworld.screen.load_magic_eyes";

@@ -17,6 +17,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -42,6 +44,22 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
     @Override
     protected Item getDefaultItem() {
         return ModItems.CARVED_SAPPHIRE_FULL.get();
+    }
+
+    @Override
+    public void tick() {
+        // Check for water collision manually before movement
+        if (!this.level().isClientSide) {
+             Vec3 start = this.position();
+             Vec3 end = start.add(this.getDeltaMovement());
+             HitResult raytrace = this.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.SOURCE_ONLY, this));
+             if (raytrace.getType() == HitResult.Type.BLOCK) {
+                 this.onHit(raytrace);
+                 // If onHit discards the entity, we should stop here.
+                 if (this.isRemoved()) return;
+             }
+        }
+        super.tick();
     }
 
     @Override

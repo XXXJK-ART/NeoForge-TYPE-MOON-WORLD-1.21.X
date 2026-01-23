@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.procedures;
 
 import net.minecraft.world.entity.Entity;
-import net.minecraft.network.chat.Component;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public class ToggleMagicCircuit {

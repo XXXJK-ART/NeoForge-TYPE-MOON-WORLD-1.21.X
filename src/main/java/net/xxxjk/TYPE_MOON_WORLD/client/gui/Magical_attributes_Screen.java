@@ -41,6 +41,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     Button sapphireThrowButton;
     Button emeraldUseButton;
     Button topazThrowButton;
+    Button rubyFlameSwordButton;
+    Button sapphireWinterRiverButton;
+    Button emeraldShieldButton;
+    Button topazReinforcementButton;
 
     public Magical_attributes_Screen(MagicalattributesMenu container, Inventory inventory, Component text) {
         super(container, inventory, text);
@@ -94,6 +98,26 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             boolean selected = vars.selected_magics.contains("topaz_throw");
             topazThrowButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_TOPAZ_THROW_SELECTED : MagicConstants.KEY_MAGIC_TOPAZ_THROW_SHORT));
         }
+
+        if (rubyFlameSwordButton != null) {
+            boolean selected = vars.selected_magics.contains("ruby_flame_sword");
+            rubyFlameSwordButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_RUBY_FLAME_SWORD_SELECTED : MagicConstants.KEY_MAGIC_RUBY_FLAME_SWORD_SHORT));
+        }
+
+        if (sapphireWinterRiverButton != null) {
+            boolean selected = vars.selected_magics.contains("sapphire_winter_frost");
+            sapphireWinterRiverButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_SAPPHIRE_WINTER_FROST_SELECTED : MagicConstants.KEY_MAGIC_SAPPHIRE_WINTER_FROST_SHORT));
+        }
+
+        if (emeraldShieldButton != null) {
+            boolean selected = vars.selected_magics.contains("emerald_winter_river");
+            emeraldShieldButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_EMERALD_WINTER_RIVER_SELECTED : MagicConstants.KEY_MAGIC_EMERALD_WINTER_RIVER_SHORT));
+        }
+
+        if (topazReinforcementButton != null) {
+            boolean selected = vars.selected_magics.contains("topaz_reinforcement");
+            topazReinforcementButton.setMessage(Component.translatable(selected ? MagicConstants.KEY_MAGIC_TOPAZ_REINFORCEMENT_SELECTED : MagicConstants.KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT));
+        }
     }
     
     private void updateVisibility() {
@@ -102,6 +126,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         if (sapphireThrowButton != null) sapphireThrowButton.visible = visible;
         if (emeraldUseButton != null) emeraldUseButton.visible = visible;
         if (topazThrowButton != null) topazThrowButton.visible = visible;
+        if (rubyFlameSwordButton != null) rubyFlameSwordButton.visible = visible;
+        if (sapphireWinterRiverButton != null) sapphireWinterRiverButton.visible = visible;
+        if (emeraldShieldButton != null) emeraldShieldButton.visible = visible;
+        if (topazReinforcementButton != null) topazReinforcementButton.visible = visible;
     }
 
     @Override
@@ -183,6 +211,42 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         }).bounds(col2, row2, btnWidth, btnHeight).build(); 
         topazThrowButton.visible = false;
         this.addRenderableWidget(topazThrowButton);
+
+        // Row 3: y = 80, Row 4: y = 100
+        int row3 = this.topPos + 80;
+        int row4 = this.topPos + 100;
+
+        rubyFlameSwordButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_RUBY_FLAME_SWORD), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("ruby_flame_sword");
+            PacketDistributor.sendToServer(new SelectMagicMessage("ruby_flame_sword", !isSelected));
+        }).bounds(col1, row3, btnWidth, btnHeight).build();
+        rubyFlameSwordButton.visible = false;
+        this.addRenderableWidget(rubyFlameSwordButton);
+
+        sapphireWinterRiverButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_SAPPHIRE_WINTER_FROST), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("sapphire_winter_frost");
+            PacketDistributor.sendToServer(new SelectMagicMessage("sapphire_winter_frost", !isSelected));
+        }).bounds(col2, row3, btnWidth, btnHeight).build();
+        sapphireWinterRiverButton.visible = false;
+        this.addRenderableWidget(sapphireWinterRiverButton);
+
+        emeraldShieldButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_EMERALD_WINTER_RIVER), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("emerald_winter_river");
+            PacketDistributor.sendToServer(new SelectMagicMessage("emerald_winter_river", !isSelected));
+        }).bounds(col1, row4, btnWidth, btnHeight).build();
+        emeraldShieldButton.visible = false;
+        this.addRenderableWidget(emeraldShieldButton);
+
+        topazReinforcementButton = Button.builder(Component.translatable(MagicConstants.KEY_MAGIC_TOPAZ_REINFORCEMENT), e -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean isSelected = vars.selected_magics.contains("topaz_reinforcement");
+            PacketDistributor.sendToServer(new SelectMagicMessage("topaz_reinforcement", !isSelected));
+        }).bounds(col2, row4, btnWidth, btnHeight).build();
+        topazReinforcementButton.visible = false;
+        this.addRenderableWidget(topazReinforcementButton);
 
         imagebutton_basic_attributes = new ImageButton(this.leftPos + 4, this.topPos - 31, 32, 32,
                 new WidgetSprites(ResourceLocation.parse("typemoonworld:textures/screens/basic_attributes.png"),

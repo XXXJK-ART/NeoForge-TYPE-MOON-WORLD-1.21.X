@@ -41,24 +41,47 @@ public class CarvedGemItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Check if mana is sufficient
             if (vars.player_mana >= manaAmount) {
                 vars.player_mana -= manaAmount;
                 vars.syncPlayerVariables(player);
-                if (stack.getCount() <= 1) {
-                    ItemStack fullGem = new ItemStack(fullGemItem());
-                    player.setItemInHand(hand, fullGem);
-                    return InteractionResultHolder.sidedSuccess(fullGem, world.isClientSide);
-                } else {
-                    stack.shrink(1);
-                    ItemStack fullGem = new ItemStack(fullGemItem());
-                    if (!player.addItem(fullGem)) {
-                        player.drop(fullGem, false);
-                    }
-                }
+                giveFullGem(player, hand, stack, world);
             } else {
-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("魔力不足"), true);
+                // Auto Health Conversion
+                // Logic: 1 HP (0.5 heart) -> 10 Mana. (Based on Manually_deduct_health_to_restore_mana)
+                double deficit = manaAmount - vars.player_mana;
+                float healthCost = (float) Math.ceil(deficit / 10.0); // 1 HP per 10 Mana
+                
+                if (player.getHealth() > healthCost) {
+                    player.setHealth(player.getHealth() - healthCost);
+                    
+                    // Consume all remaining mana
+                    vars.player_mana = 0; // Technically it becomes negative then filled by HP, ending at exactly 0 relative to cost. 
+                                          // Or simpler: we paid the mana cost using all mana + some health.
+                    vars.syncPlayerVariables(player);
+                    
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("\u00A7c魔力不足！消耗了 " + (int)healthCost + " 点生命值来补充魔力。"), true);
+                    
+                    giveFullGem(player, hand, stack, world);
+                } else {
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("魔力与生命力均不足！"), true);
+                }
             }
         }
         return InteractionResultHolder.sidedSuccess(stack, world.isClientSide);
+    }
+
+    private void giveFullGem(Player player, InteractionHand hand, ItemStack stack, Level world) {
+        if (stack.getCount() <= 1) {
+            ItemStack fullGem = new ItemStack(fullGemItem());
+            player.setItemInHand(hand, fullGem);
+        } else {
+            stack.shrink(1);
+            ItemStack fullGem = new ItemStack(fullGemItem());
+            if (!player.addItem(fullGem)) {
+                player.drop(fullGem, false);
+            }
+        }
     }
 }

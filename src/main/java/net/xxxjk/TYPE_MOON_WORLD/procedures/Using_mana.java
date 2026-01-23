@@ -12,21 +12,32 @@ public class Using_mana {
     public static void execute(Entity entity) {
         if (entity == null)
             return;
-        if (entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana < entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana) {
-            {
-                TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                _vars.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
-                        + 10, entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
-                _vars.syncPlayerVariables(entity);
+        
+        // Removed the upper limit check to allow overload
+        {
+            TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            // Add mana without capping at max_mana
+            _vars.player_mana = _vars.player_mana + 10;
+            _vars.syncPlayerVariables(entity);
+        }
+        
+        if (entity instanceof Player _player) {
+            ItemStack _stktoremove = new ItemStack(ModItems.MAGIC_FRAGMENTS.get());
+            _player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem()
+                    == p.getItem(), 1, _player.inventoryMenu.getCraftSlots());
+            
+            // Add feedback for overload
+            double current = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
+            double max = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana;
+            if (current > max && !_player.level().isClientSide()) {
+                 String color = "\u00A7e"; // Yellow
+                 if (current > max * 1.25) {
+                      color = "\u00A74"; // Dark Red
+                 } else if (current > max * 1.2) {
+                      color = "\u00A7c"; // Red
+                 }
+                 _player.displayClientMessage(Component.literal(color + "警告：魔力过载！ (" + (int)current + "/" + (int)max + ")"), true);
             }
-            if (entity instanceof Player _player) {
-                ItemStack _stktoremove = new ItemStack(ModItems.MAGIC_FRAGMENTS.get());
-                _player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem()
-                        == p.getItem(), 1, _player.inventoryMenu.getCraftSlots());
-            }
-        } else {
-            if (entity instanceof Player _player && !_player.level().isClientSide())
-                _player.displayClientMessage(Component.literal("魔力已满"), true);
         }
     }
 }

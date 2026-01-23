@@ -13,7 +13,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.util.thread.SidedThreadGroups;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -40,7 +39,6 @@ import org.slf4j.Logger;
 
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -84,11 +82,7 @@ public class TYPE_MOON_WORLD {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-        private void commonSetup(final FMLCommonSetupEvent event) {
-
-    }
-
-    // Add the example block item to the building blocks tab
+        // Add the example block item to the building blocks tab
     //将示例块项目添加到构建块选项卡。
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
 

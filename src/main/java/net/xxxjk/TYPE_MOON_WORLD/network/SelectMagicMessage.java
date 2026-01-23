@@ -9,9 +9,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 public record SelectMagicMessage(String magicId, boolean add) implements CustomPacketPayload {
     public static final Type<SelectMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("type_moon_world", "select_magic"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SelectMagicMessage> STREAM_CODEC = StreamCodec.of(

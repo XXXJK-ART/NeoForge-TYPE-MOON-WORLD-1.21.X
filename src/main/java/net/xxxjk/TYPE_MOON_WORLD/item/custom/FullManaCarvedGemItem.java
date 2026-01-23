@@ -35,24 +35,34 @@ public class FullManaCarvedGemItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (vars.player_mana < vars.player_max_mana) {
-                double canReceive = vars.player_max_mana - vars.player_mana;
-                double restore = Math.min(canReceive, manaAmount);
-                vars.player_mana += restore;
-                vars.syncPlayerVariables(player);
-                if (stack.getCount() <= 1) {
-                    ItemStack emptyGem = new ItemStack(emptyGemSupplier.get());
-                    player.setItemInHand(hand, emptyGem);
-                    return InteractionResultHolder.sidedSuccess(emptyGem, world.isClientSide);
-                } else {
-                    stack.shrink(1);
-                    ItemStack emptyGem = new ItemStack(emptyGemSupplier.get());
-                    if (!player.addItem(emptyGem)) {
-                        player.drop(emptyGem, false);
-                    }
-                }
+            
+            // Allow Overload: Removed check for max mana
+            vars.player_mana += manaAmount;
+            vars.syncPlayerVariables(player);
+            
+            // Overload warning
+            double current = vars.player_mana;
+            double max = vars.player_max_mana;
+            if (current > max) {
+                 String color = "\u00A7e"; // Yellow
+                 if (current > max * 1.25) {
+                      color = "\u00A74"; // Dark Red
+                 } else if (current > max * 1.2) {
+                      color = "\u00A7c"; // Red
+                 }
+                 player.displayClientMessage(net.minecraft.network.chat.Component.literal(color + "警告：魔力过载！ (" + (int)current + "/" + (int)max + ")"), true);
+            }
+            
+            if (stack.getCount() <= 1) {
+                ItemStack emptyGem = new ItemStack(emptyGemSupplier.get());
+                player.setItemInHand(hand, emptyGem);
+                return InteractionResultHolder.sidedSuccess(emptyGem, world.isClientSide);
             } else {
-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("魔力已满"), true);
+                stack.shrink(1);
+                ItemStack emptyGem = new ItemStack(emptyGemSupplier.get());
+                if (!player.addItem(emptyGem)) {
+                    player.drop(emptyGem, false);
+                }
             }
         }
         return InteractionResultHolder.sidedSuccess(stack, world.isClientSide);

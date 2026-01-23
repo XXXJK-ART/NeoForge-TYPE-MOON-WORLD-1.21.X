@@ -5,13 +5,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
@@ -54,21 +52,79 @@ public class MagicEmeraldUse {
             if (hasItem) {
                 Level level = player.level();
                 if (!level.isClientSide) {
-                    Direction facing = player.getDirection();
-                    BlockPos playerPos = player.blockPosition();
-                    BlockPos startPos = playerPos.relative(facing, MagicConstants.EMERALD_WALL_DISTANCE);
+                    // Use 8-direction logic for more precise placement
+                    float yaw = player.getYRot();
+                    // Normalize yaw to 0-360
+                    float normalizedYaw = (yaw % 360 + 360) % 360;
+                    // 0=South, 90=West, 180=North, 270=East
+                    // Octant 0: South (337.5 - 22.5)
+                    // Octant 1: South-West (22.5 - 67.5)
+                    // Octant 2: West (67.5 - 112.5)
+                    // ...
+                    int octant = Math.round(normalizedYaw / 45f) % 8;
+
+                    int dx = 0;
+                    int dz = 0;
+                    int rx = 0; // Right vector X
+                    int rz = 0; // Right vector Z
                     
-                    Direction right = facing.getClockWise();
+                    // Distance scaling for diagonals (optional, but 4 blocks diagonal is further than 4 blocks cardinal)
+                    // Let's use roughly same distance count
+                    int dist = MagicConstants.EMERALD_WALL_DISTANCE;
+                    if (octant % 2 != 0) {
+                        dist = (int) Math.round(dist * 0.75); // Slightly reduce step count for diagonals to match Euclidian distance roughly
+                        if (dist < 1) dist = 1;
+                    }
+
+                    switch (octant) {
+                        case 0: // South (+Z)
+                            dx = 0; dz = 1;
+                            rx = -1; rz = 0; // Right is West (-X)
+                            break;
+                        case 1: // South-West (-X, +Z)
+                            dx = -1; dz = 1;
+                            rx = -1; rz = -1; // Right is North-West (-X, -Z)
+                            break;
+                        case 2: // West (-X)
+                            dx = -1; dz = 0;
+                            rx = 0; rz = -1; // Right is North (-Z)
+                            break;
+                        case 3: // North-West (-X, -Z)
+                            dx = -1; dz = -1;
+                            rx = 1; rz = -1; // Right is North-East (+X, -Z)
+                            break;
+                        case 4: // North (-Z)
+                            dx = 0; dz = -1;
+                            rx = 1; rz = 0; // Right is East (+X)
+                            break;
+                        case 5: // North-East (+X, -Z)
+                            dx = 1; dz = -1;
+                            rx = 1; rz = 1; // Right is South-East (+X, +Z)
+                            break;
+                        case 6: // East (+X)
+                            dx = 1; dz = 0;
+                            rx = 0; rz = 1; // Right is South (+Z)
+                            break;
+                        case 7: // South-East (+X, +Z)
+                            dx = 1; dz = 1;
+                            rx = -1; rz = 1; // Right is South-West (-X, +Z)
+                            break;
+                    }
+
+                    BlockPos playerPos = player.blockPosition();
+                    // Center of the wall
+                    BlockPos startPos = playerPos.offset(dx * dist, 0, dz * dist);
+                    
                     Direction up = Direction.UP;
                     
                     List<BlockPos> placedBlocks = new ArrayList<>();
                     RandomSource random = level.getRandom();
                     
-                    // Create Wall (centered on startPos)
-                    // Width 3 (-1 to 1), Height 3 (0 to 2)
                     for (int w = -1; w <= 1; w++) {
                         for (int h = 0; h < 3; h++) {
-                            BlockPos targetPos = startPos.relative(right, w).relative(up, h);
+                            // Calculate position based on "Right" vector
+                            BlockPos targetPos = startPos.offset(rx * w, 0, rz * w).relative(up, h);
+                            
                             if (level.getBlockState(targetPos).canBeReplaced()) {
                                 if (level.setBlock(targetPos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState(), 3)) {
                                     placedBlocks.add(targetPos);
