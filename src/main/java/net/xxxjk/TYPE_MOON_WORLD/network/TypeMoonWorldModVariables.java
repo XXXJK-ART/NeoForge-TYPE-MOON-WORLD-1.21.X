@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import net.minecraft.world.item.ItemStack;
+
 @SuppressWarnings("null")
 public class TypeMoonWorldModVariables {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, TYPE_MOON_WORLD.MOD_ID);
@@ -73,6 +75,14 @@ public class TypeMoonWorldModVariables {
             clone.magic_circuit_open_timer = original.magic_circuit_open_timer;
             clone.selected_magics = new java.util.ArrayList<>(original.selected_magics);
             clone.current_magic_index = original.current_magic_index;
+            
+            // Clone Projection Data
+            clone.analyzed_items = new java.util.ArrayList<>();
+            for (ItemStack stack : original.analyzed_items) {
+                clone.analyzed_items.add(stack.copy());
+            }
+            clone.projection_selected_item = original.projection_selected_item.copy();
+
             if (!event.isWasDeath()) {
                 clone.player_mana = original.player_mana;
             }
@@ -98,6 +108,10 @@ public class TypeMoonWorldModVariables {
         public java.util.List<String> selected_magics = new java.util.ArrayList<>();
         public int current_magic_index = 0;
         public double magic_cooldown = 0;
+        
+        // Projection Magic Data
+        public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
+        public ItemStack projection_selected_item = ItemStack.EMPTY;
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -124,6 +138,20 @@ public class TypeMoonWorldModVariables {
             }
             nbt.put("selected_magics", magicList);
             nbt.putInt("current_magic_index", current_magic_index);
+            
+            // Serialize Analyzed Items
+            net.minecraft.nbt.ListTag analyzedList = new net.minecraft.nbt.ListTag();
+            for (ItemStack stack : analyzed_items) {
+                if (!stack.isEmpty()) {
+                    analyzedList.add(stack.save(lookupProvider));
+                }
+            }
+            nbt.put("analyzed_items", analyzedList);
+            
+            // Serialize Selected Projection Item
+            if (!projection_selected_item.isEmpty()) {
+                nbt.put("projection_selected_item", projection_selected_item.save(lookupProvider));
+            }
             
             return nbt;
         }
@@ -154,6 +182,23 @@ public class TypeMoonWorldModVariables {
                 }
             }
             current_magic_index = nbt.getInt("current_magic_index");
+            
+            // Deserialize Analyzed Items
+            analyzed_items.clear();
+            if (nbt.contains("analyzed_items")) {
+                net.minecraft.nbt.ListTag analyzedList = nbt.getList("analyzed_items", 10); // 10 is CompoundTag
+                for (int i = 0; i < analyzedList.size(); i++) {
+                    java.util.Optional<ItemStack> stack = ItemStack.parse(lookupProvider, analyzedList.getCompound(i));
+                    stack.ifPresent(analyzed_items::add);
+                }
+            }
+            
+            // Deserialize Selected Projection Item
+            projection_selected_item = ItemStack.EMPTY;
+            if (nbt.contains("projection_selected_item")) {
+                java.util.Optional<ItemStack> stack = ItemStack.parse(lookupProvider, nbt.getCompound("projection_selected_item"));
+                stack.ifPresent(s -> projection_selected_item = s);
+            }
         }
 
         public void syncPlayerVariables(Entity entity) {

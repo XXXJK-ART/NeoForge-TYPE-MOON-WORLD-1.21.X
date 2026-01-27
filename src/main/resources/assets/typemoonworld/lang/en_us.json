@@ -62,6 +62,30 @@
   "gui.typemoonworld.screen.load_magic_eyes": "Equip Magic Eyes and Modifications Here",
   "gui.typemoonworld.screen.wip": "Work In Progress",
   "gui.typemoonworld.screen.learned_magic": "Learned Magic",
+  "key.typemoonworld.magic.projection": "Projection Magic",
+  "key.typemoonworld.magic.projection.selected": "Projection Magic",
+  "key.typemoonworld.magic.projection.short": "Projection",
+  "gui.typemoonworld.projection_preset": "Projection Preset",
+  "gui.typemoonworld.projection.filter.all": "All",
+  "gui.typemoonworld.projection.filter.building": "Building",
+  "gui.typemoonworld.projection.filter.combat": "Combat",
+  "gui.typemoonworld.projection.filter.tools": "Tools",
+  "gui.typemoonworld.projection.filter.misc": "Misc",
+  "gui.typemoonworld.projection.filter.special": "Special",
+  
+  "message.typemoonworld.projection.cannot_analyze_projected": "Cannot analyze projected item",
+  "message.typemoonworld.projection.analysis_complete": "Analysis Complete. Cost: %s",
+  "message.typemoonworld.projection.not_enough_mana": "Not enough mana. Need: %s",
+  "message.typemoonworld.projection.already_analyzed": "Item already analyzed",
+  "message.typemoonworld.projection.no_target": "No projection target selected",
+  "message.typemoonworld.projection.tooltip": "Projection (10s)",
+  "message.typemoonworld.projection.tooltip.infinite": "Projection (UBW)",
+  "message.typemoonworld.projection.cannot_craft": "Projected items cannot be used for crafting",
+  "message.typemoonworld.projection.cannot_repair": "Projected items cannot be repaired or reinforced",
+  "message.typemoonworld.projection.cannot_grind": "Projected items cannot be ground or disenchanted",
+
+  "message.typemoonworld.mana.health_conversion": "Insufficient Mana. Consumed %s HP instead of %s Mana.",
+  "message.typemoonworld.mana.not_enough_health": "Insufficient Mana and Health!",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
 }

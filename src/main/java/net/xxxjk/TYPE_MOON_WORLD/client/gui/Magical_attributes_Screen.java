@@ -109,6 +109,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("sapphire_winter_frost", MagicConstants.KEY_MAGIC_SAPPHIRE_WINTER_FROST_SHORT, "jewel", 0xFF0088FF));
         allMagics.add(new MagicEntry("emerald_winter_river", MagicConstants.KEY_MAGIC_EMERALD_WINTER_RIVER_SHORT, "jewel", 0xFF00FF00));
         allMagics.add(new MagicEntry("topaz_reinforcement", MagicConstants.KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT, "jewel", 0xFFFFFF00));
+        allMagics.add(new MagicEntry("projection", MagicConstants.KEY_MAGIC_PROJECTION_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         
         updateFilteredMagics();
     }
@@ -117,7 +118,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // String query = searchBox != null ? searchBox.getValue().toLowerCase() : "";
         String query = ""; // No search box
         filteredMagics = allMagics.stream().filter(entry -> {
-            boolean matchCategory = "all".equals(filterCategory) || entry.category.equals(filterCategory);
+            boolean matchCategory = "all".equals(filterCategory) || entry.category.contains(filterCategory);
             String name = Component.translatable(entry.nameKey).getString().toLowerCase();
             boolean matchSearch = query.isEmpty() || name.contains(query) || entry.id.contains(query);
             return matchCategory && matchSearch;
@@ -224,6 +225,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             // Fallback if selected key not found or same as short
             if (isSelected && msg.getString().equals(entry.nameKey)) {
                  msg = Component.translatable(entry.nameKey); 
+            }
+            
+            // Handle case where short key doesn't have .short suffix (though they should)
+            if (!entry.nameKey.endsWith(".short") && isSelected) {
+                // If we don't follow the convention, try appending .selected or use a map
+                // For projection, we defined KEY_MAGIC_PROJECTION_SHORT = ...short
+                // So it should be handled by replace above.
             }
             
             guiGraphics.drawCenteredString(this.font, msg, btnX + btnW / 2, btnY + (btnH - 8) / 2, textColor);
@@ -370,10 +378,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // Button should be after that.
         // Let's place label at x=200. Width ~25. Button at x=230.
         this.filterButton = new NeonButton(this.leftPos + 230, this.topPos + 25, 40, 14, Component.literal("全部"), e -> {
-            // Cycle filters: all -> jewel -> all
+            // Cycle filters: all -> jewel -> basic -> unlimited_blade_works -> all
             if ("all".equals(filterCategory)) {
                 filterCategory = "jewel";
                 e.setMessage(Component.literal("宝石"));
+            } else if ("jewel".equals(filterCategory)) {
+                filterCategory = "basic";
+                e.setMessage(Component.literal("基础"));
+            } else if ("basic".equals(filterCategory)) {
+                filterCategory = "unlimited_blade_works";
+                e.setMessage(Component.literal("无限剑制"));
             } else {
                 filterCategory = "all";
                 e.setMessage(Component.literal("全部"));

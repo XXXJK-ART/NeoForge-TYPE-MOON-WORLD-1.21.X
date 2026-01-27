@@ -68,6 +68,22 @@ public class MagicConstants {
     public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT = "gui.typemoonworld.magic.topaz_reinforcement.short";
     public static final String MSG_MAGIC_TOPAZ_REINFORCEMENT_NEED_GEM = "message.typemoonworld.magic.topaz_reinforcement.need_gem";
 
+    // Projection Magic
+    public static final String KEY_MAGIC_PROJECTION = "key.typemoonworld.magic.projection";
+    public static final String KEY_MAGIC_PROJECTION_SELECTED = "key.typemoonworld.magic.projection.selected";
+    public static final String KEY_MAGIC_PROJECTION_SHORT = "key.typemoonworld.magic.projection.short";
+    
+    public static final String MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED = "message.typemoonworld.projection.cannot_analyze_projected";
+    public static final String MSG_PROJECTION_ANALYSIS_COMPLETE = "message.typemoonworld.projection.analysis_complete";
+    public static final String MSG_PROJECTION_NOT_ENOUGH_MANA = "message.typemoonworld.projection.not_enough_mana";
+    public static final String MSG_PROJECTION_ALREADY_ANALYZED = "message.typemoonworld.projection.already_analyzed";
+    public static final String MSG_PROJECTION_NO_TARGET = "message.typemoonworld.projection.no_target";
+    public static final String MSG_PROJECTION_TOOLTIP = "message.typemoonworld.projection.tooltip";
+    public static final String MSG_PROJECTION_TOOLTIP_INFINITE = "message.typemoonworld.projection.tooltip.infinite";
+    public static final String MSG_PROJECTION_CANNOT_CRAFT = "message.typemoonworld.projection.cannot_craft";
+    public static final String MSG_PROJECTION_CANNOT_REPAIR = "message.typemoonworld.projection.cannot_repair";
+    public static final String MSG_PROJECTION_CANNOT_GRIND = "message.typemoonworld.projection.cannot_grind";
+
     public static final String GUI_MAGIC_EYES_AND_MODIFICATION = "gui.typemoonworld.screen.magic_eyes_and_modification";
     public static final String GUI_LOAD_MAGIC_EYES = "gui.typemoonworld.screen.load_magic_eyes";
     public static final String GUI_WIP = "gui.typemoonworld.screen.wip";

@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldUse;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldWinterRiver;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicProjection;
 
 @SuppressWarnings("null")
 public class CastMagic {
@@ -67,6 +68,9 @@ public class CastMagic {
                 castSuccess = true;
             } else if ("topaz_reinforcement".equals(magicId)) {
                 MagicTopazReinforcement.execute(entity);
+                castSuccess = true;
+            } else if ("projection".equals(magicId)) {
+                MagicProjection.execute(entity);
                 castSuccess = true;
             }
             

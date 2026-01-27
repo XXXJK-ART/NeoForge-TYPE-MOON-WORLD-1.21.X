@@ -121,6 +121,9 @@ public class Magic_display_Overlay {
                 } else if ("topaz_reinforcement".equals(magicId)) {
                     magicName = "黄宝石（三 强化）";
                     magicColor = 0xFFFFFF00; // Yellow
+                } else if ("projection".equals(magicId)) {
+                    magicName = "投影魔术";
+                    magicColor = 0xFF00FFFF; // Cyan
                 }
             }
             

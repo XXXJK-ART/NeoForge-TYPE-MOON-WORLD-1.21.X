@@ -36,6 +36,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import org.slf4j.Logger;
 
+import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
+
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
@@ -44,6 +47,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file.
 //此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.xxxjk.TYPE_MOON_WORLD.command.TypeMoonCommands;
+
 @Mod(TYPE_MOON_WORLD.MOD_ID)
 public class TYPE_MOON_WORLD {
     public static final String MOD_ID = "typemoonworld";
@@ -64,6 +70,7 @@ public class TYPE_MOON_WORLD {
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         //如果此类中没有 @SubscribeEvent 注释的函数（如下面的 onServerStarting()），请不要添加此行。
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.addListener(this::registerCommands);
 
         ModCreativeModeTabs.register(modEventBus);//添加创造页
 
@@ -81,7 +88,11 @@ public class TYPE_MOON_WORLD {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-        // Add the example block item to the building blocks tab
+        private void registerCommands(RegisterCommandsEvent event) {
+        TypeMoonCommands.register(event.getDispatcher());
+    }
+
+    // Add the example block item to the building blocks tab
     //将示例块项目添加到构建块选项卡。
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
 
@@ -112,6 +123,8 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
         addNetworkMessage(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
         addNetworkMessage(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
+        addNetworkMessage(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);
+        addNetworkMessage(OpenProjectionGuiMessage.TYPE, OpenProjectionGuiMessage.STREAM_CODEC, OpenProjectionGuiMessage::handleData);
 
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),
