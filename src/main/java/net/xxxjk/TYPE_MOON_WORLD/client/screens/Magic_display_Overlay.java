@@ -124,6 +124,12 @@ public class Magic_display_Overlay {
                 } else if ("projection".equals(magicId)) {
                     magicName = "投影魔术";
                     magicColor = 0xFF00FFFF; // Cyan
+                } else if ("structural_analysis".equals(magicId)) {
+                    magicName = "构造解析";
+                    magicColor = 0xFF00FFFF; // Cyan
+                } else if ("broken_phantasm".equals(magicId)) {
+                    magicName = "投影崩坏";
+                    magicColor = 0xFFFF4000; // Orange Red
                 }
             }
             

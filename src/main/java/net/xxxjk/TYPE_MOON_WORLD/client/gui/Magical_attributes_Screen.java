@@ -110,6 +110,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("emerald_winter_river", MagicConstants.KEY_MAGIC_EMERALD_WINTER_RIVER_SHORT, "jewel", 0xFF00FF00));
         allMagics.add(new MagicEntry("topaz_reinforcement", MagicConstants.KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT, "jewel", 0xFFFFFF00));
         allMagics.add(new MagicEntry("projection", MagicConstants.KEY_MAGIC_PROJECTION_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
+        allMagics.add(new MagicEntry("structural_analysis", MagicConstants.KEY_MAGIC_STRUCTURAL_ANALYSIS_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
+        allMagics.add(new MagicEntry("broken_phantasm", MagicConstants.KEY_MAGIC_BROKEN_PHANTASM_SHORT, "unlimited_blade_works,basic", 0xFFFF4000));
         
         updateFilteredMagics();
     }

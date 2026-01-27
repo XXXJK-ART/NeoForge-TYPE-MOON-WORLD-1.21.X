@@ -72,6 +72,14 @@ public class MagicConstants {
     public static final String KEY_MAGIC_PROJECTION = "key.typemoonworld.magic.projection";
     public static final String KEY_MAGIC_PROJECTION_SELECTED = "key.typemoonworld.magic.projection.selected";
     public static final String KEY_MAGIC_PROJECTION_SHORT = "key.typemoonworld.magic.projection.short";
+
+    public static final String KEY_MAGIC_STRUCTURAL_ANALYSIS = "key.typemoonworld.magic.structural_analysis";
+    public static final String KEY_MAGIC_STRUCTURAL_ANALYSIS_SELECTED = "key.typemoonworld.magic.structural_analysis.selected";
+    public static final String KEY_MAGIC_STRUCTURAL_ANALYSIS_SHORT = "key.typemoonworld.magic.structural_analysis.short";
+    
+    public static final String KEY_MAGIC_BROKEN_PHANTASM = "key.typemoonworld.magic.broken_phantasm";
+    public static final String KEY_MAGIC_BROKEN_PHANTASM_SELECTED = "key.typemoonworld.magic.broken_phantasm.selected";
+    public static final String KEY_MAGIC_BROKEN_PHANTASM_SHORT = "key.typemoonworld.magic.broken_phantasm.short";
     
     public static final String MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED = "message.typemoonworld.projection.cannot_analyze_projected";
     public static final String MSG_PROJECTION_ANALYSIS_COMPLETE = "message.typemoonworld.projection.analysis_complete";
@@ -80,6 +88,7 @@ public class MagicConstants {
     public static final String MSG_PROJECTION_NO_TARGET = "message.typemoonworld.projection.no_target";
     public static final String MSG_PROJECTION_TOOLTIP = "message.typemoonworld.projection.tooltip";
     public static final String MSG_PROJECTION_TOOLTIP_INFINITE = "message.typemoonworld.projection.tooltip.infinite";
+    public static final String MSG_PROJECTION_HANDS_FULL = "message.typemoonworld.projection.hands_full";
     public static final String MSG_PROJECTION_CANNOT_CRAFT = "message.typemoonworld.projection.cannot_craft";
     public static final String MSG_PROJECTION_CANNOT_REPAIR = "message.typemoonworld.projection.cannot_repair";
     public static final String MSG_PROJECTION_CANNOT_GRIND = "message.typemoonworld.projection.cannot_grind";

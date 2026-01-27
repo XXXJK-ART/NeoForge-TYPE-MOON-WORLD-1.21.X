@@ -30,45 +30,21 @@ public class MagicProjection {
         }
 
         ItemStack heldItem = player.getMainHandItem();
+        ItemStack offhandItem = player.getOffhandItem();
         
-        // Analyze Logic (Holding Item)
-        if (!heldItem.isEmpty()) {
-            // Check if already projected (prevent analyzing projected items)
-            if (heldItem.has(DataComponents.CUSTOM_DATA)) {
-                 CompoundTag tag = heldItem.get(DataComponents.CUSTOM_DATA).copyTag();
-                 if (tag.contains("is_projected")) {
-                     player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED), true);
-                     return;
-                 }
-            }
-            
-            // Check if already analyzed
-            boolean known = false;
-            for (ItemStack s : vars.analyzed_items) {
-                 if (ItemStack.isSameItemSameComponents(s, heldItem)) {
-                     known = true;
-                     break;
-                 }
-            }
-            
-            if (!known) {
-                double cost = calculateCost(heldItem, vars.player_magic_attributes_sword);
-                
-                if (ManaHelper.consumeManaOrHealth(player, cost)) {
-                    ItemStack toSave = heldItem.copy();
-                    toSave.setCount(1);
-                    vars.analyzed_items.add(toSave);
-                    vars.syncPlayerVariables(player);
-                    player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ANALYSIS_COMPLETE, (int)cost), true);
-                }
-                return;
-            }
-            player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ALREADY_ANALYZED), true);
-            return;
+        // Projection Logic
+        boolean canProject = false;
+        net.minecraft.world.InteractionHand handToUse = null;
+
+        if (heldItem.isEmpty()) {
+            canProject = true;
+            handToUse = net.minecraft.world.InteractionHand.MAIN_HAND;
+        } else if (offhandItem.isEmpty()) {
+            canProject = true;
+            handToUse = net.minecraft.world.InteractionHand.OFF_HAND;
         }
 
-        // Projection Logic (Empty Hand)
-        if (heldItem.isEmpty()) {
+        if (canProject) {
             ItemStack target = vars.projection_selected_item;
             if (target.isEmpty()) {
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_NO_TARGET), true);
@@ -126,10 +102,13 @@ public class MagicProjection {
                 // Add Glint
                 projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
                 
-                player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, projected);
+                player.setItemInHand(handToUse, projected);
                 vars.syncPlayerVariables(player);
                 player.displayClientMessage(Component.literal("Trace On"), true);
             }
+        } else {
+            // If both hands are not empty
+            player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_HANDS_FULL), true);
         }
     }
     

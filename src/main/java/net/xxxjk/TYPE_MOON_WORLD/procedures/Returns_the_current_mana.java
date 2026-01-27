@@ -8,7 +8,7 @@ public class Returns_the_current_mana {
     public static String execute(Entity entity) {
         if (entity == null)
             return "";
-        return entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana + "/" + entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana;
+        return (int)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana + "/" + (int)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana;
     }
 }
 

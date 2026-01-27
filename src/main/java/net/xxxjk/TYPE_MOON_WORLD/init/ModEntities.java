@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 
 @SuppressWarnings("null")
 public class ModEntities {
@@ -27,6 +28,10 @@ public class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<TopazProjectileEntity>> TOPAZ_PROJECTILE =
             ENTITY_TYPES.register("topaz_projectile", () -> EntityType.Builder.<TopazProjectileEntity>of(TopazProjectileEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).build("topaz_projectile"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<BrokenPhantasmProjectileEntity>> BROKEN_PHANTASM_PROJECTILE =
+            ENTITY_TYPES.register("broken_phantasm_projectile", () -> EntityType.Builder.<BrokenPhantasmProjectileEntity>of(BrokenPhantasmProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("broken_phantasm_projectile"));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

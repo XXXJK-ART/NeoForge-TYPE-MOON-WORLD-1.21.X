@@ -13,6 +13,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldWinterRiver;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicProjection;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicStructuralAnalysis;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicBrokenPhantasm;
 
 @SuppressWarnings("null")
 public class CastMagic {
@@ -72,10 +74,16 @@ public class CastMagic {
             } else if ("projection".equals(magicId)) {
                 MagicProjection.execute(entity);
                 castSuccess = true;
+            } else if ("structural_analysis".equals(magicId)) {
+                MagicStructuralAnalysis.execute(entity);
+                castSuccess = true;
+            } else if ("broken_phantasm".equals(magicId)) {
+                MagicBrokenPhantasm.execute(entity);
+                castSuccess = true;
             }
             
             if (castSuccess) {
-                vars.magic_cooldown = 20; // 1 second cooldown (20 ticks)
+                vars.magic_cooldown = 10; // 0.5 second cooldown (10 ticks)
                 vars.syncPlayerVariables(entity);
             }
         }

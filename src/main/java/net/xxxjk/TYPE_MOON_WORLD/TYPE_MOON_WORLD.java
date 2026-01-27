@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 //此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.command.TypeMoonCommands;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
 
 @Mod(TYPE_MOON_WORLD.MOD_ID)
 public class TYPE_MOON_WORLD {
@@ -177,6 +178,7 @@ public class TYPE_MOON_WORLD {
             event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), ThrownItemRenderer::new);
             event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), ThrownItemRenderer::new);
             event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), ThrownItemRenderer::new);
+            event.registerEntityRenderer(ModEntities.BROKEN_PHANTASM_PROJECTILE.get(), BrokenPhantasmRenderer::new);
         }
 
 
