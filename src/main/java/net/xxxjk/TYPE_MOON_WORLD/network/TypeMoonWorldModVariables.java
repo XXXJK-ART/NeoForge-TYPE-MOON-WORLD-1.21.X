@@ -76,6 +76,10 @@ public class TypeMoonWorldModVariables {
             clone.selected_magics = new java.util.ArrayList<>(original.selected_magics);
             clone.current_magic_index = original.current_magic_index;
             
+            clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
+            clone.proficiency_projection = original.proficiency_projection;
+            clone.proficiency_jewel_magic = original.proficiency_jewel_magic;
+
             // Clone Projection Data
             clone.analyzed_items = new java.util.ArrayList<>();
             for (ItemStack stack : original.analyzed_items) {
@@ -108,6 +112,11 @@ public class TypeMoonWorldModVariables {
         public java.util.List<String> selected_magics = new java.util.ArrayList<>();
         public int current_magic_index = 0;
         public double magic_cooldown = 0;
+
+        // Proficiency Data
+        public double proficiency_structural_analysis = 0;
+        public double proficiency_projection = 0;
+        public double proficiency_jewel_magic = 0;
         
         // Projection Magic Data
         public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
@@ -132,6 +141,10 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("magic_circuit_open_timer", magic_circuit_open_timer);
             nbt.putDouble("magic_cooldown", magic_cooldown);
             
+            nbt.putDouble("proficiency_structural_analysis", proficiency_structural_analysis);
+            nbt.putDouble("proficiency_projection", proficiency_projection);
+            nbt.putDouble("proficiency_jewel_magic", proficiency_jewel_magic);
+
             net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
             for (String magic : selected_magics) {
                 magicList.add(net.minecraft.nbt.StringTag.valueOf(magic));
@@ -173,6 +186,10 @@ public class TypeMoonWorldModVariables {
             is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
             magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
             magic_cooldown = nbt.getDouble("magic_cooldown");
+
+            proficiency_structural_analysis = nbt.getDouble("proficiency_structural_analysis");
+            proficiency_projection = nbt.getDouble("proficiency_projection");
+            proficiency_jewel_magic = nbt.getDouble("proficiency_jewel_magic");
             
             selected_magics.clear();
             if (nbt.contains("selected_magics")) {

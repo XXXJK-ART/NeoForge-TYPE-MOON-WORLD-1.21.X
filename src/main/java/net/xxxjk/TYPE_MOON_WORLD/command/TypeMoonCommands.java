@@ -3,9 +3,11 @@ package net.xxxjk.TYPE_MOON_WORLD.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -61,16 +63,52 @@ public class TypeMoonCommands {
                     .then(Commands.argument("enabled", BoolArgumentType.bool())
                         .executes(ctx -> setAttribute(ctx, "sword", BoolArgumentType.getBool(ctx, "enabled")))))
             )
+
+            // Proficiency
+            .then(Commands.literal("proficiency")
+                .then(Commands.argument("type", StringArgumentType.word())
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic"}, builder))
+                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                        .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
         );
+    }
+
+    private static int setProficiency(CommandContext<CommandSourceStack> ctx, String type, double value) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Limit Proficiency to 0-100
+            value = Math.max(0.0, Math.min(100.0, value));
+            
+            switch (type) {
+                case "structural_analysis": vars.proficiency_structural_analysis = value; break;
+                case "projection": vars.proficiency_projection = value; break;
+                case "jewel_magic": vars.proficiency_jewel_magic = value; break;
+            }
+            
+            vars.syncPlayerVariables(player);
+            // Must use final variable for lambda
+            final double finalValue = value;
+            ctx.getSource().sendSuccess(() -> Component.literal("Set Proficiency " + type + " to " + finalValue), true);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     private static int setMana(CommandContext<CommandSourceStack> ctx, double value) {
         try {
             ServerPlayer player = ctx.getSource().getPlayerOrException();
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Limit Mana to 0-100000
+            value = Math.max(0.0, Math.min(100000.0, value));
+            
             vars.player_mana = value;
             vars.syncPlayerVariables(player);
-            ctx.getSource().sendSuccess(() -> Component.literal("Set Mana to " + value), true);
+            final double finalValue = value;
+            ctx.getSource().sendSuccess(() -> Component.literal("Set Mana to " + finalValue), true);
             return 1;
         } catch (Exception e) {
             return 0;
@@ -81,9 +119,14 @@ public class TypeMoonCommands {
         try {
             ServerPlayer player = ctx.getSource().getPlayerOrException();
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Limit Max Mana to 0-100000
+            value = Math.max(0.0, Math.min(100000.0, value));
+            
             vars.player_max_mana = value;
             vars.syncPlayerVariables(player);
-            ctx.getSource().sendSuccess(() -> Component.literal("Set Max Mana to " + value), true);
+            final double finalValue = value;
+            ctx.getSource().sendSuccess(() -> Component.literal("Set Max Mana to " + finalValue), true);
             return 1;
         } catch (Exception e) {
             return 0;
@@ -94,9 +137,16 @@ public class TypeMoonCommands {
         try {
             ServerPlayer player = ctx.getSource().getPlayerOrException();
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Limit Regen Speed (Interval) to 0s - 60s
+            // Assuming the input is in seconds or ticks? Usually commands use human readable units if not specified.
+            // But checking the logic, it's likely used as a timer threshold.
+            value = Math.max(0.0, Math.min(60.0, value));
+            
             vars.player_mana_egenerated_every_moment = value;
             vars.syncPlayerVariables(player);
-            ctx.getSource().sendSuccess(() -> Component.literal("Set Mana Regen to " + value), true);
+            final double finalValue = value;
+            ctx.getSource().sendSuccess(() -> Component.literal("Set Mana Regen Interval to " + finalValue + "s"), true);
             return 1;
         } catch (Exception e) {
             return 0;
@@ -107,9 +157,14 @@ public class TypeMoonCommands {
         try {
             ServerPlayer player = ctx.getSource().getPlayerOrException();
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Limit Restore Amount to 0 - 10000
+            value = Math.max(0.0, Math.min(10000.0, value));
+            
             vars.player_restore_magic_moment = value;
             vars.syncPlayerVariables(player);
-            ctx.getSource().sendSuccess(() -> Component.literal("Set Mana Restore to " + value), true);
+            final double finalValue = value;
+            ctx.getSource().sendSuccess(() -> Component.literal("Set Mana Restore Amount to " + finalValue), true);
             return 1;
         } catch (Exception e) {
             return 0;

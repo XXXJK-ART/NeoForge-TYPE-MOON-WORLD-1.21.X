@@ -149,14 +149,18 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         
         if (this.pageMode == 1) {
             // Render Magic List
-            renderMagicList(guiGraphics, mouseX, mouseY);
+            MagicEntry hoveredEntry = renderMagicList(guiGraphics, mouseX, mouseY);
+            if (hoveredEntry != null) {
+                renderMagicTooltip(guiGraphics, hoveredEntry, mouseX, mouseY);
+            }
         }
         
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
     
-    private void renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private MagicEntry renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        MagicEntry hoveredEntry = null;
         
         int listX = this.leftPos + 130;
         int listY = this.topPos + 50;
@@ -187,33 +191,15 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             int startOffsetY = 10;
             
             int btnX = listX + startOffsetX + col * (btnW + gapX); 
-            // Fix vertical alignment: shift up by one slot
-            // Originally: listY + startOffsetY + row * (btnH + gapY)
-            // If we shift up by one full slot (height + gap), we subtract (btnH + gapY)
-            // But user said "misaligned by exactly one", maybe it means the visual list starts too low?
-            // Or maybe the hitboxes are off?
-            // "magical list is vertically misaligned by exactly one, clicking the previous icon selects the next one"
-            // This implies the RENDER is correct but the CLICK detection is offset? 
-            // Or Render is offset and click is correct?
-            // If "clicking top one selects bottom one", then Click Area > Render Area.
-            // If "clicking previous (top) selects next (bottom)", then Click Area is LOWER than Render Area.
-            // Wait, "clicking the previous icon selects the next one" -> Click Item N triggers Item N+1?
-            // No, "clicking the UPPER icon selects the LOWER icon" means click area is shifted UP relative to render?
-            // Or Render is shifted DOWN?
-            
-            // Let's look at click logic vs render logic.
-            // Render: btnY = listY + startOffsetY + row * (btnH + gapY)
-            // Click: btnY = listY + row * 25 (where 25 is btnH + gapY approx)
-            
-            // In init(), GAP_Y = 10, BTN_H = 20. Total 30 per row.
-            // In Render: row * (20 + 10) = row * 30.
-            // In Click (old code): row * 25. -> This is the mismatch!
             
             // Let's sync Render and Click logic.
             int btnY = listY + startOffsetY + row * (btnH + gapY); 
             
             // Custom Button Render Logic
             boolean hovered = mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH;
+            if (hovered) {
+                hoveredEntry = entry;
+            }
             
             // Selection logic: Green if selected, else default
             int borderColor = isSelected ? 0xFF00FF00 : (hovered ? entry.color : 0xFF00AAAA);
@@ -256,6 +242,87 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + scrollBarWidth, scrollBarY + scrollBarHeight, 0x80000000); // Track
             guiGraphics.fill(scrollBarX, barTop, scrollBarX + scrollBarWidth, barTop + barHeight, 0xFF00FFFF); // Thumb
         }
+        
+        return hoveredEntry;
+    }
+    
+    private void renderMagicTooltip(GuiGraphics guiGraphics, MagicEntry entry, int mouseX, int mouseY) {
+        List<Component> tooltip = new ArrayList<>();
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        
+        // Title (Magic Name)
+        tooltip.add(Component.translatable(entry.nameKey).withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF00FFFF).withBold(true)));
+        
+        // Main Description
+        String descKey = "magic.typemoonworld." + entry.id + ".desc";
+        String baseDescKey = descKey;
+        
+        // Handle Sword Attribute overrides
+        if (vars.player_magic_attributes_sword) {
+            String swordKey = descKey + ".sword";
+            if (net.minecraft.client.resources.language.I18n.exists(swordKey)) {
+                // Add Sword Text as Introduction (Flavor)
+                String translated = net.minecraft.client.resources.language.I18n.get(swordKey);
+                for (String line : translated.split("\n")) {
+                    tooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GOLD));
+                }
+                // Add a spacer
+                tooltip.add(Component.empty());
+            }
+        }
+
+        // Always render the main functional description
+        if (net.minecraft.client.resources.language.I18n.exists(descKey)) {
+            String translated = net.minecraft.client.resources.language.I18n.get(descKey);
+            for (String line : translated.split("\n")) {
+                tooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
+            }
+        }
+        
+        // Proficiency Display
+        double proficiency = 0;
+        boolean showProficiency = false;
+        
+        if ("structural_analysis".equals(entry.id)) {
+            proficiency = vars.proficiency_structural_analysis;
+            showProficiency = true;
+        } else if ("projection".equals(entry.id)) {
+            proficiency = vars.proficiency_projection;
+            showProficiency = true;
+        } else if ("jewel".equals(entry.category)) {
+            proficiency = vars.proficiency_jewel_magic;
+            showProficiency = true;
+        }
+        
+        if (showProficiency) {
+            tooltip.add(Component.empty());
+            String profText = String.format("%.1f%%", proficiency);
+            tooltip.add(Component.translatable("gui.typemoonworld.proficiency", profText).withStyle(net.minecraft.ChatFormatting.GOLD));
+        }
+
+        // Multi-form Descriptions (desc.0, desc.1, etc.)
+        for (int i = 0; i < 10; i++) { // Limit to 10 forms to avoid infinite loop
+            String formKey = baseDescKey + "." + i;
+            if (net.minecraft.client.resources.language.I18n.exists(formKey)) {
+                if (i > 0 || net.minecraft.client.resources.language.I18n.exists(descKey)) {
+                    tooltip.add(Component.empty()); // Spacer
+                }
+                String translated = net.minecraft.client.resources.language.I18n.get(formKey);
+                for (String line : translated.split("\n")) {
+                    tooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
+                }
+            } else {
+                // If 0 exists but 1 doesn't, stop. 
+                // But maybe they skipped numbers? Unlikely. Assume sequential.
+                if (i == 0 && !net.minecraft.client.resources.language.I18n.exists(baseDescKey)) {
+                    // If no main desc and no form 0, maybe just stop?
+                } else if (i > 0) {
+                    break;
+                }
+            }
+        }
+        
+        guiGraphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
     }
     
     private void updateVisibility() {

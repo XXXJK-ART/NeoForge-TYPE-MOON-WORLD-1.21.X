@@ -118,10 +118,29 @@ public class MagicStructuralAnalysis {
         if (!known) {
             double cost = calculateCost(toSave, vars.player_magic_attributes_sword);
             
-            if (ManaHelper.consumeManaOrHealth(player, cost)) {
-                vars.analyzed_items.add(toSave);
-                vars.syncPlayerVariables(player);
-                player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ANALYSIS_COMPLETE, (int)cost), true);
+            // Proficiency Logic
+            double successRate = 0.5 + (vars.proficiency_structural_analysis * 0.005); // Base 50% + 0.5% per level (max 100%)
+            if (vars.player_magic_attributes_sword && toSave.getItem() instanceof net.minecraft.world.item.SwordItem) {
+                successRate = 1.0; // Sword attribute makes sword analysis 100% success
+            }
+            if (successRate > 1.0) successRate = 1.0;
+
+            boolean success = player.getRandom().nextDouble() < successRate;
+
+            if (success) {
+                if (ManaHelper.consumeManaOrHealth(player, cost)) {
+                    vars.analyzed_items.add(toSave);
+                    vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.5);
+                    vars.syncPlayerVariables(player);
+                    player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ANALYSIS_COMPLETE, (int)cost), true);
+                }
+            } else {
+                double failCost = cost * 0.3; // 30% cost on fail
+                if (ManaHelper.consumeManaOrHealth(player, failCost)) {
+                    vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.1);
+                    vars.syncPlayerVariables(player);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
+                }
             }
         } else {
             player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ALREADY_ANALYZED), true);

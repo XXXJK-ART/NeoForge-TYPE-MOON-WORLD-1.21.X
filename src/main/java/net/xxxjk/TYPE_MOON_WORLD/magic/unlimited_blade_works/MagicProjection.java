@@ -51,8 +51,12 @@ public class MagicProjection {
                 return;
             }
             
-            double cost = calculateCost(target, vars.player_magic_attributes_sword);
+            double cost = calculateCost(target, vars.player_magic_attributes_sword, vars.proficiency_projection);
             if (ManaHelper.consumeManaOrHealth(player, cost)) {
+                
+                // Proficiency Increase
+                vars.proficiency_projection = Math.min(100, vars.proficiency_projection + 0.2);
+                vars.syncPlayerVariables(player);
                 
                 // TODO: Special Effect for Sword Attribute
                 if (vars.player_magic_attributes_sword) {
@@ -112,7 +116,7 @@ public class MagicProjection {
         }
     }
     
-    private static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
+    private static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
         double baseCost = 10;
         Rarity rarity = stack.getRarity();
         if (rarity == Rarity.UNCOMMON) baseCost = 50;
@@ -149,6 +153,12 @@ public class MagicProjection {
                 baseCost *= 0.5; // 50% cost for other items
             }
         }
+        
+        // Proficiency Discount (up to 50% reduction)
+        // 0 proficiency = 0% reduction
+        // 100 proficiency = 50% reduction
+        // cost = cost * (1 - (proficiency * 0.005))
+        baseCost *= (1.0 - (proficiency * 0.005));
         
         return baseCost;
     }

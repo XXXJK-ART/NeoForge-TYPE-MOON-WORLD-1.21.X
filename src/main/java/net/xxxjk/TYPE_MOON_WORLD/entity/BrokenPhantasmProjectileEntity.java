@@ -131,14 +131,16 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
 
         // Instant damage for small explosions (Power <= 5)
         if (this.maxRadius <= 5) {
-             double damageRadius = this.maxRadius * 1.2;
+             // Increase range for small explosions: Base 2.0 + Radius * 1.5
+             double damageRadius = 2.0 + this.maxRadius * 1.5;
              AABB damageBox = new AABB(explosionCenter).inflate(damageRadius);
              List<Entity> entities = this.level().getEntities(this, damageBox);
              DamageSource damageSource = this.damageSources().explosion(this, this.getOwner());
              
              for (Entity e : entities) {
                  if (e instanceof LivingEntity) {
-                     float damage = getExplosionPower() * 2.0f;
+                     // Increase damage for small explosions: Base 5 + Power * 3
+                     float damage = 5.0f + getExplosionPower() * 3.0f;
                      e.hurt(damageSource, damage);
                      damagedEntities.add(e);
                  }

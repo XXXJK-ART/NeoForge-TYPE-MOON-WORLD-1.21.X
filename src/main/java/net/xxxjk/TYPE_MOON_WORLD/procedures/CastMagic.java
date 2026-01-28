@@ -83,7 +83,30 @@ public class CastMagic {
             }
             
             if (castSuccess) {
-                vars.magic_cooldown = 10; // 0.5 second cooldown (10 ticks)
+                // Default Cooldown 10 ticks (0.5s)
+                double cooldown = 10;
+                
+                // Jewel Magic Cooldown Logic
+                if (vars.selected_magics.get(index).startsWith("ruby") || 
+                    vars.selected_magics.get(index).startsWith("sapphire") || 
+                    vars.selected_magics.get(index).startsWith("emerald") || 
+                    vars.selected_magics.get(index).startsWith("topaz")) {
+                    
+                    // Base 20 ticks (1s)
+                    cooldown = 20;
+                    
+                    // Reduce by proficiency
+                    // 0 proficiency = 20 ticks
+                    // 100 proficiency = 0 ticks (instant) -> Clamp to min 1 tick
+                    // Reduction: proficiency * 0.2 ticks per level? 
+                    // 100 * 0.2 = 20 ticks reduction. Perfect.
+                    cooldown = Math.max(1, cooldown - (vars.proficiency_jewel_magic * 0.2));
+                    
+                    // Increase proficiency slightly on use
+                    vars.proficiency_jewel_magic = Math.min(100, vars.proficiency_jewel_magic + 0.1);
+                }
+                
+                vars.magic_cooldown = cooldown;
                 vars.syncPlayerVariables(entity);
             }
         }
