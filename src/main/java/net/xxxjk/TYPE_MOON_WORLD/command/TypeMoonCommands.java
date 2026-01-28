@@ -70,7 +70,98 @@ public class TypeMoonCommands {
                     .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic"}, builder))
                     .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
                         .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
+            
+            // Magic Learning
+            .then(Commands.literal("magic")
+                .then(Commands.literal("learn")
+                    .then(Commands.argument("magic_id", StringArgumentType.string())
+                        .executes(ctx -> learnMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))))
+                .then(Commands.literal("forget")
+                    .then(Commands.argument("magic_id", StringArgumentType.string())
+                        .executes(ctx -> forgetMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))))
+                .then(Commands.literal("learn_all")
+                    .executes(TypeMoonCommands::learnAllMagics))
+                .then(Commands.literal("forget_all")
+                    .executes(TypeMoonCommands::forgetAllMagics))
+            )
         );
+    }
+
+    private static int learnMagic(CommandContext<CommandSourceStack> ctx, String magicId) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            if (!vars.learned_magics.contains(magicId)) {
+                vars.learned_magics.add(magicId);
+                vars.syncPlayerVariables(player);
+                ctx.getSource().sendSuccess(() -> Component.literal("Learned magic: " + magicId), true);
+            } else {
+                ctx.getSource().sendSuccess(() -> Component.literal("Magic already learned: " + magicId), false);
+            }
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int forgetMagic(CommandContext<CommandSourceStack> ctx, String magicId) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            if (vars.learned_magics.contains(magicId)) {
+                vars.learned_magics.remove(magicId);
+                vars.syncPlayerVariables(player);
+                ctx.getSource().sendSuccess(() -> Component.literal("Forgot magic: " + magicId), true);
+            } else {
+                ctx.getSource().sendSuccess(() -> Component.literal("Magic not found: " + magicId), false);
+            }
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+    
+    private static int learnAllMagics(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Add all known magics
+            String[] allMagics = {
+                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw",
+                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement",
+                "projection", "structural_analysis", "broken_phantasm"
+            };
+            
+            for (String m : allMagics) {
+                if (!vars.learned_magics.contains(m)) {
+                    vars.learned_magics.add(m);
+                }
+            }
+            
+            vars.syncPlayerVariables(player);
+            ctx.getSource().sendSuccess(() -> Component.literal("Learned all magics"), true);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+    
+    private static int forgetAllMagics(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            vars.learned_magics.clear();
+            
+            vars.syncPlayerVariables(player);
+            ctx.getSource().sendSuccess(() -> Component.literal("Forgot all magics"), true);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     private static int setProficiency(CommandContext<CommandSourceStack> ctx, String type, double value) {

@@ -11,6 +11,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -60,8 +61,21 @@ public class ModItems {
     public static final DeferredItem<Item> RAW_WHITE_GEMSTONE = ITEMS.register("raw_white_gemstone",
             () -> new Item(new Item.Properties()));
 
+    public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL = ITEMS.register("magic_scroll_basic_jewel",
+            () -> new MagicScrollItem(new Item.Properties(), 0.5,
+                    "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw"));
 
+    public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL = ITEMS.register("magic_scroll_advanced_jewel",
+            () -> new MagicScrollItem(new Item.Properties(), 0.25,
+                    "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement"));
 
+    public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION = ITEMS.register("magic_scroll_projection",
+            () -> new MagicScrollItem(new Item.Properties(), 0.5,
+                    "projection", "structural_analysis"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM = ITEMS.register("magic_scroll_broken_phantasm",
+            () -> new MagicScrollItem(new Item.Properties(), 0.5,
+                    "broken_phantasm"));
 
 
     public static void register(IEventBus eventBus) {

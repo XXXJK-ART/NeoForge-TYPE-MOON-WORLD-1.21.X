@@ -79,6 +79,8 @@ public class TypeMoonWorldModVariables {
             clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
             clone.proficiency_projection = original.proficiency_projection;
             clone.proficiency_jewel_magic = original.proficiency_jewel_magic;
+            
+            clone.learned_magics = new java.util.ArrayList<>(original.learned_magics);
 
             // Clone Projection Data
             clone.analyzed_items = new java.util.ArrayList<>();
@@ -121,6 +123,9 @@ public class TypeMoonWorldModVariables {
         // Projection Magic Data
         public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
         public ItemStack projection_selected_item = ItemStack.EMPTY;
+        
+        // Learned Magics
+        public java.util.List<String> learned_magics = new java.util.ArrayList<>();
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -160,6 +165,13 @@ public class TypeMoonWorldModVariables {
                 }
             }
             nbt.put("analyzed_items", analyzedList);
+            
+            // Serialize Learned Magics
+            net.minecraft.nbt.ListTag learnedList = new net.minecraft.nbt.ListTag();
+            for (String magic : learned_magics) {
+                learnedList.add(net.minecraft.nbt.StringTag.valueOf(magic));
+            }
+            nbt.put("learned_magics", learnedList);
             
             // Serialize Selected Projection Item
             if (!projection_selected_item.isEmpty()) {
@@ -210,6 +222,15 @@ public class TypeMoonWorldModVariables {
                 }
             }
             
+            // Deserialize Learned Magics
+            learned_magics.clear();
+            if (nbt.contains("learned_magics")) {
+                net.minecraft.nbt.ListTag learnedList = nbt.getList("learned_magics", 8); // 8 is StringTag
+                for (int i = 0; i < learnedList.size(); i++) {
+                    learned_magics.add(learnedList.getString(i));
+                }
+            }
+
             // Deserialize Selected Projection Item
             projection_selected_item = ItemStack.EMPTY;
             if (nbt.contains("projection_selected_item")) {

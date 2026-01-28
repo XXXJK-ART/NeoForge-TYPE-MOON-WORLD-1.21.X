@@ -119,11 +119,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     private void updateFilteredMagics() {
         // String query = searchBox != null ? searchBox.getValue().toLowerCase() : "";
         String query = ""; // No search box
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        
         filteredMagics = allMagics.stream().filter(entry -> {
             boolean matchCategory = "all".equals(filterCategory) || entry.category.contains(filterCategory);
             String name = Component.translatable(entry.nameKey).getString().toLowerCase();
             boolean matchSearch = query.isEmpty() || name.contains(query) || entry.id.contains(query);
-            return matchCategory && matchSearch;
+            
+            // Check if learned
+            boolean learned = vars.learned_magics.contains(entry.id);
+            
+            return matchCategory && matchSearch && learned;
         }).collect(Collectors.toList());
         
         // Reset scroll if needed

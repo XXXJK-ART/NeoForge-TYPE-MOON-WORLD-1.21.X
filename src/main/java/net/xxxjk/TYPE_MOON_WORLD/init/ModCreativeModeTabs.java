@@ -24,6 +24,11 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
                         output.accept(ModItems.HOLY_SHROUD);
+                        
+                        output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
+                        output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL);
+                        output.accept(ModItems.MAGIC_SCROLL_PROJECTION);
+                        output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
 
                         output.accept(ModItems.CHISEL);
 

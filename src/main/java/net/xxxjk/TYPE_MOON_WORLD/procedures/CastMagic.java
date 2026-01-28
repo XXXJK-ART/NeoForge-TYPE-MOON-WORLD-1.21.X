@@ -45,6 +45,15 @@ public class CastMagic {
         int index = vars.current_magic_index;
         if (index >= 0 && index < vars.selected_magics.size()) {
             String magicId = vars.selected_magics.get(index);
+            
+            // Validate if magic is learned
+            if (!vars.learned_magics.contains(magicId)) {
+                if (entity instanceof Player player && !player.level().isClientSide()) {
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.not_learned"), true);
+                }
+                return;
+            }
+            
             boolean castSuccess = false;
             
             if ("ruby_throw".equals(magicId)) {

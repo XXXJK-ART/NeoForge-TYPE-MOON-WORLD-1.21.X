@@ -18,6 +18,16 @@
   "item.typemoonworld.raw_topaz": "黄之宝石原矿",
   "item.typemoonworld.raw_white_gemstone": "白之宝石原矿",
 
+  "item.typemoonworld.magic_scroll_basic_jewel": "基础·宝石魔术卷轴",
+  "item.typemoonworld.magic_scroll_advanced_jewel": "进阶·宝石魔术卷轴",
+  "item.typemoonworld.magic_scroll_projection": "投影/解析卷轴",
+  "item.typemoonworld.magic_scroll_broken_phantasm": "投影崩坏卷轴",
+  
+  "message.typemoonworld.scroll.already_learned": "你已经学会了该卷轴记载的所有魔术。",
+  "message.typemoonworld.scroll.learn_success": "魔术学习成功！",
+  "message.typemoonworld.scroll.learn_failed": "学习失败... 卷轴受损。",
+  "message.typemoonworld.magic.not_learned": "你尚未学会该魔术，无法释放。",
+
   "block.typemoonworld.spirit_vein_node": "灵脉矿",
   "block.typemoonworld.spirit_vein_block": "玛那结晶",
   "block.typemoonworld.emerald_block": "绿之宝石块",

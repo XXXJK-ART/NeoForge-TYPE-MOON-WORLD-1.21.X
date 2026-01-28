@@ -18,6 +18,16 @@
   "item.typemoonworld.raw_topaz": "Raw Topaz",
   "item.typemoonworld.raw_white_gemstone": "Raw White Gemstone",
 
+  "item.typemoonworld.magic_scroll_basic_jewel": "Basic Jewel Scroll",
+  "item.typemoonworld.magic_scroll_advanced_jewel": "Advanced Jewel Scroll",
+  "item.typemoonworld.magic_scroll_projection": "Projection & Analysis Scroll",
+  "item.typemoonworld.magic_scroll_broken_phantasm": "Broken Phantasm Scroll",
+
+  "message.typemoonworld.scroll.already_learned": "You have already learned all magics in this scroll.",
+  "message.typemoonworld.scroll.learn_success": "Magic learned successfully!",
+  "message.typemoonworld.scroll.learn_failed": "Learning failed... Scroll damaged.",
+  "message.typemoonworld.magic.not_learned": "You have not learned this magic yet.",
+
   "block.typemoonworld.spirit_vein_node": "Spirit Vein Node",
   "block.typemoonworld.spirit_vein_block": "Spirit Vein Block",
   "block.typemoonworld.emerald_block": "Emerald Block",
