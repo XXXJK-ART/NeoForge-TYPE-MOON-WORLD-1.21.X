@@ -24,6 +24,7 @@ import org.joml.Vector3f;
 import java.util.HashMap;
 
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 
@@ -32,7 +33,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import net.minecraft.util.Mth;
 
-@SuppressWarnings("null")
+@SuppressWarnings({"null", "unused"})
 public class Magical_attributes_Screen extends AbstractContainerScreen<MagicalattributesMenu> {
     private final static HashMap<String, Object> guistate = MagicalattributesMenu.guistate;
     private final Level world;
@@ -112,6 +113,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("projection", MagicConstants.KEY_MAGIC_PROJECTION_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         allMagics.add(new MagicEntry("structural_analysis", MagicConstants.KEY_MAGIC_STRUCTURAL_ANALYSIS_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         allMagics.add(new MagicEntry("broken_phantasm", MagicConstants.KEY_MAGIC_BROKEN_PHANTASM_SHORT, "unlimited_blade_works,basic", 0xFFFF4000));
+        allMagics.add(new MagicEntry("unlimited_blade_works", MagicConstants.KEY_MAGIC_UNLIMITED_BLADE_WORKS_SHORT, "unlimited_blade_works", 0xFFFF0000));
         
         updateFilteredMagics();
     }
@@ -143,6 +145,25 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        // Hide player inventory when not on page 0
+        if (this.pageMode != 0) {
+            // We can't easily "hide" slots client-side visually without modifying the container
+            // BUT, the container ALREADY hides slots via isActive().
+            // So we just need to make sure we don't render their backgrounds/tooltips if for some reason they show up.
+            // Actually, AbstractContainerScreen renders slots based on their visibility.
+            // If container.slots.isActive() is false, they shouldn't be interactable.
+            // However, AbstractContainerScreen.render() calls renderBg -> super.render -> renderSlots.
+            // Slots that are not 'isActive' are usually moved off-screen by the container logic or just not processed for clicks.
+            // But visually, standard slots might still be rendered if their x/y are within screen.
+            // Wait, Slot.isActive() controls if it appears in the container's list for interaction? 
+            // No, Slot.isActive() is a NeoForge/Forge extension or vanilla?
+            // Vanilla Slot has 'isActive()'. AbstractContainerMenu.slots contains ALL slots.
+            // AbstractContainerScreen.render() iterates all slots and calls renderSlot().
+            // AbstractContainerScreen.renderSlot() checks 'if (slot.isActive())'.
+            // So if our Menu logic is correct, they won't render.
+            // Let's verify Menu logic.
+        }
+        
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         if (Basic_information_back_player_self.execute(entity) instanceof LivingEntity livingEntity) {
@@ -295,6 +316,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         } else if ("projection".equals(entry.id)) {
             proficiency = vars.proficiency_projection;
             showProficiency = true;
+        } else if ("unlimited_blade_works".equals(entry.id)) {
+            proficiency = vars.proficiency_unlimited_blade_works;
+            showProficiency = true;
         } else if ("jewel".equals(entry.category)) {
             proficiency = vars.proficiency_jewel_magic;
             showProficiency = true;
@@ -340,6 +364,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         if (imagebutton_basic_attributes != null) imagebutton_basic_attributes.visible = true;
     }
 
+    // Removed local renderTechFrame, using GuiUtils
+    
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
         RenderSystem.setShaderColor(1, 1, 1, 1);
@@ -352,29 +378,59 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         int w = this.imageWidth;
         int h = this.imageHeight;
         
-        // 1. Main Background (Gradient: Dark Blue/Purple to Black)
-        guiGraphics.fillGradient(x, y, x + w, y + h, 0xF0101020, 0xF0050510);
-        
-        // 2. Cyber/Magic Border (Cyan/Neon Blue)
-        int borderColor = 0xFF00FFFF;
-        int borderWidth = 1;
-        
-        guiGraphics.fill(x - borderWidth, y - borderWidth, x + w + borderWidth, y, borderColor); // Top
-        guiGraphics.fill(x - borderWidth, y + h, x + w + borderWidth, y + h + borderWidth, borderColor); // Bottom
-        guiGraphics.fill(x - borderWidth, y, x, y + h, borderColor); // Left
-        guiGraphics.fill(x + w, y, x + w + borderWidth, y + h, borderColor); // Right
-        
-        // 3. Header Separator
-        guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, 0x8000FFFF);
+        GuiUtils.renderBackground(guiGraphics, x, y, w, h);
         
         // 4. Character Panel Background (Left side)
-        guiGraphics.fill(x + 10, y + 35, x + 110, y + 150, 0x40000000); 
-        guiGraphics.renderOutline(x + 10, y + 35, 100, 115, 0x6000FFFF);
+        // guiGraphics.fill(x + 10, y + 35, x + 110, y + 150, 0x40000000); 
+        // guiGraphics.renderOutline(x + 10, y + 35, 100, 115, 0x6000FFFF);
+        GuiUtils.renderTechFrame(guiGraphics, x + 10, y + 35, 100, 150, 0xFF00AAAA, 0xFF00FFFF);
         
         // 5. Enhanced Magic Circuit Decorations (PCB Style) - REDESIGNED
         // REMOVED all circuits and connecting lines as requested
         
         // (Empty)
+
+        // 6. Inventory Background for Page 0
+        if (pageMode == 0) {
+            // Inventory Panel Background
+            int invX = x + 145;
+            int invY = y + 80;
+            int invW = 172;
+            int invH = 85;
+            
+            // guiGraphics.fill(invX, invY, invX + invW, invY + invH, 0x40000000); // Semi-transparent bg
+            // guiGraphics.renderOutline(invX, invY, invW, invH, 0xFF00AAAA); // Border
+            GuiUtils.renderTechFrame(guiGraphics, invX, invY, invW, invH, 0xFF00AAAA, 0xFF0088FF);
+            
+            // Mystic Eyes Slot Background
+            int eyeSlotX = x + 195; // 200 - 5 (padding for 28x28 box around 16x16 slot)
+            int eyeSlotY = y + 35; // 40 - 5
+            int eyeSlotSize = 26;
+            
+            // guiGraphics.fill(eyeSlotX, eyeSlotY, eyeSlotX + eyeSlotSize, eyeSlotY + eyeSlotSize, 0x60000000);
+            // guiGraphics.renderOutline(eyeSlotX, eyeSlotY, eyeSlotSize, eyeSlotSize, 0xFFFF00FF); // Purple/Pink highlight
+            GuiUtils.renderTechFrame(guiGraphics, eyeSlotX, eyeSlotY, eyeSlotSize, eyeSlotSize, 0xFFFF00FF, 0xFFFF0088);
+            
+            // Draw connection line
+            guiGraphics.fill(x + 110 + 2, y + 60, eyeSlotX - 2, y + 61, 0xFF00FFFF);
+            
+            // Draw Inventory Slot Grids (Visual Guide)
+            // Inventory (3x9) at 150, 85
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 9; ++j) {
+                    int slotX = x + 150 + j * 18 - 1;
+                    int slotY = y + 85 + i * 18 - 1;
+                    guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, 0x20FFFFFF);
+                }
+            }
+            
+            // Hotbar (1x9) at 150, 143
+            for (int k = 0; k < 9; ++k) {
+                int slotX = x + 150 + k * 18 - 1;
+                int slotY = y + 143 - 1;
+                guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, 0x20FFFFFF);
+            }
+        }
 
         RenderSystem.disableBlend();
     }
@@ -399,9 +455,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
         // Content
         if (pageMode == 0) {
-            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_MAGIC_EYES_AND_MODIFICATION), 125, 40, 0xFF00E0E0, false);
-            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_LOAD_MAGIC_EYES), 125, 60, 0xFFCCCCCC, false);
-            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_WIP), 125, 80, 0xFFAAAAAA, false);
+            // No text
+            // Add symbol or icon for Mystic Eyes?
+            // Let's add a small label "EYES" above the slot if it's not too cluttered.
+            // But user asked to clear text. So maybe just keep it graphical.
+            // Maybe draw a small eye symbol?
+            // For now, keep it clean as requested previously.
         } else {
             guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_LEARNED_MAGIC), 125, 28, 0xFF00E0E0, false);
             // Label for filter
@@ -411,31 +470,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         }
     }
 
-        // Custom Neon Button Class
-    class NeonButton extends Button {
-        private final int hoverColor; // Add specific hover color support
-
-        public NeonButton(int x, int y, int width, int height, Component message, OnPress onPress) {
-            this(x, y, width, height, message, onPress, 0xFF00FFFF); // Default Cyan
-        }
-
-        public NeonButton(int x, int y, int width, int height, Component message, OnPress onPress, int color) {
-            super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
-            this.hoverColor = color;
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            int borderColor = isHoveredOrFocused() ? hoverColor : 0xFF00AAAA;
-            int fillColor = isHoveredOrFocused() ? (hoverColor & 0x00FFFFFF) | 0x80000000 : 0x80000000;
-            int textColor = isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA;
-            
-            guiGraphics.fill(getX(), getY(), getX() + width, getY() + height, fillColor);
-            guiGraphics.renderOutline(getX(), getY(), width, height, borderColor);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, getMessage(), getX() + width / 2, getY() + (height - 8) / 2, textColor);
-        }
-    }
-
+    // Custom Neon Button Class Removed - Use NeonButton.java
+    
     @Override
     public void init() {
         super.init();
@@ -486,12 +522,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         
         imagebutton_magical_attributes = new NeonButton(tabX + tabWidth + 2, tabY, tabWidth, tabHeight, Component.literal("身体改造"), e -> {
             this.pageMode = 0;
+            this.menu.setPage(0);
+            PacketDistributor.sendToServer(new PageChangeMessage(0));
             updateVisibility();
         });
         this.addRenderableWidget(imagebutton_magical_attributes);
         
         imagebutton_magical_properties = new NeonButton(tabX + (tabWidth + 2) * 2, tabY, tabWidth, tabHeight, Component.literal("魔术知识"), e -> {
             this.pageMode = 1;
+            this.menu.setPage(1);
+            PacketDistributor.sendToServer(new PageChangeMessage(1));
             updateVisibility();
         });
         this.addRenderableWidget(imagebutton_magical_properties);

@@ -1,0 +1,19 @@
+{
+  "type": "typemoonworld:unlimited_blade_works",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+        {
+          "block": "minecraft:bedrock",
+          "height": 1
+        },
+        {
+          "block": "minecraft:sand",
+          "height": 50
+        }
+      ],
+      "biome": "minecraft:desert"
+    }
+  }
+}

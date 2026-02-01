@@ -1,11 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.block;
 
+import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DropExperienceBlock;
-import net.minecraft.world.level.block.TransparentBlock;
+import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.bus.api.IEventBus;
@@ -16,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 import java.util.function.Supplier;
+
 @SuppressWarnings("null")
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
@@ -71,7 +73,7 @@ public class ModBlocks {
                     BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
     public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock("green_transparent_block",
-            () -> new TransparentBlock(BlockBehaviour.Properties.of()
+            () -> new HalfTransparentBlock(BlockBehaviour.Properties.of()
                     .strength(50f, 1200f).sound(SoundType.GLASS).noOcclusion()
                     .isViewBlocking((s, l, p) -> false).isValidSpawn((s, l, p, e) -> false)
                     .isSuffocating((s, l, p) -> false).isRedstoneConductor((s, l, p) -> false)));

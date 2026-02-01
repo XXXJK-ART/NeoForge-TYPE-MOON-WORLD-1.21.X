@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works;
+package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,12 +22,6 @@ public class MagicProjection {
         if (!(entity instanceof ServerPlayer player)) return;
 
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-
-        // Check for Shift Key (Sneaking)
-        if (player.isShiftKeyDown()) {
-            PacketDistributor.sendToPlayer(player, new OpenProjectionGuiMessage());
-            return;
-        }
 
         ItemStack heldItem = player.getMainHandItem();
         ItemStack offhandItem = player.getOffhandItem();

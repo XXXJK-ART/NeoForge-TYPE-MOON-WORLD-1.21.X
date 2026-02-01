@@ -20,7 +20,6 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 public class Magic_display_Overlay {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void eventHandler(RenderGuiEvent.Pre event) {
-        int w = event.getGuiGraphics().guiWidth();
         int h = event.getGuiGraphics().guiHeight();
         Player entity = Minecraft.getInstance().player;
         if (entity == null) return;
@@ -130,6 +129,9 @@ public class Magic_display_Overlay {
                 } else if ("broken_phantasm".equals(magicId)) {
                     magicName = "投影崩坏";
                     magicColor = 0xFFFF4000; // Orange Red
+                } else if ("unlimited_blade_works".equals(magicId)) {
+                    magicName = "无限剑制";
+                    magicColor = 0xFFFF0000; // Red
                 }
             }
             

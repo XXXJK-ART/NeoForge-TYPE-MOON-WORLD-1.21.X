@@ -45,6 +45,13 @@
   "key.typemoonworld.basic_information_gui": "Basic information",
   "key.typemoonworld.magic_circuit_switch": "Magic Circuit Switch",
   "key.typemoonworld.cast_magic": "Cast Magic",
+  "key.typemoonworld.mystic_eyes_activate": "Toggle Mystic Eyes",
+  "key.typemoonworld.open_projection_preset": "Open Projection Preset",
+  "key.typemoonworld.cycle_magic": "Cycle Magic (Scroll)",
+
+  "item.typemoonworld.mystic_eyes_of_death_perception": "Mystic Eyes of Death Perception (Rainbow)",
+  "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "Mystic Eyes of Death Perception (Noble Colour)",
+
   "key.categories.typemoonworld": "TYPE MOON WORLD",
 
   "gui.typemoonworld.magic.ruby_throw": "Ruby (Throw)",
@@ -114,22 +121,36 @@
   "key.typemoonworld.magic.broken_phantasm.selected": "Broken Phantasm",
   "key.typemoonworld.magic.broken_phantasm.short": "Broken Phantasm",
   "magic.typemoonworld.broken_phantasm.desc": "Fires a projected Noble Phantasm as an arrow,\ncausing a massive mana explosion.",
-  "gui.typemoonworld.projection_preset": "Projection Preset",
+  "gui.typemoonworld.projection_preset": "Magic Preset",
+  "message.typemoonworld.mystic_eyes.activated": "Magic Eyes Activated",
+  "message.typemoonworld.mystic_eyes.deactivated": "Magic Eyes Deactivated",
+  "message.typemoonworld.mystic_eyes.not_equipped": "No Magic Eyes equipped",
   "gui.typemoonworld.projection.filter.all": "All",
   "gui.typemoonworld.projection.filter.building": "Building",
   "gui.typemoonworld.projection.filter.combat": "Combat",
   "gui.typemoonworld.projection.filter.tools": "Tools",
   "gui.typemoonworld.projection.filter.misc": "Misc",
+  "key.typemoonworld.magic.unlimited_blade_works": "Unlimited Blade Works",
+  "key.typemoonworld.magic.unlimited_blade_works.selected": "Unlimited Blade Works",
+  "key.typemoonworld.magic.unlimited_blade_works.short": "UBW",
+  "magic.typemoonworld.unlimited_blade_works.desc": "Reality Marble: Unlimited Blade Works.\nThe materialization of one's inner world.",
+  "magic.typemoonworld.unlimited_blade_works.desc.sword": "I am the bone of my sword.\nSteel is my body, and fire is my blood.\nI have created over a thousand blades.\nUnaware of loss.\nNor aware of gain.\nWithstood pain to create weapons,waiting for one's arrival.\nI have no regrets. \nThis is the only path.\nMy whole life was,\n——【Unlimited Blade Works】",
+  
+  "message.typemoonworld.unlimited_blade_works.awakened": "I am the bone of my sword...?",
+  "message.typemoonworld.unlimited_blade_works.chant": "I am the bone of my sword.",
+  "message.typemoonworld.unlimited_blade_works.activated": "——【Unlimited Blade Works】",
+  "message.typemoonworld.unlimited_blade_works.failed": "Deployment Failed",
+  "message.typemoonworld.unlimited_blade_works.mana_depleted": "§cMana Depleted. Chant Interrupted.",
+  "message.typemoonworld.unlimited_blade_works.interrupted": "§cConcentration Broken! Chant Interrupted.",
+  "message.typemoonworld.unlimited_blade_works.cancelled": "§cChant Cancelled.",
+  "message.typemoonworld.unlimited_blade_works.exit": "Reality Marble Dissipated.",
+
+  "magic.typemoonworld.projection.desc.sword": "Trace On",
+  "magic.typemoonworld.structural_analysis.desc.sword": "Trace On",
+  
+  "message.typemoonworld.structural_analysis.failed": "Analysis failed. Structure unknown.",
+
   "gui.typemoonworld.projection.filter.special": "Special",
-  
-  "gui.typemoonworld.projection.filter.special": "Special",
-  
-  "gui.typemoonworld.proficiency": "Proficiency: %s",
-  
-  "magic.typemoonworld.projection.desc.sword": "Trace On... Projecting Noble Phantasm...",
-  "magic.typemoonworld.structural_analysis.desc.sword": "Appraisal: Instantly analyze structure.",
-  
-  "message.typemoonworld.structural_analysis.failed": "Analysis failed. Structure unknown. Partial mana consumed.",
 
   "message.typemoonworld.projection.cannot_analyze_projected": "Cannot analyze projected item",
   "message.typemoonworld.projection.analysis_complete": "Analysis Complete. Cost: %s",

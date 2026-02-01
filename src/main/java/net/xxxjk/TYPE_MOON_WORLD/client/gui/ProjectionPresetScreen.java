@@ -1,16 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -22,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SuppressWarnings({"null", "unused", "unchecked"})
 public class ProjectionPresetScreen extends Screen {
     private final Player player;
     private int leftPos, topPos;
@@ -81,12 +78,13 @@ public class ProjectionPresetScreen extends Screen {
             int width = Minecraft.getInstance().font.width(Component.translatable(labelKey)) + 10;
             if (width < 40) width = 40;
             
-            Button btn = Button.builder(Component.translatable(labelKey), b -> {
+            // Use NeonButton
+            NeonButton btn = new NeonButton(currentX, btnY, width, btnH, Component.translatable(labelKey), b -> {
                 this.currentFilter = filter;
                 this.scrollOffs = 0;
                 this.startIndex = 0;
                 updateFilteredItems();
-            }).bounds(currentX, btnY, width, btnH).build();
+            }, 0xFF00FFFF);
             
             this.addRenderableWidget(btn);
             filterButtons.add(btn);
@@ -155,23 +153,21 @@ public class ProjectionPresetScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         // Background
-        // Modern gradient style matching Magical_attributes_Screen
         int x = this.leftPos;
         int y = this.topPos;
         int w = this.imageWidth;
         int h = this.imageHeight;
         
-        guiGraphics.fillGradient(x, y, x + w, y + h, 0xF0101020, 0xF0050510);
-        int borderColor = 0xFF00FFFF;
-        guiGraphics.renderOutline(x, y, w, h, borderColor);
-        
-        // Header Separator
-        guiGraphics.fill(x + 5, y + 30, x + w - 5, y + 31, 0x8000FFFF);
+        GuiUtils.renderBackground(guiGraphics, x, y, w, h);
 
-        // Items List Area
+        // Items List Area Frame
         int listX = leftPos + LIST_X_OFFSET;
         int listY = topPos + LIST_Y_OFFSET;
+        int listW = w - LIST_X_OFFSET * 2;
+        int listH = h - LIST_Y_OFFSET - 10;
         
+        GuiUtils.renderTechFrame(guiGraphics, listX - 2, listY - 2, listW + 4, listH + 4, 0xFF00AAAA, 0xFF00FFFF);
+
         int totalVisible = COLS * ROWS;
 
         for (int i = 0; i < totalVisible; i++) {

@@ -12,9 +12,10 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldUse;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldWinterRiver;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
-import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicProjection;
-import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicStructuralAnalysis;
-import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicBrokenPhantasm;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
+import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 
 @SuppressWarnings("null")
 public class CastMagic {
@@ -88,6 +89,9 @@ public class CastMagic {
                 castSuccess = true;
             } else if ("broken_phantasm".equals(magicId)) {
                 MagicBrokenPhantasm.execute(entity);
+                castSuccess = true;
+            } else if ("unlimited_blade_works".equals(magicId)) {
+                MagicUnlimitedBladeWorks.execute(entity);
                 castSuccess = true;
             }
             

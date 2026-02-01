@@ -1,4 +1,4 @@
-package net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works;
+package net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;

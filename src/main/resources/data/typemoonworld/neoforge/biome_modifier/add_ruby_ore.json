@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#typemoonworld:has_ruby_ore",
+  "features": "typemoonworld:ore_ruby_mine_placed",
+  "step": "underground_ores"
+}

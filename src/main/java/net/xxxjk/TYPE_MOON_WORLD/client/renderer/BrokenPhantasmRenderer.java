@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 
+@SuppressWarnings({"null", "deprecation", "unchecked"})
 public class BrokenPhantasmRenderer extends EntityRenderer<BrokenPhantasmProjectileEntity> {
 
     public BrokenPhantasmRenderer(EntityRendererProvider.Context context) {
