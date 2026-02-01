@@ -38,6 +38,8 @@ import org.slf4j.Logger;
 
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -126,6 +128,8 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
         addNetworkMessage(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);
         addNetworkMessage(OpenProjectionGuiMessage.TYPE, OpenProjectionGuiMessage.STREAM_CODEC, OpenProjectionGuiMessage::handleData);
+        addNetworkMessage(MysticEyesToggleMessage.TYPE, MysticEyesToggleMessage.STREAM_CODEC, MysticEyesToggleMessage::handleData);
+        addNetworkMessage(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
 
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),

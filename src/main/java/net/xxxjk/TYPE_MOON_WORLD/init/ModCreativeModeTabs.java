@@ -29,6 +29,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
+                        
+                        output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
+                        output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
 
                         output.accept(ModItems.CHISEL);
 

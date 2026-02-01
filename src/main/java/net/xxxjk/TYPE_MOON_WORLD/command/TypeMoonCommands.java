@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
+@SuppressWarnings({"null", "unchecked"})
 public class TypeMoonCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("typemoon")
@@ -67,7 +68,7 @@ public class TypeMoonCommands {
             // Proficiency
             .then(Commands.literal("proficiency")
                 .then(Commands.argument("type", StringArgumentType.word())
-                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic"}, builder))
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic", "unlimited_blade_works"}, builder))
                     .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
                         .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
             
@@ -176,6 +177,7 @@ public class TypeMoonCommands {
                 case "structural_analysis": vars.proficiency_structural_analysis = value; break;
                 case "projection": vars.proficiency_projection = value; break;
                 case "jewel_magic": vars.proficiency_jewel_magic = value; break;
+                case "unlimited_blade_works": vars.proficiency_unlimited_blade_works = value; break;
             }
             
             vars.syncPlayerVariables(player);

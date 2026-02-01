@@ -26,7 +26,7 @@ import java.util.HashMap;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
-@SuppressWarnings("null")
+@SuppressWarnings({"null", "unused"})
 public class Basic_information_Screen extends AbstractContainerScreen<BasicInformationMenu> {
     private final static HashMap<String, Object> guistate = BasicInformationMenu.guistate;
     private final Level world;
@@ -77,33 +77,13 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         int w = this.imageWidth;
         int h = this.imageHeight;
         
-        // 1. Main Background (Gradient: Dark Blue/Purple to Black)
-        guiGraphics.fillGradient(x, y, x + w, y + h, 0xF0101020, 0xF0050510);
-        
-        // 2. Cyber/Magic Border (Cyan/Neon Blue)
-        int borderColor = 0xFF00FFFF;
-        int borderWidth = 1;
-        
-        guiGraphics.fill(x - borderWidth, y - borderWidth, x + w + borderWidth, y, borderColor); // Top
-        guiGraphics.fill(x - borderWidth, y + h, x + w + borderWidth, y + h + borderWidth, borderColor); // Bottom
-        guiGraphics.fill(x - borderWidth, y, x, y + h, borderColor); // Left
-        guiGraphics.fill(x + w, y, x + w + borderWidth, y + h, borderColor); // Right
-        
-        // 3. Header Separator
-        guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, 0x8000FFFF);
+        GuiUtils.renderBackground(guiGraphics, x, y, w, h);
         
         // 4. Character Panel Background (Left side)
-        guiGraphics.fill(x + 10, y + 35, x + 110, y + 185, 0x40000000); 
-        guiGraphics.renderOutline(x + 10, y + 35, 100, 150, 0x6000FFFF);
+        // guiGraphics.fill(x + 10, y + 35, x + 110, y + 185, 0x40000000); 
+        // guiGraphics.renderOutline(x + 10, y + 35, 100, 150, 0x6000FFFF);
+        GuiUtils.renderTechFrame(guiGraphics, x + 10, y + 35, 100, 150, 0xFF00AAAA, 0xFF00FFFF);
         
-        // 5. Enhanced Magic Circuit Decorations (PCB Style) - REDESIGNED
-        // REMOVED all circuits and connecting lines as requested
-        // Keeping only subtle background watermark if needed, or remove completely?
-        // User said "remove all magic circuit designs and the connecting line in the middle"
-        // So I will remove everything under section 5.
-        
-        // (Empty)
-
         RenderSystem.disableBlend();
     }
 
@@ -140,29 +120,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         gui.drawString(this.font, value, x + 60, y, 0xFFFFFFFF, false);
     }
 
-    // Custom Neon Button Class
-    class NeonButton extends Button {
-        public NeonButton(int x, int y, int width, int height, Component message, OnPress onPress) {
-            super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            int borderColor = isHoveredOrFocused() ? 0xFF00FFFF : 0xFF00AAAA;
-            int fillColor = isHoveredOrFocused() ? 0x80000050 : 0x80000000;
-            int textColor = isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA;
-            
-            // Fill
-            guiGraphics.fill(getX(), getY(), getX() + width, getY() + height, fillColor);
-            
-            // Border
-            guiGraphics.renderOutline(getX(), getY(), width, height, borderColor);
-            
-            // Text
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, getMessage(), getX() + width / 2, getY() + (height - 8) / 2, textColor);
-        }
-    }
-
+    // Custom Neon Button Class Removed - Use NeonButton.java
+    
     @Override
     public void init() {
         super.init();

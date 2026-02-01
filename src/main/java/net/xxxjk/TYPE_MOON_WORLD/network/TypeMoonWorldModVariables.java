@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 @SuppressWarnings("null")
 public class TypeMoonWorldModVariables {
@@ -79,6 +80,18 @@ public class TypeMoonWorldModVariables {
             clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
             clone.proficiency_projection = original.proficiency_projection;
             clone.proficiency_jewel_magic = original.proficiency_jewel_magic;
+            clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
+            
+            clone.is_chanting_ubw = original.is_chanting_ubw;
+            clone.ubw_chant_progress = original.ubw_chant_progress;
+            clone.ubw_chant_timer = original.ubw_chant_timer;
+
+            clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
+            clone.is_in_ubw = original.is_in_ubw;
+            clone.ubw_return_x = original.ubw_return_x;
+            clone.ubw_return_y = original.ubw_return_y;
+            clone.ubw_return_z = original.ubw_return_z;
+            clone.ubw_return_dimension = original.ubw_return_dimension;
             
             clone.learned_magics = new java.util.ArrayList<>(original.learned_magics);
 
@@ -88,6 +101,11 @@ public class TypeMoonWorldModVariables {
                 clone.analyzed_items.add(stack.copy());
             }
             clone.projection_selected_item = original.projection_selected_item.copy();
+
+            // Clone Mystic Eyes Inventory
+            for (int i = 0; i < original.mysticEyesInventory.getSlots(); i++) {
+                clone.mysticEyesInventory.setStackInSlot(i, original.mysticEyesInventory.getStackInSlot(i).copy());
+            }
 
             if (!event.isWasDeath()) {
                 clone.player_mana = original.player_mana;
@@ -119,13 +137,29 @@ public class TypeMoonWorldModVariables {
         public double proficiency_structural_analysis = 0;
         public double proficiency_projection = 0;
         public double proficiency_jewel_magic = 0;
+        public double proficiency_unlimited_blade_works = 0;
         
         // Projection Magic Data
         public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
         public ItemStack projection_selected_item = ItemStack.EMPTY;
+        public ItemStackHandler mysticEyesInventory = new ItemStackHandler(1);
+        public boolean is_mystic_eyes_active = false;
         
         // Learned Magics
         public java.util.List<String> learned_magics = new java.util.ArrayList<>();
+        
+        // UBW Chant Data
+        public boolean is_chanting_ubw = false;
+        public int ubw_chant_progress = 0; // 0 to 8 lines (or similar steps)
+        public int ubw_chant_timer = 0;
+        
+        // UBW State Data
+        public boolean has_unlimited_blade_works = false;
+        public boolean is_in_ubw = false;
+        public double ubw_return_x = 0;
+        public double ubw_return_y = 0;
+        public double ubw_return_z = 0;
+        public String ubw_return_dimension = "minecraft:overworld";
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -149,6 +183,18 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("proficiency_structural_analysis", proficiency_structural_analysis);
             nbt.putDouble("proficiency_projection", proficiency_projection);
             nbt.putDouble("proficiency_jewel_magic", proficiency_jewel_magic);
+            nbt.putDouble("proficiency_unlimited_blade_works", proficiency_unlimited_blade_works);
+            
+            nbt.putBoolean("is_chanting_ubw", is_chanting_ubw);
+            nbt.putInt("ubw_chant_progress", ubw_chant_progress);
+            nbt.putInt("ubw_chant_timer", ubw_chant_timer);
+
+            nbt.putBoolean("has_unlimited_blade_works", has_unlimited_blade_works);
+            nbt.putBoolean("is_in_ubw", is_in_ubw);
+            nbt.putDouble("ubw_return_x", ubw_return_x);
+            nbt.putDouble("ubw_return_y", ubw_return_y);
+            nbt.putDouble("ubw_return_z", ubw_return_z);
+            nbt.putString("ubw_return_dimension", ubw_return_dimension);
 
             net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
             for (String magic : selected_magics) {
@@ -178,6 +224,8 @@ public class TypeMoonWorldModVariables {
                 nbt.put("projection_selected_item", projection_selected_item.save(lookupProvider));
             }
             
+            nbt.put("mysticEyesInventory", mysticEyesInventory.serializeNBT(lookupProvider));
+
             return nbt;
         }
 
@@ -202,6 +250,18 @@ public class TypeMoonWorldModVariables {
             proficiency_structural_analysis = nbt.getDouble("proficiency_structural_analysis");
             proficiency_projection = nbt.getDouble("proficiency_projection");
             proficiency_jewel_magic = nbt.getDouble("proficiency_jewel_magic");
+            proficiency_unlimited_blade_works = nbt.getDouble("proficiency_unlimited_blade_works");
+            
+            is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
+            ubw_chant_progress = nbt.getInt("ubw_chant_progress");
+            ubw_chant_timer = nbt.getInt("ubw_chant_timer");
+            
+            has_unlimited_blade_works = nbt.getBoolean("has_unlimited_blade_works");
+            is_in_ubw = nbt.getBoolean("is_in_ubw");
+            if (nbt.contains("ubw_return_x")) ubw_return_x = nbt.getDouble("ubw_return_x");
+            if (nbt.contains("ubw_return_y")) ubw_return_y = nbt.getDouble("ubw_return_y");
+            if (nbt.contains("ubw_return_z")) ubw_return_z = nbt.getDouble("ubw_return_z");
+            if (nbt.contains("ubw_return_dimension")) ubw_return_dimension = nbt.getString("ubw_return_dimension");
             
             selected_magics.clear();
             if (nbt.contains("selected_magics")) {
@@ -237,9 +297,27 @@ public class TypeMoonWorldModVariables {
                 java.util.Optional<ItemStack> stack = ItemStack.parse(lookupProvider, nbt.getCompound("projection_selected_item"));
                 stack.ifPresent(s -> projection_selected_item = s);
             }
+            
+            if (nbt.contains("mysticEyesInventory")) {
+                mysticEyesInventory.deserializeNBT(lookupProvider, nbt.getCompound("mysticEyesInventory"));
+            }
         }
 
         public void syncPlayerVariables(Entity entity) {
+            // Auto-unlock Unlimited Blade Works if player has Sword Attribute
+            if (this.player_magic_attributes_sword) {
+                if (!this.learned_magics.contains("unlimited_blade_works")) {
+                    this.learned_magics.add("unlimited_blade_works");
+                    this.has_unlimited_blade_works = true;
+                    if (entity instanceof net.minecraft.world.entity.player.Player player && !player.level().isClientSide()) {
+                         player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.unlimited_blade_works.awakened"), false);
+                    }
+                } else if (!this.has_unlimited_blade_works) {
+                    // Ensure boolean is synced if already in list
+                    this.has_unlimited_blade_works = true;
+                }
+            }
+
             if (entity instanceof ServerPlayer serverPlayer)
                 PacketDistributor.sendToPlayer(serverPlayer, new PlayerVariablesSyncMessage(this));
         }

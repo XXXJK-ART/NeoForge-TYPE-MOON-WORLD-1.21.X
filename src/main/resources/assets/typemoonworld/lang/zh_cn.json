@@ -23,10 +23,10 @@
   "item.typemoonworld.magic_scroll_projection": "投影/解析卷轴",
   "item.typemoonworld.magic_scroll_broken_phantasm": "投影崩坏卷轴",
   
-  "message.typemoonworld.scroll.already_learned": "你已经学会了该卷轴记载的所有魔术。",
+  "message.typemoonworld.scroll.already_learned": "你已经学会了该卷轴记载的所有魔术.",
   "message.typemoonworld.scroll.learn_success": "魔术学习成功！",
-  "message.typemoonworld.scroll.learn_failed": "学习失败... 卷轴受损。",
-  "message.typemoonworld.magic.not_learned": "你尚未学会该魔术，无法释放。",
+  "message.typemoonworld.scroll.learn_failed": "学习失败... 卷轴受损.",
+  "message.typemoonworld.magic.not_learned": "你尚未学会该魔术，无法释放.",
 
   "block.typemoonworld.spirit_vein_node": "灵脉矿",
   "block.typemoonworld.spirit_vein_block": "玛那结晶",
@@ -45,6 +45,13 @@
   "key.typemoonworld.basic_information_gui": "基础界面",
   "key.typemoonworld.magic_circuit_switch": "魔术回路开关",
   "key.typemoonworld.cast_magic": "释放魔术",
+  "key.typemoonworld.mystic_eyes_activate": "魔眼开关",
+  "key.typemoonworld.open_projection_preset": "打开投影预设",
+  "key.typemoonworld.cycle_magic": "切换魔术 (滚轮)",
+
+  "item.typemoonworld.mystic_eyes_of_death_perception": "直死之魔眼（虹级）",
+  "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "直死之魔眼（noble colour）",
+  
   "key.categories.typemoonworld": "TYPE MOON WORLD",
   
   "gui.typemoonworld.magic.ruby_throw": "红宝石（投掷）",
@@ -114,12 +121,29 @@
   "key.typemoonworld.magic.broken_phantasm.selected": "投影崩坏",
   "key.typemoonworld.magic.broken_phantasm.short": "投影崩坏",
   "magic.typemoonworld.broken_phantasm.desc": "将投影的宝具作为箭矢射出,\n引发剧烈的魔力爆炸.",
-  "gui.typemoonworld.projection_preset": "投影魔术 - 预设",
+  "gui.typemoonworld.projection_preset": "魔术预设",
+  "message.typemoonworld.mystic_eyes.activated": "魔眼 已开启",
+  "message.typemoonworld.mystic_eyes.deactivated": "魔眼 已关闭",
+  "message.typemoonworld.mystic_eyes.not_equipped": "未装备魔眼",
   "gui.typemoonworld.projection.filter.all": "全部",
   "gui.typemoonworld.projection.filter.building": "建筑",
   "gui.typemoonworld.projection.filter.combat": "战斗",
   "gui.typemoonworld.projection.filter.tools": "工具",
   "gui.typemoonworld.projection.filter.misc": "杂项",
+  "key.typemoonworld.magic.unlimited_blade_works": "无限剑制",
+  "key.typemoonworld.magic.unlimited_blade_works.selected": "无限剑制",
+  "key.typemoonworld.magic.unlimited_blade_works.short": "无限剑制",
+  "magic.typemoonworld.unlimited_blade_works.desc": "固有结界·无限剑制.\n心象风景的具现化.",
+  "magic.typemoonworld.unlimited_blade_works.desc.sword": "I am the bone of my sword.\nSteel is my body, and fire is my blood.\nI have created over a thousand blades.\nUnaware of loss.\nNor aware of gain.\nWithstood pain to create weapons,waiting for one's arrival.\nI have no regrets. \nThis is the only path.\nMy whole life was,\n——【Unlimited Blade Works】",
+  
+  "message.typemoonworld.unlimited_blade_works.awakened": "I am the bone of my sword...?",
+  "message.typemoonworld.unlimited_blade_works.chant": "§bI am the bone of my sword.",
+  "message.typemoonworld.unlimited_blade_works.activated": "§c——【Unlimited Blade Works】",
+  "message.typemoonworld.unlimited_blade_works.mana_depleted": "§c魔力耗尽.咏唱中断.",
+  "message.typemoonworld.unlimited_blade_works.interrupted": "§c集中被打断！咏唱中断.",
+  "message.typemoonworld.unlimited_blade_works.cancelled": "§c咏唱已取消.",
+  "message.typemoonworld.unlimited_blade_works.exit": "§c固有结界解除.",
+
   "gui.typemoonworld.projection.filter.special": "特殊",
 
   "gui.typemoonworld.proficiency": "熟练度: %s",
@@ -127,7 +151,7 @@
   "magic.typemoonworld.projection.desc.sword": "Trace On",
   "magic.typemoonworld.structural_analysis.desc.sword": "解析万物之构造.",
   
-  "message.typemoonworld.structural_analysis.failed": "解析失败，无法获取物品构造，魔力仅消耗部分。",
+  "message.typemoonworld.structural_analysis.failed": "解析失败，无法获取物品构造，魔力仅消耗部分.",
   
   "message.typemoonworld.projection.cannot_analyze_projected": "无法解析投影物品",
   "message.typemoonworld.projection.analysis_complete": "解析完成.消耗魔力: %s",

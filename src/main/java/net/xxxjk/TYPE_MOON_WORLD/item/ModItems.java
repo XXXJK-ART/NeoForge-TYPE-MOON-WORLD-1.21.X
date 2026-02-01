@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -76,6 +77,12 @@ public class ModItems {
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM = ITEMS.register("magic_scroll_broken_phantasm",
             () -> new MagicScrollItem(new Item.Properties(), 0.5,
                     "broken_phantasm"));
+
+    public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
+            () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
+
+    public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR = ITEMS.register("mystic_eyes_of_death_perception_noble_color",
+            () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
 
 
     public static void register(IEventBus eventBus) {
