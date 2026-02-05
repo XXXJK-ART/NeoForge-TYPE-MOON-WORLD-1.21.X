@@ -57,41 +57,51 @@ public class TypeMoonWorldModKeyMappings {
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Post event) {
             if (Minecraft.getInstance().screen == null) {
+                Player player = Minecraft.getInstance().player;
+                if (player == null) return;
+                
+                TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                
                 if (MAGIC_CIRCUIT_SWITCH.consumeClick()) {
-                    PacketDistributor.sendToServer(new MagicCircuitSwitchMessage(0, 0));
-                    MagicCircuitSwitchMessage.pressAction(Minecraft.getInstance().player, 0, 0);
+                    if (vars.is_magus) {
+                        PacketDistributor.sendToServer(new MagicCircuitSwitchMessage(0, 0));
+                        MagicCircuitSwitchMessage.pressAction(player, 0, 0);
+                    }
                 }
                 if (CAST_MAGIC.consumeClick()) {
-                    PacketDistributor.sendToServer(new CastMagicMessage());
-                    CastMagicMessage.pressAction(Minecraft.getInstance().player);
+                    if (vars.is_magus) {
+                        PacketDistributor.sendToServer(new CastMagicMessage());
+                        CastMagicMessage.pressAction(player);
+                    }
                 }
                 if (LOSE_HEALTH_REGAIN_MANA.consumeClick()) {
+                    // Always allow X key to trigger unlock logic
                     PacketDistributor.sendToServer(new Lose_health_regain_mana_Message(0, 0));
-                    Lose_health_regain_mana_Message.pressAction(Minecraft.getInstance().player, 0, 0);
+                    Lose_health_regain_mana_Message.pressAction(player, 0, 0);
                 }
                 if (BASIC_INFORMATION_GUI.consumeClick()) {
-                    PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0));
-                    if (Minecraft.getInstance().player != null) {
-                        Basic_information_gui_Message.pressAction(Minecraft.getInstance().player, 0, 0);
+                    if (vars.is_magus) {
+                        PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0));
+                        Basic_information_gui_Message.pressAction(player, 0, 0);
                     }
                 }
                 if (MYSTIC_EYES_ACTIVATE.consumeClick()) {
-                    PacketDistributor.sendToServer(new MysticEyesToggleMessage(0));
-                    MysticEyesToggleMessage.pressAction(Minecraft.getInstance().player, 0);
+                    if (vars.is_magus) {
+                        PacketDistributor.sendToServer(new MysticEyesToggleMessage(0));
+                        MysticEyesToggleMessage.pressAction(player, 0);
+                    }
                 }
 
                 // Tab Key for Projection GUI
                 if (OPEN_PROJECTION_PRESET.isDown()) {
                     if (!isTabDown) {
                         isTabDown = true;
-                        Player player = Minecraft.getInstance().player;
-                        if (player != null) {
-                            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                        if (vars.is_magus) { // Check magus status
                             if (vars.is_magic_circuit_open && !vars.selected_magics.isEmpty()) {
                                 int index = vars.current_magic_index;
                                 if (index >= 0 && index < vars.selected_magics.size()) {
                                     String magicId = vars.selected_magics.get(index);
-                                    if ("projection".equals(magicId)) {
+                                    if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "unlimited_blade_works".equals(magicId)) {
                                         Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen(player));
                                     }
                                 }
@@ -108,10 +118,16 @@ public class TypeMoonWorldModKeyMappings {
         public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
             if (Minecraft.getInstance().screen == null) {
                 if (TypeMoonWorldModKeyMappings.CYCLE_MAGIC.isDown()) {
-                    double scrollDelta = event.getScrollDeltaY();
-                    if (scrollDelta != 0) {
-                        PacketDistributor.sendToServer(new CycleMagicMessage(scrollDelta > 0));
-                        event.setCanceled(true);
+                    Player player = Minecraft.getInstance().player;
+                    if (player != null) {
+                         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                         if (vars.is_magus) {
+                            double scrollDelta = event.getScrollDeltaY();
+                            if (scrollDelta != 0) {
+                                PacketDistributor.sendToServer(new CycleMagicMessage(scrollDelta > 0));
+                                event.setCanceled(true);
+                            }
+                         }
                     }
                 }
             }

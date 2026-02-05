@@ -109,7 +109,7 @@ public class Restore_mana {
                 _vars.magic_cooldown = Math.max(0, _vars.magic_cooldown - regenInterval);
             }
             
-            _vars.syncPlayerVariables(entity);
+            _vars.syncMana(entity);
 
             if (entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana < 20) {
                 if ((entity instanceof LivingEntity _livEnt ? _livEnt.getHealth() : -1) > 2) {
@@ -117,7 +117,7 @@ public class Restore_mana {
                         TypeMoonWorldModVariables.PlayerVariables _varsInner = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                         _varsInner.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
                                 + 20, entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
-                        _varsInner.syncPlayerVariables(entity);
+                        _varsInner.syncMana(entity);
                     }
                     LivingEntity _entity = (LivingEntity) entity;
                     _entity.setHealth((float) (_entity.getHealth() - 2));

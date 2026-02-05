@@ -18,6 +18,6 @@ public class ToggleMagicCircuit {
         } else {
             vars.magic_circuit_open_timer = 0;
         }
-        vars.syncPlayerVariables(entity);
+        vars.syncMana(entity);
     }
 }

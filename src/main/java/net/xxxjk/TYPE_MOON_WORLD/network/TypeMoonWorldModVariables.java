@@ -5,6 +5,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.attachment.AttachmentType;
 
@@ -21,6 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +60,20 @@ public class TypeMoonWorldModVariables {
         }
 
         @SubscribeEvent
+        public static void onPlayerPickupItem(ItemEntityPickupEvent.Post event) {
+            if (event.getPlayer() instanceof ServerPlayer player) {
+                PlayerVariables vars = player.getData(PLAYER_VARIABLES);
+                if (!vars.is_magus) {
+                    ItemStack stack = event.getOriginalStack();
+                    ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+                    if (id != null && TYPE_MOON_WORLD.MOD_ID.equals(id.getNamespace())) {
+                        player.displayClientMessage(Component.literal("§b你感受到了一股微弱的魔力波动... 按下 §eX §f键以觉醒魔术回路."), true);
+                    }
+                }
+            }
+        }
+
+        @SubscribeEvent
         public static void clonePlayer(PlayerEvent.Clone event) {
             PlayerVariables original = event.getOriginal().getData(PLAYER_VARIABLES);
             PlayerVariables clone = new PlayerVariables();
@@ -82,16 +98,32 @@ public class TypeMoonWorldModVariables {
             clone.proficiency_jewel_magic = original.proficiency_jewel_magic;
             clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
             
-            clone.is_chanting_ubw = original.is_chanting_ubw;
-            clone.ubw_chant_progress = original.ubw_chant_progress;
-            clone.ubw_chant_timer = original.ubw_chant_timer;
-
             clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
-            clone.is_in_ubw = original.is_in_ubw;
-            clone.ubw_return_x = original.ubw_return_x;
-            clone.ubw_return_y = original.ubw_return_y;
-            clone.ubw_return_z = original.ubw_return_z;
-            clone.ubw_return_dimension = original.ubw_return_dimension;
+
+            if (!event.isWasDeath()) {
+                clone.is_chanting_ubw = original.is_chanting_ubw;
+                clone.ubw_chant_progress = original.ubw_chant_progress;
+                clone.ubw_chant_timer = original.ubw_chant_timer;
+                
+                clone.is_in_ubw = original.is_in_ubw;
+                clone.ubw_return_x = original.ubw_return_x;
+                clone.ubw_return_y = original.ubw_return_y;
+                clone.ubw_return_z = original.ubw_return_z;
+                clone.ubw_return_dimension = original.ubw_return_dimension;
+            } else {
+                // Reset UBW states on death
+                clone.is_chanting_ubw = false;
+                clone.ubw_chant_progress = 0;
+                clone.ubw_chant_timer = 0;
+                
+                clone.is_in_ubw = false;
+                // Return coordinates reset to defaults or keep them? 
+                // Better to reset to prevent weird teleports if logic triggers
+                clone.ubw_return_x = 0;
+                clone.ubw_return_y = 0;
+                clone.ubw_return_z = 0;
+                clone.ubw_return_dimension = "minecraft:overworld";
+            }
             
             clone.learned_magics = new java.util.ArrayList<>(original.learned_magics);
 
@@ -107,8 +139,20 @@ public class TypeMoonWorldModVariables {
                 clone.mysticEyesInventory.setStackInSlot(i, original.mysticEyesInventory.getStackInSlot(i).copy());
             }
 
+            // Always sync mana if not death, or if we want to keep some on death?
+            // Current request: Fix "unable to project analyzed items after death"
+            // This implies analyzed_items were lost.
+            // The code above ALREADY copies analyzed_items.
+            // Wait, does `original` have the data?
+            // If `event.isWasDeath()` is true, NeoForge might have already cleared capabilities or something?
+            // No, `getOriginal()` should have the data.
+            
+            // However, let's make sure we are copying EVERYTHING correctly.
+            
             if (!event.isWasDeath()) {
                 clone.player_mana = original.player_mana;
+            } else {
+                // On Death, maybe keep some mana or reset to 0? Default is 0.
             }
             event.getEntity().setData(PLAYER_VARIABLES, clone);
         }
@@ -155,6 +199,7 @@ public class TypeMoonWorldModVariables {
         
         // UBW State Data
         public boolean has_unlimited_blade_works = false;
+        public boolean is_magus = false; // New variable for unlocking logic
         public boolean is_in_ubw = false;
         public double ubw_return_x = 0;
         public double ubw_return_y = 0;
@@ -190,6 +235,7 @@ public class TypeMoonWorldModVariables {
             nbt.putInt("ubw_chant_timer", ubw_chant_timer);
 
             nbt.putBoolean("has_unlimited_blade_works", has_unlimited_blade_works);
+            nbt.putBoolean("is_magus", is_magus);
             nbt.putBoolean("is_in_ubw", is_in_ubw);
             nbt.putDouble("ubw_return_x", ubw_return_x);
             nbt.putDouble("ubw_return_y", ubw_return_y);
@@ -257,6 +303,7 @@ public class TypeMoonWorldModVariables {
             ubw_chant_timer = nbt.getInt("ubw_chant_timer");
             
             has_unlimited_blade_works = nbt.getBoolean("has_unlimited_blade_works");
+            if (nbt.contains("is_magus")) is_magus = nbt.getBoolean("is_magus");
             is_in_ubw = nbt.getBoolean("is_in_ubw");
             if (nbt.contains("ubw_return_x")) ubw_return_x = nbt.getDouble("ubw_return_x");
             if (nbt.contains("ubw_return_y")) ubw_return_y = nbt.getDouble("ubw_return_y");
@@ -321,6 +368,16 @@ public class TypeMoonWorldModVariables {
             if (entity instanceof ServerPlayer serverPlayer)
                 PacketDistributor.sendToPlayer(serverPlayer, new PlayerVariablesSyncMessage(this));
         }
+
+        public void syncMana(Entity entity) {
+            if (entity instanceof ServerPlayer serverPlayer)
+                PacketDistributor.sendToPlayer(serverPlayer, new ManaSyncMessage(this));
+        }
+
+        public void syncProficiency(Entity entity) {
+            if (entity instanceof ServerPlayer serverPlayer)
+                PacketDistributor.sendToPlayer(serverPlayer, new ProficiencySyncMessage(this));
+        }
     }
 
     public record PlayerVariablesSyncMessage(PlayerVariables data) implements CustomPacketPayload {
@@ -342,6 +399,87 @@ public class TypeMoonWorldModVariables {
                 context.enqueueWork(() -> context.player().getData(PLAYER_VARIABLES).deserializeNBT(context.player().registryAccess(), message.data.serializeNBT(context.player().registryAccess()))).exceptionally(e -> {
                     context.connection().disconnect(Component.literal(e.getMessage()));
                     return null;
+                });
+            }
+        }
+    }
+
+    public record ManaSyncMessage(double player_mana, double player_max_mana, double magic_cooldown, double magic_circuit_open_timer, boolean is_magic_circuit_open) implements CustomPacketPayload {
+        public static final Type<ManaSyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "mana_sync"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, ManaSyncMessage> STREAM_CODEC = StreamCodec.of(
+                (RegistryFriendlyByteBuf buffer, ManaSyncMessage message) -> {
+                    buffer.writeDouble(message.player_mana);
+                    buffer.writeDouble(message.player_max_mana);
+                    buffer.writeDouble(message.magic_cooldown);
+                    buffer.writeDouble(message.magic_circuit_open_timer);
+                    buffer.writeBoolean(message.is_magic_circuit_open);
+                },
+                (RegistryFriendlyByteBuf buffer) -> new ManaSyncMessage(
+                        buffer.readDouble(),
+                        buffer.readDouble(),
+                        buffer.readDouble(),
+                        buffer.readDouble(),
+                        buffer.readBoolean()
+                )
+        );
+
+        public ManaSyncMessage(PlayerVariables vars) {
+            this(vars.player_mana, vars.player_max_mana, vars.magic_cooldown, vars.magic_circuit_open_timer, vars.is_magic_circuit_open);
+        }
+
+        @Override
+        public @NotNull Type<ManaSyncMessage> type() {
+            return TYPE;
+        }
+
+        public static void handleData(final ManaSyncMessage message, final IPayloadContext context) {
+            if (context.flow() == PacketFlow.CLIENTBOUND) {
+                context.enqueueWork(() -> {
+                    PlayerVariables vars = context.player().getData(PLAYER_VARIABLES);
+                    vars.player_mana = message.player_mana;
+                    vars.player_max_mana = message.player_max_mana;
+                    vars.magic_cooldown = message.magic_cooldown;
+                    vars.magic_circuit_open_timer = message.magic_circuit_open_timer;
+                    vars.is_magic_circuit_open = message.is_magic_circuit_open;
+                });
+            }
+        }
+    }
+
+    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic, double unlimited_blade_works) implements CustomPacketPayload {
+        public static final Type<ProficiencySyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "proficiency_sync"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
+                (RegistryFriendlyByteBuf buffer, ProficiencySyncMessage message) -> {
+                    buffer.writeDouble(message.structural_analysis);
+                    buffer.writeDouble(message.projection);
+                    buffer.writeDouble(message.jewel_magic);
+                    buffer.writeDouble(message.unlimited_blade_works);
+                },
+                (RegistryFriendlyByteBuf buffer) -> new ProficiencySyncMessage(
+                        buffer.readDouble(),
+                        buffer.readDouble(),
+                        buffer.readDouble(),
+                        buffer.readDouble()
+                )
+        );
+
+        public ProficiencySyncMessage(PlayerVariables vars) {
+            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic, vars.proficiency_unlimited_blade_works);
+        }
+
+        @Override
+        public @NotNull Type<ProficiencySyncMessage> type() {
+            return TYPE;
+        }
+
+        public static void handleData(final ProficiencySyncMessage message, final IPayloadContext context) {
+            if (context.flow() == PacketFlow.CLIENTBOUND) {
+                context.enqueueWork(() -> {
+                    PlayerVariables vars = context.player().getData(PLAYER_VARIABLES);
+                    vars.proficiency_structural_analysis = message.structural_analysis;
+                    vars.proficiency_projection = message.projection;
+                    vars.proficiency_jewel_magic = message.jewel_magic;
+                    vars.proficiency_unlimited_blade_works = message.unlimited_blade_works;
                 });
             }
         }

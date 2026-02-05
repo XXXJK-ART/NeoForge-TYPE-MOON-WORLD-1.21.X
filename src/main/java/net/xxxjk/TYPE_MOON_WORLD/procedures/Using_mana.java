@@ -18,7 +18,7 @@ public class Using_mana {
             TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             // Add mana without capping at max_mana
             _vars.player_mana = _vars.player_mana + 10;
-            _vars.syncPlayerVariables(entity);
+            _vars.syncMana(entity);
         }
         
         if (entity instanceof Player _player) {

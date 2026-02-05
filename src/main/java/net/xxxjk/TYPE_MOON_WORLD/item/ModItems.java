@@ -12,11 +12,28 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
             DeferredRegister.createItems(TYPE_MOON_WORLD.MOD_ID);
+
+    public static final DeferredItem<Item> REDSWORD = ITEMS.register("redsword",
+            () -> new RedswordItem(new Item.Properties().durability(2000).fireResistant().rarity(Rarity.RARE)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "redsword_damage"), 
+                                            9, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED, 
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "redsword_speed"), 
+                                            -1.2, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
 
     public static final DeferredItem<Item> MAGIC_FRAGMENTS = ITEMS.register("magic_fragments",
             () -> new Magic_fragmentsItem(new Item.Properties()));
@@ -83,6 +100,9 @@ public class ModItems {
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR = ITEMS.register("mystic_eyes_of_death_perception_noble_color",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
+
+    public static final DeferredItem<Item> AVALON = ITEMS.register("avalon",
+            () -> new AvalonItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
 
 
     public static void register(IEventBus eventBus) {

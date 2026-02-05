@@ -11,11 +11,17 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 
 @SuppressWarnings("null")
 public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(Registries.ENTITY_TYPE, TYPE_MOON_WORLD.MOD_ID);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH =
+            ENTITY_TYPES.register("muramasa_slash", () -> EntityType.Builder.<MuramasaSlashProjectileEntity>of(MuramasaSlashProjectileEntity::new, MobCategory.MISC)
+                    .sized(1.0f, 1.0f).clientTrackingRange(10).updateInterval(2).build("muramasa_slash"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<RubyProjectileEntity>> RUBY_PROJECTILE =
             ENTITY_TYPES.register("ruby_projectile", () -> EntityType.Builder.<RubyProjectileEntity>of(RubyProjectileEntity::new, MobCategory.MISC)
@@ -32,6 +38,10 @@ public class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<BrokenPhantasmProjectileEntity>> BROKEN_PHANTASM_PROJECTILE =
             ENTITY_TYPES.register("broken_phantasm_projectile", () -> EntityType.Builder.<BrokenPhantasmProjectileEntity>of(BrokenPhantasmProjectileEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("broken_phantasm_projectile"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<UBWProjectileEntity>> UBW_PROJECTILE =
+            ENTITY_TYPES.register("ubw_projectile", () -> EntityType.Builder.<UBWProjectileEntity>of(UBWProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("ubw_projectile"));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

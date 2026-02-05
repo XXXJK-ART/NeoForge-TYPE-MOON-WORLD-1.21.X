@@ -39,7 +39,7 @@ public class GuiUtils {
         guiGraphics.fill(x + w - len - 3, y + h - thick + 1, x + w - len - 1, y + h + 1, cornerColor);
         
         // Inner thin lines for "tech" feel
-        int innerOffset = 5;
+        // int innerOffset = 5;
         // guiGraphics.renderOutline(x + innerOffset, y + innerOffset, w - innerOffset * 2, h - innerOffset * 2, color & 0x80FFFFFF);
     }
     

@@ -8,6 +8,6 @@ public class Back_player_mana_egenerated_every_moment {
     public static String execute(Entity entity) {
         if (entity == null)
             return "";
-        return "每单位回魔：%s".formatted(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana_egenerated_every_moment);
+        return "每单位回魔：%.1f".formatted(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana_egenerated_every_moment);
     }
 }

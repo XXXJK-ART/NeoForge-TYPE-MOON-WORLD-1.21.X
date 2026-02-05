@@ -1,0 +1,12 @@
+{
+    "variants": {
+        "facing=north,animation=0": { "model": "typemoonworld:block/redswordblock" },
+        "facing=east,animation=0": { "model": "typemoonworld:block/redswordblock", "y": 90 },
+        "facing=south,animation=0": { "model": "typemoonworld:block/redswordblock", "y": 180 },
+        "facing=west,animation=0": { "model": "typemoonworld:block/redswordblock", "y": 270 },
+        "facing=north,animation=1": { "model": "typemoonworld:block/redswordblock" },
+        "facing=east,animation=1": { "model": "typemoonworld:block/redswordblock", "y": 90 },
+        "facing=south,animation=1": { "model": "typemoonworld:block/redswordblock", "y": 180 },
+        "facing=west,animation=1": { "model": "typemoonworld:block/redswordblock", "y": 270 }
+    }
+}

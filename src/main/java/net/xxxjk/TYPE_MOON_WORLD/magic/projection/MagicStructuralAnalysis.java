@@ -21,6 +21,9 @@ import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 
 public class MagicStructuralAnalysis {
     public static void execute(Entity entity) {
@@ -64,6 +67,12 @@ public class MagicStructuralAnalysis {
     }
 
     private static void analyzeItem(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack target) {
+        // Avalon cannot be analyzed
+        if (target.getItem() instanceof AvalonItem) {
+            player.displayClientMessage(Component.literal("§c无法解析神造兵装"), true);
+            return;
+        }
+
         // Check if already projected (prevent analyzing projected items)
         if (target.has(DataComponents.CUSTOM_DATA)) {
              CompoundTag tag = target.get(DataComponents.CUSTOM_DATA).copyTag();
@@ -109,6 +118,16 @@ public class MagicStructuralAnalysis {
         // Check if already analyzed
         boolean known = false;
         for (ItemStack s : vars.analyzed_items) {
+             // Use stricter check? Or just Item check?
+             // "unable to normally analyze other items" -> implies bug in this check.
+             // ItemStack.isSameItemSameComponents checks components too.
+             // If we analyzed a Sword with 100 durability, and try to analyze a Sword with 99 durability,
+             // isSameItemSameComponents might return false (different components if damage is component).
+             // But if we use isSameItem, we can't distinguish enchanted/special items.
+             
+             // However, user said "unable to project analyzed things after death" AND "unable to analyze other items".
+             // This suggests the list might be corrupted or state is weird.
+             
              if (ItemStack.isSameItemSameComponents(s, toSave)) {
                  known = true;
                  break;
@@ -191,6 +210,14 @@ public class MagicStructuralAnalysis {
              if (hardness > 0) {
                  baseCost += hardness * 5; 
              }
+        }
+        
+        // Attack Damage Calculation
+        ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND); 
+        if (damage > 0) {
+            // Add damage to cost (e.g., 1 damage = 5 mana)
+            baseCost += damage * 5;
         }
         
         // Sword Attribute Discount / Cost Modification

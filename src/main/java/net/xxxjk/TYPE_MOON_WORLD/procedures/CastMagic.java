@@ -99,28 +99,34 @@ public class CastMagic {
                 // Default Cooldown 10 ticks (0.5s)
                 double cooldown = 10;
                 
-                // Jewel Magic Cooldown Logic
+                // Jewel Magic Cooldown Logic (Proficiency dependent)
                 if (vars.selected_magics.get(index).startsWith("ruby") || 
                     vars.selected_magics.get(index).startsWith("sapphire") || 
                     vars.selected_magics.get(index).startsWith("emerald") || 
                     vars.selected_magics.get(index).startsWith("topaz")) {
                     
                     // Base 20 ticks (1s)
-                    cooldown = 20;
-                    
-                    // Reduce by proficiency
-                    // 0 proficiency = 20 ticks
-                    // 100 proficiency = 0 ticks (instant) -> Clamp to min 1 tick
-                    // Reduction: proficiency * 0.2 ticks per level? 
-                    // 100 * 0.2 = 20 ticks reduction. Perfect.
-                    cooldown = Math.max(1, cooldown - (vars.proficiency_jewel_magic * 0.2));
+                    double baseCooldown = 20;
+                    cooldown = Math.max(1, baseCooldown - (vars.proficiency_jewel_magic * 0.2));
                     
                     // Increase proficiency slightly on use
                     vars.proficiency_jewel_magic = Math.min(100, vars.proficiency_jewel_magic + 0.1);
+                } 
+                // Structural Analysis & Projection & UBW & Broken Phantasm & Others
+                // User Request: "Skill unrelated to proficiency, cooldown reduced to 0.5s"
+                // Structural Analysis, Projection, Broken Phantasm, UBW, etc. are currently using Default 10 (0.5s).
+                // So they are already 0.5s?
+                // Wait, maybe some had longer default?
+                // In previous code:
+                // cooldown = 10;
+                // So all non-jewel magics were already 10 ticks (0.5s).
+                // Let's ensure this is explicit and correct.
+                else {
+                    cooldown = 10; // 0.5s
                 }
                 
                 vars.magic_cooldown = cooldown;
-                vars.syncPlayerVariables(entity);
+                vars.syncMana(entity);
             }
         }
     }

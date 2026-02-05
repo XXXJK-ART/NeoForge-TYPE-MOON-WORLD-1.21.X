@@ -38,7 +38,7 @@ public class FullManaCarvedGemItem extends Item {
             
             // Allow Overload: Removed check for max mana
             vars.player_mana += manaAmount;
-            vars.syncPlayerVariables(player);
+            vars.syncMana(player);
             
             // Overload warning
             double current = vars.player_mana;

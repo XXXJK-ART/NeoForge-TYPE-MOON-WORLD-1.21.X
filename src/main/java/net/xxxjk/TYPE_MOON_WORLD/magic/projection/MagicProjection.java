@@ -9,13 +9,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
 import net.minecraft.nbt.CompoundTag;
 
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
 
 public class MagicProjection {
     public static void execute(Entity entity) {
@@ -138,6 +140,14 @@ public class MagicProjection {
              }
         }
         
+        // Attack Damage Calculation
+        ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND); 
+        if (damage > 0) {
+            // Add damage to cost (e.g., 1 damage = 5 mana)
+            baseCost += damage * 5;
+        }
+        
         // Sword Attribute Discount / Cost Modification
         if (hasSwordAttribute) {
             boolean isSword = stack.getItem() instanceof net.minecraft.world.item.SwordItem;
@@ -155,5 +165,9 @@ public class MagicProjection {
         baseCost *= (1.0 - (proficiency * 0.005));
         
         return baseCost;
+    }
+
+    private static boolean isNoblePhantasm(ItemStack stack) {
+        return stack.getItem() instanceof RedswordItem;
     }
 }
