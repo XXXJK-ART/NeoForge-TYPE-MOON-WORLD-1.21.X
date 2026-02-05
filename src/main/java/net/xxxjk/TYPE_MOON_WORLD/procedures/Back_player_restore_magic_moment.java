@@ -8,6 +8,6 @@ public class Back_player_restore_magic_moment {
     public static String execute(Entity entity) {
         if (entity == null)
             return "";
-        return "每%s秒回单位魔力".formatted(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_restore_magic_moment / 20);
+        return "每%.1f秒回单位魔力".formatted(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_restore_magic_moment / 20);
     }
 }

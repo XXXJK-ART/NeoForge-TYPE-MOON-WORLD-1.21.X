@@ -20,7 +20,7 @@ public class ManaHelper {
         
         if (vars.player_mana >= amount) {
             vars.player_mana -= amount;
-            vars.syncPlayerVariables(player);
+            vars.syncMana(player);
             return true;
         } else {
             // Not enough mana, check health
@@ -39,7 +39,7 @@ public class ManaHelper {
             if (player.getHealth() > healthCost) {
                 // Consume all remaining mana first
                 vars.player_mana = 0;
-                vars.syncPlayerVariables(player);
+                vars.syncMana(player);
                 
                 // Damage player
                 // We need a damage source. MAGIC is appropriate.

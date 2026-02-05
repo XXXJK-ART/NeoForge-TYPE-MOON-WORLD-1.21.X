@@ -28,7 +28,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemCraftedEvent;
 import net.neoforged.neoforge.event.entity.player.AnvilRepairEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -37,10 +37,8 @@ import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public class ProjectionTickHandler {
 
-    // Simple in-memory storage for active sessions. 
-    // For persistent storage across restarts, WorldSavedData is better, but for 10s items, memory might suffice if we accept loss on restart.
-    // Given the short duration, in-memory map per level is acceptable.
-    private static final Map<GlobalPos, Long> projectedBlocks = new HashMap<>();
+    // Thread-safe storage for active sessions
+    private static final Map<GlobalPos, Long> projectedBlocks = new ConcurrentHashMap<>();
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -177,6 +175,17 @@ public class ProjectionTickHandler {
     }
 
     @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.getLevel().isClientSide()) return;
+        if (event.getLevel() instanceof ServerLevel level) {
+            GlobalPos pos = GlobalPos.of(level.dimension(), event.getPos());
+            if (projectedBlocks.containsKey(pos)) {
+                projectedBlocks.remove(pos);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof ItemEntity itemEntity) {
             if (itemEntity.level().isClientSide) return;
@@ -213,10 +222,15 @@ public class ProjectionTickHandler {
                 long placeTime = entry.getValue();
                 if (level.getGameTime() - placeTime > 200) {
                     BlockPos pos = entry.getKey().pos();
-                    // Remove block (Set to Air)
-                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-                    level.playSound(null, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1.0f, 1.0f);
-                    level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.05);
+                    // Check if the block is still the one we placed?
+                    // Since we don't store the block state, we assume that if it wasn't broken (via BreakEvent), it's still there.
+                    // However, we should check if it's AIR already to avoid particles on nothing.
+                    if (!level.getBlockState(pos).isAir()) {
+                        // Remove block (Set to Air)
+                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                        level.playSound(null, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1.0f, 1.0f);
+                        level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.05);
+                    }
                     it.remove();
                 }
             }

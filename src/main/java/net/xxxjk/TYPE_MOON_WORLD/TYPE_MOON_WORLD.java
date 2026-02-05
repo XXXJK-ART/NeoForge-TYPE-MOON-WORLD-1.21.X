@@ -21,6 +21,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadHandler;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -41,7 +42,6 @@ import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 import java.util.*;
@@ -52,6 +52,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.command.TypeMoonCommands;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordBlockRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWWeaponBlockEntityRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 
 @Mod(TYPE_MOON_WORLD.MOD_ID)
 public class TYPE_MOON_WORLD {
@@ -79,8 +84,9 @@ public class TYPE_MOON_WORLD {
 
         ModItems.register(modEventBus);//添加物品
         ModBlocks.register(modEventBus);//添加方块
+        ModBlockEntities.register(modEventBus);
         ModEntities.register(modEventBus);
-
+        
         TypeMoonWorldModMenus.REGISTRY.register(modEventBus);//添加菜单
 
         // Register the item to a creative tab
@@ -122,6 +128,8 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
         addNetworkMessage(Magical_attributes_Button_Message.TYPE, Magical_attributes_Button_Message.STREAM_CODEC, Magical_attributes_Button_Message::handleData);
         addNetworkMessage(TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE, TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData);
+        addNetworkMessage(TypeMoonWorldModVariables.ManaSyncMessage.TYPE, TypeMoonWorldModVariables.ManaSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.ManaSyncMessage::handleData);
+        addNetworkMessage(TypeMoonWorldModVariables.ProficiencySyncMessage.TYPE, TypeMoonWorldModVariables.ProficiencySyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.ProficiencySyncMessage::handleData);
         addNetworkMessage(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
         addNetworkMessage(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
         addNetworkMessage(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
@@ -183,6 +191,10 @@ public class TYPE_MOON_WORLD {
             event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), ThrownItemRenderer::new);
             event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), ThrownItemRenderer::new);
             event.registerEntityRenderer(ModEntities.BROKEN_PHANTASM_PROJECTILE.get(), BrokenPhantasmRenderer::new);
+            event.registerEntityRenderer(ModEntities.UBW_PROJECTILE.get(), UBWProjectileRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.REDSWORD_BLOCK_ENTITY.get(), context -> new RedswordBlockRenderer());
+            event.registerBlockEntityRenderer(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), UBWWeaponBlockEntityRenderer::new);
+            event.registerEntityRenderer(ModEntities.MURAMASA_SLASH.get(), MuramasaSlashProjectileRenderer::new);
         }
 
 

@@ -13,6 +13,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 
 public class MagicBrokenPhantasm {
     public static void execute(Entity entity) {
@@ -96,6 +98,14 @@ public class MagicBrokenPhantasm {
              if (hardness > 0) {
                  baseCost += hardness * 5; 
              }
+        }
+        
+        // Attack Damage Calculation
+        ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND); 
+        if (damage > 0) {
+            // Add damage to cost (e.g., 1 damage = 5 mana)
+            baseCost += damage * 5;
         }
         
         // Sword Attribute Discount / Cost Modification

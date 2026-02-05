@@ -15,7 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.ItemStack;
-import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +26,47 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.stream.Stream;
+
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.Level;
+import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+
+import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.portal.DimensionTransition;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+
+import net.minecraft.core.particles.ParticleTypes;
+import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.minecraft.world.item.TridentItem;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ElytraItem;
+import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.FishingRodItem;
+import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.FlintAndSteelItem;
+import net.minecraft.world.item.ProjectileWeaponItem;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.damagesource.DamageSource;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public class ChantHandler {
@@ -34,10 +75,69 @@ public class ChantHandler {
     // Total lines: 9 lines + 1 activation
     private static final int BASE_CHANT_INTERVAL = 40; // 2 seconds base
     
+    // UUID -> Center Position of UBW (In UBW dimension)
+    private static final Map<UUID, Vec3> UBW_LOCATIONS = new ConcurrentHashMap<>();
+
     // Store entities to be removed with delay for each player
     // UUID -> List of RemovalEntry
     private static final Map<UUID, List<RemovalEntry>> REMOVAL_QUEUES = new ConcurrentHashMap<>();
     
+    // Terrain Backup Storage
+    // UUID -> (BlockPos -> BlockBackup)
+    private static final Map<UUID, Map<BlockPos, BlockBackup>> BACKUP_BLOCKS = new ConcurrentHashMap<>();
+    
+    private static record BlockBackup(BlockState state, @org.jetbrains.annotations.Nullable CompoundTag nbt) {}
+
+    // UUID -> List of captured ItemEntities (Stored as ItemStack and Position)
+    private static final Map<UUID, List<ItemBackup>> BACKUP_ITEMS = new ConcurrentHashMap<>();
+    
+    private static record ItemBackup(ItemStack stack, Vec3 position) {}
+
+    // UUID -> Center Position of Chant
+    private static final Map<UUID, BlockPos> CHANT_CENTERS = new ConcurrentHashMap<>();
+    // UUID -> Current max radius of terrain effect
+    private static final Map<UUID, Double> TERRAIN_RADIUS = new ConcurrentHashMap<>();
+    // UUID -> Restoration Queue (Positions to restore, ordered or just set)
+    private static final Map<UUID, List<BlockPos>> RESTORATION_QUEUES = new ConcurrentHashMap<>();
+
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        UUID uuid = event.getEntity().getUUID();
+        UBW_LOCATIONS.remove(uuid);
+        REMOVAL_QUEUES.remove(uuid);
+        BACKUP_BLOCKS.remove(uuid);
+        BACKUP_ITEMS.remove(uuid);
+        CHANT_CENTERS.remove(uuid);
+        TERRAIN_RADIUS.remove(uuid);
+        RESTORATION_QUEUES.remove(uuid);
+        TELEPORTED_ENTITIES.remove(uuid);
+        GENERATED_ENTITIES.remove(uuid);
+        PLACED_SWORDS.remove(uuid);
+    }
+    
+    // UUID -> List of Entities that were teleported with the player
+    private static final Map<UUID, List<EntityReturnData>> TELEPORTED_ENTITIES = new ConcurrentHashMap<>();
+    
+    // UUID -> List of Entities that were generated/spawned inside UBW (e.g. summons, splits)
+    private static final Map<UUID, List<UUID>> GENERATED_ENTITIES = new ConcurrentHashMap<>();
+
+    // UUID -> List of Placed Sword Blocks (for cleanup and density check)
+    public static final Map<UUID, List<BlockPos>> PLACED_SWORDS = new ConcurrentHashMap<>();
+
+    public static void registerPlacedSword(UUID playerUUID, BlockPos pos) {
+        PLACED_SWORDS.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(pos);
+    }
+
+    private static class EntityReturnData {
+        final UUID uuid;
+        final Vec3 originalPos;
+        
+        EntityReturnData(UUID uuid, Vec3 originalPos) {
+            this.uuid = uuid;
+            this.originalPos = originalPos;
+        }
+    }
+
     private static class RemovalEntry {
         final Entity entity;
         int delay;
@@ -52,12 +152,51 @@ public class ChantHandler {
     private static final Map<UUID, Boolean> WAS_CHANTING = new ConcurrentHashMap<>();
 
     @SubscribeEvent
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide) return;
+        if (!event.getLevel().dimension().location().equals(ModDimensions.UBW_KEY.location())) return;
+        
+        Entity entity = event.getEntity();
+        if (entity instanceof LivingEntity && !(entity instanceof ServerPlayer) && !(entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) {
+            // Find which UBW instance this belongs to
+            Vec3 pos = entity.position();
+            
+            for (Map.Entry<UUID, Vec3> entry : UBW_LOCATIONS.entrySet()) {
+                if (entry.getValue().distanceToSqr(pos) < 40000) { // 200 block radius squared
+                    UUID playerUUID = entry.getKey();
+                    
+                    // Check if this entity was teleported IN (don't mark it as generated if it came from outside)
+                    List<EntityReturnData> teleported = TELEPORTED_ENTITIES.get(playerUUID);
+                    boolean isTeleported = false;
+                    if (teleported != null) {
+                        for (EntityReturnData data : teleported) {
+                            if (data.uuid.equals(entity.getUUID())) {
+                                isTeleported = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!isTeleported) {
+                        GENERATED_ENTITIES.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(entity.getUUID());
+                    }
+                    break; // Found the owner
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity().level().isClientSide) return;
         
         if (event.getEntity() instanceof ServerPlayer player) {
             // Process removal queue first
             processRemovalQueue(player);
+            // Process restoration queue
+            processRestorationQueue(player);
+            // Process refill queue
+            processRefillQueue(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
             
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
@@ -70,6 +209,8 @@ public class ChantHandler {
                 // Stopped chanting and didn't enter UBW (if entered UBW, is_in_ubw would be true)
                 // Ensure visual effects are cleared.
                 clearVisualSwords(player);
+                startTerrainRestoration(player); // Start restoring terrain
+                
                 // Reset progress just in case
                 if (vars.ubw_chant_progress > 0) {
                     vars.ubw_chant_progress = 0;
@@ -81,6 +222,39 @@ public class ChantHandler {
             // Update state for next tick
             WAS_CHANTING.put(player.getUUID(), isChanting);
             
+        // Check if player is the owner of the current UBW instance
+        boolean isOwner = false;
+        if (vars.is_in_ubw) {
+            // Check if player is in THEIR OWN UBW
+            if (UBW_LOCATIONS.containsKey(player.getUUID())) {
+                Vec3 center = UBW_LOCATIONS.get(player.getUUID());
+                if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location()) && player.position().distanceToSqr(center) < 40000) {
+                     isOwner = true;
+                }
+            }
+        }
+
+        // Maintenance Cost for UBW (Only for Owner)
+        if (isOwner) {
+                if (player.tickCount % 20 == 0) {
+                     double cost = 2.0;
+                     if (vars.player_mana >= cost) {
+                         vars.player_mana -= cost;
+                         vars.syncMana(player);
+                         
+                         // Check sword density and refill if needed
+                         // Only check every 100 ticks (5 seconds) to save performance
+                         if (player.tickCount % 100 == 0) {
+                             checkAndRefillSwords(player, vars);
+                         }
+                     } else {
+                         // Not enough mana, force exit
+                         player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.mana_depleted"), true);
+                         returnFromUBW(player, vars);
+                     }
+                 }
+            }
+            
             if (vars.is_chanting_ubw) {
                 // ... (chanting logic) ...
                 
@@ -88,6 +262,14 @@ public class ChantHandler {
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
                 
                 vars.ubw_chant_timer++;
+                
+                // Terrain Logic
+                if (vars.ubw_chant_progress >= 3) {
+                     processTerrainEffect(player, vars);
+                } else {
+                     // Ensure no residual data if restarted before restoration finished (unlikely but safe)
+                     // Actually, if we are < 3, we shouldn't have active terrain effects.
+                }
                 
                 // Calculate interval based on proficiency
                 // Proficiency 0 -> 40 ticks
@@ -110,16 +292,422 @@ public class ChantHandler {
                 // Continuous weapon rain from step 3 onwards
                 if (vars.ubw_chant_progress >= 3 && vars.ubw_chant_progress <= 9) {
                      // Spawn weapons frequently, not just on step change
-                     // Spawn every 10 ticks (0.5s) approx to feel like "rain"
-                     // Or check if current timer % 10 == 0
-                     if (vars.ubw_chant_timer % 10 == 0) {
-                         spawnVisualSwords(player, vars, 3); // Spawn a few each time
+                     // Spawn every 8 ticks (0.4s) - Slightly faster than 10
+                     if (vars.ubw_chant_timer % 8 == 0) {
+                         // Moderate count: Start at 3, increase by 2 per step
+                         int count = 3 + (vars.ubw_chant_progress - 3) * 2;
+                         double maxRadius = 10.0 + (vars.ubw_chant_progress - 3) * 5.0;
+                         spawnVisualSwords(player, vars, count, maxRadius);
                      }
                 }
             }
         }
     }
     
+    private static void checkAndRefillSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+        // Only run this logic on the UBW owner/caster to avoid duplicate spawning
+        
+        if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+             // We are in UBW.
+             // Iterate all LivingEntities in this dimension (players and mobs)
+             // Using getEntities() on the level is more comprehensive
+             Iterable<Entity> allEntities = player.getServer().getLevel(ModDimensions.UBW_KEY).getEntities().getAll();
+             
+             for (Entity entity : allEntities) {
+                 if (!(entity instanceof LivingEntity target)) continue;
+                 if (!target.isAlive()) continue;
+                 
+                 // Check density around THIS target
+                 // Range: 48 blocks (3 chunks diameter approx)
+                 double checkRadius = 48.0;
+                 AABB checkBox = target.getBoundingBox().inflate(checkRadius);
+                 
+                 // Check placed blocks density
+                 int swordCount = 0;
+                 List<BlockPos> placed = PLACED_SWORDS.get(player.getUUID());
+                 if (placed != null) {
+                     double tX = target.getX();
+                     double tZ = target.getZ();
+                     for (BlockPos p : placed) {
+                         // Simple Manhattan distance check for speed, or euclidean squared
+                         double dx = p.getX() - tX;
+                         double dz = p.getZ() - tZ;
+                         if (dx * dx + dz * dz < checkRadius * checkRadius) {
+                             swordCount++;
+                         }
+                     }
+                 }
+                 
+                 // Legacy entity check (optional, but good for transition)
+                 // swordCount += target.level().getEntitiesOfClass(net.xxxjk.TYPE_MOON_WORLD.entity.ProjectedSwordEntity.class, checkBox).size();
+                 // swordCount += target.level().getEntitiesOfClass(UBWInsideSwordEntity.class, checkBox).size();
+                 
+                 // Target density: ~1000 swords in this area for "Full" feeling
+                 int targetCount = 1000;
+                 
+                 if (swordCount < 50) {
+                     // Case 1: Almost empty (New Area) -> BURST FILL
+                     // Trigger massive refill similar to initial fill
+                     
+                     int refillCount = 200 + player.getRandom().nextInt(100); 
+                     
+                     for (int i = 0; i < refillCount; i++) {
+                         // Fast burst: delay 0-20 ticks (1 second)
+                         // Use center-dense distribution
+                         double minRadius = 3.0;
+                         double r = minRadius + (player.getRandom().nextDouble() * player.getRandom().nextDouble() * (checkRadius - minRadius));
+                         double theta = player.getRandom().nextDouble() * Math.PI * 2;
+                         double x = target.getX() + r * Math.cos(theta);
+                         double z = target.getZ() + r * Math.sin(theta);
+                         
+                         REFILL_QUEUES.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+                             .add(new RefillEntry(player.getRandom().nextInt(20), new Vec3(x, target.getY(), z))); 
+                     }
+                     
+                 } else if (swordCount < targetCount / 2) {
+                     // Case 2: Half empty -> SLOW REFILL
+                     // Slowly drip feed swords to maintain density
+                     
+                     int refillCount = 20 + player.getRandom().nextInt(10);
+                     
+                     for (int i = 0; i < refillCount; i++) {
+                         // Slower: delay 0-60 ticks (3 seconds)
+                         // Use center-dense distribution
+                         double minRadius = 3.0;
+                         double r = minRadius + (player.getRandom().nextDouble() * player.getRandom().nextDouble() * (checkRadius - minRadius));
+                         double theta = player.getRandom().nextDouble() * Math.PI * 2;
+                         double x = target.getX() + r * Math.cos(theta);
+                         double z = target.getZ() + r * Math.sin(theta);
+                         
+                         REFILL_QUEUES.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+                             .add(new RefillEntry(i * 2, new Vec3(x, target.getY(), z))); 
+                     }
+                 }
+             }
+        }
+    }
+    
+    // ... existing code ...
+
+    // New Inner Class for Refill Queue
+    private static class RefillEntry {
+        int delay;
+        final Vec3 exactPos; // Stores the exact target position
+        
+        RefillEntry(int delay, Vec3 exactPos) {
+            this.delay = delay;
+            this.exactPos = exactPos;
+        }
+    }
+    
+    // New Map for Refill Queue
+    private static final Map<UUID, List<RefillEntry>> REFILL_QUEUES = new ConcurrentHashMap<>();
+    
+    // In onPlayerTick, process this queue
+    private static void processRefillQueue(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+        UUID uuid = player.getUUID();
+        List<RefillEntry> queue = REFILL_QUEUES.get(uuid);
+        
+        if (queue != null && !queue.isEmpty()) {
+            Iterator<RefillEntry> it = queue.iterator();
+            while (it.hasNext()) {
+                RefillEntry entry = it.next();
+                entry.delay--;
+                if (entry.delay <= 0) {
+                    // Spawn ONE sword at EXACT position
+                    spawnVisualSwordAt(player, vars, entry.exactPos);
+                    it.remove();
+                }
+            }
+            if (queue.isEmpty()) {
+                REFILL_QUEUES.remove(uuid);
+            }
+        }
+    }
+    
+    // Modified helper to spawn at specific location
+    private static void spawnVisualSwordAt(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, Vec3 targetPos) {
+        if (player.level().isClientSide) return;
+        
+        List<ItemStack> weapons = new ArrayList<>();
+        for (ItemStack stack : vars.analyzed_items) {
+            if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
+                weapons.add(stack);
+            }
+        }
+        
+        if (!weapons.isEmpty()) {
+            ItemStack weapon = weapons.get(player.getRandom().nextInt(weapons.size())).copy();
+            
+            double x = targetPos.x;
+            double z = targetPos.z;
+            
+            // Adapt to terrain height
+            int surfaceY = player.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int)x, (int)z);
+            double y = surfaceY + 12 + player.getRandom().nextDouble() * 5; 
+
+            // Obstruction check (if spawn point is somehow obstructed, e.g. very high mountain cap or barrier)
+            if (!player.level().getBlockState(net.minecraft.core.BlockPos.containing(x, y, z)).isAir()) {
+                 // Try to find a safe spot upwards
+                 y = surfaceY + 20; 
+            }
+            
+            UBWProjectileEntity projectile = new UBWProjectileEntity(player.level(), player, weapon);
+            projectile.setPos(x, y, z);
+            projectile.setDeltaMovement(0, -2.0, 0); 
+            projectile.setXRot(-90.0f); 
+            player.level().addFreshEntity(projectile);
+            
+            if (player.level() instanceof ServerLevel serverLevel) {
+                 serverLevel.sendParticles(ParticleTypes.ENCHANT, x, y, z, 5, 0.2, 0.2, 0.2, 0.05);
+                 // Reduced volume for mass spawning
+                 serverLevel.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.ILLUSIONER_PREPARE_MIRROR, net.minecraft.sounds.SoundSource.PLAYERS, 0.3f, 1.5f);
+            }
+        }
+    }
+
+    private static void processTerrainEffect(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+        if (player.level().isClientSide) return;
+        UUID uuid = player.getUUID();
+        
+        BlockPos center = CHANT_CENTERS.computeIfAbsent(uuid, k -> player.blockPosition());
+        Map<BlockPos, BlockBackup> backups = BACKUP_BLOCKS.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
+        
+        // Calculate target radius based on progress and timer
+        // Progress 3 -> 9. (7 steps)
+        // Max radius 40.
+        // We want the radius to reach Max (40) exactly when chant ends (step 9).
+        
+        double maxRadius = 40.0;
+        int maxStep = 9;
+        int currentStep = vars.ubw_chant_progress;
+        
+        // Retrieve current radius
+        double currentRadius = TERRAIN_RADIUS.getOrDefault(uuid, 0.0);
+        
+        // Target for THIS step
+        double stepTargetRadius = (double)currentStep / maxStep * maxRadius;
+        
+        // Smoothly interpolate to step target
+        // If currentRadius < stepTargetRadius, expand.
+        double dist = stepTargetRadius - currentRadius;
+        double speed = 0.0;
+        
+        if (dist > 0) {
+            speed = Math.max(0.1, dist / 20.0); // Reach target in ~1 second
+            currentRadius += speed;
+        } else {
+             currentRadius = stepTargetRadius;
+        }
+
+        TERRAIN_RADIUS.put(uuid, currentRadius);
+            
+        int r = (int)Math.ceil(currentRadius);
+        int prevR = (int)Math.floor(currentRadius - speed);
+            
+        // Only iterate if radius increased to a new integer block
+        if (r > prevR) {
+            // Iterate logic
+            // Floor: center.y - 1
+            // Air: center.y to center.y + r
+            
+            int floorY = center.getY() - 1;
+            
+            for (int x = -r; x <= r; x++) {
+                for (int z = -r; z <= r; z++) {
+                    double distSqr = x*x + z*z;
+                    if (distSqr <= currentRadius * currentRadius) {
+                         BlockPos pos = center.offset(x, 0, z); // Base pos at center Y
+                         
+                         // 1. Handle Surface (y-1) -> Red Sand
+                         BlockPos floorPos = new BlockPos(pos.getX(), floorY, pos.getZ());
+                         if (!backups.containsKey(floorPos)) {
+                             BlockState oldState = player.level().getBlockState(floorPos);
+                             // Don't replace Bedrock or Unbreakable
+                             if (oldState.getDestroySpeed(player.level(), floorPos) >= 0) {
+                                 // Save Tile Entity
+                                 CompoundTag nbt = null;
+                                 BlockEntity be = player.level().getBlockEntity(floorPos);
+                                 if (be != null) {
+                                     nbt = be.saveWithFullMetadata(player.level().registryAccess());
+                                 }
+                                 
+                                 backups.put(floorPos, new BlockBackup(oldState, nbt));
+                                 // Set to Red Sand
+                                 player.level().setBlock(floorPos, Blocks.RED_SAND.defaultBlockState(), 18);
+                             }
+                         }
+
+                         // 2. Handle Base (y-2) -> Red Sandstone
+                         BlockPos basePos = floorPos.below();
+                         if (!backups.containsKey(basePos)) {
+                             BlockState oldState = player.level().getBlockState(basePos);
+                             if (oldState.getDestroySpeed(player.level(), basePos) >= 0) {
+                                 // Save Tile Entity
+                                 CompoundTag nbt = null;
+                                 BlockEntity be = player.level().getBlockEntity(basePos);
+                                 if (be != null) {
+                                     nbt = be.saveWithFullMetadata(player.level().registryAccess());
+                                 }
+
+                                 backups.put(basePos, new BlockBackup(oldState, nbt));
+                                 player.level().setBlock(basePos, Blocks.RED_SANDSTONE.defaultBlockState(), 18);
+                             }
+                         }
+                         
+                         // 3. Handle Air above (Hemisphere clearing)
+                         int maxY = (int)Math.sqrt(Math.max(0, maxRadius * maxRadius - distSqr)); 
+                         
+                         for (int yOffset = 0; yOffset <= maxY; yOffset++) {
+                             BlockPos airPos = new BlockPos(pos.getX(), center.getY() + yOffset, pos.getZ());
+                             if (!backups.containsKey(airPos)) {
+                                 BlockState oldState = player.level().getBlockState(airPos);
+                                 // Skip UBW Weapon Blocks
+                                 if (oldState.getBlock() instanceof net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock) continue;
+                                 
+                                 if (!oldState.isAir() && oldState.getDestroySpeed(player.level(), airPos) >= 0) {
+                                     // Save Tile Entity
+                                     CompoundTag nbt = null;
+                                     BlockEntity be = player.level().getBlockEntity(airPos);
+                                     if (be != null) {
+                                         nbt = be.saveWithFullMetadata(player.level().registryAccess());
+                                     }
+
+                                     backups.put(airPos, new BlockBackup(oldState, nbt));
+                                     player.level().setBlock(airPos, Blocks.AIR.defaultBlockState(), 18);
+                                     
+                                     // Check for Item Entities at this position and store them
+                                     AABB box = new AABB(airPos);
+                                     List<ItemEntity> items = player.level().getEntitiesOfClass(ItemEntity.class, box);
+                                     if (!items.isEmpty()) {
+                                         List<ItemBackup> itemBackups = BACKUP_ITEMS.computeIfAbsent(uuid, k -> new ArrayList<>());
+                                         for (ItemEntity item : items) {
+                                             itemBackups.add(new ItemBackup(item.getItem().copy(), item.position()));
+                                             item.discard();
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void startTerrainRestoration(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        Map<BlockPos, BlockBackup> backups = BACKUP_BLOCKS.get(uuid);
+        if (backups == null || backups.isEmpty()) {
+            CHANT_CENTERS.remove(uuid);
+            TERRAIN_RADIUS.remove(uuid);
+            return;
+        }
+        
+        BlockPos center = CHANT_CENTERS.get(uuid);
+        if (center == null) center = player.blockPosition(); // Fallback
+        
+        // Create a list of positions sorted by distance from center (Outer -> Inner)
+        // Actually, user said "From Outside to Inside".
+        // Distance large -> Distance small.
+        List<BlockPos> sortedPos = new ArrayList<>(backups.keySet());
+        final BlockPos finalCenter = center;
+        
+        Collections.sort(sortedPos, (p1, p2) -> {
+            double d1 = p1.distSqr(finalCenter);
+            double d2 = p2.distSqr(finalCenter);
+            return Double.compare(d2, d1); // Descending order
+        });
+        
+        RESTORATION_QUEUES.put(uuid, sortedPos);
+    }
+    
+    private static void processRestorationQueue(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        List<BlockPos> queue = RESTORATION_QUEUES.get(uuid);
+        
+        if (queue != null && !queue.isEmpty()) {
+            Map<BlockPos, BlockBackup> backups = BACKUP_BLOCKS.get(uuid);
+            if (backups == null) {
+                RESTORATION_QUEUES.remove(uuid);
+                return;
+            }
+            
+            // Restore speed: 50 blocks per tick?
+            // If total is ~2000 blocks, it takes 40 ticks (2s). Good.
+            int blocksPerTick = 400; 
+            
+            Iterator<BlockPos> it = queue.iterator();
+            int processed = 0;
+            
+            while (it.hasNext() && processed < blocksPerTick) {
+                BlockPos pos = it.next();
+                BlockBackup backup = backups.get(pos);
+                if (backup != null) {
+                    player.level().setBlock(pos, backup.state(), 18);
+                    // Restore Tile Entity
+                    if (backup.nbt() != null) {
+                        BlockEntity be = player.level().getBlockEntity(pos);
+                        if (be != null) {
+                            be.loadWithComponents(backup.nbt(), player.level().registryAccess());
+                        }
+                    }
+                }
+                it.remove();
+                // Also remove from backups to keep clean? Not strictly necessary if we clear all at end.
+                processed++;
+            }
+            
+            if (queue.isEmpty()) {
+                // Restore Items
+                List<ItemBackup> items = BACKUP_ITEMS.remove(uuid);
+                if (items != null) {
+                    for (ItemBackup itemBackup : items) {
+                        ItemEntity itemEntity = new ItemEntity(player.level(), itemBackup.position().x, itemBackup.position().y, itemBackup.position().z, itemBackup.stack());
+                        itemEntity.setDeltaMovement(0, 0, 0);
+                        player.level().addFreshEntity(itemEntity);
+                    }
+                }
+                
+                RESTORATION_QUEUES.remove(uuid);
+                BACKUP_BLOCKS.remove(uuid);
+                CHANT_CENTERS.remove(uuid);
+                TERRAIN_RADIUS.remove(uuid);
+            }
+        }
+    }
+    
+    private static void restoreTerrainInstantly(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        Map<BlockPos, BlockBackup> backups = BACKUP_BLOCKS.get(uuid);
+        if (backups != null) {
+            for (Map.Entry<BlockPos, BlockBackup> entry : backups.entrySet()) {
+                player.level().setBlock(entry.getKey(), entry.getValue().state(), 18);
+                if (entry.getValue().nbt() != null) {
+                    BlockEntity be = player.level().getBlockEntity(entry.getKey());
+                    if (be != null) {
+                        be.loadWithComponents(entry.getValue().nbt(), player.level().registryAccess());
+                    }
+                }
+            }
+            BACKUP_BLOCKS.remove(uuid);
+        }
+        
+        // Restore Items
+        List<ItemBackup> items = BACKUP_ITEMS.remove(uuid);
+        if (items != null) {
+            for (ItemBackup itemBackup : items) {
+                ItemEntity itemEntity = new ItemEntity(player.level(), itemBackup.position().x, itemBackup.position().y, itemBackup.position().z, itemBackup.stack());
+                itemEntity.setDeltaMovement(0, 0, 0);
+                player.level().addFreshEntity(itemEntity);
+            }
+        }
+        
+        CHANT_CENTERS.remove(uuid);
+        TERRAIN_RADIUS.remove(uuid);
+        RESTORATION_QUEUES.remove(uuid);
+    }
+
     private static void processRemovalQueue(ServerPlayer player) {
         UUID playerId = player.getUUID();
         if (REMOVAL_QUEUES.containsKey(playerId)) {
@@ -169,8 +757,8 @@ public class ChantHandler {
             chantText = "§bSteel is my body, and fire is my blood.";
         } else if (progress == 3) {
             chantText = "§bI have created over a thousand blades.";
-            // Initial burst spawn
-            spawnVisualSwords(player, vars, 8);
+            // Initial burst spawn - slightly increased from 8
+            spawnVisualSwords(player, vars, 10, 10.0);
         } else if (progress == 4) {
             chantText = "§bUnaware of loss.";
         } else if (progress == 5) {
@@ -203,75 +791,103 @@ public class ChantHandler {
         }
     }
     
-    private static void spawnVisualSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int count) {
-        if (player.level().isClientSide) return;
-        
-        List<ItemStack> weapons = new ArrayList<>();
-        for (ItemStack stack : vars.analyzed_items) {
-            if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem) {
-                weapons.add(stack);
-            }
-        }
-        
-        if (!weapons.isEmpty()) {
-            for (int i = 0; i < count; i++) {
-                ItemStack weapon = weapons.get(player.getRandom().nextInt(weapons.size())).copy();
-                
-                double radius = player.getRandom().nextDouble() * 10.0;
-                double angle = player.getRandom().nextDouble() * Math.PI * 2;
-                double x = player.getX() + radius * Math.cos(angle);
-                double z = player.getZ() + radius * Math.sin(angle);
-                double y = player.getY() + 4 + player.getRandom().nextDouble() * 2; // 4-6 blocks high
-
-                // Prevent spawning directly above player's head (small exclusion zone)
-                // Radius check: if x,z is within 1 block of player
-                if (Math.abs(x - player.getX()) < 1.0 && Math.abs(z - player.getZ()) < 1.0) {
-                     continue; // Skip this sword
-                }
-                
-                // Check for obstruction
-                if (!player.level().getBlockState(net.minecraft.core.BlockPos.containing(x, y, z)).isAir()) {
-                    y = player.getY() + 0.5; // Fallback
-                }
-                
-                BrokenPhantasmProjectileEntity projectile = new BrokenPhantasmProjectileEntity(player.level(), player, weapon);
-                projectile.setPos(x, y, z);
-                projectile.setDeltaMovement(0, -0.8, 0); // Downward velocity
-                projectile.setUBWPhantasm(true);
-                player.level().addFreshEntity(projectile);
-            }
+    private static void spawnVisualSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int count, double maxRadius) {
+        // Wrapper for compatibility with old calls in Chant
+        for (int i = 0; i < count; i++) {
+             // Chant visuals use ring/random distribution
+             // Bias towards outer edge for chant visual
+             double rNormalized = Math.sqrt(player.getRandom().nextDouble());
+             if (rNormalized < 0.2) rNormalized = 0.2 + player.getRandom().nextDouble() * 0.8;
+             double radius = rNormalized * maxRadius;
+             double angle = player.getRandom().nextDouble() * Math.PI * 2;
+             
+             double x = player.getX() + radius * Math.cos(angle);
+             double z = player.getZ() + radius * Math.sin(angle);
+             
+             // Prevent spawning directly above player
+             if (Math.abs(x - player.getX()) < 1.0 && Math.abs(z - player.getZ()) < 1.0) continue;
+             
+             spawnVisualSwordAt(player, vars, new Vec3(x, player.getY(), z));
         }
     }
     
     private static void clearVisualSwords(ServerPlayer player) {
-        // Clear entities in a large radius around the player
-        double maxRadius = 32.0;
-        AABB box = player.getBoundingBox().inflate(maxRadius);
-        List<Entity> entities = player.level().getEntities(player, box, e -> 
-            (e instanceof Display.ItemDisplay && e.getTags().contains("ubw_visual_sword")) ||
-            (e instanceof BrokenPhantasmProjectileEntity && ((BrokenPhantasmProjectileEntity)e).isUBWPhantasm())
-        );
+        BlockPos center = player.blockPosition();
         
-        List<RemovalEntry> queue = new ArrayList<>();
+        UUID uuid = player.getUUID();
         
-        for (Entity e : entities) {
-            double dist = e.distanceTo(player);
-            // Delay calculation: Outer (far) -> Delay Small (0)
-            // Inner (close) -> Delay Large (maxRadius)
-            // delay = (maxRadius - dist) * factor
-            // Let's use 0.5 tick per block to make it faster (16 ticks total spread)
-            int delay = (int) Math.max(0, (maxRadius - dist) * 1.0);
-            
-            queue.add(new RemovalEntry(e, delay));
+        // 0. Clear Placed Blocks
+        List<BlockPos> placed = PLACED_SWORDS.remove(uuid);
+        if (placed != null) {
+            for (BlockPos pos : placed) {
+                if (player.level().getBlockState(pos).getBlock() instanceof net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock) {
+                    player.level().setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                    if (player.level() instanceof ServerLevel serverLevel) {
+                         serverLevel.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.1, 0.1, 0.1, 0.05);
+                    }
+                }
+            }
         }
         
-        if (!queue.isEmpty()) {
-            // Merge or replace queue? Usually clear is called once at end.
-            // Replace is safer to avoid duplicates if called multiple times.
-            REMOVAL_QUEUES.put(player.getUUID(), queue);
+        double terrainRadius = TERRAIN_RADIUS.getOrDefault(uuid, 0.0);
+        // Expanded clear range to ensure no leftovers (chunk size)
+        int scanR = (int)Math.max(terrainRadius, 80);
+        
+        AABB scanBox = new AABB(center).inflate(scanR, 64, scanR);
+        
+        // 1. Clear Projected Swords (Ground) - Handled by PLACED_SWORDS
+        // No entity clearing needed for blocks
+        
+        // 2. Clear UBW Projectiles (Falling)
+        List<UBWProjectileEntity> projectiles = player.level().getEntitiesOfClass(UBWProjectileEntity.class, scanBox);
+        for (UBWProjectileEntity projectile : projectiles) {
+            projectile.discard();
+            if (player.level() instanceof ServerLevel serverLevel) {
+                 serverLevel.sendParticles(ParticleTypes.POOF, projectile.getX(), projectile.getY(), projectile.getZ(), 2, 0.1, 0.1, 0.1, 0.05);
+            }
         }
     }
     
+    // Reset dimension logic
+    // We can't delete dimension at runtime easily in vanilla/forge without mixins or complex hacks.
+    // However, we can "reset" it by clearing blocks around the spawn or simply not deleting it but ensuring it's clean.
+    // User requested "Leave -> Delete, Enter -> New".
+    // Deleting a dimension folder while server is running is dangerous and likely to fail or cause corruption.
+    // Alternative: 
+    // 1. Teleport player to a FAR AWAY location in the same dimension each time (e.g. x += 10000).
+    // 2. Clear the area around the new location.
+    // This simulates a "new" dimension.
+    
+    // Let's implement the "Offset Strategy".
+    // We store a global offset for the UBW dimension.
+    // Or better, store it in WorldData or just use a random far coordinate.
+    
+    // Helper to find safe spawn Y (Feet position)
+    private static int findSafeSpawnY(ServerLevel level, int x, int z) {
+        // We can't trust simple heightmaps in unknown terrain generators.
+        // The safest way is to scan from the SKY downwards.
+        // Standard max height is 320.
+        
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, 320, z);
+        
+        // 1. Scan down to find the FIRST solid block (Terrain Surface)
+        int surfaceY = -999;
+        for (int y = 320; y > -64; y--) {
+            pos.setY(y);
+            BlockState state = level.getBlockState(pos);
+            if (!state.isAir() && state.isFaceSturdy(level, pos, net.minecraft.core.Direction.UP)) {
+                surfaceY = y;
+                break;
+            }
+        }
+        
+        // If we fell into void, default to 64
+        if (surfaceY == -999) return 64;
+        
+        // 2. The safe spawn is on top of that surface
+        return surfaceY + 1;
+    }
+
     private static void activateUBW(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
         vars.is_chanting_ubw = false;
         vars.ubw_chant_progress = 0;
@@ -289,36 +905,130 @@ public class ChantHandler {
         
         player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.activated"), true);
         
-        // Clear visual effects immediately (instant remove, no animation delay)
-        // Because player is leaving this dimension anyway.
-        // Or if we want animation, we can leave it, but since we tp away, better clear to save resources.
+        // Restore Terrain Instantly BEFORE Teleport
+        restoreTerrainInstantly(player);
         
-        // The user requested: "Upon entering UBW dimension, items in overworld should be cleared directly."
-        // We can reuse clearVisualSwords but with 0 delay for all.
+        // Clear visual effects immediately
+        clearVisualSwords(player);
         
-        // Actually, clearVisualSwords uses a queue. We should probably clear instantly here.
-        AABB box = player.getBoundingBox().inflate(64.0); // Large radius
-        List<Entity> entities = player.level().getEntities(player, box, e -> 
-            (e instanceof Display.ItemDisplay && e.getTags().contains("ubw_visual_sword")) ||
-            (e instanceof BrokenPhantasmProjectileEntity && ((BrokenPhantasmProjectileEntity)e).isUBWPhantasm())
-        );
+        // Find entities to teleport (Range 40)
+        double range = 40.0;
+        AABB tpBox = player.getBoundingBox().inflate(range);
+        List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, tpBox, e -> e != player && e.isAlive() && !(e instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon));
+        List<EntityReturnData> teleported = new ArrayList<>();
+        // Pre-register the list to the map to ensure onEntityJoinLevel can see these UUIDs
+        // and differentiate them from new spawns.
+        TELEPORTED_ENTITIES.put(player.getUUID(), teleported);
         
-        for (Entity e : entities) {
-            e.discard();
-        }
-        
-        // Also clear any pending removal queue for this player to stop processing
-        REMOVAL_QUEUES.remove(player.getUUID());
+        // List of entities in the new dimension (Player + Teleported) for sword rain
+        List<Entity> swordRainTargets = new ArrayList<>();
         
         // Teleport to Reality Marble dimension
-        net.minecraft.server.level.ServerLevel ubwLevel = player.server.getLevel(net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions.UBW_KEY);
+        ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
         if (ubwLevel != null) {
-            // Target Y calculated based on flat world generation
-            double targetY = -12; 
-            player.teleportTo(ubwLevel, 0.5, targetY, 0.5, player.getYRot(), player.getXRot());
+            // "New" Dimension Strategy:
+            // Teleport to a random far location to simulate a fresh world.
+            // Range: +/- 1,000,000
+            double offsetX = (player.getRandom().nextDouble() - 0.5) * 2000000;
+            double offsetZ = (player.getRandom().nextDouble() - 0.5) * 2000000;
+            
+            // Align to chunk center to be nice
+            offsetX = Math.round(offsetX / 16) * 16 + 0.5;
+            offsetZ = Math.round(offsetZ / 16) * 16 + 0.5;
+            
+            // Get safe surface height using new logic
+            int safeY = findSafeSpawnY(ubwLevel, (int)offsetX, (int)offsetZ);
+            double targetY = safeY; 
+            
+            // Teleport Player
+            player.teleportTo(ubwLevel, offsetX, targetY, offsetZ, player.getYRot(), player.getXRot());
+            UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, targetY, offsetZ));
+            // Only add player to initial fill targets to avoid lag
+            swordRainTargets.add(player);
+            
+            // Teleport Entities
+            for (LivingEntity target : targets) {
+                // Store original position
+                Vec3 originalPos = target.position();
+
+                // Calculate relative position
+                double relX = target.getX() - vars.ubw_return_x;
+                double relZ = target.getZ() - vars.ubw_return_z;
+                
+                double entityTargetX = offsetX + relX;
+                double entityTargetZ = offsetZ + relZ;
+                
+                // Find surface for entity using new logic
+                int entitySafeY = findSafeSpawnY(ubwLevel, (int)entityTargetX, (int)entityTargetZ);
+                double entityTargetY = entitySafeY;
+                
+                // Add to list BEFORE teleporting
+                EntityReturnData data = new EntityReturnData(target.getUUID(), originalPos);
+                teleported.add(data);
+                
+                // Teleport to new pos
+                Entity newEntity = target.changeDimension(new DimensionTransition(ubwLevel, new Vec3(entityTargetX, entityTargetY, entityTargetZ), Vec3.ZERO, target.getYRot(), target.getXRot(), DimensionTransition.DO_NOTHING));
+                if (newEntity != null) {
+                    // Check if newEntity is a player and is chanting
+                    if (newEntity instanceof ServerPlayer targetPlayer) {
+                         TypeMoonWorldModVariables.PlayerVariables targetVars = targetPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                         if (targetVars.is_chanting_ubw) {
+                             interruptChant(targetPlayer, targetVars, "message.typemoonworld.unlimited_blade_works.interrupted");
+                         }
+                    }
+                }
+            }
+            
+            // Trigger Initial Sword Burst (Fill the chunk around player only)
+            initialUBWFill(player, vars, swordRainTargets);
         }
         
         player.level().playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.END_PORTAL_SPAWN, net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+    }
+    
+    private static void initialUBWFill(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, List<Entity> targets) {
+        if (player.level().isClientSide) return;
+        
+        // If targets not provided (old call), find nearby
+        if (targets == null || targets.isEmpty()) {
+             targets = new ArrayList<>();
+             targets.add(player);
+             double scanRange = 64.0;
+             AABB scanBox = player.getBoundingBox().inflate(scanRange);
+             List<LivingEntity> nearby = player.level().getEntitiesOfClass(LivingEntity.class, scanBox);
+             targets.addAll(nearby);
+        }
+        
+        for (Entity target : targets) {
+            if (!(target instanceof LivingEntity living)) continue;
+            
+            // Very High density spawn for initial fill
+            // Spawn ~500 swords per entity area to cover the screen
+            int swordCount = 400 + player.getRandom().nextInt(200);
+            double spawnRadius = 64.0; // Fill a larger area (radius 64 = diameter 128 = 8 chunks)
+            
+            // To avoid massive lag spike, we can use the Queue system too?
+            // Or just spawn them directly but carefully.
+            // Let's spawn 200 directly and queue the rest?
+            // For now, let's just queue ALL of them but with very short delay (0-40 ticks = 2s)
+            // This creates a cool "raining down" effect over 2 seconds instead of instant freeze.
+            
+            for (int i = 0; i < swordCount; i++) {
+                // Delay 0 to 40 ticks
+                int delay = player.getRandom().nextInt(40);
+                
+                // Calculate position here for Center-Dense distribution
+                // Square the random factor to bias towards 0 (center)
+                double r = player.getRandom().nextDouble() * player.getRandom().nextDouble() * spawnRadius;
+                double angle = player.getRandom().nextDouble() * Math.PI * 2;
+                
+                double x = target.getX() + r * Math.cos(angle);
+                double z = target.getZ() + r * Math.sin(angle);
+                
+                REFILL_QUEUES.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+                    .add(new RefillEntry(delay, new Vec3(x, target.getY(), z)));
+            }
+        }
     }
     
     private static void interruptChant(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, String reasonKey) {
@@ -330,9 +1040,197 @@ public class ChantHandler {
         // Clear visual effects
         clearVisualSwords(player);
         
+        // Start terrain restoration
+        startTerrainRestoration(player);
+        
         player.displayClientMessage(Component.translatable(reasonKey), true);
     }
 
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity().level().isClientSide) return;
+        
+        // If player dies in UBW, return everyone
+        if (event.getEntity() instanceof ServerPlayer player) {
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.is_in_ubw) {
+                returnFromUBW(player, vars);
+            }
+        }
+    }
+    
+    @SubscribeEvent
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+             
+             // Check if leaving UBW
+             if (event.getFrom().location().equals(ModDimensions.UBW_KEY.location())) {
+                 // We rely on returnFromUBW to handle entity teleportation.
+                 // Calling it here is risky because player position is already updated to target dimension.
+                 // Only cleanup vars here if needed.
+                 
+                 if (vars.is_in_ubw) {
+                     vars.is_in_ubw = false;
+                     vars.syncPlayerVariables(player);
+                 }
+             }
+        }
+    }
+
+    // Helper to return everyone from UBW
+    private static void returnFromUBW(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+        // Determine Return Level
+        ServerLevel returnLevel = player.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(vars.ubw_return_dimension)));
+        if (returnLevel == null) returnLevel = player.getServer().overworld();
+        
+        // Entities are currently in player.level() (UBW)
+        // MUST be called BEFORE player teleports, because scanning relies on player's current position in UBW
+        if (player.level() instanceof ServerLevel sourceLevel) {
+            // Check if player is actually in UBW dimension before scanning
+            if (sourceLevel.dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+                 // Clear visual swords before leaving
+                 clearVisualSwords(player);
+                 
+                 returnEntitiesOnly(player, vars, sourceLevel, returnLevel);
+            }
+        }
+        
+        // Return Player
+        player.teleportTo(returnLevel, vars.ubw_return_x, vars.ubw_return_y, vars.ubw_return_z, player.getYRot(), player.getXRot());
+        
+        vars.is_in_ubw = false;
+        vars.syncPlayerVariables(player);
+        UBW_LOCATIONS.remove(player.getUUID());
+    }
+    
+    private static void returnEntitiesOnly(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServerLevel sourceLevel, ServerLevel targetLevel) {
+        UUID playerUUID = player.getUUID();
+        List<UUID> processedUUIDs = new ArrayList<>();
+        
+        // 1. Teleport originally captured entities (if they are still alive)
+        List<EntityReturnData> teleported = TELEPORTED_ENTITIES.remove(playerUUID);
+        if (teleported != null) {
+            for (EntityReturnData data : teleported) {
+                Entity e = sourceLevel.getEntity(data.uuid);
+                if (e instanceof LivingEntity living && e.isAlive()) {
+                    // Check for players with UBW capability
+                    if (living instanceof ServerPlayer p) {
+                         TypeMoonWorldModVariables.PlayerVariables pVars = p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                         if (pVars.has_unlimited_blade_works) {
+                             // If they have UBW, they stay in the dimension (Reality Marble Persistence)
+                             continue;
+                         }
+                    }
+                    
+                    living.changeDimension(new DimensionTransition(targetLevel, data.originalPos, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
+                    processedUUIDs.add(data.uuid);
+                }
+            }
+        }
+        
+        // 2. Teleport GENERATED entities (Summons/Splits)
+        List<UUID> generated = GENERATED_ENTITIES.remove(playerUUID);
+        if (generated != null) {
+            for (UUID uuid : generated) {
+                if (processedUUIDs.contains(uuid)) continue;
+                
+                Entity e = sourceLevel.getEntity(uuid);
+                if (e instanceof LivingEntity living && e.isAlive()) {
+                    // Calculate target position in Overworld (relative to return point)
+                    // relative = current - playerUBW
+                    double relX = living.getX() - player.getX();
+                    double relZ = living.getZ() - player.getZ();
+                    
+                    double targetX = vars.ubw_return_x + relX;
+                    double targetY = vars.ubw_return_y; 
+                    double targetZ = vars.ubw_return_z + relZ;
+                    
+                    // Safety check
+                    BlockPos targetBlockPos = new BlockPos((int)targetX, (int)targetY, (int)targetZ);
+                    
+                    if (!targetLevel.getBlockState(targetBlockPos).isAir()) {
+                         targetY = targetLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, (int)targetX, (int)targetZ);
+                    } else {
+                        boolean groundFound = false;
+                        for (int i = 1; i <= 5; i++) {
+                            if (!targetLevel.getBlockState(targetBlockPos.below(i)).isAir()) {
+                                targetY -= (i - 1);
+                                groundFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    targetY += 0.1;
+                    
+                    living.changeDimension(new DimensionTransition(targetLevel, new Vec3(targetX, targetY, targetZ), Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
+                    processedUUIDs.add(uuid);
+                }
+            }
+        }
+        
+        // 3. Fallback Scan for anything missed (e.g. untracked spawns or glitches)
+        // Scan a large area around the player (128 block radius) to catch everything
+        double scanRange = 128.0;
+        AABB scanBox = player.getBoundingBox().inflate(scanRange);
+        List<LivingEntity> newEntities = sourceLevel.getEntitiesOfClass(LivingEntity.class, scanBox, e -> 
+            e != player && e.isAlive() && !processedUUIDs.contains(e.getUUID()) && !(e instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)
+        );
+        
+        for (LivingEntity newEntity : newEntities) {
+            // Check for players with UBW capability
+            if (newEntity instanceof ServerPlayer p) {
+                 TypeMoonWorldModVariables.PlayerVariables pVars = p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                 if (pVars.has_unlimited_blade_works) {
+                     // If they have UBW, they stay in the dimension (Reality Marble Persistence)
+                     continue;
+                 }
+            }
+            
+            // Calculate relative position to player in UBW
+            double relX = newEntity.getX() - player.getX();
+            // Ignore relative Y to prevent suffocation if player was jumping/flying
+            // double relY = newEntity.getY() - player.getY(); 
+            double relZ = newEntity.getZ() - player.getZ();
+            
+            // Calculate target position in Overworld (relative to return point)
+            double targetX = vars.ubw_return_x + relX;
+            double targetY = vars.ubw_return_y; // Use player's return Y directly
+            double targetZ = vars.ubw_return_z + relZ;
+            
+            // Safety check: ensure we don't spawn inside blocks
+            BlockPos targetBlockPos = new BlockPos((int)targetX, (int)targetY, (int)targetZ);
+            
+            // Find safe height: Start from player's feet level and check up/down
+            // First check if target pos is solid
+            if (!targetLevel.getBlockState(targetBlockPos).isAir()) {
+                // If solid, try to find surface above
+                 targetY = targetLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, (int)targetX, (int)targetZ);
+            } else {
+                // If air, check if there is ground below (don't drop them from sky)
+                // If the block below is also air, we might be over a ravine or player was flying.
+                // Try to snap to ground if within reasonable distance (e.g. 5 blocks)
+                // Otherwise, keep at player Y (maybe player is flying)
+                boolean groundFound = false;
+                for (int i = 1; i <= 5; i++) {
+                    if (!targetLevel.getBlockState(targetBlockPos.below(i)).isAir()) {
+                        targetY -= (i - 1); // Found ground
+                        groundFound = true;
+                        break;
+                    }
+                }
+                // If no ground found nearby, rely on player Y.
+            }
+            
+            // Add slight Y offset to prevent z-fighting or floor clipping
+            targetY += 0.1;
+            
+            Vec3 targetPos = new Vec3(targetX, targetY, targetZ);
+            
+            newEntity.changeDimension(new DimensionTransition(targetLevel, targetPos, Vec3.ZERO, newEntity.getYRot(), newEntity.getXRot(), DimensionTransition.DO_NOTHING));
+        }
+    }
     @SubscribeEvent
     public static void onLivingDamage(LivingIncomingDamageEvent event) {
         if (event.getEntity().level().isClientSide) return;
@@ -340,6 +1238,26 @@ public class ChantHandler {
         if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
+            // Sovereignty Protection Logic
+            if (vars.is_in_ubw) {
+                 if (UBW_LOCATIONS.containsKey(player.getUUID())) {
+                     Vec3 center = UBW_LOCATIONS.get(player.getUUID());
+                     if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location()) && player.position().distanceToSqr(center) < 40000) {
+                          // Player is the owner of this UBW instance
+                          // Check if damage source is from UBW sword
+                          if (event.getSource().getDirectEntity() instanceof UBWProjectileEntity) {
+                              event.setCanceled(true);
+                              return;
+                          }
+                          // Also check if damage is MAGIC or generic damage from own spells if needed
+                          // For now, only blocking swords as requested "Sovereignty... can not be hurt"
+                          // If user meant invincibility, we would cancel all.
+                          // Usually in Fate, Shirou is not invincible in UBW, but he controls the swords.
+                          // So blocking UBWProjectileEntity is correct.
+                     }
+                 }
+            }
+
             if (vars.is_chanting_ubw) {
                 float damage = event.getAmount();
                 // Threshold for interruption: 4.0 damage (2 hearts)

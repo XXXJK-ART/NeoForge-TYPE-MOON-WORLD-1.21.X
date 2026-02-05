@@ -45,7 +45,7 @@ public class CarvedGemItem extends Item {
             // Check if mana is sufficient
             if (vars.player_mana >= manaAmount) {
                 vars.player_mana -= manaAmount;
-                vars.syncPlayerVariables(player);
+                vars.syncMana(player);
                 giveFullGem(player, hand, stack, world);
             } else {
                 // Auto Health Conversion
@@ -59,7 +59,7 @@ public class CarvedGemItem extends Item {
                     // Consume all remaining mana
                     vars.player_mana = 0; // Technically it becomes negative then filled by HP, ending at exactly 0 relative to cost. 
                                           // Or simpler: we paid the mana cost using all mana + some health.
-                    vars.syncPlayerVariables(player);
+                    vars.syncMana(player);
                     
                     player.displayClientMessage(net.minecraft.network.chat.Component.literal("\u00A7c魔力不足！消耗了 " + (int)healthCost + " 点生命值来补充魔力。"), true);
                     

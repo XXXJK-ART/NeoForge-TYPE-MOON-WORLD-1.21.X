@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.block;
 
-import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -13,8 +12,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.RedswordBlock;
 
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordBlockItem;
 
 import java.util.function.Supplier;
 
@@ -22,6 +23,9 @@ import java.util.function.Supplier;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(TYPE_MOON_WORLD.MOD_ID);
+
+    public static final DeferredBlock<Block> REDSWORD_BLOCK = registerBlock("redswordblock",
+            () -> new RedswordBlock(BlockBehaviour.Properties.of()));
 
     public static final DeferredBlock<Block> SPIRIT_VEIN_NODE = registerBlock("spirit_vein_node",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
@@ -78,6 +82,10 @@ public class ModBlocks {
                     .isViewBlocking((s, l, p) -> false).isValidSpawn((s, l, p, e) -> false)
                     .isSuffocating((s, l, p) -> false).isRedstoneConductor((s, l, p) -> false)));
 
+    public static final DeferredBlock<Block> UBW_WEAPON_BLOCK = registerBlock("ubw_weapon_block",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock(BlockBehaviour.Properties.of()
+                    .strength(0.1f).noOcclusion().noCollission().dynamicShape()));
+
     private static <T extends Block> DeferredBlock<T> registerBlock (String name, Supplier<T> block){
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);
@@ -86,6 +94,12 @@ public class ModBlocks {
 
     private static <T extends Block> void registerBlockItem(String name, DeferredBlock<T> block) {
         ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+    }
+    
+    private static <T extends Block> DeferredBlock<T> registerBlockWithCustomItem(String name, Supplier<T> block) {
+        DeferredBlock<T> toReturn = BLOCKS.register(name, block);
+        ModItems.ITEMS.register(name, () -> new RedswordBlockItem(toReturn.get(), new Item.Properties()));
+        return toReturn;
     }
 
     public static void register(IEventBus eventBus){

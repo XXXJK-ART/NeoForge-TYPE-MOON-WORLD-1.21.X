@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
+@SuppressWarnings("null")
 public class NeonButton extends Button {
     private final int hoverColor;
 

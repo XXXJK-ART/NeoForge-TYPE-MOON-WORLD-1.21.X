@@ -15,6 +15,16 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.Manually_deduct_health_to_restore_ma
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+
 public record Lose_health_regain_mana_Message(int eventType, int pressed) implements CustomPacketPayload {
     public static final Type<Lose_health_regain_mana_Message> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "key_losehealthregainmana"));
@@ -43,8 +53,77 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
     public static void pressAction(Player entity, int type, int pressed) {
         Level world = entity.level();
         // security measure to prevent arbitrary chunk generation
-        if (world.isLoaded(entity.blockPosition())) if (type == 0) {
-            Manually_deduct_health_to_restore_mana.execute(entity);
+        if (world.isLoaded(entity.blockPosition())) {
+            if (entity instanceof ServerPlayer player) {
+                TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                
+                if (!vars.is_magus) {
+                    // Check for Mod Item in Inventory
+                    boolean hasModItem = false;
+                    for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                        ItemStack stack = player.getInventory().getItem(i);
+                        if (!stack.isEmpty()) {
+                            ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+                            if (id != null && TYPE_MOON_WORLD.MOD_ID.equals(id.getNamespace())) {
+                                hasModItem = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!hasModItem) {
+                        player.displayClientMessage(Component.literal("§c你还没有获得魔术的媒介."), true);
+                        return;
+                    }
+
+                    // Unlock Logic
+                    vars.is_magus = true;
+                    java.util.Random random = new java.util.Random();
+                    
+                    // Randomize Base Stats
+                    vars.player_max_mana = Math.round((100.0 + random.nextDouble() * 900.0) * 10.0) / 10.0; // 100.0 to 1000.0
+                    vars.player_mana = vars.player_max_mana;
+                    
+                    // Round to 1 decimal place
+                    double regen = 1.0 + random.nextDouble() * 9.0; // 1.0 to 10.0
+                    vars.player_mana_egenerated_every_moment = Math.round(regen * 10.0) / 10.0;
+                    
+                    double restore = 1.0 + random.nextDouble() * 9.0; // 1.0 to 10.0
+                    vars.player_restore_magic_moment = Math.round(restore * 10.0) / 10.0;
+                    
+                    // Randomize Element Attributes (Earth, Water, Fire, Wind)
+                    // Reset all first
+                    vars.player_magic_attributes_earth = false;
+                    vars.player_magic_attributes_water = false;
+                    vars.player_magic_attributes_fire = false;
+                    vars.player_magic_attributes_wind = false;
+                    vars.player_magic_attributes_ether = false; // Usually rare, but let's include it
+                    
+                    int element = random.nextInt(5);
+                    switch (element) {
+                        case 0 -> vars.player_magic_attributes_earth = true;
+                        case 1 -> vars.player_magic_attributes_water = true;
+                        case 2 -> vars.player_magic_attributes_fire = true;
+                        case 3 -> vars.player_magic_attributes_wind = true;
+                        case 4 -> {
+                            // Ether is rare, maybe re-roll? Or just let it be.
+                            vars.player_magic_attributes_ether = true;
+                        }
+                    }
+
+                    vars.syncPlayerVariables(player);
+                    vars.syncMana(player);
+                    
+                    player.displayClientMessage(Component.literal("§b魔术回路已接通. 你现在是一名魔术师了."), false);
+                    world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
+                    
+                    if (world instanceof ServerLevel serverLevel) {
+                        serverLevel.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1, player.getZ(), 20, 0.5, 0.5, 0.5, 0.1);
+                    }
+                } else if (type == 0) {
+                    Manually_deduct_health_to_restore_mana.execute(entity);
+                }
+            }
         }
     }
 }

@@ -32,6 +32,10 @@ public class ModCreativeModeTabs {
                         
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
+                        
+                        output.accept(ModItems.AVALON);
+                        output.accept(ModItems.REDSWORD);
+                        output.accept(ModBlocks.REDSWORD_BLOCK);
 
                         output.accept(ModItems.CHISEL);
 

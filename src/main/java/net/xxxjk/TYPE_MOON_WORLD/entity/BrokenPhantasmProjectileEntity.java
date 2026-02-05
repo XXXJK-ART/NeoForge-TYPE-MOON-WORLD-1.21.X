@@ -27,19 +27,13 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.world.entity.Display;
-import com.mojang.math.Transformation;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
 
+@SuppressWarnings("null")
 public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Float> EXPLOSION_POWER = SynchedEntityData.defineId(BrokenPhantasmProjectileEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> IS_EXPLODING = SynchedEntityData.defineId(BrokenPhantasmProjectileEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_UBW_PHANTASM = SynchedEntityData.defineId(BrokenPhantasmProjectileEntity.class, EntityDataSerializers.BOOLEAN);
     
     private int lifeTime = 0;
     private int explosionTick = 0;
@@ -68,15 +62,6 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
         super.defineSynchedData(builder);
         builder.define(EXPLOSION_POWER, 2.0f);
         builder.define(IS_EXPLODING, false);
-        builder.define(IS_UBW_PHANTASM, false);
-    }
-
-    public void setUBWPhantasm(boolean isUBW) {
-        this.entityData.set(IS_UBW_PHANTASM, isUBW);
-    }
-
-    public boolean isUBWPhantasm() {
-        return this.entityData.get(IS_UBW_PHANTASM);
     }
 
     public void setExplosionPower(float power) {
@@ -98,14 +83,6 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     public void tick() {
-        if (isUBWPhantasm()) {
-            super.tick();
-            if (this.level().isClientSide) {
-                 this.level().addParticle(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
-            }
-            return; // No explosion countdown for UBW
-        }
-
         if (isExploding()) {
             if (!this.level().isClientSide) {
                 processExplosion();
@@ -144,119 +121,15 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     protected void onHit(HitResult result) {
-        if (isUBWPhantasm()) {
-            if (!this.level().isClientSide) {
-                // Check if hit entity is player (shooter)
-                if (result.getType() == HitResult.Type.ENTITY) {
-                    net.minecraft.world.phys.EntityHitResult entityHit = (net.minecraft.world.phys.EntityHitResult) result;
-                    Entity target = entityHit.getEntity();
-                    
-                    if (target instanceof net.minecraft.world.entity.player.Player) {
-                        return; // Ignore players, pass through
-                    }
-                    
-                    // Damage other entities but DO NOT STOP
-                    if (!hitEntities.contains(target)) {
-                        float damage = calculateDamage();
-                        target.hurt(this.damageSources().thrown(this, this.getOwner()), damage);
-                        hitEntities.add(target);
-                    }
-                    
-                    // Important: We do NOT call super.onHit() or discard() here.
-                    // This allows the projectile to continue moving.
-                    return; 
-                }
-                
-                // If hit block
-                if (result.getType() == HitResult.Type.BLOCK) {
-                    net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) result;
-                    BlockState state = this.level().getBlockState(blockHit.getBlockPos());
-                    
-                    // Pass through non-solid blocks (grass, flowers, etc.)
-                    if (state.getCollisionShape(this.level(), blockHit.getBlockPos()).isEmpty() || !state.isSolid()) {
-                         // Ignore non-solid hits
-                         return; 
-                    }
-                }
-
-                // Spawn ItemDisplay
-                Display.ItemDisplay display = new Display.ItemDisplay(EntityType.ITEM_DISPLAY, this.level());
-                display.setPos(this.getX(), this.getY(), this.getZ());
-                display.addTag("ubw_visual_sword");
-                
-                // Random rotation to look natural but stuck in ground
-                // We want the blade to point down.
-                
-                float randomYRot = this.level().random.nextFloat() * 360.0f;
-                
-                // Minecraft sword texture is diagonal (pointing TR, approx 45 deg).
-                // To point DOWN (270 deg):
-                // 45 + 225 = 270. So we need to rotate Z by 225 degrees (approx 3.92 rad).
-                float zRot = (float)Math.toRadians(225);
-                
-                // Add slight random tilt around X axis so it's not perfectly vertical
-                float xTilt = (float)Math.toRadians(this.level().random.nextGaussian() * 10);
-                
-                Quaternionf rotation = new Quaternionf()
-                    .rotateY((float)Math.toRadians(randomYRot))
-                    .rotateZ(zRot)
-                    .rotateX(xTilt);
-                
-                // Constructing NBT for transformation
-                net.minecraft.nbt.CompoundTag transformTag = new net.minecraft.nbt.CompoundTag();
-                
-                net.minecraft.nbt.ListTag translationList = new net.minecraft.nbt.ListTag();
-                translationList.add(net.minecraft.nbt.FloatTag.valueOf(0f));
-                // Lower it to stick into ground. 0.5f was too high. 
-                // -0.2f helps bury the tip.
-                translationList.add(net.minecraft.nbt.FloatTag.valueOf(-0.25f)); 
-                translationList.add(net.minecraft.nbt.FloatTag.valueOf(0f));
-                transformTag.put("translation", translationList);
-                
-                net.minecraft.nbt.ListTag scaleList = new net.minecraft.nbt.ListTag();
-                scaleList.add(net.minecraft.nbt.FloatTag.valueOf(1f));
-                scaleList.add(net.minecraft.nbt.FloatTag.valueOf(1f));
-                scaleList.add(net.minecraft.nbt.FloatTag.valueOf(1f));
-                transformTag.put("scale", scaleList);
-                
-                net.minecraft.nbt.ListTag leftRotList = new net.minecraft.nbt.ListTag();
-                leftRotList.add(net.minecraft.nbt.FloatTag.valueOf(rotation.x));
-                leftRotList.add(net.minecraft.nbt.FloatTag.valueOf(rotation.y));
-                leftRotList.add(net.minecraft.nbt.FloatTag.valueOf(rotation.z));
-                leftRotList.add(net.minecraft.nbt.FloatTag.valueOf(rotation.w));
-                transformTag.put("left_rotation", leftRotList);
-                
-                net.minecraft.nbt.ListTag rightRotList = new net.minecraft.nbt.ListTag();
-                rightRotList.add(net.minecraft.nbt.FloatTag.valueOf(0f));
-                rightRotList.add(net.minecraft.nbt.FloatTag.valueOf(0f));
-                rightRotList.add(net.minecraft.nbt.FloatTag.valueOf(0f));
-                rightRotList.add(net.minecraft.nbt.FloatTag.valueOf(1f));
-                transformTag.put("right_rotation", rightRotList);
-                
-                net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-                display.save(tag);
-                
-                // Set Item
-                tag.put("item", this.getItem().save(this.registryAccess()));
-                tag.putString("item_display", "fixed");
-                
-                // Set Transformation
-                tag.put("transformation", transformTag);
-                
-                display.load(tag);
-                
-                this.level().addFreshEntity(display);
-                this.discard();
-            }
-            return;
+        if (isExploding()) {
+             // If already exploding, do nothing (explosion process handles it)
+             return;
         }
 
         // Stop movement logic
-        if (!isExploding()) {
-             // super.onHit(result); // Don't call super onHit as it might discard entity
-             if (!this.level().isClientSide) {
-                 startExplosion();
-             }
+        // super.onHit(result); // Don't call super onHit as it might discard entity
+        if (!this.level().isClientSide) {
+             startExplosion();
         }
     }
     
@@ -267,9 +140,6 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void startExplosion() {
-        // Strictly disable explosion for UBW Phantasm projectiles
-        if (isUBWPhantasm()) return;
-        
         if (isExploding()) return;
         this.entityData.set(IS_EXPLODING, true);
         this.setNoGravity(true);
@@ -326,7 +196,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                         if (distSqr <= nextRadius*nextRadius && distSqr > currentRadius*currentRadius && distSqr <= maxRadius*maxRadius) {
                             BlockPos pos = explosionCenter.offset(x, y, z);
                             BlockState state = this.level().getBlockState(pos);
-                            if (!state.isAir() && state.getBlock().getExplosionResistance() < 1200) {
+                            if (!state.isAir() && state.getExplosionResistance(this.level(), pos, null) < 1200) {
                                 this.level().setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                                 // Chance to spawn particles at block pos
                                 if (this.level().random.nextInt(10) == 0) {

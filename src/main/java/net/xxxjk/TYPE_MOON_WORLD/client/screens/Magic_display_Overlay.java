@@ -33,6 +33,9 @@ public class Magic_display_Overlay {
 
         // Fetch Mana Data
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        
+        if (!vars.is_magus) return; // Do not render if not awakened
+        
         double currentMana = vars.player_mana;
         double maxMana = vars.player_max_mana;
         
