@@ -11,6 +11,10 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerLevel;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
+import java.util.List;
 
 @SuppressWarnings({"null", "unchecked"})
 public class TypeMoonCommands {
@@ -85,7 +89,61 @@ public class TypeMoonCommands {
                 .then(Commands.literal("forget_all")
                     .executes(TypeMoonCommands::forgetAllMagics))
             )
+
+            // Clear Shiki Entity
+            .then(Commands.literal("shiki")
+                .then(Commands.literal("clear")
+                    .executes(TypeMoonCommands::clearShiki))
+                .then(Commands.literal("health")
+                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(1.0))
+                        .executes(ctx -> setShikiHealth(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
+            )
         );
+    }
+
+    private static int setShikiHealth(CommandContext<CommandSourceStack> ctx, double health) {
+        try {
+            ServerLevel level = ctx.getSource().getLevel();
+            int count = 0;
+            
+            // Iterate over all entities in the level
+            for (Entity entity : level.getAllEntities()) {
+                if (entity instanceof RyougiShikiEntity shiki) {
+                    shiki.setHealth((float) health);
+                    count++;
+                }
+            }
+            
+            final int finalCount = count;
+            final double finalHealth = health;
+            ctx.getSource().sendSuccess(() -> Component.literal("Set health of " + finalCount + " Ryougi Shiki entities to " + finalHealth), true);
+            return count;
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("Error setting health: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    private static int clearShiki(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerLevel level = ctx.getSource().getLevel();
+            int count = 0;
+            
+            // Iterate over all entities in the level
+            for (Entity entity : level.getAllEntities()) {
+                if (entity instanceof RyougiShikiEntity shiki) {
+                    shiki.discard(); // Force remove, bypassing immunity
+                    count++;
+                }
+            }
+            
+            final int finalCount = count;
+            ctx.getSource().sendSuccess(() -> Component.literal("Cleared " + finalCount + " Ryougi Shiki entities."), true);
+            return count;
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("Error clearing entities: " + e.getMessage()));
+            return 0;
+        }
     }
 
     private static int learnMagic(CommandContext<CommandSourceStack> ctx, String magicId) {

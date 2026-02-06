@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import net.minecraft.tags.ItemTags;
+
 @SuppressWarnings({"null", "unused", "unchecked"})
 public class ProjectionPresetScreen extends Screen {
     private final Player player;
@@ -42,7 +44,7 @@ public class ProjectionPresetScreen extends Screen {
     private static final int ROWS = 8;  // 150 / 18 ≈ 8
     
     public ProjectionPresetScreen(Player player) {
-        super(Component.literal("Projection Preset"));
+        super(Component.translatable("gui.typemoonworld.projection.title"));
         this.player = player;
     }
 
@@ -106,20 +108,21 @@ public class ProjectionPresetScreen extends Screen {
                 return isEnchanted || isRenamed;
             }
             
-            // Check creative tabs or item tags for other categories
-            // This is a rough approximation
+            // Check ItemTags for better compatibility
             if ("combat".equals(currentFilter)) {
-                // Swords, Bows, Armor
-                return stack.getItem() instanceof net.minecraft.world.item.SwordItem || 
-                       stack.getItem() instanceof net.minecraft.world.item.AxeItem ||
+                return stack.is(ItemTags.SWORDS) || 
+                       stack.is(ItemTags.AXES) || 
                        stack.getItem() instanceof net.minecraft.world.item.BowItem ||
                        stack.getItem() instanceof net.minecraft.world.item.CrossbowItem ||
                        stack.getItem() instanceof net.minecraft.world.item.ShieldItem ||
-                       stack.getItem() instanceof net.minecraft.world.item.ArmorItem;
+                       stack.getItem() instanceof net.minecraft.world.item.ArmorItem ||
+                       stack.getItem() instanceof net.minecraft.world.item.TridentItem;
             }
             
             if ("tools".equals(currentFilter)) {
-                return stack.getItem() instanceof net.minecraft.world.item.DiggerItem || // Pickaxe, Shovel, Axe, Hoe
+                return stack.is(ItemTags.PICKAXES) ||
+                       stack.is(ItemTags.SHOVELS) ||
+                       stack.is(ItemTags.HOES) ||
                        stack.getItem() instanceof net.minecraft.world.item.ShearsItem ||
                        stack.getItem() instanceof net.minecraft.world.item.FlintAndSteelItem ||
                        stack.getItem() instanceof net.minecraft.world.item.FishingRodItem;
@@ -130,16 +133,15 @@ public class ProjectionPresetScreen extends Screen {
             }
             
             if ("misc".equals(currentFilter)) {
-                // Everything else that is not caught above
-                // Or maybe just things that are NOT blocks, tools, combat
-                 boolean isCombat = stack.getItem() instanceof net.minecraft.world.item.SwordItem || 
-                        stack.getItem() instanceof net.minecraft.world.item.AxeItem ||
-                        stack.getItem() instanceof net.minecraft.world.item.BowItem ||
+                // Not covered by above
+                boolean isCombat = stack.is(ItemTags.SWORDS) || stack.is(ItemTags.AXES) || 
+                       stack.getItem() instanceof net.minecraft.world.item.BowItem ||
                        stack.getItem() instanceof net.minecraft.world.item.CrossbowItem ||
                        stack.getItem() instanceof net.minecraft.world.item.ShieldItem ||
                        stack.getItem() instanceof net.minecraft.world.item.ArmorItem;
-                boolean isTool = stack.getItem() instanceof net.minecraft.world.item.DiggerItem;
+                boolean isTool = stack.is(ItemTags.PICKAXES) || stack.is(ItemTags.SHOVELS) || stack.is(ItemTags.HOES);
                 boolean isBlock = stack.getItem() instanceof net.minecraft.world.item.BlockItem;
+                
                 return !isCombat && !isTool && !isBlock;
             }
             

@@ -38,23 +38,9 @@ public class MagicUnlimitedBladeWorks {
         boolean isInUBWDimension = player.level().dimension().location().equals(net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions.UBW_KEY.location());
 
         if (vars.is_in_ubw || isInUBWDimension) {
-            // Exit UBW
-            vars.is_in_ubw = false;
+            // Exit UBW - Use ChantHandler logic to ensure entities are returned and cleanup is done
+            ChantHandler.returnFromUBW(player, vars);
             player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.exit"), true);
-            
-            // Teleport back
-            ResourceKey<Level> returnDimKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(vars.ubw_return_dimension));
-            ServerLevel returnLevel = player.server.getLevel(returnDimKey);
-            
-            if (returnLevel != null) {
-                player.teleportTo(returnLevel, vars.ubw_return_x, vars.ubw_return_y, vars.ubw_return_z, player.getYRot(), player.getXRot());
-            } else {
-                 // Fallback to Overworld spawn if dimension is missing
-                 ServerLevel overworld = player.server.getLevel(Level.OVERWORLD);
-                 if (overworld != null) {
-                     player.teleportTo(overworld, overworld.getSharedSpawnPos().getX(), overworld.getSharedSpawnPos().getY(), overworld.getSharedSpawnPos().getZ(), player.getYRot(), player.getXRot());
-                 }
-            }
         } else {
             // Start Chant for UBW
             double initialCost = 50.0;

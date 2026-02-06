@@ -5,7 +5,7 @@
   "has_skylight": true,
   "has_ceiling": false,
   "ambient_light": 0.5,
-  "fixed_time": 12500,
+  "fixed_time": 12000,
   "piglin_safe": false,
   "bed_works": false,
   "respawn_anchor_works": false,
@@ -14,7 +14,7 @@
   "min_y": -64,
   "height": 384,
   "infiniburn": "#minecraft:infiniburn_overworld",
-  "effects": "minecraft:overworld",
+  "effects": "typemoonworld:unlimited_blade_works",
   "monster_spawn_light_level": 0,
   "monster_spawn_block_light_limit": 0
 }

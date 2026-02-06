@@ -41,6 +41,7 @@ public class RedswordItem extends Item implements GeoItem {
         super(properties);
     }
 
+    
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
@@ -150,7 +151,7 @@ public class RedswordItem extends Item implements GeoItem {
         if (charge > 0) {
             // Use Handler instead of Entity
             if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
-                MuramasaSlashHandler.initiate(serverLevel, serverPlayer, charge);
+                MuramasaSlashHandler.initiate(serverLevel, serverPlayer, charge, getMaxSlashDistance(), getMaxSlashWidth(), getMaxSlashHeight());
             }
             
             // SFX
@@ -201,5 +202,25 @@ public class RedswordItem extends Item implements GeoItem {
         if (isSelected && entity instanceof LivingEntity livingEntity && !level.isClientSide) {
             livingEntity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20, 1));
         }
+    }
+
+    public int getMaxManaCost() {
+        return 100;
+    }
+
+    public double getManaCostPerTick() {
+        return 2.5;
+    }
+
+    public int getMaxSlashDistance() {
+        return 50;
+    }
+
+    public int getMaxSlashWidth() {
+        return 5;
+    }
+
+    public int getMaxSlashHeight() {
+        return 50;
     }
 }

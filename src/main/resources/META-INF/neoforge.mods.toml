@@ -76,6 +76,14 @@ description='''${mod_description}'''
     # Side this dependency is applied on - BOTH, CLIENT, or SERVER
     side="BOTH"
 
+# Dependency for GeckoLib
+[[dependencies.typemoonworld]]
+    modId="geckolib"
+    type="required"
+    versionRange="[4.7,)"
+    ordering="NONE"
+    side="BOTH"
+
 # Here's another dependency
 [[dependencies.typemoonworld]]
     modId="minecraft"

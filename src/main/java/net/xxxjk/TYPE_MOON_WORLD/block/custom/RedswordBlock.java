@@ -68,7 +68,13 @@ public class RedswordBlock extends BaseEntityBlock {
     @NotNull
     public InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
         if (!level.isClientSide) {
-             ItemEntity entityToSpawn = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.REDSWORD.get()));
+             ItemStack stackToDrop;
+             if (level.random.nextFloat() < 0.1f) {
+                 stackToDrop = new ItemStack(ModItems.TSUMUKARI_MURAMASA.get());
+             } else {
+                 stackToDrop = new ItemStack(ModItems.REDSWORD.get());
+             }
+             ItemEntity entityToSpawn = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), stackToDrop);
              entityToSpawn.setPickUpDelay(15);
              entityToSpawn.setUnlimitedLifetime();
              level.addFreshEntity(entityToSpawn);
