@@ -38,7 +38,7 @@ public class MuramasaSlashHandler {
         
         double currentDistance = 0;
         
-        SlashInstance(UUID playerUUID, ResourceKey<Level> dimension, Vec3 startPos, Vec3 direction, int charge) {
+        SlashInstance(UUID playerUUID, ResourceKey<Level> dimension, Vec3 startPos, Vec3 direction, int charge, int maxDistLimit, int maxWidthLimit, int maxHeightLimit) {
             this.playerUUID = playerUUID;
             this.dimension = dimension;
             this.startPos = startPos;
@@ -47,22 +47,27 @@ public class MuramasaSlashHandler {
             this.charge = charge;
             
             // Dimensions
-            // Max distance: 100 blocks (at max charge) -> Increased to 200
-            this.maxDistance = Math.max(20, (int)(charge * 2.0)); 
-            // Width: 1 + charge / 10, max 10
-            this.width = Math.min(10, 1 + charge / 10);
-            // Height: 100 blocks (at max charge)
-            this.height = Math.max(5, charge); 
+            // Max distance: scaled by charge relative to max possible charge (assumed 100 for normalization, but passed limits are absolute)
+            // Let's assume charge is passed as raw ticks or percentage. 
+            // Previous logic: maxDistance = charge * 2.
+            // New logic: scale linearly up to maxDistLimit based on charge.
+            // If we assume standard max charge is ~100.
+            
+            this.maxDistance = Math.max(20, Math.min(maxDistLimit, (int)(charge * (maxDistLimit / 100.0)))); 
+            // Width
+            this.width = Math.min(maxWidthLimit, 1 + charge / 10);
+            // Height
+            this.height = Math.min(maxHeightLimit, Math.max(5, charge)); 
         }
     }
 
     private static final List<SlashInstance> ACTIVE_SLASHES = new ArrayList<>();
 
-    public static void initiate(ServerLevel level, ServerPlayer player, int charge) {
+    public static void initiate(ServerLevel level, ServerPlayer player, int charge, int maxDist, int maxWidth, int maxHeight) {
         if (charge <= 0) return;
         
         Vec3 look = player.getLookAngle();
-        ACTIVE_SLASHES.add(new SlashInstance(player.getUUID(), level.dimension(), player.position().add(0, player.getEyeHeight() * 0.5, 0), look, charge));
+        ACTIVE_SLASHES.add(new SlashInstance(player.getUUID(), level.dimension(), player.position().add(0, player.getEyeHeight() * 0.5, 0), look, charge, maxDist, maxWidth, maxHeight));
     }
 
     @SubscribeEvent
@@ -127,7 +132,9 @@ public class MuramasaSlashHandler {
                     BlockPos pos = BlockPos.containing(posVec);
                     
                     BlockState state = level.getBlockState(pos);
-                    if (!state.isAir() && state.getDestroySpeed(level, pos) >= 0 && state.getDestroySpeed(level, pos) < 50.0f) {
+                    // 检查方块是否不是空气，且硬度小于50，或者是否是液体
+                    boolean isFluid = !level.getFluidState(pos).isEmpty();
+                    if ((!state.isAir() && state.getDestroySpeed(level, pos) >= 0 && state.getDestroySpeed(level, pos) < 50.0f) || isFluid) {
                         // Vaporize (No drops)
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                         
@@ -152,8 +159,8 @@ public class MuramasaSlashHandler {
             for (Entity e : entities) {
                 if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID)) {
                     // Damage
-                    // Base 10 + 3 per charge. Max 310.
-                    float damage = 10.0f + (slash.charge * 3.0f);
+                    // Base 20 + 5 per charge. Max 520.
+                    float damage = 20.0f + (slash.charge * 5.0f);
                     living.hurt(level.damageSources().magic(), damage);
                     living.igniteForSeconds(5);
                 }

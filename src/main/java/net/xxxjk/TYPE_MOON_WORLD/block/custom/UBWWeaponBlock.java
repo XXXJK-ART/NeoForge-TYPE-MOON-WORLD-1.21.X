@@ -104,6 +104,16 @@ public class UBWWeaponBlock extends BaseEntityBlock {
 
     private static void tick(Level level, BlockPos pos, BlockState state, UBWWeaponBlockEntity blockEntity) {
         if (level.isClientSide) return;
+
+        // Check for support block below
+        BlockPos belowPos = pos.below();
+        if (level.isEmptyBlock(belowPos) || level.getBlockState(belowPos).isAir()) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+            if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                serverLevel.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.1, 0.1, 0.1, 0.05);
+            }
+            return;
+        }
         
         // Don't despawn inside UBW dimension
         if (level.dimension().location().equals(ModDimensions.UBW_KEY.location())) return;
@@ -140,7 +150,11 @@ public class UBWWeaponBlock extends BaseEntityBlock {
                     
                     // Clear and destroy block
                     ubwTile.setStoredItem(ItemStack.EMPTY);
-                    level.destroyBlock(pos, false);
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); // 直接设为空气，不产生破坏粒子
+                    
+                    // Play Chain Sound
+                    level.playSound(null, pos, net.minecraft.sounds.SoundEvents.CHAIN_BREAK, net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.0f);
+                    
                     return ItemInteractionResult.SUCCESS;
                 }
             }

@@ -106,13 +106,17 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         // Attributes Section
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         
-        guiGraphics.drawString(this.font, "基础属性:", startX, startY + spacing * 5, 0xFF00E0E0, false);
-        String baseAttr = buildBaseAttributes(vars).replace("基础属性：", "");
-        guiGraphics.drawWordWrap(this.font, Component.literal(baseAttr), startX, startY + spacing * 6, 160, 0xFFCCCCCC);
+        Component baseLabel = Component.translatable("gui.typemoonworld.basic_info.base_attributes");
+        guiGraphics.drawString(this.font, baseLabel, startX, startY + spacing * 5, 0xFF00E0E0, false);
         
-        guiGraphics.drawString(this.font, "扩展属性:", startX, startY + spacing * 8, 0xFF00E0E0, false);
-        String extraAttr = buildExtraAttributes(vars).replace("扩展属性：", "");
-        guiGraphics.drawWordWrap(this.font, Component.literal(extraAttr), startX, startY + spacing * 9, 160, 0xFFCCCCCC);
+        Component baseAttr = buildBaseAttributes(vars);
+        guiGraphics.drawWordWrap(this.font, baseAttr, startX, startY + spacing * 6, 160, 0xFFCCCCCC);
+        
+        Component extraLabel = Component.translatable("gui.typemoonworld.basic_info.extra_attributes");
+        guiGraphics.drawString(this.font, extraLabel, startX, startY + spacing * 8, 0xFF00E0E0, false);
+        
+        Component extraAttr = buildExtraAttributes(vars);
+        guiGraphics.drawWordWrap(this.font, extraAttr, startX, startY + spacing * 9, 160, 0xFFCCCCCC);
     }
     
     private void drawStat(GuiGraphics gui, String label, String value, int x, int y) {
@@ -136,92 +140,80 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         int btnHeight = 16;
         int startX = this.leftPos + this.imageWidth - (btnWidth * 3) - 10;
         
-        imagebutton_basic_attributes = new NeonButton(startX, btnY, btnWidth, btnHeight, Component.literal("基础属性"), e -> {
+        imagebutton_basic_attributes = new NeonButton(startX, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {
             // Already here
         });
         // Highlight active tab
         // imagebutton_basic_attributes.active = false; 
         this.addRenderableWidget(imagebutton_basic_attributes);
 
-        imagebutton_magical_attributes = new NeonButton(startX + btnWidth + 2, btnY, btnWidth, btnHeight, Component.literal("身体改造"), e -> {
+        imagebutton_magical_attributes = new NeonButton(startX + btnWidth + 2, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.body_modification"), e -> {
             PacketDistributor.sendToServer(new Basic_information_Button_Message(0, x, y, z));
             Basic_information_Button_Message.handleButtonAction(entity, 0, x, y, z);
         });
         this.addRenderableWidget(imagebutton_magical_attributes);
 
-        imagebutton_magical_properties = new NeonButton(startX + (btnWidth + 2) * 2, btnY, btnWidth, btnHeight, Component.literal("魔术知识"), e -> {
+        imagebutton_magical_properties = new NeonButton(startX + (btnWidth + 2) * 2, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.magic_knowledge"), e -> {
             PacketDistributor.sendToServer(new Basic_information_Button_Message(1, x, y, z));
             Basic_information_Button_Message.handleButtonAction(entity, 1, x, y, z);
         });
         this.addRenderableWidget(imagebutton_magical_properties);
     }
 
-    private String buildBaseAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {
-        StringBuilder builder = new StringBuilder("基础属性：");
+    private Component buildBaseAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {
+        net.minecraft.network.chat.MutableComponent builder = Component.empty();
         boolean has = false;
         if (vars.player_magic_attributes_earth) {
-            builder.append("地");
+            builder.append(Component.translatable("attribute.typemoonworld.earth"));
             has = true;
         }
         if (vars.player_magic_attributes_water) {
-            if (has) {
-                builder.append("·");
-            }
-            builder.append("水");
+            if (has) builder.append(Component.literal("·"));
+            builder.append(Component.translatable("attribute.typemoonworld.water"));
             has = true;
         }
         if (vars.player_magic_attributes_fire) {
-            if (has) {
-                builder.append("·");
-            }
-            builder.append("火");
+            if (has) builder.append(Component.literal("·"));
+            builder.append(Component.translatable("attribute.typemoonworld.fire"));
             has = true;
         }
         if (vars.player_magic_attributes_wind) {
-            if (has) {
-                builder.append("·");
-            }
-            builder.append("风");
+            if (has) builder.append(Component.literal("·"));
+            builder.append(Component.translatable("attribute.typemoonworld.wind"));
             has = true;
         }
         if (vars.player_magic_attributes_ether) {
-            if (has) {
-                builder.append("·");
-            }
-            builder.append("以太");
+            if (has) builder.append(Component.literal("·"));
+            builder.append(Component.translatable("attribute.typemoonworld.ether"));
             has = true;
         }
         if (!has) {
-            builder.append("/");
+            builder.append(Component.literal("/"));
         }
-        return builder.toString();
+        return builder;
     }
 
-    private String buildExtraAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {
-        StringBuilder builder = new StringBuilder("扩展属性：");
+    private Component buildExtraAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {
+        net.minecraft.network.chat.MutableComponent builder = Component.empty();
         boolean has = false;
         if (vars.player_magic_attributes_none) {
-            builder.append("无属性");
+            builder.append(Component.translatable("attribute.typemoonworld.none"));
             has = true;
         }
         if (vars.player_magic_attributes_imaginary_number) {
-            if (has) {
-                builder.append("·");
-            }
-            builder.append("虚数");
+            if (has) builder.append(Component.literal("·"));
+            builder.append(Component.translatable("attribute.typemoonworld.imaginary"));
             has = true;
         }
         if (vars.player_magic_attributes_sword) {
-            if (has) {
-                builder.append("·");
-            }
-            builder.append("剑");
+            if (has) builder.append(Component.literal("·"));
+            builder.append(Component.translatable("attribute.typemoonworld.sword"));
             has = true;
         }
         if (!has) {
-            builder.append("/");
+            builder.append(Component.literal("/"));
         }
-        return builder.toString();
+        return builder;
     }
 
     private void renderEntityInInventoryFollowsAngle(GuiGraphics guiGraphics, int x, int y,

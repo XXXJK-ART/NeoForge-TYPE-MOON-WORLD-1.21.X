@@ -43,6 +43,10 @@ public class ModEntities {
             ENTITY_TYPES.register("ubw_projectile", () -> EntityType.Builder.<UBWProjectileEntity>of(UBWProjectileEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("ubw_projectile"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>> RYOUGI_SHIKI =
+            ENTITY_TYPES.register("ryougi_shiki", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity::new, MobCategory.CREATURE)
+                    .sized(0.6f, 1.8f).build("ryougi_shiki"));
+
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }

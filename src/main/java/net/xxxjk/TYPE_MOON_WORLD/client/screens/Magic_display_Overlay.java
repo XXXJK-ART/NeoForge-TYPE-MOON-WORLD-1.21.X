@@ -15,6 +15,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
+import net.minecraft.network.chat.Component;
+
 @EventBusSubscriber({Dist.CLIENT})
 @SuppressWarnings("null")
 public class Magic_display_Overlay {
@@ -94,51 +96,41 @@ public class Magic_display_Overlay {
 
         // --- Magic Name Display ---
         if (vars.is_magic_circuit_open) {
-            String magicName = "无";
+            net.minecraft.network.chat.MutableComponent magicName = Component.literal("None");
             int magicColor = 0xFF00FFFF; // Default Cyan
 
             if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                 String magicId = vars.selected_magics.get(vars.current_magic_index);
-                if ("ruby_throw".equals(magicId)) {
-                    magicName = "红宝石（投掷）";
+                
+                // Use translation keys instead of hardcoded strings
+                String translationKey = "magic.typemoonworld." + magicId + ".name";
+                
+                // Fallback logic for legacy keys or direct ID mapping if needed, 
+                // but generally we should use the lang file.
+                // Assuming lang file entries exist or will be created.
+                // For now, let's map known IDs to specific translation keys to be safe, 
+                // or just use the generic pattern which is cleaner.
+                
+                magicName = Component.translatable(translationKey);
+                
+                if (magicId.startsWith("ruby")) {
                     magicColor = 0xFFFF0000; // Red
-                } else if ("sapphire_throw".equals(magicId)) {
-                    magicName = "蓝宝石（投掷）";
+                } else if (magicId.startsWith("sapphire")) {
                     magicColor = 0xFF0088FF; // Blue
-                } else if ("emerald_use".equals(magicId)) {
-                    magicName = "绿宝石（展开）";
+                } else if (magicId.startsWith("emerald")) {
                     magicColor = 0xFF00FF00; // Green
-                } else if ("topaz_throw".equals(magicId)) {
-                    magicName = "黄宝石（投掷）";
+                } else if (magicId.startsWith("topaz")) {
                     magicColor = 0xFFFFFF00; // Yellow
-                } else if ("ruby_flame_sword".equals(magicId)) {
-                    magicName = "红宝石（炎之剑）";
-                    magicColor = 0xFFFF0000; // Red
-                } else if ("sapphire_winter_frost".equals(magicId)) {
-                    magicName = "蓝宝石（冬之霜）";
-                    magicColor = 0xFF0088FF; // Blue
-                } else if ("emerald_winter_river".equals(magicId)) {
-                    magicName = "绿宝石（冬之河）";
-                    magicColor = 0xFF00FF00; // Green
-                } else if ("topaz_reinforcement".equals(magicId)) {
-                    magicName = "黄宝石（三 强化）";
-                    magicColor = 0xFFFFFF00; // Yellow
-                } else if ("projection".equals(magicId)) {
-                    magicName = "投影魔术";
-                    magicColor = 0xFF00FFFF; // Cyan
-                } else if ("structural_analysis".equals(magicId)) {
-                    magicName = "构造解析";
+                } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId)) {
                     magicColor = 0xFF00FFFF; // Cyan
                 } else if ("broken_phantasm".equals(magicId)) {
-                    magicName = "投影崩坏";
                     magicColor = 0xFFFF4000; // Orange Red
                 } else if ("unlimited_blade_works".equals(magicId)) {
-                    magicName = "无限剑制";
                     magicColor = 0xFFFF0000; // Red
                 }
             }
             
-            String labelStr = "当前魔术: ";
+            Component labelStr = Component.translatable("gui.typemoonworld.overlay.current_magic");
             // Draw slightly above the bar
             // Icon overlaps bar, text should be above bar
             int magicTextX = barX; 

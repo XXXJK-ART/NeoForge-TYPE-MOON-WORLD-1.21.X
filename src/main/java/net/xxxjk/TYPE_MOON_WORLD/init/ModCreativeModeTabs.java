@@ -35,6 +35,7 @@ public class ModCreativeModeTabs {
                         
                         output.accept(ModItems.AVALON);
                         output.accept(ModItems.REDSWORD);
+                        output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModBlocks.REDSWORD_BLOCK);
 
                         output.accept(ModItems.CHISEL);
@@ -71,6 +72,8 @@ public class ModCreativeModeTabs {
 
                         output.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
                         output.accept(ModBlocks.SPIRIT_VEIN_NODE);
+                        
+                        output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

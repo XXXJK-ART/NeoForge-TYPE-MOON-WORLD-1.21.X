@@ -99,6 +99,7 @@ public class TypeMoonWorldModVariables {
             clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
             
             clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
+            clone.is_magus = original.is_magus;
 
             if (!event.isWasDeath()) {
                 clone.is_chanting_ubw = original.is_chanting_ubw;

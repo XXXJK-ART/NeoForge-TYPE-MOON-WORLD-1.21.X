@@ -108,6 +108,9 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                         // Attack
                         fakePlayer.attack(target);
                         
+                        // Remove Invulnerability Frames
+                        target.invulnerableTime = 0;
+                        
                         // Restore Aggro/Credit to real player
                         if (target instanceof LivingEntity livingTarget) {
                             livingTarget.setLastHurtByMob(serverPlayer);

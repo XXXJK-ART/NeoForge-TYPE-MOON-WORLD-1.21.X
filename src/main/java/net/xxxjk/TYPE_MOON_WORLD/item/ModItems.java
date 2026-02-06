@@ -23,7 +23,7 @@ public class ModItems {
     public static final DeferredItem<Item> REDSWORD = ITEMS.register("redsword",
             () -> new RedswordItem(new Item.Properties().durability(2000).fireResistant().rarity(Rarity.RARE)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
-                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 
+                    .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "redsword_damage"), 
                                             9, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
@@ -31,7 +31,22 @@ public class ModItems {
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED, 
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "redsword_speed"), 
-                                            -1.2, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
+                                            0.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+
+    public static final DeferredItem<Item> TSUMUKARI_MURAMASA = ITEMS.register("tsumukari_muramasa",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem(new Item.Properties().durability(5000).fireResistant().rarity(Rarity.EPIC)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "tsumukari_damage"), 
+                                            15, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED, 
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "tsumukari_speed"), 
+                                            0.3, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE), 
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
@@ -104,6 +119,8 @@ public class ModItems {
     public static final DeferredItem<Item> AVALON = ITEMS.register("avalon",
             () -> new AvalonItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
 
+    public static final DeferredItem<Item> RYOUGI_SHIKI_SPAWN_EGG = ITEMS.register("ryougi_shiki_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.RYOUGI_SHIKI, 0x99CCFF, 0xCC0022, new Item.Properties()));
 
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
