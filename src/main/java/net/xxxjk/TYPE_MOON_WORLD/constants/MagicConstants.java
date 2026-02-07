@@ -85,6 +85,11 @@ public class MagicConstants {
     public static final String KEY_MAGIC_UNLIMITED_BLADE_WORKS_SELECTED = "key.typemoonworld.magic.unlimited_blade_works.selected";
     public static final String KEY_MAGIC_UNLIMITED_BLADE_WORKS_SHORT = "key.typemoonworld.magic.unlimited_blade_works.short";
     
+    public static final String KEY_MAGIC_SWORD_BARREL_FULL_OPEN = "key.typemoonworld.magic.sword_barrel_full_open";
+    public static final String KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SELECTED = "key.typemoonworld.magic.sword_barrel_full_open.selected";
+    public static final String KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SHORT = "key.typemoonworld.magic.sword_barrel_full_open.short";
+    public static final String MSG_MAGIC_SWORD_BARREL_MODE_CHANGE = "message.typemoonworld.magic.sword_barrel.mode_change";
+
     public static final String MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED = "message.typemoonworld.projection.cannot_analyze_projected";
     public static final String MSG_PROJECTION_ANALYSIS_COMPLETE = "message.typemoonworld.projection.analysis_complete";
     public static final String MSG_PROJECTION_NOT_ENOUGH_MANA = "message.typemoonworld.projection.not_enough_mana";

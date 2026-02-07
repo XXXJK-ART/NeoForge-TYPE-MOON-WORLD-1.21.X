@@ -30,7 +30,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                 net.minecraft.world.entity.player.Player player = context.player();
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                 if (message.add) {
-                    if (!vars.selected_magics.contains(message.magicId) && vars.selected_magics.size() < 10) {
+                    if (!vars.selected_magics.contains(message.magicId) && vars.selected_magics.size() < 20) {
                         vars.selected_magics.add(message.magicId);
                     }
                 } else {

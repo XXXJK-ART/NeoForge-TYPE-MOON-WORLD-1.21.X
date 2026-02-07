@@ -18,6 +18,7 @@ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -42,6 +43,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.state.BlockState;
 
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+
 public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_DEFENDING = SynchedEntityData.defineId(RyougiShikiEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_BETRAYED = SynchedEntityData.defineId(RyougiShikiEntity.class, EntityDataSerializers.BOOLEAN); // Track if betrayed (attacked after feeding)
@@ -62,10 +65,510 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
     private boolean isSerious = false;
     private boolean isGuerrilla = false; // Hit and run mode for tough enemies
 
+    private int killCount = 0;
+    private long lastKillTime = 0;
+    private int idleTimer = 0;
+    
+    private boolean isPanicState = false;
+    private int forcedSlashTimer = 0;
+    private boolean isWeakened = false;
+    private int weaknessTimer = 0;
+
     public RyougiShikiEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, -1.0F);
     }
+
+    @Override
+    public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
+        // Cat-like reflexes: Immune to fall damage
+        return false;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!this.level().isClientSide) {
+            // Fire Extinguish Logic (50% chance per tick)
+            if (this.isOnFire()) {
+                if (this.random.nextFloat() < 0.5F) {
+                    this.clearFire();
+                } else {
+                    // Seek Water (if still on fire)
+                    // Try to find water in 10 block radius
+                    BlockPos waterPos = null;
+                    BlockPos center = this.blockPosition();
+                    // Simple scan
+                    for(BlockPos p : BlockPos.betweenClosed(center.offset(-10, -5, -10), center.offset(10, 5, 10))) {
+                        if (this.level().getFluidState(p).is(net.minecraft.tags.FluidTags.WATER)) {
+                            waterPos = p.immutable();
+                            break;
+                        }
+                    }
+                    
+                    if (waterPos != null) {
+                        this.getNavigation().moveTo(waterPos.getX(), waterPos.getY(), waterPos.getZ(), 1.5D);
+                    }
+                }
+            }
+
+            // Vehicle Escape Logic
+            if (this.isPassenger()) {
+                // If has target or annoyed, dismount
+                if (this.getTarget() != null || this.random.nextFloat() < 0.05F) {
+                    this.stopRiding();
+                    this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
+                }
+            }
+
+            // 1. Manage Weakness
+            if (this.isWeakened) {
+                this.weaknessTimer--;
+                if (this.weaknessTimer <= 0) {
+                    this.isWeakened = false;
+                }
+            }
+
+            // 2. Manage Panic State
+            if (this.isPanicState) {
+                this.forcedSlashTimer++;
+                this.performPanicSlash();
+                
+                // Exit Conditions
+                boolean safeFromLava = !this.isInLava();
+                boolean safeFromSiege = !this.isBesieged();
+                
+                if ((safeFromLava && safeFromSiege) || this.forcedSlashTimer > 100) {
+                    this.isPanicState = false;
+                    this.isWeakened = true;
+                    this.weaknessTimer = 20; // 1 second weakness
+                    this.forcedSlashTimer = 0;
+                }
+                // Suppress other behaviors in panic mode
+                return;
+            }
+
+            // Idle Check
+            if (this.getDeltaMovement().lengthSqr() < 0.001 && this.getTarget() == null) {
+                this.idleTimer++;
+                if (this.idleTimer > 600 && this.random.nextFloat() < 0.005F) { // 30s idle
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.idle", 20.0);
+                    this.idleTimer = 0;
+                }
+            } else {
+                this.idleTimer = 0;
+            }
+
+            // Low Health Check (Periodically)
+            if (this.tickCount % 600 == 0 && this.getHealth() < this.getMaxHealth() * 0.2F) {
+                broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.low_health", 20.0, 0.3F);
+            }
+
+            // Environment Check (Every ~30s)
+            if (this.tickCount % 600 == 0 && this.random.nextFloat() < 0.1F) {
+                if (this.level().isThundering()) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.environment_thunder", 20.0);
+                } else if (this.level().isNight() && this.level().canSeeSky(this.blockPosition())) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.environment_night", 20.0);
+                } else if (this.level().dimension() == Level.NETHER) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.environment_nether", 20.0);
+                } else if (this.level().dimension() == Level.END) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.environment_the_end", 20.0);
+                }
+            }
+
+            // Player Looking Check
+            if (this.tickCount % 40 == 0) {
+                for (Player player : this.level().players()) {
+                    if (player.distanceToSqr(this) < 100 && isLookingAt(player, this)) {
+                        broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.player_looking", 20.0, 0.1F); // Low chance
+                        break;
+                    }
+                }
+            }
+            
+            // Passive Interaction with Held Items (Check every 20 ticks / 1s)
+            if (this.tickCount % 20 == 0) {
+                Player p = this.level().getNearestPlayer(this, 8.0D);
+                // Only talk if NOT in combat
+                if (p != null && !this.entityData.get(IS_BETRAYED) && this.hasLineOfSight(p) && this.getTarget() == null) {
+                    ItemStack heldItem = p.getMainHandItem();
+                    
+                    // Sword (Lore: Weapon appreciation)
+                    if (heldItem.getItem() instanceof net.minecraft.world.item.SwordItem) {
+                        if (this.random.nextFloat() < 0.05F) { // 5% chance per second
+                            this.getLookControl().setLookAt(p, 30.0F, 30.0F);
+                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.see_sword", 20.0);
+                        }
+                    }
+                    
+                    // Shield (Lore: Defense comment)
+                    else if (heldItem.getItem() instanceof net.minecraft.world.item.ShieldItem) {
+                        if (this.random.nextFloat() < 0.05F) {
+                            this.getLookControl().setLookAt(p, 30.0F, 30.0F);
+                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.see_shield", 20.0);
+                        }
+                    }
+                    
+                    // Clock (Lore: Waiting)
+                    else if (heldItem.is(net.minecraft.world.item.Items.CLOCK)) {
+                        if (this.random.nextFloat() < 0.05F) {
+                            this.getLookControl().setLookAt(p, 30.0F, 30.0F);
+                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.see_clock", 20.0);
+                        }
+                    }
+                    
+                    // Cat-like reactions (Milk, String)
+                    else if (heldItem.is(net.minecraft.world.item.Items.MILK_BUCKET) || heldItem.is(net.minecraft.world.item.Items.STRING)) {
+                         // Higher chance for cat items (10%)
+                         if (this.random.nextFloat() < 0.1F) {
+                             this.getLookControl().setLookAt(p, 30.0F, 30.0F);
+                             String key = heldItem.is(net.minecraft.world.item.Items.MILK_BUCKET) ? 
+                                 "entity.typemoonworld.ryougi_shiki.speech.see_milk" : "entity.typemoonworld.ryougi_shiki.speech.see_string";
+                             broadcastToNearbyPlayers(key, 20.0);
+                         }
+                    }
+                }
+            }
+
+            // Proactive Dangerous Block Avoidance
+            this.checkDangerousBlocks();
+
+            // Water/Lava Aversion Logic (Teleport to land if stuck in fluid)
+            if (this.isInWater() || this.isInLava()) {
+                // Try to teleport to nearest land (Horizontal 2 blocks, Max 3 attempts)
+                boolean safe = false;
+                for (int i = 0; i < 3; i++) {
+                    double angle = this.random.nextDouble() * Math.PI * 2;
+                    double tx = this.getX() + 2.0 * Math.cos(angle);
+                    double tz = this.getZ() + 2.0 * Math.sin(angle);
+                    double ty = this.getY();
+                    
+                    // Check if target is safe (Solid block below, Air at feet)
+                    BlockPos targetPos = BlockPos.containing(tx, ty, tz);
+                    BlockState below = this.level().getBlockState(targetPos.below());
+                    BlockState at = this.level().getBlockState(targetPos);
+                    
+                    if (below.isSolid() && !at.getFluidState().isSource() && !at.isSuffocating(this.level(), targetPos)) {
+                        this.teleportTo(tx, ty, tz);
+                        safe = true;
+                        break;
+                    }
+                }
+                
+                if (!safe) {
+                    // If still stuck, use Slash to clear terrain (replace fluids with Air)
+                    if (this.slashCooldown == 0) {
+                        this.performSlash();
+                        this.slashCooldown = 20; // Fast cooldown to clear path
+                    }
+                    
+                    // If stuck in Lava, trigger Panic State
+                    if (this.isInLava()) {
+                        this.startPanicState();
+                    }
+                }
+                
+                // Speak occasionally
+                if (this.random.nextFloat() < 0.05F) { // 5% chance per tick
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.hate_water", 15.0);
+                }
+            }
+            
+            // Panic Trigger: Besieged
+            if (!this.isWeakened && this.isBesieged() && this.tickCount % 20 == 0) {
+                 this.startPanicState();
+            }
+
+            // Defense timer logic
+            if (this.blockingTimer > 0) {
+                this.blockingTimer--;
+                if (this.blockingTimer == 0) {
+                    this.entityData.set(IS_DEFENDING, false);
+                }
+            }
+
+            // Environmental Interaction: Rain
+            if (this.level().isRainingAt(this.blockPosition()) && this.random.nextFloat() < 0.001F) { // Rare chance in rain
+                 // 0.1% per tick -> approx every 50 seconds in rain
+                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.rain", 20.0);
+            }
+
+            // Environmental Interaction: Moon (Night + Clear Sky + Surface)
+            if (this.level().isNight() && !this.level().isRaining() && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() < 0.0005F) {
+                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.moon", 20.0);
+            }
+            
+            // Environmental Interaction: Cherry Grove (If in biome)
+            // Note: Cherry Grove is 1.20+, ensure compatibility. Biome check.
+            if (this.level().getBiome(this.blockPosition()).is(net.minecraft.world.level.biome.Biomes.CHERRY_GROVE) && this.random.nextFloat() < 0.002F) {
+                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.cherry_blossom", 20.0);
+            }
+
+            // Status Interaction: Low Health Player Nearby
+            if (this.tickCount % 100 == 0) { // Every 5 seconds
+                Player p = this.level().getNearestPlayer(this, 10.0D);
+                if (p != null && p.getHealth() < p.getMaxHealth() * 0.3F && !this.entityData.get(IS_BETRAYED)) {
+                     // Only speak if friendship is high enough to care
+                     if (this.entityData.get(FRIENDSHIP_LEVEL) >= 3) {
+                         p.displayClientMessage(Component.translatable("entity.typemoonworld.ryougi_shiki.speech.player_low_health"), false);
+                     }
+                }
+                
+                // Status Interaction: Invisible Player
+                if (p != null && p.hasEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY)) {
+                     // She has Mystic Eyes, she can likely perceive presence or lines of death even if invisible
+                     if (this.random.nextFloat() < 0.3F) {
+                         p.displayClientMessage(Component.translatable("entity.typemoonworld.ryougi_shiki.speech.player_invisible"), false);
+                     }
+                }
+            }
+
+            // Autosuggestion Logic (Self-Buffs when HP < 50%)
+            if (this.getHealth() < this.getMaxHealth() * 0.5F) {
+                if (!this.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED)) {
+                    this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 200, 1));
+                }
+                if (!this.hasEffect(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST)) {
+                    this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 200, 1));
+                }
+            }
+
+            // Slash Logic
+            if (this.slashCooldown > 0) this.slashCooldown--;
+            if (this.ultimateCooldown > 0) this.ultimateCooldown--;
+            if (this.knifeThrowCooldown > 0) this.knifeThrowCooldown--;
+            
+            // Sword Retrieval Logic
+            if (!this.hasSword()) {
+                if (this.swordRetrievalTimer > 0) {
+                    this.swordRetrievalTimer--;
+                } else {
+                    // Retrieve Sword
+                    this.entityData.set(HAS_SWORD, true);
+                    this.playSound(SoundEvents.ARMOR_EQUIP_IRON.value(), 1.0F, 1.0F);
+                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.retrieve_knife", 20.0);
+                }
+            }
+
+            // Limb Loss Logic Check (Continuous check)
+            // Ensure we are alive (health > 0) to avoid conflict with death logic
+            if (this.getHealth() <= 20.0F && this.getHealth() > 0.0F && this.hasLeftArm()) {
+                this.entityData.set(HAS_LEFT_ARM, false);
+                this.playSound(SoundEvents.ITEM_BREAK, 1.0F, 0.5F);
+                broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.lost_arm", 30.0);
+            }
+            
+            LivingEntity target = this.getTarget();
+            if (target != null) {
+                // Knife Throw Logic
+                // Conditions: Distance > 5, Has Sword, Cooldown 0
+                // New Condition: Target must be in air (Y difference > 2.0) or flying/jumping
+                double distSqr = this.distanceToSqr(target);
+                double dyThrow = target.getY() - this.getY();
+                
+                boolean isTargetInAir = dyThrow > 2.0D || !target.onGround();
+                
+                if (distSqr > 25.0D && this.hasSword() && this.knifeThrowCooldown == 0 && isTargetInAir) {
+                     // Check for multiple flying enemies
+                     long flyingEnemiesCount = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(20.0D), 
+                         e -> e != this && (e instanceof Monster || e instanceof Player) && e.isAlive() && (!e.onGround() || e.getY() > this.getY() + 2.0D)).size();
+
+                     if (flyingEnemiesCount >= 2) {
+                         // Multiple flying enemies: Throw 3 knives
+                         if (this.random.nextFloat() < 0.2F) { // 20% chance
+                             this.performMultiKnifeThrow(target, 3);
+                         }
+                     } else {
+                         // Single target or just normal air check
+                         // 5% chance per tick if conditions met (and far enough)
+                         if (this.random.nextFloat() < 0.05F) {
+                             this.performKnifeThrow(target);
+                         }
+                     }
+                }
+
+                // Anti-Air Attack Logic
+                // If target is above (3 to 8 blocks) and close horizontally
+                double dy = target.getY() - this.getY();
+                double distSqrToTarget = this.distanceToSqr(target);
+                if (dy > 3.0D && dy < 8.0D && distSqrToTarget < 25.0D && this.onGround() && this.random.nextFloat() < 0.2F) {
+                      // Jump
+                      this.setDeltaMovement(this.getDeltaMovement().add(0, 1.2, 0));
+                      this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 2.0F);
+                      
+                      // Dash towards
+                      Vec3 vec = target.position().subtract(this.position()).normalize().scale(0.5);
+                      this.setDeltaMovement(this.getDeltaMovement().add(vec.x, 0, vec.z));
+                      
+                      broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.jump_attack", 20.0, 1.0F);
+                      
+                      // Trigger Slash immediately
+                      if (this.slashCooldown == 0) {
+                          this.performSlash();
+                          this.slashCooldown = 40; // Shorter cooldown for air attack
+                      }
+                }
+
+                // Teleport logic (When far away OR retreating)
+                // If in Guerrilla mode (retreating), allow teleporting backwards or away?
+                // The AvoidEntityGoal handles movement, but we can add small blinks here.
+                
+                boolean canUseSkills = !this.isGuerrilla; // Disable offensive skills when retreating
+
+                if (distSqrToTarget > 64.0D && this.random.nextFloat() < 0.05F) { // > 8 blocks away, 5% chance per tick
+                    // Only teleport forward if NOT retreating
+                    if (canUseSkills) {
+                        Vec3 look = this.getLookAngle();
+                        double teleportDist = 2.0D;
+                        // Teleport 2 blocks forward
+                        double tx = this.getX() + look.x * teleportDist;
+                        double ty = this.getY();
+                        double tz = this.getZ() + look.z * teleportDist;
+                        
+                        BlockPos tpPos = BlockPos.containing(tx, ty, tz);
+                        if (this.level().getBlockState(tpPos).isAir() || !this.level().getBlockState(tpPos).blocksMotion()) {
+                            this.teleportTo(tx, ty, tz);
+                            this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
+                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.dodge", 10.0, 0.1F);
+                        }
+                    }
+                } else if (this.isGuerrilla && this.random.nextFloat() < 0.1F) { // Retreating teleport
+                    // Teleport away/backwards
+                    Vec3 look = this.getLookAngle().reverse(); // Backwards
+                    double teleportDist = 2.0D;
+                    double tx = this.getX() + look.x * teleportDist;
+                    double ty = this.getY();
+                    double tz = this.getZ() + look.z * teleportDist;
+                    
+                    BlockPos tpPos = BlockPos.containing(tx, ty, tz);
+                    if (this.level().getBlockState(tpPos).isAir() || !this.level().getBlockState(tpPos).blocksMotion()) {
+                        this.teleportTo(tx, ty, tz);
+                        this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
+                    }
+                }
+
+                if (this.slashCooldown == 0 && canUseSkills) { // Only slash if not retreating
+                    // If target is in air, significantly reduce chance of using Ground Slash
+                    // 20% chance if in air, 100% if on ground
+                    if (isTargetInAir && this.random.nextFloat() > 0.2F) {
+                        // Skip slash attempt
+                    } else {
+                        boolean shouldSlash = false;
+                        
+                        // Check enemies count (> 3)
+                        List<LivingEntity> enemies = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.0D), 
+                            e -> e != this && (e instanceof Monster || e instanceof Player) && e.isAlive());
+                        if (enemies.size() > 3) {
+                            shouldSlash = true;
+                            // Dialogue when crowded (Reduced probability: 10%)
+                            if (!this.level().isClientSide) {
+                                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.crowded", 10.0, 0.1F);
+                            }
+                        }
+                        
+                        // Check obstruction (Path stuck)
+                        if (!shouldSlash && this.getNavigation().isStuck()) {
+                            shouldSlash = true;
+                        }
+                        
+                        if (shouldSlash) {
+                            performSlash();
+                            this.slashCooldown = 60; // 3 seconds cooldown
+                        }
+                    }
+                }
+
+                List<LivingEntity> toughEnemies = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0D), 
+                    e -> e != this && e instanceof Monster && e.getMaxHealth() > 100.0F && e.isAlive());
+                
+                if (toughEnemies.size() >= 2) {
+                    // Too many tough enemies, hit and run!
+                    // Logic: Attack for a bit, then flee, then attack
+                    if (this.tickCount % 100 < 40) { // 40 ticks run, 60 ticks fight
+                        if (!this.isGuerrilla) {
+                            // Just entered flee mode
+                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.guerrilla_retreat", 15.0);
+                        }
+                        this.isGuerrilla = true;
+                    } else {
+                        this.isGuerrilla = false;
+                    }
+                } else {
+                    this.isGuerrilla = false;
+                }
+            }
+            
+            // AI State Machine logic
+            float healthPct = this.getHealth() / this.getMaxHealth();
+            
+            // Passive behavior when player holds Sweet Berries
+            Player player = this.level().getNearestPlayer(this, 10.0D);
+            if (player != null && (player.getMainHandItem().is(net.minecraft.world.item.Items.SWEET_BERRIES) || player.getOffhandItem().is(net.minecraft.world.item.Items.SWEET_BERRIES))) {
+                 // Check if betrayed. If betrayed, ignore berries (unless fed again maybe? But user said "next time no use")
+                 // User said: "next time take out sweet berries it is useless" if attacked.
+                 boolean betrayed = this.entityData.get(IS_BETRAYED);
+                 
+                 if (!betrayed) {
+                     // Clear target to stop attacking
+                     if (this.getTarget() == player) {
+                         this.setTarget(null);
+                     }
+                     
+                     // Look at player
+                     this.getLookControl().setLookAt(player, 30.0F, 30.0F);
+                     
+                     // Stop moving if no other enemies around
+                     if (this.getTarget() == null) {
+                         this.getNavigation().stop();
+                     }
+                 }
+            }
+            
+            if (healthPct < 0.8F && !this.isSerious) {
+                // Enter Serious Mode: More aggressive, less dodge
+                this.isSerious = true;
+                this.playSound(SoundEvents.ITEM_BREAK, 1.0F, 0.5F); // Sound cue for mode switch
+            } else if (healthPct >= 0.8F) {
+                 if (this.isSerious) {
+                    // Enter Passive Mode: Cat-like, high dodge, only counter-attack
+                    this.isSerious = false;
+                }
+            }
+            
+            // Friendship Logic: If friendship >= 5, help player
+            // But do not follow (as requested). Just attack hostile mobs targeting player.
+            if (this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !this.entityData.get(IS_BETRAYED)) {
+                 // Add protection goal if not present
+                 // Note: Ideally check if goal is running or added, but addGoal handles duplicates gracefully usually?
+                 // Actually, best to manage it like attackMonstersGoal
+                 this.targetSelector.addGoal(3, this.attackPlayerEnemiesGoal);
+            } else {
+                 this.targetSelector.removeGoal(this.attackPlayerEnemiesGoal);
+            }
+        }
+        
+        // Client-side visual effects
+        if (this.level().isClientSide) {
+            // Sprint/Attack Trail
+            if (this.isSprinting() || this.isGuerrilla) {
+                 this.level().addParticle(ParticleTypes.CLOUD, 
+                    this.getX() + (this.random.nextDouble() - 0.5), 
+                    this.getY() + 0.1, 
+                    this.getZ() + (this.random.nextDouble() - 0.5), 
+                    0, 0, 0);
+            }
+        }
+    }
+    
+    private boolean isLookingAt(LivingEntity viewer, LivingEntity target) {
+        Vec3 viewVec = viewer.getViewVector(1.0F).normalize();
+        Vec3 dirToTarget = target.getEyePosition().subtract(viewer.getEyePosition()).normalize();
+        return viewVec.dot(dirToTarget) > 0.95; // ~18 degrees cone
+    }
+
+
+
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
@@ -75,6 +578,68 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                 .add(Attributes.ARMOR, 4.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.5D)
                 .add(Attributes.FOLLOW_RANGE, 64.0D);
+    }
+
+    @Override
+    public void setTarget(@javax.annotation.Nullable LivingEntity target) {
+        LivingEntity oldTarget = this.getTarget();
+        super.setTarget(target);
+        
+        if (target != null && target != oldTarget && !this.level().isClientSide) {
+            String speechKey = null;
+            
+            // Priority Checks
+            if (target.isInvisible()) {
+                speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_invisible";
+            } else if (target.getMaxHealth() >= 50 && !(target instanceof net.minecraft.world.entity.boss.wither.WitherBoss) && !(target instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) && this.random.nextFloat() < 0.2F) {
+                // High HP non-boss check (Seeing Lines), low chance to override specific type
+                speechKey = "entity.typemoonworld.ryougi_shiki.speech.seeing_lines";
+            } else {
+                // Type Checks
+                if (target instanceof net.minecraft.world.entity.monster.Zombie) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_zombie";
+                } else if (target instanceof net.minecraft.world.entity.monster.Skeleton || target instanceof net.minecraft.world.entity.monster.Stray) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_skeleton";
+                } else if (target instanceof net.minecraft.world.entity.monster.Creeper) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_creeper";
+                } else if (target instanceof net.minecraft.world.entity.monster.EnderMan) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_enderman";
+                } else if (target instanceof net.minecraft.world.entity.monster.Spider || target instanceof net.minecraft.world.entity.monster.CaveSpider) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_spider";
+                } else if (target instanceof net.minecraft.world.entity.monster.Witch || target instanceof net.minecraft.world.entity.monster.Evoker) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_witch";
+                } else if (target instanceof net.minecraft.world.entity.monster.Phantom) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_phantom";
+                } else if (target instanceof net.minecraft.world.entity.monster.Vex || target instanceof net.minecraft.world.entity.monster.Blaze) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_spirit";
+                } else if (target instanceof net.minecraft.world.entity.monster.Slime || target instanceof net.minecraft.world.entity.monster.MagmaCube) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_slime";
+                } else if (target instanceof net.minecraft.world.entity.boss.wither.WitherBoss) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_wither";
+                } else if (target instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_ender_dragon";
+                } else if (target instanceof net.minecraft.world.entity.animal.IronGolem) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_iron_golem";
+                } else if (target instanceof net.minecraft.world.entity.npc.Villager) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_villager";
+                } else if (target instanceof net.minecraft.world.entity.animal.Animal || target instanceof net.minecraft.world.entity.TamableAnimal) {
+                    speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_animal";
+                } else {
+                    // Check horde condition
+                    List<Monster> nearbyMonsters = this.level().getEntitiesOfClass(Monster.class, this.getBoundingBox().inflate(15.0D));
+                    if (nearbyMonsters.size() > 5) {
+                        speechKey = "entity.typemoonworld.ryougi_shiki.speech.target_horde";
+                    }
+                }
+            }
+            
+            if (speechKey != null) {
+                // 30% chance to speak specific line on target switch to avoid constant spam
+                if (this.random.nextFloat() < 0.3F) {
+                    broadcastToNearbyPlayers(speechKey, 20.0);
+                }
+            }
+        }
     }
 
     @Override
@@ -109,6 +674,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             public boolean canUse() {
                 // Must have sword to attack
                 if (!RyougiShikiEntity.this.hasSword()) return false;
+                // Note: Weakened entity can still melee attack (defensive/counter), but skills are disabled.
                 return super.canUse() && !RyougiShikiEntity.this.isGuerrilla;
             }
             
@@ -123,10 +689,10 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             // Or dynamically adjust attribute.
         });
         
-        // Flee/Kiting goal when Guerrilla mode is active OR when weapon is lost
+        // Flee/Kiting goal when Guerrilla mode is active OR when weapon is lost OR when Weakened
         this.goalSelector.addGoal(1, new net.minecraft.world.entity.ai.goal.AvoidEntityGoal<>(this, LivingEntity.class, 
             16.0F, 1.8D, 2.0D, // Increased speed for retreating (Base 0.25 * 1.8 = 0.45 / 2.0 = 0.5)
-            (entity) -> entity == RyougiShikiEntity.this.getTarget() && (RyougiShikiEntity.this.isGuerrilla || !RyougiShikiEntity.this.hasSword())
+            (entity) -> entity == RyougiShikiEntity.this.getTarget() && (RyougiShikiEntity.this.isGuerrilla || !RyougiShikiEntity.this.hasSword() || RyougiShikiEntity.this.isWeakened)
         ));
 
         this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 1.0D));
@@ -134,9 +700,11 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        // Attack monsters by default (Active aggression)
-        this.attackMonstersGoal = new NearestAttackableTargetGoal<>(this, Monster.class, true);
-        this.targetSelector.addGoal(2, this.attackMonstersGoal); 
+        // Attack all Enemies (Monsters, Slimes, etc.) by default
+        this.attackMonstersGoal = new NearestAttackableTargetGoal<>(this, Monster.class, true); 
+        // We use LivingEntity.class and filter for Enemy interface to catch Slimes, Magma Cubes, etc.
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 10, true, false, 
+            (e) -> e instanceof Enemy && !(e instanceof RyougiShikiEntity))); 
         
         // Custom goal: Attack entities that attacked the player (Owner-like behavior but without taming)
         this.attackPlayerEnemiesGoal = new NearestAttackableTargetGoal<>(this, LivingEntity.class, 10, true, false, 
@@ -173,6 +741,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                 // Conditions:
                 // 0. Must have sword
                 if (!RyougiShikiEntity.this.hasSword()) return false;
+                if (RyougiShikiEntity.this.isWeakened) return false;
 
                 // 1. Cooldown must be 0
                 if (RyougiShikiEntity.this.ultimateCooldown > 0 || t == null || !t.isAlive()) return false;
@@ -304,8 +873,18 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             
             // Resolve Variant
             String finalKey = baseKey;
-            // Check random chance to use variant
-            if (this.random.nextBoolean()) {
+            
+            // Special handling for keys with 5 variants
+            if (baseKey.equals("entity.typemoonworld.ryougi_shiki.speech.death") || 
+                baseKey.equals("entity.typemoonworld.ryougi_shiki.speech.lost_arm")) {
+                int variant = this.random.nextInt(5); // 0 to 4
+                if (variant > 0) {
+                    finalKey = baseKey + "_v" + (variant + 1); // _v2, _v3, _v4, _v5 (base is v1)
+                }
+                // variant 0 keeps baseKey
+            } 
+            // Standard 2-variant logic
+            else if (this.random.nextBoolean()) {
                 // 50% chance to use variant for selected keys
                 switch (baseKey) {
                     case "entity.typemoonworld.ryougi_shiki.speech.see_sword":
@@ -365,333 +944,79 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-        
-        // Client-side visual effects
-        if (this.level().isClientSide) {
-            // Sprint/Attack Trail
-            if (this.isSprinting() || this.isGuerrilla) {
-                 this.level().addParticle(ParticleTypes.CLOUD, 
-                    this.getX() + (this.random.nextDouble() - 0.5), 
-                    this.getY() + 0.1, 
-                    this.getZ() + (this.random.nextDouble() - 0.5), 
-                    0, 0, 0);
-            }
-        }
 
+
+    private void performMultiKnifeThrow(LivingEntity target, int count) {
         if (!this.level().isClientSide) {
-            // Passive Interaction with Held Items (Check every 20 ticks / 1s)
-            if (this.tickCount % 20 == 0) {
-                Player p = this.level().getNearestPlayer(this, 8.0D);
-                // Only talk if NOT in combat
-                if (p != null && !this.entityData.get(IS_BETRAYED) && this.hasLineOfSight(p) && this.getTarget() == null) {
-                    ItemStack heldItem = p.getMainHandItem();
-                    
-                    // Sword (Lore: Weapon appreciation)
-                    if (heldItem.getItem() instanceof net.minecraft.world.item.SwordItem) {
-                        if (this.random.nextFloat() < 0.05F) { // 5% chance per second
-                            this.getLookControl().setLookAt(p, 30.0F, 30.0F);
-                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.see_sword", 20.0);
-                        }
-                    }
-                    
-                    // Shield (Lore: Defense comment)
-                    else if (heldItem.getItem() instanceof net.minecraft.world.item.ShieldItem) {
-                        if (this.random.nextFloat() < 0.05F) {
-                            this.getLookControl().setLookAt(p, 30.0F, 30.0F);
-                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.see_shield", 20.0);
-                        }
-                    }
-                    
-                    // Clock (Lore: Waiting)
-                    else if (heldItem.is(net.minecraft.world.item.Items.CLOCK)) {
-                        if (this.random.nextFloat() < 0.05F) {
-                            this.getLookControl().setLookAt(p, 30.0F, 30.0F);
-                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.see_clock", 20.0);
-                        }
-                    }
-                    
-                    // Cat-like reactions (Milk, String)
-                    else if (heldItem.is(net.minecraft.world.item.Items.MILK_BUCKET) || heldItem.is(net.minecraft.world.item.Items.STRING)) {
-                         // Higher chance for cat items (10%)
-                         if (this.random.nextFloat() < 0.1F) {
-                             this.getLookControl().setLookAt(p, 30.0F, 30.0F);
-                             String key = heldItem.is(net.minecraft.world.item.Items.MILK_BUCKET) ? 
-                                 "entity.typemoonworld.ryougi_shiki.speech.see_milk" : "entity.typemoonworld.ryougi_shiki.speech.see_string";
-                             broadcastToNearbyPlayers(key, 20.0);
-                         }
-                    }
-                }
-            }
+            if (this.isWeakened) return;
+            // Check target is current target
+            if (target != this.getTarget()) return;
 
-            // Water Aversion Logic
-            if (this.isInWater()) {
-                this.jumpControl.jump();
-                this.setDeltaMovement(this.getDeltaMovement().add(
-                    (this.random.nextDouble() - 0.5) * 0.5, 
-                    0.2, 
-                    (this.random.nextDouble() - 0.5) * 0.5
-                ));
-                // Speak occasionally
-                if (this.random.nextFloat() < 0.05F) { // 5% chance per tick
-                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.hate_water", 15.0);
-                }
-            }
-
-            // Defense timer logic
-            if (this.blockingTimer > 0) {
-                this.blockingTimer--;
-                if (this.blockingTimer == 0) {
-                    this.entityData.set(IS_DEFENDING, false);
-                }
-            }
-
-            // Environmental Interaction: Rain
-            if (this.level().isRainingAt(this.blockPosition()) && this.random.nextFloat() < 0.001F) { // Rare chance in rain
-                 // 0.1% per tick -> approx every 50 seconds in rain
-                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.rain", 20.0);
-            }
-
-            // Environmental Interaction: Moon (Night + Clear Sky + Surface)
-            if (this.level().isNight() && !this.level().isRaining() && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() < 0.0005F) {
-                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.moon", 20.0);
-            }
-            
-            // Environmental Interaction: Cherry Grove (If in biome)
-            // Note: Cherry Grove is 1.20+, ensure compatibility. Biome check.
-            if (this.level().getBiome(this.blockPosition()).is(net.minecraft.world.level.biome.Biomes.CHERRY_GROVE) && this.random.nextFloat() < 0.002F) {
-                 broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.cherry_blossom", 20.0);
-            }
-
-            // Status Interaction: Low Health Player Nearby
-            if (this.tickCount % 100 == 0) { // Every 5 seconds
-                Player p = this.level().getNearestPlayer(this, 10.0D);
-                if (p != null && p.getHealth() < p.getMaxHealth() * 0.3F && !this.entityData.get(IS_BETRAYED)) {
-                     // Only speak if friendship is high enough to care
-                     if (this.entityData.get(FRIENDSHIP_LEVEL) >= 3) {
-                         p.displayClientMessage(Component.translatable("entity.typemoonworld.ryougi_shiki.speech.player_low_health"), false);
-                     }
-                }
+            // Throw Multiple Knives
+            for (int i = 0; i < count; i++) {
+                // Delay subsequent throws? Or burst instant?
+                // Instant burst is easier to implement.
                 
-                // Status Interaction: Invisible Player
-                if (p != null && p.hasEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY)) {
-                     // She has Mystic Eyes, she can likely perceive presence or lines of death even if invisible
-                     if (this.random.nextFloat() < 0.3F) {
-                         p.displayClientMessage(Component.translatable("entity.typemoonworld.ryougi_shiki.speech.player_invisible"), false);
-                     }
-                }
-            }
-
-            // Autosuggestion Logic (Self-Buffs when HP < 50%)
-            if (this.getHealth() < this.getMaxHealth() * 0.5F) {
-                if (!this.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED)) {
-                    this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 200, 1));
-                }
-                if (!this.hasEffect(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST)) {
-                    this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 200, 1));
-                }
-            }
-
-            // Slash Logic
-            if (this.slashCooldown > 0) this.slashCooldown--;
-            if (this.ultimateCooldown > 0) this.ultimateCooldown--;
-            if (this.knifeThrowCooldown > 0) this.knifeThrowCooldown--;
-            
-            // Sword Retrieval Logic
-            if (!this.hasSword()) {
-                if (this.swordRetrievalTimer > 0) {
-                    this.swordRetrievalTimer--;
-                } else {
-                    // Retrieve Sword
-                    this.entityData.set(HAS_SWORD, true);
-                    this.playSound(SoundEvents.ARMOR_EQUIP_IRON.value(), 1.0F, 1.0F);
-                    broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.retrieve_knife", 20.0);
-                }
-            }
-
-            // Limb Loss Logic Check (Continuous check)
-            if (this.getHealth() <= 20.0F && this.hasLeftArm()) {
-                this.entityData.set(HAS_LEFT_ARM, false);
-                this.playSound(SoundEvents.ITEM_BREAK, 1.0F, 0.5F);
-                broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.lost_arm", 30.0);
-            }
-
-            LivingEntity target = this.getTarget();
-            if (target != null) {
-                // Knife Throw Logic
-                // Conditions: Distance > 5, Has Sword, Cooldown 0
-                // New Condition: Target must be in air (Y difference > 2.0) or flying/jumping
-                double distSqr = this.distanceToSqr(target);
-                double dyThrow = target.getY() - this.getY();
-                
-                boolean isTargetInAir = dyThrow > 2.0D || !target.onGround();
-                
-                if (distSqr > 25.0D && this.hasSword() && this.knifeThrowCooldown == 0 && isTargetInAir) {
-                     // 5% chance per tick if conditions met (and far enough)
-                     if (this.random.nextFloat() < 0.05F) {
-                         this.performKnifeThrow(target);
-                     }
-                }
-
-                // Anti-Air Attack Logic
-                // If target is above (3 to 8 blocks) and close horizontally
-                double dy = target.getY() - this.getY();
-                double distSqrToTarget = this.distanceToSqr(target);
-                if (dy > 3.0D && dy < 8.0D && distSqrToTarget < 25.0D && this.onGround() && this.random.nextFloat() < 0.2F) {
-                      // Jump
-                      this.setDeltaMovement(this.getDeltaMovement().add(0, 1.2, 0));
-                      this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 2.0F);
-                      
-                      // Dash towards
-                      Vec3 vec = target.position().subtract(this.position()).normalize().scale(0.5);
-                      this.setDeltaMovement(this.getDeltaMovement().add(vec.x, 0, vec.z));
-                      
-                      broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.jump_attack", 20.0, 1.0F);
-                      
-                      // Trigger Slash immediately
-                      if (this.slashCooldown == 0) {
-                          this.performSlash();
-                          this.slashCooldown = 40; // Shorter cooldown for air attack
-                      }
-                }
-
-                // Teleport logic (When far away OR retreating)
-                // If in Guerrilla mode (retreating), allow teleporting backwards or away?
-                // The AvoidEntityGoal handles movement, but we can add small blinks here.
-                
-                boolean canUseSkills = !this.isGuerrilla; // Disable offensive skills when retreating
-
-                if (distSqrToTarget > 64.0D && this.random.nextFloat() < 0.05F) { // > 8 blocks away, 5% chance per tick
-                    // Only teleport forward if NOT retreating
-                    if (canUseSkills) {
-                        Vec3 look = this.getLookAngle();
-                        double teleportDist = 2.0D;
-                        // Teleport 2 blocks forward
-                        double tx = this.getX() + look.x * teleportDist;
-                        double ty = this.getY();
-                        double tz = this.getZ() + look.z * teleportDist;
-                        
-                        BlockPos tpPos = BlockPos.containing(tx, ty, tz);
-                        if (this.level().getBlockState(tpPos).isAir() || !this.level().getBlockState(tpPos).blocksMotion()) {
-                            this.teleportTo(tx, ty, tz);
-                            this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
-                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.dodge", 10.0, 0.1F);
+                net.minecraft.world.entity.projectile.Snowball projectile = new net.minecraft.world.entity.projectile.Snowball(this.level(), this) {
+                    @Override
+                    protected void onHitEntity(net.minecraft.world.phys.EntityHitResult pResult) {
+                        if (pResult.getEntity() instanceof LivingEntity living) {
+                            if (living instanceof Player p && RyougiShikiEntity.this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !RyougiShikiEntity.this.entityData.get(IS_BETRAYED)) return;
+                            if (living == RyougiShikiEntity.this.getTarget()) {
+                                RyougiShikiEntity.this.handleMysticEyesEffect(living, true); 
+                                living.hurt(RyougiShikiEntity.this.damageSources().thrown(this, RyougiShikiEntity.this), 6.0F);
+                            }
                         }
                     }
-                } else if (this.isGuerrilla && this.random.nextFloat() < 0.1F) { // Retreating teleport
-                    // Teleport away/backwards
-                    Vec3 look = this.getLookAngle().reverse(); // Backwards
-                    double teleportDist = 2.0D;
-                    double tx = this.getX() + look.x * teleportDist;
-                    double ty = this.getY();
-                    double tz = this.getZ() + look.z * teleportDist;
-                    
-                    BlockPos tpPos = BlockPos.containing(tx, ty, tz);
-                    if (this.level().getBlockState(tpPos).isAir() || !this.level().getBlockState(tpPos).blocksMotion()) {
-                        this.teleportTo(tx, ty, tz);
-                        this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
+                    @Override
+                    protected void onHit(net.minecraft.world.phys.HitResult pResult) {
+                        super.onHit(pResult);
+                        if (!this.level().isClientSide) this.discard();
                     }
-                }
-
-                if (this.slashCooldown == 0 && canUseSkills) { // Only slash if not retreating
-                    boolean shouldSlash = false;
-                    
-                    // Check enemies count (> 3)
-                    List<LivingEntity> enemies = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.0D), 
-                        e -> e != this && (e instanceof Monster || e instanceof Player) && e.isAlive());
-                    if (enemies.size() > 3) {
-                        shouldSlash = true;
-                        // Dialogue when crowded (Reduced probability: 10%)
-                        if (!this.level().isClientSide) {
-                             broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.crowded", 10.0, 0.1F);
+                    @Override
+                    public void tick() {
+                        super.tick();
+                        if (this.level().isClientSide) {
+                             this.level().addParticle(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+                             this.level().addParticle(ParticleTypes.ENCHANTED_HIT, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+                             this.level().addParticle(ParticleTypes.WITCH, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
                         }
                     }
-                    
-                    // Check obstruction (Path stuck)
-                    if (!shouldSlash && this.getNavigation().isStuck()) {
-                        shouldSlash = true;
-                    }
-                    
-                    if (shouldSlash) {
-                        performSlash();
-                        this.slashCooldown = 60; // 3 seconds cooldown
-                    }
-                }
+                };
+                projectile.setInvisible(true); 
+                projectile.setItem(ItemStack.EMPTY);
 
-                List<LivingEntity> toughEnemies = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0D), 
-                    e -> e != this && e instanceof Monster && e.getMaxHealth() > 100.0F && e.isAlive());
+                double d0 = target.getX() - this.getX();
+                double d1 = target.getEyeY() - 0.3333333333333333D - projectile.getY();
+                double d2 = target.getZ() - this.getZ();
+                double d3 = Math.sqrt(d0 * d0 + d2 * d2);
                 
-                if (toughEnemies.size() >= 2) {
-                    // Too many tough enemies, hit and run!
-                    // Logic: Attack for a bit, then flee, then attack
-                    if (this.tickCount % 100 < 40) { // 40 ticks run, 60 ticks fight
-                        if (!this.isGuerrilla) {
-                            // Just entered flee mode
-                            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.guerrilla_retreat", 15.0);
-                        }
-                        this.isGuerrilla = true;
-                    } else {
-                        this.isGuerrilla = false;
-                    }
-                } else {
-                    this.isGuerrilla = false;
-                }
+                // Add spread for multi-throw
+                float spread = i == 0 ? 0 : 10.0F; 
+                // Adjust angle for spread? Snowball shoot has uncertainty parameter (last float)
+                // We can increase uncertainty for 2nd and 3rd knife
+                
+                projectile.shoot(d0, d1 + d3 * 0.2D, d2, 1.6F, (float)(14 - this.level().getDifficulty().getId() * 4) + spread);
+                
+                this.level().addFreshEntity(projectile);
             }
             
-            // AI State Machine logic
-            float healthPct = this.getHealth() / this.getMaxHealth();
+            this.playSound(SoundEvents.TRIDENT_THROW.value(), 1.0F, 1.0F);
+            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.throw_knife", 20.0);
             
-            // Passive behavior when player holds Sweet Berries
-            Player player = this.level().getNearestPlayer(this, 10.0D);
-            if (player != null && (player.getMainHandItem().is(net.minecraft.world.item.Items.SWEET_BERRIES) || player.getOffhandItem().is(net.minecraft.world.item.Items.SWEET_BERRIES))) {
-                 // Check if betrayed. If betrayed, ignore berries (unless fed again maybe? But user said "next time no use")
-                 // User said: "next time take out sweet berries it is useless" if attacked.
-                 boolean betrayed = this.entityData.get(IS_BETRAYED);
-                 
-                 if (!betrayed) {
-                     // Clear target to stop attacking
-                     if (this.getTarget() == player) {
-                         this.setTarget(null);
-                     }
-                     
-                     // Look at player
-                     this.getLookControl().setLookAt(player, 30.0F, 30.0F);
-                     
-                     // Stop moving if no other enemies around
-                     if (this.getTarget() == null) {
-                         this.getNavigation().stop();
-                     }
-                 }
-            }
-            
-            if (healthPct < 0.8F && !this.isSerious) {
-                // Enter Serious Mode: More aggressive, less dodge
-                this.isSerious = true;
-                this.playSound(SoundEvents.ITEM_BREAK, 1.0F, 0.5F); // Sound cue for mode switch
-            } else if (healthPct >= 0.8F) {
-                 if (this.isSerious) {
-                    // Enter Passive Mode: Cat-like, high dodge, only counter-attack
-                    this.isSerious = false;
-                }
-            }
-            
-            // Friendship Logic: If friendship >= 5, help player
-            // But do not follow (as requested). Just attack hostile mobs targeting player.
-            if (this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !this.entityData.get(IS_BETRAYED)) {
-                 // Add protection goal if not present
-                 // Note: Ideally check if goal is running or added, but addGoal handles duplicates gracefully usually?
-                 // Actually, best to manage it like attackMonstersGoal
-                 this.targetSelector.addGoal(3, this.attackPlayerEnemiesGoal);
-            } else {
-                 this.targetSelector.removeGoal(this.attackPlayerEnemiesGoal);
-            }
+            // Set State
+            this.entityData.set(HAS_SWORD, false);
+            this.swordRetrievalTimer = 40; // 2 seconds (Increased for multi-throw)
+            this.knifeThrowCooldown = 200; // 10 seconds cooldown
         }
     }
 
     private void performKnifeThrow(LivingEntity target) {
         if (!this.level().isClientSide) {
+            if (this.isWeakened) return;
+            // Check target is current target
+            if (target != this.getTarget()) return;
+
             // Throw Logic
             // Use Snowball instead of Arrow to avoid "arrow" properties, but render it invisible
             // We want an "Empty Entity" that carries damage and effects.
@@ -704,9 +1029,15 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                     // We manually apply damage.
                     
                     if (pResult.getEntity() instanceof LivingEntity living) {
-                        // Apply Mystic Eyes Effect
-                        RyougiShikiEntity.this.handleMysticEyesEffect(living, true); // Boosted effect
-                        living.hurt(RyougiShikiEntity.this.damageSources().thrown(this, RyougiShikiEntity.this), 6.0F);
+                        // Absolute Safety Check
+                        if (living instanceof Player p && RyougiShikiEntity.this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !RyougiShikiEntity.this.entityData.get(IS_BETRAYED)) return;
+
+                        // Only affect if it's the target
+                        if (living == RyougiShikiEntity.this.getTarget()) {
+                            // Apply Mystic Eyes Effect
+                            RyougiShikiEntity.this.handleMysticEyesEffect(living, true); // Boosted effect
+                            living.hurt(RyougiShikiEntity.this.damageSources().thrown(this, RyougiShikiEntity.this), 6.0F);
+                        }
                     }
                 }
                 
@@ -753,14 +1084,21 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             
             // Set State
             this.entityData.set(HAS_SWORD, false);
-            this.swordRetrievalTimer = 100; // 5 seconds
+            this.swordRetrievalTimer = 20; // 1 second
             this.knifeThrowCooldown = 200; // 10 seconds cooldown for skill itself
         }
     }
 
     private void performSlash() {
+        performSlash(false);
+    }
+
+    private void performSlash(boolean force) {
         if (this.level().isClientSide) return;
-        if (!this.hasSword()) return; // Cannot slash without sword
+        if (this.isWeakened && !force) return;
+        if (!this.hasSword() && !force) return; // Cannot slash without sword
+        // Force allows bypassing cooldown and sword check (if needed for survival)
+        
         Vec3 lookVec = this.getLookAngle();
         Vec3 center = this.position().add(0, this.getEyeHeight() * 0.5, 0);
         
@@ -795,14 +1133,19 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                 
                 BlockPos pos = BlockPos.containing(center.add(offset));
                 BlockState state = this.level().getBlockState(pos);
-                if (!state.isAir() && state.getDestroySpeed(this.level(), pos) >= 0) {
-                    this.level().destroyBlock(pos, false, this);
+                // Replace with AIR if destroyable
+                // To prevent lava/water issues, we set to AIR.
+                // However, user said "prevent being burned by lava", so maybe replace FLUIDS with AIR too?
+                // "Destroy terrain slash will directly replace with air block (prevent lava burn)"
+                // So if it's lava, replace with AIR.
+                if (!state.isAir() && (state.getDestroySpeed(this.level(), pos) >= 0 || state.getFluidState().isSource())) {
+                    this.level().setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 }
                 
                 // Also clear 1 block up and down to ensure path
                 BlockPos posUp = pos.above();
-                if (!this.level().getBlockState(posUp).isAir() && this.level().getBlockState(posUp).getDestroySpeed(this.level(), posUp) >= 0) {
-                     this.level().destroyBlock(posUp, false, this);
+                if (!this.level().getBlockState(posUp).isAir() && (this.level().getBlockState(posUp).getDestroySpeed(this.level(), posUp) >= 0 || this.level().getBlockState(posUp).getFluidState().isSource())) {
+                     this.level().setBlock(posUp, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 }
             }
         }
@@ -812,24 +1155,23 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
              e -> e != this && e.isAlive());
              
         for (LivingEntity e : targets) {
+            // Absolute Safety Check
+            if (e instanceof Player p && this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !this.entityData.get(IS_BETRAYED)) continue;
+
             // Safety Check: Do not harm non-hostile entities unless they are the target or targeting Shiki/Player
-            // "Non-hostile" roughly means not a Monster and not targeting us.
-            boolean isHostile = e instanceof Monster || e == this.getTarget();
-            if (e instanceof net.minecraft.world.entity.Mob mob) {
-                if (mob.getTarget() == this || mob.getTarget() instanceof Player) {
-                    isHostile = true;
-                }
-            }
-            // Also check for players (PvP safety) - Only attack if betrayed or if player is the target
-            if (e instanceof Player) {
-                isHostile = (this.entityData.get(IS_BETRAYED) || e == this.getTarget());
-            }
+            // Only attack if it is the current target
+            boolean isTarget = (e == this.getTarget());
             
-            if (!isHostile) continue; // Skip friendly fire
+            // Or if it's hostile and we are in combat?
+            // User requirement: "Skills only affect targeted creatures" (索敌的生物)
+            // So strictly enforce isTarget check for skills?
+            // "Skills only have effect on targeted mobs"
+            
+            if (!isTarget) continue; // Skip if not the main target
 
             // Use Mystic Eyes effect logic (Force Kill or Heavy Damage)
             handleMysticEyesEffect(e);
-            // Also apply a base damage to ensure aggro
+            // Also apply a base damage to ensure aggro (but suppress it)
             e.hurt(this.damageSources().mobAttack(this), 5.0F);
         }
     }
@@ -851,6 +1193,11 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             }
         }
         super.heal(healAmount);
+        
+        if (healAmount > 1.0F && !this.level().isClientSide && this.getHealth() < this.getMaxHealth()) {
+             // 20% chance to thank if healed significantly
+             broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.healed", 20.0, 0.2F);
+        }
     }
     
     @Override
@@ -858,12 +1205,42 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         if (!this.hasLeftArm() && health > 20.0F) {
             health = 20.0F;
         }
+        
+        // Anti-Causality Protection: Prevent setHealth(0) from external mods
+        if (health <= 0.0F && !this.isProcessingDamage && this.getHealth() > 0.0F) {
+             health = 1.0F; // Keep at 1 HP
+             if (!this.level().isClientSide) {
+                  broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.resist_causality", 20.0);
+             }
+        }
+        
         super.setHealth(health);
     }
 
+    private int escapeAttempts = 0;
+    private long lastEscapeTime = 0;
+    private boolean isProcessingDamage = false; // Flag to track internal damage processing
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // Handle Guerrilla Retreat Counter-Attack Logic
+        // Force target the attacker regardless of immunity (e.g. perfect defense)
+        if (source.getEntity() instanceof LivingEntity attacker && attacker != this) {
+            this.setTarget(attacker);
+        }
+
+        this.isProcessingDamage = true;
+        try {
+            // 0. Causality/Infinite Damage Protection
+            // Cap damage to prevent one-shots from OP mods (Draconic Evolution, Avaritia, etc.)
+            // If damage is absurdly high (> 1000), cap it to a survivable amount (e.g., 20% of Max HP)
+            if (amount > 1000.0F && !source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
+                amount = this.getMaxHealth() * 0.2F; // Cap to 20% max HP
+                if (!this.level().isClientSide) {
+                     broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.resist_infinite", 20.0);
+                }
+            }
+
+            // Handle Guerrilla Retreat Counter-Attack Logic
         if (this.isGuerrilla && source.getEntity() instanceof LivingEntity attacker) {
              // If attacked while retreating, counter attack or skill!
              this.isGuerrilla = false; // Stop retreating momentarily
@@ -877,6 +1254,98 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
              // After counter, she resumes normal AI state, which might decide to flee again next tick
         }
 
+        // Environmental/Trap Escape Logic
+        if (!this.level().isClientSide) {
+             boolean isTrap = source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE) || 
+                              source.is(DamageTypes.LAVA) || 
+                              source.is(DamageTypes.IN_WALL) || 
+                              source.is(DamageTypes.CRAMMING) || 
+                              source.is(DamageTypes.HOT_FLOOR) || 
+                              source.is(DamageTypes.SWEET_BERRY_BUSH) || 
+                              source.is(DamageTypes.CACTUS) || 
+                              source.is(net.minecraft.world.damagesource.DamageTypes.DROWN) ||
+                              source.is(DamageTypes.FREEZE) || 
+                              source.is(DamageTypes.WITHER) ||
+                              (source.getEntity() == null && source.getDirectEntity() == null && !source.is(DamageTypes.GENERIC_KILL) && !source.is(DamageTypes.FELL_OUT_OF_WORLD));
+            
+             if (isTrap) {
+                 long currentTime = this.level().getGameTime();
+                 // Reset attempts if long time passed (5 seconds)
+                 if (currentTime - lastEscapeTime > 100) {
+                     escapeAttempts = 0;
+                 }
+                 
+                 if (escapeAttempts < 3) {
+                     escapeAttempts++;
+                     lastEscapeTime = currentTime;
+                     
+                     // 1. Voice (Randomized for variety and mod compatibility)
+                     String[] escapeLines = {
+                         "entity.typemoonworld.ryougi_shiki.speech.escape_trap",
+                         "entity.typemoonworld.ryougi_shiki.speech.unknown_danger_1",
+                         "entity.typemoonworld.ryougi_shiki.speech.unknown_danger_2",
+                         "entity.typemoonworld.ryougi_shiki.speech.unknown_danger_3"
+                     };
+                     broadcastToNearbyPlayers(escapeLines[this.random.nextInt(escapeLines.length)], 20.0);
+                     
+                     // 2. 3x3x3 Slash (Center on self)
+                     BlockPos center = this.blockPosition();
+                     // Destroy Blocks
+                     for (int x = -1; x <= 1; x++) {
+                         for (int y = -1; y <= 1; y++) {
+                             for (int z = -1; z <= 1; z++) {
+                                 BlockPos p = center.offset(x, y, z);
+                                 BlockState state = this.level().getBlockState(p);
+                                 if (!state.isAir() && state.getDestroySpeed(this.level(), p) >= 0) {
+                                     this.level().destroyBlock(p, false, this); // No drops
+                                 }
+                             }
+                         }
+                     }
+                     // Kill Entities
+                     AABB box = this.getBoundingBox().inflate(1.5);
+                     List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, box, e -> e != this && e.isAlive());
+                     for (LivingEntity e : targets) {
+                         handleMysticEyesEffect(e, true); // Boosted effect (Instant Kill likely)
+                     }
+                     
+                     // Visuals
+                     ((net.minecraft.server.level.ServerLevel)this.level()).sendParticles(ParticleTypes.SWEEP_ATTACK, 
+                         this.getX(), this.getY() + 1.0, this.getZ(), 5, 1.0, 1.0, 1.0, 0.0);
+                     this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 0.5F);
+                     
+                     // 3. Teleport (2 blocks towards safety)
+                     // Try to find a safe spot (Air) in 2 block radius
+                     // Prefer Up/Sides
+                     BlockPos bestPos = null;
+                     
+                     // Simple search: check 2 blocks in cardinal directions + Up
+                     BlockPos[] candidates = {
+                         center.above(2), center.north(2), center.south(2), center.east(2), center.west(2),
+                         center.north(2).above(), center.south(2).above(), center.east(2).above(), center.west(2).above()
+                     };
+                     
+                     for (BlockPos p : candidates) {
+                         if (this.level().getBlockState(p).isAir() && this.level().getBlockState(p.above()).isAir()) {
+                             bestPos = p;
+                             break;
+                         }
+                     }
+                     
+                     if (bestPos != null) {
+                         this.teleportTo(bestPos.getX() + 0.5, bestPos.getY(), bestPos.getZ() + 0.5);
+                     } else {
+                         // Fallback: Just teleport Up 2 blocks
+                         this.teleportTo(this.getX(), this.getY() + 2.0, this.getZ());
+                     }
+                     
+                     this.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0F, 1.0F);
+                     
+                     return false; // Negate damage
+                 }
+             }
+        }
+
         // Anti-Kill Command / Generic Kill
         if (source.is(DamageTypes.GENERIC_KILL) || source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
              // Only immune if it's not a legitimate void fall (y < -64)
@@ -884,12 +1353,31 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                  this.playSound(SoundEvents.ANVIL_LAND, 1.0F, 0.5F); // Heavy sound
                  // Send message to server/players
                  if (!this.level().isClientSide) {
-                      this.level().getServer().getPlayerList().broadcastSystemMessage(
-                          Component.translatable("entity.typemoonworld.ryougi_shiki.speech.void_fall"), false
-                      );
+                      broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.resist_void", 20.0);
                  }
                  return false;
              }
+        }
+        
+        // Status Effect / Magic Countermeasure (Kill the Poison/Curse)
+        // Probability: 80% chance to negate and remove effects
+        if ((source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || 
+            source.is(DamageTypes.WITHER)) && this.random.nextFloat() < 0.8F) { 
+            
+            this.removeAllEffects(); // "Kill" the status effect
+            this.playSound(SoundEvents.ENCHANTMENT_TABLE_USE, 1.0F, 1.0F);
+            
+            // Visuals
+            if (!this.level().isClientSide) {
+                ((net.minecraft.server.level.ServerLevel)this.level()).sendParticles(ParticleTypes.WITCH, 
+                    this.getX(), this.getY() + 1.0, this.getZ(), 5, 0.5, 0.5, 0.5, 0.0);
+            }
+            return false;
+        }
+        
+        // Lightning Immunity
+        if (source.is(DamageTypes.LIGHTNING_BOLT)) {
+            return false;
         }
 
         Entity directEntity = source.getDirectEntity();
@@ -928,7 +1416,8 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                 } else {
                     // Probability Active Attack (Counter)
                     // Instead of automatic reflection, we attempt a normal attack swing
-                    if (this.random.nextFloat() < 0.5F) {
+                    // Check distance: Only counter if attacker is within melee range (approx 4 blocks)
+                    if (this.distanceToSqr(attacker) <= 16.0D && this.random.nextFloat() < 0.5F) {
                         this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                         if (this.hasSword() && this.slashCooldown == 0) {
                             this.performSlash();
@@ -986,13 +1475,31 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
              }
         }
 
-        return super.hurt(source, amount);
+        boolean result = super.hurt(source, amount);
+        if (result && amount > 8.0F && !this.level().isClientSide) {
+             broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.hurt_high", 20.0, 0.5F);
+        }
+        return result;
+        } finally {
+            this.isProcessingDamage = false;
+        }
     }
 
     private void triggerDefense() {
         if (!this.level().isClientSide && !this.entityData.get(IS_DEFENDING)) {
+            // Cannot defend if on fire
+            if (this.isOnFire()) return;
+            
             this.entityData.set(IS_DEFENDING, true);
             this.blockingTimer = 10; // Reduced to 0.5 seconds to avoid stun-lock
+        }
+    }
+
+    @Override
+    public void die(DamageSource cause) {
+        super.die(cause);
+        if (!this.level().isClientSide) {
+            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.death", 30.0);
         }
     }
 
@@ -1011,10 +1518,36 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         // super.kill(); // Intentionally removed
     }
 
+    // Helper to prevent retaliation/aggro when Shiki attacks
+    // Removed suppressRetaliation method as per request to allow normal aggro/swarm logic
+
+    @Override
+    public boolean canAttack(LivingEntity target) {
+        if (target instanceof Player player) {
+            // Check friendship: Level 5+ implies absolute safety
+            if (this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !this.entityData.get(IS_BETRAYED)) {
+                return false;
+            }
+        }
+        return super.canAttack(target);
+    }
+
     @Override
     public boolean doHurtTarget(Entity pEntity) {
+        // Absolute Safety Check for Friends
+        if (pEntity instanceof Player player) {
+             if (this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !this.entityData.get(IS_BETRAYED)) {
+                 return false;
+             }
+        }
+
         this.lastDamageTime = this.tickCount; // Update last damage time
         boolean flag = super.doHurtTarget(pEntity);
+        
+        if (!flag && pEntity instanceof LivingEntity living && living.isBlocking() && !this.level().isClientSide) {
+             broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.attack_blocked", 20.0, 0.5F);
+        }
+        
         // Apply Mystic Eyes effect even if normal attack failed (e.g., Creative Mode, Invulnerable)
         // Only apply Mystic Eyes if has sword
         if (pEntity instanceof LivingEntity target && this.hasSword()) {
@@ -1030,6 +1563,20 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
 
             if (flag || target.isInvulnerable() || (target instanceof Player p && p.isCreative())) {
                 handleMysticEyesEffect(target);
+                // Multi-kill logic hook: if entity dies, increment count
+                if (target.isDeadOrDying()) {
+                     long time = this.level().getGameTime();
+                     if (time - this.lastKillTime < 100) { // 5 seconds window
+                         this.killCount++;
+                         if (this.killCount >= 3) {
+                             broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.multi_kill", 20.0, 1.0F);
+                             this.killCount = 0;
+                         }
+                     } else {
+                         this.killCount = 1;
+                     }
+                     this.lastKillTime = time;
+                }
                 return true;
             }
         }
@@ -1139,6 +1686,10 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
     }
 
     private void forceKill(LivingEntity target) {
+        // Manually trigger swarm anger for specific mobs before killing
+        // This ensures that even if the kill is instant/silent, the swarm is alerted
+        triggerSwarmAnger(target);
+
         if (target instanceof Player player && player.isCreative()) {
             // Bypass Creative Mode
             player.getAbilities().invulnerable = false; // Temporarily disable invulnerability
@@ -1172,6 +1723,10 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             target.die(this.damageSources().genericKill());
         }
         this.playSound(SoundEvents.TRIDENT_THUNDER.value(), 1.0F, 2.0F); // Kill sound
+    }
+
+    private void triggerSwarmAnger(LivingEntity target) {
+        EntityUtils.triggerSwarmAnger(this.level(), this, target);
     }
 
     // Map to track interaction frequency (Player -> Last Interaction Time)
@@ -1411,6 +1966,135 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         }
 
         return super.mobInteract(pPlayer, pHand);
+    }
+
+    private boolean isBesieged() {
+        List<LivingEntity> enemies = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0D), 
+            e -> e != this && (e instanceof Monster || e instanceof Player) && e.isAlive());
+            
+        long strongCount = enemies.stream().filter(e -> e.getMaxHealth() > 100).count();
+        
+        return enemies.size() > 5 || strongCount > 3;
+    }
+
+    private void startPanicState() {
+        if (!this.isPanicState) {
+            this.isPanicState = true;
+            this.forcedSlashTimer = 0;
+            this.playSound(SoundEvents.WARDEN_ROAR, 1.0F, 2.0F); // Panic sound
+            broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.panic", 20.0);
+        }
+    }
+
+    private void performPanicSlash() {
+        if (this.level().isClientSide) return;
+        
+        // Slash every 0.2s (4 ticks)
+        if (this.tickCount % 4 != 0) return;
+
+        BlockPos center = this.blockPosition();
+        // 3x3x3 Area
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                for (int z = -1; z <= 1; z++) {
+                    // Skip feet block (0, -1, 0) relative to center
+                    // center is usually at feet.
+                    if (x == 0 && y == -1 && z == 0) continue;
+                    
+                    BlockPos p = center.offset(x, y, z);
+                    BlockState state = this.level().getBlockState(p);
+                    // Destroy if not air and destroyable
+                    // Replace fluids with AIR
+                    if (!state.isAir() && (state.getDestroySpeed(this.level(), p) >= 0 || state.getFluidState().isSource())) {
+                         this.level().setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                    }
+                }
+            }
+        }
+        
+        // Damage Entities (Continuous, low damage per tick, relies on invulnerability frames to throttle)
+        AABB box = this.getBoundingBox().inflate(2.5); 
+        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, box, e -> e != this && e.isAlive());
+        for (LivingEntity e : targets) {
+            // Absolute Safety Check
+            if (e instanceof Player p && this.entityData.get(FRIENDSHIP_LEVEL) >= 5 && !this.entityData.get(IS_BETRAYED)) continue;
+            
+            if (e == this.getTarget()) {
+                 // Mystic Eyes Effect (Reduced Chance)
+                 // Normal chance is 20/HP or 1%. Here we reduce it further.
+                 // Let's say 20% of normal chance.
+                 if (this.random.nextFloat() < 0.2F) {
+                     this.handleMysticEyesEffect(e);
+                 }
+                 e.hurt(this.damageSources().mobAttack(this), 6.0F);
+            }
+        }
+        
+        // Visuals (Throttled)
+        ((net.minecraft.server.level.ServerLevel)this.level()).sendParticles(ParticleTypes.SWEEP_ATTACK, 
+             this.getX(), this.getY() + 1.0, this.getZ(), 3, 1.0, 1.0, 1.0, 0.0);
+        this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 1.5F);
+    }
+
+    private void checkDangerousBlocks() {
+        if (this.level().isClientSide || this.tickCount % 5 != 0) return; // Check every 5 ticks
+
+        Vec3 velocity = this.getDeltaMovement();
+        Vec3 look = this.getLookAngle();
+        // Use velocity if moving significantly, otherwise look direction
+        Vec3 dir = velocity.lengthSqr() > 0.01 ? velocity.normalize() : look;
+
+        BlockPos center = this.blockPosition();
+        boolean dangerFound = false;
+
+        // Check 2 blocks ahead and 1 block down/up
+        for (int i = 1; i <= 2; i++) {
+            double tx = center.getX() + dir.x * i;
+            double tz = center.getZ() + dir.z * i;
+            BlockPos target = BlockPos.containing(tx, center.getY(), tz);
+            
+            if (isDangerous(this.level().getBlockState(target)) || 
+                isDangerous(this.level().getBlockState(target.below())) ||
+                isDangerous(this.level().getBlockState(target.above()))) {
+                dangerFound = true;
+                break;
+            }
+        }
+        
+        // Also check current position (in case standing in it)
+        if (!dangerFound) {
+            if (isDangerous(this.level().getBlockState(center)) || isDangerous(this.level().getBlockState(center.below()))) {
+                dangerFound = true;
+            }
+        }
+
+        if (dangerFound) {
+             // Proactive Slash
+             // Force it even if cooldown is active (Survival priority)
+             this.performSlash(true);
+             this.slashCooldown = 20; // Set short cooldown
+             
+             // Stop movement momentarily to avoid walking into it while slashing?
+             this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
+        }
+    }
+
+    private boolean isDangerous(BlockState state) {
+        if (state.isAir()) return false;
+        if (state.getFluidState().is(net.minecraft.tags.FluidTags.LAVA)) return true;
+        
+        if (state.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK) || 
+            state.is(net.minecraft.world.level.block.Blocks.CACTUS) || 
+            state.is(net.minecraft.world.level.block.Blocks.SWEET_BERRY_BUSH) || 
+            state.is(net.minecraft.world.level.block.Blocks.FIRE) || 
+            state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE) || 
+            state.is(net.minecraft.world.level.block.Blocks.CAMPFIRE) || 
+            state.is(net.minecraft.world.level.block.Blocks.SOUL_CAMPFIRE) || 
+            state.is(net.minecraft.world.level.block.Blocks.WITHER_ROSE) ||
+            state.is(net.minecraft.world.level.block.Blocks.POWDER_SNOW)) {
+            return true;
+        }
+        return false;
     }
 
     @Override

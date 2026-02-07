@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,11 +74,18 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
             RandomSource random = level.getRandom();
 
             // Create Ice Sphere
+            Entity owner = this.getOwner();
             for (int x = -radius; x <= radius; x++) {
                 for (int y = -radius; y <= radius; y++) {
                     for (int z = -radius; z <= radius; z++) {
                         if (x * x + y * y + z * z <= radius * radius) {
                             BlockPos pos = center.offset(x, y, z);
+                            
+                            // Prevent burying the shooter
+                            if (owner != null && pos.distSqr(owner.blockPosition()) <= 4.0D) {
+                                continue;
+                            }
+                            
                             if (level.getBlockState(pos).isAir()) {
                                 BlockState iceState;
                                 int roll = random.nextInt(100);
@@ -106,10 +114,16 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
             // Apply Debuff
             AABB aabb = new AABB(center).inflate(radius);
             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
-            Entity owner = this.getOwner();
             for (LivingEntity entity : entities) {
                 if (entity != owner) {
                     entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MagicConstants.SAPPHIRE_DEBUFF_DURATION, 1));
+                    if (owner instanceof LivingEntity livingOwner) {
+                        EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
+                        // Also set target since addEffect doesn't
+                        if (entity instanceof net.minecraft.world.entity.Mob mob) {
+                            mob.setTarget(livingOwner);
+                        }
+                    }
                 }
             }
 

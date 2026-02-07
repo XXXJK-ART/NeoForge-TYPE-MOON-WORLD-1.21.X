@@ -38,6 +38,9 @@ public class TypeMoonWorldModVariables {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, TYPE_MOON_WORLD.MOD_ID);
     public static final Supplier<AttachmentType<PlayerVariables>> PLAYER_VARIABLES = ATTACHMENT_TYPES.register("player_variables",
             () -> AttachmentType.serializable(PlayerVariables::new).build());
+    
+    public static final Supplier<AttachmentType<UBWReturnData>> UBW_RETURN_DATA = ATTACHMENT_TYPES.register("ubw_return_data",
+            () -> AttachmentType.serializable(UBWReturnData::new).build());
 
     @EventBusSubscriber
     public static class EventBusVariableHandlers {
@@ -111,6 +114,9 @@ public class TypeMoonWorldModVariables {
                 clone.ubw_return_y = original.ubw_return_y;
                 clone.ubw_return_z = original.ubw_return_z;
                 clone.ubw_return_dimension = original.ubw_return_dimension;
+                
+                clone.sword_barrel_mode = original.sword_barrel_mode;
+                clone.is_sword_barrel_active = false; // Reset on death
             } else {
                 // Reset UBW states on death
                 clone.is_chanting_ubw = false;
@@ -207,6 +213,10 @@ public class TypeMoonWorldModVariables {
         public double ubw_return_z = 0;
         public String ubw_return_dimension = "minecraft:overworld";
 
+        // Magic Modes
+        public int sword_barrel_mode = 0; // 0: Default, 1: Mode 2, etc.
+        public boolean is_sword_barrel_active = false; // Toggle state for continuous fire
+
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
             CompoundTag nbt = new CompoundTag();
@@ -242,6 +252,9 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("ubw_return_y", ubw_return_y);
             nbt.putDouble("ubw_return_z", ubw_return_z);
             nbt.putString("ubw_return_dimension", ubw_return_dimension);
+            
+            nbt.putInt("sword_barrel_mode", sword_barrel_mode);
+            nbt.putBoolean("is_sword_barrel_active", is_sword_barrel_active);
 
             net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
             for (String magic : selected_magics) {
@@ -310,6 +323,9 @@ public class TypeMoonWorldModVariables {
             if (nbt.contains("ubw_return_y")) ubw_return_y = nbt.getDouble("ubw_return_y");
             if (nbt.contains("ubw_return_z")) ubw_return_z = nbt.getDouble("ubw_return_z");
             if (nbt.contains("ubw_return_dimension")) ubw_return_dimension = nbt.getString("ubw_return_dimension");
+            
+            if (nbt.contains("sword_barrel_mode")) sword_barrel_mode = nbt.getInt("sword_barrel_mode");
+            if (nbt.contains("is_sword_barrel_active")) is_sword_barrel_active = nbt.getBoolean("is_sword_barrel_active");
             
             selected_magics.clear();
             if (nbt.contains("selected_magics")) {
@@ -483,6 +499,35 @@ public class TypeMoonWorldModVariables {
                     vars.proficiency_unlimited_blade_works = message.unlimited_blade_works;
                 });
             }
+        }
+    }
+
+    public static class UBWReturnData implements INBTSerializable<CompoundTag> {
+        public java.util.UUID ownerUUID;
+        public double returnX, returnY, returnZ;
+        public String returnDim = "";
+        public boolean generated = false;
+
+        @Override
+        public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
+            CompoundTag tag = new CompoundTag();
+            if (ownerUUID != null) tag.putUUID("ownerUUID", ownerUUID);
+            tag.putDouble("returnX", returnX);
+            tag.putDouble("returnY", returnY);
+            tag.putDouble("returnZ", returnZ);
+            tag.putString("returnDim", returnDim);
+            tag.putBoolean("generated", generated);
+            return tag;
+        }
+
+        @Override
+        public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag tag) {
+            if (tag.hasUUID("ownerUUID")) ownerUUID = tag.getUUID("ownerUUID");
+            returnX = tag.getDouble("returnX");
+            returnY = tag.getDouble("returnY");
+            returnZ = tag.getDouble("returnZ");
+            returnDim = tag.getString("returnDim");
+            generated = tag.getBoolean("generated");
         }
     }
 }

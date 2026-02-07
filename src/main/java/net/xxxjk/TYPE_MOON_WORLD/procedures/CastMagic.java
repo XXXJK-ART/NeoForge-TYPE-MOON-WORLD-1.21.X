@@ -93,6 +93,9 @@ public class CastMagic {
             } else if ("unlimited_blade_works".equals(magicId)) {
                 MagicUnlimitedBladeWorks.execute(entity);
                 castSuccess = true;
+            } else if ("sword_barrel_full_open".equals(magicId)) {
+                net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen.execute(entity);
+                castSuccess = true;
             }
             
             if (castSuccess) {

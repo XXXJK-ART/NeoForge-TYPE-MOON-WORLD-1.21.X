@@ -68,6 +68,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.server.level.TicketType;
 
 
 
@@ -77,16 +79,12 @@ public class ChantHandler {
     // Chant intervals (in ticks). Assuming 20 ticks = 1 second.
     // Total lines: 9 lines + 1 activation
     private static final int BASE_CHANT_INTERVAL = 40; // 2 seconds base
-
-    private static final String NBT_UBW_OWNER = "typemoonworld:ubw_owner_uuid";
-    private static final String NBT_UBW_RET_X = "typemoonworld:ubw_return_x";
-    private static final String NBT_UBW_RET_Y = "typemoonworld:ubw_return_y";
-    private static final String NBT_UBW_RET_Z = "typemoonworld:ubw_return_z";
-    private static final String NBT_UBW_RET_DIM = "typemoonworld:ubw_return_dim";
-    private static final String NBT_UBW_GENERATED = "typemoonworld:ubw_generated";
     
     // UUID -> Center Position of UBW (In UBW dimension)
     private static final Map<UUID, Vec3> UBW_LOCATIONS = new ConcurrentHashMap<>();
+    
+    // UUID -> Pending Target Position (Pre-calculated)
+    private static final Map<UUID, Vec3> PENDING_UBW_LOCATIONS = new ConcurrentHashMap<>();
 
     // Store entities to be removed with delay for each player
     // UUID -> List of RemovalEntry
@@ -114,6 +112,7 @@ public class ChantHandler {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID uuid = event.getEntity().getUUID();
         UBW_LOCATIONS.remove(uuid);
+        PENDING_UBW_LOCATIONS.remove(uuid);
         REMOVAL_QUEUES.remove(uuid);
         BACKUP_BLOCKS.remove(uuid);
         BACKUP_ITEMS.remove(uuid);
@@ -178,8 +177,8 @@ public class ChantHandler {
         if (entity instanceof LivingEntity && !(entity instanceof ServerPlayer) && !(entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) {
             // Check if this entity was teleported IN (Has Owner Tag)
             // If it has tag, we don't need to do anything, it's already tracked by tag.
-            CompoundTag data = entity.getPersistentData();
-            if (data.contains(NBT_UBW_OWNER)) {
+            TypeMoonWorldModVariables.UBWReturnData data = entity.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+            if (data.ownerUUID != null) {
                 return;
             }
             
@@ -192,8 +191,8 @@ public class ChantHandler {
                     UUID playerUUID = entry.getKey();
                     
                     // Mark as generated
-                    data.putUUID(NBT_UBW_OWNER, playerUUID);
-                    data.putBoolean(NBT_UBW_GENERATED, true);
+                    data.ownerUUID = playerUUID;
+                    data.generated = true;
                     
                     // Keep legacy list for now
                     GENERATED_ENTITIES.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(entity.getUUID());
@@ -229,6 +228,9 @@ public class ChantHandler {
             boolean isChanting = vars.is_chanting_ubw;
             boolean wasChanting = WAS_CHANTING.getOrDefault(player.getUUID(), false);
             
+            // Handle Sword Barrel Full Open Tick
+            MagicSwordBarrelFullOpen.tick(player);
+            
             // Detect falling edge: Player WAS chanting but IS NOT chanting anymore.
             // This covers all cancellation cases: key release, packet update, interruption, etc.
             if (wasChanting && !isChanting && !vars.is_in_ubw) {
@@ -236,6 +238,17 @@ public class ChantHandler {
                 // Ensure visual effects are cleared.
                 clearVisualSwords(player);
                 startTerrainRestoration(player); // Start restoring terrain
+                
+                // Clear pending location/ticket if canceled
+                if (PENDING_UBW_LOCATIONS.containsKey(player.getUUID())) {
+                     Vec3 pending = PENDING_UBW_LOCATIONS.remove(player.getUUID());
+                     ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
+                     if (ubwLevel != null) {
+                         BlockPos targetPos = new BlockPos((int)pending.x, 100, (int)pending.z);
+                         ChunkPos chunkPos = new ChunkPos(targetPos);
+                         ubwLevel.getChunkSource().removeRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
+                     }
+                }
                 
                 // Reset progress just in case
                 if (vars.ubw_chant_progress > 0) {
@@ -603,15 +616,16 @@ public class ChantHandler {
                                      player.level().setBlock(airPos, Blocks.AIR.defaultBlockState(), 18);
                                      
                                      // Check for Item Entities at this position and store them
-                                     AABB box = new AABB(airPos);
-                                     List<ItemEntity> items = player.level().getEntitiesOfClass(ItemEntity.class, box);
-                                     if (!items.isEmpty()) {
-                                         List<ItemBackup> itemBackups = BACKUP_ITEMS.computeIfAbsent(uuid, k -> new ArrayList<>());
-                                         for (ItemEntity item : items) {
-                                             itemBackups.add(new ItemBackup(item.getItem().copy(), item.position()));
-                                             item.discard();
-                                         }
-                                     }
+                                    AABB box = new AABB(airPos);
+                                    List<ItemEntity> items = player.level().getEntitiesOfClass(ItemEntity.class, box);
+                                    if (!items.isEmpty()) {
+                                        List<ItemBackup> itemBackups = BACKUP_ITEMS.computeIfAbsent(uuid, k -> new ArrayList<>());
+                                        for (ItemEntity item : items) {
+                                            // Don't store items, just discard them (Delete drops from broken containers)
+                                            // itemBackups.add(new ItemBackup(item.getItem().copy(), item.position()));
+                                            item.discard();
+                                        }
+                                    }
                                  }
                              }
                          }
@@ -779,7 +793,22 @@ public class ChantHandler {
         // Lines 2-9: 50 mana each
         // Total steps: 1 (start), 2, 3, 4, 5, 6, 7, 8, 9 (final chant), 10 (activation)
         
-        if (progress == 2) {
+        if (progress == 1) {
+             // Pre-calculate UBW location and load chunk
+             ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
+             if (ubwLevel != null) {
+                double offsetX = (player.getRandom().nextDouble() - 0.5) * 2000000;
+                double offsetZ = (player.getRandom().nextDouble() - 0.5) * 2000000;
+                offsetX = Math.round(offsetX / 16) * 16 + 0.5;
+                offsetZ = Math.round(offsetZ / 16) * 16 + 0.5;
+                
+                BlockPos targetPos = new BlockPos((int)offsetX, 100, (int)offsetZ);
+                ChunkPos chunkPos = new ChunkPos(targetPos);
+                ubwLevel.getChunkSource().addRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
+                
+                PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0, offsetZ));
+             }
+        } else if (progress == 2) {
             chantText = "§bSteel is my body, and fire is my blood.";
         } else if (progress == 3) {
             chantText = "§bI have created over a thousand blades.";
@@ -958,13 +987,24 @@ public class ChantHandler {
             if (ubwLevel != null) {
                 // "New" Dimension Strategy:
                 // Teleport to a random far location to simulate a fresh world.
-                // Range: +/- 1,000,000
-                double offsetX = (player.getRandom().nextDouble() - 0.5) * 2000000;
-                double offsetZ = (player.getRandom().nextDouble() - 0.5) * 2000000;
+                // Use pre-calculated location if available (from chant step 1)
                 
-                // Align to chunk center to be nice
-                offsetX = Math.round(offsetX / 16) * 16 + 0.5;
-                offsetZ = Math.round(offsetZ / 16) * 16 + 0.5;
+                double offsetX;
+                double offsetZ;
+                
+                if (PENDING_UBW_LOCATIONS.containsKey(player.getUUID())) {
+                    Vec3 pending = PENDING_UBW_LOCATIONS.remove(player.getUUID());
+                    offsetX = pending.x;
+                    offsetZ = pending.z;
+                } else {
+                    // Fallback if not pre-calculated
+                    offsetX = (player.getRandom().nextDouble() - 0.5) * 2000000;
+                    offsetZ = (player.getRandom().nextDouble() - 0.5) * 2000000;
+                    
+                    // Align to chunk center to be nice
+                    offsetX = Math.round(offsetX / 16) * 16 + 0.5;
+                    offsetZ = Math.round(offsetZ / 16) * 16 + 0.5;
+                }
                 
                 // Get safe surface height using new logic
                 int safeY = findSafeSpawnY(ubwLevel, (int)offsetX, (int)offsetZ);
@@ -972,6 +1012,12 @@ public class ChantHandler {
                 
                 // Teleport Player
                 player.teleportTo(ubwLevel, offsetX, targetY, offsetZ, player.getYRot(), player.getXRot());
+                
+                // Remove pre-load ticket now that player is there
+                BlockPos targetPos = new BlockPos((int)offsetX, (int)targetY, (int)offsetZ);
+                ChunkPos chunkPos = new ChunkPos(targetPos);
+                ubwLevel.getChunkSource().removeRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
+                
                 UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, targetY, offsetZ));
                 // Only add player to initial fill targets to avoid lag
                 swordRainTargets.add(player);
@@ -982,12 +1028,12 @@ public class ChantHandler {
                     Vec3 originalPos = target.position();
 
                     // TAGGING ENTITY
-                    CompoundTag data = target.getPersistentData();
-                    data.putUUID(NBT_UBW_OWNER, player.getUUID());
-                    data.putDouble(NBT_UBW_RET_X, originalPos.x);
-                    data.putDouble(NBT_UBW_RET_Y, originalPos.y);
-                    data.putDouble(NBT_UBW_RET_Z, originalPos.z);
-                    data.putString(NBT_UBW_RET_DIM, player.level().dimension().location().toString());
+                    TypeMoonWorldModVariables.UBWReturnData data = target.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+                    data.ownerUUID = player.getUUID();
+                    data.returnX = originalPos.x;
+                    data.returnY = originalPos.y;
+                    data.returnZ = originalPos.z;
+                    data.returnDim = player.level().dimension().location().toString();
                     
                     // Calculate relative position
                     double relX = target.getX() - vars.ubw_return_x;
@@ -1012,12 +1058,12 @@ public class ChantHandler {
                         ACTIVE_ENTITY_POSITIONS.put(newEntity.getUUID(), newEntity.position());
 
                         // Explicitly copy NBT tags to new entity to ensure persistence
-                        CompoundTag newData = newEntity.getPersistentData();
-                        newData.putUUID(NBT_UBW_OWNER, player.getUUID());
-                        newData.putDouble(NBT_UBW_RET_X, originalPos.x);
-                        newData.putDouble(NBT_UBW_RET_Y, originalPos.y);
-                        newData.putDouble(NBT_UBW_RET_Z, originalPos.z);
-                        newData.putString(NBT_UBW_RET_DIM, player.level().dimension().location().toString());
+                        TypeMoonWorldModVariables.UBWReturnData newData = newEntity.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+                        newData.ownerUUID = player.getUUID();
+                        newData.returnX = originalPos.x;
+                        newData.returnY = originalPos.y;
+                        newData.returnZ = originalPos.z;
+                        newData.returnDim = player.level().dimension().location().toString();
                         
                         // Check if newEntity is a player and is chanting
                         if (newEntity instanceof ServerPlayer targetPlayer) {
@@ -1213,8 +1259,8 @@ public class ChantHandler {
                 // Set automatically handles duplicates, but check for efficiency if needed
                 if (toReturn.contains(livingEntity)) continue;
 
-                CompoundTag data = entity.getPersistentData();
-                if (data.contains(NBT_UBW_OWNER) && data.getUUID(NBT_UBW_OWNER).equals(playerUUID)) {
+                TypeMoonWorldModVariables.UBWReturnData data = livingEntity.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+                if (data.ownerUUID != null && data.ownerUUID.equals(playerUUID)) {
                     toReturn.add(livingEntity);
                     scanCount++;
                 }
@@ -1222,7 +1268,7 @@ public class ChantHandler {
         }
         
         for (LivingEntity entity : toReturn) {
-            CompoundTag data = entity.getPersistentData();
+            TypeMoonWorldModVariables.UBWReturnData data = entity.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
             
             // Unified Relative Positioning Strategy
             // Regardless of whether the entity was generated or captured, we now move it relative to the player.
@@ -1260,12 +1306,12 @@ public class ChantHandler {
             targetY += 0.1;
             
             // Clear Tags
-            data.remove(NBT_UBW_OWNER);
-            data.remove(NBT_UBW_RET_X);
-            data.remove(NBT_UBW_RET_Y);
-            data.remove(NBT_UBW_RET_Z);
-            data.remove(NBT_UBW_RET_DIM);
-            data.remove(NBT_UBW_GENERATED);
+            data.ownerUUID = null;
+            data.returnDim = "";
+            data.returnX = 0;
+            data.returnY = 0;
+            data.returnZ = 0;
+            data.generated = false;
             
             // Teleport
             entity.setPortalCooldown(0);
@@ -1307,9 +1353,9 @@ public class ChantHandler {
             
             for (Entity entity : allEntities) {
                 if (entity instanceof LivingEntity living && !(entity instanceof ServerPlayer)) {
-                    CompoundTag data = entity.getPersistentData();
-                    if (data.contains(NBT_UBW_OWNER)) {
-                        UUID ownerUUID = data.getUUID(NBT_UBW_OWNER);
+                    TypeMoonWorldModVariables.UBWReturnData data = living.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+                    if (data.ownerUUID != null) {
+                        UUID ownerUUID = data.ownerUUID;
                         
                         // Check if owner is still active in UBW
                         // UBW_LOCATIONS contains active UBW owners
@@ -1322,13 +1368,13 @@ public class ChantHandler {
             
             // Process Orphans
             for (LivingEntity orphan : orphans) {
-                CompoundTag data = orphan.getPersistentData();
+                TypeMoonWorldModVariables.UBWReturnData data = orphan.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
                 
                 // Retrieve Return Information
-                String dimStr = data.getString(NBT_UBW_RET_DIM);
-                double retX = data.getDouble(NBT_UBW_RET_X);
-                double retY = data.getDouble(NBT_UBW_RET_Y);
-                double retZ = data.getDouble(NBT_UBW_RET_Z);
+                String dimStr = data.returnDim;
+                double retX = data.returnX;
+                double retY = data.returnY;
+                double retZ = data.returnZ;
                 
                 ServerLevel targetLevel = serverLevel.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dimStr)));
                 if (targetLevel == null) targetLevel = serverLevel.getServer().overworld();
@@ -1342,12 +1388,12 @@ public class ChantHandler {
                 }
                 
                 // Clear Tags
-                data.remove(NBT_UBW_OWNER);
-                data.remove(NBT_UBW_RET_X);
-                data.remove(NBT_UBW_RET_Y);
-                data.remove(NBT_UBW_RET_Z);
-                data.remove(NBT_UBW_RET_DIM);
-                data.remove(NBT_UBW_GENERATED);
+                data.ownerUUID = null;
+                data.returnDim = "";
+                data.returnX = 0;
+                data.returnY = 0;
+                data.returnZ = 0;
+                data.generated = false;
                 
                 // Teleport
                 orphan.setPortalCooldown(0);

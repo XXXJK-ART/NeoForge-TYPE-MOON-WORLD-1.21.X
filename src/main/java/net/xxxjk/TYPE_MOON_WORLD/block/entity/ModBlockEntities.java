@@ -21,6 +21,10 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("ubw_weapon_block_entity", () ->
                     BlockEntityType.Builder.of(UBWWeaponBlockEntity::new, ModBlocks.UBW_WEAPON_BLOCK.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity>> SWORD_BARREL_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("sword_barrel_block_entity", () ->
+                    BlockEntityType.Builder.of(net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity::new, ModBlocks.SWORD_BARREL_BLOCK.get()).build(null));
+
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);
     }

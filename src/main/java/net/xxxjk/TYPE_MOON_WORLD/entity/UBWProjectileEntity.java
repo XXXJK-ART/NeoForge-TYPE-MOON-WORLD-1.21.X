@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.minecraft.core.Direction;
 
 @SuppressWarnings("null")
@@ -57,6 +58,18 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
     public UBWProjectileEntity(Level level, double x, double y, double z) {
         super(ModEntities.UBW_PROJECTILE.get(), x, y, z, level);
     }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return true;
+    }
+
+    @Override
+    public boolean isPushedByFluid() {
+        return false;
+    }
+
+
 
     @Override
     protected Item getDefaultItem() {
@@ -117,6 +130,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                             if (livingTarget instanceof Mob mob) {
                                 mob.setTarget(serverPlayer);
                             }
+                            EntityUtils.triggerSwarmAnger(this.level(), serverPlayer, livingTarget);
                         }
                         
                         // Cleanup
@@ -137,16 +151,39 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
             // If hit block
             if (result.getType() == HitResult.Type.BLOCK) {
                 net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) result;
-                BlockState state = this.level().getBlockState(blockHit.getBlockPos());
+                BlockPos hitPos = blockHit.getBlockPos();
+                BlockState state = this.level().getBlockState(hitPos);
                 
-                // Pass through non-solid blocks (grass, flowers, etc.)
-                if (state.getCollisionShape(this.level(), blockHit.getBlockPos()).isEmpty() || !state.canOcclude()) {
+                // Pass through non-solid blocks
+                if (state.getCollisionShape(this.level(), hitPos).isEmpty() || !state.canOcclude()) {
                      // Ignore non-solid hits
                      return; 
                 }
+                
+                // Check if the block BELOW is already a UBW weapon block (prevent stacking)
+                if (state.getBlock() instanceof UBWWeaponBlock) {
+                    this.discard();
+                    return;
+                }
 
-                BlockPos hitPos = blockHit.getBlockPos();
                 BlockPos placePos = hitPos.relative(blockHit.getDirection());
+                
+                // Check nearby entities before placing
+                // If no living entities within range, discard instead of placing
+                double range = 20.0;
+                if (this.level().dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+                    range = 36.0;
+                }
+                
+                AABB checkArea = new AABB(placePos).inflate(range);
+                List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(LivingEntity.class, checkArea);
+                // Filter out owner
+                nearbyEntities.removeIf(e -> e.equals(this.getOwner()));
+                
+                if (nearbyEntities.isEmpty()) {
+                     this.discard();
+                     return;
+                }
                 
                 // Check if placeable (Air or replaceable)
                 BlockState placeState = this.level().getBlockState(placePos);

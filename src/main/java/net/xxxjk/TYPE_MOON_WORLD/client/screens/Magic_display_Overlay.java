@@ -127,6 +127,10 @@ public class Magic_display_Overlay {
                     magicColor = 0xFFFF4000; // Orange Red
                 } else if ("unlimited_blade_works".equals(magicId)) {
                     magicColor = 0xFFFF0000; // Red
+                } else if ("sword_barrel_full_open".equals(magicId)) {
+                    magicColor = 0xFFFF0000; // Red
+                    // Append Mode info
+                    magicName = Component.translatable(translationKey).append(" [Mode: " + vars.sword_barrel_mode + "]");
                 }
             }
             

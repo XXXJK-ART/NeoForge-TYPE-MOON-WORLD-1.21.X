@@ -114,6 +114,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("structural_analysis", MagicConstants.KEY_MAGIC_STRUCTURAL_ANALYSIS_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         allMagics.add(new MagicEntry("broken_phantasm", MagicConstants.KEY_MAGIC_BROKEN_PHANTASM_SHORT, "unlimited_blade_works,basic", 0xFFFF4000));
         allMagics.add(new MagicEntry("unlimited_blade_works", MagicConstants.KEY_MAGIC_UNLIMITED_BLADE_WORKS_SHORT, "unlimited_blade_works", 0xFFFF0000));
+        allMagics.add(new MagicEntry("sword_barrel_full_open", MagicConstants.KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SHORT, "unlimited_blade_works", 0xFFFF0000));
         
         updateFilteredMagics();
     }

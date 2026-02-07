@@ -70,5 +70,22 @@ public class MagicUnlimitedBladeWorks {
             vars.syncPlayerVariables(player);
             player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.unlocked"), false);
         }
+        
+        // Auto-learn Sword Barrel Full Open if UBW is unlocked
+        if (vars.has_unlimited_blade_works && !vars.learned_magics.contains("sword_barrel_full_open")) {
+            vars.learned_magics.add("sword_barrel_full_open");
+            // Also ensure it is selected or at least available in cycle
+            if (!vars.selected_magics.contains("sword_barrel_full_open")) {
+                // Insert after UBW if possible, or just add
+                int ubwIndex = vars.selected_magics.indexOf("unlimited_blade_works");
+                if (ubwIndex != -1 && ubwIndex < vars.selected_magics.size() - 1) {
+                    vars.selected_magics.add(ubwIndex + 1, "sword_barrel_full_open");
+                } else {
+                    vars.selected_magics.add("sword_barrel_full_open");
+                }
+            }
+            vars.syncPlayerVariables(player);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("key.typemoonworld.magic.sword_barrel_full_open")), false);
+        }
     }
 }

@@ -26,10 +26,17 @@ public class MagicBrokenPhantasm {
 
         // Check Main Hand first
         if (!isProjectedItem(heldItem)) {
-            heldItem = player.getOffhandItem();
-            isMainHand = false;
-            if (!isProjectedItem(heldItem)) {
-                player.displayClientMessage(Component.literal("手中没有投影物品"), true);
+            ItemStack offhandItem = player.getOffhandItem();
+            if (isProjectedItem(offhandItem)) {
+                heldItem = offhandItem;
+                isMainHand = false;
+            } else {
+                // No projected item found. Attempt auto-projection if hands are free.
+                if (heldItem.isEmpty() || offhandItem.isEmpty()) {
+                    net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection.execute(entity);
+                } else {
+                    player.displayClientMessage(Component.literal("手中没有投影物品"), true);
+                }
                 return;
             }
         }
@@ -48,7 +55,8 @@ public class MagicBrokenPhantasm {
         float explosionPower = (float)(cost / 20.0);
         
         // Cap explosion power to avoid server crashes (e.g. max 50)
-        if (explosionPower > 50.0f) explosionPower = 50.0f;
+        // NOTE: We pass the raw power now, and let the entity handle capping for effects.
+        // if (explosionPower > 50.0f) explosionPower = 50.0f;
 
         // Spawn Projectile
         BrokenPhantasmProjectileEntity projectile = new BrokenPhantasmProjectileEntity(player.level(), player, heldItem.copy());
@@ -72,7 +80,7 @@ public class MagicBrokenPhantasm {
         return false;
     }
 
-    private static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
+    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
         double baseCost = 10;
         Rarity rarity = stack.getRarity();
         if (rarity == Rarity.UNCOMMON) baseCost = 50;

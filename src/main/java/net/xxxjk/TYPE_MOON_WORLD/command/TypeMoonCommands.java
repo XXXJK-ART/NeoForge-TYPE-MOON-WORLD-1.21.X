@@ -191,7 +191,8 @@ public class TypeMoonCommands {
             String[] allMagics = {
                 "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw",
                 "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement",
-                "projection", "structural_analysis", "broken_phantasm"
+                "projection", "structural_analysis", "broken_phantasm",
+                "unlimited_blade_works", "sword_barrel_full_open"
             };
             
             for (String m : allMagics) {

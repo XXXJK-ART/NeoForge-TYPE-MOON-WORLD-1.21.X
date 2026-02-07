@@ -200,7 +200,10 @@ public class RedswordItem extends Item implements GeoItem {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
         if (isSelected && entity instanceof LivingEntity livingEntity && !level.isClientSide) {
-            livingEntity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20, 1));
+            livingEntity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20, 1, false, false));
+            // Muramasa Debuffs: Hunger (Energy Drain) and Unluck (Cursed Karma)
+            livingEntity.addEffect(new MobEffectInstance(MobEffects.HUNGER, 20, 0, false, false));
+            livingEntity.addEffect(new MobEffectInstance(MobEffects.UNLUCK, 20, 1, false, false));
         }
     }
 

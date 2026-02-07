@@ -13,16 +13,19 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.RedswordBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.GreenTransparentBlock;
 
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordBlockItem;
 
 import java.util.function.Supplier;
 
+import net.minecraft.world.level.block.Blocks;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
+
 @SuppressWarnings("null")
 public class ModBlocks {
-    public static final DeferredRegister.Blocks BLOCKS =
-            DeferredRegister.createBlocks(TYPE_MOON_WORLD.MOD_ID);
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(TYPE_MOON_WORLD.MOD_ID);
 
     public static final DeferredBlock<Block> REDSWORD_BLOCK = registerBlock("redswordblock",
             () -> new RedswordBlock(BlockBehaviour.Properties.of()));
@@ -77,14 +80,16 @@ public class ModBlocks {
                     BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
     public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock("green_transparent_block",
-            () -> new HalfTransparentBlock(BlockBehaviour.Properties.of()
+            () -> new GreenTransparentBlock(BlockBehaviour.Properties.of()
                     .strength(50f, 1200f).sound(SoundType.GLASS).noOcclusion()
                     .isViewBlocking((s, l, p) -> false).isValidSpawn((s, l, p, e) -> false)
                     .isSuffocating((s, l, p) -> false).isRedstoneConductor((s, l, p) -> false)));
 
-    public static final DeferredBlock<Block> UBW_WEAPON_BLOCK = registerBlock("ubw_weapon_block",
-            () -> new net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock(BlockBehaviour.Properties.of()
-                    .strength(0.1f).noOcclusion().noCollission().dynamicShape()));
+    public static final DeferredBlock<UBWWeaponBlock> UBW_WEAPON_BLOCK = registerBlock("ubw_weapon_block",
+            () -> new UBWWeaponBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak()));
+
+    public static final DeferredBlock<net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock> SWORD_BARREL_BLOCK = registerBlock("sword_barrel_block",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak()));
 
     private static <T extends Block> DeferredBlock<T> registerBlock (String name, Supplier<T> block){
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);

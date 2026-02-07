@@ -10,11 +10,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class UBWWeaponBlockEntity extends BlockEntity {
+public class SwordBarrelBlockEntity extends BlockEntity {
     private ItemStack storedItem = ItemStack.EMPTY;
 
-    public UBWWeaponBlockEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), pos, blockState);
+    // Store precise rotation for "侧着扎在方块上"
+    private float customPitch = 0f;
+    private float customYaw = 0f;
+
+    public SwordBarrelBlockEntity(BlockPos pos, BlockState blockState) {
+        super(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), pos, blockState);
     }
 
     public ItemStack getStoredItem() {
@@ -28,6 +32,23 @@ public class UBWWeaponBlockEntity extends BlockEntity {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         }
     }
+    
+    public void setCustomRotation(float pitch, float yaw) {
+        this.customPitch = pitch;
+        this.customYaw = yaw;
+        this.setChanged();
+        if (this.level != null) {
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        }
+    }
+    
+    public float getCustomPitch() {
+        return customPitch;
+    }
+    
+    public float getCustomYaw() {
+        return customYaw;
+    }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -37,6 +58,12 @@ public class UBWWeaponBlockEntity extends BlockEntity {
         } else {
             this.storedItem = ItemStack.EMPTY;
         }
+        if (tag.contains("CustomPitch")) {
+            this.customPitch = tag.getFloat("CustomPitch");
+        }
+        if (tag.contains("CustomYaw")) {
+            this.customYaw = tag.getFloat("CustomYaw");
+        }
     }
 
     @Override
@@ -45,6 +72,8 @@ public class UBWWeaponBlockEntity extends BlockEntity {
         if (!this.storedItem.isEmpty()) {
             tag.put("StoredItem", this.storedItem.save(registries));
         }
+        tag.putFloat("CustomPitch", this.customPitch);
+        tag.putFloat("CustomYaw", this.customYaw);
     }
 
     @Override

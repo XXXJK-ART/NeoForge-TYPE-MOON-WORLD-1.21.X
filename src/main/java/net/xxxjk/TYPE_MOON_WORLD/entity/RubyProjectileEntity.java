@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import net.minecraft.core.particles.ParticleTypes;
 
@@ -39,6 +40,13 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
             // 将 fire 参数设置为 true 以产生火焰
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), MagicConstants.RUBY_EXPLOSION_RADIUS, true, Level.ExplosionInteraction.TNT);
             
+            if (this.getOwner() instanceof LivingEntity owner) {
+                 java.util.List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(MagicConstants.RUBY_EXPLOSION_RADIUS));
+                 for (LivingEntity t : targets) {
+                     EntityUtils.triggerSwarmAnger(this.level(), owner, t);
+                 }
+            }
+            
             // Additional particle effects on hit
             if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), 20, 1.0, 1.0, 1.0, 0.5);
@@ -59,6 +67,14 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
 
         if (this.tickCount > MagicConstants.RUBY_LIFETIME_TICKS && !this.level().isClientSide) { // 10 seconds = 200 ticks
              this.level().explode(this, this.getX(), this.getY(), this.getZ(), MagicConstants.RUBY_EXPLOSION_RADIUS, true, Level.ExplosionInteraction.TNT);
+             
+             if (this.getOwner() instanceof LivingEntity owner) {
+                 java.util.List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(MagicConstants.RUBY_EXPLOSION_RADIUS));
+                 for (LivingEntity t : targets) {
+                     EntityUtils.triggerSwarmAnger(this.level(), owner, t);
+                 }
+             }
+             
              this.discard();
         }
     }

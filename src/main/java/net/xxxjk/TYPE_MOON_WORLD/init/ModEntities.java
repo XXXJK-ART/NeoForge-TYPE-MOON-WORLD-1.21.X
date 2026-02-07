@@ -47,6 +47,10 @@ public class ModEntities {
             ENTITY_TYPES.register("ryougi_shiki", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity::new, MobCategory.CREATURE)
                     .sized(0.6f, 1.8f).build("ryougi_shiki"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>> SWORD_BARREL_PROJECTILE =
+            ENTITY_TYPES.register("sword_barrel_projectile", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("sword_barrel_projectile"));
+
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }
