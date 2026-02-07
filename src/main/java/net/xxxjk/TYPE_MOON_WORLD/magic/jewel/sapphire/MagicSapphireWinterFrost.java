@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -122,6 +123,10 @@ public class MagicSapphireWinterFrost {
                     for (LivingEntity target : entities) {
                         if (target != player) {
                             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 4)); // Slowness V
+                            EntityUtils.triggerSwarmAnger(level, player, target);
+                            if (target instanceof net.minecraft.world.entity.Mob mob) {
+                                mob.setTarget(player);
+                            }
                             
                             // Ice Prison Generation
                             AABB targetBox = target.getBoundingBox();

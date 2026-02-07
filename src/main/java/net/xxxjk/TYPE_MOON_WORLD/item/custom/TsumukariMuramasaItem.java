@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
@@ -14,10 +16,21 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
+import net.minecraft.world.item.TooltipFlag;
+import java.util.List;
+import net.minecraft.world.item.Item;
+
 public class TsumukariMuramasaItem extends RedswordItem {
 
     public TsumukariMuramasaItem(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.add(Component.translatable("item.typemoonworld.tsumukari_muramasa.desc").withStyle(net.minecraft.ChatFormatting.GOLD));
+        tooltipComponents.add(Component.translatable("item.typemoonworld.tsumukari_muramasa.warning").withStyle(net.minecraft.ChatFormatting.RED, net.minecraft.ChatFormatting.BOLD));
     }
 
     @Override
@@ -47,7 +60,10 @@ public class TsumukariMuramasaItem extends RedswordItem {
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
+        // Do not call super to avoid Redsword's debuffs
+        if (isSelected && entity instanceof LivingEntity livingEntity && !level.isClientSide) {
+            livingEntity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20, 1, false, false));
+        }
     }
     
     @Override

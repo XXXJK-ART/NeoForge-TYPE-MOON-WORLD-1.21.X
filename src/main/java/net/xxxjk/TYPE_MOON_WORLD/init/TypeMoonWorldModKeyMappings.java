@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
 
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
@@ -38,6 +39,7 @@ public class TypeMoonWorldModKeyMappings {
     public static final KeyMapping MYSTIC_EYES_ACTIVATE = new KeyMapping("key.typemoonworld.mystic_eyes_activate", GLFW.GLFW_KEY_V, KEY_CATEGORY);
     public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", GLFW.GLFW_KEY_TAB, KEY_CATEGORY);
     public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", GLFW.GLFW_KEY_Z, KEY_CATEGORY);
+    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", GLFW.GLFW_KEY_LEFT_CONTROL, KEY_CATEGORY);
 
     @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
@@ -48,11 +50,40 @@ public class TypeMoonWorldModKeyMappings {
         event.register(MYSTIC_EYES_ACTIVATE);
         event.register(OPEN_PROJECTION_PRESET);
         event.register(CYCLE_MAGIC);
+        event.register(MAGIC_MODE_SWITCH);
     }
 
     @EventBusSubscriber({Dist.CLIENT})
     public static class KeyEventListener {
         private static boolean isTabDown = false;
+
+        @SubscribeEvent
+        public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+            if (Minecraft.getInstance().screen == null) {
+                double scrollDelta = event.getScrollDeltaY();
+                if (scrollDelta == 0) return;
+
+                // Priority 1: Mode Switch (Ctrl + Scroll)
+                if (MAGIC_MODE_SWITCH.isDown()) {
+                     boolean forward = scrollDelta > 0;
+                     PacketDistributor.sendToServer(new MagicModeSwitchMessage(forward));
+                     event.setCanceled(true);
+                     return;
+                }
+
+                // Priority 2: Cycle Magic (Z + Scroll)
+                if (TypeMoonWorldModKeyMappings.CYCLE_MAGIC.isDown()) {
+                    Player player = Minecraft.getInstance().player;
+                    if (player != null) {
+                         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                         if (vars.is_magus) {
+                            PacketDistributor.sendToServer(new CycleMagicMessage(scrollDelta > 0));
+                            event.setCanceled(true);
+                         }
+                    }
+                }
+            }
+        }
 
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Post event) {
@@ -101,7 +132,7 @@ public class TypeMoonWorldModKeyMappings {
                                 int index = vars.current_magic_index;
                                 if (index >= 0 && index < vars.selected_magics.size()) {
                                     String magicId = vars.selected_magics.get(index);
-                                    if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "unlimited_blade_works".equals(magicId)) {
+                                    if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "unlimited_blade_works".equals(magicId) || "broken_phantasm".equals(magicId)) {
                                         Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen(player));
                                     }
                                 }
@@ -110,25 +141,6 @@ public class TypeMoonWorldModKeyMappings {
                     }
                 } else {
                     isTabDown = false;
-                }
-            }
-        }
-        
-        @SubscribeEvent
-        public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
-            if (Minecraft.getInstance().screen == null) {
-                if (TypeMoonWorldModKeyMappings.CYCLE_MAGIC.isDown()) {
-                    Player player = Minecraft.getInstance().player;
-                    if (player != null) {
-                         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                         if (vars.is_magus) {
-                            double scrollDelta = event.getScrollDeltaY();
-                            if (scrollDelta != 0) {
-                                PacketDistributor.sendToServer(new CycleMagicMessage(scrollDelta > 0));
-                                event.setCanceled(true);
-                            }
-                         }
-                    }
                 }
             }
         }

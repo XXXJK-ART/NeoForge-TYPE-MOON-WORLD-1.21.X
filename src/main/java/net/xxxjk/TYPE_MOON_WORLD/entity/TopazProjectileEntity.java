@@ -15,6 +15,7 @@ import net.minecraft.world.phys.HitResult;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.List;
 
@@ -59,6 +60,13 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
                     entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, MagicConstants.TOPAZ_DEBUFF_DURATION, 0));
                     entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, MagicConstants.TOPAZ_DEBUFF_DURATION, 0));
                     entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MagicConstants.TOPAZ_DEBUFF_DURATION, 1));
+                    
+                    if (owner instanceof LivingEntity livingOwner) {
+                        EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
+                        if (entity instanceof net.minecraft.world.entity.Mob mob) {
+                            mob.setTarget(livingOwner);
+                        }
+                    }
                 }
             }
 

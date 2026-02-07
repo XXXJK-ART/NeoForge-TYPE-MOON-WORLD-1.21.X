@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.List;
 
@@ -136,6 +137,9 @@ public class MuramasaSlashProjectileEntity extends Projectile {
         for (Entity e : entities) {
             e.hurt(this.damageSources().mobProjectile(this, (LivingEntity)this.getOwner()), damage);
             e.igniteForSeconds(5);
+            if (this.getOwner() instanceof LivingEntity owner && e instanceof LivingEntity target) {
+                EntityUtils.triggerSwarmAnger(this.level(), owner, target);
+            }
         }
     }
 

@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
@@ -138,6 +139,7 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(OpenProjectionGuiMessage.TYPE, OpenProjectionGuiMessage.STREAM_CODEC, OpenProjectionGuiMessage::handleData);
         addNetworkMessage(MysticEyesToggleMessage.TYPE, MysticEyesToggleMessage.STREAM_CODEC, MysticEyesToggleMessage::handleData);
         addNetworkMessage(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
+        addNetworkMessage(MagicModeSwitchMessage.TYPE, MagicModeSwitchMessage.STREAM_CODEC, MagicModeSwitchMessage::handleData);
 
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),
@@ -191,7 +193,17 @@ public class TYPE_MOON_WORLD {
             event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), ThrownItemRenderer::new);
             event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), ThrownItemRenderer::new);
             event.registerEntityRenderer(ModEntities.BROKEN_PHANTASM_PROJECTILE.get(), BrokenPhantasmRenderer::new);
+            // Removed UBW_PROJECTILE registration from here to avoid duplication if it's now in TypeMoonWorldClientEvents
+            // But TypeMoonWorldClientEvents is safer if this inner class isn't fully reliable or split.
+            // Actually, let's keep it here and remove from TypeMoonWorldClientEvents if this is the main registry.
+            // But wait, user edited TypeMoonWorldClientEvents?
+            // The codebase has BOTH TypeMoonWorldClientEvents AND TYPE_MOON_WORLD$ClientModEvents.
+            // This is messy. Let's fix it by keeping it HERE where other projectiles are.
+            // And I should revert the change in TypeMoonWorldClientEvents? Or use that one?
+            // TYPE_MOON_WORLD.java seems to have the comprehensive list.
+            
             event.registerEntityRenderer(ModEntities.UBW_PROJECTILE.get(), UBWProjectileRenderer::new);
+            
             event.registerBlockEntityRenderer(ModBlockEntities.REDSWORD_BLOCK_ENTITY.get(), context -> new RedswordBlockRenderer());
             event.registerBlockEntityRenderer(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), UBWWeaponBlockEntityRenderer::new);
             event.registerEntityRenderer(ModEntities.MURAMASA_SLASH.get(), MuramasaSlashProjectileRenderer::new);

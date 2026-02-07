@@ -23,6 +23,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,7 +146,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
         this.setNoGravity(true);
         this.setDeltaMovement(Vec3.ZERO);
         this.explosionCenter = this.blockPosition();
-        this.maxRadius = getExplosionPower(); // Radius = Power
+        this.maxRadius = Math.min(getExplosionPower(), 50.0f); // Radius cap to 50 for effects
         this.currentRadius = 0;
         this.explosionTick = 0;
         
@@ -158,14 +159,20 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
              double damageRadius = 2.0 + this.maxRadius * 1.5;
              AABB damageBox = new AABB(explosionCenter).inflate(damageRadius);
              List<Entity> entities = this.level().getEntities(this, damageBox);
-             DamageSource damageSource = this.damageSources().explosion(this, this.getOwner());
+             
+             // Damage: Explosion only
+             DamageSource explosionSource = this.damageSources().explosion(this, this.getOwner());
              
              for (Entity e : entities) {
                  if (e instanceof LivingEntity) {
-                     // Increase damage for small explosions: Base 5 + Power * 3
-                     float damage = 5.0f + getExplosionPower() * 3.0f;
-                     e.hurt(damageSource, damage);
+                     // Damage: Power * 10
+                     float totalDamage = getExplosionPower() * 10.0f;
+                     e.invulnerableTime = 0;
+                     e.hurt(explosionSource, totalDamage);
                      damagedEntities.add(e);
+                     if (this.getOwner() instanceof LivingEntity owner) {
+                         EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);
+                     }
                  }
              }
         }
@@ -216,7 +223,9 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
             double damageRadius = nextRadius * 1.2; 
             AABB damageBox = new AABB(explosionCenter).inflate(damageRadius);
             List<Entity> entities = this.level().getEntities(this, damageBox);
-            DamageSource damageSource = this.damageSources().explosion(this, this.getOwner());
+            
+            // Damage: Explosion only
+            DamageSource explosionSource = this.damageSources().explosion(this, this.getOwner());
             
             for (Entity e : entities) {
                 if (!damagedEntities.contains(e)) {
@@ -224,9 +233,13 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                         double dist = e.distanceToSqr(this.getX(), this.getY(), this.getZ());
                         // Only damage if the "wave" has reached them
                         if (dist <= damageRadius * damageRadius) {
-                            float damage = getExplosionPower() * 2.0f; 
-                            e.hurt(damageSource, damage);
+                            float totalDamage = getExplosionPower() * 10.0f;
+                            e.invulnerableTime = 0;
+                            e.hurt(explosionSource, totalDamage);
                             damagedEntities.add(e);
+                            if (this.getOwner() instanceof LivingEntity owner) {
+                                EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);
+                            }
                         }
                     }
                 }

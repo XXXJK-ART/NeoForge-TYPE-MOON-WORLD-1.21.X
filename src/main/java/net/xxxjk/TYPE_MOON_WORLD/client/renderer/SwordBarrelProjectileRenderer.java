@@ -13,17 +13,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 
 @SuppressWarnings({"null", "deprecation", "unchecked"})
-public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity> {
+public class SwordBarrelProjectileRenderer extends EntityRenderer<SwordBarrelProjectileEntity> {
 
-    public UBWProjectileRenderer(EntityRendererProvider.Context context) {
+    public SwordBarrelProjectileRenderer(EntityRendererProvider.Context context) {
         super(context);
     }
 
     @Override
-    public void render(net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    public void render(SwordBarrelProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
         float scale = 1.75F;
         
@@ -51,10 +51,8 @@ public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WO
         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(itemStack, entity.level(), (LivingEntity)null, entity.getId());
         
         try {
-            // Render item
             Minecraft.getInstance().getItemRenderer().render(itemStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
         } catch (Exception e) {
-            // Silent catch
         }
         
         poseStack.popPose();
@@ -62,7 +60,7 @@ public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WO
     }
 
     @Override
-    public ResourceLocation getTextureLocation(UBWProjectileEntity entity) {
+    public ResourceLocation getTextureLocation(SwordBarrelProjectileEntity entity) {
         return TextureAtlas.LOCATION_BLOCKS;
     }
 }

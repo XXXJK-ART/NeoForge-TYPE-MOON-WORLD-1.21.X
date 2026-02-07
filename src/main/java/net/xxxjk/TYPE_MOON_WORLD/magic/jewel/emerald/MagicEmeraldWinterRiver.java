@@ -69,9 +69,6 @@ public class MagicEmeraldWinterRiver {
                 Level level = player.level();
                 if (!level.isClientSide) {
                     BlockPos center = player.blockPosition().above(); // Center roughly on player body
-                    
-                    // Buckets for scheduling restoration: Map<Delay, List<BlockPos>>
-                    Map<Integer, List<BlockPos>> restoreBuckets = new HashMap<>();
                     RandomSource random = level.getRandom();
                     
                     // Particles
@@ -80,65 +77,33 @@ public class MagicEmeraldWinterRiver {
                     }
 
                     // 5x5x5 Hollow Sphere
-                    // Diameter 5 -> Radius 2 (with center 0,0,0: -2, -1, 0, 1, 2)
                     int radius = 2;
                     
                     for (int x = -radius; x <= radius; x++) {
                         for (int y = -radius; y <= radius; y++) {
                             for (int z = -radius; z <= radius; z++) {
-                                // Sphere check: x^2 + y^2 + z^2 <= r^2
-                                // To make it "center hollow", we can exclude the very center or a small radius
-                                // "中心镂空" usually means removing the core.
-                                // Let's exclude radius < 1? i.e. center block (0,0,0) and maybe adjacents if they are too close.
-                                // But 5x5x5 is small. 
-                                // Distance check:
                                 double distSq = x * x + y * y + z * z;
                                 
                                 if (distSq <= radius * radius) {
-                                    // Hollow check: exclude if distSq is small (e.g. center block)
-                                    // distance 0 is center. distance 1 is adjacent.
-                                    // Let's exclude distSq < 1.0 (only center block)
-                                    // Or distSq < 2.0 (center + 6 neighbors)?
-                                    // "Hollow Sphere" usually implies a shell.
-                                    // If we want a shell of radius 2, we keep distSq > (r-1)^2 ?
-                                    // If r=2, (r-1)=1. So distSq > 1.
-                                    // This would keep only the outer layer.
-                                    // Let's try to keep blocks where distSq > 1.5?
-                                    // Center block is 0. Adjacents are 1. Corners of 3x3 are 2 or 3.
-                                    // Let's just exclude the exact center block (0,0,0) as a safe "hollow".
-                                    // But the user said "Center Hollow" (中心镂空).
-                                    // Let's exclude distSq < 2. This excludes the cross at the center.
-                                    
+                                    // Hollow check: exclude distSq < 2 (Center)
                                     if (distSq > 1.5) { 
                                         BlockPos pos = center.offset(x, y, z);
-                                        // Force replace any breakable block
-                                        if (level.getBlockState(pos).getDestroySpeed(level, pos) >= 0) {
-                                            if (level.setBlock(pos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState(), 2)) {
-                                                // Add to restore bucket
-                                                int delay = 160 + random.nextInt(41); // 160-200 ticks
-                                                restoreBuckets.computeIfAbsent(delay, k -> new ArrayList<>()).add(pos);
+                                        BlockState currentState = level.getBlockState(pos);
+                                        
+                                        // Place block if replaceable or refresh if it's already our block
+                                        if (currentState.getDestroySpeed(level, pos) >= 0 || currentState.is(ModBlocks.GREEN_TRANSPARENT_BLOCK.get())) {
+                                            if (level.setBlock(pos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState(), 3)) {
+                                                // onPlace will handle scheduling
+                                            } else if (currentState.is(ModBlocks.GREEN_TRANSPARENT_BLOCK.get())) {
+                                                // Force refresh timer if block was already there and didn't change
+                                                int delay = 160 + random.nextInt(41);
+                                                level.scheduleTick(pos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get(), delay);
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                    
-                    // Schedule Revert Tasks
-                    for (Map.Entry<Integer, List<BlockPos>> entry : restoreBuckets.entrySet()) {
-                        int delay = entry.getKey();
-                        List<BlockPos> posList = entry.getValue();
-                        
-                        TYPE_MOON_WORLD.queueServerWork(delay, () -> {
-                            for (BlockPos pos : posList) {
-                                BlockState state = level.getBlockState(pos);
-                                if (state.is(ModBlocks.GREEN_TRANSPARENT_BLOCK.get())) {
-                                    level.levelEvent(2001, pos, Block.getId(state));
-                                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-                                }
-                            }
-                        });
                     }
                 }
                 

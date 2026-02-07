@@ -15,7 +15,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -132,9 +134,22 @@ public class MuramasaSlashHandler {
                     BlockPos pos = BlockPos.containing(posVec);
                     
                     BlockState state = level.getBlockState(pos);
-                    // 检查方块是否不是空气，且硬度小于50，或者是否是液体
+                    // Check block destruction based on charge level
                     boolean isFluid = !level.getFluidState(pos).isEmpty();
-                    if ((!state.isAir() && state.getDestroySpeed(level, pos) >= 0 && state.getDestroySpeed(level, pos) < 50.0f) || isFluid) {
+                    float hardness = state.getDestroySpeed(level, pos);
+                    boolean isBreakable = hardness >= 0; // -1 is unbreakable (Bedrock, Barrier, etc.)
+                    
+                    boolean canBreak;
+                    if (slash.charge > 60) {
+                        // High Level: Break everything except Bedrock (and technically unbreakable blocks)
+                        // Explicitly check for Bedrock block to be sure, though hardness -1 covers it usually.
+                        canBreak = isBreakable && !state.is(Blocks.BEDROCK);
+                    } else {
+                        // Low Level: Only break soft blocks (< 50 hardness)
+                        canBreak = isBreakable && hardness < 50.0f;
+                    }
+
+                    if ((!state.isAir() && canBreak) || isFluid) {
                         // Vaporize (No drops)
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                         
@@ -161,7 +176,15 @@ public class MuramasaSlashHandler {
                     // Damage
                     // Base 20 + 5 per charge. Max 520.
                     float damage = 20.0f + (slash.charge * 5.0f);
-                    living.hurt(level.damageSources().magic(), damage);
+                    
+                    Player player = level.getPlayerByUUID(slash.playerUUID);
+                    if (player != null) {
+                        living.hurt(level.damageSources().indirectMagic(player, player), damage);
+                        EntityUtils.triggerSwarmAnger(level, player, living);
+                    } else {
+                        living.hurt(level.damageSources().magic(), damage);
+                    }
+                    
                     living.igniteForSeconds(5);
                 }
             }

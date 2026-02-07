@@ -15,8 +15,9 @@ public class Manually_deduct_health_to_restore_mana {
             if ((entity instanceof LivingEntity _livEnt ? _livEnt.getHealth() : -1) > 1) {
                 {
                     TypeMoonWorldModVariables.PlayerVariables _vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                    _vars.player_mana = Math.min(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana
-                            + 10, entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_max_mana);
+                    // Allow Overload: Just add mana, don't cap at Max if we are already overloading or want to overload.
+                    // Previous logic capped at Max, causing Overload (>Max) to drop to Max.
+                    _vars.player_mana = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana + 10;
                     _vars.syncMana(entity);
                 }
                 LivingEntity _entity = (LivingEntity) entity;
