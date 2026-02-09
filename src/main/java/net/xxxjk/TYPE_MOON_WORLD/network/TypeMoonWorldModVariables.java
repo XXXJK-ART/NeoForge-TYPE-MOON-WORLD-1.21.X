@@ -100,6 +100,7 @@ public class TypeMoonWorldModVariables {
             clone.proficiency_projection = original.proficiency_projection;
             clone.proficiency_jewel_magic = original.proficiency_jewel_magic;
             clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
+            clone.proficiency_sword_barrel_full_open = original.proficiency_sword_barrel_full_open;
             
             clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
             clone.is_magus = original.is_magus;
@@ -189,6 +190,7 @@ public class TypeMoonWorldModVariables {
         public double proficiency_projection = 0;
         public double proficiency_jewel_magic = 0;
         public double proficiency_unlimited_blade_works = 0;
+        public double proficiency_sword_barrel_full_open = 0;
         
         // Projection Magic Data
         public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
@@ -216,6 +218,7 @@ public class TypeMoonWorldModVariables {
         // Magic Modes
         public int sword_barrel_mode = 0; // 0: Default, 1: Mode 2, etc.
         public boolean is_sword_barrel_active = false; // Toggle state for continuous fire
+        public boolean ubw_broken_phantasm_enabled = false; // Toggle state for Broken Phantasm
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -240,6 +243,7 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("proficiency_projection", proficiency_projection);
             nbt.putDouble("proficiency_jewel_magic", proficiency_jewel_magic);
             nbt.putDouble("proficiency_unlimited_blade_works", proficiency_unlimited_blade_works);
+            nbt.putDouble("proficiency_sword_barrel_full_open", proficiency_sword_barrel_full_open);
             
             nbt.putBoolean("is_chanting_ubw", is_chanting_ubw);
             nbt.putInt("ubw_chant_progress", ubw_chant_progress);
@@ -255,6 +259,7 @@ public class TypeMoonWorldModVariables {
             
             nbt.putInt("sword_barrel_mode", sword_barrel_mode);
             nbt.putBoolean("is_sword_barrel_active", is_sword_barrel_active);
+            nbt.putBoolean("ubw_broken_phantasm_enabled", ubw_broken_phantasm_enabled);
 
             net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
             for (String magic : selected_magics) {
@@ -326,6 +331,7 @@ public class TypeMoonWorldModVariables {
             
             if (nbt.contains("sword_barrel_mode")) sword_barrel_mode = nbt.getInt("sword_barrel_mode");
             if (nbt.contains("is_sword_barrel_active")) is_sword_barrel_active = nbt.getBoolean("is_sword_barrel_active");
+            if (nbt.contains("ubw_broken_phantasm_enabled")) ubw_broken_phantasm_enabled = nbt.getBoolean("ubw_broken_phantasm_enabled");
             
             selected_magics.clear();
             if (nbt.contains("selected_magics")) {
@@ -463,7 +469,7 @@ public class TypeMoonWorldModVariables {
         }
     }
 
-    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic, double unlimited_blade_works) implements CustomPacketPayload {
+    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic, double unlimited_blade_works, double sword_barrel_full_open) implements CustomPacketPayload {
         public static final Type<ProficiencySyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "proficiency_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
                 (RegistryFriendlyByteBuf buffer, ProficiencySyncMessage message) -> {
@@ -471,8 +477,10 @@ public class TypeMoonWorldModVariables {
                     buffer.writeDouble(message.projection);
                     buffer.writeDouble(message.jewel_magic);
                     buffer.writeDouble(message.unlimited_blade_works);
+                    buffer.writeDouble(message.sword_barrel_full_open);
                 },
                 (RegistryFriendlyByteBuf buffer) -> new ProficiencySyncMessage(
+                        buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
@@ -481,7 +489,7 @@ public class TypeMoonWorldModVariables {
         );
 
         public ProficiencySyncMessage(PlayerVariables vars) {
-            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic, vars.proficiency_unlimited_blade_works);
+            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open);
         }
 
         @Override
@@ -497,6 +505,7 @@ public class TypeMoonWorldModVariables {
                     vars.proficiency_projection = message.projection;
                     vars.proficiency_jewel_magic = message.jewel_magic;
                     vars.proficiency_unlimited_blade_works = message.unlimited_blade_works;
+                    vars.proficiency_sword_barrel_full_open = message.sword_barrel_full_open;
                 });
             }
         }

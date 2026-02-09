@@ -34,11 +34,22 @@ import java.util.Map;
 
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 
+import net.neoforged.neoforge.event.level.LevelEvent;
+
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public class ProjectionTickHandler {
 
     // Thread-safe storage for active sessions
     private static final Map<GlobalPos, Long> projectedBlocks = new ConcurrentHashMap<>();
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) return;
+        if (event.getLevel() instanceof Level level) {
+             net.minecraft.resources.ResourceKey<Level> dim = level.dimension();
+             projectedBlocks.keySet().removeIf(pos -> pos.dimension().equals(dim));
+        }
+    }
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {

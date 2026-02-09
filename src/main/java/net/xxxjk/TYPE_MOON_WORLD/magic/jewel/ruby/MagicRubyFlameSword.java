@@ -12,58 +12,41 @@ import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
+import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import java.util.List;
+import java.util.ArrayList;
+
 public class MagicRubyFlameSword {
     public static void execute(Entity entity) {
         if (entity == null)
             return;
         
         if (entity instanceof Player player) {
-            ItemStack requiredItem = new ItemStack(ModItems.CARVED_RUBY_FULL.get());
-            int requiredCount = 3;
+            // Count total rubies
             int count = 0;
-            
-            // Count items
             for (int i = 0; i < player.getInventory().items.size(); i++) {
                 ItemStack stack = player.getInventory().items.get(i);
-                if (stack.getItem() == requiredItem.getItem()) {
+                if (stack.getItem() instanceof FullManaCarvedGemItem gemItem && gemItem.getType() == GemType.RUBY) {
                     count += stack.getCount();
                 }
             }
-            if (player.getOffhandItem().getItem() == requiredItem.getItem()) {
-                count += player.getOffhandItem().getCount();
+            ItemStack offhand = player.getOffhandItem();
+            if (offhand.getItem() instanceof FullManaCarvedGemItem gemItem && gemItem.getType() == GemType.RUBY) {
+                count += offhand.getCount();
             }
 
-            if (count >= requiredCount) {
-                // Consume items
-                int toRemove = requiredCount;
-                
-                // Remove from main inventory
-                for (int i = 0; i < player.getInventory().items.size(); i++) {
-                    if (toRemove <= 0) break;
-                    ItemStack stack = player.getInventory().items.get(i);
-                    if (stack.getItem() == requiredItem.getItem()) {
-                        int remove = Math.min(toRemove, stack.getCount());
-                        stack.shrink(remove);
-                        toRemove -= remove;
-                        if (stack.isEmpty()) {
-                             player.getInventory().removeItem(stack);
-                        }
-                    }
-                }
-                
-                // Remove from offhand
-                if (toRemove > 0) {
-                     ItemStack stack = player.getOffhandItem();
-                     if (stack.getItem() == requiredItem.getItem()) {
-                         int remove = Math.min(toRemove, stack.getCount());
-                         stack.shrink(remove);
-                     }
-                }
+            if (count >= 3) {
+                // Consume 3 gems
+                ItemStack gem1 = GemUtils.consumeGem(player, GemType.RUBY);
+                ItemStack gem2 = GemUtils.consumeGem(player, GemType.RUBY);
+                ItemStack gem3 = GemUtils.consumeGem(player, GemType.RUBY);
 
                 // Fire 3 projectiles
-                spawnProjectile(player);
-                TYPE_MOON_WORLD.queueServerWork(5, () -> spawnProjectile(player));
-                TYPE_MOON_WORLD.queueServerWork(10, () -> spawnProjectile(player));
+                spawnProjectile(player, gem1);
+                TYPE_MOON_WORLD.queueServerWork(5, () -> spawnProjectile(player, gem2));
+                TYPE_MOON_WORLD.queueServerWork(10, () -> spawnProjectile(player, gem3));
                 
             } else {
                 player.displayClientMessage(Component.literal("需要3个红宝石"), true);
@@ -71,7 +54,9 @@ public class MagicRubyFlameSword {
         }
     }
 
-    private static void spawnProjectile(Player player) {
+    private static void spawnProjectile(Player player, ItemStack gemStack) {
+        if (gemStack.isEmpty()) return;
+        
         Level level = player.level();
         
         // Particles
@@ -80,7 +65,7 @@ public class MagicRubyFlameSword {
         }
 
         RubyProjectileEntity projectile = new RubyProjectileEntity(level, player);
-        projectile.setItem(new ItemStack(ModItems.CARVED_RUBY_FULL.get()));
+        projectile.setItem(gemStack);
         projectile.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, MagicConstants.RUBY_THROW_VELOCITY, MagicConstants.RUBY_THROW_INACCURACY);
         level.addFreshEntity(projectile);
     }

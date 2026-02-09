@@ -109,6 +109,9 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                 
                 // Damage other entities but DO NOT STOP
                 if (!hitEntities.contains(target)) {
+                    // Remove Invulnerability Frames
+                    target.invulnerableTime = 0;
+
                     Entity owner = this.getOwner();
                     if (owner instanceof ServerPlayer serverPlayer && this.level() instanceof ServerLevel serverLevel) {
                         FakePlayer fakePlayer = new FakePlayer(serverLevel, new GameProfile(UUID.randomUUID(), "[UBW_Proxy]"));
@@ -120,9 +123,6 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                         
                         // Attack
                         fakePlayer.attack(target);
-                        
-                        // Remove Invulnerability Frames
-                        target.invulnerableTime = 0;
                         
                         // Restore Aggro/Credit to real player
                         if (target instanceof LivingEntity livingTarget) {
@@ -140,6 +140,10 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                         float damage = calculateDamage();
                         target.hurt(this.damageSources().thrown(this, this.getOwner()), damage);
                     }
+                    
+                    // Ensure Invulnerability is reset AFTER hit too (for rapid fire)
+                    target.invulnerableTime = 0;
+                    
                     hitEntities.add(target);
                 }
                 

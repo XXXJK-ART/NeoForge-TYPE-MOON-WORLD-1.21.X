@@ -26,55 +26,48 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+
 public class MagicSapphireWinterFrost {
     public static void execute(Entity entity) {
         if (entity == null)
             return;
 
         if (entity instanceof Player player) {
-            ItemStack requiredItem = new ItemStack(ModItems.CARVED_SAPPHIRE_FULL.get());
-            int requiredCount = 3;
             int count = 0;
-
-            // Count items
             for (int i = 0; i < player.getInventory().items.size(); i++) {
                 ItemStack stack = player.getInventory().items.get(i);
-                if (stack.getItem() == requiredItem.getItem()) {
+                if (stack.getItem() instanceof FullManaCarvedGemItem gemItem && gemItem.getType() == GemType.SAPPHIRE) {
                     count += stack.getCount();
                 }
             }
-            if (player.getOffhandItem().getItem() == requiredItem.getItem()) {
-                count += player.getOffhandItem().getCount();
+            ItemStack offhand = player.getOffhandItem();
+            if (offhand.getItem() instanceof FullManaCarvedGemItem gemItem && gemItem.getType() == GemType.SAPPHIRE) {
+                count += offhand.getCount();
             }
 
-            if (count >= requiredCount) {
-                // Consume items
-                int toRemove = requiredCount;
-                for (int i = 0; i < player.getInventory().items.size(); i++) {
-                    if (toRemove <= 0) break;
-                    ItemStack stack = player.getInventory().items.get(i);
-                    if (stack.getItem() == requiredItem.getItem()) {
-                        int remove = Math.min(toRemove, stack.getCount());
-                        stack.shrink(remove);
-                        toRemove -= remove;
-                        if (stack.isEmpty()) {
-                            player.getInventory().removeItem(stack);
-                        }
-                    }
-                }
-                if (toRemove > 0) {
-                    ItemStack stack = player.getOffhandItem();
-                    if (stack.getItem() == requiredItem.getItem()) {
-                        int remove = Math.min(toRemove, stack.getCount());
-                        stack.shrink(remove);
-                    }
-                }
+            if (count >= 3) {
+                // Consume 3 gems
+                ItemStack gem1 = GemUtils.consumeGem(player, GemType.SAPPHIRE);
+                ItemStack gem2 = GemUtils.consumeGem(player, GemType.SAPPHIRE);
+                ItemStack gem3 = GemUtils.consumeGem(player, GemType.SAPPHIRE);
+
+                float m1 = 1.0f;
+                if (gem1.getItem() instanceof FullManaCarvedGemItem g) m1 = g.getQuality().getEffectMultiplier();
+                float m2 = 1.0f;
+                if (gem2.getItem() instanceof FullManaCarvedGemItem g) m2 = g.getQuality().getEffectMultiplier();
+                float m3 = 1.0f;
+                if (gem3.getItem() instanceof FullManaCarvedGemItem g) m3 = g.getQuality().getEffectMultiplier();
+
+                float multiplier = (m1 + m2 + m3) / 3.0f;
 
                 // Execute Winter Frost
                 Level level = player.level();
                 if (!level.isClientSide) {
                     BlockPos center = player.blockPosition();
-                    int radius = 10;
+                    int radius = Math.max(5, Math.round(10 * multiplier));
                     
                     // Buckets for scheduling restoration: Map<Delay, List<BlockInfo>>
                     Map<Integer, List<RestoreData>> restoreBuckets = new HashMap<>();
@@ -108,7 +101,8 @@ public class MagicSapphireWinterFrost {
                                         level.setBlock(pos, iceState, 2);
                                         
                                         // Add to restore bucket
-                                        int delay = 160 + random.nextInt(41); // 160 to 200 ticks (8-10s)
+                                        int baseDelay = 160 + random.nextInt(41); // 160 to 200 ticks (8-10s)
+                                        int delay = Math.round(baseDelay * multiplier);
                                         restoreBuckets.computeIfAbsent(delay, k -> new ArrayList<>())
                                                       .add(new RestoreData(pos, state, iceState));
                                     }
@@ -122,7 +116,8 @@ public class MagicSapphireWinterFrost {
                     List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
                     for (LivingEntity target : entities) {
                         if (target != player) {
-                            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 4)); // Slowness V
+                            int duration = Math.round(200 * multiplier);
+                            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 4)); // Slowness V
                             EntityUtils.triggerSwarmAnger(level, player, target);
                             if (target instanceof net.minecraft.world.entity.Mob mob) {
                                 mob.setTarget(player);
@@ -160,7 +155,8 @@ public class MagicSapphireWinterFrost {
                                                 level.setBlock(pos, iceState, 2);
                                                 
                                                 // Add to restore bucket (restore to AIR)
-                                                int delay = 160 + random.nextInt(41); // 160 to 200 ticks (8-10s)
+                                                int baseDelay = 160 + random.nextInt(41); // 160 to 200 ticks (8-10s)
+                                                int delay = Math.round(baseDelay * multiplier);
                                                 restoreBuckets.computeIfAbsent(delay, k -> new ArrayList<>())
                                                               .add(new RestoreData(pos, Blocks.AIR.defaultBlockState(), iceState));
                                             }
@@ -198,7 +194,7 @@ public class MagicSapphireWinterFrost {
                         });
                     }
                 }
-
+                
             } else {
                 player.displayClientMessage(Component.literal("需要3个蓝宝石"), true);
             }

@@ -12,7 +12,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -34,22 +33,27 @@ import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
-public class RedswordItem extends Item implements GeoItem {
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
+
+public class RedswordItem extends SwordItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public RedswordItem(Properties properties) {
-        super(properties);
+        super(Tiers.NETHERITE, properties);
     }
 
-    
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private RedswordRenderer renderer;
+            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer renderer;
+
             @Override
             public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new RedswordRenderer();
+                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer();
                 return this.renderer;
             }
         });
@@ -104,9 +108,9 @@ public class RedswordItem extends Item implements GeoItem {
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         boolean isMaxCharge = currentCharge >= 100;
         
-        if (isMaxCharge || vars.player_mana >= 10) {
+        if (isMaxCharge || vars.player_mana >= 5) {
             if (!isMaxCharge) {
-                vars.player_mana -= 10;
+                vars.player_mana -= 5;
                 vars.syncMana(player);
             }
             
@@ -208,11 +212,11 @@ public class RedswordItem extends Item implements GeoItem {
     }
 
     public int getMaxManaCost() {
-        return 100;
+        return 500;
     }
 
     public double getManaCostPerTick() {
-        return 2.5;
+        return 5.0;
     }
 
     public int getMaxSlashDistance() {

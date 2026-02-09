@@ -10,13 +10,14 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.minecraft.network.chat.Component;
 
-public record MagicModeSwitchMessage(boolean forward) implements CustomPacketPayload {
+public record MagicModeSwitchMessage(boolean forward, int targetMode) implements CustomPacketPayload {
     public static final Type<MagicModeSwitchMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "magic_mode_switch"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicModeSwitchMessage> STREAM_CODEC = StreamCodec.of(
             (RegistryFriendlyByteBuf buffer, MagicModeSwitchMessage message) -> {
                 buffer.writeBoolean(message.forward);
+                buffer.writeInt(message.targetMode);
             },
-            (RegistryFriendlyByteBuf buffer) -> new MagicModeSwitchMessage(buffer.readBoolean())
+            (RegistryFriendlyByteBuf buffer) -> new MagicModeSwitchMessage(buffer.readBoolean(), buffer.readInt())
     );
 
     @Override
@@ -37,22 +38,48 @@ public record MagicModeSwitchMessage(boolean forward) implements CustomPacketPay
                         // Switch between 5 modes (0, 1, 2, 3, 4)
                         int maxModes = 5;
                         
-                        if (message.forward) {
-                            vars.sword_barrel_mode = (vars.sword_barrel_mode + 1) % maxModes;
-                        } else {
-                            vars.sword_barrel_mode = (vars.sword_barrel_mode - 1 + maxModes) % maxModes;
-                        }
-                        
-                        // Send feedback
-                        String modeStr = String.valueOf(vars.sword_barrel_mode);
-                        if (vars.sword_barrel_mode == 0) modeStr = "0 (AOE)";
-                        else if (vars.sword_barrel_mode == 1) modeStr = "1 (Aiming)";
-                        else if (vars.sword_barrel_mode == 2) modeStr = "2 (Focus)";
-                        else if (vars.sword_barrel_mode == 3) modeStr = "3 (Broken Phantasm)";
-                        else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
+                        if (message.targetMode >= 0 && message.targetMode < maxModes) {
+                            if (message.targetMode == 3) {
+                                // Toggle Broken Phantasm (Explosion)
+                                vars.ubw_broken_phantasm_enabled = !vars.ubw_broken_phantasm_enabled;
+                                
+                                if (vars.ubw_broken_phantasm_enabled) {
+                                    player.displayClientMessage(Component.literal("Broken Phantasm Mode: ON"), true);
+                                } else {
+                                    player.displayClientMessage(Component.literal("Broken Phantasm Mode: OFF"), true);
+                                }
+                                vars.syncPlayerVariables(player);
+                            } else {
+                                vars.sword_barrel_mode = message.targetMode;
+                                
+                                // Send feedback
+                                String modeStr = String.valueOf(vars.sword_barrel_mode);
+                                if (vars.sword_barrel_mode == 0) modeStr = "0 (AOE)";
+                                else if (vars.sword_barrel_mode == 1) modeStr = "1 (Aiming)";
+                                else if (vars.sword_barrel_mode == 2) modeStr = "2 (Focus)";
+                                else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
 
-                        player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
-                        vars.syncPlayerVariables(player);
+                                player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
+                                vars.syncPlayerVariables(player);
+                            }
+                        } else {
+                            if (message.forward) {
+                                vars.sword_barrel_mode = (vars.sword_barrel_mode + 1) % maxModes;
+                            } else {
+                                vars.sword_barrel_mode = (vars.sword_barrel_mode - 1 + maxModes) % maxModes;
+                            }
+                            
+                            // Send feedback
+                            String modeStr = String.valueOf(vars.sword_barrel_mode);
+                            if (vars.sword_barrel_mode == 0) modeStr = "0 (AOE)";
+                            else if (vars.sword_barrel_mode == 1) modeStr = "1 (Aiming)";
+                            else if (vars.sword_barrel_mode == 2) modeStr = "2 (Focus)";
+                            else if (vars.sword_barrel_mode == 3) modeStr = "3 (Broken Phantasm)";
+                            else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
+
+                            player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
+                            vars.syncPlayerVariables(player);
+                        }
                     }
                 }
             }).exceptionally(e -> {

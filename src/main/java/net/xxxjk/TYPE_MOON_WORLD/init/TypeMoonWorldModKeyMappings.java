@@ -27,6 +27,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = {Dist.CLIENT})
 public class TypeMoonWorldModKeyMappings {
@@ -66,7 +69,7 @@ public class TypeMoonWorldModKeyMappings {
                 // Priority 1: Mode Switch (Ctrl + Scroll)
                 if (MAGIC_MODE_SWITCH.isDown()) {
                      boolean forward = scrollDelta > 0;
-                     PacketDistributor.sendToServer(new MagicModeSwitchMessage(forward));
+                     PacketDistributor.sendToServer(new MagicModeSwitchMessage(forward, -1));
                      event.setCanceled(true);
                      return;
                 }
@@ -84,7 +87,7 @@ public class TypeMoonWorldModKeyMappings {
                 }
             }
         }
-
+        
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Post event) {
             if (Minecraft.getInstance().screen == null) {
@@ -92,6 +95,29 @@ public class TypeMoonWorldModKeyMappings {
                 if (player == null) return;
                 
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+
+                // Open Mode Switcher Menu on Ctrl Key Press (if correct magic selected)
+                if (MAGIC_MODE_SWITCH.isDown()) {
+                     if (vars.is_magus && !vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
+                         String currentMagic = vars.selected_magics.get(vars.current_magic_index);
+                         if ("sword_barrel_full_open".equals(currentMagic)) {
+                             if (Minecraft.getInstance().screen == null) {
+                                 Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen(vars.sword_barrel_mode));
+                             }
+                         }
+                     }
+                }
+
+                // Open Radial Menu on Z Key Press (if not scrolling)
+                if (CYCLE_MAGIC.isDown()) {
+                     // Only open if we have magics and are a magus
+                     if (vars.is_magus && !vars.selected_magics.isEmpty()) {
+                         // Only open if current screen is NOT already the radial menu
+                         if (!(Minecraft.getInstance().screen instanceof net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen)) {
+                             Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen(vars.selected_magics));
+                         }
+                     }
+                }
                 
                 if (MAGIC_CIRCUIT_SWITCH.consumeClick()) {
                     if (vars.is_magus) {

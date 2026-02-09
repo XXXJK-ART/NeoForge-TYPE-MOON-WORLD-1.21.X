@@ -24,6 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import net.neoforged.neoforge.event.level.LevelEvent;
+
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public class MuramasaSlashHandler {
     
@@ -70,6 +72,15 @@ public class MuramasaSlashHandler {
         
         Vec3 look = player.getLookAngle();
         ACTIVE_SLASHES.add(new SlashInstance(player.getUUID(), level.dimension(), player.position().add(0, player.getEyeHeight() * 0.5, 0), look, charge, maxDist, maxWidth, maxHeight));
+    }
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) return;
+        if (event.getLevel() instanceof Level level) {
+             ResourceKey<Level> dim = level.dimension();
+             ACTIVE_SLASHES.removeIf(slash -> slash.dimension.equals(dim));
+        }
     }
 
     @SubscribeEvent

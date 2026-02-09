@@ -26,10 +26,17 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import net.minecraft.world.phys.Vec3;
+
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.minecraft.world.item.ItemStack;
 
 @SuppressWarnings("null")
 public class SapphireProjectileEntity extends ThrowableItemProjectile {
+    public final List<Vec3> tracePos = new LinkedList<>();
+
     public SapphireProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
         super(type, level);
     }
@@ -59,6 +66,19 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
                  // If onHit discards the entity, we should stop here.
                  if (this.isRemoved()) return;
              }
+        } else {
+             Vec3 pos = position();
+             boolean addPos = true;
+             if (tracePos.size() > 0) {
+                 Vec3 lastPos = tracePos.get(tracePos.size() - 1);
+                 addPos = pos.distanceToSqr(lastPos) >= 0.01;
+             }
+             if (addPos) {
+                 tracePos.add(pos);
+                 if (tracePos.size() > 560) {
+                     tracePos.remove(0);
+                 }
+             }
         }
         super.tick();
     }
@@ -69,7 +89,14 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
         if (!this.level().isClientSide) {
             Level level = this.level();
             BlockPos center = this.blockPosition();
-            int radius = MagicConstants.SAPPHIRE_ICE_RADIUS;
+            
+            float multiplier = 1.0f;
+            ItemStack stack = this.getItem();
+            if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
+                 multiplier = gemItem.getQuality().getEffectMultiplier();
+            }
+            int radius = Math.round(MagicConstants.SAPPHIRE_ICE_RADIUS * multiplier);
+            
             List<BlockPos> placedBlocks = new ArrayList<>();
             RandomSource random = level.getRandom();
 

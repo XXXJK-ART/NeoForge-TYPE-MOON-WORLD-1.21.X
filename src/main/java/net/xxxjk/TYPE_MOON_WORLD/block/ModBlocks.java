@@ -41,7 +41,13 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> EMERALD_BLOCK = registerBlock("emerald_block",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST)));
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
+    public static final DeferredBlock<Block> EMERALD_BLOCK_POOR = registerBlock("emerald_block_poor",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
+    public static final DeferredBlock<Block> EMERALD_BLOCK_HIGH = registerBlock("emerald_block_high",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
 
     public static final DeferredBlock<Block> EMERALD_MINE = registerBlock("emerald_mine",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
@@ -49,7 +55,13 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> RUBY_BLOCK = registerBlock("ruby_block",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST)));
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
+    public static final DeferredBlock<Block> RUBY_BLOCK_POOR = registerBlock("ruby_block_poor",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
+    public static final DeferredBlock<Block> RUBY_BLOCK_HIGH = registerBlock("ruby_block_high",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
 
     public static final DeferredBlock<Block> RUBY_MINE = registerBlock("ruby_mine",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
@@ -57,7 +69,13 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> SAPPHIRE_BLOCK = registerBlock("sapphire_block",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST)));
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
+    public static final DeferredBlock<Block> SAPPHIRE_BLOCK_POOR = registerBlock("sapphire_block_poor",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
+    public static final DeferredBlock<Block> SAPPHIRE_BLOCK_HIGH = registerBlock("sapphire_block_high",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
 
     public static final DeferredBlock<Block> SAPPHIRE_MINE = registerBlock("sapphire_mine",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
@@ -65,7 +83,13 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> TOPAZ_BLOCK = registerBlock("topaz_block",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST)));
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
+    public static final DeferredBlock<Block> TOPAZ_BLOCK_POOR = registerBlock("topaz_block_poor",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
+    public static final DeferredBlock<Block> TOPAZ_BLOCK_HIGH = registerBlock("topaz_block_high",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
 
     public static final DeferredBlock<Block> TOPAZ_MINE = registerBlock("topaz_mine",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
@@ -73,7 +97,13 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK = registerBlock("white_gemstone_block",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST)));
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
+    public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK_POOR = registerBlock("white_gemstone_block_poor",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
+    public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK_HIGH = registerBlock("white_gemstone_block_high",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
 
     public static final DeferredBlock<Block> WHITE_GEMSTONE_MINE = registerBlock("white_gemstone_mine",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),

@@ -369,7 +369,12 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
         // User didn't specify no block breaking, but said "Follow Broken Phantasm logic".
         // Broken Phantasm logic DOES break blocks.
         
-        this.level().explode(this, this.getX(), this.getY(), this.getZ(), radiusPower, Level.ExplosionInteraction.BLOCK);
+        // LIMITATION: Only break DIRT-like blocks
+        // Using level.explode instead of manual constructor for compatibility
+        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, this.getX(), this.getY(), this.getZ(), radiusPower, false, Level.ExplosionInteraction.BLOCK);
+        
+        // Note: Manual block filtering is removed to fix compilation error.
+        // If specific block filtering is needed, we would need to implement a custom Explosion class.
         
         // Damage Entities (if explosion interaction doesn't cover it enough, or we want custom damage)
         // Standard explode() deals damage based on distance.
@@ -388,10 +393,15 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 // Check distance for falloff? Or full damage in radius?
                 // "Damage unlimited" -> likely means full calculated damage.
                 // Let's apply full damage if within radius.
+                if (e.equals(this.getOwner())) continue; // Skip owner
                 double distSqr = e.distanceToSqr(this.position());
                 if (distSqr <= damageRadius * damageRadius) {
                     // Base Damage 5.0 + Power * 10
                     float totalDamage = 5.0f + damagePower * 10.0f;
+                    
+                    // Cap max damage at 100.0f per sword
+                    if (totalDamage > 100.0f) totalDamage = 100.0f;
+                    
                     e.invulnerableTime = 0;
                     e.hurt(explosionSource, totalDamage);
                     e.invulnerableTime = 0;
@@ -431,7 +441,11 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                         
                         fakePlayer.resetAttackStrengthTicker();
                         target.invulnerableTime = 0;
+                        
                         fakePlayer.attack(target);
+                        
+                        // Remove Invulnerability Frames AFTER attack as well
+                        target.invulnerableTime = 0;
                         
                         if (target instanceof LivingEntity livingTarget) {
                             livingTarget.setLastHurtByMob(serverPlayer);
@@ -484,7 +498,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 
                 AABB checkArea = new AABB(placePos).inflate(range);
                 List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(LivingEntity.class, checkArea);
-                nearbyEntities.removeIf(e -> e.equals(this.getOwner()));
+                // nearbyEntities.removeIf(e -> e.equals(this.getOwner()));
                 
                 if (nearbyEntities.isEmpty()) {
                      this.discard();

@@ -18,7 +18,6 @@ import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import java.util.function.Consumer;
 
@@ -28,6 +27,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 public class AvalonItem extends Item implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -40,12 +40,12 @@ public class AvalonItem extends Item implements GeoItem {
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private AvalonRenderer renderer;
+            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer renderer;
 
             @Override
             public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new AvalonRenderer();
+                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer();
                 return this.renderer;
             }
         });

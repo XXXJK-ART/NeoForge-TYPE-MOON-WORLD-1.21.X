@@ -3,12 +3,12 @@ package net.xxxjk.TYPE_MOON_WORLD.constants;
 public class MagicConstants {
     // Ruby Throw Magic
     public static final float RUBY_EXPLOSION_RADIUS = 5.0F;
-    public static final float RUBY_THROW_VELOCITY = 3.0F;
+    public static final float RUBY_THROW_VELOCITY = 1.5F;
     public static final float RUBY_THROW_INACCURACY = 1.0F;
     public static final int RUBY_LIFETIME_TICKS = 200; // 10 seconds
 
     // Sapphire Throw Magic
-    public static final float SAPPHIRE_THROW_VELOCITY = 3.0F;
+    public static final float SAPPHIRE_THROW_VELOCITY = 1.5F;
     public static final float SAPPHIRE_THROW_INACCURACY = 1.0F;
     public static final int SAPPHIRE_ICE_RADIUS = 3;
     public static final int SAPPHIRE_ICE_DURATION = 100; // 5 seconds (20 ticks * 5)
@@ -21,7 +21,7 @@ public class MagicConstants {
     public static final int EMERALD_WALL_DISTANCE = 4; // Moved from 2 to 4 (2 blocks further)
 
     // Topaz Throw Magic
-    public static final float TOPAZ_THROW_VELOCITY = 3.0F;
+    public static final float TOPAZ_THROW_VELOCITY = 2.0F;
     public static final float TOPAZ_THROW_INACCURACY = 1.0F;
     public static final int TOPAZ_DEBUFF_DURATION = 200; // 10 seconds
     public static final double TOPAZ_EFFECT_RADIUS = 5.0;

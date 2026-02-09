@@ -115,17 +115,9 @@ public class CastMagic {
                     // Increase proficiency slightly on use
                     vars.proficiency_jewel_magic = Math.min(100, vars.proficiency_jewel_magic + 0.1);
                 } 
-                // Structural Analysis & Projection & UBW & Broken Phantasm & Others
-                // User Request: "Skill unrelated to proficiency, cooldown reduced to 0.5s"
-                // Structural Analysis, Projection, Broken Phantasm, UBW, etc. are currently using Default 10 (0.5s).
-                // So they are already 0.5s?
-                // Wait, maybe some had longer default?
-                // In previous code:
-                // cooldown = 10;
-                // So all non-jewel magics were already 10 ticks (0.5s).
-                // Let's ensure this is explicit and correct.
                 else {
-                    cooldown = 10; // 0.5s
+                    // For all other skills, set strict 0.5s cooldown (10 ticks)
+                    cooldown = 10;
                 }
                 
                 vars.magic_cooldown = cooldown;

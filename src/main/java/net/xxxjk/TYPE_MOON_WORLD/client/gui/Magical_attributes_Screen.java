@@ -320,6 +320,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         } else if ("unlimited_blade_works".equals(entry.id)) {
             proficiency = vars.proficiency_unlimited_blade_works;
             showProficiency = true;
+        } else if ("sword_barrel_full_open".equals(entry.id)) {
+            proficiency = vars.proficiency_sword_barrel_full_open;
+            showProficiency = true;
         } else if ("jewel".equals(entry.category)) {
             proficiency = vars.proficiency_jewel_magic;
             showProficiency = true;

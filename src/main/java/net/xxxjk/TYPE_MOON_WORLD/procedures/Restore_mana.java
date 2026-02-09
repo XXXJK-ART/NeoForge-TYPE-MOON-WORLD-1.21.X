@@ -19,11 +19,21 @@ import javax.annotation.Nullable;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 
+import net.minecraft.server.level.ServerPlayer;
+
 @EventBusSubscriber
 public class Restore_mana {
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         execute(event, event.getEntity().level(), event.getEntity());
+    }
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        // Delay slightly to ensure player entity is fully initialized in the world
+        TYPE_MOON_WORLD.queueServerWork(20, () -> {
+            execute(event, event.getEntity().level(), event.getEntity());
+        });
     }
 
     public static void execute(LevelAccessor world, Entity entity) {
@@ -44,6 +54,9 @@ public class Restore_mana {
                 // 开启魔术回路时，回魔间隔减半（速度翻倍）
                 regenInterval /= 2;
                 
+                // 确保间隔至少为 1 tick
+                if (regenInterval < 1.0) regenInterval = 1.0;
+                
                 // 每次回魔调用时增加计时器（因为现在调用频率可能变了，但这里逻辑需要稍微调整，见下文分析）
                 // 实际上 execute 是被 queueServerWork 调用的，delay 决定了频率。
                 // 所以我们只需要在这里计算 delay 即可。
@@ -52,8 +65,8 @@ public class Restore_mana {
                 // 既然 execute 是每隔 delay tick 运行一次，那么计时器加上 delay 即可。
                 _vars.magic_circuit_open_timer += regenInterval; 
                 
-                // 24000 ticks = 1 day. Check if timer exceeded limit
-                if (_vars.magic_circuit_open_timer >= 24000) {
+                // 72000 ticks = 3 days. Check if timer exceeded limit
+                if (_vars.magic_circuit_open_timer >= 72000) {
                      _vars.is_magic_circuit_open = false;
                      _vars.magic_circuit_open_timer = 0;
                      if (entity instanceof LivingEntity _entity) {
