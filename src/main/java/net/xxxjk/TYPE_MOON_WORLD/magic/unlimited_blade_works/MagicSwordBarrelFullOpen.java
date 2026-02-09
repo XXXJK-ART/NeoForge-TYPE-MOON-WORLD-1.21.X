@@ -119,10 +119,33 @@ public class MagicSwordBarrelFullOpen {
         
         if (!vars.is_sword_barrel_active) return;
         
-        // Safety check: if UBW lost or conditions not met, disable
-        if (!vars.has_unlimited_blade_works) {
+        // Interrupt Conditions:
+        // 1. Magic Circuit Closed
+        // 2. Magic Selection Changed (Must be sword_barrel_full_open)
+        // 3. UBW Lost
+        
+        boolean interrupt = false;
+        
+        if (!vars.is_magic_circuit_open) {
+            interrupt = true;
+        } else if (!vars.has_unlimited_blade_works) {
+            interrupt = true;
+        } else {
+            // Check selected magic
+            if (vars.selected_magics.isEmpty() || vars.current_magic_index < 0 || vars.current_magic_index >= vars.selected_magics.size()) {
+                interrupt = true;
+            } else {
+                String currentMagic = vars.selected_magics.get(vars.current_magic_index);
+                if (!"sword_barrel_full_open".equals(currentMagic)) {
+                    interrupt = true;
+                }
+            }
+        }
+        
+        if (interrupt) {
             vars.is_sword_barrel_active = false;
             vars.syncPlayerVariables(player);
+            // player.displayClientMessage(Component.translatable("message.typemoonworld.trace_off"), true);
             return;
         }
         
@@ -142,10 +165,30 @@ public class MagicSwordBarrelFullOpen {
         }
         
         // Fire rate control (e.g. every 5 ticks = 0.25s)
-        if (player.tickCount % 5 != 0) return;
+        // Check "No Cooldown" mode
+        boolean noCooldown = player.getPersistentData().getBoolean("TypeMoonNoCooldown");
+        if (!noCooldown && player.tickCount % 5 != 0) return;
 
         // Cost Check (Per shot)
-        if (!ManaHelper.consumeManaOrHealth(player, MANA_COST)) {
+        double cost = MANA_COST;
+        if (player.level().dimension() == ModDimensions.UBW_KEY) {
+            cost = MANA_COST / 2.0;
+        }
+
+        // Bypass mana cost if No Cooldown (usually implies unlimited mana too for testing?)
+        // User said "No cooldown refers to magic usage no cooldown".
+        // Often implies free cost or just speed.
+        // Let's assume it only affects speed/cooldown, but if user spamming, they might need mana.
+        // But strict interpretation: Cooldown only.
+        // However, standard "No Cooldown" cheats usually imply free usage.
+        // Let's stick to cooldown first. If user wants unlimited mana, they can use set max mana + high regen.
+        
+        if (!ManaHelper.consumeManaOrHealth(player, cost)) {
+             // If No Cooldown is active, maybe we allow it even without mana?
+             // "无冷却指令" -> "No Cooldown Command".
+             // Let's strictly follow "No Cooldown".
+             // Mana is separate.
+             
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
             vars.is_sword_barrel_active = false; // Auto-disable if out of mana
             vars.syncPlayerVariables(player);
@@ -229,6 +272,8 @@ public class MagicSwordBarrelFullOpen {
         // 1. Get Weapons
         List<ItemStack> weapons = new ArrayList<>();
         for (ItemStack stack : vars.analyzed_items) {
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem) continue;
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem) continue;
             if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
                 weapons.add(stack);
             }
@@ -253,7 +298,7 @@ public class MagicSwordBarrelFullOpen {
         
         // Raytrace for entity
         AABB rayBox = new AABB(eyePos, endPos).inflate(2.0);
-        List<Entity> entities = level.getEntities(player, rayBox, e -> e instanceof LivingEntity && !e.isSpectator());
+        List<Entity> entities = level.getEntities(player, rayBox, e -> e instanceof LivingEntity && !e.isSpectator() && !(e instanceof net.minecraft.world.entity.player.Player p && p.isCreative()));
         
         double closestDist = range * range;
         
@@ -272,7 +317,18 @@ public class MagicSwordBarrelFullOpen {
         
         // 3. Generate Swords (Horizontal Line)
         RandomSource random = player.getRandom();
-        int swordCount = 75; // Multiplied by 3 (was 25)
+        
+        // Base count calculation
+        int baseCount = getSwordCount(vars.proficiency_unlimited_blade_works, 75);
+        
+        // Reduce count if outside UBW dimension (2/3 of normal)
+        boolean isInsideUBW = player.level().dimension().location().equals(ModDimensions.UBW_KEY.location());
+        if (!isInsideUBW) {
+            baseCount = (int)(baseCount * 0.66);
+            if (baseCount < 5) baseCount = 5; // Maintain minimum limit
+        }
+        
+        int swordCount = baseCount;
         
         // Horizontal Spread Logic
         // Calculate "Right" vector
@@ -378,7 +434,7 @@ public class MagicSwordBarrelFullOpen {
         }
         
         RandomSource random = player.getRandom();
-        int swordCount = 20; // Increased from 12
+        int swordCount = getSwordCount(vars.proficiency_unlimited_blade_works, 20);
         
         // Player facing vector
         Vec3 lookVec = player.getLookAngle();
@@ -401,8 +457,8 @@ public class MagicSwordBarrelFullOpen {
             ItemStack weapon = weapons.get(random.nextInt(weapons.size())).copy();
             
             // Spread along the "Right" vector (Line formation behind player)
-            // Width: approx 9 blocks (was 6.0)
-            double width = 9.0;
+            // Width: approx 18 blocks (was 9.0)
+            double width = 18.0;
             double spread = (random.nextDouble() - 0.5) * width;
             
             // Add some vertical noise (Increased for Mode 0)
@@ -487,7 +543,7 @@ public class MagicSwordBarrelFullOpen {
         
         // Then check entities along the ray
         AABB rayBox = new AABB(eyePos, targetPos).inflate(1.0);
-        List<Entity> entities = level.getEntities(player, rayBox, e -> e instanceof LivingEntity && !e.isSpectator());
+        List<Entity> entities = level.getEntities(player, rayBox, e -> e instanceof LivingEntity && !e.isSpectator() && !(e instanceof net.minecraft.world.entity.player.Player p && p.isCreative()));
         
         double closestDist = range * range;
         
@@ -520,7 +576,7 @@ public class MagicSwordBarrelFullOpen {
         
         // 3. Generate Swords
         RandomSource random = player.getRandom();
-        int swordCount = 12;
+        int swordCount = getSwordCount(vars.proficiency_unlimited_blade_works, 12);
         
         for (int i = 0; i < swordCount; i++) {
             // Random point on sphere surface
@@ -674,5 +730,12 @@ public class MagicSwordBarrelFullOpen {
         }
         
         level.playSound(null, center.x, center.y, center.z, net.minecraft.sounds.SoundEvents.ILLUSIONER_PREPARE_MIRROR, net.minecraft.sounds.SoundSource.PLAYERS, 0.5f, 1.5f);
+    }
+    
+    private static int getSwordCount(double proficiency, int maxCount) {
+        // Minimum 5, Maximum maxCount
+        // Proficiency assumed 0-100
+        double ratio = Math.min(Math.max(proficiency, 0.0), 100.0) / 100.0;
+        return 5 + (int)((maxCount - 5) * ratio);
     }
 }

@@ -42,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
 
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
@@ -52,12 +53,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 //此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.command.TypeMoonCommands;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordBlockRenderer;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWWeaponBlockEntityRenderer;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 
 @Mod(TYPE_MOON_WORLD.MOD_ID)
 public class TYPE_MOON_WORLD {
@@ -140,6 +135,7 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(MysticEyesToggleMessage.TYPE, MysticEyesToggleMessage.STREAM_CODEC, MysticEyesToggleMessage::handleData);
         addNetworkMessage(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
         addNetworkMessage(MagicModeSwitchMessage.TYPE, MagicModeSwitchMessage.STREAM_CODEC, MagicModeSwitchMessage::handleData);
+        addNetworkMessage(SwitchMagicMessage.TYPE, SwitchMagicMessage.STREAM_CODEC, SwitchMagicMessage::handleData);
 
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),
@@ -178,37 +174,4 @@ public class TYPE_MOON_WORLD {
         workQueue.clear();
     }
 
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-    //您可以使用 EventBusSubscriber 自动注册带有 @SubscribeEvent 注释的类中的所有静态方法。
-    @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents {
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event) {
-
-        }
-        
-        @SubscribeEvent
-        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), ThrownItemRenderer::new);
-            event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), ThrownItemRenderer::new);
-            event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), ThrownItemRenderer::new);
-            event.registerEntityRenderer(ModEntities.BROKEN_PHANTASM_PROJECTILE.get(), BrokenPhantasmRenderer::new);
-            // Removed UBW_PROJECTILE registration from here to avoid duplication if it's now in TypeMoonWorldClientEvents
-            // But TypeMoonWorldClientEvents is safer if this inner class isn't fully reliable or split.
-            // Actually, let's keep it here and remove from TypeMoonWorldClientEvents if this is the main registry.
-            // But wait, user edited TypeMoonWorldClientEvents?
-            // The codebase has BOTH TypeMoonWorldClientEvents AND TYPE_MOON_WORLD$ClientModEvents.
-            // This is messy. Let's fix it by keeping it HERE where other projectiles are.
-            // And I should revert the change in TypeMoonWorldClientEvents? Or use that one?
-            // TYPE_MOON_WORLD.java seems to have the comprehensive list.
-            
-            event.registerEntityRenderer(ModEntities.UBW_PROJECTILE.get(), UBWProjectileRenderer::new);
-            
-            event.registerBlockEntityRenderer(ModBlockEntities.REDSWORD_BLOCK_ENTITY.get(), context -> new RedswordBlockRenderer());
-            event.registerBlockEntityRenderer(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), UBWWeaponBlockEntityRenderer::new);
-            event.registerEntityRenderer(ModEntities.MURAMASA_SLASH.get(), MuramasaSlashProjectileRenderer::new);
-        }
-
-
-    }
 }

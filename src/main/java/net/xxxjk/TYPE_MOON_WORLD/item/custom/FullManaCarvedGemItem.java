@@ -16,12 +16,26 @@ import java.util.function.Supplier;
 @SuppressWarnings("null")
 public class FullManaCarvedGemItem extends Item {
     private final Supplier<Item> emptyGemSupplier;
-    private final double manaAmount;
+    private final GemQuality quality;
+    private final GemType type;
 
-    public FullManaCarvedGemItem(Properties properties, Supplier<Item> emptyGemSupplier, double manaAmount) {
+    public FullManaCarvedGemItem(Properties properties, Supplier<Item> emptyGemSupplier, GemQuality quality, GemType type) {
         super(properties);
         this.emptyGemSupplier = emptyGemSupplier;
-        this.manaAmount = manaAmount;
+        this.quality = quality;
+        this.type = type;
+    }
+
+    public GemQuality getQuality() {
+        return quality;
+    }
+    
+    public GemType getType() {
+        return type;
+    }
+    
+    public double getManaAmount() {
+        return quality.getCapacity();
     }
 
     @Override
@@ -35,6 +49,7 @@ public class FullManaCarvedGemItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            double manaAmount = quality.getCapacity();
             
             // Allow Overload: Removed check for max mana
             vars.player_mana += manaAmount;

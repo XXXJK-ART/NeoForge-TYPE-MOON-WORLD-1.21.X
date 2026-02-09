@@ -26,9 +26,13 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.HOLY_SHROUD);
                         
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
+                        output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL);
+                        output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION);
+                        output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
+                        output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
@@ -46,27 +50,69 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RAW_TOPAZ);
                         output.accept(ModItems.RAW_WHITE_GEMSTONE);
 
+                        output.accept(ModItems.CARVED_EMERALD_POOR);
                         output.accept(ModItems.CARVED_EMERALD);
+                        output.accept(ModItems.CARVED_EMERALD_HIGH);
+                        
+                        output.accept(ModItems.CARVED_RUBY_POOR);
                         output.accept(ModItems.CARVED_RUBY);
+                        output.accept(ModItems.CARVED_RUBY_HIGH);
+                        
+                        output.accept(ModItems.CARVED_SAPPHIRE_POOR);
                         output.accept(ModItems.CARVED_SAPPHIRE);
+                        output.accept(ModItems.CARVED_SAPPHIRE_HIGH);
+                        
+                        output.accept(ModItems.CARVED_TOPAZ_POOR);
                         output.accept(ModItems.CARVED_TOPAZ);
+                        output.accept(ModItems.CARVED_TOPAZ_HIGH);
+                        
+                        output.accept(ModItems.CARVED_WHITE_GEMSTONE_POOR);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE);
+                        output.accept(ModItems.CARVED_WHITE_GEMSTONE_HIGH);
 
+                        output.accept(ModItems.CARVED_EMERALD_POOR_FULL);
                         output.accept(ModItems.CARVED_EMERALD_FULL);
+                        output.accept(ModItems.CARVED_EMERALD_HIGH_FULL);
+                        
+                        output.accept(ModItems.CARVED_RUBY_POOR_FULL);
                         output.accept(ModItems.CARVED_RUBY_FULL);
+                        output.accept(ModItems.CARVED_RUBY_HIGH_FULL);
+                        
+                        output.accept(ModItems.CARVED_SAPPHIRE_POOR_FULL);
                         output.accept(ModItems.CARVED_SAPPHIRE_FULL);
+                        output.accept(ModItems.CARVED_SAPPHIRE_HIGH_FULL);
+                        
+                        output.accept(ModItems.CARVED_TOPAZ_POOR_FULL);
                         output.accept(ModItems.CARVED_TOPAZ_FULL);
+                        output.accept(ModItems.CARVED_TOPAZ_HIGH_FULL);
+                        
+                        output.accept(ModItems.CARVED_WHITE_GEMSTONE_POOR_FULL);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE_FULL);
+                        output.accept(ModItems.CARVED_WHITE_GEMSTONE_HIGH_FULL);
 
+                        output.accept(ModBlocks.EMERALD_BLOCK_POOR);
                         output.accept(ModBlocks.EMERALD_BLOCK);
+                        output.accept(ModBlocks.EMERALD_BLOCK_HIGH);
                         output.accept(ModBlocks.EMERALD_MINE);
+                        
+                        output.accept(ModBlocks.RUBY_BLOCK_POOR);
                         output.accept(ModBlocks.RUBY_BLOCK);
+                        output.accept(ModBlocks.RUBY_BLOCK_HIGH);
                         output.accept(ModBlocks.RUBY_MINE);
+                        
+                        output.accept(ModBlocks.SAPPHIRE_BLOCK_POOR);
                         output.accept(ModBlocks.SAPPHIRE_BLOCK);
+                        output.accept(ModBlocks.SAPPHIRE_BLOCK_HIGH);
                         output.accept(ModBlocks.SAPPHIRE_MINE);
+                        
+                        output.accept(ModBlocks.TOPAZ_BLOCK_POOR);
                         output.accept(ModBlocks.TOPAZ_BLOCK);
+                        output.accept(ModBlocks.TOPAZ_BLOCK_HIGH);
                         output.accept(ModBlocks.TOPAZ_MINE);
+                        
+                        output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK_POOR);
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK);
+                        output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK_HIGH);
                         output.accept(ModBlocks.WHITE_GEMSTONE_MINE);
                         output.accept(ModBlocks.GREEN_TRANSPARENT_BLOCK);
 

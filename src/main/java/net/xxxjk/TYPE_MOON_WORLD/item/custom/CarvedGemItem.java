@@ -10,30 +10,32 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Supplier;
+
 @SuppressWarnings("null")
 public class CarvedGemItem extends Item {
     private final GemType type;
-    private final double manaAmount;
+    private final GemQuality quality;
+    private final Supplier<Item> fullGemSupplier;
 
-    public CarvedGemItem(Properties properties, GemType type, double manaAmount) {
+    public CarvedGemItem(Properties properties, GemType type, GemQuality quality, Supplier<Item> fullGemSupplier) {
         super(properties);
         this.type = type;
-        this.manaAmount = manaAmount;
+        this.quality = quality;
+        this.fullGemSupplier = fullGemSupplier;
     }
 
     private Item fullGemItem() {
-        return switch (type) {
-            case EMERALD -> ModItems.CARVED_EMERALD_FULL.get();
-            case RUBY -> ModItems.CARVED_RUBY_FULL.get();
-            case SAPPHIRE -> ModItems.CARVED_SAPPHIRE_FULL.get();
-            case TOPAZ -> ModItems.CARVED_TOPAZ_FULL.get();
-            case WHITE_GEMSTONE -> ModItems.CARVED_WHITE_GEMSTONE_FULL.get();
-        };
+        return fullGemSupplier.get();
     }
 
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {
         return false;
+    }
+    
+    public GemQuality getQuality() {
+        return quality;
     }
 
     @Override
@@ -41,6 +43,7 @@ public class CarvedGemItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            double manaAmount = quality.getCapacity();
             
             // Check if mana is sufficient
             if (vars.player_mana >= manaAmount) {

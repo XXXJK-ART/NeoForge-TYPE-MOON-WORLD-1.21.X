@@ -48,10 +48,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.RandomSource;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.item.BlockItem;
@@ -111,6 +113,18 @@ public class ChantHandler {
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID uuid = event.getEntity().getUUID();
+        
+        // Safety: If player is logging out while chanting, restore terrain instantly
+        // This prevents corrupted world state if the server restarts or player doesn't log back in for a while
+        // Check local state or persistent variable?
+        // Variables are attached to player, but player is about to unload.
+        // We can check our Map state.
+        if (WAS_CHANTING.getOrDefault(uuid, false)) {
+             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+                 restoreTerrainInstantly(serverPlayer);
+             }
+        }
+        
         UBW_LOCATIONS.remove(uuid);
         PENDING_UBW_LOCATIONS.remove(uuid);
         REMOVAL_QUEUES.remove(uuid);
@@ -124,6 +138,8 @@ public class ChantHandler {
         PLACED_SWORDS.remove(uuid);
         ACTIVE_UBW_ENTITIES.remove(uuid);
         ACTIVE_ENTITY_POSITIONS.remove(uuid);
+        REFILL_QUEUES.remove(uuid);
+        WAS_CHANTING.remove(uuid);
     }
     
     // UUID -> List of Entities that were teleported with the player
@@ -276,7 +292,7 @@ public class ChantHandler {
         // Maintenance Cost for UBW (Only for Owner)
         if (isOwner) {
                 if (player.tickCount % 20 == 0) {
-                     double cost = 2.0;
+                     double cost = 10.0;
                      if (vars.player_mana >= cost) {
                          vars.player_mana -= cost;
                          vars.syncMana(player);
@@ -322,6 +338,13 @@ public class ChantHandler {
                     // Increase proficiency slightly on chant step
                     if (vars.proficiency_unlimited_blade_works < 100) {
                         vars.proficiency_unlimited_blade_works = Math.min(100, vars.proficiency_unlimited_blade_works + 0.05);
+                        
+                        // Check for Layer Write (Sword Barrel Full Open) acquisition
+                        // Obtain when UBW proficiency >= 1.0 (1%)
+                        if (vars.proficiency_unlimited_blade_works >= 1.0 && !vars.learned_magics.contains("sword_barrel_full_open")) {
+                            vars.learned_magics.add("sword_barrel_full_open");
+                            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld.sword_barrel_full_open")), true);
+                        }
                     }
                     
                     // Process Chant Steps
@@ -343,6 +366,10 @@ public class ChantHandler {
         }
     }
     
+    // Helper for random sword generation (Passive)
+    // Reduce density/count for "Sword Rain" reduction request
+    // "减小所有的无限剑制内的剑雨（不包括层写）"
+    // This method handles the ambient "refill" of swords.
     private static void checkAndRefillSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
         // Only run this logic on the UBW owner/caster to avoid duplicate spawning
         
@@ -355,6 +382,8 @@ public class ChantHandler {
              for (Entity entity : allEntities) {
                  if (!(entity instanceof LivingEntity target)) continue;
                  if (!target.isAlive()) continue;
+                 // Skip if target is Creative Player
+                 if (target instanceof ServerPlayer p && (p.isCreative() || p.isSpectator())) continue;
                  
                  // Check density around THIS target
                  // Range: 48 blocks (3 chunks diameter approx)
@@ -368,65 +397,76 @@ public class ChantHandler {
                      double tX = target.getX();
                      double tZ = target.getZ();
                      for (BlockPos p : placed) {
-                         // Simple Manhattan distance check for speed, or euclidean squared
-                         double dx = p.getX() - tX;
-                         double dz = p.getZ() - tZ;
-                         if (dx * dx + dz * dz < checkRadius * checkRadius) {
+                         // Fast distance check (Squared)
+                         if (p.distSqr(new net.minecraft.core.Vec3i((int)tX, p.getY(), (int)tZ)) < checkRadius * checkRadius) {
                              swordCount++;
                          }
                      }
                  }
                  
-                 // Legacy entity check (optional, but good for transition)
-                 // swordCount += target.level().getEntitiesOfClass(net.xxxjk.TYPE_MOON_WORLD.entity.ProjectedSwordEntity.class, checkBox).size();
-                 // swordCount += target.level().getEntitiesOfClass(UBWInsideSwordEntity.class, checkBox).size();
-                 
-                 // Target density: ~1000 swords in this area for "Full" feeling
-                 int targetCount = 1000;
-                 
-                 if (swordCount < 50) {
-                     // Case 1: Almost empty (New Area) -> BURST FILL
-                     // Trigger massive refill similar to initial fill
-                     
-                     int refillCount = 200 + player.getRandom().nextInt(100); 
-                     
-                     for (int i = 0; i < refillCount; i++) {
-                         // Fast burst: delay 0-20 ticks (1 second)
-                         // Use center-dense distribution
-                         double minRadius = 3.0;
-                         double r = minRadius + (player.getRandom().nextDouble() * player.getRandom().nextDouble() * (checkRadius - minRadius));
-                         double theta = player.getRandom().nextDouble() * Math.PI * 2;
-                         double x = target.getX() + r * Math.cos(theta);
-                         double z = target.getZ() + r * Math.sin(theta);
-                         
-                         REFILL_QUEUES.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
-                             .add(new RefillEntry(player.getRandom().nextInt(20), new Vec3(x, target.getY(), z))); 
-                     }
-                     
-                 } else if (swordCount < targetCount / 2) {
-                     // Case 2: Half empty -> SLOW REFILL
-                     // Slowly drip feed swords to maintain density
-                     
-                     int refillCount = 20 + player.getRandom().nextInt(10);
-                     
-                     for (int i = 0; i < refillCount; i++) {
-                         // Slower: delay 0-60 ticks (3 seconds)
-                         // Use center-dense distribution
-                         double minRadius = 3.0;
-                         double r = minRadius + (player.getRandom().nextDouble() * player.getRandom().nextDouble() * (checkRadius - minRadius));
-                         double theta = player.getRandom().nextDouble() * Math.PI * 2;
-                         double x = target.getX() + r * Math.cos(theta);
-                         double z = target.getZ() + r * Math.sin(theta);
-                         
-                         REFILL_QUEUES.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
-                             .add(new RefillEntry(i * 2, new Vec3(x, target.getY(), z))); 
-                     }
+                 // Limit: 50 swords around player? Reduced from whatever default implied
+                 // Let's set a hard cap to reduce "rain" density
+                 if (swordCount < 20) { // Reduced from implicit higher value
+                     // Spawn some swords
+                     spawnPassiveSwords(player, target, 5); // Spawn batch of 5
                  }
              }
         }
     }
     
-    // ... existing code ...
+    private static void spawnPassiveSwords(ServerPlayer owner, LivingEntity target, int count) {
+        if (target instanceof Player p && (p.isCreative() || p.isSpectator())) return;
+        ServerLevel level = (ServerLevel) owner.level();
+        RandomSource random = level.getRandom();
+        
+        for (int i = 0; i < count; i++) {
+            // Random position around target
+            double r = 10.0 + random.nextDouble() * 30.0; // 10-40 blocks away
+            double angle = random.nextDouble() * 2.0 * Math.PI;
+            
+            double x = target.getX() + Math.cos(angle) * r;
+            double z = target.getZ() + Math.sin(angle) * r;
+            
+            BlockPos pos = new BlockPos((int)x, 100, (int)z); // Floor is 100
+            
+            if (level.getBlockState(pos).isAir()) {
+                 BlockState state = net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks.SWORD_BARREL_BLOCK.get().defaultBlockState()
+                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.FACING, net.minecraft.core.Direction.UP)
+                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.ROTATION_A, random.nextBoolean())
+                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.ROTATION_B, random.nextBoolean());
+                 
+                 level.setBlock(pos, state, 3);
+                 registerPlacedSword(owner.getUUID(), pos);
+            }
+        }
+        
+        // Spawn reduced falling swords (Rain)
+        // Previous logic had high density. We reduce it here.
+        // Only spawn if player is in UBW dimension
+        if (level.dimension() == ModDimensions.UBW_KEY && random.nextInt(10) == 0) { // 10% chance per tick per call
+             spawnVisualSwordAt(owner, target.getX(), target.getZ(), 20.0);
+        }
+    }
+    
+    private static void spawnVisualSwordAt(ServerPlayer player, double centerX, double centerZ, double radius) {
+        ServerLevel level = (ServerLevel) player.level();
+        RandomSource random = level.getRandom();
+        
+        double r = random.nextDouble() * radius;
+        double theta = random.nextDouble() * Math.PI * 2;
+        double x = centerX + r * Math.cos(theta);
+        double z = centerZ + r * Math.sin(theta);
+        double y = player.getY() + 15.0 + random.nextDouble() * 10.0;
+        
+        // Create falling sword projectile (visual only or low damage)
+        net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity sword = new net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.UBW_PROJECTILE.get(), level);
+        sword.setPos(x, y, z);
+        sword.setOwner(player);
+        sword.setDeltaMovement(0, -0.5 - random.nextDouble() * 0.5, 0); // Fall down
+        sword.setXRot(90.0f); // Point down
+        
+        level.addFreshEntity(sword);
+    }
 
     // New Inner Class for Refill Queue
     private static class RefillEntry {
@@ -470,6 +510,10 @@ public class ChantHandler {
         
         List<ItemStack> weapons = new ArrayList<>();
         for (ItemStack stack : vars.analyzed_items) {
+            // Exclude Tsumukari Muramasa and Redsword
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem) continue;
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem) continue;
+            
             if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
                 weapons.add(stack);
             }
@@ -784,6 +828,55 @@ public class ChantHandler {
         }
     }
     
+    // Helper to spawn swords around player on entry
+    private static void spawnEntrySwords(ServerPlayer player) {
+        // We need to spawn them in the UBW dimension, but player is currently in Overworld (about to TP).
+        // Wait, player is NOT YET teleported in activateUBW.
+        // But we want them to appear "immediately upon entry".
+        // So we should spawn them in the TARGET dimension (UBW) at the target location.
+        // We know the target location: PENDING_UBW_LOCATIONS.get(player.getUUID()) or similar logic.
+        // Actually, activateUBW uses PENDING_UBW_LOCATIONS to find where to teleport.
+        
+        Vec3 targetCenter = PENDING_UBW_LOCATIONS.get(player.getUUID());
+        if (targetCenter == null) return;
+        
+        ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
+        if (ubwLevel == null) return;
+        
+        RandomSource random = player.getRandom();
+        // Reduced count for "Sword Rain" reduction request?
+        // User said: "减小所有的无限剑制内的剑雨（不包括层写）"
+        // And "无限剑制进入纬度时玩家周围的地上直接生成方块剑"
+        // So this is a NEW feature, not the rain itself.
+        // Let's spawn a reasonable amount, e.g. 30.
+        int count = 30;
+        double radius = 15.0;
+        
+        for (int i = 0; i < count; i++) {
+            double angle = random.nextDouble() * 2.0 * Math.PI;
+            double dist = random.nextDouble() * radius;
+            double x = targetCenter.x + Math.cos(angle) * dist;
+            double z = targetCenter.z + Math.sin(angle) * dist;
+            
+            // Y is usually 100 flat in UBW
+            BlockPos pos = new BlockPos((int)x, 100, (int)z);
+            
+            // Place Sword Block
+            // Check if air
+            if (ubwLevel.getBlockState(pos).isAir()) {
+                 BlockState state = net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks.SWORD_BARREL_BLOCK.get().defaultBlockState()
+                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.FACING, net.minecraft.core.Direction.UP) // Facing UP
+                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.ROTATION_A, random.nextBoolean())
+                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.ROTATION_B, random.nextBoolean());
+                 
+                 ubwLevel.setBlock(pos, state, 3);
+                 
+                 // Register
+                 registerPlacedSword(player.getUUID(), pos);
+            }
+        }
+    }
+
     private static void processChantStep(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
         int progress = vars.ubw_chant_progress;
         double cost = 50.0;
@@ -969,6 +1062,11 @@ public class ChantHandler {
         // Reset Active Entity List
         ACTIVE_UBW_ENTITIES.remove(player.getUUID());
         ACTIVE_ENTITY_POSITIONS.remove(player.getUUID());
+        
+        // Spawn Sword Blocks around the player immediately upon entry
+        // Radius: 20 blocks
+        // Count: ~50 swords?
+        spawnEntrySwords(player);
         
         // Find entities to teleport (Range 40)
         double range = 40.0;
@@ -1417,7 +1515,7 @@ public class ChantHandler {
                      if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location()) && player.position().distanceToSqr(center) < 40000) {
                           // Player is the owner of this UBW instance
                           // Check if damage source is from UBW sword
-                          if (event.getSource().getDirectEntity() instanceof UBWProjectileEntity) {
+                          if (event.getSource().getDirectEntity() instanceof UBWProjectileEntity || event.getSource().getDirectEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity) {
                               event.setCanceled(true);
                               return;
                           }

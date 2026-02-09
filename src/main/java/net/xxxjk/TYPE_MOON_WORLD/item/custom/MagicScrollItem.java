@@ -22,7 +22,7 @@ public class MagicScrollItem extends Item {
     private final double successRate;
 
     public MagicScrollItem(Properties properties, double successRate, String... magics) {
-        super(properties.durability(10)); // 10 Durability
+        super(properties);
         this.successRate = successRate;
         this.magicsToLearn = Arrays.asList(magics);
     }

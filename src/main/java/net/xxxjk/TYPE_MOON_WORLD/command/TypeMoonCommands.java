@@ -90,6 +90,19 @@ public class TypeMoonCommands {
                     .executes(TypeMoonCommands::forgetAllMagics))
             )
 
+            // Reset Command
+            .then(Commands.literal("reset")
+                .executes(TypeMoonCommands::resetPlayer))
+            
+            // Max Level & All Skills Command
+            .then(Commands.literal("max")
+                .executes(TypeMoonCommands::setMaxLevel))
+            
+            // No Cooldown Command (Toggle)
+            .then(Commands.literal("cooldown")
+                .then(Commands.literal("toggle")
+                    .executes(TypeMoonCommands::toggleCooldown)))
+
             // Clear Shiki Entity
             .then(Commands.literal("shiki")
                 .then(Commands.literal("clear")
@@ -99,6 +112,116 @@ public class TypeMoonCommands {
                         .executes(ctx -> setShikiHealth(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
             )
         );
+    }
+
+    private static int resetPlayer(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Reset Stats
+            vars.player_mana = 0;
+            vars.player_max_mana = 100.0;
+            vars.player_mana_egenerated_every_moment = 5.0; // Default regen interval
+            vars.player_restore_magic_moment = 1.0; // Default restore amount
+            
+            // Reset Attributes
+            vars.player_magic_attributes_earth = false;
+            vars.player_magic_attributes_water = false;
+            vars.player_magic_attributes_fire = false;
+            vars.player_magic_attributes_wind = false;
+            vars.player_magic_attributes_ether = false;
+            vars.player_magic_attributes_none = false;
+            vars.player_magic_attributes_imaginary_number = false;
+            vars.player_magic_attributes_sword = false;
+            
+            // Reset Proficiency
+            vars.proficiency_structural_analysis = 0.0;
+            vars.proficiency_projection = 0.0;
+            vars.proficiency_jewel_magic = 0.0;
+            vars.proficiency_unlimited_blade_works = 0.0;
+            
+            // Reset Magics
+            vars.learned_magics.clear();
+            vars.has_unlimited_blade_works = false;
+            
+            // Reset Cooldown
+            player.getPersistentData().putBoolean("TypeMoonNoCooldown", false);
+            
+            vars.syncPlayerVariables(player);
+            ctx.getSource().sendSuccess(() -> Component.literal("Player stats and skills have been reset."), true);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int setMaxLevel(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Max Stats
+            vars.player_max_mana = 100000.0;
+            vars.player_mana = vars.player_max_mana;
+            vars.player_mana_egenerated_every_moment = 100.0; // High regen amount
+            vars.player_restore_magic_moment = 1.0; // Fast regen interval (1 tick)
+            
+            // All Attributes
+            vars.player_magic_attributes_earth = true;
+            vars.player_magic_attributes_water = true;
+            vars.player_magic_attributes_fire = true;
+            vars.player_magic_attributes_wind = true;
+            vars.player_magic_attributes_ether = true;
+            vars.player_magic_attributes_none = true;
+            vars.player_magic_attributes_imaginary_number = true;
+            vars.player_magic_attributes_sword = true;
+            
+            // Max Proficiency
+            vars.proficiency_structural_analysis = 100.0;
+            vars.proficiency_projection = 100.0;
+            vars.proficiency_jewel_magic = 100.0;
+            vars.proficiency_unlimited_blade_works = 100.0;
+            vars.proficiency_sword_barrel_full_open = 100.0;
+            
+            // Learn All Magics
+            String[] allMagics = {
+                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw",
+                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement",
+                "projection", "structural_analysis", "broken_phantasm",
+                "unlimited_blade_works", "sword_barrel_full_open"
+            };
+            for (String m : allMagics) {
+                if (!vars.learned_magics.contains(m)) {
+                    vars.learned_magics.add(m);
+                }
+            }
+            vars.has_unlimited_blade_works = true;
+            
+            vars.syncPlayerVariables(player);
+            ctx.getSource().sendSuccess(() -> Component.literal("Player set to MAX LEVEL with ALL SKILLS."), true);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int toggleCooldown(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            boolean current = player.getPersistentData().getBoolean("TypeMoonNoCooldown");
+            boolean newState = !current;
+            player.getPersistentData().putBoolean("TypeMoonNoCooldown", newState);
+            
+            if (newState) {
+                ctx.getSource().sendSuccess(() -> Component.literal("No Cooldown Mode: ON"), true);
+            } else {
+                ctx.getSource().sendSuccess(() -> Component.literal("No Cooldown Mode: OFF"), true);
+            }
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     private static int setShikiHealth(CommandContext<CommandSourceStack> ctx, double health) {
