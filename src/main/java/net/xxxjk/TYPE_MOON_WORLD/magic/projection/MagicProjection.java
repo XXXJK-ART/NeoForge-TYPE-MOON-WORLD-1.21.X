@@ -18,6 +18,10 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 
 public class MagicProjection {
     public static void execute(Entity entity) {
@@ -44,6 +48,12 @@ public class MagicProjection {
             ItemStack target = vars.projection_selected_item;
             if (target.isEmpty()) {
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_NO_TARGET), true);
+                return;
+            }
+            
+            // Avalon cannot be projected
+            if (target.getItem() instanceof AvalonItem) {
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_PROJECT_DIVINE), true);
                 return;
             }
             
@@ -102,9 +112,16 @@ public class MagicProjection {
                 // Add Glint
                 projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
                 
+                // Special Effects for Temple Stone Sword Axe (Nine Lives)
+                if (projected.getItem() instanceof TempleStoneSwordAxeItem) {
+                    player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
+                    player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2)); // Strength III (to be powerful)
+                    player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1)); // Speed II
+                }
+
                 player.setItemInHand(handToUse, projected);
                 vars.syncPlayerVariables(player);
-                player.displayClientMessage(Component.literal("Trace On"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_TRACE_ON), true);
             }
         } else {
             // If both hands are not empty
@@ -114,14 +131,20 @@ public class MagicProjection {
     
     private static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
         double baseCost = 10;
-        Rarity rarity = stack.getRarity();
-        if (rarity == Rarity.UNCOMMON) baseCost = 50;
-        else if (rarity == Rarity.RARE) baseCost = 100;
-        else if (rarity == Rarity.EPIC) baseCost = 300;
+        
+        // Noble Phantasms have a fixed base cost of 500
+        if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
+            baseCost = 500;
+        } else {
+            Rarity rarity = stack.getRarity();
+            if (rarity == Rarity.UNCOMMON) baseCost = 50;
+            else if (rarity == Rarity.RARE) baseCost = 100;
+            else if (rarity == Rarity.EPIC) baseCost = 300;
+        }
         
         // Multipliers
         // Enchantments
-        int enchantCount = stack.getEnchantments().size();
+        int enchantCount = stack.getOrDefault(DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY).size();
         if (enchantCount > 0) {
             baseCost *= (1 + enchantCount * 0.2); 
         }
@@ -168,6 +191,6 @@ public class MagicProjection {
     }
 
     private static boolean isNoblePhantasm(ItemStack stack) {
-        return stack.getItem() instanceof RedswordItem;
+        return stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
     }
 }

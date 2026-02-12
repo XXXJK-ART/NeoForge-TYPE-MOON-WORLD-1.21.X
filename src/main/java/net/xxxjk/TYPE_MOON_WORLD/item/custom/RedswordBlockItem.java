@@ -15,7 +15,6 @@ import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 
 import java.util.function.Consumer;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 public class RedswordBlockItem extends BlockItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);

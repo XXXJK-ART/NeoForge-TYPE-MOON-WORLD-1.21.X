@@ -190,11 +190,15 @@ public class MuramasaSlashHandler {
                     
                     Player player = level.getPlayerByUUID(slash.playerUUID);
                     if (player != null) {
-                        living.hurt(level.damageSources().indirectMagic(player, player), damage);
-                        EntityUtils.triggerSwarmAnger(level, player, living);
-                    } else {
-                        living.hurt(level.damageSources().magic(), damage);
-                    }
+                        living.invulnerableTime = 0;
+                    living.hurt(level.damageSources().indirectMagic(player, player), damage);
+                    living.invulnerableTime = 0;
+                    EntityUtils.triggerSwarmAnger(level, player, living);
+                } else {
+                    living.invulnerableTime = 0;
+                    living.hurt(level.damageSources().magic(), damage);
+                    living.invulnerableTime = 0;
+                }
                     
                     living.igniteForSeconds(5);
                 }

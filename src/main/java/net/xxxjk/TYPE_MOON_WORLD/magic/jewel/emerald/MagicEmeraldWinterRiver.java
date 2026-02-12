@@ -17,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 
 import java.util.List;
 
@@ -134,7 +135,7 @@ public class MagicEmeraldWinterRiver {
                 }
                 
             } else {
-                player.displayClientMessage(Component.literal("需要2个绿宝石"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_EMERALD_WINTER_RIVER_NEED_GEM), true);
             }
         }
     }

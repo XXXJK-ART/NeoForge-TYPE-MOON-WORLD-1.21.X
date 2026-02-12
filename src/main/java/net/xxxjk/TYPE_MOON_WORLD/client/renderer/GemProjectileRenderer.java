@@ -24,8 +24,6 @@ import java.util.List;
 public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends EntityRenderer<T> {
     private final ItemRenderer itemRenderer;
     private final float scale;
-    private final boolean fullBright;
-    private final float r, g, b;
     private static final ResourceLocation TRAIL_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/end_gateway_beam.png");
 
     public GemProjectileRenderer(EntityRendererProvider.Context context, float r, float g, float b) {
@@ -36,10 +34,6 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         super(context);
         this.itemRenderer = context.getItemRenderer();
         this.scale = scale;
-        this.fullBright = fullBright;
-        this.r = r;
-        this.g = g;
-        this.b = b;
     }
 
     @Override
@@ -65,11 +59,40 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
 
         if (trace.size() < 2) return;
 
-        // Use a glowing translucent render type
-        // Use beacon_beam instead of custom texture to verify visibility
+        // Use a glowing translucent render type which is more compatible with shaders
+        // Using beacon_beam texture
         VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png")));
         
+        // Determine color based on entity type
+        float r = 1.0f, g = 1.0f, b = 1.0f;
+        boolean isVisualSlash = false;
+        
+        if (entity instanceof RubyProjectileEntity ruby) {
+             int type = ruby.getGemType();
+             if (type == 0) { // Ruby - Red
+                 r = 1.0f; g = 0.2f; b = 0.2f;
+             } else if (type == 1) { // Sapphire - Blue
+                 r = 0.2f; g = 0.2f; b = 1.0f;
+             } else if (type == 2) { // Emerald - Green
+                 r = 0.2f; g = 1.0f; b = 0.2f;
+             } else if (type == 3) { // Topaz - Yellow
+                 r = 1.0f; g = 1.0f; b = 0.2f;
+             } else if (type == 4) { // Cyan
+                 r = 0.0f; g = 1.0f; b = 1.0f;
+             } else if (type == 99) { // Visual Slash (Nine Lives)
+                 r = 1.0f; g = 1.0f; b = 1.0f;
+                 isVisualSlash = true;
+             } else { // Random/White
+                 r = 1.0f; g = 1.0f; b = 1.0f;
+             }
+        } else if (entity instanceof SapphireProjectileEntity) {
+             r = 0.2f; g = 0.2f; b = 1.0f;
+        } else if (entity instanceof TopazProjectileEntity) {
+             r = 1.0f; g = 1.0f; b = 0.2f;
+        }
+
         Vec3 currentPos = entity.getPosition(partialTicks);
+
         Vec3 camPos = this.entityRenderDispatcher.camera.getPosition();
 
         // Create a full list of control points including current interpolated pos
@@ -85,7 +108,9 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         poseStack.translate(-currentPos.x, -currentPos.y, -currentPos.z);
         
         PoseStack.Pose pose = poseStack.last();
-        float baseWidth = 0.3f; // Increased width as requested
+        // Base width for visual slash scales with entity size (default 0.1f * scale)
+        // Normal projectiles stay at 0.3f
+        float baseWidth = isVisualSlash ? (0.1f * ((RubyProjectileEntity)entity).getVisualScale()) : 0.3f; 
         int samplesPerSegment = 5; // Higher quality spline
         // Dynamic texture repeat based on trail length to maintain consistent density
         // 16.0f points per repeat (approx 1 repeat per 0.8 seconds of trail)
@@ -115,17 +140,43 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                 float progress1 = globalIndex1 / totalPoints;
                 float progress2 = globalIndex2 / totalPoints;
 
-                float width1 = getWidth(baseWidth, progress1);
-                float width2 = getWidth(baseWidth, progress2);
-                float alpha1 = getAlpha(progress1);
-                float alpha2 = getAlpha(progress2);
+                float width1 = isVisualSlash ? baseWidth : getWidth(baseWidth, progress1);
+                float width2 = isVisualSlash ? baseWidth : getWidth(baseWidth, progress2);
+                float alpha1 = isVisualSlash ? 1.0f : getAlpha(progress1);
+                float alpha2 = isVisualSlash ? 1.0f : getAlpha(progress2);
                 
                 // UV mapping: Tile based on progress
                 // U goes from 0 to textureRepeat
                 float u1 = progress1 * textureRepeat;
                 float u2 = progress2 * textureRepeat;
 
-                drawBillboardSegment(pose, vertexConsumer, start, end, camPos, width1, width2, alpha1, alpha2, u1, u2);
+                float r1 = r, g1 = g, b1 = b;
+                float r2 = r, g2 = g, b2 = b;
+
+                // Random mode logic removed to prevent rainbow. We want specific color of the gem.
+                // The GemType is now correctly set to the ACTUAL gem thrown (e.g. Red for Ruby).
+                // So 'r', 'g', 'b' variables are already set correctly above in renderTrail.
+                // However, for pure WHITE_GEMSTONE (type 4), we want NO special effects (White trail).
+                // If isRandom is true (meaning Type 4 White Gemstone), it will be white.
+                // If MagicRubyThrow sets type 0 (Ruby) even in Random mode, then isRandom is false, and it uses Red.
+                
+                // Wait, if MagicRubyThrow logic sets type to 0/1/2/3, then isRandom will be FALSE.
+                // So we get colored trails.
+                // If it sets type to 4 (White Gemstone), isRandom is TRUE.
+                // And for type 4 we want NO special effects (White trail).
+                // So we actually DON'T need any rainbow logic here.
+                
+                // Removing the rainbow block I just added? Or did I misunderstand "Random throw white gem can also throw"?
+                // "Random throw white gem can also throw" -> MagicRubyThrow logic updated to include White Gemstone.
+                // "Random throw... what gem throws what color trail" -> Done by MagicRubyThrow setting correct ID.
+                // "No effects" -> Probably means no particle effects? That's in RubyProjectileEntity.tick().
+                
+                // So here in Renderer, we just render the color.
+                // If type is 4 (White), r/g/b is 1.0 (White).
+                // If type is 0 (Ruby), r/g/b is Red.
+                // So we should NOT add rainbow override.
+
+                drawBillboardSegment(pose, vertexConsumer, start, end, camPos, width1, width2, alpha1, alpha2, u1, u2, r1, g1, b1, r2, g2, b2);
             }
         }
         
@@ -154,7 +205,7 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         return progress * progress;
     }
 
-    private void drawBillboardSegment(PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 camPos, float width1, float width2, float alpha1, float alpha2, float u1, float u2) {
+    private void drawBillboardSegment(PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 camPos, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
         Vec3 dir = end.subtract(start);
         if (dir.lengthSqr() < 0.000001) return;
         
@@ -180,10 +231,10 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         // U coordinates: Tiled based on input
         // V coordinates: 0 to 1 across the width
         
-        vertex(pose, consumer, v0, r, g, b, alpha1, u1, 0);
-        vertex(pose, consumer, v2, r, g, b, alpha2, u2, 0);
-        vertex(pose, consumer, v3, r, g, b, alpha2, u2, 1);
-        vertex(pose, consumer, v1, r, g, b, alpha1, u1, 1);
+        vertex(pose, consumer, v0, r1, g1, b1, alpha1, u1, 0);
+        vertex(pose, consumer, v2, r2, g2, b2, alpha2, u2, 0);
+        vertex(pose, consumer, v3, r2, g2, b2, alpha2, u2, 1);
+        vertex(pose, consumer, v1, r1, g1, b1, alpha1, u1, 1);
     }
 
     private void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 pos, float r, float g, float b, float a, float u, float v) {

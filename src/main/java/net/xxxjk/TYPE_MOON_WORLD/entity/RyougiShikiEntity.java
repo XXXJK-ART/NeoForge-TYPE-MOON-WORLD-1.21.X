@@ -4,6 +4,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,12 +39,16 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.chat.Component;
 import javax.annotation.Nonnull;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.state.BlockState;
 
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 
 public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_DEFENDING = SynchedEntityData.defineId(RyougiShikiEntity.class, EntityDataSerializers.BOOLEAN);
@@ -249,7 +254,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                     BlockState below = this.level().getBlockState(targetPos.below());
                     BlockState at = this.level().getBlockState(targetPos);
                     
-                    if (below.isSolid() && !at.getFluidState().isSource() && !at.isSuffocating(this.level(), targetPos)) {
+                    if (below.isFaceSturdy(this.level(), targetPos.below(), Direction.UP) && !at.getFluidState().isSource() && !at.isSuffocating(this.level(), targetPos)) {
                         this.teleportTo(tx, ty, tz);
                         safe = true;
                         break;
@@ -427,7 +432,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                         double tz = this.getZ() + look.z * teleportDist;
                         
                         BlockPos tpPos = BlockPos.containing(tx, ty, tz);
-                        if (this.level().getBlockState(tpPos).isAir() || !this.level().getBlockState(tpPos).blocksMotion()) {
+                        if (this.level().getBlockState(tpPos).isAir() || this.level().getBlockState(tpPos).getCollisionShape(this.level(), tpPos).isEmpty()) {
                             this.teleportTo(tx, ty, tz);
                             this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
                             broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.dodge", 10.0, 0.1F);
@@ -442,7 +447,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                     double tz = this.getZ() + look.z * teleportDist;
                     
                     BlockPos tpPos = BlockPos.containing(tx, ty, tz);
-                    if (this.level().getBlockState(tpPos).isAir() || !this.level().getBlockState(tpPos).blocksMotion()) {
+                    if (this.level().getBlockState(tpPos).isAir() || this.level().getBlockState(tpPos).getCollisionShape(this.level(), tpPos).isEmpty()) {
                         this.teleportTo(tx, ty, tz);
                         this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
                     }
@@ -1240,6 +1245,35 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                 }
             }
 
+            // Noble Phantasm Defense Logic
+            if (isNoblePhantasmAttack(source)) {
+                float chance = this.random.nextFloat();
+                if (chance < 0.5F) {
+                    // 50% Block (Defense Success)
+                    this.triggerDefense();
+                    this.playSound(SoundEvents.SHIELD_BLOCK, 1.0F, 1.0F);
+                    return false;
+                } else if (chance < 0.9F) {
+                    // 40% Half Blood (Take damage to reach 50% HP)
+                    float currentHealth = this.getHealth();
+                    float halfHealth = this.getMaxHealth() / 2.0F;
+                    
+                    if (currentHealth > halfHealth) {
+                        amount = currentHealth - halfHealth;
+                    } 
+                    // If already below half health, take original damage (amount)
+                    
+                    this.playSound(SoundEvents.PLAYER_HURT, 1.0F, 1.0F);
+                    if (!this.level().isClientSide) {
+                        broadcastToNearbyPlayers("entity.typemoonworld.ryougi_shiki.speech.hurt_noble_phantasm", 20.0);
+                    }
+                    return super.hurt(source, amount);
+                } else {
+                    // 10% Fail (Take full damage)
+                    return super.hurt(source, amount);
+                }
+            }
+
             // Handle Guerrilla Retreat Counter-Attack Logic
         if (this.isGuerrilla && source.getEntity() instanceof LivingEntity attacker) {
              // If attacked while retreating, counter attack or skill!
@@ -1511,9 +1545,11 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         // Do nothing. Or play a sound.
         if (!this.level().isClientSide && this.isAlive()) {
              this.playSound(SoundEvents.ANVIL_LAND, 1.0F, 0.5F);
-             this.level().getServer().getPlayerList().broadcastSystemMessage(
-                 Component.translatable("entity.typemoonworld.ryougi_shiki.speech.refused"), false
-             );
+             if (this.level() instanceof ServerLevel serverLevel) {
+                 serverLevel.getServer().getPlayerList().broadcastSystemMessage(
+                     Component.translatable("entity.typemoonworld.ryougi_shiki.speech.refused"), false
+                 );
+             }
         }
         // super.kill(); // Intentionally removed
     }
@@ -2093,6 +2129,23 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             state.is(net.minecraft.world.level.block.Blocks.WITHER_ROSE) ||
             state.is(net.minecraft.world.level.block.Blocks.POWDER_SNOW)) {
             return true;
+        }
+        return false;
+    }
+
+    private boolean isNoblePhantasmAttack(DamageSource source) {
+        Entity direct = source.getDirectEntity();
+        Entity attacker = source.getEntity();
+        
+        if (direct instanceof BrokenPhantasmProjectileEntity || direct instanceof SwordBarrelProjectileEntity) {
+            return true;
+        }
+        
+        if (attacker instanceof LivingEntity living) {
+            ItemStack mainHand = living.getMainHandItem();
+            if (mainHand.getItem() instanceof NoblePhantasmItem) {
+                return true;
+            }
         }
         return false;
     }

@@ -101,6 +101,8 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
 
     // Flag for Broken Phantasm Mode (UBW)
     private static final EntityDataAccessor<Boolean> IS_BROKEN_PHANTASM = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.BOOLEAN);
+    // Target Entity ID for locking
+    private static final EntityDataAccessor<Integer> TARGET_ENTITY_ID = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
@@ -112,6 +114,11 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
         builder.define(TARGET_Z, 0f);
         builder.define(HAS_TARGET, false);
         builder.define(IS_BROKEN_PHANTASM, false);
+        builder.define(TARGET_ENTITY_ID, -1);
+    }
+    
+    public void setTargetEntity(int entityId) {
+        this.entityData.set(TARGET_ENTITY_ID, entityId);
     }
     
     public void setBrokenPhantasm(boolean isBrokenPhantasm) {
@@ -189,27 +196,43 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 // Keep position fixed
                 this.setDeltaMovement(Vec3.ZERO);
                 
-                // Update Target Position based on Owner's Look (if server side)
+                // Update Target Position based on Locked Entity OR Owner's Look
                 if (!this.level().isClientSide) {
-                    Entity owner = this.getOwner();
-                    if (owner instanceof LivingEntity livingOwner) {
-                        // Raytrace new target
-                        double range = 40.0; // Default range
-                        Vec3 eyePos = livingOwner.getEyePosition();
-                        Vec3 lookVec = livingOwner.getLookAngle();
-                        Vec3 endPos = eyePos.add(lookVec.scale(range));
-                        
-                        // Simple raytrace for block or just use look endpoint
-                        HitResult hit = this.level().clip(new net.minecraft.world.level.ClipContext(eyePos, endPos, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, livingOwner));
-                        Vec3 newTarget = hit.getType() != HitResult.Type.MISS ? hit.getLocation() : endPos;
-                        
-                        // Check for entity target (optional, but good for "aiming")
-                        // For now just look point is fine.
-                        
-                        // Update Synched Data (This causes the sword to turn)
-                        this.entityData.set(TARGET_X, (float)newTarget.x);
-                        this.entityData.set(TARGET_Y, (float)newTarget.y);
-                        this.entityData.set(TARGET_Z, (float)newTarget.z);
+                    int targetId = this.entityData.get(TARGET_ENTITY_ID);
+                    boolean locked = false;
+                    
+                    if (targetId != -1) {
+                        Entity target = this.level().getEntity(targetId);
+                        if (target != null && target.isAlive()) {
+                             this.entityData.set(TARGET_X, (float)target.getX());
+                             this.entityData.set(TARGET_Y, (float)(target.getY() + target.getBbHeight() * 0.5));
+                             this.entityData.set(TARGET_Z, (float)target.getZ());
+                             this.entityData.set(HAS_TARGET, true);
+                             locked = true;
+                        } else {
+                             // Target lost, stop locking
+                             this.entityData.set(TARGET_ENTITY_ID, -1);
+                        }
+                    }
+                    
+                    if (!locked) {
+                        Entity owner = this.getOwner();
+                        if (owner instanceof LivingEntity livingOwner) {
+                            // Raytrace new target
+                            double range = 40.0; // Default range
+                            Vec3 eyePos = livingOwner.getEyePosition();
+                            Vec3 lookVec = livingOwner.getLookAngle();
+                            Vec3 endPos = eyePos.add(lookVec.scale(range));
+                            
+                            // Simple raytrace for block or just use look endpoint
+                            HitResult hit = this.level().clip(new net.minecraft.world.level.ClipContext(eyePos, endPos, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, livingOwner));
+                            Vec3 newTarget = hit.getType() != HitResult.Type.MISS ? hit.getLocation() : endPos;
+                            
+                            // Update Synched Data (This causes the sword to turn)
+                            this.entityData.set(TARGET_X, (float)newTarget.x);
+                            this.entityData.set(TARGET_Y, (float)newTarget.y);
+                            this.entityData.set(TARGET_Z, (float)newTarget.z);
+                        }
                     }
                     
                      if (this.entityData.get(HAS_TARGET)) {
@@ -265,16 +288,30 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
             // Mode 1 or Mode 2 Tracking Logic
             // If enabled and owner is present, update velocity to curve towards owner's look target
             if ((this.isMode1Tracking || this.isMode2Tracking) && !this.level().isClientSide) {
-                Entity owner = this.getOwner();
-                if (owner instanceof LivingEntity livingOwner) {
-                     // Calculate target point (Owner's look)
-                     double range = 64.0;
-                     Vec3 eyePos = livingOwner.getEyePosition();
-                     Vec3 lookVec = livingOwner.getLookAngle();
-                     Vec3 endPos = eyePos.add(lookVec.scale(range));
-                     HitResult hit = this.level().clip(new net.minecraft.world.level.ClipContext(eyePos, endPos, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, livingOwner));
-                     Vec3 targetPos = hit.getType() != HitResult.Type.MISS ? hit.getLocation() : endPos;
-                     
+                Vec3 targetPos = null;
+                int targetId = this.entityData.get(TARGET_ENTITY_ID);
+                
+                if (targetId != -1) {
+                     Entity target = this.level().getEntity(targetId);
+                     if (target != null && target.isAlive()) {
+                         targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
+                     }
+                }
+                
+                if (targetPos == null) {
+                    Entity owner = this.getOwner();
+                    if (owner instanceof LivingEntity livingOwner) {
+                         // Calculate target point (Owner's look)
+                         double range = 64.0;
+                         Vec3 eyePos = livingOwner.getEyePosition();
+                         Vec3 lookVec = livingOwner.getLookAngle();
+                         Vec3 endPos = eyePos.add(lookVec.scale(range));
+                         HitResult hit = this.level().clip(new net.minecraft.world.level.ClipContext(eyePos, endPos, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, livingOwner));
+                         targetPos = hit.getType() != HitResult.Type.MISS ? hit.getLocation() : endPos;
+                    }
+                }
+
+                if (targetPos != null) {
                      // Steer towards target
                      Vec3 currentVel = this.getDeltaMovement();
                      double speed = currentVel.length();
@@ -349,40 +386,31 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
     private void triggerExplosion() {
         if (this.level().isClientSide) return;
         
-        double cost = MagicBrokenPhantasm.calculateCost(this.getItem(), true); // Has sword attribute
+        // Calculate raw cost (pass false for hasSwordAttribute) to determine true power of the item
+        double cost = MagicBrokenPhantasm.calculateCost(this.getItem(), false); 
         float explosionPower = (float)(cost / 20.0);
         
         // Fix for low mana/cost items having 0 explosion power
         // If power is too low (e.g. wooden sword), set a minimum base
-        if (explosionPower < 1.0f) explosionPower = 1.0f;
+        if (explosionPower < 2.0f) explosionPower = 2.0f;
         
         float damagePower = explosionPower; // Full power for damage
-        float radiusPower = Math.min(explosionPower, 5.0f); // Cap radius to 5.0
+        float radiusPower = Math.min(explosionPower, 6.0f); // Cap radius
         
         // Increase base radius slightly for better AOE feel
-        if (radiusPower < 2.0f) radiusPower = 2.0f;
+        if (radiusPower < 3.0f) radiusPower = 3.0f;
         
-        // Explosion Effect (Block destruction is minimal/none for UBW usually, but let's follow standard)
-        // Usually Broken Phantasm breaks blocks.
-        // But UBW swords might be too spammy.
-        // Let's use a standard explosion but maybe no block breaking? 
-        // User didn't specify no block breaking, but said "Follow Broken Phantasm logic".
-        // Broken Phantasm logic DOES break blocks.
+        // Explosion Effect: NONE (No block destruction, only particles and sound)
+        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, this.getX(), this.getY(), this.getZ(), radiusPower, false, Level.ExplosionInteraction.NONE);
         
-        // LIMITATION: Only break DIRT-like blocks
-        // Using level.explode instead of manual constructor for compatibility
-        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, this.getX(), this.getY(), this.getZ(), radiusPower, false, Level.ExplosionInteraction.BLOCK);
-        
-        // Note: Manual block filtering is removed to fix compilation error.
-        // If specific block filtering is needed, we would need to implement a custom Explosion class.
-        
-        // Damage Entities (if explosion interaction doesn't cover it enough, or we want custom damage)
-        // Standard explode() deals damage based on distance.
-        // But we need "Damage: Power * 10" and "Unlimited Damage".
-        // The standard explosion damage is roughly Power * 7 at center.
-        // We should apply CUSTOM damage to ensure it matches the request.
-        
-        double damageRadius = radiusPower * 3.0; // Increased radius multiplier (was 2.0)
+        // Manual Particle Effects for visual impact (since NONE might be too subtle)
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, this.getX(), this.getY(), this.getZ(), 1, 0, 0, 0, 0);
+            serverLevel.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(), 1, 0, 0, 0, 0);
+        }
+
+        // Damage Entities logic...
+        double damageRadius = radiusPower * 2.5; 
         AABB damageBox = this.getBoundingBox().inflate(damageRadius);
         List<Entity> entities = this.level().getEntities(this, damageBox);
         
@@ -390,14 +418,11 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
         
         for (Entity e : entities) {
             if (e instanceof LivingEntity) {
-                // Check distance for falloff? Or full damage in radius?
-                // "Damage unlimited" -> likely means full calculated damage.
-                // Let's apply full damage if within radius.
                 if (e.equals(this.getOwner())) continue; // Skip owner
                 double distSqr = e.distanceToSqr(this.position());
                 if (distSqr <= damageRadius * damageRadius) {
-                    // Base Damage 5.0 + Power * 10
-                    float totalDamage = 5.0f + damagePower * 10.0f;
+                    // Base Damage 10.0 + Power * 10
+                    float totalDamage = 10.0f + damagePower * 10.0f;
                     
                     // Cap max damage at 100.0f per sword
                     if (totalDamage > 100.0f) totalDamage = 100.0f;
@@ -435,11 +460,15 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 if (!hitEntities.contains(target)) {
                     Entity owner = this.getOwner();
                     if (owner instanceof ServerPlayer serverPlayer && this.level() instanceof ServerLevel serverLevel) {
-                        FakePlayer fakePlayer = new FakePlayer(serverLevel, new GameProfile(UUID.randomUUID(), "[UBW_Proxy]"));
+                        FakePlayer fakePlayer = new FakePlayer(serverLevel, new GameProfile(UUID.randomUUID(), "[UBW_Proxy]")) {
+                            @Override
+                            public float getAttackStrengthScale(float adjustTicks) {
+                                return 1.0F;
+                            }
+                        };
                         fakePlayer.setPos(this.getX(), this.getY(), this.getZ());
                         fakePlayer.setItemInHand(InteractionHand.MAIN_HAND, this.getItem());
                         
-                        fakePlayer.resetAttackStrengthTicker();
                         target.invulnerableTime = 0;
                         
                         fakePlayer.attack(target);

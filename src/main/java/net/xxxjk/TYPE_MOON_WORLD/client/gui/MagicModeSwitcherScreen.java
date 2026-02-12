@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
@@ -19,6 +20,7 @@ import java.util.List;
 
 public class MagicModeSwitcherScreen extends Screen {
     private final List<Component> modes = new ArrayList<>();
+    private final List<Integer> modeIds = new ArrayList<>();
     private static final ResourceLocation[] MODE_ICONS = new ResourceLocation[] {
         ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/gui/mode/mode_0.png"),
         ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/gui/mode/mode_1.png"),
@@ -26,38 +28,83 @@ public class MagicModeSwitcherScreen extends Screen {
         ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/gui/mode/mode_3.png"),
         ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/gui/mode/mode_4.png")
     };
+    
+    private static final ResourceLocation[] JEWEL_ICONS = new ResourceLocation[] {
+        ResourceLocation.parse("typemoonworld:textures/item/carved_ruby.png"),
+        ResourceLocation.parse("typemoonworld:textures/item/carved_sapphire.png"),
+        ResourceLocation.parse("typemoonworld:textures/item/carved_emerald.png"),
+        ResourceLocation.parse("typemoonworld:textures/item/carved_topaz.png"),
+        ResourceLocation.parse("typemoonworld:textures/item/carved_cyan_gemstone.png"),
+        ResourceLocation.parse("typemoonworld:textures/item/carved_white_gemstone.png")
+    };
     private int selectedIndex = 0;
     private boolean isClosing = false;
 
     public MagicModeSwitcherScreen(int currentMode) {
         super(Component.translatable("gui.typemoonworld.mode_switcher.title"));
-        this.selectedIndex = currentMode;
         
         // Define modes
-        // 0: AOE, 1: Aiming, 2: Focus, 3: Broken Phantasm, 4: Clear
-        modes.add(Component.literal("AOE")); // 0
-        modes.add(Component.literal("Aiming")); // 1
-        modes.add(Component.literal("Focus")); // 2
-        modes.add(Component.literal("Broken\nPhantasm")); // 3
-        modes.add(Component.literal("Clear")); // 4
+        Player player = Minecraft.getInstance().player;
+        if (player != null) {
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            String currentMagic = "";
+            if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
+                currentMagic = vars.selected_magics.get(vars.current_magic_index);
+            }
+            
+            if ("sword_barrel_full_open".equals(currentMagic)) {
+                // 0: AOE, 1: Aiming, 2: Focus, 3: Broken Phantasm, 4: Clear
+                addMode(0, Component.literal("AOE"));
+                addMode(1, Component.literal("Aiming"));
+                addMode(2, Component.literal("Focus"));
+                addMode(3, Component.literal("Broken\nPhantasm"));
+                addMode(4, Component.literal("Clear"));
+            } else if ("jewel_magic_shoot".equals(currentMagic)) {
+                // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random
+                if (vars.learned_magics.contains("ruby_throw")) addMode(0, Component.literal("Ruby").withStyle(net.minecraft.ChatFormatting.RED));
+                if (vars.learned_magics.contains("sapphire_throw")) addMode(1, Component.literal("Sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
+                if (vars.learned_magics.contains("emerald_use")) addMode(2, Component.literal("Emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
+                if (vars.learned_magics.contains("topaz_throw")) addMode(3, Component.literal("Topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                if (vars.learned_magics.contains("cyan_throw")) addMode(4, Component.literal("Cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+                addMode(5, Component.literal("Random").withStyle(net.minecraft.ChatFormatting.WHITE));
+            } else if ("jewel_magic_release".equals(currentMagic)) {
+                // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan
+                if (vars.learned_magics.contains("ruby_flame_sword")) addMode(0, Component.literal("Ruby").withStyle(net.minecraft.ChatFormatting.RED));
+                if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(1, Component.literal("Sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
+                if (vars.learned_magics.contains("emerald_winter_river")) addMode(2, Component.literal("Emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
+                if (vars.learned_magics.contains("topaz_reinforcement")) addMode(3, Component.literal("Topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                if (vars.learned_magics.contains("cyan_wind")) addMode(4, Component.literal("Cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+            }
+        }
         
-        // Ensure index is valid
-        if (this.selectedIndex < 0) this.selectedIndex = 0;
-        if (this.selectedIndex >= modes.size()) this.selectedIndex = 0;
+        if (modes.isEmpty()) {
+            addMode(0, Component.literal("None"));
+        }
+        
+        // Find index matching currentMode
+        this.selectedIndex = 0;
+        for (int i = 0; i < modeIds.size(); i++) {
+            if (modeIds.get(i) == currentMode) {
+                this.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    private void addMode(int id, Component component) {
+        modeIds.add(id);
+        modes.add(component);
     }
 
     @Override
     public void init() {
         super.init();
         // Inherit mouse position to prevent recentering
-        if (this.minecraft != null) {
-            this.lastMouseX = this.minecraft.mouseHandler.xpos() * (double)this.width / (double)this.minecraft.getWindow().getWidth();
-            this.lastMouseY = this.minecraft.mouseHandler.ypos() * (double)this.height / (double)this.minecraft.getWindow().getHeight();
+        Minecraft mc = this.minecraft;
+        if (mc != null) {
+            // Mouse position tracking removed as unused
         }
     }
-    
-    private double lastMouseX = 0;
-    private double lastMouseY = 0;
 
     @Override
     public boolean isPauseScreen() {
@@ -91,7 +138,11 @@ public class MagicModeSwitcherScreen extends Screen {
     private void closeAndSelect() {
         isClosing = true;
         // Send packet to set mode
-        PacketDistributor.sendToServer(new MagicModeSwitchMessage(true, selectedIndex));
+        int targetMode = 0;
+        if (selectedIndex >= 0 && selectedIndex < modeIds.size()) {
+            targetMode = modeIds.get(selectedIndex);
+        }
+        PacketDistributor.sendToServer(new MagicModeSwitchMessage(true, targetMode));
         this.onClose();
     }
     
@@ -149,6 +200,32 @@ public class MagicModeSwitcherScreen extends Screen {
         // Update selection on hover
         updateSelectionAt(mouseX, mouseY);
         
+        boolean showIcons = true;
+        boolean isSwordBarrel = false;
+        boolean isJewelMagic = false;
+        if (!modes.isEmpty()) {
+            // Check magic type from player vars directly for accuracy
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+                TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                String currentMagic = "";
+                if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
+                    currentMagic = vars.selected_magics.get(vars.current_magic_index);
+                }
+                
+                if ("sword_barrel_full_open".equals(currentMagic)) {
+                    isSwordBarrel = true;
+                } else if (currentMagic.startsWith("jewel_magic")) {
+                    isJewelMagic = true;
+                } else {
+                    showIcons = false;
+                }
+            }
+        }
+        
+        // Title
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 5, 0xFFFFFF);
+        
         for (int i = 0; i < modes.size(); i++) {
             int x = startX + i * (itemWidth + gap);
             int y = startY;
@@ -160,8 +237,10 @@ public class MagicModeSwitcherScreen extends Screen {
             int fillColor = isSelected ? 0x60FFFFFF : 0x40000000; 
             int textColor = isSelected ? 0xFFFFFF55 : 0xFFAAAAAA; // Yellowish if selected, Grey if not
             
-            // Special handling for Broken Phantasm (index 3)
-            if (i == 3) {
+            // Special handling for Broken Phantasm (modeId 3)
+            int modeId = (i < modeIds.size()) ? modeIds.get(i) : -1;
+            
+            if (isSwordBarrel && modeId == 3) {
                 // Check if BP is enabled
                 if (this.minecraft != null && this.minecraft.player != null) {
                     TypeMoonWorldModVariables.PlayerVariables vars = this.minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -181,13 +260,36 @@ public class MagicModeSwitcherScreen extends Screen {
             
             // Draw Icon
             // Icon size 24x24 (scaled down)
-            if (i < MODE_ICONS.length) {
+            if (showIcons) {
                 RenderSystem.enableBlend();
                 int iconSize = 24;
                 int iconX = x + (itemWidth - iconSize) / 2;
                 int iconY = y + 4; 
                 
-                guiGraphics.blit(MODE_ICONS[i], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                if (isSwordBarrel && modeId >= 0 && modeId < MODE_ICONS.length) {
+                    guiGraphics.blit(MODE_ICONS[modeId], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                } else if (isJewelMagic && modeId >= 0 && modeId < JEWEL_ICONS.length) {
+                    if (modeId != 5) {
+                        guiGraphics.blit(JEWEL_ICONS[modeId], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                    } else { // Random: Stacked 5 icons (Ruby, Sapphire, Emerald, Topaz, White)
+                        // Draw 5 small icons arranged in a pattern
+                        int smallSize = 12; // Even smaller to fit 5
+                        int cx = iconX + (iconSize - smallSize) / 2;
+                        int cy = iconY + (iconSize - smallSize) / 2;
+                        
+                        // Center: White
+                        guiGraphics.blit(JEWEL_ICONS[5], cx, cy, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        
+                        // Top-Left: Ruby
+                        guiGraphics.blit(JEWEL_ICONS[0], cx - 6, cy - 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        // Top-Right: Sapphire
+                        guiGraphics.blit(JEWEL_ICONS[1], cx + 6, cy - 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        // Bottom-Left: Emerald
+                        guiGraphics.blit(JEWEL_ICONS[2], cx - 6, cy + 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        // Bottom-Right: Topaz
+                        guiGraphics.blit(JEWEL_ICONS[3], cx + 6, cy + 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                    }
+                }
                 RenderSystem.disableBlend();
             }
             
@@ -198,28 +300,18 @@ public class MagicModeSwitcherScreen extends Screen {
             // Manual multiline handling for "\n"
             if (textStr.contains("\n")) {
                 String[] lines = textStr.split("\n");
-                // Draw 2 lines. 
-                // Line 1 at y + itemHeight - 16
-                // Line 2 at y + itemHeight - 8
-                // Need to use small font? Default font is 9px high. 
-                // 50px height. Icon at y+4 (24px). Space left: 50-4-24 = 22px.
-                // 2 lines take 18px. It will be tight.
-                // Let's move text slightly up or scale down.
-                // Or just draw them.
-                
-                // Draw line 1
                 guiGraphics.drawCenteredString(this.font, lines[0], x + itemWidth / 2, y + itemHeight - 18, textColor);
-                // Draw line 2
                 guiGraphics.drawCenteredString(this.font, lines[1], x + itemWidth / 2, y + itemHeight - 9, textColor);
             } else {
                 // Draw single line text at bottom
+                // If no icons, draw centered?
                 int textY = y + itemHeight - 10;
+                if (!showIcons) {
+                    textY = y + (itemHeight - 8) / 2; // Center vertically
+                }
                 guiGraphics.drawCenteredString(this.font, text, x + itemWidth / 2, textY, textColor);
             }
         }
-        
-        // Title
-        guiGraphics.drawCenteredString(this.font, Component.literal("Select Mode"), this.width / 2, startY - 15, 0xFFFFFFFF);
     }
     
     private boolean updateSelectionAt(double mouseX, double mouseY) {

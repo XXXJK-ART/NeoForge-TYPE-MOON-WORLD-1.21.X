@@ -94,6 +94,7 @@ public class TypeMoonWorldClientEvents {
         event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer<>(context, 1.0f, 0.0f, 0.0f));
         event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), context -> new GemProjectileRenderer<>(context, 0.0f, 0.0f, 1.0f));
         event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), context -> new GemProjectileRenderer<>(context, 1.0f, 1.0f, 0.0f));
+        event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
     }
 
     @SubscribeEvent

@@ -56,11 +56,29 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     boolean scrolling;
     int startIndex;
     
+    // Description Scroll
+    float descScrollOffs;
+    boolean descScrolling;
+    
+    // Tooltip State
+    private long hoverStartTime = 0;
+    private MagicEntry lastHoveredEntry = null;
+    private boolean tooltipActive = false;
+    
     // UI Constants
     private static final int LIST_X_OFFSET = 130;
     private static final int LIST_Y_OFFSET = 50;
     private static final int LIST_WIDTH = 180;
     private static final int LIST_HEIGHT = 140;
+    
+    // New Layout Constants
+    private static final int PLAYER_VIEW_WIDTH = 80;
+    private static final int LIST_VIEW_X = 85;
+    private static final int LIST_VIEW_WIDTH = 100;
+    private static final int DESC_VIEW_X = 190;
+    private static final int DESC_VIEW_WIDTH = 160;
+    private static final int VIEW_HEIGHT = 140;
+    
     private static final int BTN_WIDTH = 80;
     private static final int BTN_HEIGHT = 20;
     private static final int GAP_X = 10;
@@ -85,6 +103,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         }
     }
     
+    // Current Selection
+    private MagicEntry selectedEntry = null;
+    
     public Magical_attributes_Screen(MagicalattributesMenu container, Inventory inventory, Component text) {
         super(container, inventory, text);
         this.world = container.world;
@@ -102,14 +123,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     private void initMagicList() {
         allMagics.clear();
         // Jewel Magics
-        allMagics.add(new MagicEntry("ruby_throw", MagicConstants.KEY_MAGIC_RUBY_THROW_SHORT, "jewel", 0xFFFF0000));
-        allMagics.add(new MagicEntry("sapphire_throw", MagicConstants.KEY_MAGIC_SAPPHIRE_THROW_SHORT, "jewel", 0xFF0088FF));
-        allMagics.add(new MagicEntry("emerald_use", MagicConstants.KEY_MAGIC_EMERALD_USE_SHORT, "jewel", 0xFF00FF00));
-        allMagics.add(new MagicEntry("topaz_throw", MagicConstants.KEY_MAGIC_TOPAZ_THROW_SHORT, "jewel", 0xFFFFFF00));
-        allMagics.add(new MagicEntry("ruby_flame_sword", MagicConstants.KEY_MAGIC_RUBY_FLAME_SWORD_SHORT, "jewel", 0xFFFF0000));
-        allMagics.add(new MagicEntry("sapphire_winter_frost", MagicConstants.KEY_MAGIC_SAPPHIRE_WINTER_FROST_SHORT, "jewel", 0xFF0088FF));
-        allMagics.add(new MagicEntry("emerald_winter_river", MagicConstants.KEY_MAGIC_EMERALD_WINTER_RIVER_SHORT, "jewel", 0xFF00FF00));
-        allMagics.add(new MagicEntry("topaz_reinforcement", MagicConstants.KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT, "jewel", 0xFFFFFF00));
+        allMagics.add(new MagicEntry("jewel_magic_shoot", MagicConstants.KEY_MAGIC_JEWEL_SHOOT_SHORT, "jewel", 0xFF00FFFF));
+        allMagics.add(new MagicEntry("jewel_magic_release", MagicConstants.KEY_MAGIC_JEWEL_RELEASE_SHORT, "jewel", 0xFFFF4000));
+        
         allMagics.add(new MagicEntry("projection", MagicConstants.KEY_MAGIC_PROJECTION_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         allMagics.add(new MagicEntry("structural_analysis", MagicConstants.KEY_MAGIC_STRUCTURAL_ANALYSIS_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         allMagics.add(new MagicEntry("broken_phantasm", MagicConstants.KEY_MAGIC_BROKEN_PHANTASM_SHORT, "unlimited_blade_works,basic", 0xFFFF4000));
@@ -117,6 +133,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("sword_barrel_full_open", MagicConstants.KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SHORT, "unlimited_blade_works", 0xFFFF0000));
         
         updateFilteredMagics();
+        
+        // Auto-select first learned magic
+        if (!filteredMagics.isEmpty()) {
+            selectedEntry = filteredMagics.get(0);
+        }
     }
     
     private void updateFilteredMagics() {
@@ -148,59 +169,56 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         // Hide player inventory when not on page 0
         if (this.pageMode != 0) {
-            // We can't easily "hide" slots client-side visually without modifying the container
-            // BUT, the container ALREADY hides slots via isActive().
-            // So we just need to make sure we don't render their backgrounds/tooltips if for some reason they show up.
-            // Actually, AbstractContainerScreen renders slots based on their visibility.
-            // If container.slots.isActive() is false, they shouldn't be interactable.
-            // However, AbstractContainerScreen.render() calls renderBg -> super.render -> renderSlots.
-            // Slots that are not 'isActive' are usually moved off-screen by the container logic or just not processed for clicks.
-            // But visually, standard slots might still be rendered if their x/y are within screen.
-            // Wait, Slot.isActive() controls if it appears in the container's list for interaction? 
-            // No, Slot.isActive() is a NeoForge/Forge extension or vanilla?
-            // Vanilla Slot has 'isActive()'. AbstractContainerMenu.slots contains ALL slots.
-            // AbstractContainerScreen.render() iterates all slots and calls renderSlot().
-            // AbstractContainerScreen.renderSlot() checks 'if (slot.isActive())'.
-            // So if our Menu logic is correct, they won't render.
-            // Let's verify Menu logic.
+            // ... (comments unchanged)
         }
         
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         if (Basic_information_back_player_self.execute(entity) instanceof LivingEntity livingEntity) {
-            // Reposition entity to align with Left Panel (Left Panel: x+10 to x+110)
-            // Center X = leftPos + 10 + 50 = leftPos + 60
-            // Bottom Y = topPos + 185 - 15 = topPos + 170 (approx feet pos)
+            // Reposition entity to align with Left Panel (Left Panel: 0-80)
+            // Center X = leftPos + 60 (Center of 10-110 frame)
+            // Bottom Y = topPos + 170 (approx feet pos)
             this.renderEntityInInventoryFollowsAngle(guiGraphics, this.leftPos + 60, this.topPos + 170, 0f
                     + (float) Math.atan((this.leftPos + 60 - mouseX) / 40.0), (float) Math.atan((this.topPos + 87 - mouseY) / 40.0), livingEntity);
         }
         
         if (this.pageMode == 1) {
-            // Render Magic List
-            MagicEntry hoveredEntry = renderMagicList(guiGraphics, mouseX, mouseY);
-            if (hoveredEntry != null) {
-                renderMagicTooltip(guiGraphics, hoveredEntry, mouseX, mouseY);
+            // Render Magic List (Center-Left)
+            renderMagicList(guiGraphics, mouseX, mouseY);
+            
+            // Tooltip Logic
+            checkTooltipHover(mouseX, mouseY);
+            if (tooltipActive && lastHoveredEntry != null) {
+                renderScrollableTooltip(guiGraphics, mouseX, mouseY);
             }
         }
         
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
     
-    private MagicEntry renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        MagicEntry hoveredEntry = null;
         
-        int listX = this.leftPos + 130;
-        int listY = this.topPos + 50;
-        int listWidth = 180;
-        int listHeight = 140;
+        int listX = this.leftPos + LIST_X_OFFSET;
+        int listY = this.topPos + LIST_Y_OFFSET;
+        int listWidth = LIST_WIDTH;
+        int listHeight = LIST_HEIGHT;
         
-        // Render List Background with a border
-        guiGraphics.fill(listX, listY, listX + listWidth, listY + listHeight, 0x40000000); // Semi-transparent bg
-        guiGraphics.renderOutline(listX, listY, listWidth, listHeight, 0xFF00AAAA); // Cyan/Blue border
+        // Render List Background
+        // guiGraphics.fill(listX, listY, listX + listWidth, listY + listHeight, 0x40000000); // Optional bg
         
-        // Render Buttons
-        for (int i = 0; i < 8; i++) {
+        // Render Buttons (Grid)
+        int btnW = BTN_WIDTH;
+        int btnH = BTN_HEIGHT;
+        int gapX = GAP_X;
+        int gapY = GAP_Y;
+        int startOffsetX = START_OFFSET_X;
+        int startOffsetY = START_OFFSET_Y;
+        
+        // Visible items: 2 columns x 4 rows = 8
+        int visibleItems = 8;
+        
+        for (int i = 0; i < visibleItems; i++) {
             int index = startIndex + i;
             if (index >= filteredMagics.size()) break;
             
@@ -210,44 +228,23 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             int col = i % 2;
             int row = i / 2;
             
-            // Adjust positions to be inside the list box with padding
-            int btnW = 80;
-            int btnH = 20;
-            int gapX = 10;
-            int gapY = 10;
-            int startOffsetX = 5;
-            int startOffsetY = 10;
+            int btnX = listX + startOffsetX + col * (btnW + gapX);
+            int btnY = listY + startOffsetY + row * (btnH + gapY);
             
-            int btnX = listX + startOffsetX + col * (btnW + gapX); 
-            
-            // Let's sync Render and Click logic.
-            int btnY = listY + startOffsetY + row * (btnH + gapY); 
-            
-            // Custom Button Render Logic
+            // Hover logic
             boolean hovered = mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH;
-            if (hovered) {
-                hoveredEntry = entry;
-            }
             
-            // Selection logic: Green if selected, else default
-            int borderColor = isSelected ? 0xFF00FF00 : (hovered ? entry.color : 0xFF00AAAA);
-            int fillColor = isSelected ? 0x80004000 : (hovered ? (entry.color & 0x00FFFFFF) | 0x80000000 : 0x80000000);
+            // Colors
+            int borderColor = isSelected ? 0xFF00FF00 : (hovered ? entry.color : 0xFF00AAAA); 
+            int fillColor = isSelected ? 0x80005500 : (hovered ? (entry.color & 0x00FFFFFF) | 0x80000000 : 0x80000000);
             int textColor = isSelected ? 0xFFFFFFFF : (hovered ? 0xFFFFFFFF : 0xFFAAAAAA);
             
             guiGraphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, fillColor);
             guiGraphics.renderOutline(btnX, btnY, btnW, btnH, borderColor);
             
-            Component msg = Component.translatable(isSelected ? entry.nameKey.replace(".short", ".selected") : entry.nameKey);
-            // Fallback if selected key not found or same as short
-            if (isSelected && msg.getString().equals(entry.nameKey)) {
+            Component msg = Component.translatable(entry.nameKey.replace(".short", ".selected"));
+            if (msg.getString().equals(entry.nameKey)) {
                  msg = Component.translatable(entry.nameKey); 
-            }
-            
-            // Handle case where short key doesn't have .short suffix (though they should)
-            if (!entry.nameKey.endsWith(".short") && isSelected) {
-                // If we don't follow the convention, try appending .selected or use a map
-                // For projection, we defined KEY_MAGIC_PROJECTION_SHORT = ...short
-                // So it should be handled by replace above.
             }
             
             guiGraphics.drawCenteredString(this.font, msg, btnX + btnW / 2, btnY + (btnH - 8) / 2, textColor);
@@ -256,8 +253,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // Render Scrollbar
         int totalRows = (filteredMagics.size() + 1) / 2;
         int visibleRows = 4;
+        
         if (totalRows > visibleRows) {
-            int scrollBarX = listX + listWidth + 2; // Right of the list box
+            int scrollBarX = listX + listWidth + 5; // Outside the list area
             int scrollBarY = listY;
             int scrollBarWidth = 6;
             int scrollBarHeight = listHeight;
@@ -270,44 +268,227 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + scrollBarWidth, scrollBarY + scrollBarHeight, 0x80000000); // Track
             guiGraphics.fill(scrollBarX, barTop, scrollBarX + scrollBarWidth, barTop + barHeight, 0xFF00FFFF); // Thumb
         }
+    }
+
+    private void renderScrollableTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (lastHoveredEntry == null) return;
         
-        return hoveredEntry;
+        List<Component> lines = getDescriptionLines(lastHoveredEntry);
+        
+        // Tooltip Dimensions
+        int tooltipWidth = 160;
+        int lineHeight = 10;
+        int padding = 5;
+        int contentHeight = lines.size() * lineHeight;
+        
+        // Max height
+        int maxTooltipHeight = 120;
+        int tooltipHeight = Math.min(contentHeight + padding * 2, maxTooltipHeight);
+        
+        // Position near mouse, but clamped to screen
+        int tooltipX = mouseX + 12;
+        int tooltipY = mouseY - 12;
+        
+        if (tooltipX + tooltipWidth > this.width) {
+            tooltipX = mouseX - tooltipWidth - 12;
+        }
+        if (tooltipY + tooltipHeight > this.height) {
+            tooltipY = this.height - tooltipHeight - 5;
+        }
+        
+        // Render Background
+        // Use a high Z-offset to render on top
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(0, 0, 400);
+        
+        guiGraphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, 0xF0100010);
+        guiGraphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 0xFF00AAAA); // Border
+        
+        // Scrollbar if needed
+        int viewHeight = tooltipHeight - padding * 2;
+        boolean canScroll = contentHeight > viewHeight;
+        
+        if (canScroll) {
+            int scrollBarX = tooltipX + tooltipWidth - 6;
+            int scrollBarY = tooltipY + padding;
+            int scrollBarHeight = viewHeight;
+            
+            int barHeight = (int)((float)(viewHeight * scrollBarHeight) / contentHeight);
+            if (barHeight < 10) barHeight = 10;
+            
+            int barTop = scrollBarY + (int)(this.descScrollOffs * (scrollBarHeight - barHeight));
+            
+            guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + scrollBarHeight, 0x80000000);
+            guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, 0xFFFFFFFF);
+        }
+        
+        // Scissor Test for Text
+        int scale = (int) Minecraft.getInstance().getWindow().getGuiScale();
+        // Adjust for GUI scale and window height (OpenGL coordinates start from bottom-left)
+        int scX = (int)((tooltipX + padding) * scale);
+        int scY = (int)((Minecraft.getInstance().getWindow().getHeight()) - (tooltipY + tooltipHeight - padding) * scale);
+        int scW = (int)((tooltipWidth - 10) * scale);
+        int scH = (int)(viewHeight * scale);
+        
+        RenderSystem.enableScissor(scX, scY, scW, scH);
+                                   
+        int startY = tooltipY + padding - (int)(this.descScrollOffs * (Math.max(0, contentHeight - viewHeight)));
+        
+        for (int i = 0; i < lines.size(); i++) {
+            int y = startY + i * lineHeight;
+            // Draw if visible (basic check)
+            // if (y + lineHeight > tooltipY && y < tooltipY + tooltipHeight)
+            guiGraphics.drawString(this.font, lines.get(i), tooltipX + padding, y, 0xFFFFFFFF, false);
+        }
+        
+        RenderSystem.disableScissor();
+        guiGraphics.pose().popPose();
+    }
+
+    private void checkTooltipHover(int mouseX, int mouseY) {
+        int listX = this.leftPos + LIST_X_OFFSET;
+        int listY = this.topPos + LIST_Y_OFFSET;
+        
+        if (mouseX >= listX && mouseX < listX + LIST_WIDTH && mouseY >= listY && mouseY < listY + LIST_HEIGHT) {
+            int btnW = BTN_WIDTH;
+            int btnH = BTN_HEIGHT;
+            int gapX = GAP_X;
+            int gapY = GAP_Y;
+            int startOffsetX = START_OFFSET_X;
+            int startOffsetY = START_OFFSET_Y;
+            
+            int visibleItems = 8;
+            MagicEntry currentHover = null;
+            
+            for (int i = 0; i < visibleItems; i++) {
+                int index = startIndex + i;
+                if (index >= filteredMagics.size()) break;
+                
+                int col = i % 2;
+                int row = i / 2;
+                
+                int btnX = listX + startOffsetX + col * (btnW + gapX);
+                int btnY = listY + startOffsetY + row * (btnH + gapY);
+                
+                if (mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH) {
+                    currentHover = filteredMagics.get(index);
+                    break;
+                }
+            }
+            
+            if (currentHover != null) {
+                if (currentHover != lastHoveredEntry) {
+                    lastHoveredEntry = currentHover;
+                    hoverStartTime = System.currentTimeMillis();
+                    descScrollOffs = 0;
+                    tooltipActive = false;
+                } else {
+                    if (System.currentTimeMillis() - hoverStartTime > 500) {
+                        tooltipActive = true;
+                    }
+                }
+                return;
+            }
+        }
+        
+        lastHoveredEntry = null;
+        tooltipActive = false;
+        hoverStartTime = 0;
     }
     
-    private void renderMagicTooltip(GuiGraphics guiGraphics, MagicEntry entry, int mouseX, int mouseY) {
-        List<Component> tooltip = new ArrayList<>();
+    private List<Component> getDescriptionLines(MagicEntry entry) {
+        List<Component> lines = new ArrayList<>();
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         
-        // Title (Magic Name)
-        tooltip.add(Component.translatable(entry.nameKey).withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF00FFFF).withBold(true)));
+        // Title
+        lines.add(Component.translatable(entry.nameKey).withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF00FFFF).withBold(true)));
+        lines.add(Component.empty());
         
-        // Main Description
         String descKey = "magic.typemoonworld." + entry.id + ".desc";
-        String baseDescKey = descKey;
         
-        // Handle Sword Attribute overrides
-        if (vars.player_magic_attributes_sword) {
-            String swordKey = descKey + ".sword";
-            if (net.minecraft.client.resources.language.I18n.exists(swordKey)) {
-                // Add Sword Text as Introduction (Flavor)
-                String translated = net.minecraft.client.resources.language.I18n.get(swordKey);
+        // Logic copied from previous renderMagicTooltip
+        if (entry.id.startsWith("jewel_magic")) {
+             if (net.minecraft.client.resources.language.I18n.exists(descKey)) {
+                String translated = net.minecraft.client.resources.language.I18n.get(descKey);
                 for (String line : translated.split("\n")) {
-                    tooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GOLD));
+                    lines.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
                 }
-                // Add a spacer
-                tooltip.add(Component.empty());
-            }
-        }
+                lines.add(Component.empty());
+             }
 
-        // Always render the main functional description
-        if (net.minecraft.client.resources.language.I18n.exists(descKey)) {
-            String translated = net.minecraft.client.resources.language.I18n.get(descKey);
-            for (String line : translated.split("\n")) {
-                tooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
+             int maxModes = entry.id.equals("jewel_magic_shoot") ? 6 : 5;
+             
+             for (int i = 0; i < maxModes; i++) {
+                 String modeName = "";
+                 String subSkillId = "";
+                 int color = 0xFFFFFFFF;
+                 
+                 if (entry.id.equals("jewel_magic_shoot")) {
+                     switch(i) {
+                         case 0: modeName = "Ruby"; subSkillId = "ruby_throw"; color = 0xFFFF5555; break;
+                         case 1: modeName = "Sapphire"; subSkillId = "sapphire_throw"; color = 0xFF5555FF; break;
+                         case 2: modeName = "Emerald"; subSkillId = "emerald_use"; color = 0xFF55FF55; break;
+                         case 3: modeName = "Topaz"; subSkillId = "topaz_throw"; color = 0xFFFFFF55; break;
+                         case 4: modeName = "Cyan"; subSkillId = "cyan_throw"; color = 0xFF00FFFF; break;
+                         case 5: modeName = "Random"; subSkillId = "jewel_magic_shoot"; color = 0xFFFFFFFF; break;
+                     }
+                 } else { // release
+                     switch(i) {
+                         case 0: modeName = "Ruby"; subSkillId = "ruby_flame_sword"; color = 0xFFFF5555; break;
+                         case 1: modeName = "Sapphire"; subSkillId = "sapphire_winter_frost"; color = 0xFF5555FF; break;
+                         case 2: modeName = "Emerald"; subSkillId = "emerald_winter_river"; color = 0xFF55FF55; break;
+                         case 3: modeName = "Topaz"; subSkillId = "topaz_reinforcement"; color = 0xFFFFFF55; break;
+                         case 4: modeName = "Cyan"; subSkillId = "cyan_wind"; color = 0xFF00FFFF; break;
+                     }
+                 }
+                 
+                 if (vars.learned_magics.contains(subSkillId)) {
+                     String specificKey = "magic.typemoonworld." + entry.id + "." + modeName.toLowerCase() + ".desc";
+                     if (net.minecraft.client.resources.language.I18n.exists(specificKey)) {
+                         lines.add(Component.literal("- " + modeName + " -").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(color)));
+                         String translated = net.minecraft.client.resources.language.I18n.get(specificKey);
+                         for (String line : translated.split("\n")) {
+                             lines.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
+                         }
+                         lines.add(Component.empty());
+                     }
+                 }
+             }
+        } else {
+            String baseDescKey = descKey;
+            if (vars.player_magic_attributes_sword) {
+                String swordKey = descKey + ".sword";
+                if (net.minecraft.client.resources.language.I18n.exists(swordKey)) {
+                    String translated = net.minecraft.client.resources.language.I18n.get(swordKey);
+                    for (String line : translated.split("\n")) {
+                        lines.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GOLD));
+                    }
+                    lines.add(Component.empty());
+                }
+            }
+            if (net.minecraft.client.resources.language.I18n.exists(descKey)) {
+                String translated = net.minecraft.client.resources.language.I18n.get(descKey);
+                for (String line : translated.split("\n")) {
+                    lines.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
+                }
+            }
+            for (int i = 0; i < 10; i++) {
+                String formKey = baseDescKey + "." + i;
+                if (net.minecraft.client.resources.language.I18n.exists(formKey)) {
+                    if (i > 0 || net.minecraft.client.resources.language.I18n.exists(descKey)) {
+                        lines.add(Component.empty());
+                    }
+                    String translated = net.minecraft.client.resources.language.I18n.get(formKey);
+                    for (String line : translated.split("\n")) {
+                        lines.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
+                    }
+                } else {
+                    if (i > 0) break;
+                }
             }
         }
         
-        // Proficiency Display
+        // Proficiency
         double proficiency = 0;
         boolean showProficiency = false;
         
@@ -323,41 +504,34 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         } else if ("sword_barrel_full_open".equals(entry.id)) {
             proficiency = vars.proficiency_sword_barrel_full_open;
             showProficiency = true;
-        } else if ("jewel".equals(entry.category)) {
-            proficiency = vars.proficiency_jewel_magic;
+        } else if ("jewel_magic_shoot".equals(entry.id)) {
+            proficiency = vars.proficiency_jewel_magic_shoot;
+            showProficiency = true;
+        } else if ("jewel_magic_release".equals(entry.id)) {
+            proficiency = vars.proficiency_jewel_magic_release;
             showProficiency = true;
         }
         
         if (showProficiency) {
-            tooltip.add(Component.empty());
+            lines.add(Component.empty());
             String profText = String.format("%.1f%%", proficiency);
-            tooltip.add(Component.translatable("gui.typemoonworld.proficiency", profText).withStyle(net.minecraft.ChatFormatting.GOLD));
-        }
-
-        // Multi-form Descriptions (desc.0, desc.1, etc.)
-        for (int i = 0; i < 10; i++) { // Limit to 10 forms to avoid infinite loop
-            String formKey = baseDescKey + "." + i;
-            if (net.minecraft.client.resources.language.I18n.exists(formKey)) {
-                if (i > 0 || net.minecraft.client.resources.language.I18n.exists(descKey)) {
-                    tooltip.add(Component.empty()); // Spacer
-                }
-                String translated = net.minecraft.client.resources.language.I18n.get(formKey);
-                for (String line : translated.split("\n")) {
-                    tooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
-                }
-            } else {
-                // If 0 exists but 1 doesn't, stop. 
-                // But maybe they skipped numbers? Unlikely. Assume sequential.
-                if (i == 0 && !net.minecraft.client.resources.language.I18n.exists(baseDescKey)) {
-                    // If no main desc and no form 0, maybe just stop?
-                } else if (i > 0) {
-                    break;
-                }
-            }
+            lines.add(Component.translatable("gui.typemoonworld.proficiency", profText).withStyle(net.minecraft.ChatFormatting.GOLD));
         }
         
-        guiGraphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
+        return lines;
     }
+
+    // Removed old renderMagicList and renderMagicTooltip methods that returned MagicEntry or void
+    // Now renderMagicList is void and draws buttons.
+    // renderDescriptionPanel handles the text.
+
+    // Mouse Input methods moved to end of file to match "Old Version" structure
+
+    
+    // Remove old renderMagicList signature if it conflicts (it was returning MagicEntry)
+    // The previous code had: private MagicEntry renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY)
+    // We changed it to void.
+
     
     private void updateVisibility() {
         boolean visible = (this.pageMode == 1);
@@ -466,7 +640,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             // Maybe draw a small eye symbol?
             // For now, keep it clean as requested previously.
         } else {
-            guiGraphics.drawString(this.font, Component.translatable(MagicConstants.GUI_LEARNED_MAGIC), 125, 28, 0xFF00E0E0, false);
+            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.screen.learned_magic"), 125, 28, 0xFF00E0E0, false);
             // Label for filter
             // Button is at 230, 25. Text should be left of it.
             // "分类:"
@@ -632,6 +806,19 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (this.pageMode == 1) {
+            // Check Tooltip Scroll
+            if (tooltipActive && lastHoveredEntry != null) {
+                 List<Component> lines = getDescriptionLines(lastHoveredEntry);
+                 int contentHeight = lines.size() * 10;
+                 int viewHeight = 110; 
+                 
+                 if (contentHeight > viewHeight) {
+                     float step = 10.0f / (contentHeight - viewHeight);
+                     this.descScrollOffs = Mth.clamp(this.descScrollOffs - (float)deltaY * step * 3, 0.0F, 1.0F);
+                     return true;
+                 }
+            }
+
             // Check if mouse is over the list area
             int listX = this.leftPos + LIST_X_OFFSET;
             int listY = this.topPos + LIST_Y_OFFSET;

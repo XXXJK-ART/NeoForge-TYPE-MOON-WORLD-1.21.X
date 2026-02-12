@@ -13,6 +13,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +74,7 @@ public class MagicSwordBarrelFullOpen {
             if (!vars.is_sword_barrel_active) {
                 vars.is_sword_barrel_active = true;
                 vars.syncPlayerVariables(player);
-                player.displayClientMessage(Component.translatable("message.typemoonworld.trace_off"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_TRACE_OFF), true);
                 player.getPersistentData().putDouble("SwordBarrelClearRadius", 40.0);
             } else {
                 vars.is_sword_barrel_active = false;
@@ -90,9 +91,9 @@ public class MagicSwordBarrelFullOpen {
             player.getPersistentData().putBoolean("UBWBrokenPhantasmEnabled", isBP);
             
             if (isBP) {
-                player.displayClientMessage(Component.literal("Broken Phantasm Mode: ON"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_UBW_BROKEN_PHANTASM_ON), true);
             } else {
-                player.displayClientMessage(Component.literal("Broken Phantasm Mode: OFF"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_UBW_BROKEN_PHANTASM_OFF), true);
             }
             // Do not change is_sword_barrel_active state
             return;
@@ -104,11 +105,11 @@ public class MagicSwordBarrelFullOpen {
         
         if (vars.is_sword_barrel_active) {
             if (mode != 4) { // Should not be 4 if we are here
-                player.displayClientMessage(Component.translatable("message.typemoonworld.trace_on"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_TRACE_ON), true);
             }
         } else {
             if (mode != 2) {
-                player.displayClientMessage(Component.translatable("message.typemoonworld.trace_off"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_TRACE_OFF), true);
             }
         }
     }
@@ -189,7 +190,7 @@ public class MagicSwordBarrelFullOpen {
              // Let's strictly follow "No Cooldown".
              // Mana is separate.
              
-            player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+            player.displayClientMessage(Component.translatable(MagicConstants.MSG_NOT_ENOUGH_MANA), true);
             vars.is_sword_barrel_active = false; // Auto-disable if out of mana
             vars.syncPlayerVariables(player);
             return;
@@ -272,8 +273,7 @@ public class MagicSwordBarrelFullOpen {
         // 1. Get Weapons
         List<ItemStack> weapons = new ArrayList<>();
         for (ItemStack stack : vars.analyzed_items) {
-            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem) continue;
-            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem) continue;
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) continue;
             if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
                 weapons.add(stack);
             }
@@ -374,6 +374,10 @@ public class MagicSwordBarrelFullOpen {
                 projectile.setBrokenPhantasm(true);
             }
             
+            if (targetEntity != null) {
+                projectile.setTargetEntity(targetEntity.getId());
+            }
+            
             // Determine Target Point for Hover (Aiming)
             // If we have a target entity, aim at it. Otherwise aim at the raytrace end point.
             // But wait, if targetEntity moves, aimTarget is static here.
@@ -423,6 +427,7 @@ public class MagicSwordBarrelFullOpen {
         // 1. Get Weapons
         List<ItemStack> weapons = new ArrayList<>();
         for (ItemStack stack : vars.analyzed_items) {
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) continue;
             if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
                 weapons.add(stack);
             }
@@ -513,6 +518,7 @@ public class MagicSwordBarrelFullOpen {
         // 1. Get Weapons
         List<ItemStack> weapons = new ArrayList<>();
         for (ItemStack stack : vars.analyzed_items) {
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) continue;
             if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
                 weapons.add(stack);
             }
@@ -638,6 +644,10 @@ public class MagicSwordBarrelFullOpen {
             // Check Broken Phantasm Mode
             if (player.getPersistentData().getBoolean("UBWBrokenPhantasmEnabled")) {
                 projectile.setBrokenPhantasm(true);
+            }
+            
+            if (targetEntity != null) {
+                projectile.setTargetEntity(targetEntity.getId());
             }
             
             // Set Hover: 20 ticks (1s)

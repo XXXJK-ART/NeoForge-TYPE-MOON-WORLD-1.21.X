@@ -6,7 +6,6 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -66,6 +65,8 @@ public class ChiselItem extends Item {
                 resultGem = getRandomQualityGem(ModItems.CARVED_TOPAZ_POOR.get(), ModItems.CARVED_TOPAZ.get(), ModItems.CARVED_TOPAZ_HIGH.get());
             } else if (rawItem == ModItems.RAW_WHITE_GEMSTONE.get()) {
                 resultGem = getRandomQualityGem(ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), ModItems.CARVED_WHITE_GEMSTONE.get(), ModItems.CARVED_WHITE_GEMSTONE_HIGH.get());
+            } else if (rawItem == ModItems.RAW_CYAN_GEMSTONE.get()) {
+                resultGem = getRandomQualityGem(ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), ModItems.CARVED_CYAN_GEMSTONE.get(), ModItems.CARVED_CYAN_GEMSTONE_HIGH.get());
             }
             // Vanilla Mapping
             // Diamond -> White Gemstone
@@ -85,9 +86,13 @@ public class ChiselItem extends Item {
             else if (rawItem == Items.GLOWSTONE_DUST) {
                 resultGem = getRandomQualityGem(ModItems.CARVED_TOPAZ_POOR.get(), ModItems.CARVED_TOPAZ.get(), ModItems.CARVED_TOPAZ_HIGH.get());
             }
-            // Lapis Lazuli -> Blue Gemstone
+            // Lapis Lazuli -> Cyan Gemstone or Sapphire (50/50)
             else if (rawItem == Items.LAPIS_LAZULI) {
-                resultGem = getRandomQualityGem(ModItems.CARVED_SAPPHIRE_POOR.get(), ModItems.CARVED_SAPPHIRE.get(), ModItems.CARVED_SAPPHIRE_HIGH.get());
+                if (random.nextBoolean()) {
+                    resultGem = getRandomQualityGem(ModItems.CARVED_SAPPHIRE_POOR.get(), ModItems.CARVED_SAPPHIRE.get(), ModItems.CARVED_SAPPHIRE_HIGH.get());
+                } else {
+                    resultGem = getRandomQualityGem(ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), ModItems.CARVED_CYAN_GEMSTONE.get(), ModItems.CARVED_CYAN_GEMSTONE_HIGH.get());
+                }
             }
             
             if (!resultGem.isEmpty()) {

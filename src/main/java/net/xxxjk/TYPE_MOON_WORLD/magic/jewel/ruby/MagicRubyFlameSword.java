@@ -49,7 +49,7 @@ public class MagicRubyFlameSword {
                 TYPE_MOON_WORLD.queueServerWork(10, () -> spawnProjectile(player, gem3));
                 
             } else {
-                player.displayClientMessage(Component.literal("需要3个红宝石"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_RUBY_FLAME_SWORD_NEED_GEM), true);
             }
         }
     }

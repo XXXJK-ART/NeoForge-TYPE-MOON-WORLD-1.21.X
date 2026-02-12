@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,9 +28,14 @@ public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WO
         float scale = 1.75F;
         
         // Calculate rotation
-        // Consistent with BrokenPhantasmRenderer
         float ryaw = 90.0F + entity.yRotO + (entity.getYRot() - entity.yRotO) * partialTicks;
         float rpitch = 135.0F - entity.xRotO + (entity.getXRot() - entity.xRotO) * partialTicks;
+
+        // Apply Noble Phantasm specific rotation (tip forward)
+        ItemStack itemStack = entity.getItem();
+        if (!itemStack.isEmpty() && itemStack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
+            rpitch -= 45.0F;
+        }
 
         // Apply rotation
         poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
@@ -41,8 +46,6 @@ public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WO
         poseStack.translate(-0.59, -0.59, 0.0F);
         poseStack.scale(scale, scale, scale);
 
-        // Get Item
-        ItemStack itemStack = entity.getItem();
         if (itemStack.isEmpty()) {
             poseStack.popPose();
             return;
@@ -63,6 +66,6 @@ public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WO
 
     @Override
     public ResourceLocation getTextureLocation(UBWProjectileEntity entity) {
-        return TextureAtlas.LOCATION_BLOCKS;
+        return InventoryMenu.BLOCK_ATLAS;
     }
 }

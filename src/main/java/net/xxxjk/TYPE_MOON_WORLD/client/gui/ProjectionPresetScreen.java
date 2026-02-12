@@ -68,10 +68,11 @@ public class ProjectionPresetScreen extends Screen {
         // Building, Colored, Natural, Functional, Redstone, Tools, Combat, Food, Ingredients, Spawn Eggs?
         // Let's simplify: Building(Blocks), Combat(Weapons/Armor), Tools, Misc(Items), Special(Enchanted/Renamed)
         
-        String[] filters = {"all", "building", "combat", "tools", "misc", "special"};
-        String[] labels = {"gui.typemoonworld.projection.filter.all", "gui.typemoonworld.projection.filter.building", 
+        String[] filters = {"all", "noble_phantasm", "combat", "tools", "building", "misc", "special"};
+        String[] labels = {"gui.typemoonworld.projection.filter.all", "gui.typemoonworld.projection.filter.noble_phantasm",
                            "gui.typemoonworld.projection.filter.combat", "gui.typemoonworld.projection.filter.tools",
-                           "gui.typemoonworld.projection.filter.misc", "gui.typemoonworld.projection.filter.special"};
+                           "gui.typemoonworld.projection.filter.building", "gui.typemoonworld.projection.filter.misc", 
+                           "gui.typemoonworld.projection.filter.special"};
         
         int currentX = startX;
         for (int i = 0; i < filters.length; i++) {
@@ -100,6 +101,10 @@ public class ProjectionPresetScreen extends Screen {
         
         filteredItems = allItems.stream().filter(stack -> {
             if ("all".equals(currentFilter)) return true;
+            
+            if ("noble_phantasm".equals(currentFilter)) {
+                return stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+            }
             
             if ("special".equals(currentFilter)) {
                 // Enchanted or Renamed
@@ -141,8 +146,9 @@ public class ProjectionPresetScreen extends Screen {
                        stack.getItem() instanceof net.minecraft.world.item.ArmorItem;
                 boolean isTool = stack.is(ItemTags.PICKAXES) || stack.is(ItemTags.SHOVELS) || stack.is(ItemTags.HOES);
                 boolean isBlock = stack.getItem() instanceof net.minecraft.world.item.BlockItem;
+                boolean isNP = stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
                 
-                return !isCombat && !isTool && !isBlock;
+                return !isCombat && !isTool && !isBlock && !isNP;
             }
             
             return true;

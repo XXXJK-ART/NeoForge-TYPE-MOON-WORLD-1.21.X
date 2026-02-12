@@ -6,7 +6,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,13 +13,11 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("null")
 public class CarvedGemItem extends Item {
-    private final GemType type;
     private final GemQuality quality;
     private final Supplier<Item> fullGemSupplier;
 
     public CarvedGemItem(Properties properties, GemType type, GemQuality quality, Supplier<Item> fullGemSupplier) {
         super(properties);
-        this.type = type;
         this.quality = quality;
         this.fullGemSupplier = fullGemSupplier;
     }

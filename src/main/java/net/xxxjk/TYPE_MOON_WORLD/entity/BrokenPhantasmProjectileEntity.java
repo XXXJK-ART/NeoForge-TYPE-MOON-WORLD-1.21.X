@@ -42,8 +42,6 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
     private BlockPos explosionCenter;
     private float maxRadius;
     private List<Entity> damagedEntities = new ArrayList<>();
-    // Prevent multi-damage to same entity in short time or single fall
-    private List<Entity> hitEntities = new ArrayList<>();
 
     public BrokenPhantasmProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
         super(type, level);

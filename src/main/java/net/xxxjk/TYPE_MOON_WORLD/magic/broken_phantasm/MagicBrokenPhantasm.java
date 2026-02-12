@@ -11,39 +11,34 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.CompoundTag;
 
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.component.CustomData;
 
 public class MagicBrokenPhantasm {
-    public static void execute(Entity entity) {
-        if (!(entity instanceof ServerPlayer player)) return;
-
-        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+    private static void executeMode(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
         ItemStack heldItem = player.getMainHandItem();
         boolean isMainHand = true;
 
         // Check Main Hand first
-        if (!isProjectedItem(heldItem)) {
+        if (!isValidBPItem(heldItem)) {
             ItemStack offhandItem = player.getOffhandItem();
-            if (isProjectedItem(offhandItem)) {
+            if (isValidBPItem(offhandItem)) {
                 heldItem = offhandItem;
                 isMainHand = false;
             } else {
-                // No projected item found. Attempt auto-projection if hands are free.
+                // No valid item found. Attempt auto-projection if hands are free.
                 if (heldItem.isEmpty() || offhandItem.isEmpty()) {
-                    net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection.execute(entity);
+                    net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection.execute(player);
                 } else {
-                    player.displayClientMessage(Component.literal("手中没有投影物品"), true);
+                    player.displayClientMessage(Component.literal("手中没有投影物品或宝具"), true);
                 }
                 return;
             }
         }
 
         // Calculate Cost (for explosion power)
-        // Note: For Broken Phantasm, we want the ORIGINAL cost even if player has sword attribute discount.
-        // So we pass 'false' for hasSwordAttribute to calculateCost.
         double cost = calculateCost(heldItem, false);
         
         // Calculate Explosion Power
@@ -71,21 +66,54 @@ public class MagicBrokenPhantasm {
         player.displayClientMessage(Component.literal("投影崩坏！(威力: " + String.format("%.1f", explosionPower) + ")"), true);
     }
 
+    public static void execute(Entity entity) {
+        if (!(entity instanceof ServerPlayer player)) return;
+        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        executeMode(player, vars);
+    }
+
+    private static boolean isValidBPItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        // 1. Projected items can always be BP'd
+        if (stack.has(DataComponents.CUSTOM_DATA)) {
+            CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+            if (customData != null) {
+                CompoundTag tag = customData.copyTag();
+                if (tag.contains("is_projected")) return true;
+            }
+        }
+        // 2. Noble Phantasms (except Avalon) can be BP'd
+        if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem && 
+            !(stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem)) {
+            return true;
+        }
+        return false;
+    }
+
     private static boolean isProjectedItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (stack.has(DataComponents.CUSTOM_DATA)) {
-            CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
-            return tag.contains("is_projected");
+            CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+            if (customData != null) {
+                CompoundTag tag = customData.copyTag();
+                return tag.contains("is_projected");
+            }
         }
         return false;
     }
 
     public static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
         double baseCost = 10;
-        Rarity rarity = stack.getRarity();
-        if (rarity == Rarity.UNCOMMON) baseCost = 50;
-        else if (rarity == Rarity.RARE) baseCost = 100;
-        else if (rarity == Rarity.EPIC) baseCost = 300;
+        
+        // Noble Phantasms have a fixed base cost of 500
+        if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
+            baseCost = 500;
+        } else {
+            Rarity rarity = stack.getRarity();
+            if (rarity == Rarity.UNCOMMON) baseCost = 50;
+            else if (rarity == Rarity.RARE) baseCost = 100;
+            else if (rarity == Rarity.EPIC) baseCost = 300;
+        }
         
         // Multipliers
         // Enchantments

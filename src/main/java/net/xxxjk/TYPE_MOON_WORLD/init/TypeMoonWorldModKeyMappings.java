@@ -59,6 +59,7 @@ public class TypeMoonWorldModKeyMappings {
     @EventBusSubscriber({Dist.CLIENT})
     public static class KeyEventListener {
         private static boolean isTabDown = false;
+        private static boolean isModeSwitchDown = false;
 
         @SubscribeEvent
         public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
@@ -98,25 +99,41 @@ public class TypeMoonWorldModKeyMappings {
 
                 // Open Mode Switcher Menu on Ctrl Key Press (if correct magic selected)
                 if (MAGIC_MODE_SWITCH.isDown()) {
-                     if (vars.is_magus && !vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
-                         String currentMagic = vars.selected_magics.get(vars.current_magic_index);
-                         if ("sword_barrel_full_open".equals(currentMagic)) {
-                             if (Minecraft.getInstance().screen == null) {
-                                 Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen(vars.sword_barrel_mode));
-                             }
-                         }
+                     if (!isModeSwitchDown) {
+                         if (vars.is_magus && !vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
+                            String currentMagic = vars.selected_magics.get(vars.current_magic_index);
+                            if ("sword_barrel_full_open".equals(currentMagic)) {
+                                if (Minecraft.getInstance().screen == null) {
+                                    Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.sword_barrel_mode));
+                                    isModeSwitchDown = true;
+                                }
+                            } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
+                                if (Minecraft.getInstance().screen == null) {
+                                    Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.jewel_magic_mode));
+                                    isModeSwitchDown = true;
+                                }
+                            }
+                        }
+                         // If we didn't open the screen (e.g. wrong magic), we still mark key as down to prevent retry every tick? 
+                         // Actually, user might want to switch magic and then press Ctrl. 
+                         // But if they hold Ctrl and scroll to switch magic, should it open immediately? 
+                         // For safety, let's only set true if we actually TRIED to open or just mark it processed.
+                         // But if we mark it processed, user has to release Ctrl to try again. This is safer.
+                         isModeSwitchDown = true;
                      }
+                } else {
+                    isModeSwitchDown = false;
                 }
 
                 // Open Radial Menu on Z Key Press (if not scrolling)
                 if (CYCLE_MAGIC.isDown()) {
                      // Only open if we have magics and are a magus
                      if (vars.is_magus && !vars.selected_magics.isEmpty()) {
-                         // Only open if current screen is NOT already the radial menu
-                         if (!(Minecraft.getInstance().screen instanceof net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen)) {
-                             Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen(vars.selected_magics));
-                         }
-                     }
+                        // Only open if current screen is NOT already the radial menu
+                        if (!(Minecraft.getInstance().screen instanceof MagicRadialMenuScreen)) {
+                            Minecraft.getInstance().setScreen(new MagicRadialMenuScreen(vars.selected_magics));
+                        }
+                    }
                 }
                 
                 if (MAGIC_CIRCUIT_SWITCH.consumeClick()) {
@@ -159,7 +176,7 @@ public class TypeMoonWorldModKeyMappings {
                                 if (index >= 0 && index < vars.selected_magics.size()) {
                                     String magicId = vars.selected_magics.get(index);
                                     if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "unlimited_blade_works".equals(magicId) || "broken_phantasm".equals(magicId)) {
-                                        Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen(player));
+                                        Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
                                     }
                                 }
                             }

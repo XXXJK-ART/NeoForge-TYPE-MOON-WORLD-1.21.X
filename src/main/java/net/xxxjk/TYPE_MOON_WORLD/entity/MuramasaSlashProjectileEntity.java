@@ -6,13 +6,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -135,7 +133,10 @@ public class MuramasaSlashProjectileEntity extends Projectile {
         List<Entity> entities = this.level().getEntities(this, box, e -> e instanceof LivingEntity && e != this.getOwner());
         
         for (Entity e : entities) {
+            e.invulnerableTime = 0;
             e.hurt(this.damageSources().mobProjectile(this, (LivingEntity)this.getOwner()), damage);
+            e.invulnerableTime = 0;
+            
             e.igniteForSeconds(5);
             if (this.getOwner() instanceof LivingEntity owner && e instanceof LivingEntity target) {
                 EntityUtils.triggerSwarmAnger(this.level(), owner, target);

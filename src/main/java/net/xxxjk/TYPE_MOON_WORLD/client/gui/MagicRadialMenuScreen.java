@@ -3,7 +3,6 @@ package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -25,23 +24,9 @@ public class MagicRadialMenuScreen extends Screen {
         this.availableMagics = availableMagics;
     }
 
-    @Override
-    public void init() {
-        super.init();
-        // Removed custom mouse handling to respect default behavior like other GUIs
-        // Ensure initial mouse position is tracked
-        if (this.minecraft != null) {
-            this.lastMouseX = this.minecraft.mouseHandler.xpos() * (double)this.width / (double)this.minecraft.getWindow().getWidth();
-            this.lastMouseY = this.minecraft.mouseHandler.ypos() * (double)this.height / (double)this.minecraft.getWindow().getHeight();
-        }
-    }
-
     private boolean isScrollMode = false;
     private double scrollOriginX = 0;
     private double scrollOriginY = 0;
-
-    private double lastMouseX = 0;
-    private double lastMouseY = 0;
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -97,10 +82,6 @@ public class MagicRadialMenuScreen extends Screen {
             }
         }
         
-        // Update last mouse position
-        lastMouseX = mouseX;
-        lastMouseY = mouseY;
-
         // Setup Rendering
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -378,10 +359,6 @@ public class MagicRadialMenuScreen extends Screen {
             isScrollMode = true;
             scrollOriginX = mouseX;
             scrollOriginY = mouseY;
-            
-            // Update last mouse position to prevent instant revert after cooldown
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
             
             // Sync scroll selection to server immediately
             performAction(false);

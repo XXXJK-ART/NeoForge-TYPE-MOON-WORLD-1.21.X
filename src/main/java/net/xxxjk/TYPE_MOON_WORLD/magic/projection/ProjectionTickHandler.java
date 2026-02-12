@@ -26,6 +26,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemCraftedEvent;
 import net.neoforged.neoforge.event.entity.player.AnvilRepairEvent;
+import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -127,7 +128,9 @@ public class ProjectionTickHandler {
         if (stack.isEmpty()) return;
         if (!stack.has(DataComponents.CUSTOM_DATA)) return;
         
-        CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
+        CustomData cd = stack.get(DataComponents.CUSTOM_DATA);
+        if (cd == null) return;
+        CompoundTag tag = cd.copyTag();
         if (tag.contains("is_projected")) {
             if (tag.contains("is_infinite_projection")) return; // Skip removal for infinite projection
             
@@ -154,9 +157,12 @@ public class ProjectionTickHandler {
             boolean isProjected = false;
             for (net.minecraft.world.InteractionHand hand : net.minecraft.world.InteractionHand.values()) {
                 ItemStack s = player.getItemInHand(hand);
-                if (s.has(DataComponents.CUSTOM_DATA) && s.get(DataComponents.CUSTOM_DATA).copyTag().contains("is_projected")) {
-                    isProjected = true;
-                    break;
+                if (s.has(DataComponents.CUSTOM_DATA)) {
+                    CustomData cd = s.get(DataComponents.CUSTOM_DATA);
+                    if (cd != null && cd.copyTag().contains("is_projected")) {
+                        isProjected = true;
+                        break;
+                    }
                 }
             }
             
@@ -168,10 +174,13 @@ public class ProjectionTickHandler {
                     for (net.minecraft.world.InteractionHand hand : net.minecraft.world.InteractionHand.values()) {
                         ItemStack s = player.getItemInHand(hand);
                         if (s.has(DataComponents.CUSTOM_DATA)) {
-                            CompoundTag tag = s.get(DataComponents.CUSTOM_DATA).copyTag();
-                            if (tag.contains("is_projected") && tag.contains("is_infinite_projection")) {
-                                isInfinite = true;
-                                break;
+                            CustomData cd = s.get(DataComponents.CUSTOM_DATA);
+                            if (cd != null) {
+                                CompoundTag tag = cd.copyTag();
+                                if (tag.contains("is_projected") && tag.contains("is_infinite_projection")) {
+                                    isInfinite = true;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -203,16 +212,19 @@ public class ProjectionTickHandler {
             
             ItemStack stack = itemEntity.getItem();
             if (stack.has(DataComponents.CUSTOM_DATA)) {
-                CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
-                if (tag.contains("is_projected")) {
-                    if (tag.contains("is_infinite_projection")) return; // Skip removal
-                    
-                    long projTime = tag.getLong("projection_time");
-                    if (itemEntity.level().getGameTime() - projTime > 200) {
-                        itemEntity.discard();
-                        itemEntity.level().playSound(null, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), SoundEvents.ITEM_BREAK, SoundSource.NEUTRAL, 1.0f, 1.0f);
-                        if (itemEntity.level() instanceof ServerLevel serverLevel) {
-                            serverLevel.sendParticles(ParticleTypes.POOF, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 5, 0.1, 0.1, 0.1, 0.05);
+                CustomData cd = stack.get(DataComponents.CUSTOM_DATA);
+                if (cd != null) {
+                    CompoundTag tag = cd.copyTag();
+                    if (tag.contains("is_projected")) {
+                        if (tag.contains("is_infinite_projection")) return; // Skip removal
+                        
+                        long projTime = tag.getLong("projection_time");
+                        if (itemEntity.level().getGameTime() - projTime > 200) {
+                            itemEntity.discard();
+                            itemEntity.level().playSound(null, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), SoundEvents.ITEM_BREAK, SoundSource.NEUTRAL, 1.0f, 1.0f);
+                            if (itemEntity.level() instanceof ServerLevel serverLevel) {
+                                serverLevel.sendParticles(ParticleTypes.POOF, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 5, 0.1, 0.1, 0.1, 0.05);
+                            }
                         }
                     }
                 }
@@ -251,12 +263,15 @@ public class ProjectionTickHandler {
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         if (event.getItemStack().has(DataComponents.CUSTOM_DATA)) {
-            CompoundTag tag = event.getItemStack().get(DataComponents.CUSTOM_DATA).copyTag();
-            if (tag.contains("is_projected")) {
-                if (tag.contains("is_infinite_projection")) {
-                    event.getToolTip().add(net.minecraft.network.chat.Component.translatable(MagicConstants.MSG_PROJECTION_TOOLTIP_INFINITE).withStyle(net.minecraft.ChatFormatting.GOLD));
-                } else {
-                    event.getToolTip().add(net.minecraft.network.chat.Component.translatable(MagicConstants.MSG_PROJECTION_TOOLTIP).withStyle(net.minecraft.ChatFormatting.AQUA));
+            CustomData cd = event.getItemStack().get(DataComponents.CUSTOM_DATA);
+            if (cd != null) {
+                CompoundTag tag = cd.copyTag();
+                if (tag.contains("is_projected")) {
+                    if (tag.contains("is_infinite_projection")) {
+                        event.getToolTip().add(net.minecraft.network.chat.Component.translatable(MagicConstants.MSG_PROJECTION_TOOLTIP_INFINITE).withStyle(net.minecraft.ChatFormatting.GOLD));
+                    } else {
+                        event.getToolTip().add(net.minecraft.network.chat.Component.translatable(MagicConstants.MSG_PROJECTION_TOOLTIP).withStyle(net.minecraft.ChatFormatting.AQUA));
+                    }
                 }
             }
         }
@@ -268,14 +283,17 @@ public class ProjectionTickHandler {
         for (int i = 0; i < event.getInventory().getContainerSize(); i++) {
             ItemStack stack = event.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.has(DataComponents.CUSTOM_DATA)) {
-                CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
-                if (tag.contains("is_projected") && !tag.contains("is_infinite_projection")) {
-                    hasProjectedIngredient = true;
-                    break;
-                }
-                if (tag.contains("is_infinite_projection")) {
-                    hasProjectedIngredient = true;
-                    break;
+                CustomData cd = stack.get(DataComponents.CUSTOM_DATA);
+                if (cd != null) {
+                    CompoundTag tag = cd.copyTag();
+                    if (tag.contains("is_projected") && !tag.contains("is_infinite_projection")) {
+                        hasProjectedIngredient = true;
+                        break;
+                    }
+                    if (tag.contains("is_infinite_projection")) {
+                        hasProjectedIngredient = true;
+                        break;
+                    }
                 }
             }
         }
@@ -293,15 +311,21 @@ public class ProjectionTickHandler {
         ItemStack left = event.getLeft();
         ItemStack right = event.getRight();
         if (!left.isEmpty() && left.has(DataComponents.CUSTOM_DATA)) {
-            CompoundTag tag = left.get(DataComponents.CUSTOM_DATA).copyTag();
-            if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
-                hasProjectedInput = true;
+            CustomData cd = left.get(DataComponents.CUSTOM_DATA);
+            if (cd != null) {
+                CompoundTag tag = cd.copyTag();
+                if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
+                    hasProjectedInput = true;
+                }
             }
         }
         if (!hasProjectedInput && !right.isEmpty() && right.has(DataComponents.CUSTOM_DATA)) {
-            CompoundTag tag = right.get(DataComponents.CUSTOM_DATA).copyTag();
-            if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
-                hasProjectedInput = true;
+            CustomData cd = right.get(DataComponents.CUSTOM_DATA);
+            if (cd != null) {
+                CompoundTag tag = cd.copyTag();
+                if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
+                    hasProjectedInput = true;
+                }
             }
         }
         if (hasProjectedInput) {
@@ -316,20 +340,23 @@ public class ProjectionTickHandler {
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("is_projected", true);
         tag.putLong("projection_time", player.level().getGameTime());
-        net.minecraft.world.item.component.CustomData existing = stack.get(DataComponents.CUSTOM_DATA);
+        CustomData existing = stack.get(DataComponents.CUSTOM_DATA);
         if (existing != null) {
             CompoundTag merged = existing.copyTag();
             merged.putBoolean("is_projected", true);
             merged.putLong("projection_time", player.level().getGameTime());
-            stack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(merged));
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(merged));
         } else {
-            stack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         }
         if (stack.has(DataComponents.CUSTOM_DATA)) {
-            CompoundTag cur = stack.get(DataComponents.CUSTOM_DATA).copyTag();
-            if (cur.contains("is_infinite_projection")) {
-                cur.remove("is_infinite_projection");
-                stack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(cur));
+            CustomData cd = stack.get(DataComponents.CUSTOM_DATA);
+            if (cd != null) {
+                CompoundTag cur = cd.copyTag();
+                if (cur.contains("is_infinite_projection")) {
+                    cur.remove("is_infinite_projection");
+                    stack.set(DataComponents.CUSTOM_DATA, CustomData.of(cur));
+                }
             }
         }
         player.displayClientMessage(net.minecraft.network.chat.Component.translatable(net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants.MSG_PROJECTION_TOOLTIP).withStyle(net.minecraft.ChatFormatting.AQUA), true);
@@ -338,7 +365,9 @@ public class ProjectionTickHandler {
     private static boolean isProjectedOrInfinite(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (!stack.has(DataComponents.CUSTOM_DATA)) return false;
-        CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
+        CustomData cd = stack.get(DataComponents.CUSTOM_DATA);
+        if (cd == null) return false;
+        CompoundTag tag = cd.copyTag();
         return tag.contains("is_projected") || tag.contains("is_infinite_projection");
     }
 }

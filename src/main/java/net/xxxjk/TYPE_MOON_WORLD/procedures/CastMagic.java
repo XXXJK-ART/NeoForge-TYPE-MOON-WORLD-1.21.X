@@ -81,6 +81,12 @@ public class CastMagic {
             } else if ("topaz_reinforcement".equals(magicId)) {
                 MagicTopazReinforcement.execute(entity);
                 castSuccess = true;
+            } else if ("jewel_magic_shoot".equals(magicId)) {
+                net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelShoot.execute(entity);
+                castSuccess = true;
+            } else if ("jewel_magic_release".equals(magicId)) {
+                net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelRelease.execute(entity);
+                castSuccess = true;
             } else if ("projection".equals(magicId)) {
                 MagicProjection.execute(entity);
                 castSuccess = true;
@@ -103,17 +109,31 @@ public class CastMagic {
                 double cooldown = 10;
                 
                 // Jewel Magic Cooldown Logic (Proficiency dependent)
-                if (vars.selected_magics.get(index).startsWith("ruby") || 
+                if (vars.selected_magics.get(index).startsWith("jewel_magic_shoot")) {
+                    // Base 20 ticks (1s)
+                    double baseCooldown = 20;
+                    cooldown = Math.max(1, baseCooldown - (vars.proficiency_jewel_magic_shoot * 0.2));
+                    
+                    // Increase proficiency slightly on use
+                    vars.proficiency_jewel_magic_shoot = Math.min(100, vars.proficiency_jewel_magic_shoot + 0.1);
+                    vars.syncProficiency(entity);
+                } else if (vars.selected_magics.get(index).startsWith("jewel_magic_release")) {
+                     // Base 20 ticks (1s)
+                    double baseCooldown = 20;
+                    cooldown = Math.max(1, baseCooldown - (vars.proficiency_jewel_magic_release * 0.2));
+                    
+                    // Increase proficiency slightly on use
+                    vars.proficiency_jewel_magic_release = Math.min(100, vars.proficiency_jewel_magic_release + 0.1);
+                    vars.syncProficiency(entity);
+                }
+                else if (vars.selected_magics.get(index).startsWith("ruby") || 
                     vars.selected_magics.get(index).startsWith("sapphire") || 
                     vars.selected_magics.get(index).startsWith("emerald") || 
                     vars.selected_magics.get(index).startsWith("topaz")) {
                     
-                    // Base 20 ticks (1s)
+                    // Legacy Support
                     double baseCooldown = 20;
-                    cooldown = Math.max(1, baseCooldown - (vars.proficiency_jewel_magic * 0.2));
-                    
-                    // Increase proficiency slightly on use
-                    vars.proficiency_jewel_magic = Math.min(100, vars.proficiency_jewel_magic + 0.1);
+                    cooldown = Math.max(1, baseCooldown - (vars.proficiency_jewel_magic_shoot * 0.2));
                 } 
                 else {
                     // For all other skills, set strict 0.5s cooldown (10 ticks)

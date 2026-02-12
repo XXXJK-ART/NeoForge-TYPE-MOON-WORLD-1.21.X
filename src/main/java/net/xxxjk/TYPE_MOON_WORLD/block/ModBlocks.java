@@ -109,11 +109,29 @@ public class ModBlocks {
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
                     BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
+    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK = registerBlock("cyan_gemstone_block",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
+    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK_POOR = registerBlock("cyan_gemstone_block_poor",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
+    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK_HIGH = registerBlock("cyan_gemstone_block_high",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
+
+    public static final DeferredBlock<Block> CYAN_GEMSTONE_MINE = registerBlock("cyan_gemstone_mine",
+            () -> new DropExperienceBlock(UniformInt.of(2, 4),
+                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
+
     public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock("green_transparent_block",
             () -> new GreenTransparentBlock(BlockBehaviour.Properties.of()
                     .strength(50f, 1200f).sound(SoundType.GLASS).noOcclusion()
                     .isViewBlocking((s, l, p) -> false).isValidSpawn((s, l, p, e) -> false)
                     .isSuffocating((s, l, p) -> false).isRedstoneConductor((s, l, p) -> false)));
+
+    public static final DeferredBlock<Block> ANCIENT_TEMPLE_STONE = registerBlock("ancient_temple_stone",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(50f, 1200f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
     public static final DeferredBlock<UBWWeaponBlock> UBW_WEAPON_BLOCK = registerBlock("ubw_weapon_block",
             () -> new UBWWeaponBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak()));

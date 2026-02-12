@@ -58,7 +58,7 @@ public class MagicStructuralAnalysis {
         }
 
         if (targetItem.isEmpty()) {
-             player.displayClientMessage(Component.literal("未发现可解析目标"), true);
+             player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_NO_TARGET), true);
              return;
         }
 
@@ -67,18 +67,21 @@ public class MagicStructuralAnalysis {
     }
 
     private static void analyzeItem(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack target) {
-        // Avalon cannot be analyzed
+        // Avalon is a special Noble Phantasm that is explicitly blocked from analysis
         if (target.getItem() instanceof AvalonItem) {
-            player.displayClientMessage(Component.literal("§c无法解析神造兵装"), true);
+            player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_CANNOT_ANALYZE_DIVINE), true);
             return;
         }
 
         // Check if already projected (prevent analyzing projected items)
         if (target.has(DataComponents.CUSTOM_DATA)) {
-             CompoundTag tag = target.get(DataComponents.CUSTOM_DATA).copyTag();
-             if (tag.contains("is_projected")) {
-                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED), true);
-                 return;
+             CustomData cd = target.get(DataComponents.CUSTOM_DATA);
+             if (cd != null) {
+                 CompoundTag tag = cd.copyTag();
+                 if (tag.contains("is_projected")) {
+                     player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED), true);
+                     return;
+                 }
              }
         }
         
@@ -96,20 +99,23 @@ public class MagicStructuralAnalysis {
         }
         // Also check for legacy BlockEntityTag if any custom data remains
         if (toSave.has(DataComponents.CUSTOM_DATA)) {
-            CompoundTag customTag = toSave.get(DataComponents.CUSTOM_DATA).copyTag();
-            if (customTag.contains("BlockEntityTag")) {
-                CompoundTag bet = customTag.getCompound("BlockEntityTag");
-                if (bet.contains("Items")) {
-                    bet.remove("Items"); // Remove items from block entity tag
-                    if (bet.isEmpty()) {
-                        customTag.remove("BlockEntityTag");
-                    } else {
-                        customTag.put("BlockEntityTag", bet);
-                    }
-                    if (customTag.isEmpty()) {
-                        toSave.remove(DataComponents.CUSTOM_DATA);
-                    } else {
-                        toSave.set(DataComponents.CUSTOM_DATA, CustomData.of(customTag));
+            CustomData cd = toSave.get(DataComponents.CUSTOM_DATA);
+            if (cd != null) {
+                CompoundTag customTag = cd.copyTag();
+                if (customTag.contains("BlockEntityTag")) {
+                    CompoundTag bet = customTag.getCompound("BlockEntityTag");
+                    if (bet.contains("Items")) {
+                        bet.remove("Items"); // Remove items from block entity tag
+                        if (bet.isEmpty()) {
+                            customTag.remove("BlockEntityTag");
+                        } else {
+                            customTag.put("BlockEntityTag", bet);
+                        }
+                        if (customTag.isEmpty()) {
+                            toSave.remove(DataComponents.CUSTOM_DATA);
+                        } else {
+                            toSave.set(DataComponents.CUSTOM_DATA, CustomData.of(customTag));
+                        }
                     }
                 }
             }
@@ -158,7 +164,7 @@ public class MagicStructuralAnalysis {
                 if (ManaHelper.consumeManaOrHealth(player, failCost)) {
                     vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.1);
                     vars.syncPlayerVariables(player);
-                    player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
+                    player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
                 }
             }
         } else {
@@ -186,14 +192,20 @@ public class MagicStructuralAnalysis {
 
     private static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
         double baseCost = 10;
-        Rarity rarity = stack.getRarity();
-        if (rarity == Rarity.UNCOMMON) baseCost = 50;
-        else if (rarity == Rarity.RARE) baseCost = 100;
-        else if (rarity == Rarity.EPIC) baseCost = 300;
+        
+        // Noble Phantasms have a fixed base cost of 500
+        if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
+            baseCost = 500;
+        } else {
+            Rarity rarity = stack.getRarity();
+            if (rarity == Rarity.UNCOMMON) baseCost = 50;
+            else if (rarity == Rarity.RARE) baseCost = 100;
+            else if (rarity == Rarity.EPIC) baseCost = 300;
+        }
         
         // Multipliers
         // Enchantments
-        int enchantCount = stack.getEnchantments().size();
+        int enchantCount = stack.getOrDefault(DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY).size();
         if (enchantCount > 0) {
             baseCost *= (1 + enchantCount * 0.2); 
         }
