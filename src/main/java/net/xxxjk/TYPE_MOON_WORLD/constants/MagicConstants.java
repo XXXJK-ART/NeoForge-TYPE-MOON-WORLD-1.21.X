@@ -26,6 +26,10 @@ public class MagicConstants {
     public static final int TOPAZ_DEBUFF_DURATION = 200; // 10 seconds
     public static final double TOPAZ_EFFECT_RADIUS = 5.0;
 
+    // Cyan Wind Magic
+    public static final float CYAN_WIND_RADIUS = 4.0F;
+    public static final int CYAN_WIND_DURATION = 100; // 5 seconds
+
     // Translation Keys
     public static final String KEY_MAGIC_RUBY_THROW = "gui.typemoonworld.magic.ruby_throw";
     public static final String KEY_MAGIC_RUBY_THROW_SELECTED = "gui.typemoonworld.magic.ruby_throw.selected";
@@ -68,6 +72,18 @@ public class MagicConstants {
     public static final String KEY_MAGIC_TOPAZ_REINFORCEMENT_SHORT = "gui.typemoonworld.magic.topaz_reinforcement.short";
     public static final String MSG_MAGIC_TOPAZ_REINFORCEMENT_NEED_GEM = "message.typemoonworld.magic.topaz_reinforcement.need_gem";
 
+    // New Jewel Magic Integration
+    public static final String KEY_MAGIC_JEWEL_SHOOT = "key.typemoonworld.magic.jewel_shoot";
+    public static final String KEY_MAGIC_JEWEL_SHOOT_SELECTED = "key.typemoonworld.magic.jewel_shoot.selected";
+    public static final String KEY_MAGIC_JEWEL_SHOOT_SHORT = "key.typemoonworld.magic.jewel_shoot.short";
+
+    public static final String KEY_MAGIC_JEWEL_RELEASE = "key.typemoonworld.magic.jewel_release";
+    public static final String KEY_MAGIC_JEWEL_RELEASE_SELECTED = "key.typemoonworld.magic.jewel_release.selected";
+    public static final String KEY_MAGIC_JEWEL_RELEASE_SHORT = "key.typemoonworld.magic.jewel_release.short";
+    
+    public static final String MSG_MAGIC_JEWEL_MODE_CHANGE = "message.typemoonworld.magic.jewel.mode_change";
+    public static final String MSG_MAGIC_ANY_GEM_NEED = "message.typemoonworld.magic.any_gem.need";
+
     // Projection Magic
     public static final String KEY_MAGIC_PROJECTION = "key.typemoonworld.magic.projection";
     public static final String KEY_MAGIC_PROJECTION_SELECTED = "key.typemoonworld.magic.projection.selected";
@@ -90,23 +106,27 @@ public class MagicConstants {
     public static final String KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SHORT = "key.typemoonworld.magic.sword_barrel_full_open.short";
     public static final String MSG_MAGIC_SWORD_BARREL_MODE_CHANGE = "message.typemoonworld.magic.sword_barrel.mode_change";
 
+    // General Magic Messages
+    public static final String MSG_TRACE_ON = "message.typemoonworld.trace_on";
+    public static final String MSG_TRACE_OFF = "message.typemoonworld.trace_off";
+    public static final String MSG_NOT_ENOUGH_MANA = "message.typemoonworld.not_enough_mana";
+    
+    // UBW Messages
+    public static final String MSG_UBW_BROKEN_PHANTASM_ON = "message.typemoonworld.ubw.broken_phantasm.on";
+    public static final String MSG_UBW_BROKEN_PHANTASM_OFF = "message.typemoonworld.ubw.broken_phantasm.off";
+    
+    // Structural Analysis Messages
+    public static final String MSG_STRUCTURAL_ANALYSIS_NO_TARGET = "message.typemoonworld.structural_analysis.no_target";
+    public static final String MSG_STRUCTURAL_ANALYSIS_FAILED = "message.typemoonworld.structural_analysis.failed";
+    public static final String MSG_STRUCTURAL_ANALYSIS_CANNOT_ANALYZE_DIVINE = "message.typemoonworld.structural_analysis.cannot_analyze_divine";
+    public static final String MSG_PROJECTION_ALREADY_ANALYZED = "message.typemoonworld.projection.already_analyzed";
     public static final String MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED = "message.typemoonworld.projection.cannot_analyze_projected";
     public static final String MSG_PROJECTION_ANALYSIS_COMPLETE = "message.typemoonworld.projection.analysis_complete";
-    public static final String MSG_PROJECTION_NOT_ENOUGH_MANA = "message.typemoonworld.projection.not_enough_mana";
-    public static final String MSG_PROJECTION_ALREADY_ANALYZED = "message.typemoonworld.projection.already_analyzed";
+    
+    // Projection Messages
     public static final String MSG_PROJECTION_NO_TARGET = "message.typemoonworld.projection.no_target";
+    public static final String MSG_PROJECTION_CANNOT_PROJECT_DIVINE = "message.typemoonworld.projection.cannot_project_divine";
+    public static final String MSG_PROJECTION_HANDS_FULL = "message.typemoonworld.projection.hands_full";
     public static final String MSG_PROJECTION_TOOLTIP = "message.typemoonworld.projection.tooltip";
     public static final String MSG_PROJECTION_TOOLTIP_INFINITE = "message.typemoonworld.projection.tooltip.infinite";
-    public static final String MSG_PROJECTION_HANDS_FULL = "message.typemoonworld.projection.hands_full";
-    public static final String MSG_PROJECTION_CANNOT_CRAFT = "message.typemoonworld.projection.cannot_craft";
-    public static final String MSG_PROJECTION_CANNOT_REPAIR = "message.typemoonworld.projection.cannot_repair";
-    public static final String MSG_PROJECTION_CANNOT_GRIND = "message.typemoonworld.projection.cannot_grind";
-
-    public static final String GUI_MAGIC_EYES_AND_MODIFICATION = "gui.typemoonworld.screen.magic_eyes_and_modification";
-    public static final String GUI_LOAD_MAGIC_EYES = "gui.typemoonworld.screen.load_magic_eyes";
-    public static final String GUI_WIP = "gui.typemoonworld.screen.wip";
-    public static final String GUI_LEARNED_MAGIC = "gui.typemoonworld.screen.learned_magic";
-
-    // UI Constants
-    public static final int UI_COLOR_TEXT = -13408513;
 }

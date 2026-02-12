@@ -5,6 +5,7 @@ public enum GemType {
     RUBY,
     SAPPHIRE,
     TOPAZ,
-    WHITE_GEMSTONE
+    WHITE_GEMSTONE,
+    CYAN
 }
 

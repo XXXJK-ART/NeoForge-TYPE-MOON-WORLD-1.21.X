@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "typemoonworld:block/cyan_gemstone_mine"
+  }
+}

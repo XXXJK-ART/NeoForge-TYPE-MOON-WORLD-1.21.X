@@ -40,6 +40,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.AVALON);
                         output.accept(ModItems.REDSWORD);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
+                        output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModBlocks.REDSWORD_BLOCK);
 
                         output.accept(ModItems.CHISEL);
@@ -49,6 +50,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RAW_SAPPHIRE);
                         output.accept(ModItems.RAW_TOPAZ);
                         output.accept(ModItems.RAW_WHITE_GEMSTONE);
+                        output.accept(ModItems.RAW_CYAN_GEMSTONE);
 
                         output.accept(ModItems.CARVED_EMERALD_POOR);
                         output.accept(ModItems.CARVED_EMERALD);
@@ -69,6 +71,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE_POOR);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE_HIGH);
+                        
+                        output.accept(ModItems.CARVED_CYAN_GEMSTONE_POOR);
+                        output.accept(ModItems.CARVED_CYAN_GEMSTONE);
+                        output.accept(ModItems.CARVED_CYAN_GEMSTONE_HIGH);
 
                         output.accept(ModItems.CARVED_EMERALD_POOR_FULL);
                         output.accept(ModItems.CARVED_EMERALD_FULL);
@@ -89,6 +95,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE_POOR_FULL);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE_FULL);
                         output.accept(ModItems.CARVED_WHITE_GEMSTONE_HIGH_FULL);
+                        
+                        output.accept(ModItems.CARVED_CYAN_GEMSTONE_POOR_FULL);
+                        output.accept(ModItems.CARVED_CYAN_GEMSTONE_FULL);
+                        output.accept(ModItems.CARVED_CYAN_GEMSTONE_HIGH_FULL);
 
                         output.accept(ModBlocks.EMERALD_BLOCK_POOR);
                         output.accept(ModBlocks.EMERALD_BLOCK);
@@ -114,10 +124,17 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK);
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK_HIGH);
                         output.accept(ModBlocks.WHITE_GEMSTONE_MINE);
+                        
+                        output.accept(ModBlocks.CYAN_GEMSTONE_BLOCK_POOR);
+                        output.accept(ModBlocks.CYAN_GEMSTONE_BLOCK);
+                        output.accept(ModBlocks.CYAN_GEMSTONE_BLOCK_HIGH);
+                        output.accept(ModBlocks.CYAN_GEMSTONE_MINE);
+                        
                         output.accept(ModBlocks.GREEN_TRANSPARENT_BLOCK);
 
                         output.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
                         output.accept(ModBlocks.SPIRIT_VEIN_NODE);
+                        output.accept(ModBlocks.ANCIENT_TEMPLE_STONE);
                         
                         output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
                     }).build());

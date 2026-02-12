@@ -49,27 +49,28 @@ public class MagicScrollItem extends Item {
             }
             
             // Attempt to learn
-            if (player.getRandom().nextDouble() < successRate) {
-                // Success
-                boolean learnedAny = false;
-                for (String magic : magicsToLearn) {
-                    if (!vars.learned_magics.contains(magic)) {
+            boolean learnedAny = false;
+            for (String magic : magicsToLearn) {
+                if (!vars.learned_magics.contains(magic)) {
+                    // Check success rate for each magic independently
+                    if (player.getRandom().nextDouble() < successRate) {
                         vars.learned_magics.add(magic);
+                        player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magic + ".name")), true);
                         learnedAny = true;
                     }
                 }
+            }
+            
+            if (learnedAny) {
+                vars.syncPlayerVariables(player);
+                player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_success"), true);
+                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
                 
-                if (learnedAny) {
-                    vars.syncPlayerVariables(player);
-                    player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_success"), true);
-                    player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
-                    
-                    // Consume scroll on success
-                    stack.shrink(1);
-                    return InteractionResultHolder.consume(stack);
-                }
+                // Consume scroll on success (even partial)
+                stack.shrink(1);
+                return InteractionResultHolder.consume(stack);
             } else {
-                // Failure
+                // If NO magics were learned (all failed roll), treat as total failure
                 player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_failed"), true);
                 player.playNotifySound(SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
                 

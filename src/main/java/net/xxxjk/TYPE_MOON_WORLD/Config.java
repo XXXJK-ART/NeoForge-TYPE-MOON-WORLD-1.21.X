@@ -37,7 +37,7 @@ public class Config {
     // a list of strings that are treated as resource locations for items
     private static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
             .comment("A list of items to log on common setup.")
-            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
+            .defineList("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 

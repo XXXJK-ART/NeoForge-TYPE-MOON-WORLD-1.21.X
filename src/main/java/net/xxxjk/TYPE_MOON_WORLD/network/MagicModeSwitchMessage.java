@@ -80,6 +80,54 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                             player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
                             vars.syncPlayerVariables(player);
                         }
+                    } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
+                        // Switch between 6 modes (0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random)
+                        int maxModes = 6;
+                        if ("jewel_magic_release".equals(currentMagic)) {
+                            maxModes = 5; // Release has no Random mode
+                        }
+                        
+                        if (message.targetMode >= 0 && message.targetMode < maxModes) {
+                            // Validate if learned
+                            if (isJewelModeUnlocked(vars, message.targetMode, currentMagic)) {
+                                vars.jewel_magic_mode = message.targetMode;
+                            } else {
+                                // Magic not learned, do not switch
+                                // Optional: send feedback
+                                return;
+                            }
+                        } else {
+                            // Cycle logic: find next unlocked mode
+                            int current = vars.jewel_magic_mode;
+                            int nextMode = current;
+                            int attempts = 0;
+                            do {
+                                if (message.forward) {
+                                    nextMode = (nextMode + 1) % maxModes;
+                                } else {
+                                    nextMode = (nextMode - 1 + maxModes) % maxModes;
+                                }
+                                attempts++;
+                            } while (!isJewelModeUnlocked(vars, nextMode, currentMagic) && attempts < maxModes);
+                            
+                            if (isJewelModeUnlocked(vars, nextMode, currentMagic)) {
+                                vars.jewel_magic_mode = nextMode;
+                            }
+                        }
+                        
+                        // Send feedback
+                        String modeStr = "";
+                        switch(vars.jewel_magic_mode) {
+                            case 0: modeStr = "Ruby"; break;
+                            case 1: modeStr = "Sapphire"; break;
+                            case 2: modeStr = "Emerald"; break;
+                            case 3: modeStr = "Topaz"; break;
+                            case 4: modeStr = "Cyan"; break;
+                            case 5: modeStr = "Random"; break;
+                        }
+                        
+                        player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_JEWEL_MODE_CHANGE, modeStr), true);
+                        vars.syncPlayerVariables(player);
                     }
                 }
             }).exceptionally(e -> {
@@ -87,5 +135,29 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                 return null;
             });
         }
+    }
+    
+    private static boolean isJewelModeUnlocked(TypeMoonWorldModVariables.PlayerVariables vars, int mode, String magicType) {
+        if ("jewel_magic_shoot".equals(magicType)) {
+            switch (mode) {
+                case 0: return vars.learned_magics.contains("ruby_throw");
+                case 1: return vars.learned_magics.contains("sapphire_throw");
+                case 2: return vars.learned_magics.contains("emerald_use");
+                case 3: return vars.learned_magics.contains("topaz_throw");
+                case 4: return vars.learned_magics.contains("cyan_throw");
+                case 5: return true; // Random
+                default: return false;
+            }
+        } else if ("jewel_magic_release".equals(magicType)) {
+            switch (mode) {
+                case 0: return vars.learned_magics.contains("ruby_flame_sword");
+                case 1: return vars.learned_magics.contains("sapphire_winter_frost");
+                case 2: return vars.learned_magics.contains("emerald_winter_river");
+                case 3: return vars.learned_magics.contains("topaz_reinforcement");
+                case 4: return vars.learned_magics.contains("cyan_wind");
+                default: return false;
+            }
+        }
+        return true;
     }
 }

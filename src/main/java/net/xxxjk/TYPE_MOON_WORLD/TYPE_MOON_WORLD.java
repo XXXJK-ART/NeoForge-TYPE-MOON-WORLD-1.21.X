@@ -23,6 +23,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -82,6 +83,7 @@ public class TYPE_MOON_WORLD {
         ModBlocks.register(modEventBus);//添加方块
         ModBlockEntities.register(modEventBus);
         ModEntities.register(modEventBus);
+        ModMobEffects.register(modEventBus);
         
         TypeMoonWorldModMenus.REGISTRY.register(modEventBus);//添加菜单
 

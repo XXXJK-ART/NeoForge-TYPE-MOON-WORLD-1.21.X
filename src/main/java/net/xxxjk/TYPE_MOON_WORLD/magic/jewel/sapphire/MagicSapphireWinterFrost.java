@@ -29,6 +29,7 @@ import java.util.Map;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 
 public class MagicSapphireWinterFrost {
     public static void execute(Entity entity) {
@@ -196,7 +197,7 @@ public class MagicSapphireWinterFrost {
                 }
                 
             } else {
-                player.displayClientMessage(Component.literal("需要3个蓝宝石"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SAPPHIRE_WINTER_FROST_NEED_GEM), true);
             }
         }
     }

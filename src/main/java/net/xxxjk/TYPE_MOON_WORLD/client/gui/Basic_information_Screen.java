@@ -103,20 +103,33 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         drawStat(guiGraphics, "魔力回复:", Back_player_mana_egenerated_every_moment.execute(entity), startX, startY + spacing * 2);
         drawStat(guiGraphics, "回复间隔:", Back_player_restore_magic_moment.execute(entity), startX, startY + spacing * 3);
         
+        // Proficiency Stats (Removed)
+        // TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        
+        // int profY = startY + spacing * 5;
+        // guiGraphics.drawString(this.font, Component.literal("熟练度:"), startX, profY, 0xFF00E0E0, false);
+        
+        // drawStat(guiGraphics, "结构分析:", String.format("%.1f%%", vars.proficiency_structural_analysis), startX, profY + spacing);
+        // drawStat(guiGraphics, "投影魔术:", String.format("%.1f%%", vars.proficiency_projection), startX, profY + spacing * 2);
+        // drawStat(guiGraphics, "宝石(射击):", String.format("%.1f%%", vars.proficiency_jewel_magic_shoot), startX, profY + spacing * 3);
+        // drawStat(guiGraphics, "宝石(解放):", String.format("%.1f%%", vars.proficiency_jewel_magic_release), startX, profY + spacing * 4);
+        // drawStat(guiGraphics, "无限剑制:", String.format("%.1f%%", vars.proficiency_unlimited_blade_works), startX, profY + spacing * 5);
+        
         // Attributes Section
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        int attrY = startY + spacing * 5;
         
         Component baseLabel = Component.translatable("gui.typemoonworld.basic_info.base_attributes");
-        guiGraphics.drawString(this.font, baseLabel, startX, startY + spacing * 5, 0xFF00E0E0, false);
+        guiGraphics.drawString(this.font, baseLabel, startX, attrY, 0xFF00E0E0, false);
         
         Component baseAttr = buildBaseAttributes(vars);
-        guiGraphics.drawWordWrap(this.font, baseAttr, startX, startY + spacing * 6, 160, 0xFFCCCCCC);
+        guiGraphics.drawWordWrap(this.font, baseAttr, startX, attrY + spacing, 160, 0xFFCCCCCC);
         
         Component extraLabel = Component.translatable("gui.typemoonworld.basic_info.extra_attributes");
-        guiGraphics.drawString(this.font, extraLabel, startX, startY + spacing * 8, 0xFF00E0E0, false);
+        guiGraphics.drawString(this.font, extraLabel, startX, attrY + spacing * 3, 0xFF00E0E0, false);
         
         Component extraAttr = buildExtraAttributes(vars);
-        guiGraphics.drawWordWrap(this.font, extraAttr, startX, startY + spacing * 9, 160, 0xFFCCCCCC);
+        guiGraphics.drawWordWrap(this.font, extraAttr, startX, attrY + spacing * 4, 160, 0xFFCCCCCC);
     }
     
     private void drawStat(GuiGraphics gui, String label, String value, int x, int y) {

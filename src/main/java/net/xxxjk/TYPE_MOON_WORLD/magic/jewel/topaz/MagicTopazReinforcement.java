@@ -15,6 +15,9 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
+
+import java.util.List;
 
 public class MagicTopazReinforcement {
     public static void execute(Entity entity) {
@@ -67,7 +70,7 @@ public class MagicTopazReinforcement {
                 }
 
             } else {
-                player.displayClientMessage(Component.literal("需要3个黄宝石"), true);
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_TOPAZ_REINFORCEMENT_NEED_GEM), true);
             }
         }
     }

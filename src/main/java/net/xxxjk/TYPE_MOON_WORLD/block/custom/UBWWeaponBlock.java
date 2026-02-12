@@ -51,7 +51,7 @@ public class UBWWeaponBlock extends BaseEntityBlock {
     public static final BooleanProperty ROTATION_F = BooleanProperty.create("rot_f");
     public static final BooleanProperty ROTATION_G = BooleanProperty.create("rot_g");
 
-    private static final VoxelShape SHAPE = Block.box(4, 0, 4, 12, 16, 12);
+    private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
     public UBWWeaponBlock(Properties properties) {
         super(properties);

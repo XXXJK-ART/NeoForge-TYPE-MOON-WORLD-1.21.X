@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,9 +23,54 @@ import net.minecraft.world.item.ItemStack;
 @SuppressWarnings("null")
 public class RubyProjectileEntity extends ThrowableItemProjectile {
     public final List<Vec3> tracePos = new LinkedList<>();
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> GEM_TYPE = net.minecraft.network.syncher.SynchedEntityData.defineId(RubyProjectileEntity.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Float> VISUAL_SCALE = net.minecraft.network.syncher.SynchedEntityData.defineId(RubyProjectileEntity.class, net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Float> VISUAL_END_X = net.minecraft.network.syncher.SynchedEntityData.defineId(RubyProjectileEntity.class, net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Float> VISUAL_END_Y = net.minecraft.network.syncher.SynchedEntityData.defineId(RubyProjectileEntity.class, net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Float> VISUAL_END_Z = net.minecraft.network.syncher.SynchedEntityData.defineId(RubyProjectileEntity.class, net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> HAS_VISUAL_END = net.minecraft.network.syncher.SynchedEntityData.defineId(RubyProjectileEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
 
     public RubyProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
         super(type, level);
+    }
+    
+    @Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(GEM_TYPE, 0); // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Random/White
+        builder.define(VISUAL_SCALE, 1.0f);
+        builder.define(VISUAL_END_X, 0.0f);
+        builder.define(VISUAL_END_Y, 0.0f);
+        builder.define(VISUAL_END_Z, 0.0f);
+        builder.define(HAS_VISUAL_END, false);
+    }
+    
+    public void setVisualScale(float scale) {
+        this.entityData.set(VISUAL_SCALE, scale);
+    }
+    
+    public float getVisualScale() {
+        return this.entityData.get(VISUAL_SCALE);
+    }
+    
+    public void setVisualEnd(Vec3 end) {
+        this.entityData.set(VISUAL_END_X, (float)end.x);
+        this.entityData.set(VISUAL_END_Y, (float)end.y);
+        this.entityData.set(VISUAL_END_Z, (float)end.z);
+        this.entityData.set(HAS_VISUAL_END, true);
+    }
+    
+    public Vec3 getVisualEnd() {
+        if (!this.entityData.get(HAS_VISUAL_END)) return null;
+        return new Vec3(this.entityData.get(VISUAL_END_X), this.entityData.get(VISUAL_END_Y), this.entityData.get(VISUAL_END_Z));
+    }
+    
+    public void setGemType(int type) {
+        this.entityData.set(GEM_TYPE, type);
+    }
+    
+    public int getGemType() {
+        return this.entityData.get(GEM_TYPE);
     }
 
     public RubyProjectileEntity(Level level, LivingEntity shooter) {
@@ -41,14 +87,62 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
     }
 
     @Override
+    protected boolean canHitEntity(Entity entity) {
+        if (this.getGemType() == 99) return false; // Visual slash passes through entities
+        return super.canHitEntity(entity);
+    }
+
+    @Override
     protected void onHit(HitResult result) {
         super.onHit(result);
         if (!this.level().isClientSide) {
-            float multiplier = 1.0f;
+            // Visual Only Mode (Slash Effect)
+            if (this.getGemType() == 99) {
+                this.discard();
+                return;
+            }
+
+            // Check for Random Mode
+            boolean isRandomMode = false;
             ItemStack stack = this.getItem();
+            net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+            if (customData != null && customData.copyTag().getBoolean("IsRandomMode")) {
+                isRandomMode = true;
+            }
+
+            // Cyan Gemstone (Type 4) Logic - Only if NOT Random Mode
+            if (this.getGemType() == 4 && !isRandomMode) {
+                 float multiplier = 1.0f;
+                 if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
+                      multiplier = gemItem.getQuality().getEffectMultiplier();
+                 }
+                 
+                 if (customData != null) {
+                     net.minecraft.nbt.CompoundTag tag = customData.copyTag();
+                     if (tag.contains("ExplosionPowerMultiplier")) {
+                         multiplier *= tag.getFloat("ExplosionPowerMultiplier");
+                     }
+                 }
+
+                 net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity wind = new net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity(this.level(), this.getX(), this.getY(), this.getZ(), MagicConstants.CYAN_WIND_RADIUS * multiplier, MagicConstants.CYAN_WIND_DURATION, (this.getOwner() instanceof LivingEntity l) ? l : null);
+                 this.level().addFreshEntity(wind);
+                 this.discard();
+                 return;
+            }
+
+            float multiplier = 1.0f;
             if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
                  multiplier = gemItem.getQuality().getEffectMultiplier();
             }
+            
+            // Check for custom power multiplier
+            if (customData != null) {
+                net.minecraft.nbt.CompoundTag tag = customData.copyTag();
+                if (tag.contains("ExplosionPowerMultiplier")) {
+                    multiplier *= tag.getFloat("ExplosionPowerMultiplier");
+                }
+            }
+            
             float radius = MagicConstants.RUBY_EXPLOSION_RADIUS * multiplier;
 
             // 参数说明：source, x, y, z, radius, fire, interaction
@@ -73,22 +167,104 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
     }
     
     @Override
+    public void onSyncedDataUpdated(net.minecraft.network.syncher.EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (HAS_VISUAL_END.equals(key) && this.level().isClientSide) {
+             if (this.entityData.get(HAS_VISUAL_END)) {
+                // Update trace immediately when data arrives
+                tracePos.clear();
+                Vec3 start = this.position();
+                Vec3 end = getVisualEnd();
+                if (end != null) {
+                    int steps = 20;
+                    for (int i = 0; i <= steps; i++) {
+                        tracePos.add(start.lerp(end, (float)i / steps));
+                    }
+                }
+             }
+        }
+    }
+    
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        if (this.getGemType() == 99) {
+            // Always render visual slashes if within reasonable distance (e.g. 64 blocks = 4096 sqr)
+            // Or just return true if it's not too far (e.g. 256 blocks)
+            return distance < 65536.0D; // 256 blocks
+        }
+        return super.shouldRenderAtSqrDistance(distance);
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getBoundingBoxForCulling() {
+        if (this.getGemType() == 99 && this.entityData.get(HAS_VISUAL_END)) {
+            Vec3 end = getVisualEnd();
+            if (end != null) {
+                return this.getBoundingBox().minmax(new net.minecraft.world.phys.AABB(end, end).inflate(1.0));
+            }
+        }
+        return super.getBoundingBoxForCulling();
+    }
+
+    @Override
     public void tick() {
         super.tick();
         
+        // Cleanup visual entities
+        // Lasts for 2s (40 ticks) as requested
+        if (!this.level().isClientSide && this.getGemType() == 99 && this.tickCount > 40) {
+            this.discard();
+            return;
+        }
+        
         if (this.level().isClientSide) {
-            this.level().addParticle(ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            boolean isRandomMode = false;
+            ItemStack stack = this.getItem();
+            net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+            if (customData != null && customData.copyTag().getBoolean("IsRandomMode")) {
+                isRandomMode = true;
+            }
+
+            int type = getGemType();
+            // Default Ruby particles
+            if (type == 0) {
+                 this.level().addParticle(ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else if (type == 1) { // Sapphire
+                 this.level().addParticle(ParticleTypes.SNOWFLAKE, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else if (type == 2) { // Emerald
+                 this.level().addParticle(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else if (type == 3) { // Topaz
+                 this.level().addParticle(ParticleTypes.WAX_ON, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else if (type == 4) { // Cyan
+                 this.level().addParticle(ParticleTypes.CLOUD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else { // White
+                 this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            }
             
             Vec3 pos = position();
-            boolean addPos = true;
-            if (tracePos.size() > 0) {
-                Vec3 lastPos = tracePos.get(tracePos.size() - 1);
-                addPos = pos.distanceToSqr(lastPos) >= 0.01;
-            }
-            if (addPos) {
-                tracePos.add(pos);
-                if (tracePos.size() > 560) {
-                    tracePos.remove(0);
+            if (this.getGemType() == 99 && this.entityData.get(HAS_VISUAL_END)) {
+                // Static slash logic: Always keep the trace full between Start (Current Pos) and End
+                tracePos.clear();
+                Vec3 start = this.position();
+                Vec3 end = getVisualEnd();
+                int steps = 20;
+                for (int i = 0; i <= steps; i++) {
+                    tracePos.add(start.lerp(end, (float)i / steps));
+                }
+            } else {
+                boolean addPos = true;
+                if (!tracePos.isEmpty()) {
+                    Vec3 last = tracePos.get(tracePos.size() - 1);
+                    if (last.distanceToSqr(pos) < 0.05) {
+                        addPos = false;
+                    }
+                }
+                
+                if (addPos) {
+                    tracePos.add(pos);
+                    if (tracePos.size() > 560) {
+                        tracePos.remove(0);
+                    }
                 }
             }
         }
@@ -99,6 +275,16 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
              if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
                   multiplier = gemItem.getQuality().getEffectMultiplier();
              }
+             
+             // Check for custom power multiplier
+             net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+             if (customData != null) {
+                 net.minecraft.nbt.CompoundTag tag = customData.copyTag();
+                 if (tag.contains("ExplosionPowerMultiplier")) {
+                     multiplier *= tag.getFloat("ExplosionPowerMultiplier");
+                 }
+             }
+             
              float radius = MagicConstants.RUBY_EXPLOSION_RADIUS * multiplier;
 
              this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, true, Level.ExplosionInteraction.TNT);

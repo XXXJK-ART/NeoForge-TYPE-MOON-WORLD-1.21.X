@@ -386,9 +386,9 @@ public class ChantHandler {
                  if (target instanceof ServerPlayer p && (p.isCreative() || p.isSpectator())) continue;
                  
                  // Check density around THIS target
-                 // Range: 48 blocks (3 chunks diameter approx)
-                 double checkRadius = 48.0;
-                 AABB checkBox = target.getBoundingBox().inflate(checkRadius);
+                 // Range: 20 blocks (Increased from 15)
+                 double checkRadius = 20.0;
+                 // AABB checkBox = target.getBoundingBox().inflate(checkRadius);
                  
                  // Check placed blocks density
                  int swordCount = 0;
@@ -404,47 +404,56 @@ public class ChantHandler {
                      }
                  }
                  
-                 // Limit: 50 swords around player? Reduced from whatever default implied
-                 // Let's set a hard cap to reduce "rain" density
-                 if (swordCount < 20) { // Reduced from implicit higher value
-                     // Spawn some swords
-                     spawnPassiveSwords(player, target, 5); // Spawn batch of 5
+                 // Check if target is "Powerful"
+                 boolean isPowerful = target instanceof ServerPlayer || 
+                                      target.getMaxHealth() >= 50.0f || 
+                                      target instanceof net.minecraft.world.entity.boss.wither.WitherBoss;
+
+                 // Limit: Threshold 50 for Powerful, 10 for others
+                 int threshold = isPowerful ? 50 : 10;
+                 
+                 if (swordCount < threshold) { 
+                     // Spawn rain to refill
+                     // Powerful: 60-100 swords. Others: 3-5 swords.
+                     int minSpawn = isPowerful ? 60 : 3;
+                     int varSpawn = isPowerful ? 40 : 2;
+                     int toSpawn = minSpawn + player.getRandom().nextInt(varSpawn);
+                     
+                     double spawnRadius = 20.0;
+                     
+                     for (int i = 0; i < toSpawn; i++) {
+                        int delay = player.getRandom().nextInt(20); // Fast rain (1s)
+                        
+                        double r = player.getRandom().nextDouble() * spawnRadius;
+                        double theta = player.getRandom().nextDouble() * Math.PI * 2;
+                        double x = target.getX() + r * Math.cos(theta);
+                        double z = target.getZ() + r * Math.sin(theta);
+                        
+                        REFILL_QUEUES.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+                            .add(new RefillEntry(delay, new Vec3(x, target.getY(), z)));
+                     }
                  }
-             }
+            }
         }
     }
     
     private static void spawnPassiveSwords(ServerPlayer owner, LivingEntity target, int count) {
         if (target instanceof Player p && (p.isCreative() || p.isSpectator())) return;
         ServerLevel level = (ServerLevel) owner.level();
-        RandomSource random = level.getRandom();
+        TypeMoonWorldModVariables.PlayerVariables vars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         
         for (int i = 0; i < count; i++) {
-            // Random position around target
-            double r = 10.0 + random.nextDouble() * 30.0; // 10-40 blocks away
-            double angle = random.nextDouble() * 2.0 * Math.PI;
-            
-            double x = target.getX() + Math.cos(angle) * r;
-            double z = target.getZ() + Math.sin(angle) * r;
-            
-            BlockPos pos = new BlockPos((int)x, 100, (int)z); // Floor is 100
-            
-            if (level.getBlockState(pos).isAir()) {
-                 BlockState state = net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks.SWORD_BARREL_BLOCK.get().defaultBlockState()
-                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.FACING, net.minecraft.core.Direction.UP)
-                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.ROTATION_A, random.nextBoolean())
-                        .setValue(net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock.ROTATION_B, random.nextBoolean());
-                 
-                 level.setBlock(pos, state, 3);
-                 registerPlacedSword(owner.getUUID(), pos);
-            }
-        }
-        
-        // Spawn reduced falling swords (Rain)
-        // Previous logic had high density. We reduce it here.
-        // Only spawn if player is in UBW dimension
-        if (level.dimension() == ModDimensions.UBW_KEY && random.nextInt(10) == 0) { // 10% chance per tick per call
-             spawnVisualSwordAt(owner, target.getX(), target.getZ(), 20.0);
+             // Spawn falling sword projectile (Rain)
+             // Use spawnVisualSwordAt which creates a UBWProjectileEntity
+             // UBWProjectileEntity handles block placement on impact
+             
+             // Random position around target (Radius 15 to match check)
+             double r = level.getRandom().nextDouble() * 15.0;
+             double theta = level.getRandom().nextDouble() * Math.PI * 2;
+             double x = target.getX() + r * Math.cos(theta);
+             double z = target.getZ() + r * Math.sin(theta);
+             
+             spawnVisualSwordAt(owner, vars, new Vec3(x, target.getY(), z));
         }
     }
     
@@ -510,9 +519,8 @@ public class ChantHandler {
         
         List<ItemStack> weapons = new ArrayList<>();
         for (ItemStack stack : vars.analyzed_items) {
-            // Exclude Tsumukari Muramasa and Redsword
-            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem) continue;
-            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem) continue;
+            // Exclude Noble Phantasms from common sword rain
+            if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) continue;
             
             if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof TieredItem || stack.getItem() instanceof TridentItem) {
                 weapons.add(stack);
@@ -527,12 +535,14 @@ public class ChantHandler {
             
             // Adapt to terrain height
             int surfaceY = player.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int)x, (int)z);
-            double y = surfaceY + 12 + player.getRandom().nextDouble() * 5; 
+            // Spawn above target OR surface, whichever is higher (Ensure rain falls ON target)
+            double baseY = Math.max(surfaceY, targetPos.y);
+            double y = baseY + 12 + player.getRandom().nextDouble() * 5; 
 
             // Obstruction check (if spawn point is somehow obstructed, e.g. very high mountain cap or barrier)
             if (!player.level().getBlockState(net.minecraft.core.BlockPos.containing(x, y, z)).isAir()) {
                  // Try to find a safe spot upwards
-                 y = surfaceY + 20; 
+                 y = baseY + 20; 
             }
             
             UBWProjectileEntity projectile = new UBWProjectileEntity(player.level(), player, weapon);

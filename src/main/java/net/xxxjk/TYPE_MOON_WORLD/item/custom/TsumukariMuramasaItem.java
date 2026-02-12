@@ -33,7 +33,6 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import java.util.function.Consumer;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
@@ -41,7 +40,7 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.UseAnim;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 
-public class TsumukariMuramasaItem extends SwordItem implements GeoItem {
+public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePhantasmItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public TsumukariMuramasaItem(Properties properties) {
@@ -98,7 +97,8 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem {
     
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (context.getPlayer() != null && context.getPlayer().isCrouching()) {
+        Player player = context.getPlayer();
+        if (player != null && player.isCrouching()) {
             return InteractionResult.PASS;
         }
         Level level = context.getLevel();

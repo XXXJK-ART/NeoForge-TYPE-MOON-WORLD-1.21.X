@@ -2,9 +2,6 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -30,10 +27,6 @@ import java.util.List;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.server.level.ServerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
@@ -114,12 +107,14 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
 
                     Entity owner = this.getOwner();
                     if (owner instanceof ServerPlayer serverPlayer && this.level() instanceof ServerLevel serverLevel) {
-                        FakePlayer fakePlayer = new FakePlayer(serverLevel, new GameProfile(UUID.randomUUID(), "[UBW_Proxy]"));
+                        FakePlayer fakePlayer = new FakePlayer(serverLevel, new GameProfile(UUID.randomUUID(), "[UBW_Proxy]")) {
+                            @Override
+                            public float getAttackStrengthScale(float adjustTicks) {
+                                return 1.0F;
+                            }
+                        };
                         fakePlayer.setPos(this.getX(), this.getY(), this.getZ());
                         fakePlayer.setItemInHand(InteractionHand.MAIN_HAND, this.getItem());
-                        
-                        // Reset attack cooldown to ensure full damage
-                        fakePlayer.resetAttackStrengthTicker();
                         
                         // Attack
                         fakePlayer.attack(target);

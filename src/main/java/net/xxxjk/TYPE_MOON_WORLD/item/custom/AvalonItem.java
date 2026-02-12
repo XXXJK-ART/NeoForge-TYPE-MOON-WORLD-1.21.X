@@ -27,9 +27,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
-public class AvalonItem extends Item implements GeoItem {
+public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private static final long TICKS_FOR_SWORD_ATTRIBUTE = 24000; // 1 Game Day
 

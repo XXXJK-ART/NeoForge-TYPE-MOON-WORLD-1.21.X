@@ -98,7 +98,8 @@ public class TypeMoonWorldModVariables {
             
             clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
             clone.proficiency_projection = original.proficiency_projection;
-            clone.proficiency_jewel_magic = original.proficiency_jewel_magic;
+            clone.proficiency_jewel_magic_shoot = original.proficiency_jewel_magic_shoot;
+            clone.proficiency_jewel_magic_release = original.proficiency_jewel_magic_release;
             clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
             clone.proficiency_sword_barrel_full_open = original.proficiency_sword_barrel_full_open;
             
@@ -117,7 +118,8 @@ public class TypeMoonWorldModVariables {
                 clone.ubw_return_dimension = original.ubw_return_dimension;
                 
                 clone.sword_barrel_mode = original.sword_barrel_mode;
-                clone.is_sword_barrel_active = false; // Reset on death
+            clone.jewel_magic_mode = original.jewel_magic_mode;
+            clone.is_sword_barrel_active = false; // Reset on death
             } else {
                 // Reset UBW states on death
                 clone.is_chanting_ubw = false;
@@ -188,7 +190,8 @@ public class TypeMoonWorldModVariables {
         // Proficiency Data
         public double proficiency_structural_analysis = 0;
         public double proficiency_projection = 0;
-        public double proficiency_jewel_magic = 0;
+        public double proficiency_jewel_magic_shoot = 0;
+        public double proficiency_jewel_magic_release = 0;
         public double proficiency_unlimited_blade_works = 0;
         public double proficiency_sword_barrel_full_open = 0;
         
@@ -217,6 +220,7 @@ public class TypeMoonWorldModVariables {
 
         // Magic Modes
         public int sword_barrel_mode = 0; // 0: Default, 1: Mode 2, etc.
+        public int jewel_magic_mode = 0; // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz
         public boolean is_sword_barrel_active = false; // Toggle state for continuous fire
         public boolean ubw_broken_phantasm_enabled = false; // Toggle state for Broken Phantasm
 
@@ -241,7 +245,8 @@ public class TypeMoonWorldModVariables {
             
             nbt.putDouble("proficiency_structural_analysis", proficiency_structural_analysis);
             nbt.putDouble("proficiency_projection", proficiency_projection);
-            nbt.putDouble("proficiency_jewel_magic", proficiency_jewel_magic);
+            nbt.putDouble("proficiency_jewel_magic_shoot", proficiency_jewel_magic_shoot);
+            nbt.putDouble("proficiency_jewel_magic_release", proficiency_jewel_magic_release);
             nbt.putDouble("proficiency_unlimited_blade_works", proficiency_unlimited_blade_works);
             nbt.putDouble("proficiency_sword_barrel_full_open", proficiency_sword_barrel_full_open);
             
@@ -258,6 +263,7 @@ public class TypeMoonWorldModVariables {
             nbt.putString("ubw_return_dimension", ubw_return_dimension);
             
             nbt.putInt("sword_barrel_mode", sword_barrel_mode);
+            nbt.putInt("jewel_magic_mode", jewel_magic_mode);
             nbt.putBoolean("is_sword_barrel_active", is_sword_barrel_active);
             nbt.putBoolean("ubw_broken_phantasm_enabled", ubw_broken_phantasm_enabled);
 
@@ -314,7 +320,14 @@ public class TypeMoonWorldModVariables {
 
             proficiency_structural_analysis = nbt.getDouble("proficiency_structural_analysis");
             proficiency_projection = nbt.getDouble("proficiency_projection");
-            proficiency_jewel_magic = nbt.getDouble("proficiency_jewel_magic");
+            proficiency_jewel_magic_shoot = nbt.getDouble("proficiency_jewel_magic_shoot");
+            proficiency_jewel_magic_release = nbt.getDouble("proficiency_jewel_magic_release");
+            // Migrate old proficiency
+            if (nbt.contains("proficiency_jewel_magic")) {
+                double old = nbt.getDouble("proficiency_jewel_magic");
+                if (proficiency_jewel_magic_shoot == 0) proficiency_jewel_magic_shoot = old;
+                if (proficiency_jewel_magic_release == 0) proficiency_jewel_magic_release = old;
+            }
             proficiency_unlimited_blade_works = nbt.getDouble("proficiency_unlimited_blade_works");
             
             is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
@@ -330,6 +343,7 @@ public class TypeMoonWorldModVariables {
             if (nbt.contains("ubw_return_dimension")) ubw_return_dimension = nbt.getString("ubw_return_dimension");
             
             if (nbt.contains("sword_barrel_mode")) sword_barrel_mode = nbt.getInt("sword_barrel_mode");
+            if (nbt.contains("jewel_magic_mode")) jewel_magic_mode = nbt.getInt("jewel_magic_mode");
             if (nbt.contains("is_sword_barrel_active")) is_sword_barrel_active = nbt.getBoolean("is_sword_barrel_active");
             if (nbt.contains("ubw_broken_phantasm_enabled")) ubw_broken_phantasm_enabled = nbt.getBoolean("ubw_broken_phantasm_enabled");
             
@@ -385,6 +399,26 @@ public class TypeMoonWorldModVariables {
                 } else if (!this.has_unlimited_blade_works) {
                     // Ensure boolean is synced if already in list
                     this.has_unlimited_blade_works = true;
+                }
+            }
+
+            // Migrate Jewel Magics
+            boolean knowsOldJewelMagic = false;
+            String[] oldJewels = {"ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", 
+                                  "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement"};
+            for (String old : oldJewels) {
+                if (this.learned_magics.contains(old)) {
+                    knowsOldJewelMagic = true;
+                    break;
+                }
+            }
+            
+            if (knowsOldJewelMagic) {
+                if (!this.learned_magics.contains("jewel_magic_shoot")) {
+                    this.learned_magics.add("jewel_magic_shoot");
+                }
+                if (!this.learned_magics.contains("jewel_magic_release")) {
+                    this.learned_magics.add("jewel_magic_release");
                 }
             }
 
@@ -469,17 +503,19 @@ public class TypeMoonWorldModVariables {
         }
     }
 
-    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic, double unlimited_blade_works, double sword_barrel_full_open) implements CustomPacketPayload {
+    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic_shoot, double jewel_magic_release, double unlimited_blade_works, double sword_barrel_full_open) implements CustomPacketPayload {
         public static final Type<ProficiencySyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "proficiency_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
                 (RegistryFriendlyByteBuf buffer, ProficiencySyncMessage message) -> {
                     buffer.writeDouble(message.structural_analysis);
                     buffer.writeDouble(message.projection);
-                    buffer.writeDouble(message.jewel_magic);
+                    buffer.writeDouble(message.jewel_magic_shoot);
+                    buffer.writeDouble(message.jewel_magic_release);
                     buffer.writeDouble(message.unlimited_blade_works);
                     buffer.writeDouble(message.sword_barrel_full_open);
                 },
                 (RegistryFriendlyByteBuf buffer) -> new ProficiencySyncMessage(
+                        buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
@@ -489,7 +525,7 @@ public class TypeMoonWorldModVariables {
         );
 
         public ProficiencySyncMessage(PlayerVariables vars) {
-            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open);
+            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic_shoot, vars.proficiency_jewel_magic_release, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open);
         }
 
         @Override
@@ -503,7 +539,8 @@ public class TypeMoonWorldModVariables {
                     PlayerVariables vars = context.player().getData(PLAYER_VARIABLES);
                     vars.proficiency_structural_analysis = message.structural_analysis;
                     vars.proficiency_projection = message.projection;
-                    vars.proficiency_jewel_magic = message.jewel_magic;
+                    vars.proficiency_jewel_magic_shoot = message.jewel_magic_shoot;
+                    vars.proficiency_jewel_magic_release = message.jewel_magic_release;
                     vars.proficiency_unlimited_blade_works = message.unlimited_blade_works;
                     vars.proficiency_sword_barrel_full_open = message.sword_barrel_full_open;
                 });

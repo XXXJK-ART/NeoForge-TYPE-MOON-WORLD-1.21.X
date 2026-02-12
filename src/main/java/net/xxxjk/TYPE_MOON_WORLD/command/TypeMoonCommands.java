@@ -138,7 +138,8 @@ public class TypeMoonCommands {
             // Reset Proficiency
             vars.proficiency_structural_analysis = 0.0;
             vars.proficiency_projection = 0.0;
-            vars.proficiency_jewel_magic = 0.0;
+            vars.proficiency_jewel_magic_shoot = 0.0;
+            vars.proficiency_jewel_magic_release = 0.0;
             vars.proficiency_unlimited_blade_works = 0.0;
             
             // Reset Magics
@@ -180,14 +181,16 @@ public class TypeMoonCommands {
             // Max Proficiency
             vars.proficiency_structural_analysis = 100.0;
             vars.proficiency_projection = 100.0;
-            vars.proficiency_jewel_magic = 100.0;
+            vars.proficiency_jewel_magic_shoot = 100.0;
+            vars.proficiency_jewel_magic_release = 100.0;
             vars.proficiency_unlimited_blade_works = 100.0;
             vars.proficiency_sword_barrel_full_open = 100.0;
             
             // Learn All Magics
             String[] allMagics = {
-                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw",
-                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement",
+                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
+                "jewel_magic_shoot", "jewel_magic_release",
                 "projection", "structural_analysis", "broken_phantasm",
                 "unlimited_blade_works", "sword_barrel_full_open"
             };
@@ -312,8 +315,9 @@ public class TypeMoonCommands {
             
             // Add all known magics
             String[] allMagics = {
-                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw",
-                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement",
+                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
+                "jewel_magic_shoot", "jewel_magic_release",
                 "projection", "structural_analysis", "broken_phantasm",
                 "unlimited_blade_works", "sword_barrel_full_open"
             };
@@ -358,7 +362,10 @@ public class TypeMoonCommands {
             switch (type) {
                 case "structural_analysis": vars.proficiency_structural_analysis = value; break;
                 case "projection": vars.proficiency_projection = value; break;
-                case "jewel_magic": vars.proficiency_jewel_magic = value; break;
+                case "jewel_magic": 
+                    vars.proficiency_jewel_magic_shoot = value; 
+                    vars.proficiency_jewel_magic_release = value;
+                    break;
                 case "unlimited_blade_works": vars.proficiency_unlimited_blade_works = value; break;
             }
             

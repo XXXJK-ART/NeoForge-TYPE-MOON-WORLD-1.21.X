@@ -51,6 +51,10 @@ public class ModEntities {
             ENTITY_TYPES.register("sword_barrel_projectile", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("sword_barrel_projectile"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity>> CYAN_WIND_FIELD =
+            ENTITY_TYPES.register("cyan_wind_field", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity::new, MobCategory.MISC)
+                    .sized(4.0f, 2.0f).clientTrackingRange(10).updateInterval(2).build("cyan_wind_field"));
+
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }
