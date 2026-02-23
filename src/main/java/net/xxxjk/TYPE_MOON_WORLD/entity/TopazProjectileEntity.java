@@ -7,6 +7,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -89,14 +91,16 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
             Entity owner = this.getOwner();
             for (LivingEntity entity : entities) {
-                if (entity != owner) {
-                    entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration, 0));
-                    entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0));
-                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1));
-                    
-                    if (owner instanceof LivingEntity livingOwner) {
-                        EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
-                        if (entity instanceof net.minecraft.world.entity.Mob mob) {
+                if (entity == owner) continue;
+                if (entity instanceof Player player && player.isCreative()) continue;
+                entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration, 0));
+                entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0));
+                entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1));
+                
+                if (owner instanceof LivingEntity livingOwner) {
+                    EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
+                    if (!(livingOwner instanceof Player ownerPlayer && ownerPlayer.isCreative())) {
+                        if (entity instanceof Mob mob) {
                             mob.setTarget(livingOwner);
                         }
                     }

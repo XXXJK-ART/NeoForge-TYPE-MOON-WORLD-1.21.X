@@ -40,7 +40,7 @@ public class MagicSwordBarrelFullOpen {
     // Cooldown in ticks (e.g. 10 ticks = 0.5s)
     private static final int COOLDOWN = 10;
     // Mana cost per activation (continuous drain)
-    private static final double MANA_COST = 20.0;
+    private static final double MANA_COST = 30.0;
     
     // Clear Mode State
     // We can use a custom tag on player or just iterate per tick if simple
@@ -89,6 +89,8 @@ public class MagicSwordBarrelFullOpen {
             boolean isBP = player.getPersistentData().getBoolean("UBWBrokenPhantasmEnabled");
             isBP = !isBP;
             player.getPersistentData().putBoolean("UBWBrokenPhantasmEnabled", isBP);
+            vars.ubw_broken_phantasm_enabled = isBP;
+            vars.syncPlayerVariables(player);
             
             if (isBP) {
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_UBW_BROKEN_PHANTASM_ON), true);
@@ -174,6 +176,10 @@ public class MagicSwordBarrelFullOpen {
         double cost = MANA_COST;
         if (player.level().dimension() == ModDimensions.UBW_KEY) {
             cost = MANA_COST / 2.0;
+        }
+        // Broken Phantasm (Explosion Mode) has higher cost
+        if (player.getPersistentData().getBoolean("UBWBrokenPhantasmEnabled")) {
+            cost *= 2.0;
         }
 
         // Bypass mana cost if No Cooldown (usually implies unlimited mana too for testing?)

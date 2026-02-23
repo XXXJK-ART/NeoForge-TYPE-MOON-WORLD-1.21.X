@@ -223,6 +223,8 @@ public class TypeMoonWorldModVariables {
         public int jewel_magic_mode = 0; // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz
         public boolean is_sword_barrel_active = false; // Toggle state for continuous fire
         public boolean ubw_broken_phantasm_enabled = false; // Toggle state for Broken Phantasm
+        public int merlin_favor = 0;
+        public int merlin_talk_counter = 0;
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -266,6 +268,8 @@ public class TypeMoonWorldModVariables {
             nbt.putInt("jewel_magic_mode", jewel_magic_mode);
             nbt.putBoolean("is_sword_barrel_active", is_sword_barrel_active);
             nbt.putBoolean("ubw_broken_phantasm_enabled", ubw_broken_phantasm_enabled);
+            nbt.putInt("merlin_favor", merlin_favor);
+            nbt.putInt("merlin_talk_counter", merlin_talk_counter);
 
             net.minecraft.nbt.ListTag magicList = new net.minecraft.nbt.ListTag();
             for (String magic : selected_magics) {
@@ -346,6 +350,13 @@ public class TypeMoonWorldModVariables {
             if (nbt.contains("jewel_magic_mode")) jewel_magic_mode = nbt.getInt("jewel_magic_mode");
             if (nbt.contains("is_sword_barrel_active")) is_sword_barrel_active = nbt.getBoolean("is_sword_barrel_active");
             if (nbt.contains("ubw_broken_phantasm_enabled")) ubw_broken_phantasm_enabled = nbt.getBoolean("ubw_broken_phantasm_enabled");
+            if (nbt.contains("merlin_favor")) {
+                int favor = nbt.getInt("merlin_favor");
+                if (favor > 5) favor = 5;
+                if (favor < -5) favor = -5;
+                merlin_favor = favor;
+            }
+            if (nbt.contains("merlin_talk_counter")) merlin_talk_counter = nbt.getInt("merlin_talk_counter");
             
             selected_magics.clear();
             if (nbt.contains("selected_magics")) {

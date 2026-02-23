@@ -118,7 +118,7 @@ public class UBWWeaponBlock extends BaseEntityBlock {
         // Determine check range based on dimension
         double range = 20.0;
         if (level.dimension().location().equals(ModDimensions.UBW_KEY.location())) {
-            range = 36.0;
+            range = 30.0;
         }
         
         // Check every 20 ticks (1 second) to be more responsive

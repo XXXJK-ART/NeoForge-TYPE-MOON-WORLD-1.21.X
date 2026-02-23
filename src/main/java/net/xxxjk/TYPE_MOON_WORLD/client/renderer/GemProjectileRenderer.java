@@ -9,8 +9,12 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
@@ -51,6 +55,7 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
     }
 
     private void renderTrail(T entity, float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
+        Level level = entity.level();
         List<Vec3> trace;
         if (entity instanceof RubyProjectileEntity ruby) trace = ruby.tracePos;
         else if (entity instanceof SapphireProjectileEntity sapphire) trace = sapphire.tracePos;
@@ -59,13 +64,15 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
 
         if (trace.size() < 2) return;
 
-        // Use a glowing translucent render type which is more compatible with shaders
-        // Using beacon_beam texture
+        if (entity instanceof RubyProjectileEntity ruby && ruby.getGemType() == 99) {
+            NineLivesSlashRenderer.renderVisualSlash(entity, partialTicks, poseStack, buffer);
+            return;
+        }
+
         VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png")));
         
         // Determine color based on entity type
         float r = 1.0f, g = 1.0f, b = 1.0f;
-        boolean isVisualSlash = false;
         
         if (entity instanceof RubyProjectileEntity ruby) {
              int type = ruby.getGemType();
@@ -81,7 +88,6 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                  r = 0.0f; g = 1.0f; b = 1.0f;
              } else if (type == 99) { // Visual Slash (Nine Lives)
                  r = 1.0f; g = 1.0f; b = 1.0f;
-                 isVisualSlash = true;
              } else { // Random/White
                  r = 1.0f; g = 1.0f; b = 1.0f;
              }
@@ -108,12 +114,8 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         poseStack.translate(-currentPos.x, -currentPos.y, -currentPos.z);
         
         PoseStack.Pose pose = poseStack.last();
-        // Base width for visual slash scales with entity size (default 0.1f * scale)
-        // Normal projectiles stay at 0.3f
-        float baseWidth = isVisualSlash ? (0.1f * ((RubyProjectileEntity)entity).getVisualScale()) : 0.3f; 
-        int samplesPerSegment = 5; // Higher quality spline
-        // Dynamic texture repeat based on trail length to maintain consistent density
-        // 16.0f points per repeat (approx 1 repeat per 0.8 seconds of trail)
+        float baseWidth = 0.3f; 
+        int samplesPerSegment = 5; 
         float textureRepeat = Math.max(1.0f, points.size() / 16.0f);
 
         for (int i = 0; i < points.size() - 1; i++) {
@@ -140,10 +142,10 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                 float progress1 = globalIndex1 / totalPoints;
                 float progress2 = globalIndex2 / totalPoints;
 
-                float width1 = isVisualSlash ? baseWidth : getWidth(baseWidth, progress1);
-                float width2 = isVisualSlash ? baseWidth : getWidth(baseWidth, progress2);
-                float alpha1 = isVisualSlash ? 1.0f : getAlpha(progress1);
-                float alpha2 = isVisualSlash ? 1.0f : getAlpha(progress2);
+                float width1 = getWidth(baseWidth, progress1);
+                float width2 = getWidth(baseWidth, progress2);
+                float alpha1 = getAlpha(progress1);
+                float alpha2 = getAlpha(progress2);
                 
                 // UV mapping: Tile based on progress
                 // U goes from 0 to textureRepeat
@@ -176,7 +178,7 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                 // If type is 0 (Ruby), r/g/b is Red.
                 // So we should NOT add rainbow override.
 
-                drawBillboardSegment(pose, vertexConsumer, start, end, camPos, width1, width2, alpha1, alpha2, u1, u2, r1, g1, b1, r2, g2, b2);
+                drawBillboardSegment(level, pose, vertexConsumer, start, end, camPos, width1, width2, alpha1, alpha2, u1, u2, r1, g1, b1, r2, g2, b2);
             }
         }
         
@@ -200,12 +202,21 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         return base * (0.2f + 0.8f * (float)Math.sqrt(progress));
     }
 
-    // Alpha Function: Quadratic fade
     private float getAlpha(float progress) {
-        return progress * progress;
+        return 0.2f + 0.3f * progress * progress;
     }
 
-    private void drawBillboardSegment(PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 camPos, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
+    private float getVisualWidth(float base, float progress) {
+        float s = Mth.sin((float)Math.PI * progress);
+        return base * (0.4f + 0.6f * s);
+    }
+
+    private float getVisualAlpha(float progress) {
+        float s = Mth.sin((float)Math.PI * progress);
+        return 0.6f + 0.4f * s;
+    }
+
+    private void drawBillboardSegment(Level level, PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 camPos, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
         Vec3 dir = end.subtract(start);
         if (dir.lengthSqr() < 0.000001) return;
         
@@ -231,19 +242,29 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         // U coordinates: Tiled based on input
         // V coordinates: 0 to 1 across the width
         
-        vertex(pose, consumer, v0, r1, g1, b1, alpha1, u1, 0);
-        vertex(pose, consumer, v2, r2, g2, b2, alpha2, u2, 0);
-        vertex(pose, consumer, v3, r2, g2, b2, alpha2, u2, 1);
-        vertex(pose, consumer, v1, r1, g1, b1, alpha1, u1, 1);
+        int lightStart = LightTexture.FULL_BRIGHT;
+        int lightEnd = LightTexture.FULL_BRIGHT;
+        
+        vertex(pose, consumer, v0, r1, g1, b1, alpha1, u1, 0, lightStart);
+        vertex(pose, consumer, v2, r2, g2, b2, alpha2, u2, 0, lightEnd);
+        vertex(pose, consumer, v3, r2, g2, b2, alpha2, u2, 1, lightEnd);
+        vertex(pose, consumer, v1, r1, g1, b1, alpha1, u1, 1, lightStart);
     }
 
-    private void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 pos, float r, float g, float b, float a, float u, float v) {
+    private void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 pos, float r, float g, float b, float a, float u, float v, int packedLight) {
         consumer.addVertex(pose, (float)pos.x, (float)pos.y, (float)pos.z)
                 .setColor(r, g, b, a)
                 .setUv(u, v)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(15728880) // Full bright
+                .setLight(packedLight)
                 .setNormal(pose, 0, 1, 0);
+    }
+    
+    private int packedLight(Level level, Vec3 pos) {
+        BlockPos bp = BlockPos.containing(pos);
+        int block = level.getBrightness(LightLayer.BLOCK, bp);
+        int sky = level.getBrightness(LightLayer.SKY, bp);
+        return LightTexture.pack(block, sky);
     }
 
     @Override

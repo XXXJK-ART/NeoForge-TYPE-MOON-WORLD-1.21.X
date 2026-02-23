@@ -88,6 +88,7 @@ public class TypeMoonWorldClientEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.RYOUGI_SHIKI.get(), RyougiShikiRenderer::new);
+        event.registerEntityRenderer(ModEntities.MERLIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer::new);
         event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer::new);
         

@@ -66,6 +66,10 @@
   "item.typemoonworld.avalon": "Avalon",
   "item.typemoonworld.redsword": "Muramasa (Blade)",
   "block.typemoonworld.redswordblock": "Muramasa (Blade Block)",
+  "item.typemoonworld.excalibur": "Excalibur (Sword of Promised Victory)",
+  "item.typemoonworld.excalibur.desc": "EX-rank, Anti-Fortress Noble Phantasm. A holy sword forged in Avalon that converts the wielder’s mana into light and releases it as a beam. True Name: Sword of Promised Victory.",
+  "item.typemoonworld.excalibur2": "Excalibur (Golden Sword of Certain Victory)",
+  "item.typemoonworld.excalibur2.desc": "B (cond. A+) Anti-Unit Noble Phantasm. The selection-of-kings ceremonial sword Caliburn. When wielded by a rightful king, it manifests power befitting a holy sword; however, its blade cannot endure massive mana and risks collapse upon True Name release.",
   
   "key.categories.typemoonworld": "TYPE MOON WORLD",
   
@@ -283,6 +287,8 @@
   "attribute.typemoonworld.sword": "Sword",
   "gui.typemoonworld.projection.title": "Projection Preset",
   "item.typemoonworld.ryougi_shiki_spawn_egg": "Ryougi Shiki Spawn Egg",
+  "entity.typemoonworld.merlin": "Merlin",
+  "item.typemoonworld.merlin_spawn_egg": "Merlin Spawn Egg",
   "entity.typemoonworld.ryougi_shiki.speech.crowded": "§7[Ryougi Shiki] Crowded...",
   "entity.typemoonworld.ryougi_shiki.speech.kill_creative": "§c[Ryougi Shiki] §4Everything that exists has a flaw.",
   "entity.typemoonworld.ryougi_shiki.speech.betrayed": "§c[Ryougi Shiki] ...I see.",

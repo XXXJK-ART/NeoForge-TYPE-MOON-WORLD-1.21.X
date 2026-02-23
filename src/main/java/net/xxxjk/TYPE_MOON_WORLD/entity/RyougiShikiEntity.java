@@ -84,6 +84,14 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
         this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, -1.0F);
     }
 
+    public int getFriendshipLevel() {
+        return this.entityData.get(FRIENDSHIP_LEVEL);
+    }
+
+    public void setFriendshipLevel(int value) {
+        this.entityData.set(FRIENDSHIP_LEVEL, value);
+    }
+
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
         // Cat-like reflexes: Immune to fall damage
@@ -1337,8 +1345,8 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                          }
                      }
                      // Kill Entities
-                     AABB box = this.getBoundingBox().inflate(1.5);
-                     List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, box, e -> e != this && e.isAlive());
+                    AABB box = this.getBoundingBox().inflate(1.5);
+                    List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, box, e -> e != this && e.isAlive() && (!(e instanceof Player p) || !p.isCreative()));
                      for (LivingEntity e : targets) {
                          handleMysticEyesEffect(e, true); // Boosted effect (Instant Kill likely)
                      }

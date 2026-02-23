@@ -13,6 +13,11 @@ import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+
 import java.util.function.Consumer;
 
 public class TempleStoneSwordAxeItem extends SwordItem implements GeoItem, NoblePhantasmItem {
@@ -44,6 +49,12 @@ public class TempleStoneSwordAxeItem extends SwordItem implements GeoItem, Noble
     private PlayState predicate(AnimationState<TempleStoneSwordAxeItem> event) {
         event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.model.new"));
         return PlayState.CONTINUE;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, java.util.List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        tooltip.add(Component.translatable("item.typemoonworld.temple_stone_sword_axe.desc").withStyle(net.minecraft.ChatFormatting.GOLD));
     }
 
     @Override

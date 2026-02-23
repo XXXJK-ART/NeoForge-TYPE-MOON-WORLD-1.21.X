@@ -19,6 +19,10 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import java.util.function.Consumer;
 
 import net.minecraft.core.component.DataComponents;
@@ -115,6 +119,12 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
     private PlayState predicate(AnimationState<AvalonItem> event) {
         event.getController().setAnimation(RawAnimation.begin().thenLoop("animation.model.new"));
         return PlayState.CONTINUE;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, java.util.List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        tooltip.add(Component.translatable("item.typemoonworld.avalon.desc").withStyle(net.minecraft.ChatFormatting.GOLD));
     }
 
     @Override

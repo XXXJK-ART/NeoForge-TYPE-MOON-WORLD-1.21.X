@@ -138,6 +138,7 @@ public class TYPE_MOON_WORLD {
         addNetworkMessage(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
         addNetworkMessage(MagicModeSwitchMessage.TYPE, MagicModeSwitchMessage.STREAM_CODEC, MagicModeSwitchMessage::handleData);
         addNetworkMessage(SwitchMagicMessage.TYPE, SwitchMagicMessage.STREAM_CODEC, SwitchMagicMessage::handleData);
+        // Removed Excalibur beam start message registration (unused)
 
         final PayloadRegistrar registrar = event.registrar(MOD_ID);
         MESSAGES.forEach((id, networkMessage) -> registrar.playBidirectional(id, ((NetworkMessage) networkMessage).reader(),

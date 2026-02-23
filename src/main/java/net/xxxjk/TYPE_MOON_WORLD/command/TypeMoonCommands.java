@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -111,6 +112,21 @@ public class TypeMoonCommands {
                     .then(Commands.argument("value", DoubleArgumentType.doubleArg(1.0))
                         .executes(ctx -> setShikiHealth(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
             )
+            // King Qualification (Advancement)
+            .then(Commands.literal("king")
+                .then(Commands.literal("grant")
+                    .executes(TypeMoonCommands::grantKing))
+                .then(Commands.literal("revoke")
+                    .executes(TypeMoonCommands::revokeKing))
+            )
+            .then(Commands.literal("favor")
+                .then(Commands.literal("merlin")
+                    .then(Commands.argument("value", IntegerArgumentType.integer(-5, 5))
+                        .executes(ctx -> setMerlinFavor(ctx, IntegerArgumentType.getInteger(ctx, "value")))))
+                .then(Commands.literal("shiki")
+                    .then(Commands.argument("value", IntegerArgumentType.integer(-5, 5))
+                        .executes(ctx -> setShikiFavor(ctx, IntegerArgumentType.getInteger(ctx, "value")))))
+            )
         );
     }
 
@@ -153,6 +169,48 @@ public class TypeMoonCommands {
             ctx.getSource().sendSuccess(() -> Component.literal("Player stats and skills have been reset."), true);
             return 1;
         } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int grantKing(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "king_qualification");
+            net.minecraft.advancements.AdvancementHolder holder = player.server.getAdvancements().get(id);
+            if (holder == null) {
+                ctx.getSource().sendFailure(Component.literal("Advancement not found: " + id));
+                return 0;
+            }
+            net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+            for (String criterion : progress.getRemainingCriteria()) {
+                player.getAdvancements().award(holder, criterion);
+            }
+            ctx.getSource().sendSuccess(() -> Component.literal("Granted advancement: 王之资格"), true);
+            return 1;
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    private static int revokeKing(CommandContext<CommandSourceStack> ctx) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "king_qualification");
+            net.minecraft.advancements.AdvancementHolder holder = player.server.getAdvancements().get(id);
+            if (holder == null) {
+                ctx.getSource().sendFailure(Component.literal("Advancement not found: " + id));
+                return 0;
+            }
+            net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+            for (String criterion : progress.getCompletedCriteria()) {
+                player.getAdvancements().revoke(holder, criterion);
+            }
+            ctx.getSource().sendSuccess(() -> Component.literal("Revoked advancement: 王之资格"), true);
+            return 1;
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));
             return 0;
         }
     }
@@ -409,6 +467,44 @@ public class TypeMoonCommands {
             vars.syncPlayerVariables(player);
             final double finalValue = value;
             ctx.getSource().sendSuccess(() -> Component.literal("Set Max Mana to " + finalValue), true);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int setShikiFavor(CommandContext<CommandSourceStack> ctx, int value) {
+        try {
+            ServerLevel level = ctx.getSource().getLevel();
+            int count = 0;
+            for (Entity entity : level.getAllEntities()) {
+                if (entity instanceof RyougiShikiEntity shiki) {
+                    if (value < -5) value = -5;
+                    if (value > 5) value = 5;
+                    int current = shiki.getFriendshipLevel();
+                    shiki.setFriendshipLevel(value);
+                    count++;
+                }
+            }
+            final int finalValue = value;
+            final int finalCount = count;
+            ctx.getSource().sendSuccess(() -> Component.literal("已将 " + finalCount + " 个两仪式的好感度设置为 " + finalValue), true);
+            return count;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int setMerlinFavor(CommandContext<CommandSourceStack> ctx, int value) {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (value < -5) value = -5;
+            if (value > 5) value = 5;
+            vars.merlin_favor = value;
+            vars.syncPlayerVariables(player);
+            final int finalValue = value;
+            ctx.getSource().sendSuccess(() -> Component.literal("已将梅林好感度设置为 " + finalValue), true);
             return 1;
         } catch (Exception e) {
             return 0;

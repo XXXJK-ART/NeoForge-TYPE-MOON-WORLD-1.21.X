@@ -368,7 +368,6 @@ public class ChantHandler {
     
     // Helper for random sword generation (Passive)
     // Reduce density/count for "Sword Rain" reduction request
-    // "减小所有的无限剑制内的剑雨（不包括层写）"
     // This method handles the ambient "refill" of swords.
     private static void checkAndRefillSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
         // Only run this logic on the UBW owner/caster to avoid duplicate spawning
@@ -379,15 +378,15 @@ public class ChantHandler {
              // Using getEntities() on the level is more comprehensive
              Iterable<Entity> allEntities = player.getServer().getLevel(ModDimensions.UBW_KEY).getEntities().getAll();
              
-             for (Entity entity : allEntities) {
-                 if (!(entity instanceof LivingEntity target)) continue;
-                 if (!target.isAlive()) continue;
-                 // Skip if target is Creative Player
-                 if (target instanceof ServerPlayer p && (p.isCreative() || p.isSpectator())) continue;
-                 
-                 // Check density around THIS target
-                 // Range: 20 blocks (Increased from 15)
-                 double checkRadius = 20.0;
+            for (Entity entity : allEntities) {
+                if (!(entity instanceof LivingEntity target)) continue;
+                if (!target.isAlive()) continue;
+                // Skip if target is Spectator Player
+                if (target instanceof ServerPlayer p && p.isSpectator()) continue;
+                
+                // Check density around THIS target
+                // Range: 30 blocks in UBW
+                double checkRadius = 30.0;
                  // AABB checkBox = target.getBoundingBox().inflate(checkRadius);
                  
                  // Check placed blocks density
@@ -404,22 +403,22 @@ public class ChantHandler {
                      }
                  }
                  
-                 // Check if target is "Powerful"
+                // Check if target is "Powerful"
                  boolean isPowerful = target instanceof ServerPlayer || 
                                       target.getMaxHealth() >= 50.0f || 
                                       target instanceof net.minecraft.world.entity.boss.wither.WitherBoss;
 
-                 // Limit: Threshold 50 for Powerful, 10 for others
-                 int threshold = isPowerful ? 50 : 10;
+                // Limit: Threshold 60 for Powerful, 20 for others
+                int threshold = isPowerful ? 60 : 20;
                  
-                 if (swordCount < threshold) { 
-                     // Spawn rain to refill
-                     // Powerful: 60-100 swords. Others: 3-5 swords.
-                     int minSpawn = isPowerful ? 60 : 3;
-                     int varSpawn = isPowerful ? 40 : 2;
+                if (swordCount < threshold) { 
+                    // Spawn rain to refill
+                    // Powerful: 80-120 swords. Others: 20-30 swords.
+                    int minSpawn = isPowerful ? 80 : 20;
+                    int varSpawn = isPowerful ? 40 : 10;
                      int toSpawn = minSpawn + player.getRandom().nextInt(varSpawn);
                      
-                     double spawnRadius = 20.0;
+                    double spawnRadius = 30.0;
                      
                      for (int i = 0; i < toSpawn; i++) {
                         int delay = player.getRandom().nextInt(20); // Fast rain (1s)

@@ -13,6 +13,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 
 @SuppressWarnings("null")
 public class ModEntities {
@@ -46,6 +47,10 @@ public class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>> RYOUGI_SHIKI =
             ENTITY_TYPES.register("ryougi_shiki", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity::new, MobCategory.CREATURE)
                     .sized(0.6f, 1.8f).build("ryougi_shiki"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MerlinEntity>> MERLIN =
+            ENTITY_TYPES.register("merlin", () -> EntityType.Builder.<MerlinEntity>of(MerlinEntity::new, MobCategory.CREATURE)
+                    .sized(0.6f, 1.8f).build("merlin"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>> SWORD_BARREL_PROJECTILE =
             ENTITY_TYPES.register("sword_barrel_projectile", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity::new, MobCategory.MISC)

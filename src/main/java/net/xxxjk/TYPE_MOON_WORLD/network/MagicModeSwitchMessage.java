@@ -42,6 +42,7 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                             if (message.targetMode == 3) {
                                 // Toggle Broken Phantasm (Explosion)
                                 vars.ubw_broken_phantasm_enabled = !vars.ubw_broken_phantasm_enabled;
+                                player.getPersistentData().putBoolean("UBWBrokenPhantasmEnabled", vars.ubw_broken_phantasm_enabled);
                                 
                                 if (vars.ubw_broken_phantasm_enabled) {
                                     player.displayClientMessage(Component.literal("Broken Phantasm Mode: ON"), true);

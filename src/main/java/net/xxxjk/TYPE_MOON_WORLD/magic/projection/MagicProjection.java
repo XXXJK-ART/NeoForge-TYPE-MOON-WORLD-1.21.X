@@ -112,12 +112,7 @@ public class MagicProjection {
                 // Add Glint
                 projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
                 
-                // Special Effects for Temple Stone Sword Axe (Nine Lives)
-                if (projected.getItem() instanceof TempleStoneSwordAxeItem) {
-                    player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
-                    player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2)); // Strength III (to be powerful)
-                    player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1)); // Speed II
-                }
+                // Special Effects moved to Structural Analysis when used on projected Temple Stone Axe-Sword
 
                 player.setItemInHand(handToUse, projected);
                 vars.syncPlayerVariables(player);

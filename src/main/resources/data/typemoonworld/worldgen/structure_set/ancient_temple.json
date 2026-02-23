@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "typemoonworld:ancient_temple",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 64,
+    "separation": 32,
+    "salt": 99887766
+  }
+}

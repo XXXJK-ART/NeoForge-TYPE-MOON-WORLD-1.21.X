@@ -119,13 +119,14 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                         // Attack
                         fakePlayer.attack(target);
                         
-                        // Restore Aggro/Credit to real player
                         if (target instanceof LivingEntity livingTarget) {
                             livingTarget.setLastHurtByMob(serverPlayer);
-                            if (livingTarget instanceof Mob mob) {
-                                mob.setTarget(serverPlayer);
+                            if (!serverPlayer.isCreative()) {
+                                if (livingTarget instanceof Mob mob) {
+                                    mob.setTarget(serverPlayer);
+                                }
+                                EntityUtils.triggerSwarmAnger(this.level(), serverPlayer, livingTarget);
                             }
-                            EntityUtils.triggerSwarmAnger(this.level(), serverPlayer, livingTarget);
                         }
                         
                         // Cleanup
@@ -166,23 +167,6 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                 }
 
                 BlockPos placePos = hitPos.relative(blockHit.getDirection());
-                
-                // Check nearby entities before placing
-                // If no living entities within range, discard instead of placing
-                double range = 20.0;
-                if (this.level().dimension().location().equals(ModDimensions.UBW_KEY.location())) {
-                    range = 36.0;
-                }
-                
-                AABB checkArea = new AABB(placePos).inflate(range);
-                List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(LivingEntity.class, checkArea);
-                // Filter out owner
-                nearbyEntities.removeIf(e -> e.equals(this.getOwner()));
-                
-                if (nearbyEntities.isEmpty()) {
-                     this.discard();
-                     return;
-                }
                 
                 // Check if placeable (Air or replaceable)
                 BlockState placeState = this.level().getBlockState(placePos);
