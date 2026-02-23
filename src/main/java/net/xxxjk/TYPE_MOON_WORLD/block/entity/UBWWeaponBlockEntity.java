@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class UBWWeaponBlockEntity extends BlockEntity {
     private ItemStack storedItem = ItemStack.EMPTY;
+    private long spawnTime = 0L;
 
     public UBWWeaponBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), pos, blockState);
@@ -23,6 +24,9 @@ public class UBWWeaponBlockEntity extends BlockEntity {
 
     public void setStoredItem(ItemStack itemStack) {
         this.storedItem = itemStack;
+        if (this.level != null && this.spawnTime == 0L) {
+            this.spawnTime = this.level.getGameTime();
+        }
         this.setChanged();
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
@@ -37,6 +41,11 @@ public class UBWWeaponBlockEntity extends BlockEntity {
         } else {
             this.storedItem = ItemStack.EMPTY;
         }
+        if (tag.contains("SpawnTime")) {
+            this.spawnTime = tag.getLong("SpawnTime");
+        } else {
+            this.spawnTime = 0L;
+        }
     }
 
     @Override
@@ -45,6 +54,11 @@ public class UBWWeaponBlockEntity extends BlockEntity {
         if (!this.storedItem.isEmpty()) {
             tag.put("StoredItem", this.storedItem.save(registries));
         }
+        tag.putLong("SpawnTime", this.spawnTime);
+    }
+
+    public long getSpawnTime() {
+        return spawnTime;
     }
 
     @Override

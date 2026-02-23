@@ -137,15 +137,15 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
                 serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, this.getX(), this.getY(), this.getZ(), 50, 3.0, 3.0, 3.0, 0.1);
             }
 
-            // Apply Debuff
             AABB aabb = new AABB(center).inflate(radius);
             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
             for (LivingEntity entity : entities) {
-                if (entity != owner) {
-                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MagicConstants.SAPPHIRE_DEBUFF_DURATION, 1));
-                    if (owner instanceof LivingEntity livingOwner) {
-                        EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
-                        // Also set target since addEffect doesn't
+                if (entity == owner) continue;
+                if (entity instanceof net.minecraft.world.entity.player.Player player && player.isCreative()) continue;
+                entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MagicConstants.SAPPHIRE_DEBUFF_DURATION, 1));
+                if (owner instanceof LivingEntity livingOwner) {
+                    EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
+                    if (!(livingOwner instanceof net.minecraft.world.entity.player.Player ownerPlayer && ownerPlayer.isCreative())) {
                         if (entity instanceof net.minecraft.world.entity.Mob mob) {
                             mob.setTarget(livingOwner);
                         }

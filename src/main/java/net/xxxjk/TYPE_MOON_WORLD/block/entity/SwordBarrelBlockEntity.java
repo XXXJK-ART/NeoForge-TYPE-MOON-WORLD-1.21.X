@@ -16,6 +16,7 @@ public class SwordBarrelBlockEntity extends BlockEntity {
     // Store precise rotation for "侧着扎在方块上"
     private float customPitch = 0f;
     private float customYaw = 0f;
+    private long spawnTime = 0L;
 
     public SwordBarrelBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), pos, blockState);
@@ -27,6 +28,9 @@ public class SwordBarrelBlockEntity extends BlockEntity {
 
     public void setStoredItem(ItemStack itemStack) {
         this.storedItem = itemStack;
+        if (this.level != null && this.spawnTime == 0L) {
+            this.spawnTime = this.level.getGameTime();
+        }
         this.setChanged();
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
@@ -50,6 +54,10 @@ public class SwordBarrelBlockEntity extends BlockEntity {
         return customYaw;
     }
 
+    public long getSpawnTime() {
+        return spawnTime;
+    }
+
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
@@ -64,6 +72,11 @@ public class SwordBarrelBlockEntity extends BlockEntity {
         if (tag.contains("CustomYaw")) {
             this.customYaw = tag.getFloat("CustomYaw");
         }
+        if (tag.contains("SpawnTime")) {
+            this.spawnTime = tag.getLong("SpawnTime");
+        } else {
+            this.spawnTime = 0L;
+        }
     }
 
     @Override
@@ -74,6 +87,7 @@ public class SwordBarrelBlockEntity extends BlockEntity {
         }
         tag.putFloat("CustomPitch", this.customPitch);
         tag.putFloat("CustomYaw", this.customYaw);
+        tag.putLong("SpawnTime", this.spawnTime);
     }
 
     @Override

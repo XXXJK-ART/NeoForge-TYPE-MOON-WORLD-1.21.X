@@ -12,8 +12,15 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.*;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
+import net.minecraft.client.gui.Gui;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEventSubscriber {
@@ -56,13 +63,24 @@ public class ClientModEventSubscriber {
                 return this.renderer;
             }
         }, ModItems.TSUMUKARI_MURAMASA.get());
+        
+        event.registerMobEffect(new IClientMobEffectExtensions() {
+            private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/mob_effect/nine_lives.jpg");
+            @Override
+            public boolean renderInventoryIcon(MobEffectInstance instance, EffectRenderingInventoryScreen<?> screen, GuiGraphics guiGraphics, int x, int y, int blitOffset) {
+                guiGraphics.blit(ICON, x - 1, y + 6, 0, 0, 18, 18, 18, 18);
+                return true;
+            }
+            @Override
+            public boolean renderGuiIcon(MobEffectInstance instance, Gui gui, GuiGraphics guiGraphics, int x, int y, float z, float alpha) {
+                guiGraphics.blit(ICON, x + 3, y + 2, 0, 0, 18, 18, 18, 18);
+                return true;
+            }
+        }, ModMobEffects.NINE_LIVES.get());
     }
     
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.BROKEN_PHANTASM_PROJECTILE.get(), BrokenPhantasmRenderer::new);
         
         event.registerEntityRenderer(ModEntities.UBW_PROJECTILE.get(), UBWProjectileRenderer::new);

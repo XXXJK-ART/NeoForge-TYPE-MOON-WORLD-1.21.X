@@ -14,6 +14,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.platform.GlStateManager;
 
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 
 import net.minecraft.network.chat.Component;
 
@@ -93,6 +94,7 @@ public class Magic_display_Overlay {
         int iconY = barY - 3; 
         
         event.getGuiGraphics().blit(ResourceLocation.parse("typemoonworld:textures/screens/mana.png"), iconX, iconY, 0, 0, 16, 16, 16, 16);
+        
 
         // --- Magic Name Display ---
         if (vars.is_magic_circuit_open) {

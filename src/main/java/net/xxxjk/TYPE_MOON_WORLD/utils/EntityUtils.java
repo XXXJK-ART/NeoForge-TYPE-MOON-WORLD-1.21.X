@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.utils;
 
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
@@ -17,6 +18,7 @@ public class EntityUtils {
 
     public static void triggerSwarmAnger(Level level, LivingEntity attacker, LivingEntity target) {
         if (target == null || !target.isAlive() || attacker == null || level.isClientSide) return;
+        if (attacker instanceof Player player && (player.isCreative() || player.isSpectator())) return;
         
         double range = 32.0D; // Alert range
         UUID attackerUUID = attacker.getUUID();
@@ -31,7 +33,6 @@ public class EntityUtils {
             );
             
             for (Monster mob : others) {
-                // If Zombified Piglin, set anger
                 if (mob instanceof NeutralMob neutral) {
                     neutral.setPersistentAngerTarget(attackerUUID);
                     neutral.setRemainingPersistentAngerTime(400);

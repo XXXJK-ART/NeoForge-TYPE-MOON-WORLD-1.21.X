@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": { "item": "typemoonworld:excalibur2" },
+    "title": { "translate": "adv.typemoonworld.king_qualification.title" },
+    "description": { "translate": "adv.typemoonworld.king_qualification.desc" },
+    "frame": "challenge",
+    "hidden": true,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [ "impossible" ]
+  ]
+}

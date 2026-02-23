@@ -312,16 +312,11 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 }
 
                 if (targetPos != null) {
-                     // Steer towards target
                      Vec3 currentVel = this.getDeltaMovement();
                      double speed = currentVel.length();
-                     if (speed > 0.1) {
+                     if (speed > 0.05) {
                          Vec3 desiredDir = targetPos.subtract(this.position()).normalize();
-                         // Interpolate direction (turn rate)
-                         // Mode 1: 0.15 (Smoother)
-                         // Mode 2: 0.25 (Faster turn for following look)
-                         double turnRate = this.isMode2Tracking ? 0.25 : 0.15;
-                         
+                         double turnRate = this.isMode2Tracking ? 0.15 : 0.1;
                          Vec3 newDir = currentVel.normalize().lerp(desiredDir, turnRate).normalize();
                          this.setDeltaMovement(newDir.scale(speed));
                      }
@@ -384,56 +379,13 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void triggerExplosion() {
-        if (this.level().isClientSide) return;
-        
-        // Calculate raw cost (pass false for hasSwordAttribute) to determine true power of the item
-        double cost = MagicBrokenPhantasm.calculateCost(this.getItem(), false); 
-        float explosionPower = (float)(cost / 20.0);
-        
-        // Fix for low mana/cost items having 0 explosion power
-        // If power is too low (e.g. wooden sword), set a minimum base
-        if (explosionPower < 2.0f) explosionPower = 2.0f;
-        
-        float damagePower = explosionPower; // Full power for damage
-        float radiusPower = Math.min(explosionPower, 6.0f); // Cap radius
-        
-        // Increase base radius slightly for better AOE feel
-        if (radiusPower < 3.0f) radiusPower = 3.0f;
-        
-        // Explosion Effect: NONE (No block destruction, only particles and sound)
-        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, this.getX(), this.getY(), this.getZ(), radiusPower, false, Level.ExplosionInteraction.NONE);
-        
-        // Manual Particle Effects for visual impact (since NONE might be too subtle)
-        if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, this.getX(), this.getY(), this.getZ(), 1, 0, 0, 0, 0);
-            serverLevel.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(), 1, 0, 0, 0, 0);
-        }
-
-        // Damage Entities logic...
-        double damageRadius = radiusPower * 2.5; 
-        AABB damageBox = this.getBoundingBox().inflate(damageRadius);
-        List<Entity> entities = this.level().getEntities(this, damageBox);
-        
-        DamageSource explosionSource = this.damageSources().explosion(this, this.getOwner());
-        
-        for (Entity e : entities) {
-            if (e instanceof LivingEntity) {
-                if (e.equals(this.getOwner())) continue; // Skip owner
-                double distSqr = e.distanceToSqr(this.position());
-                if (distSqr <= damageRadius * damageRadius) {
-                    // Base Damage 10.0 + Power * 10
-                    float totalDamage = 10.0f + damagePower * 10.0f;
-                    
-                    // Cap max damage at 100.0f per sword
-                    if (totalDamage > 100.0f) totalDamage = 100.0f;
-                    
-                    e.invulnerableTime = 0;
-                    e.hurt(explosionSource, totalDamage);
-                    e.invulnerableTime = 0;
-                }
-            }
-        }
-        
+        net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion.explode(
+                this.level(),
+                this,
+                this.getOwner(),
+                this.getItem(),
+                this.position()
+        );
         this.discard();
     }
 
@@ -478,10 +430,12 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                         
                         if (target instanceof LivingEntity livingTarget) {
                             livingTarget.setLastHurtByMob(serverPlayer);
-                            if (livingTarget instanceof Mob mob) {
-                                mob.setTarget(serverPlayer);
+                            if (!(serverPlayer.isCreative())) {
+                                if (livingTarget instanceof Mob mob) {
+                                    mob.setTarget(serverPlayer);
+                                }
+                                EntityUtils.triggerSwarmAnger(this.level(), serverPlayer, livingTarget);
                             }
-                            EntityUtils.triggerSwarmAnger(this.level(), serverPlayer, livingTarget);
                         }
                         
                         target.invulnerableTime = 0;
@@ -518,21 +472,6 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
 
                 // Calculate Place Position (The air block adjacent to hit face)
                 BlockPos placePos = hitPos.relative(blockHit.getDirection());
-                
-                // Check nearby entities before placing
-                double range = 20.0;
-                if (this.level().dimension().location().equals(ModDimensions.UBW_KEY.location())) {
-                    range = 36.0;
-                }
-                
-                AABB checkArea = new AABB(placePos).inflate(range);
-                List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(LivingEntity.class, checkArea);
-                // nearbyEntities.removeIf(e -> e.equals(this.getOwner()));
-                
-                if (nearbyEntities.isEmpty()) {
-                     this.discard();
-                     return;
-                }
                 
                 // Check if placeable (Air or replaceable)
                 BlockState placeState = this.level().getBlockState(placePos);

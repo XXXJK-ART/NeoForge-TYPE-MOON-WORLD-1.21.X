@@ -109,6 +109,18 @@ public class SwordBarrelBlock extends BaseEntityBlock {
     private static void tick(Level level, BlockPos pos, BlockState state, SwordBarrelBlockEntity blockEntity) {
         if (level.isClientSide) return;
 
+        long lifeTicks = 200L;
+        if (blockEntity.getSpawnTime() > 0L) {
+            long aliveTicks = level.getGameTime() - blockEntity.getSpawnTime();
+            if (aliveTicks >= lifeTicks) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.1, 0.1, 0.1, 0.05);
+                }
+                return;
+            }
+        }
+
         // "下方不能是同样的方块" - Prevent stacking
         BlockPos belowPos = pos.below();
         if (level.getBlockState(belowPos).getBlock() instanceof SwordBarrelBlock) {

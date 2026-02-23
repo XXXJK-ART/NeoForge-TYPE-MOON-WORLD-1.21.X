@@ -18,6 +18,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -218,8 +220,40 @@ public class ModItems {
     public static final DeferredItem<Item> AVALON = ITEMS.register("avalon",
             () -> new AvalonItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
 
+    public static final DeferredItem<Item> EXCALIBUR = ITEMS.register("excalibur",
+            () -> new ExcaliburItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "excalibur_damage"),
+                                            12.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "excalibur_speed"),
+                                            1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> EXCALIBUR2 = ITEMS.register("excalibur2",
+            () -> new ExcaliburGoldenItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "excalibur2_damage"),
+                                            12.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "excalibur2_speed"),
+                                            1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+
     public static final DeferredItem<Item> RYOUGI_SHIKI_SPAWN_EGG = ITEMS.register("ryougi_shiki_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.RYOUGI_SHIKI, 0x99CCFF, 0xCC0022, new Item.Properties()));
+
+    public static final DeferredItem<Item> MERLIN_SPAWN_EGG = ITEMS.register("merlin_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MERLIN, 0xFFFFFF, 0xD8B0FF, new Item.Properties()));
 
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

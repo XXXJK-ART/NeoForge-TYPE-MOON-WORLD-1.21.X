@@ -102,29 +102,44 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                 return;
             }
 
-            // Check for Random Mode
             boolean isRandomMode = false;
             ItemStack stack = this.getItem();
             net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-            if (customData != null && customData.copyTag().getBoolean("IsRandomMode")) {
-                isRandomMode = true;
+            net.minecraft.nbt.CompoundTag customTag = null;
+            if (customData != null) {
+                customTag = customData.copyTag();
+                if (customTag.getBoolean("IsRandomMode")) {
+                    isRandomMode = true;
+                }
             }
 
-            // Cyan Gemstone (Type 4) Logic - Only if NOT Random Mode
             if (this.getGemType() == 4 && !isRandomMode) {
-                 float multiplier = 1.0f;
+                 float cyanMultiplier = 1.0f;
                  if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
-                      multiplier = gemItem.getQuality().getEffectMultiplier();
+                      cyanMultiplier = gemItem.getQuality().getEffectMultiplier();
                  }
                  
-                 if (customData != null) {
-                     net.minecraft.nbt.CompoundTag tag = customData.copyTag();
-                     if (tag.contains("ExplosionPowerMultiplier")) {
-                         multiplier *= tag.getFloat("ExplosionPowerMultiplier");
+                 if (customTag != null && customTag.getBoolean("IsCyanTornado")) {
+                     float radius = MagicConstants.CYAN_WIND_RADIUS * cyanMultiplier;
+                     if (customTag.contains("CyanRadius")) {
+                         radius = customTag.getFloat("CyanRadius");
                      }
+                     int duration = MagicConstants.CYAN_WIND_DURATION;
+                     if (customTag.contains("CyanDuration")) {
+                         duration = customTag.getInt("CyanDuration");
+                     }
+                     net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity wind = new net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity(this.level(), this.getX(), this.getY(), this.getZ(), radius, duration, (this.getOwner() instanceof LivingEntity l) ? l : null);
+                     wind.setTornadoMode(true);
+                     this.level().addFreshEntity(wind);
+                     this.discard();
+                     return;
                  }
 
-                 net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity wind = new net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity(this.level(), this.getX(), this.getY(), this.getZ(), MagicConstants.CYAN_WIND_RADIUS * multiplier, MagicConstants.CYAN_WIND_DURATION, (this.getOwner() instanceof LivingEntity l) ? l : null);
+                 if (customTag != null && customTag.contains("ExplosionPowerMultiplier")) {
+                     cyanMultiplier *= customTag.getFloat("ExplosionPowerMultiplier");
+                 }
+
+                 net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity wind = new net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity(this.level(), this.getX(), this.getY(), this.getZ(), MagicConstants.CYAN_WIND_RADIUS * cyanMultiplier, MagicConstants.CYAN_WIND_DURATION, (this.getOwner() instanceof LivingEntity l) ? l : null);
                  this.level().addFreshEntity(wind);
                  this.discard();
                  return;
@@ -135,11 +150,9 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                  multiplier = gemItem.getQuality().getEffectMultiplier();
             }
             
-            // Check for custom power multiplier
-            if (customData != null) {
-                net.minecraft.nbt.CompoundTag tag = customData.copyTag();
-                if (tag.contains("ExplosionPowerMultiplier")) {
-                    multiplier *= tag.getFloat("ExplosionPowerMultiplier");
+            if (customTag != null) {
+                if (customTag.contains("ExplosionPowerMultiplier")) {
+                    multiplier *= customTag.getFloat("ExplosionPowerMultiplier");
                 }
             }
             

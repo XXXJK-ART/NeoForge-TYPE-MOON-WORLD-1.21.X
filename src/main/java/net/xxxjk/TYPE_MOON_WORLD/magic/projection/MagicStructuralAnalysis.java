@@ -22,8 +22,12 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 public class MagicStructuralAnalysis {
     public static void execute(Entity entity) {
@@ -73,16 +77,33 @@ public class MagicStructuralAnalysis {
             return;
         }
 
-        // Check if already projected (prevent analyzing projected items)
+        boolean isTempleStone = target.getItem() instanceof TempleStoneSwordAxeItem;
+        boolean isProjected = false;
         if (target.has(DataComponents.CUSTOM_DATA)) {
-             CustomData cd = target.get(DataComponents.CUSTOM_DATA);
-             if (cd != null) {
-                 CompoundTag tag = cd.copyTag();
-                 if (tag.contains("is_projected")) {
-                     player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED), true);
-                     return;
-                 }
-             }
+            CustomData cd = target.get(DataComponents.CUSTOM_DATA);
+            if (cd != null) {
+                CompoundTag tag = cd.copyTag();
+                isProjected = tag.contains("is_projected") || tag.contains("projection_time");
+            }
+        }
+        if (isProjected && !isTempleStone) {
+            player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED), true);
+            return;
+        }
+        if (isProjected && isTempleStone) {
+            double specialCost = calculateCost(target, vars.player_magic_attributes_sword);
+            if (vars.player_mana >= specialCost) {
+                vars.player_mana -= specialCost;
+                vars.syncMana(player);
+                
+                player.displayClientMessage(Component.literal("Trigger off."), true);
+                player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
+            } else {
+                player.displayClientMessage(Component.literal("魔力不足"), true);
+            }
+            return;
         }
         
         // Clean Item (Remove container contents)

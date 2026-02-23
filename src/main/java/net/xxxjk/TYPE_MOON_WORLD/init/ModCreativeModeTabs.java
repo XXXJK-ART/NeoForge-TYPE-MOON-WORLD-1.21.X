@@ -41,6 +41,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.REDSWORD);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
+                        output.accept(ModItems.EXCALIBUR);
+                        output.accept(ModItems.EXCALIBUR2);
                         output.accept(ModBlocks.REDSWORD_BLOCK);
 
                         output.accept(ModItems.CHISEL);
@@ -137,6 +139,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.ANCIENT_TEMPLE_STONE);
                         
                         output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
+                        output.accept(ModItems.MERLIN_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {
