@@ -1,0 +1,7 @@
+﻿{
+  "type": "neoforge:add_features",
+  "biomes": "#typemoonworld:is_gem_terrain",
+  "features": "typemoonworld:geode_emerald_poor_gem_terrain_placed",
+  "step": "underground_ores"
+}
+

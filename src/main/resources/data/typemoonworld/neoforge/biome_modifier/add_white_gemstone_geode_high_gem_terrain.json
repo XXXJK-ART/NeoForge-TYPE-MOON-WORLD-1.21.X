@@ -1,0 +1,7 @@
+﻿{
+  "type": "neoforge:add_features",
+  "biomes": "#typemoonworld:is_gem_terrain",
+  "features": "typemoonworld:geode_white_gemstone_high_gem_terrain_placed",
+  "step": "underground_ores"
+}
+

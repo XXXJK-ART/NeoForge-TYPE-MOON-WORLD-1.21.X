@@ -27,14 +27,16 @@ public class Magic_display_Overlay {
         Player entity = Minecraft.getInstance().player;
         if (entity == null) return;
 
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        RenderSystem.setShaderColor(1, 1, 1, 1);
+        // Backup render state if possible, or ensure we restore defaults
+        // Using try-finally to ensure state is restored even if exceptions occur
+        try {
+            RenderSystem.disableDepthTest();
+            RenderSystem.depthMask(false);
+            RenderSystem.enableBlend();
+            RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+            RenderSystem.setShaderColor(1, 1, 1, 1);
 
-        // Fetch Mana Data
+            // Fetch Mana Data
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         
         if (!vars.is_magus) return; // Do not render if not awakened
@@ -97,10 +99,11 @@ public class Magic_display_Overlay {
         
 
         // --- Magic Name Display ---
-        if (vars.is_magic_circuit_open) {
+        // Render magic name ONLY if circuit is OPEN
+        if (vars.is_magus && vars.is_magic_circuit_open) {
             net.minecraft.network.chat.MutableComponent magicName = Component.literal("None");
             int magicColor = 0xFF00FFFF; // Default Cyan
-
+            
             if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                 String magicId = vars.selected_magics.get(vars.current_magic_index);
                 
@@ -133,6 +136,40 @@ public class Magic_display_Overlay {
                     magicColor = 0xFFFF0000; // Red
                     // Append Mode info
                     magicName = Component.translatable(translationKey).append(" [Mode: " + vars.sword_barrel_mode + "]");
+                } else if ("reinforcement".equals(magicId) || "reinforcement_self".equals(magicId) || "reinforcement_other".equals(magicId) || "reinforcement_item".equals(magicId)) {
+                    magicColor = 0xFF00AA00; // Green
+
+                    // Compact reinforcement text to avoid blocking survival HUD view.
+                    String targetShort = switch (vars.reinforcement_target) {
+                        case 0 -> "自";
+                        case 1 -> "他";
+                        case 2 -> "物";
+                        case 3 -> "消";
+                        default -> "?";
+                    };
+
+                    String partShort = switch (vars.reinforcement_mode) {
+                        case 0 -> "身";
+                        case 1 -> "臂";
+                        case 2 -> "腿";
+                        case 3 -> "眼";
+                        default -> "?";
+                    };
+
+                    String cancelShort = switch (vars.reinforcement_mode) {
+                        case 0 -> "自";
+                        case 1 -> "他";
+                        case 2 -> "物";
+                        default -> "?";
+                    };
+
+                    if (vars.reinforcement_target == 3) {
+                        magicName = Component.literal("强化魔术[" + targetShort + "-" + cancelShort + "]");
+                    } else if (vars.reinforcement_target == 2) {
+                        magicName = Component.literal("强化魔术[" + targetShort + "-L" + vars.reinforcement_level + "]");
+                    } else {
+                        magicName = Component.literal("强化魔术[" + targetShort + "-" + partShort + "-L" + vars.reinforcement_level + "]");
+                    }
                 }
             }
             
@@ -145,11 +182,12 @@ public class Magic_display_Overlay {
             event.getGuiGraphics().drawString(Minecraft.getInstance().font, labelStr, magicTextX, magicTextY, 0xFFFFFFFF, true);
             event.getGuiGraphics().drawString(Minecraft.getInstance().font, magicName, magicTextX + Minecraft.getInstance().font.width(labelStr), magicTextY, magicColor, true);
         }
-
-        RenderSystem.depthMask(true);
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.enableDepthTest();
-        RenderSystem.disableBlend();
-        RenderSystem.setShaderColor(1, 1, 1, 1);
+        } finally {
+            RenderSystem.depthMask(true);
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.enableDepthTest();
+            RenderSystem.disableBlend();
+            RenderSystem.setShaderColor(1, 1, 1, 1);
+        }
     }
 }

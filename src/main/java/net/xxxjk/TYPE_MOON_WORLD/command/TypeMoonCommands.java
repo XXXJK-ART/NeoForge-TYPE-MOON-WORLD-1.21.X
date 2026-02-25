@@ -19,6 +19,15 @@ import java.util.List;
 
 @SuppressWarnings({"null", "unchecked"})
 public class TypeMoonCommands {
+    private static final String[] ALL_MAGICS = {
+        "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+        "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
+        "jewel_magic_shoot", "jewel_magic_release",
+        "projection", "structural_analysis", "broken_phantasm",
+        "unlimited_blade_works", "sword_barrel_full_open",
+        "reinforcement_self", "reinforcement_other", "reinforcement_item"
+    };
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("typemoon")
             .requires(source -> source.hasPermission(2)) // Requires OP level 2
@@ -73,7 +82,7 @@ public class TypeMoonCommands {
             // Proficiency
             .then(Commands.literal("proficiency")
                 .then(Commands.argument("type", StringArgumentType.word())
-                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic", "unlimited_blade_works"}, builder))
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic", "unlimited_blade_works", "reinforcement"}, builder))
                     .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
                         .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
             
@@ -81,9 +90,11 @@ public class TypeMoonCommands {
             .then(Commands.literal("magic")
                 .then(Commands.literal("learn")
                     .then(Commands.argument("magic_id", StringArgumentType.string())
+                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ALL_MAGICS, builder))
                         .executes(ctx -> learnMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))))
                 .then(Commands.literal("forget")
                     .then(Commands.argument("magic_id", StringArgumentType.string())
+                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ALL_MAGICS, builder))
                         .executes(ctx -> forgetMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))))
                 .then(Commands.literal("learn_all")
                     .executes(TypeMoonCommands::learnAllMagics))
@@ -157,6 +168,7 @@ public class TypeMoonCommands {
             vars.proficiency_jewel_magic_shoot = 0.0;
             vars.proficiency_jewel_magic_release = 0.0;
             vars.proficiency_unlimited_blade_works = 0.0;
+            vars.proficiency_reinforcement = 0.0;
             
             // Reset Magics
             vars.learned_magics.clear();
@@ -243,19 +255,16 @@ public class TypeMoonCommands {
             vars.proficiency_jewel_magic_release = 100.0;
             vars.proficiency_unlimited_blade_works = 100.0;
             vars.proficiency_sword_barrel_full_open = 100.0;
+            vars.proficiency_reinforcement = 100.0;
             
             // Learn All Magics
-            String[] allMagics = {
-                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
-                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
-                "jewel_magic_shoot", "jewel_magic_release",
-                "projection", "structural_analysis", "broken_phantasm",
-                "unlimited_blade_works", "sword_barrel_full_open"
-            };
-            for (String m : allMagics) {
+            for (String m : ALL_MAGICS) {
                 if (!vars.learned_magics.contains(m)) {
                     vars.learned_magics.add(m);
                 }
+            }
+            if (!vars.learned_magics.contains("reinforcement")) {
+                vars.learned_magics.add("reinforcement");
             }
             vars.has_unlimited_blade_works = true;
             
@@ -372,15 +381,7 @@ public class TypeMoonCommands {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
             // Add all known magics
-            String[] allMagics = {
-                "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
-                "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
-                "jewel_magic_shoot", "jewel_magic_release",
-                "projection", "structural_analysis", "broken_phantasm",
-                "unlimited_blade_works", "sword_barrel_full_open"
-            };
-            
-            for (String m : allMagics) {
+            for (String m : ALL_MAGICS) {
                 if (!vars.learned_magics.contains(m)) {
                     vars.learned_magics.add(m);
                 }
@@ -425,6 +426,7 @@ public class TypeMoonCommands {
                     vars.proficiency_jewel_magic_release = value;
                     break;
                 case "unlimited_blade_works": vars.proficiency_unlimited_blade_works = value; break;
+                case "reinforcement": vars.proficiency_reinforcement = value; break;
             }
             
             vars.syncPlayerVariables(player);

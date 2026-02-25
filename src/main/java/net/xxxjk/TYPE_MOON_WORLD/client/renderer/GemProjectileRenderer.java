@@ -109,12 +109,18 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         points.add(currentPos);
         
         poseStack.pushPose();
-        // Translate to the entity's current position to render relative to it
-        // This puts us in World Space (relative to camera)
-        poseStack.translate(-currentPos.x, -currentPos.y, -currentPos.z);
+        // Render relative to the entity's current position to avoid precision issues
+        // The poseStack is already translated to (EntityPos - CameraPos)
+        // We want to draw points P. 
+        // If we use world coordinates P_world, we need to translate by (-EntityPos_world) to get P_local.
+        // P_local = P_world - EntityPos_world
+        // Then vertex = P_local
+        
+        // Note: Do NOT translate poseStack by -currentPos here, as poseStack is already relative to camera.
+        // Instead, we will subtract currentPos from the points manually.
         
         PoseStack.Pose pose = poseStack.last();
-        float baseWidth = 0.3f; 
+        float baseWidth = 0.3f;  
         int samplesPerSegment = 5; 
         float textureRepeat = Math.max(1.0f, points.size() / 16.0f);
 
@@ -134,7 +140,11 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                 Vec3 start = catmullRom(t1, p0, p1, p2, p3);
                 Vec3 end = catmullRom(t2, p0, p1, p2, p3);
 
-                // Global progress for width/alpha (0.0 = tail, 1.0 = head)
+                // Calculate local positions relative to the entity
+            Vec3 startLocal = start.subtract(currentPos);
+            Vec3 endLocal = end.subtract(currentPos);
+
+            // Global progress for width/alpha (0.0 = tail, 1.0 = head)
                 float totalPoints = (points.size() - 1) * samplesPerSegment;
                 float globalIndex1 = i * samplesPerSegment + j;
                 float globalIndex2 = globalIndex1 + 1;
@@ -178,7 +188,7 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                 // If type is 0 (Ruby), r/g/b is Red.
                 // So we should NOT add rainbow override.
 
-                drawBillboardSegment(level, pose, vertexConsumer, start, end, camPos, width1, width2, alpha1, alpha2, u1, u2, r1, g1, b1, r2, g2, b2);
+                drawBillboardSegment(level, pose, vertexConsumer, startLocal, endLocal, camPos.subtract(currentPos), width1, width2, alpha1, alpha2, u1, u2, r1, g1, b1, r2, g2, b2);
             }
         }
         
@@ -216,12 +226,25 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
         return 0.6f + 0.4f * s;
     }
 
-    private void drawBillboardSegment(Level level, PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 camPos, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
+    private void drawBillboardSegment(Level level, PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 viewOffset, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
         Vec3 dir = end.subtract(start);
-        if (dir.lengthSqr() < 0.000001) return;
+        if (dir.lengthSqr() < 1.0E-6) return;
         
-        Vec3 viewDir = start.subtract(camPos);
-        Vec3 right = dir.cross(viewDir).normalize();
+        // viewOffset is (CameraPos - EntityPos) technically, but we passed (CameraPos - EntityPos) which is -RelativePos?
+        // Wait, we passed: camPos.subtract(currentPos)
+        // start is Local (Point - EntityPos)
+        // We need viewDir = Point - CameraPos
+        // Point - CameraPos = (Point - EntityPos) - (CameraPos - EntityPos) = start - viewOffset
+        
+        Vec3 viewDir = start.subtract(viewOffset);
+        
+        // Prevent NaN if viewDir and dir are parallel
+        Vec3 cross = dir.cross(viewDir);
+        if (cross.lengthSqr() < 1.0E-6) {
+             // Fallback: use UP vector or just skip
+             return;
+        }
+        Vec3 right = cross.normalize();
         
         Vec3 offset1 = right.scale(width1 * 0.5);
         Vec3 offset2 = right.scale(width2 * 0.5);

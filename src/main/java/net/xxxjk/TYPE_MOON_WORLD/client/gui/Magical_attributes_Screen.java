@@ -131,6 +131,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("broken_phantasm", MagicConstants.KEY_MAGIC_BROKEN_PHANTASM_SHORT, "unlimited_blade_works,basic", 0xFFFF4000));
         allMagics.add(new MagicEntry("unlimited_blade_works", MagicConstants.KEY_MAGIC_UNLIMITED_BLADE_WORKS_SHORT, "unlimited_blade_works", 0xFFFF0000));
         allMagics.add(new MagicEntry("sword_barrel_full_open", MagicConstants.KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SHORT, "unlimited_blade_works", 0xFFFF0000));
+
+        // Reinforcement - Now part of "basic" category
+        allMagics.add(new MagicEntry("reinforcement", MagicConstants.KEY_MAGIC_REINFORCEMENT_SHORT, "basic,reinforcement", 0xFF00AA00));
         
         updateFilteredMagics();
         
@@ -152,6 +155,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             
             // Check if learned
             boolean learned = vars.learned_magics.contains(entry.id);
+            if (!learned && "reinforcement".equals(entry.id)) {
+                learned = vars.learned_magics.contains("reinforcement_self") || 
+                          vars.learned_magics.contains("reinforcement_other") || 
+                          vars.learned_magics.contains("reinforcement_item");
+            }
             
             return matchCategory && matchSearch && learned;
         }).collect(Collectors.toList());
@@ -164,6 +172,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     }
 
     private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/basic_information.png");
+
+    // Helper method to get category label from ID
+    private String getCategoryLabel(String category) {
+        if ("jewel".equals(category)) return "宝石";
+        if ("basic".equals(category)) return "基础";
+        if ("unlimited_blade_works".equals(category)) return "无限剑制";
+        return "全部";
+    }
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
@@ -183,6 +199,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         }
         
         if (this.pageMode == 1) {
+            // Update filter button text based on current category
+            if (filterButton != null) {
+                filterButton.visible = true;
+                filterButton.setMessage(Component.literal(getCategoryLabel(filterCategory)));
+            }
+            
             // Render Magic List (Center-Left)
             renderMagicList(guiGraphics, mouseX, mouseY);
             
@@ -191,6 +213,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (tooltipActive && lastHoveredEntry != null) {
                 renderScrollableTooltip(guiGraphics, mouseX, mouseY);
             }
+        } else {
+            if (filterButton != null) filterButton.visible = false;
         }
         
         this.renderTooltip(guiGraphics, mouseX, mouseY);
@@ -224,6 +248,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             
             MagicEntry entry = filteredMagics.get(index);
             boolean isSelected = vars.selected_magics.contains(entry.id);
+            if (!isSelected && "reinforcement".equals(entry.id)) {
+                isSelected = vars.selected_magics.contains("reinforcement_self") || 
+                             vars.selected_magics.contains("reinforcement_other") || 
+                             vars.selected_magics.contains("reinforcement_item");
+            }
             
             int col = i % 2;
             int row = i / 2;
@@ -437,7 +466,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                          case 0: modeName = "Ruby"; subSkillId = "ruby_flame_sword"; color = 0xFFFF5555; break;
                          case 1: modeName = "Sapphire"; subSkillId = "sapphire_winter_frost"; color = 0xFF5555FF; break;
                          case 2: modeName = "Emerald"; subSkillId = "emerald_winter_river"; color = 0xFF55FF55; break;
-                         case 3: modeName = "Topaz"; subSkillId = "topaz_reinforcement"; color = 0xFFFFFF55; break;
+                         case 3: modeName = "Topaz"; subSkillId = "jewel_magic_release"; color = 0xFFFFFF55; break; // Topaz reinforcement is part of jewel magic release
                          case 4: modeName = "Cyan"; subSkillId = "cyan_wind"; color = 0xFF00FFFF; break;
                      }
                  }
@@ -509,6 +538,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             showProficiency = true;
         } else if ("jewel_magic_release".equals(entry.id)) {
             proficiency = vars.proficiency_jewel_magic_release;
+            showProficiency = true;
+        } else if ("reinforcement".equals(entry.id) || "reinforcement_self".equals(entry.id) || "reinforcement_other".equals(entry.id) || "reinforcement_item".equals(entry.id)) {
+            proficiency = vars.proficiency_reinforcement;
             showProficiency = true;
         }
         
@@ -650,6 +682,44 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
     // Custom Neon Button Class Removed - Use NeonButton.java
     
+    // Helper to check if a category is unlocked (has at least one learned magic)
+    private boolean isCategoryUnlocked(String category, TypeMoonWorldModVariables.PlayerVariables vars) {
+        if ("all".equals(category)) return true;
+        
+        return allMagics.stream().anyMatch(entry -> {
+            boolean matchCategory = entry.category.contains(category);
+            if (!matchCategory) return false;
+            
+            boolean learned = vars.learned_magics.contains(entry.id);
+            if (!learned && "reinforcement".equals(entry.id)) {
+                learned = vars.learned_magics.contains("reinforcement_self") || 
+                          vars.learned_magics.contains("reinforcement_other") || 
+                          vars.learned_magics.contains("reinforcement_item");
+            }
+            return learned;
+        });
+    }
+
+    private String getNextCategory(String current, TypeMoonWorldModVariables.PlayerVariables vars) {
+        // Order: all -> jewel -> basic -> unlimited_blade_works -> all
+        String next = "all";
+        if ("all".equals(current)) next = "jewel";
+        else if ("jewel".equals(current)) next = "basic";
+        else if ("basic".equals(current)) next = "unlimited_blade_works";
+        else next = "all"; // Loop back
+        
+        // If next is not unlocked (and not "all"), skip it
+        int safety = 0;
+        while (!"all".equals(next) && !isCategoryUnlocked(next, vars) && safety < 5) {
+             // Calculate next of next
+             if ("jewel".equals(next)) next = "basic";
+             else if ("basic".equals(next)) next = "unlimited_blade_works";
+             else if ("unlimited_blade_works".equals(next)) next = "all";
+             safety++;
+        }
+        return next;
+    }
+
     @Override
     public void init() {
         super.init();
@@ -667,27 +737,29 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // Button should be after that.
         // Let's place label at x=200. Width ~25. Button at x=230.
         this.filterButton = new NeonButton(this.leftPos + 230, this.topPos + 25, 40, 14, Component.literal("全部"), e -> {
-            // Cycle filters: all -> jewel -> basic -> unlimited_blade_works -> all
-            if ("all".equals(filterCategory)) {
-                filterCategory = "jewel";
-                e.setMessage(Component.literal("宝石"));
-            } else if ("jewel".equals(filterCategory)) {
-                filterCategory = "basic";
-                e.setMessage(Component.literal("基础"));
-            } else if ("basic".equals(filterCategory)) {
-                filterCategory = "unlimited_blade_works";
-                e.setMessage(Component.literal("无限剑制"));
-            } else {
-                filterCategory = "all";
-                e.setMessage(Component.literal("全部"));
-            }
+            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            
+            // Cycle filters logic with unlock check
+            // Order: all -> jewel -> basic -> unlimited_blade_works -> all
+            // Skip if not unlocked
+            
+            String nextCategory = getNextCategory(filterCategory, vars);
+            filterCategory = nextCategory;
+            
+            String label = "全部";
+            if ("jewel".equals(filterCategory)) label = "宝石";
+            else if ("basic".equals(filterCategory)) label = "基础";
+            else if ("unlimited_blade_works".equals(filterCategory)) label = "无限剑制";
+            
+            e.setMessage(Component.literal(label));
             updateFilteredMagics();
             // Reset scroll on filter change
-            this.startIndex = 0;
-            this.scrollOffs = 0;
+            startIndex = 0;
+            scrollOffs = 0;
         });
-        this.filterButton.visible = false;
-        this.addRenderableWidget(this.filterButton);
+
+        // Add filter button
+        this.addRenderableWidget(filterButton);
         
         // --- Magic Buttons are now dynamic in render() ---
         
@@ -759,8 +831,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                 if (mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH) {
                     MagicEntry entry = filteredMagics.get(index);
                     TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                    boolean isSelected = vars.selected_magics.contains(entry.id);
-                    PacketDistributor.sendToServer(new SelectMagicMessage(entry.id, !isSelected));
+                    
+                    String magicToToggle = entry.id;
+                    
+                    boolean isSelected = vars.selected_magics.contains(magicToToggle);
+                    PacketDistributor.sendToServer(new SelectMagicMessage(magicToToggle, !isSelected));
                     Minecraft.getInstance().getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
                     return true;
                 }

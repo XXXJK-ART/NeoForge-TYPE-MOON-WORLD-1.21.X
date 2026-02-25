@@ -49,15 +49,13 @@
         "-Dforge.logging.console.level\u003ddebug",
         "-Dforge.enabledGameTestNamespaces\u003dtypemoonworld",
         "-Dneoforge.enableGameTest\u003dtrue",
-        "-DlegacyClassPath.file\u003dF:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathClient\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathClient\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.4.1.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
       "cwd": "${workspaceFolder}\\runs\\client",
       "env": {
-        "JAVA_HOME": "C:\\Program Files\\Java\\jdk-21",
-        "PATH": "C:\\Program Files\\Java\\jdk-21\\bin;${env:PATH}",
-        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
+        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
       },
       "shortenCommandLine": "argfile"
     },
@@ -76,9 +74,9 @@
         "typemoonworld",
         "--all",
         "--output",
-        "F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\src\\generated\\resources",
+        "H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\src\\generated\\resources",
         "--existing",
-        "F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\src\\main\\resources",
+        "H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\src\\main\\resources",
         "--launchTarget",
         "forgedatadev",
         "--assetIndex",
@@ -111,13 +109,13 @@
         "jdk.naming.dns/com.sun.jndi.dns\u003djava.naming",
         "-Dforge.logging.markers\u003dREGISTRIES",
         "-Dforge.logging.console.level\u003ddebug",
-        "-DlegacyClassPath.file\u003dF:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathData\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathData\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.4.1.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
       "cwd": "${workspaceFolder}\\runs\\data",
       "env": {
-        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
+        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
       },
       "shortenCommandLine": "argfile"
     },
@@ -163,13 +161,13 @@
         "-Dforge.enabledGameTestNamespaces\u003dtypemoonworld",
         "-Dneoforge.enableGameTest\u003dtrue",
         "-Dneoforge.gameTestServer\u003dtrue",
-        "-DlegacyClassPath.file\u003dF:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathGameTestServer\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathGameTestServer\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.4.1.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
       "cwd": "${workspaceFolder}\\runs\\gameTestServer",
       "env": {
-        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
+        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
       },
       "shortenCommandLine": "argfile"
     },
@@ -219,13 +217,13 @@
         "-XX:HeapDumpPath\u003dMojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump",
         "-Dforge.logging.markers\u003dREGISTRIES",
         "-Dforge.logging.console.level\u003ddebug",
-        "-DlegacyClassPath.file\u003dF:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathJunit\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathJunit\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.4.1.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
       "cwd": "${workspaceFolder}\\runs\\junit",
       "env": {
-        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
+        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
       },
       "shortenCommandLine": "argfile"
     },
@@ -270,13 +268,13 @@
         "-Dforge.logging.markers\u003dREGISTRIES",
         "-Dforge.logging.console.level\u003ddebug",
         "-Dforge.enabledGameTestNamespaces\u003dtypemoonworld",
-        "-DlegacyClassPath.file\u003dF:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathServer\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathServer\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.4.1.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
       "cwd": "${workspaceFolder}\\runs\\server",
       "env": {
-        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%F:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
+        "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
       },
       "shortenCommandLine": "argfile"
     }

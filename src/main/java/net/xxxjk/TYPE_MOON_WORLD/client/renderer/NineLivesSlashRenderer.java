@@ -36,9 +36,11 @@ public final class NineLivesSlashRenderer {
         points.add(currentPos);
 
         poseStack.pushPose();
-        poseStack.translate(-currentPos.x, -currentPos.y, -currentPos.z);
+        // Use local coordinates relative to the entity to prevent precision issues
+        // poseStack is already at entity position (relative to camera)
+        // poseStack.translate(-currentPos.x, -currentPos.y, -currentPos.z); // REMOVED
         PoseStack.Pose pose = poseStack.last();
-
+        
         VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucentEmissive(TEX));
         float baseWidth = 0.1f * ruby.getVisualScale();
         int samples = 5;
@@ -69,7 +71,12 @@ public final class NineLivesSlashRenderer {
                 float u1 = pgr1 * repeat;
                 float u2 = pgr2 * repeat;
 
-                draw(level, pose, vc, start, end, camPos, w1, w2, a1, a2, u1, u2, 1f, 1f, 1f, 1f, 1f, 1f);
+                // Convert to local coordinates
+                Vec3 startLocal = start.subtract(currentPos);
+                Vec3 endLocal = end.subtract(currentPos);
+                
+                // Pass (Camera - Entity) as view reference
+                draw(level, pose, vc, startLocal, endLocal, camPos.subtract(currentPos), w1, w2, a1, a2, u1, u2, 1f, 1f, 1f, 1f, 1f, 1f);
             }
         }
 
@@ -95,11 +102,19 @@ public final class NineLivesSlashRenderer {
         return 0.6f + 0.4f * s;
     }
 
-    private static void draw(Level level, PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 camPos, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
+    private static void draw(Level level, PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, Vec3 viewOffset, float width1, float width2, float alpha1, float alpha2, float u1, float u2, float r1, float g1, float b1, float r2, float g2, float b2) {
         Vec3 dir = end.subtract(start);
-        if (dir.lengthSqr() < 0.000001) return;
-        Vec3 viewDir = start.subtract(camPos);
-        Vec3 right = dir.cross(viewDir).normalize();
+        if (dir.lengthSqr() < 1.0E-6) return;
+        
+        // start is Local (Point - EntityPos)
+        // viewOffset is (CameraPos - EntityPos)
+        // viewDir = Point - CameraPos = start - viewOffset
+        Vec3 viewDir = start.subtract(viewOffset);
+        
+        Vec3 cross = dir.cross(viewDir);
+        if (cross.lengthSqr() < 1.0E-6) return; // Prevent NaN
+        
+        Vec3 right = cross.normalize();
         Vec3 offset1 = right.scale(width1 * 0.5);
         Vec3 offset2 = right.scale(width2 * 0.5);
         Vec3 v0 = start.subtract(offset1);

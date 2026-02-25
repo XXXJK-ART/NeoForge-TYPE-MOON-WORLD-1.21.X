@@ -1,0 +1,6 @@
+﻿{
+  "type": "neoforge:add_features",
+  "biomes": "#typemoonworld:has_cyan_gemstone_ore",
+  "features": "typemoonworld:geode_cyan_gemstone_high_placed",
+  "step": "underground_ores"
+}

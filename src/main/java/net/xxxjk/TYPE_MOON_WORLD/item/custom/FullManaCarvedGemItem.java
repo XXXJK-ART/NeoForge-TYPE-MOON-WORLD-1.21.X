@@ -34,6 +34,10 @@ public class FullManaCarvedGemItem extends Item {
         return type;
     }
     
+    public Item getEmptyGemItem() {
+        return emptyGemSupplier.get();
+    }
+
     public double getManaAmount() {
         return quality.getCapacity();
     }

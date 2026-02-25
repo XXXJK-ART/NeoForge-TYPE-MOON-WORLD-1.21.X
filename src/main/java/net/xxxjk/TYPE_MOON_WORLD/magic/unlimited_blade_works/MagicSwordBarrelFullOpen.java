@@ -491,9 +491,9 @@ public class MagicSwordBarrelFullOpen {
                 projectile.setBrokenPhantasm(true);
             }
             
-            // Velocity: Angled forward and slightly down
-            // Target: Point roughly 20 blocks in front of player on ground
-            Vec3 targetPoint = player.position().add(horizontalLook.scale(20.0));
+            // Velocity: Follow player look direction
+            // Target: Point roughly 20 blocks in front of player view
+            Vec3 targetPoint = player.getEyePosition().add(lookVec.scale(20.0));
             
             // Direction vector
             Vec3 dir = targetPoint.subtract(spawnPos).normalize();

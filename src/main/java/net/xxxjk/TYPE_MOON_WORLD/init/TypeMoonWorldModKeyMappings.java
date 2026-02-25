@@ -69,10 +69,16 @@ public class TypeMoonWorldModKeyMappings {
 
                 // Priority 1: Mode Switch (Ctrl + Scroll)
                 if (MAGIC_MODE_SWITCH.isDown()) {
-                     boolean forward = scrollDelta > 0;
-                     PacketDistributor.sendToServer(new MagicModeSwitchMessage(forward, -1));
-                     event.setCanceled(true);
-                     return;
+                     Player player = Minecraft.getInstance().player;
+                     if (player != null) {
+                        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                        if (vars.is_magus && vars.is_magic_circuit_open) {
+                             boolean forward = scrollDelta > 0;
+                             PacketDistributor.sendToServer(new MagicModeSwitchMessage(1, forward ? 1 : -1));
+                             event.setCanceled(true);
+                             return;
+                        }
+                     }
                 }
 
                 // Priority 2: Cycle Magic (Z + Scroll)
@@ -80,7 +86,7 @@ public class TypeMoonWorldModKeyMappings {
                     Player player = Minecraft.getInstance().player;
                     if (player != null) {
                          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                         if (vars.is_magus) {
+                         if (vars.is_magus && vars.is_magic_circuit_open) {
                             PacketDistributor.sendToServer(new CycleMagicMessage(scrollDelta > 0));
                             event.setCanceled(true);
                          }
@@ -100,7 +106,7 @@ public class TypeMoonWorldModKeyMappings {
                 // Open Mode Switcher Menu on Ctrl Key Press (if correct magic selected)
                 if (MAGIC_MODE_SWITCH.isDown()) {
                      if (!isModeSwitchDown) {
-                         if (vars.is_magus && !vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
+                         if (vars.is_magus && vars.is_magic_circuit_open && !vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                             String currentMagic = vars.selected_magics.get(vars.current_magic_index);
                             if ("sword_barrel_full_open".equals(currentMagic)) {
                                 if (Minecraft.getInstance().screen == null) {
@@ -110,6 +116,11 @@ public class TypeMoonWorldModKeyMappings {
                             } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
                                 if (Minecraft.getInstance().screen == null) {
                                     Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.jewel_magic_mode));
+                                    isModeSwitchDown = true;
+                                }
+                            } else if ("reinforcement".equals(currentMagic) || "reinforcement_self".equals(currentMagic) || "reinforcement_other".equals(currentMagic)) {
+                                if (Minecraft.getInstance().screen == null) {
+                                    Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));
                                     isModeSwitchDown = true;
                                 }
                             }
@@ -127,8 +138,8 @@ public class TypeMoonWorldModKeyMappings {
 
                 // Open Radial Menu on Z Key Press (if not scrolling)
                 if (CYCLE_MAGIC.isDown()) {
-                     // Only open if we have magics and are a magus
-                     if (vars.is_magus && !vars.selected_magics.isEmpty()) {
+                     // Only open if we have magics and are a magus AND circuit is open
+                     if (vars.is_magus && vars.is_magic_circuit_open && !vars.selected_magics.isEmpty()) {
                         // Only open if current screen is NOT already the radial menu
                         if (!(Minecraft.getInstance().screen instanceof MagicRadialMenuScreen)) {
                             Minecraft.getInstance().setScreen(new MagicRadialMenuScreen(vars.selected_magics));

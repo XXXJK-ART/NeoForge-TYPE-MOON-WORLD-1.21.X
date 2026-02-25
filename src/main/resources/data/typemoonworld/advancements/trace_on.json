@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "typemoonworld:magic_scroll_projection"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.trace_on.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.trace_on.desc"
+    },
+    "frame": "task",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

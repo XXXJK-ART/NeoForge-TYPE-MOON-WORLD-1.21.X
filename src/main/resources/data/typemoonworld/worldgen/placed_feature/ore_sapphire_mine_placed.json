@@ -1,9 +1,9 @@
-{
+﻿{
   "feature": "typemoonworld:ore_sapphire_mine",
   "placement": [
     {
       "type": "minecraft:count",
-      "count": 10
+      "count": 6
     },
     {
       "type": "minecraft:in_square"
@@ -16,7 +16,7 @@
           "absolute": -64
         },
         "max_inclusive": {
-          "absolute": 32
+          "absolute": 16
         }
       }
     },

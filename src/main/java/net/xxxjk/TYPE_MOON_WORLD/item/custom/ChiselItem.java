@@ -12,8 +12,6 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.jetbrains.annotations.NotNull;
 import java.util.Random;
 
-import net.minecraft.world.item.Items;
-
 public class ChiselItem extends Item {
     private final Random random = new Random();
 
@@ -68,33 +66,6 @@ public class ChiselItem extends Item {
             } else if (rawItem == ModItems.RAW_CYAN_GEMSTONE.get()) {
                 resultGem = getRandomQualityGem(ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), ModItems.CARVED_CYAN_GEMSTONE.get(), ModItems.CARVED_CYAN_GEMSTONE_HIGH.get());
             }
-            // Vanilla Mapping
-            // Diamond -> White Gemstone
-            else if (rawItem == Items.DIAMOND) {
-                resultGem = getRandomQualityGem(ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), ModItems.CARVED_WHITE_GEMSTONE.get(), ModItems.CARVED_WHITE_GEMSTONE_HIGH.get());
-            }
-            // Emerald -> Green Gemstone
-            else if (rawItem == Items.EMERALD) {
-                resultGem = getRandomQualityGem(ModItems.CARVED_EMERALD_POOR.get(), ModItems.CARVED_EMERALD.get(), ModItems.CARVED_EMERALD_HIGH.get());
-            }
-            // Redstone Block -> 9x Red Gemstone
-            else if (rawItem == Items.REDSTONE_BLOCK) {
-                resultGem = getRandomQualityGem(ModItems.CARVED_RUBY_POOR.get(), ModItems.CARVED_RUBY.get(), ModItems.CARVED_RUBY_HIGH.get());
-                resultGem.setCount(9);
-            }
-            // Glowstone Dust -> Yellow Gemstone
-            else if (rawItem == Items.GLOWSTONE_DUST) {
-                resultGem = getRandomQualityGem(ModItems.CARVED_TOPAZ_POOR.get(), ModItems.CARVED_TOPAZ.get(), ModItems.CARVED_TOPAZ_HIGH.get());
-            }
-            // Lapis Lazuli -> Cyan Gemstone or Sapphire (50/50)
-            else if (rawItem == Items.LAPIS_LAZULI) {
-                if (random.nextBoolean()) {
-                    resultGem = getRandomQualityGem(ModItems.CARVED_SAPPHIRE_POOR.get(), ModItems.CARVED_SAPPHIRE.get(), ModItems.CARVED_SAPPHIRE_HIGH.get());
-                } else {
-                    resultGem = getRandomQualityGem(ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), ModItems.CARVED_CYAN_GEMSTONE.get(), ModItems.CARVED_CYAN_GEMSTONE_HIGH.get());
-                }
-            }
-            
             if (!resultGem.isEmpty()) {
                 // Success
                 offhandStack.shrink(1);
@@ -131,4 +102,5 @@ public class ChiselItem extends Item {
             return new ItemStack(high);
         }
     }
+
 }

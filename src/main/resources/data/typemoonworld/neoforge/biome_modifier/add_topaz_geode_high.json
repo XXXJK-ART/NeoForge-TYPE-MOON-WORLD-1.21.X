@@ -1,0 +1,6 @@
+﻿{
+  "type": "neoforge:add_features",
+  "biomes": "#typemoonworld:has_topaz_ore",
+  "features": "typemoonworld:geode_topaz_high_placed",
+  "step": "underground_ores"
+}
