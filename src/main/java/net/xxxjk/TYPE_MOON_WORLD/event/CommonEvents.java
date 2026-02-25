@@ -43,6 +43,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.damagesource.DamageTypes;
 import java.util.List;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -182,6 +183,13 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
         if (event.getEntity().level().isClientSide) return;
+
+        // Reinforcement (Leg): halve fall damage while agility reinforcement effect is active.
+        if (event.getSource().is(DamageTypes.FALL) && event.getEntity() instanceof LivingEntity living) {
+            if (living.hasEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY) || living.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_AGILITY)) {
+                event.setAmount(event.getAmount() * 0.5F);
+            }
+        }
         
         if (event.getSource().getEntity() instanceof Player player) {
             if (player.hasEffect(ModMobEffects.NINE_LIVES)) {

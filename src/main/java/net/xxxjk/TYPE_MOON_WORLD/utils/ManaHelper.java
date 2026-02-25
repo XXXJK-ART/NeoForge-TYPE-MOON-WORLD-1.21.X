@@ -18,6 +18,11 @@ public class ManaHelper {
     public static boolean consumeManaOrHealth(ServerPlayer player, double amount) {
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         
+        // If not awakened, cannot use mana/health conversion
+        if (!vars.is_magus) {
+            return false;
+        }
+        
         if (vars.player_mana >= amount) {
             vars.player_mana -= amount;
             vars.syncMana(player);

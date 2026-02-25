@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -16,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
@@ -116,6 +118,7 @@ public class MagicProjection {
 
                 player.setItemInHand(handToUse, projected);
                 vars.syncPlayerVariables(player);
+                grantAdvancement(player, "trace_on");
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_TRACE_ON), true);
             }
         } else {
@@ -187,5 +190,16 @@ public class MagicProjection {
 
     private static boolean isNoblePhantasm(ItemStack stack) {
         return stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+    }
+
+    private static void grantAdvancement(ServerPlayer player, String idPath) {
+        if (player.getServer() == null) return;
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, idPath);
+        net.minecraft.advancements.AdvancementHolder holder = player.getServer().getAdvancements().get(id);
+        if (holder == null) return;
+        net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        for (String criterion : progress.getRemainingCriteria()) {
+            player.getAdvancements().award(holder, criterion);
+        }
     }
 }

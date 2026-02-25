@@ -10,14 +10,14 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.minecraft.network.chat.Component;
 
-public record MagicModeSwitchMessage(boolean forward, int targetMode) implements CustomPacketPayload {
+public record MagicModeSwitchMessage(int actionType, int value) implements CustomPacketPayload {
     public static final Type<MagicModeSwitchMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "magic_mode_switch"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicModeSwitchMessage> STREAM_CODEC = StreamCodec.of(
             (RegistryFriendlyByteBuf buffer, MagicModeSwitchMessage message) -> {
-                buffer.writeBoolean(message.forward);
-                buffer.writeInt(message.targetMode);
+                buffer.writeInt(message.actionType);
+                buffer.writeInt(message.value);
             },
-            (RegistryFriendlyByteBuf buffer) -> new MagicModeSwitchMessage(buffer.readBoolean(), buffer.readInt())
+            (RegistryFriendlyByteBuf buffer) -> new MagicModeSwitchMessage(buffer.readInt(), buffer.readInt())
     );
 
     @Override
@@ -31,6 +31,64 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                 net.minecraft.world.entity.player.Player player = context.player();
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                 
+                // actionType:
+                // 0: Set Mode (Default/Legacy) - value is mode index
+                // 1: Cycle Mode (Default/Legacy) - value is direction (1 or -1)
+                // 2: Set Reinforcement Target - value is target index
+                // 3: Set Reinforcement Mode - value is mode index
+                
+                if (message.actionType == 2) {
+                    vars.reinforcement_target = message.value;
+                    
+                    Component targetComp = Component.literal("");
+                    switch (vars.reinforcement_target) {
+                        case 0: targetComp = Component.translatable("gui.typemoonworld.mode.self"); break;
+                        case 1: targetComp = Component.translatable("gui.typemoonworld.mode.other"); break;
+                        case 2: targetComp = Component.translatable("gui.typemoonworld.mode.item"); break;
+                        case 3: targetComp = Component.translatable("gui.typemoonworld.mode.cancel"); break;
+                    }
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.target_selected", targetComp), true);
+                    
+                    vars.syncPlayerVariables(player);
+                    return;
+                } else if (message.actionType == 3) {
+                    vars.reinforcement_mode = message.value;
+                    
+                    Component feedbackComp = Component.literal("");
+                    if (vars.reinforcement_target == 3) {
+                        // Cancel Target Feedback
+                        String key = "";
+                        switch (vars.reinforcement_mode) {
+                            case 0: key = "message.typemoonworld.magic.reinforcement.cancel_self"; break;
+                            case 1: key = "message.typemoonworld.magic.reinforcement.cancel_other"; break;
+                            case 2: key = "message.typemoonworld.magic.reinforcement.cancel_item"; break;
+                        }
+                        if (!key.isEmpty()) {
+                            player.displayClientMessage(Component.translatable(key), true);
+                        }
+                    } else {
+                        // Body Part Feedback
+                        switch (vars.reinforcement_mode) {
+                            case 0: feedbackComp = Component.translatable("gui.typemoonworld.mode.body"); break;
+                            case 1: feedbackComp = Component.translatable("gui.typemoonworld.mode.hand"); break;
+                            case 2: feedbackComp = Component.translatable("gui.typemoonworld.mode.leg"); break;
+                            case 3: feedbackComp = Component.translatable("gui.typemoonworld.mode.eye"); break;
+                        }
+                        player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.part_selected", feedbackComp), true);
+                    }
+                    
+                    vars.syncPlayerVariables(player);
+                    return;
+                } else if (message.actionType == 4) {
+                    vars.reinforcement_level = message.value;
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.level_selected", vars.reinforcement_level), true);
+                    vars.syncPlayerVariables(player);
+                    return;
+                } else if (message.actionType == 5) {
+                    // This is now handled in CastMagic when reinforcement_target == 3
+                    return;
+                }
+
                 if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                     String currentMagic = vars.selected_magics.get(vars.current_magic_index);
                     
@@ -38,8 +96,8 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                         // Switch between 5 modes (0, 1, 2, 3, 4)
                         int maxModes = 5;
                         
-                        if (message.targetMode >= 0 && message.targetMode < maxModes) {
-                            if (message.targetMode == 3) {
+                        if (message.actionType == 0) {
+                            if (message.value == 3) {
                                 // Toggle Broken Phantasm (Explosion)
                                 vars.ubw_broken_phantasm_enabled = !vars.ubw_broken_phantasm_enabled;
                                 player.getPersistentData().putBoolean("UBWBrokenPhantasmEnabled", vars.ubw_broken_phantasm_enabled);
@@ -51,7 +109,7 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                                 }
                                 vars.syncPlayerVariables(player);
                             } else {
-                                vars.sword_barrel_mode = message.targetMode;
+                                vars.sword_barrel_mode = message.value;
                                 
                                 // Send feedback
                                 String modeStr = String.valueOf(vars.sword_barrel_mode);
@@ -63,8 +121,8 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
                                 vars.syncPlayerVariables(player);
                             }
-                        } else {
-                            if (message.forward) {
+                        } else if (message.actionType == 1) {
+                            if (message.value > 0) {
                                 vars.sword_barrel_mode = (vars.sword_barrel_mode + 1) % maxModes;
                             } else {
                                 vars.sword_barrel_mode = (vars.sword_barrel_mode - 1 + maxModes) % maxModes;
@@ -88,22 +146,19 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                             maxModes = 5; // Release has no Random mode
                         }
                         
-                        if (message.targetMode >= 0 && message.targetMode < maxModes) {
+                        if (message.actionType == 0) {
                             // Validate if learned
-                            if (isJewelModeUnlocked(vars, message.targetMode, currentMagic)) {
-                                vars.jewel_magic_mode = message.targetMode;
-                            } else {
-                                // Magic not learned, do not switch
-                                // Optional: send feedback
-                                return;
+                            if (isJewelModeUnlocked(vars, message.value, currentMagic)) {
+                                vars.jewel_magic_mode = message.value;
                             }
-                        } else {
+                        } else if (message.actionType == 1) {
+
                             // Cycle logic: find next unlocked mode
                             int current = vars.jewel_magic_mode;
                             int nextMode = current;
                             int attempts = 0;
                             do {
-                                if (message.forward) {
+                                if (message.value > 0) {
                                     nextMode = (nextMode + 1) % maxModes;
                                 } else {
                                     nextMode = (nextMode - 1 + maxModes) % maxModes;
@@ -129,6 +184,8 @@ public record MagicModeSwitchMessage(boolean forward, int targetMode) implements
                         
                         player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_JEWEL_MODE_CHANGE, modeStr), true);
                         vars.syncPlayerVariables(player);
+                    } else if ("reinforcement".equals(currentMagic)) {
+                        // Reinforcement logic handled by actionType 2 and 3 at start of method
                     }
                 }
             }).exceptionally(e -> {

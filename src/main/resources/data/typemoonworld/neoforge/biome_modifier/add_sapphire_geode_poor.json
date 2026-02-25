@@ -1,0 +1,6 @@
+﻿{
+  "type": "neoforge:add_features",
+  "biomes": "#typemoonworld:has_sapphire_ore",
+  "features": "typemoonworld:geode_sapphire_poor_placed",
+  "step": "underground_ores"
+}

@@ -1,0 +1,30 @@
+{
+  "display": {
+    "icon": {
+      "item": "typemoonworld:redsword"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.i_am_the_bone_of_my_sword.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.i_am_the_bone_of_my_sword.desc"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "enter_ubw": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "typemoonworld:unlimited_blade_works"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "enter_ubw"
+    ]
+  ]
+}

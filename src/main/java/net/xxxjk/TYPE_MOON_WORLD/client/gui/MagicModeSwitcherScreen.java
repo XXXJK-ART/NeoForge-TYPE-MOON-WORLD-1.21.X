@@ -39,9 +39,19 @@ public class MagicModeSwitcherScreen extends Screen {
     };
     private int selectedIndex = 0;
     private boolean isClosing = false;
+    private boolean isReinforcement = false;
+    private int reinforcementStage = 0; // 0: Target, 1: Body Part, 2: Level
+    private int selectedTarget = 0;
+    private int selectedBodyPart = 0;
 
     public MagicModeSwitcherScreen(int currentMode) {
         super(Component.translatable("gui.typemoonworld.mode_switcher.title"));
+        initModes(currentMode);
+    }
+
+    private void initModes(int currentMode) {
+        modes.clear();
+        modeIds.clear();
         
         // Define modes
         Player player = Minecraft.getInstance().player;
@@ -54,39 +64,68 @@ public class MagicModeSwitcherScreen extends Screen {
             
             if ("sword_barrel_full_open".equals(currentMagic)) {
                 // 0: AOE, 1: Aiming, 2: Focus, 3: Broken Phantasm, 4: Clear
-                addMode(0, Component.literal("AOE"));
-                addMode(1, Component.literal("Aiming"));
-                addMode(2, Component.literal("Focus"));
-                addMode(3, Component.literal("Broken\nPhantasm"));
-                addMode(4, Component.literal("Clear"));
+                addMode(0, Component.translatable("gui.typemoonworld.mode.aoe"));
+                addMode(1, Component.translatable("gui.typemoonworld.mode.aiming"));
+                addMode(2, Component.translatable("gui.typemoonworld.mode.focus"));
+                addMode(3, Component.translatable("gui.typemoonworld.mode.broken_phantasm"));
+                addMode(4, Component.translatable("gui.typemoonworld.mode.clear"));
             } else if ("jewel_magic_shoot".equals(currentMagic)) {
                 // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random
-                if (vars.learned_magics.contains("ruby_throw")) addMode(0, Component.literal("Ruby").withStyle(net.minecraft.ChatFormatting.RED));
-                if (vars.learned_magics.contains("sapphire_throw")) addMode(1, Component.literal("Sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
-                if (vars.learned_magics.contains("emerald_use")) addMode(2, Component.literal("Emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
-                if (vars.learned_magics.contains("topaz_throw")) addMode(3, Component.literal("Topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
-                if (vars.learned_magics.contains("cyan_throw")) addMode(4, Component.literal("Cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
-                addMode(5, Component.literal("Random").withStyle(net.minecraft.ChatFormatting.WHITE));
+                if (vars.learned_magics.contains("ruby_throw")) addMode(0, Component.translatable("gui.typemoonworld.mode.ruby").withStyle(net.minecraft.ChatFormatting.RED));
+                if (vars.learned_magics.contains("sapphire_throw")) addMode(1, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
+                if (vars.learned_magics.contains("emerald_use")) addMode(2, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
+                if (vars.learned_magics.contains("topaz_throw")) addMode(3, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                if (vars.learned_magics.contains("cyan_throw")) addMode(4, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+                addMode(5, Component.translatable("gui.typemoonworld.mode.random").withStyle(net.minecraft.ChatFormatting.WHITE));
             } else if ("jewel_magic_release".equals(currentMagic)) {
                 // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan
-                if (vars.learned_magics.contains("ruby_flame_sword")) addMode(0, Component.literal("Ruby").withStyle(net.minecraft.ChatFormatting.RED));
-                if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(1, Component.literal("Sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
-                if (vars.learned_magics.contains("emerald_winter_river")) addMode(2, Component.literal("Emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
-                if (vars.learned_magics.contains("topaz_reinforcement")) addMode(3, Component.literal("Topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
-                if (vars.learned_magics.contains("cyan_wind")) addMode(4, Component.literal("Cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+                if (vars.learned_magics.contains("ruby_flame_sword")) addMode(0, Component.translatable("gui.typemoonworld.mode.ruby").withStyle(net.minecraft.ChatFormatting.RED));
+                if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(1, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
+                if (vars.learned_magics.contains("emerald_winter_river")) addMode(2, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
+                // Topaz reinforcement is part of jewel magic release
+                addMode(3, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                if (vars.learned_magics.contains("cyan_wind")) addMode(4, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+            } else if ("reinforcement".equals(currentMagic) || "reinforcement_self".equals(currentMagic) || "reinforcement_other".equals(currentMagic) || "reinforcement_item".equals(currentMagic)) {
+                isReinforcement = true;
+                if (reinforcementStage == 0) {
+                    addMode(0, Component.translatable("gui.typemoonworld.mode.self"));
+                    addMode(1, Component.translatable("gui.typemoonworld.mode.other"));
+                    addMode(2, Component.translatable("gui.typemoonworld.mode.item"));
+                    addMode(3, Component.translatable("gui.typemoonworld.mode.cancel"));
+                } else if (reinforcementStage == 1) {
+                    addMode(0, Component.translatable("gui.typemoonworld.mode.body"));
+                    addMode(1, Component.translatable("gui.typemoonworld.mode.hand"));
+                    addMode(2, Component.translatable("gui.typemoonworld.mode.leg"));
+                    addMode(3, Component.translatable("gui.typemoonworld.mode.eye"));
+                } else if (reinforcementStage == 2) {
+                    // Always show 5 levels in the UI as requested, but logic will handle proficiency limits
+                    for (int i = 1; i <= 5; i++) {
+                        addMode(i, Component.translatable("gui.typemoonworld.mode.level", i));
+                    }
+                } else if (reinforcementStage == 3) {
+                    // Cancel selection
+                    addMode(0, Component.translatable("gui.typemoonworld.mode.cancel.self"));
+                    addMode(1, Component.translatable("gui.typemoonworld.mode.cancel.other"));
+                    addMode(2, Component.translatable("gui.typemoonworld.mode.cancel.item"));
+                }
             }
         }
         
         if (modes.isEmpty()) {
-            addMode(0, Component.literal("None"));
+            addMode(0, Component.translatable("gui.typemoonworld.mode.none"));
         }
         
         // Find index matching currentMode
         this.selectedIndex = 0;
-        for (int i = 0; i < modeIds.size(); i++) {
-            if (modeIds.get(i) == currentMode) {
-                this.selectedIndex = i;
-                break;
+        // Only try to match currentMode if we are NOT in reinforcement (or need better logic)
+        // For reinforcement, we always start at 0 (Self/Body) or try to remember?
+        // Let's just default to 0 for simplicity in 2-stage
+        if (!isReinforcement) {
+            for (int i = 0; i < modeIds.size(); i++) {
+                if (modeIds.get(i) == currentMode) {
+                    this.selectedIndex = i;
+                    break;
+                }
             }
         }
     }
@@ -130,19 +169,94 @@ public class MagicModeSwitcherScreen extends Screen {
             }
             
             if (!isDown && !isClosing) {
-                closeAndSelect();
+                if (isReinforcement && (reinforcementStage == 1 || reinforcementStage == 2 || reinforcementStage == 3)) {
+                    // Do not auto-close in Stage 1/2/3 on key release, wait for click
+                } else {
+                    closeAndSelect();
+                }
             }
         }
     }
     
     private void closeAndSelect() {
+        if (isReinforcement) {
+            int selectedId = 0;
+            if (selectedIndex >= 0 && selectedIndex < modeIds.size()) {
+                selectedId = modeIds.get(selectedIndex);
+            }
+            
+            Player player = Minecraft.getInstance().player;
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+
+            if (reinforcementStage == 0) {
+                // Target Selection: Self(0), Other(1), Item(2), Cancel(3)
+                if (selectedId == 3) {
+                    // Send Cancel Packet (value can be whatever, maybe we ask what to cancel?)
+                    // For now, let's assume it opens a sub-menu or just cancels everything relevant?
+                    // User says: "可以取消自己的强化效果，他人的强化效果... 还有物品的强化效果"
+                    // Maybe we show another stage for what to cancel?
+                    // Or just cancel based on what's currently active?
+                    // Let's make it simple: if Cancel is selected, it opens a sub-menu to choose what to cancel
+                    
+                    // Send packet to update server state to Cancel Target (3)
+                    PacketDistributor.sendToServer(new MagicModeSwitchMessage(2, 3));
+                    
+                    reinforcementStage = 3; // 3: Cancel Target Selection
+                    initModes(0);
+                    selectedIndex = 0;
+                    return;
+                }
+                
+                PacketDistributor.sendToServer(new MagicModeSwitchMessage(2, selectedId));
+                selectedTarget = selectedId;
+                
+                if (selectedId == 2) {
+                    // Item selected -> Skip Body Part, Go to Level
+                    reinforcementStage = 2;
+                    initModes(0);
+                    selectedIndex = 0;
+                } else {
+                    // Self/Other selected -> Go to Stage 1 (Body Parts)
+                    reinforcementStage = 1;
+                    initModes(0); // Re-initialize with body parts
+                    selectedIndex = 0; // Reset selection
+                }
+            } else if (reinforcementStage == 1) {
+                // Body Part Selection: Body(0), Hand(1), Leg(2), Eye(3)
+                PacketDistributor.sendToServer(new MagicModeSwitchMessage(3, selectedId));
+                selectedBodyPart = selectedId;
+                
+                // Go to Stage 2 (Level)
+                reinforcementStage = 2;
+                initModes(0);
+                selectedIndex = 0;
+            } else if (reinforcementStage == 2) {
+                // Level Selection: 1-5
+                int maxLevel = Math.min(5, 1 + (int)(vars.proficiency_reinforcement / 20));
+                if (selectedId > maxLevel) {
+                    player.displayClientMessage(Component.literal("§c熟练度不足，无法选择该等级 (当前最大: " + maxLevel + ")"), true);
+                    return;
+                }
+                
+                PacketDistributor.sendToServer(new MagicModeSwitchMessage(4, selectedId));
+                isClosing = true;
+                this.onClose();
+            } else if (reinforcementStage == 3) {
+                // Cancel Selection: 0: Self, 1: Other, 2: Item
+                PacketDistributor.sendToServer(new MagicModeSwitchMessage(3, selectedId)); // reuse action 3 for cancel type
+                isClosing = true;
+                this.onClose();
+            }
+            return;
+        }
+
         isClosing = true;
         // Send packet to set mode
         int targetMode = 0;
         if (selectedIndex >= 0 && selectedIndex < modeIds.size()) {
             targetMode = modeIds.get(selectedIndex);
         }
-        PacketDistributor.sendToServer(new MagicModeSwitchMessage(true, targetMode));
+        PacketDistributor.sendToServer(new MagicModeSwitchMessage(0, targetMode));
         this.onClose();
     }
     
@@ -203,6 +317,7 @@ public class MagicModeSwitcherScreen extends Screen {
         boolean showIcons = true;
         boolean isSwordBarrel = false;
         boolean isJewelMagic = false;
+        boolean isReinforcement = false;
         if (!modes.isEmpty()) {
             // Check magic type from player vars directly for accuracy
             Player player = Minecraft.getInstance().player;
@@ -217,6 +332,8 @@ public class MagicModeSwitcherScreen extends Screen {
                     isSwordBarrel = true;
                 } else if (currentMagic.startsWith("jewel_magic")) {
                     isJewelMagic = true;
+                } else if ("reinforcement".equals(currentMagic) || currentMagic.startsWith("reinforcement_")) {
+                    isReinforcement = true;
                 } else {
                     showIcons = false;
                 }
@@ -236,6 +353,20 @@ public class MagicModeSwitcherScreen extends Screen {
             // Unselected: Dark background
             int fillColor = isSelected ? 0x60FFFFFF : 0x40000000; 
             int textColor = isSelected ? 0xFFFFFF55 : 0xFFAAAAAA; // Yellowish if selected, Grey if not
+            
+            // Special handling for Reinforcement Level Lock
+            if (isReinforcement && reinforcementStage == 2) {
+                Player player = Minecraft.getInstance().player;
+                if (player != null) {
+                    TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    int maxLevel = Math.min(5, 1 + (int)(vars.proficiency_reinforcement / 20));
+                    int level = (i < modeIds.size()) ? modeIds.get(i) : i + 1;
+                    if (level > maxLevel) {
+                        fillColor = 0x60555555; // Greyed out
+                        textColor = 0xFF555555;
+                    }
+                }
+            }
             
             // Special handling for Broken Phantasm (modeId 3)
             int modeId = (i < modeIds.size()) ? modeIds.get(i) : -1;
@@ -268,6 +399,51 @@ public class MagicModeSwitcherScreen extends Screen {
                 
                 if (isSwordBarrel && modeId >= 0 && modeId < MODE_ICONS.length) {
                     guiGraphics.blit(MODE_ICONS[modeId], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                } else if (isReinforcement) {
+                    ResourceLocation iconLoc = null;
+                    if (reinforcementStage == 0) {
+                        // Target Selection: Self, Other, Item, Cancel
+                        switch (modeId) {
+                            case 0: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/resistance.png"); break; // Self (Resistance)
+                            case 1: iconLoc = ResourceLocation.withDefaultNamespace("textures/item/totem_of_undying.png"); break; // Other
+                            case 2: iconLoc = ResourceLocation.withDefaultNamespace("textures/item/iron_sword.png"); break; // Item
+                            case 3: iconLoc = ResourceLocation.withDefaultNamespace("textures/item/barrier.png"); break; // Cancel
+                        }
+                    } else if (reinforcementStage == 3) {
+                        // Cancel Selection Icons
+                        switch (modeId) {
+                            case 0: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/resistance.png"); break; // Self
+                            case 1: iconLoc = ResourceLocation.withDefaultNamespace("textures/item/totem_of_undying.png"); break; // Other
+                            case 2: iconLoc = ResourceLocation.withDefaultNamespace("textures/item/iron_sword.png"); break; // Item
+                        }
+                    } else if (reinforcementStage == 1) {
+                        // Body Part Selection
+                        switch (modeId) {
+                            case 0: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/resistance.png"); break;
+                            case 1: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/strength.png"); break;
+                            case 2: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/speed.png"); break;
+                            case 3: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/night_vision.png"); break;
+                        }
+                    } else if (reinforcementStage == 2) {
+                        // Level Selection (1-5)
+                        if (selectedTarget == 2) {
+                             iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/haste.png");
+                        } else {
+                            switch (selectedBodyPart) {
+                                case 0: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/resistance.png"); break;
+                                case 1: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/strength.png"); break;
+                                case 2: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/speed.png"); break;
+                                case 3: iconLoc = ResourceLocation.withDefaultNamespace("textures/mob_effect/night_vision.png"); break;
+                            }
+                        }
+                    }
+                    
+                    if (iconLoc != null) {
+                        // Apply Cyan tint and 0.5 alpha as requested
+                        guiGraphics.setColor(0.0f, 1.0f, 1.0f, 0.5f);
+                        guiGraphics.blit(iconLoc, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                        guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+                    }
                 } else if (isJewelMagic && modeId >= 0 && modeId < JEWEL_ICONS.length) {
                     if (modeId != 5) {
                         guiGraphics.blit(JEWEL_ICONS[modeId], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);

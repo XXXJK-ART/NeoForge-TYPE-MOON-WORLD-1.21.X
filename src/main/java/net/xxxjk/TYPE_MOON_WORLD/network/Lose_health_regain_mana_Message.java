@@ -91,23 +91,52 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
                     double restore = 1.0 + random.nextDouble() * 9.0; // 1.0 to 10.0
                     vars.player_restore_magic_moment = Math.round(restore * 10.0) / 10.0;
                     
-                    // Randomize Element Attributes (Earth, Water, Fire, Wind)
                     // Reset all first
                     vars.player_magic_attributes_earth = false;
                     vars.player_magic_attributes_water = false;
                     vars.player_magic_attributes_fire = false;
                     vars.player_magic_attributes_wind = false;
-                    vars.player_magic_attributes_ether = false; // Usually rare, but let's include it
+                    vars.player_magic_attributes_ether = false;
+                    vars.player_magic_attributes_none = false;
+                    vars.player_magic_attributes_imaginary_number = false;
                     
-                    int element = random.nextInt(5);
-                    switch (element) {
-                        case 0 -> vars.player_magic_attributes_earth = true;
-                        case 1 -> vars.player_magic_attributes_water = true;
-                        case 2 -> vars.player_magic_attributes_fire = true;
-                        case 3 -> vars.player_magic_attributes_wind = true;
-                        case 4 -> {
-                            // Ether is rare, maybe re-roll? Or just let it be.
-                            vars.player_magic_attributes_ether = true;
+                    // Special Attribute Check (Rare)
+                    // If special, no basic attributes
+                    boolean isSpecial = false;
+                    
+                    // 10% chance for special attribute
+                    if (random.nextInt(100) < 10) {
+                        if (random.nextBoolean()) {
+                            vars.player_magic_attributes_none = true;
+                        } else {
+                            vars.player_magic_attributes_imaginary_number = true;
+                        }
+                        isSpecial = true;
+                    }
+                    
+                    if (!isSpecial) {
+                        // Generate Basic Attributes (1-5 count)
+                        // Weighted probability for count:
+                        // 1: 50%, 2: 30%, 3: 15%, 4: 4%, 5: 1%
+                        int roll = random.nextInt(100);
+                        int count = 1;
+                        if (roll >= 99) count = 5;
+                        else if (roll >= 95) count = 4;
+                        else if (roll >= 80) count = 3;
+                        else if (roll >= 50) count = 2;
+                        
+                        java.util.List<Integer> available = new java.util.ArrayList<>(java.util.Arrays.asList(0, 1, 2, 3, 4));
+                        java.util.Collections.shuffle(available);
+                        
+                        for (int i = 0; i < count; i++) {
+                            int attr = available.get(i);
+                            switch (attr) {
+                                case 0 -> vars.player_magic_attributes_earth = true;
+                                case 1 -> vars.player_magic_attributes_water = true;
+                                case 2 -> vars.player_magic_attributes_fire = true;
+                                case 3 -> vars.player_magic_attributes_wind = true;
+                                case 4 -> vars.player_magic_attributes_ether = true;
+                            }
                         }
                     }
 

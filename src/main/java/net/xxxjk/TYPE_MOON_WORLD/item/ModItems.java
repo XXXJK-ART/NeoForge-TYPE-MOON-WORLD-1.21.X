@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemQuality;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomMagicScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
@@ -210,6 +211,14 @@ public class ModItems {
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN = ITEMS.register("magic_scroll_broken_phantasm_broken",
             () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, // Hard to learn (20%), Low Durability (5)
                     "broken_phantasm"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_REINFORCEMENT = ITEMS.register("magic_book_reinforcement",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, 
+                    "reinforcement"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, 
+                    "reinforcement"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));

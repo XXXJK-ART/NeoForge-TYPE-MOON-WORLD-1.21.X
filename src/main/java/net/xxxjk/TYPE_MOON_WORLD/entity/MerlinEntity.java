@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -96,6 +97,8 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
     private boolean midHpLineSpoken = false;
     private boolean lowHpLineSpoken = false;
     private int hpHighCombatTicks = 0;
+    private int siegeCheckCooldown = 0;
+    private int infightingCooldown = 0;
     private int outOfCombatTicks = 0;
     private static final java.util.Map<String, Integer> SPEECH_VARIANTS = new java.util.HashMap<>();
 
@@ -130,6 +133,10 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_enderman", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.avalon_barrier", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.death", 1);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_dodge", 4);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_recovery", 4);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_avalon_hit", 4);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_death", 4);
     }
 
     public MerlinEntity(EntityType<? extends PathfinderMob> type, Level level) {
@@ -499,6 +506,42 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
             }
 
             if (hasEnemy && this.level() instanceof ServerLevel serverLevel) {
+                if (this.siegeCheckCooldown > 0) this.siegeCheckCooldown--;
+                if (this.siegeCheckCooldown <= 0 && !this.isClone) {
+                    int nearbyEnemies = this.countNearbyEnemies(serverLevel, 8.0D);
+                    if (nearbyEnemies >= 3) {
+                        this.spawnSingleIllusionClone(serverLevel, currentTarget);
+                        double angle = this.random.nextDouble() * Math.PI * 2.0D;
+                        double dist = 16.0D + this.random.nextDouble() * 16.0D;
+                        BlockPos farPos = this.blockPosition().offset((int)(Math.cos(angle)*dist), 0, (int)(Math.sin(angle)*dist));
+                        BlockPos safePos = findNearestSolidGround(serverLevel, farPos, 12);
+                        if (safePos != null) {
+                            this.teleportTo(safePos.getX() + 0.5D, safePos.getY() + 1.0D, safePos.getZ() + 0.5D);
+                            serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES, this.getX(), this.getY() + 0.8D, this.getZ(), 40, 1.0D, 1.0D, 1.0D, 0.03D);
+                            this.playSound(SoundEvents.PLAYER_TELEPORT, 1.0F, 1.0F);
+                            this.siegeCheckCooldown = 100;
+                            broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.teleport", 12.0);
+                        }
+                    }
+                }
+
+                if (this.infightingCooldown > 0) this.infightingCooldown--;
+                if (health > 900.0F && this.infightingCooldown <= 0) {
+                    AABB box = this.getBoundingBox().inflate(16.0D);
+                    java.util.List<net.minecraft.world.entity.monster.Monster> mobs = serverLevel.getEntitiesOfClass(net.minecraft.world.entity.monster.Monster.class, box, m -> m.isAlive() && m.getTarget() == this);
+                    if (mobs.size() >= 2) {
+                        java.util.Collections.shuffle(mobs);
+                        for (int i = 0; i < mobs.size(); i++) {
+                            net.minecraft.world.entity.monster.Monster m1 = mobs.get(i);
+                            net.minecraft.world.entity.monster.Monster m2 = mobs.get((i + 1) % mobs.size());
+                            m1.setTarget(m2);
+                            serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, m1.getX(), m1.getEyeY(), m1.getZ(), 5, 0.5D, 0.5D, 0.5D, 0.0D);
+                        }
+                        broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.prank_positive", 16.0D);
+                        this.infightingCooldown = 300;
+                    }
+                }
+
                 double distSqr = this.distanceToSqr(currentTarget);
 
                 if (distSqr > 256.0D && this.farCloneCooldown <= 0) {
@@ -586,7 +629,11 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
             if (this.avalonActive) {
                 this.tickAvalonField(serverLevelAvalon);
                 this.tickAvalonBarrier(serverLevelAvalon);
-            } else if (health <= 300.0F && hasEnemy && this.avalonCooldown <= 0) {
+            } else if (this.avalonCooldown <= 0) {
+                boolean criticalTrigger = health < 100.0F && !this.isClone;
+                if (criticalTrigger) {
+                    this.startAvalonField(serverLevelAvalon);
+                } else if (health <= 300.0F && hasEnemy) {
                     int enemyCount = this.countNearbyEnemies(serverLevelAvalon, 16.0D);
                     boolean highThreat = this.isHighThreatGroup(serverLevelAvalon, 16.0D);
                     if (enemyCount >= 4 || highThreat) {
@@ -594,6 +641,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                     }
                 }
             }
+        }
 
             if (hasEnemy) {
                 float maxHealth = (float) this.getAttributeValue(Attributes.MAX_HEALTH);
@@ -660,6 +708,20 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (!this.level().isClientSide && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && !source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
+            if (source.getEntity() instanceof LivingEntity attacker) {
+                if (this.sakuraTeleportCooldown <= 0 && this.random.nextFloat() < 0.5F) {
+                    if (this.level() instanceof ServerLevel serverLevel) {
+                        if (this.sakuraTeleport(serverLevel, attacker)) {
+                            this.sakuraTeleportCooldown = 60;
+                            broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.combat_dodge", 12.0);
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
         if (!source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
             boolean naturalHazard = source.is(DamageTypes.IN_WALL)
                     || source.is(DamageTypes.LAVA)
@@ -720,15 +782,6 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                 }
             }
 
-            // Sakura teleport on hit (chance)
-            if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
-                if (this.sakuraTeleportCooldown <= 0 && this.random.nextFloat() < 0.4F) {
-                    if (this.sakuraTeleport(serverLevel, attacker)) {
-                        this.sakuraTeleportCooldown = 60;
-                    }
-                }
-            }
-
             if (this.tickCount - this.lastDebuffTick >= 20) {
                 this.lastDebuffTick = this.tickCount;
                 if (this.getHealth() > 900.0F) {
@@ -770,7 +823,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                 this.restoreAvalonInstantly(serverLevel);
             }
 
-            broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.death", 24.0);
+            broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.combat_death", 24.0);
             double radius = 64.0D;
             AABB box = new AABB(
                     this.getX() - radius, this.getY() - 16.0D, this.getZ() - radius,
@@ -789,6 +842,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
         }
 
         super.die(source);
+        this.discard();
     }
 
     @Override
@@ -1197,6 +1251,14 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
     }
 
     private void handleEnvironmentTeleport(ServerLevel serverLevel, LivingEntity currentTarget, boolean hasEnemy) {
+        if (this.getY() < -64.0D) {
+            if (hasEnemy && currentTarget != null) {
+                this.teleportNearTarget(serverLevel, currentTarget);
+                broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.combat_recovery", 20.0);
+                return;
+            }
+        }
+
         BlockPos feetPos = this.blockPosition();
         BlockState feetState = serverLevel.getBlockState(feetPos);
         boolean inWaterOrLava = this.isInWaterOrBubble() || this.isInLava()

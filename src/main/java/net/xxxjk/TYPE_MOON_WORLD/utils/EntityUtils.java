@@ -13,8 +13,32 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.server.level.ServerPlayer;
 
 public class EntityUtils {
+
+    public static HitResult getRayTraceTarget(ServerPlayer player, double range) {
+        float partialTicks = 1.0F;
+        HitResult blockHit = player.pick(range, partialTicks, false);
+        Vec3 eyePos = player.getEyePosition(partialTicks);
+        double distToBlock = blockHit.getType() != HitResult.Type.MISS ? blockHit.getLocation().distanceTo(eyePos) : range;
+
+        Vec3 lookDir = player.getViewVector(partialTicks);
+        Vec3 endPos = eyePos.add(lookDir.x * range, lookDir.y * range, lookDir.z * range);
+        AABB searchBox = player.getBoundingBox().expandTowards(lookDir.scale(range)).inflate(1.0D);
+
+        EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(player, eyePos, endPos, searchBox, (e) -> !e.isSpectator() && e.isPickable(), distToBlock * distToBlock);
+
+        if (entityHit != null) {
+            return entityHit;
+        }
+        return blockHit;
+    }
 
     public static void triggerSwarmAnger(Level level, LivingEntity attacker, LivingEntity target) {
         if (target == null || !target.isAlive() || attacker == null || level.isClientSide) return;

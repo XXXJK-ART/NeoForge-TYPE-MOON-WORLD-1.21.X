@@ -12,6 +12,9 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldUse;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldWinterRiver;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementSelf;
+import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementOther;
+import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
@@ -21,6 +24,10 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBlade
 public class CastMagic {
     public static void execute(Entity entity) {
         if (entity == null)
+            return;
+            
+        // Magic casting should only happen on server side
+        if (entity.level().isClientSide())
             return;
         
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -80,6 +87,90 @@ public class CastMagic {
                 castSuccess = true;
             } else if ("topaz_reinforcement".equals(magicId)) {
                 MagicTopazReinforcement.execute(entity);
+                castSuccess = true;
+            } else if ("reinforcement".equals(magicId)) {
+                switch (vars.reinforcement_target) {
+                    case 0: // Self
+                        MagicReinforcementSelf.execute(entity);
+                        break;
+                    case 1: // Other
+                        MagicReinforcementOther.execute(entity);
+                        break;
+                    case 2: // Item
+                        MagicReinforcementItem.execute(entity);
+                        break;
+                    case 3: // Cancel
+                        if (entity instanceof Player player) {
+                            // Sub-selection for cancel
+                            int cancelType = vars.reinforcement_mode; // Reuse reinforcement_mode for cancel type? Or add new var?
+                            // Let's use mode to decide what to cancel
+                            if (cancelType == 0) {
+                                // Cancel Self
+                                TypeMoonWorldModVariables.ReinforcementData data = player.getData(TypeMoonWorldModVariables.REINFORCEMENT_DATA);
+                                if (player.getUUID().equals(data.casterUUID)) {
+                                    player.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_SELF_STRENGTH);
+                                    player.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_SELF_DEFENSE);
+                                    player.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_SELF_AGILITY);
+                                    player.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_SELF_SIGHT);
+                                    player.removeEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION);
+                                    data.casterUUID = null;
+                                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.self.success"), true);
+                                } else {
+                                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.other.not_yours"), true);
+                                }
+                            } else if (cancelType == 1) {
+                                // Cancel Other
+                                net.minecraft.world.phys.HitResult hitResult = net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.getRayTraceTarget((net.minecraft.server.level.ServerPlayer) player, 10.0D);
+                                if (hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                                    net.minecraft.world.entity.Entity target = ((net.minecraft.world.phys.EntityHitResult) hitResult).getEntity();
+                                    if (target instanceof net.minecraft.world.entity.LivingEntity livingTarget) {
+                                        TypeMoonWorldModVariables.ReinforcementData data = livingTarget.getData(TypeMoonWorldModVariables.REINFORCEMENT_DATA);
+                                        if (player.getUUID().equals(data.casterUUID)) {
+                                            livingTarget.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_OTHER_STRENGTH);
+                                            livingTarget.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_OTHER_DEFENSE);
+                                            livingTarget.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_OTHER_AGILITY);
+                                            livingTarget.removeEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.REINFORCEMENT_OTHER_SIGHT);
+                                            livingTarget.removeEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION);
+                                            data.casterUUID = null;
+                                            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.other.success", livingTarget.getDisplayName()), true);
+                                        } else {
+                                            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.other.not_yours"), true);
+                                        }
+                                    }
+                                } else {
+                                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.no_target"), true);
+                                }
+                            } else if (cancelType == 2) {
+                                // Cancel Item
+                                net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                                if (!stack.isEmpty() && stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
+                                    net.minecraft.nbt.CompoundTag tag = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
+                                    if (tag.getBoolean("Reinforced")) {
+                                        if (tag.hasUUID("CasterUUID") && player.getUUID().equals(tag.getUUID("CasterUUID"))) {
+                                            net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementEventHandler.removeReinforcement(player, stack, tag);
+                                            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.item.success"), true);
+                                        } else {
+                                            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.other.not_yours"), true);
+                                        }
+                                    } else {
+                                        player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.item.not_reinforced"), true);
+                                    }
+                                } else if (!stack.isEmpty()) {
+                                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.cancel.item.not_reinforced"), true);
+                                }
+                            }
+                        }
+                        break;
+                }
+                castSuccess = true;
+            } else if ("reinforcement_self".equals(magicId)) {
+                MagicReinforcementSelf.execute(entity);
+                castSuccess = true;
+            } else if ("reinforcement_other".equals(magicId)) {
+                MagicReinforcementOther.execute(entity);
+                castSuccess = true;
+            } else if ("reinforcement_item".equals(magicId)) {
+                MagicReinforcementItem.execute(entity);
                 castSuccess = true;
             } else if ("jewel_magic_shoot".equals(magicId)) {
                 net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelShoot.execute(entity);

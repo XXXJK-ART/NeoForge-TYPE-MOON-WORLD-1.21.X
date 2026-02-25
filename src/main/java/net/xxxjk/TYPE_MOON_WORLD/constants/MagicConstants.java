@@ -106,6 +106,23 @@ public class MagicConstants {
     public static final String KEY_MAGIC_SWORD_BARREL_FULL_OPEN_SHORT = "key.typemoonworld.magic.sword_barrel_full_open.short";
     public static final String MSG_MAGIC_SWORD_BARREL_MODE_CHANGE = "message.typemoonworld.magic.sword_barrel.mode_change";
 
+    // Reinforcement
+    public static final String KEY_MAGIC_REINFORCEMENT = "key.typemoonworld.magic.reinforcement";
+    public static final String KEY_MAGIC_REINFORCEMENT_SELECTED = "key.typemoonworld.magic.reinforcement.selected";
+    public static final String KEY_MAGIC_REINFORCEMENT_SHORT = "key.typemoonworld.magic.reinforcement.short";
+
+    public static final String KEY_MAGIC_REINFORCEMENT_SELF = "key.typemoonworld.magic.reinforcement_self";
+    public static final String KEY_MAGIC_REINFORCEMENT_SELF_SELECTED = "key.typemoonworld.magic.reinforcement_self.selected";
+    public static final String KEY_MAGIC_REINFORCEMENT_SELF_SHORT = "key.typemoonworld.magic.reinforcement_self.short";
+
+    public static final String KEY_MAGIC_REINFORCEMENT_OTHER = "key.typemoonworld.magic.reinforcement_other";
+    public static final String KEY_MAGIC_REINFORCEMENT_OTHER_SELECTED = "key.typemoonworld.magic.reinforcement_other.selected";
+    public static final String KEY_MAGIC_REINFORCEMENT_OTHER_SHORT = "key.typemoonworld.magic.reinforcement_other.short";
+
+    public static final String KEY_MAGIC_REINFORCEMENT_ITEM = "key.typemoonworld.magic.reinforcement_item";
+    public static final String KEY_MAGIC_REINFORCEMENT_ITEM_SELECTED = "key.typemoonworld.magic.reinforcement_item.selected";
+    public static final String KEY_MAGIC_REINFORCEMENT_ITEM_SHORT = "key.typemoonworld.magic.reinforcement_item.short";
+
     // General Magic Messages
     public static final String MSG_TRACE_ON = "message.typemoonworld.trace_on";
     public static final String MSG_TRACE_OFF = "message.typemoonworld.trace_off";

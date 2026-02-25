@@ -33,6 +33,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
+                        output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
+                        output.accept(ModItems.MAGIC_PAGE_REINFORCEMENT);
                         
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);

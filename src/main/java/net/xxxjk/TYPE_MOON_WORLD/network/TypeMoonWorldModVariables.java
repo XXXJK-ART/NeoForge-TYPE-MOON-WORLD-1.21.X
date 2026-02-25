@@ -41,6 +41,9 @@ public class TypeMoonWorldModVariables {
     
     public static final Supplier<AttachmentType<UBWReturnData>> UBW_RETURN_DATA = ATTACHMENT_TYPES.register("ubw_return_data",
             () -> AttachmentType.serializable(UBWReturnData::new).build());
+    
+    public static final Supplier<AttachmentType<ReinforcementData>> REINFORCEMENT_DATA = ATTACHMENT_TYPES.register("reinforcement_data",
+            () -> AttachmentType.serializable(ReinforcementData::new).build());
 
     @EventBusSubscriber
     public static class EventBusVariableHandlers {
@@ -95,9 +98,13 @@ public class TypeMoonWorldModVariables {
             clone.magic_circuit_open_timer = original.magic_circuit_open_timer;
             clone.selected_magics = new java.util.ArrayList<>(original.selected_magics);
             clone.current_magic_index = original.current_magic_index;
+            clone.magic_cooldown = original.magic_cooldown;
+            
+            clone.reinforcement_level = original.reinforcement_level;
             
             clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
             clone.proficiency_projection = original.proficiency_projection;
+            clone.proficiency_reinforcement = original.proficiency_reinforcement;
             clone.proficiency_jewel_magic_shoot = original.proficiency_jewel_magic_shoot;
             clone.proficiency_jewel_magic_release = original.proficiency_jewel_magic_release;
             clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
@@ -187,9 +194,12 @@ public class TypeMoonWorldModVariables {
         public int current_magic_index = 0;
         public double magic_cooldown = 0;
 
+        public int reinforcement_level = 1;
+        
         // Proficiency Data
         public double proficiency_structural_analysis = 0;
         public double proficiency_projection = 0;
+        public double proficiency_reinforcement = 0;
         public double proficiency_jewel_magic_shoot = 0;
         public double proficiency_jewel_magic_release = 0;
         public double proficiency_unlimited_blade_works = 0;
@@ -221,6 +231,8 @@ public class TypeMoonWorldModVariables {
         // Magic Modes
         public int sword_barrel_mode = 0; // 0: Default, 1: Mode 2, etc.
         public int jewel_magic_mode = 0; // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz
+        public int reinforcement_mode = 0; // 0: Body, 1: Hand, 2: Leg, 3: Eye
+        public int reinforcement_target = 0; // 0: Self, 1: Other, 2: Item
         public boolean is_sword_barrel_active = false; // Toggle state for continuous fire
         public boolean ubw_broken_phantasm_enabled = false; // Toggle state for Broken Phantasm
         public int merlin_favor = 0;
@@ -251,6 +263,7 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("proficiency_jewel_magic_release", proficiency_jewel_magic_release);
             nbt.putDouble("proficiency_unlimited_blade_works", proficiency_unlimited_blade_works);
             nbt.putDouble("proficiency_sword_barrel_full_open", proficiency_sword_barrel_full_open);
+            nbt.putDouble("proficiency_reinforcement", proficiency_reinforcement);
             
             nbt.putBoolean("is_chanting_ubw", is_chanting_ubw);
             nbt.putInt("ubw_chant_progress", ubw_chant_progress);
@@ -266,6 +279,9 @@ public class TypeMoonWorldModVariables {
             
             nbt.putInt("sword_barrel_mode", sword_barrel_mode);
             nbt.putInt("jewel_magic_mode", jewel_magic_mode);
+            nbt.putInt("reinforcement_mode", reinforcement_mode);
+            nbt.putInt("reinforcement_target", reinforcement_target);
+            nbt.putInt("reinforcement_level", reinforcement_level);
             nbt.putBoolean("is_sword_barrel_active", is_sword_barrel_active);
             nbt.putBoolean("ubw_broken_phantasm_enabled", ubw_broken_phantasm_enabled);
             nbt.putInt("merlin_favor", merlin_favor);
@@ -333,6 +349,8 @@ public class TypeMoonWorldModVariables {
                 if (proficiency_jewel_magic_release == 0) proficiency_jewel_magic_release = old;
             }
             proficiency_unlimited_blade_works = nbt.getDouble("proficiency_unlimited_blade_works");
+            proficiency_sword_barrel_full_open = nbt.getDouble("proficiency_sword_barrel_full_open");
+            proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
             
             is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
             ubw_chant_progress = nbt.getInt("ubw_chant_progress");
@@ -348,6 +366,9 @@ public class TypeMoonWorldModVariables {
             
             if (nbt.contains("sword_barrel_mode")) sword_barrel_mode = nbt.getInt("sword_barrel_mode");
             if (nbt.contains("jewel_magic_mode")) jewel_magic_mode = nbt.getInt("jewel_magic_mode");
+            if (nbt.contains("reinforcement_mode")) reinforcement_mode = nbt.getInt("reinforcement_mode");
+            if (nbt.contains("reinforcement_target")) reinforcement_target = nbt.getInt("reinforcement_target");
+            if (nbt.contains("reinforcement_level")) reinforcement_level = nbt.getInt("reinforcement_level");
             if (nbt.contains("is_sword_barrel_active")) is_sword_barrel_active = nbt.getBoolean("is_sword_barrel_active");
             if (nbt.contains("ubw_broken_phantasm_enabled")) ubw_broken_phantasm_enabled = nbt.getBoolean("ubw_broken_phantasm_enabled");
             if (nbt.contains("merlin_favor")) {
@@ -514,7 +535,7 @@ public class TypeMoonWorldModVariables {
         }
     }
 
-    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic_shoot, double jewel_magic_release, double unlimited_blade_works, double sword_barrel_full_open) implements CustomPacketPayload {
+    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic_shoot, double jewel_magic_release, double unlimited_blade_works, double sword_barrel_full_open, double reinforcement) implements CustomPacketPayload {
         public static final Type<ProficiencySyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "proficiency_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
                 (RegistryFriendlyByteBuf buffer, ProficiencySyncMessage message) -> {
@@ -524,8 +545,10 @@ public class TypeMoonWorldModVariables {
                     buffer.writeDouble(message.jewel_magic_release);
                     buffer.writeDouble(message.unlimited_blade_works);
                     buffer.writeDouble(message.sword_barrel_full_open);
+                    buffer.writeDouble(message.reinforcement);
                 },
                 (RegistryFriendlyByteBuf buffer) -> new ProficiencySyncMessage(
+                        buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
@@ -536,7 +559,7 @@ public class TypeMoonWorldModVariables {
         );
 
         public ProficiencySyncMessage(PlayerVariables vars) {
-            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic_shoot, vars.proficiency_jewel_magic_release, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open);
+            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic_shoot, vars.proficiency_jewel_magic_release, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open, vars.proficiency_reinforcement);
         }
 
         @Override
@@ -554,6 +577,7 @@ public class TypeMoonWorldModVariables {
                     vars.proficiency_jewel_magic_release = message.jewel_magic_release;
                     vars.proficiency_unlimited_blade_works = message.unlimited_blade_works;
                     vars.proficiency_sword_barrel_full_open = message.sword_barrel_full_open;
+                    vars.proficiency_reinforcement = message.reinforcement;
                 });
             }
         }
@@ -585,6 +609,22 @@ public class TypeMoonWorldModVariables {
             returnZ = tag.getDouble("returnZ");
             returnDim = tag.getString("returnDim");
             generated = tag.getBoolean("generated");
+        }
+    }
+
+    public static class ReinforcementData implements INBTSerializable<CompoundTag> {
+        public java.util.UUID casterUUID;
+
+        @Override
+        public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
+            CompoundTag tag = new CompoundTag();
+            if (casterUUID != null) tag.putUUID("casterUUID", casterUUID);
+            return tag;
+        }
+
+        @Override
+        public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag tag) {
+            if (tag.hasUUID("casterUUID")) casterUUID = tag.getUUID("casterUUID");
         }
     }
 }
