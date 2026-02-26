@@ -1,5 +1,22 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.stream.Stream;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ElytraItem;
+import net.minecraft.world.item.FishingRodItem;
+import net.minecraft.world.item.FlintAndSteelItem;
+import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -12,7 +29,6 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.ItemStack;
@@ -21,27 +37,17 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Display;
 import net.minecraft.world.phys.AABB;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.stream.Stream;
-
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.minecraft.resources.ResourceLocation;
@@ -51,29 +57,16 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.minecraft.world.item.TridentItem;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ElytraItem;
-import net.minecraft.world.item.ShieldItem;
-import net.minecraft.world.item.FishingRodItem;
-import net.minecraft.world.item.ShearsItem;
-import net.minecraft.world.item.FlintAndSteelItem;
-import net.minecraft.world.item.ProjectileWeaponItem;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.server.level.TicketType;
-
-
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public class ChantHandler {
@@ -854,8 +847,8 @@ public class ChantHandler {
         
         RandomSource random = player.getRandom();
         // Reduced count for "Sword Rain" reduction request?
-        // User said: "减小所有的无限剑制内的剑雨（不包括层写）"
-        // And "无限剑制进入纬度时玩家周围的地上直接生成方块剑"
+        // User said: "鍑忓皬鎵€鏈夌殑鏃犻檺鍓戝埗鍐呯殑鍓戦洦锛堜笉鍖呮嫭灞傚啓锛?
+        // And "鏃犻檺鍓戝埗杩涘叆绾害鏃剁帺瀹跺懆鍥寸殑鍦颁笂鐩存帴鐢熸垚鏂瑰潡鍓?
         // So this is a NEW feature, not the rain itself.
         // Let's spawn a reasonable amount, e.g. 30.
         int count = 30;
@@ -911,23 +904,23 @@ public class ChantHandler {
                 PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0, offsetZ));
              }
         } else if (progress == 2) {
-            chantText = "§bSteel is my body, and fire is my blood.";
+            chantText = "搂bSteel is my body, and fire is my blood.";
         } else if (progress == 3) {
-            chantText = "§bI have created over a thousand blades.";
+            chantText = "搂bI have created over a thousand blades.";
             // Initial burst spawn - slightly increased from 8
             spawnVisualSwords(player, vars, 10, 10.0);
         } else if (progress == 4) {
-            chantText = "§bUnaware of loss.";
+            chantText = "搂bUnaware of loss.";
         } else if (progress == 5) {
-            chantText = "§bNor aware of gain.";
+            chantText = "搂bNor aware of gain.";
         } else if (progress == 6) {
-            chantText = "§bWithstood pain to create weapons,waiting for one's arrival.";
+            chantText = "搂bWithstood pain to create weapons,waiting for one's arrival.";
         } else if (progress == 7) {
-            chantText = "§bI have no regrets.";
+            chantText = "搂bI have no regrets.";
         } else if (progress == 8) {
-            chantText = "§bThis is the only path.";
+            chantText = "搂bThis is the only path.";
         } else if (progress == 9) {
-            chantText = "§bMy whole life was,";
+            chantText = "搂bMy whole life was,";
         } else if (progress > 9) {
             // Activation Phase
             if (ManaHelper.consumeManaOrHealth(player, cost)) {

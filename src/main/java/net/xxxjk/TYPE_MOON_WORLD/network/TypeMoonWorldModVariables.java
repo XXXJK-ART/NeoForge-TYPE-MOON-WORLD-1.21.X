@@ -150,6 +150,11 @@ public class TypeMoonWorldModVariables {
                 clone.analyzed_items.add(stack.copy());
             }
             clone.projection_selected_item = original.projection_selected_item.copy();
+            clone.analyzed_structures = new java.util.ArrayList<>();
+            for (PlayerVariables.SavedStructure structure : original.analyzed_structures) {
+                clone.analyzed_structures.add(structure.copy());
+            }
+            clone.projection_selected_structure_id = original.projection_selected_structure_id;
 
             // Clone Mystic Eyes Inventory
             for (int i = 0; i < original.mysticEyesInventory.getSlots(); i++) {
@@ -176,6 +181,11 @@ public class TypeMoonWorldModVariables {
     }
 
     public static class PlayerVariables implements INBTSerializable<CompoundTag> {
+        public static final String TRUSTED_STRUCTURE_SOURCE = "typemoonworld:analysis_v2";
+        public static final int MAX_BLOCKS_PER_STRUCTURE = 8192;
+        public static final int MAX_TOTAL_STRUCTURE_BLOCKS = 10000;
+        public static final int MAX_STRUCTURES = 48;
+
         public double player_mana = 0;
         public double player_max_mana = 0;
         public double player_mana_egenerated_every_moment = 0;
@@ -208,6 +218,8 @@ public class TypeMoonWorldModVariables {
         // Projection Magic Data
         public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
         public ItemStack projection_selected_item = ItemStack.EMPTY;
+        public java.util.List<SavedStructure> analyzed_structures = new java.util.ArrayList<>();
+        public String projection_selected_structure_id = "";
         public ItemStackHandler mysticEyesInventory = new ItemStackHandler(1);
         public boolean is_mystic_eyes_active = false;
         
@@ -237,6 +249,193 @@ public class TypeMoonWorldModVariables {
         public boolean ubw_broken_phantasm_enabled = false; // Toggle state for Broken Phantasm
         public int merlin_favor = 0;
         public int merlin_talk_counter = 0;
+
+        public static class SavedStructureBlock {
+            public int x;
+            public int y;
+            public int z;
+            public String blockId = "minecraft:air";
+            public String blockStateProps = "";
+
+            public SavedStructureBlock() {
+            }
+
+            public SavedStructureBlock(int x, int y, int z, String blockId) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.blockId = blockId;
+            }
+
+            public SavedStructureBlock(int x, int y, int z, String blockId, String blockStateProps) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.blockId = blockId;
+                this.blockStateProps = blockStateProps == null ? "" : blockStateProps;
+            }
+
+            public SavedStructureBlock copy() {
+                return new SavedStructureBlock(x, y, z, blockId, blockStateProps);
+            }
+
+            public CompoundTag serializeNBT() {
+                CompoundTag tag = new CompoundTag();
+                tag.putInt("x", x);
+                tag.putInt("y", y);
+                tag.putInt("z", z);
+                tag.putString("block_id", blockId);
+                if (blockStateProps != null && !blockStateProps.isEmpty()) {
+                    tag.putString("block_state_props", blockStateProps);
+                }
+                return tag;
+            }
+
+            public static SavedStructureBlock fromNBT(CompoundTag tag) {
+                SavedStructureBlock block = new SavedStructureBlock();
+                block.x = tag.getInt("x");
+                block.y = tag.getInt("y");
+                block.z = tag.getInt("z");
+                if (tag.contains("block_id")) {
+                    block.blockId = tag.getString("block_id");
+                }
+                if (tag.contains("block_state_props")) {
+                    block.blockStateProps = tag.getString("block_state_props");
+                } else {
+                    block.blockStateProps = "";
+                }
+                return block;
+            }
+        }
+
+        public static class SavedStructure {
+            public String id = "";
+            public String name = "";
+            public String source = "";
+            public int sizeX = 1;
+            public int sizeY = 1;
+            public int sizeZ = 1;
+            public int totalBlocks = 0;
+            public ItemStack icon = ItemStack.EMPTY;
+            public java.util.List<SavedStructureBlock> blocks = new java.util.ArrayList<>();
+
+            public SavedStructure copy() {
+                SavedStructure structure = new SavedStructure();
+                structure.id = id;
+                structure.name = name;
+                structure.source = source;
+                structure.sizeX = sizeX;
+                structure.sizeY = sizeY;
+                structure.sizeZ = sizeZ;
+                structure.totalBlocks = totalBlocks;
+                structure.icon = icon.copy();
+                for (SavedStructureBlock block : blocks) {
+                    structure.blocks.add(block.copy());
+                }
+                return structure;
+            }
+
+            public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
+                CompoundTag tag = new CompoundTag();
+                tag.putString("id", id);
+                tag.putString("name", name);
+                if (source != null && !source.isEmpty()) {
+                    tag.putString("source", source);
+                }
+                tag.putInt("size_x", sizeX);
+                tag.putInt("size_y", sizeY);
+                tag.putInt("size_z", sizeZ);
+                tag.putInt("total_blocks", totalBlocks);
+                if (!icon.isEmpty()) {
+                    tag.put("icon", icon.save(lookupProvider));
+                }
+                net.minecraft.nbt.ListTag blockList = new net.minecraft.nbt.ListTag();
+                for (SavedStructureBlock block : blocks) {
+                    blockList.add(block.serializeNBT());
+                }
+                tag.put("blocks", blockList);
+                return tag;
+            }
+
+            public static SavedStructure fromNBT(HolderLookup.Provider lookupProvider, CompoundTag tag) {
+                SavedStructure structure = new SavedStructure();
+                if (tag.contains("id")) structure.id = tag.getString("id");
+                if (tag.contains("name")) structure.name = tag.getString("name");
+                if (tag.contains("source")) structure.source = tag.getString("source");
+                structure.sizeX = Math.max(1, tag.getInt("size_x"));
+                structure.sizeY = Math.max(1, tag.getInt("size_y"));
+                structure.sizeZ = Math.max(1, tag.getInt("size_z"));
+                structure.totalBlocks = Math.max(0, tag.getInt("total_blocks"));
+                if (tag.contains("icon")) {
+                    java.util.Optional<ItemStack> iconStack = ItemStack.parse(lookupProvider, tag.getCompound("icon"));
+                    iconStack.ifPresent(stack -> structure.icon = stack);
+                }
+                if (tag.contains("blocks")) {
+                    net.minecraft.nbt.ListTag blockList = tag.getList("blocks", 10);
+                    for (int i = 0; i < blockList.size(); i++) {
+                        structure.blocks.add(SavedStructureBlock.fromNBT(blockList.getCompound(i)));
+                    }
+                }
+                return structure;
+            }
+        }
+
+        public SavedStructure getStructureById(String id) {
+            if (id == null || id.isEmpty()) return null;
+            for (SavedStructure structure : analyzed_structures) {
+                if (id.equals(structure.id) && isTrustedStructure(structure)) {
+                    return structure;
+                }
+            }
+            return null;
+        }
+
+        public boolean removeStructureById(String id) {
+            if (id == null || id.isEmpty()) return false;
+            for (int i = 0; i < analyzed_structures.size(); i++) {
+                if (id.equals(analyzed_structures.get(i).id)) {
+                    analyzed_structures.remove(i);
+                    if (id.equals(projection_selected_structure_id)) {
+                        projection_selected_structure_id = "";
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static boolean isTrustedStructure(SavedStructure structure) {
+            return structure != null && TRUSTED_STRUCTURE_SOURCE.equals(structure.source);
+        }
+
+        private static int safeBlockCount(SavedStructure structure) {
+            if (structure == null || structure.blocks == null) return 0;
+            return Math.max(0, structure.blocks.size());
+        }
+
+        private void sanitizeAnalyzedStructures() {
+            java.util.List<SavedStructure> sanitized = new java.util.ArrayList<>();
+            int totalBlocks = 0;
+            for (SavedStructure structure : analyzed_structures) {
+                if (structure == null) continue;
+                if (!isTrustedStructure(structure)) continue;
+                if (structure.id == null || structure.id.isEmpty()) continue;
+                if (structure.blocks == null || structure.blocks.isEmpty()) continue;
+
+                int blockCount = safeBlockCount(structure);
+                if (blockCount > MAX_BLOCKS_PER_STRUCTURE) continue;
+                if (totalBlocks + blockCount > MAX_TOTAL_STRUCTURE_BLOCKS) continue;
+                if (sanitized.size() >= MAX_STRUCTURES) break;
+
+                totalBlocks += blockCount;
+                sanitized.add(structure);
+            }
+            analyzed_structures = sanitized;
+
+            if (!projection_selected_structure_id.isEmpty() && getStructureById(projection_selected_structure_id) == null) {
+                projection_selected_structure_id = "";
+            }
+        }
 
         @Override
         public CompoundTag serializeNBT(HolderLookup.@NotNull Provider lookupProvider) {
@@ -314,6 +513,13 @@ public class TypeMoonWorldModVariables {
             if (!projection_selected_item.isEmpty()) {
                 nbt.put("projection_selected_item", projection_selected_item.save(lookupProvider));
             }
+            nbt.putString("projection_selected_structure_id", projection_selected_structure_id);
+
+            net.minecraft.nbt.ListTag structuresList = new net.minecraft.nbt.ListTag();
+            for (SavedStructure structure : analyzed_structures) {
+                structuresList.add(structure.serializeNBT(lookupProvider));
+            }
+            nbt.put("analyzed_structures", structuresList);
             
             nbt.put("mysticEyesInventory", mysticEyesInventory.serializeNBT(lookupProvider));
 
@@ -413,6 +619,29 @@ public class TypeMoonWorldModVariables {
                 java.util.Optional<ItemStack> stack = ItemStack.parse(lookupProvider, nbt.getCompound("projection_selected_item"));
                 stack.ifPresent(s -> projection_selected_item = s);
             }
+
+            projection_selected_structure_id = "";
+            if (nbt.contains("projection_selected_structure_id")) {
+                projection_selected_structure_id = nbt.getString("projection_selected_structure_id");
+            }
+
+            analyzed_structures.clear();
+            if (nbt.contains("analyzed_structures")) {
+                net.minecraft.nbt.ListTag structuresList = nbt.getList("analyzed_structures", 10);
+                for (int i = 0; i < structuresList.size(); i++) {
+                    SavedStructure structure = SavedStructure.fromNBT(lookupProvider, structuresList.getCompound(i));
+                    if (structure.id == null || structure.id.isEmpty()) {
+                        structure.id = java.util.UUID.randomUUID().toString();
+                    }
+                    analyzed_structures.add(structure);
+                }
+            }
+
+            sanitizeAnalyzedStructures();
+
+            if (!projection_selected_structure_id.isEmpty() && getStructureById(projection_selected_structure_id) == null) {
+                projection_selected_structure_id = "";
+            }
             
             if (nbt.contains("mysticEyesInventory")) {
                 mysticEyesInventory.deserializeNBT(lookupProvider, nbt.getCompound("mysticEyesInventory"));
@@ -420,6 +649,7 @@ public class TypeMoonWorldModVariables {
         }
 
         public void syncPlayerVariables(Entity entity) {
+            sanitizeAnalyzedStructures();
             // Auto-unlock Unlimited Blade Works if player has Sword Attribute
             if (this.player_magic_attributes_sword) {
                 if (!this.learned_magics.contains("unlimited_blade_works")) {
@@ -452,6 +682,17 @@ public class TypeMoonWorldModVariables {
                 if (!this.learned_magics.contains("jewel_magic_release")) {
                     this.learned_magics.add("jewel_magic_release");
                 }
+            }
+
+            // Reinforcement compatibility:
+            // Legacy/fragment data may only contain reinforcement_* sub skills.
+            // Ensure the selectable base entry "reinforcement" is always present.
+            boolean knowsReinforcementSubSkill =
+                    this.learned_magics.contains("reinforcement_self")
+                            || this.learned_magics.contains("reinforcement_other")
+                            || this.learned_magics.contains("reinforcement_item");
+            if (knowsReinforcementSubSkill && !this.learned_magics.contains("reinforcement")) {
+                this.learned_magics.add("reinforcement");
             }
 
             if (entity instanceof ServerPlayer serverPlayer)

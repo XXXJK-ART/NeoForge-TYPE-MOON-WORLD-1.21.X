@@ -1,16 +1,16 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
+import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
-import net.minecraft.client.model.PlayerModel;
-import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementLayer;
-import net.minecraft.client.player.AbstractClientPlayer;
-
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.resources.PlayerSkin;
 

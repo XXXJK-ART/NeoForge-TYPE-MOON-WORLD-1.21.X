@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 
+import net.minecraft.core.Direction;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -8,7 +10,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.Direction;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity;
 
@@ -31,12 +32,12 @@ public class SwordBarrelBlockEntityRenderer implements BlockEntityRenderer<Sword
             float scale = 0.75F;
             poseStack.scale(scale, scale, scale);
 
-            // "实体剑要可以按照角度扎在地上" - Use captured projectile rotation
+            // "瀹炰綋鍓戣鍙互鎸夌収瑙掑害鎵庡湪鍦颁笂" - Use captured projectile rotation
             float pitch = tileEntity.getCustomPitch();
             float yaw = tileEntity.getCustomYaw();
             
             // Revert to UBW standard rotation logic (Vertical or fixed angle)
-            // User requested: "这些剑雨生成的剑不需要以各种角度插在地上，就参考ubw的基础的不同角度"
+            // User requested: "杩欎簺鍓戦洦鐢熸垚鐨勫墤涓嶉渶瑕佷互鍚勭瑙掑害鎻掑湪鍦颁笂锛屽氨鍙傝€僽bw鐨勫熀纭€鐨勪笉鍚岃搴?
             // UBWWeaponBlockEntityRenderer logic:
             
             // Determine rotation angle based on block direction

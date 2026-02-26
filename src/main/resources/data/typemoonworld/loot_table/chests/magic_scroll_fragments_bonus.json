@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 70
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_scroll_basic_jewel_broken",
+          "weight": 16
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_page_reinforcement",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_scroll_advanced_jewel_broken",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_scroll_projection_broken",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_scroll_broken_phantasm_broken",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

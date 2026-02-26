@@ -9,13 +9,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.Minecraft;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.platform.GlStateManager;
-
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
-
 import net.minecraft.network.chat.Component;
 
 @EventBusSubscriber({Dist.CLIENT})

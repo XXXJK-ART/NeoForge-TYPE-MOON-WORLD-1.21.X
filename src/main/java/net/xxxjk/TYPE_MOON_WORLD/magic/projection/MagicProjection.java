@@ -1,5 +1,11 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,18 +18,12 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.state.BlockState;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.nbt.CompoundTag;
-
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 
 public class MagicProjection {
     public static void execute(Entity entity) {
@@ -60,7 +60,7 @@ public class MagicProjection {
             }
             
             double cost = calculateCost(target, vars.player_magic_attributes_sword, vars.proficiency_projection);
-            if (ManaHelper.consumeManaOrHealth(player, cost)) {
+            if (ManaHelper.consumeManaWithInventoryOrHealth(player, cost)) {
                 
                 // Proficiency Increase
                 vars.proficiency_projection = Math.min(100, vars.proficiency_projection + 0.2);
@@ -73,6 +73,9 @@ public class MagicProjection {
                 
                 ItemStack projected = target.copy();
                 projected.setCount(1);
+                projected.remove(DataComponents.CONTAINER);
+                projected.remove(DataComponents.BUNDLE_CONTENTS);
+                projected.remove(DataComponents.BLOCK_ENTITY_DATA);
                 
                 // Set Durability
                 if (projected.isDamageableItem()) {

@@ -1,4 +1,4 @@
-{
+﻿{
   "item.typemoonworld.magic_fragments": "玛那",
   "block.typemoonworld.ancient_temple_stone": "古老神殿石",
   "item.typemoonworld.temple_stone_sword_axe": "神殿石剑斧",
@@ -73,8 +73,8 @@
   "item.typemoonworld.magic_scroll_basic_jewel_broken": "残缺的基础·宝石魔术",
   "item.typemoonworld.magic_scroll_advanced_jewel": "高级·宝石魔术",
   "item.typemoonworld.magic_scroll_advanced_jewel_broken": "残缺的高级·宝石魔术",
-  "item.typemoonworld.magic_scroll_projection": "投影魔术",
-  "item.typemoonworld.magic_scroll_projection_broken": "残缺的投影魔术",
+  "item.typemoonworld.magic_scroll_projection": "投影/解析魔术",
+  "item.typemoonworld.magic_scroll_projection_broken": "残缺的投影/解析魔术",
   "item.typemoonworld.magic_scroll_broken_phantasm": "投影崩坏",
   "item.typemoonworld.magic_scroll_broken_phantasm_broken": "残缺的投影崩坏",
   
@@ -167,6 +167,7 @@
   "message.typemoonworld.mystic_eyes.deactivated": "魔眼 已关闭",
   "message.typemoonworld.mystic_eyes.not_equipped": "未装备魔眼",
   "gui.typemoonworld.projection.filter.all": "全部",
+  "gui.typemoonworld.projection.filter.structure": "结构",
   "gui.typemoonworld.projection.filter.building": "建筑",
   "gui.typemoonworld.projection.filter.combat": "战斗",
   "gui.typemoonworld.projection.filter.tools": "工具",
@@ -197,6 +198,19 @@
   "message.typemoonworld.magic.any_gem.need": "需要任意满魔力宝石",
 
   "gui.typemoonworld.mode_switcher.title": "魔术模式切换",
+  
+  "magic.typemoonworld.ruby_throw.name": "红宝石投掷",
+  "magic.typemoonworld.sapphire_throw.name": "蓝宝石投掷",
+  "magic.typemoonworld.emerald_use.name": "绿宝石使用",
+  "magic.typemoonworld.topaz_throw.name": "黄宝石投掷",
+  "magic.typemoonworld.cyan_throw.name": "青宝石投掷",
+  
+  "magic.typemoonworld.ruby_flame_sword.name": "红宝石·炎之剑",
+  "magic.typemoonworld.sapphire_winter_frost.name": "蓝宝石·凛冬之霜",
+  "magic.typemoonworld.emerald_winter_river.name": "绿宝石·凛冬之河",
+  "magic.typemoonworld.topaz_reinforcement.name": "黄宝石·强化",
+  "magic.typemoonworld.cyan_wind.name": "青宝石·岚之风",
+
   "gui.typemoonworld.mode.none": "无",
   
   "message.typemoonworld.trace_on": "Trace On",
@@ -223,6 +237,28 @@
   "message.typemoonworld.unlimited_blade_works.exit": "§c固有结界解除.",
 
   "gui.typemoonworld.projection.filter.special": "特殊",
+  "gui.typemoonworld.structure.confirm.title": "是否保存当前框选范围?",
+  "gui.typemoonworld.structure.confirm.subtitle": "按 ESC 返回上一步框选",
+  "gui.typemoonworld.structure.naming.title": "为结构命名",
+  "gui.typemoonworld.structure.naming.subtitle": "输入名称并保存到个人投影数据",
+  "gui.typemoonworld.structure.naming.input": "结构名称",
+  "gui.typemoonworld.structure.naming.save": "保存",
+  "gui.typemoonworld.structure.naming.cancel": "取消",
+  "gui.typemoonworld.structure.delete.title": "是否删除该结构?",
+  "message.typemoonworld.structure.enter_name": "请输入结构名称",
+  "message.typemoonworld.structure.save_name_empty": "结构名称不能为空",
+  "message.typemoonworld.structure.invalid_range": "所选范围无效",
+  "message.typemoonworld.structure.saved": "结构已保存: %s | 消耗魔力: %s",
+  "message.typemoonworld.structure.deleted": "结构已删除",
+  "message.typemoonworld.projection.structure.preview_start": "结构幻影已开启.滚轮旋转,按 C 锁定位置.",
+  "message.typemoonworld.projection.structure.preview_lock": "位置已锁定.再次按 C 开始投影构建.",
+  "message.typemoonworld.projection.structure.build_begin": "已发送投影构建请求.",
+  "message.typemoonworld.projection.structure.started": "结构投影开始: %s",
+  "message.typemoonworld.projection.structure.cleared": "已清空构建范围,开始逐层构建.",
+  "message.typemoonworld.projection.structure.paused_mana": "投影暂停: 魔力不足.",
+  "message.typemoonworld.projection.structure.completed": "结构投影完成.",
+  "message.typemoonworld.projection.structure.start_failed": "无法开始结构投影.",
+  "message.typemoonworld.projection.structure.rotation": "朝向: %s",
 
   "gui.typemoonworld.proficiency": "熟练度: %s",
   
@@ -284,6 +320,10 @@
   "message.typemoonworld.magic.reinforcement.no_target": "未发现强化目标.",
   "message.typemoonworld.magic.reinforcement.success": "成功强化目标: %s",
   "message.typemoonworld.magic.reinforcement.no_item": "手中没有物品.",
+  
+  "message.typemoonworld.magic.circuit_not_open": "魔术回路未开启.",
+  "message.typemoonworld.magic.no_magic_selected": "未选择魔术.",
+  "message.typemoonworld.reinforcement.level_too_high": "§c熟练度不足,无法选择该等级 (当前最大: %s)",
   "message.typemoonworld.magic.reinforcement.cannot_reinforce": "该物品无法强化.",
   "message.typemoonworld.magic.reinforcement.item.repaired": "物品已强化修复.",
   "message.typemoonworld.magic.reinforcement.item.full": "物品状态完美,无需强化.",
@@ -313,6 +353,15 @@
 
   "gui.typemoonworld.basic_info.base_attributes": "基础属性:",
   "gui.typemoonworld.basic_info.extra_attributes": "扩展属性:",
+  "gui.typemoonworld.basic_info.current_mana": "当前魔力:",
+  "gui.typemoonworld.basic_info.max_mana": "魔力上限:",
+  "gui.typemoonworld.basic_info.mana_regen": "魔力回复:",
+  "gui.typemoonworld.basic_info.regen_interval": "回复间隔:",
+  
+  "gui.typemoonworld.category.jewel": "宝石",
+  "gui.typemoonworld.category.basic": "基础",
+  "gui.typemoonworld.category.ubw": "无限剑制",
+  "gui.typemoonworld.category.all": "全部",
 
   "gui.typemoonworld.mode.aoe": "广域轰炸",
   "gui.typemoonworld.mode.aiming": "定点狙击",
@@ -621,7 +670,12 @@
   "entity.typemoonworld.merlin.speech.giveup_player": "§7[梅林] 就到这里吧,下次再打,别弄得太疼.",
   
   "adv.typemoonworld.trace_on.title": "Trace On",
-  "adv.typemoonworld.trace_on.desc": "成功投影一件已解析的物品。",
+  "adv.typemoonworld.trace_on.desc": "成功投影一件已解析的物品.",
   "adv.typemoonworld.i_am_the_bone_of_my_sword.title": "I am the bone of my sword",
-  "adv.typemoonworld.i_am_the_bone_of_my_sword.desc": "进入固有结界【无限剑制】。"
+  "adv.typemoonworld.i_am_the_bone_of_my_sword.desc": "进入固有结界【无限剑制】.",
+  "message.typemoonworld.gem_resonance.start": "晶脉开始共鸣.",
+  "message.typemoonworld.gem_resonance.end": "晶脉共鸣逐渐平息.",
+  "message.typemoonworld.gem_mist.haste": "静电晶雾流动: 你的采掘更顺手了.",
+  "message.typemoonworld.gem_mist.slow": "静电晶雾紊乱: 你的采掘变得迟滞.",
+  "message.typemoonworld.gem_echo.found": "你听见了晶洞深处的回响."
 }

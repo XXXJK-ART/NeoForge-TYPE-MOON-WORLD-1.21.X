@@ -1,10 +1,12 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement;
 
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.component.CustomData;
@@ -20,7 +22,6 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 public class MagicReinforcementItem {
     public static void execute(Entity entity) {
@@ -129,6 +130,11 @@ public class MagicReinforcementItem {
         tag.putLong("ReinforcementTime", player.level().getGameTime());
         tag.putInt("ReinforcementExpiry", 600); // 30 seconds (20 ticks/s)
         tag.putUUID("CasterUUID", player.getUUID());
+        boolean hadForcedGlint = Boolean.TRUE.equals(heldItem.get(DataComponents.ENCHANTMENT_GLINT_OVERRIDE));
+        if (!hadForcedGlint) {
+            heldItem.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+            tag.putBoolean("ReinforcementInjectedGlint", true);
+        }
         
         if (!isStandardReinforceable) {
             // Non-weapon/tool reinforcement (e.g. stick, paper, etc.)

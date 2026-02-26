@@ -7,7 +7,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
-
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,6 +33,26 @@ public class Config {
             .comment("What you want the introduction message to be for the magic number")
             .define("magicNumberIntroduction", "The magic number is... ");
 
+    public static final ModConfigSpec.BooleanValue GEM_RESONANCE_ENABLED = BUILDER
+            .comment("Enable gem resonance cycle in gem terrain")
+            .define("gemResonanceEnabled", true);
+
+    public static final ModConfigSpec.IntValue GEM_RESONANCE_CYCLE_TICKS = BUILDER
+            .comment("Gem resonance cycle length in ticks")
+            .defineInRange("gemResonanceCycleTicks", 9600, 200, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue GEM_RESONANCE_DURATION_TICKS = BUILDER
+            .comment("Gem resonance active duration in ticks")
+            .defineInRange("gemResonanceDurationTicks", 900, 20, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.DoubleValue GEM_BONUS_DROP_CHANCE = BUILDER
+            .comment("Extra raw gem drop chance during resonance")
+            .defineInRange("gemBonusDropChance", 0.15D, 0.0D, 1.0D);
+
+    public static final ModConfigSpec.BooleanValue GEM_MIST_ENABLED = BUILDER
+            .comment("Enable crystal mist ambient pulses in gem terrain")
+            .define("gemMistEnabled", true);
+
     // a list of strings that are treated as resource locations for items
     private static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
             .comment("A list of items to log on common setup.")
@@ -45,6 +64,11 @@ public class Config {
     public static int magicNumber;
     public static String magicNumberIntroduction;
     public static Set<Item> items;
+    public static boolean gemResonanceEnabled;
+    public static int gemResonanceCycleTicks;
+    public static int gemResonanceDurationTicks;
+    public static double gemBonusDropChance;
+    public static boolean gemMistEnabled;
 
     private static boolean validateItemName(final Object obj) {
         return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
@@ -55,6 +79,11 @@ public class Config {
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();
         magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
+        gemResonanceEnabled = GEM_RESONANCE_ENABLED.get();
+        gemResonanceCycleTicks = GEM_RESONANCE_CYCLE_TICKS.get();
+        gemResonanceDurationTicks = Math.min(gemResonanceCycleTicks, GEM_RESONANCE_DURATION_TICKS.get());
+        gemBonusDropChance = GEM_BONUS_DROP_CHANCE.get();
+        gemMistEnabled = GEM_MIST_ENABLED.get();
 
         // convert the list of strings into a set of items
         items = ITEM_STRINGS.get().stream()

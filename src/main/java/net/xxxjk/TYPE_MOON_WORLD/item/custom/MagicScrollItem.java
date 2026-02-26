@@ -13,7 +13,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Arrays;
 
@@ -34,43 +33,32 @@ public class MagicScrollItem extends Item {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
-            // Check if already learned ALL magics in this scroll
-            boolean allLearned = true;
+            // Find first unlearned magic
+            String magicToLearn = null;
             for (String magic : magicsToLearn) {
                 if (!vars.learned_magics.contains(magic)) {
-                    allLearned = false;
+                    magicToLearn = magic;
                     break;
                 }
             }
             
-            if (allLearned) {
+            if (magicToLearn == null) {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.already_learned"), true);
                 return InteractionResultHolder.fail(stack);
             }
             
             // Attempt to learn
-            boolean learnedAny = false;
-            for (String magic : magicsToLearn) {
-                if (!vars.learned_magics.contains(magic)) {
-                    // Check success rate for each magic independently
-                    if (player.getRandom().nextDouble() < successRate) {
-                        vars.learned_magics.add(magic);
-                        player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magic + ".name")), true);
-                        learnedAny = true;
-                    }
-                }
-            }
-            
-            if (learnedAny) {
+            if (player.getRandom().nextDouble() < successRate) {
+                vars.learned_magics.add(magicToLearn);
                 vars.syncPlayerVariables(player);
-                player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_success"), true);
+                player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magicToLearn + ".name")), true);
                 player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
                 
-                // Consume scroll on success (even partial)
-                stack.shrink(1);
+                // Damage Item (Reduce Durability) instead of shrinking
+                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
                 return InteractionResultHolder.consume(stack);
             } else {
-                // If NO magics were learned (all failed roll), treat as total failure
+                // Failed to learn
                 player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_failed"), true);
                 player.playNotifySound(SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
                 

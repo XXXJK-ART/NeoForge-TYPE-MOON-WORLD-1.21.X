@@ -1,5 +1,10 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.phys.AABB;
+import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
+import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -19,7 +24,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -28,8 +32,6 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
-
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -39,9 +41,6 @@ import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
-import net.minecraft.world.damagesource.DamageSource;
-import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
-
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 
@@ -490,7 +489,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 Direction facing = hitFace.getOpposite();
                 
                 // Chance to place block (reduced probability as requested)
-                // "留在地上的概率减小一点"
+                // "鐣欏湪鍦颁笂鐨勬鐜囧噺灏忎竴鐐?
                 // Let's say 50% chance? Or 30%?
                 if (this.random.nextFloat() > 0.5f) { // 50% chance to stay (0.5 threshold)
                     this.discard();

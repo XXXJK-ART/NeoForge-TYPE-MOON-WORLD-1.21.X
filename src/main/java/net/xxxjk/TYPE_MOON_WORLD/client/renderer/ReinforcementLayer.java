@@ -35,8 +35,8 @@ public class ReinforcementLayer extends RenderLayer<AbstractClientPlayer, Player
         boolean hasDefense = player.hasEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE) || player.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_DEFENSE);
         boolean hasAgility = player.hasEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY) || player.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_AGILITY);
         boolean hasSight = player.hasEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT) || player.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_SIGHT);
-        boolean rightArmByItem = isArmHoldingReinforcedItem(player, HumanoidArm.RIGHT);
-        boolean leftArmByItem = isArmHoldingReinforcedItem(player, HumanoidArm.LEFT);
+        boolean rightArmByItem = isArmHoldingMagicTextureItem(player, HumanoidArm.RIGHT);
+        boolean leftArmByItem = isArmHoldingMagicTextureItem(player, HumanoidArm.LEFT);
 
         if (!hasStrength && !hasDefense && !hasAgility && !hasSight && !rightArmByItem && !leftArmByItem) {
             return;
@@ -139,7 +139,7 @@ public class ReinforcementLayer extends RenderLayer<AbstractClientPlayer, Player
         model.leftPants.visible = false;
     }
 
-    private static boolean isArmHoldingReinforcedItem(AbstractClientPlayer player, HumanoidArm armSide) {
+    private static boolean isArmHoldingMagicTextureItem(AbstractClientPlayer player, HumanoidArm armSide) {
         ItemStack stack = getArmStack(player, armSide);
         if (stack.isEmpty()) {
             return false;
@@ -149,7 +149,15 @@ public class ReinforcementLayer extends RenderLayer<AbstractClientPlayer, Player
             return false;
         }
         var tag = customData.copyTag();
-        return tag.contains("Reinforced") && tag.getBoolean("Reinforced");
+        if (tag.contains("Reinforced") && tag.getBoolean("Reinforced")) {
+            return true;
+        }
+        if (tag.contains("ReinforcedLevel")
+                || tag.contains("ReinforcedEnchantment")
+                || tag.contains("ReinforcementTemporary")) {
+            return true;
+        }
+        return tag.contains("is_projected") || tag.contains("is_infinite_projection");
     }
 
     private static ItemStack getArmStack(AbstractClientPlayer player, HumanoidArm armSide) {

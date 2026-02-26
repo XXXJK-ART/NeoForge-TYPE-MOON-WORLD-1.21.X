@@ -33,14 +33,14 @@ public class CastMagic {
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         if (!vars.is_magic_circuit_open) {
             if (entity instanceof Player player && !player.level().isClientSide()) {
-                 player.displayClientMessage(Component.literal("魔术回路未开启"), true);
+                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.circuit_not_open"), true);
             }
             return;
         }
 
         if (vars.selected_magics.isEmpty()) {
              if (entity instanceof Player player && !player.level().isClientSide()) {
-                 player.displayClientMessage(Component.literal("未选择魔术"), true);
+                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.no_magic_selected"), true);
             }
             return;
         }

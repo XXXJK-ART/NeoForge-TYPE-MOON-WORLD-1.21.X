@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -20,14 +19,11 @@ import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-
 import java.util.HashMap;
-
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
-
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -155,10 +151,25 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             
             // Check if learned
             boolean learned = vars.learned_magics.contains(entry.id);
-            if (!learned && "reinforcement".equals(entry.id)) {
-                learned = vars.learned_magics.contains("reinforcement_self") || 
-                          vars.learned_magics.contains("reinforcement_other") || 
-                          vars.learned_magics.contains("reinforcement_item");
+            
+            // FORCE Check for Virtual/Category Magics (Ignore if parent ID is learned, require sub-skills)
+            if ("reinforcement".equals(entry.id)) {
+                learned = vars.learned_magics.contains("reinforcement")
+                        || vars.learned_magics.contains("reinforcement_self")
+                        || vars.learned_magics.contains("reinforcement_other")
+                        || vars.learned_magics.contains("reinforcement_item");
+            } else if ("jewel_magic_shoot".equals(entry.id)) {
+                learned = vars.learned_magics.contains("ruby_throw") ||
+                          vars.learned_magics.contains("sapphire_throw") ||
+                          vars.learned_magics.contains("emerald_use") ||
+                          vars.learned_magics.contains("topaz_throw") ||
+                          vars.learned_magics.contains("cyan_throw");
+            } else if ("jewel_magic_release".equals(entry.id)) {
+                learned = vars.learned_magics.contains("ruby_flame_sword") ||
+                          vars.learned_magics.contains("sapphire_winter_frost") ||
+                          vars.learned_magics.contains("emerald_winter_river") ||
+                          vars.learned_magics.contains("topaz_reinforcement") ||
+                          vars.learned_magics.contains("cyan_wind");
             }
             
             return matchCategory && matchSearch && learned;
@@ -175,10 +186,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
     // Helper method to get category label from ID
     private String getCategoryLabel(String category) {
-        if ("jewel".equals(category)) return "宝石";
-        if ("basic".equals(category)) return "基础";
-        if ("unlimited_blade_works".equals(category)) return "无限剑制";
-        return "全部";
+        if ("jewel".equals(category)) return Component.translatable("gui.typemoonworld.category.jewel").getString();
+        if ("basic".equals(category)) return Component.translatable("gui.typemoonworld.category.basic").getString();
+        if ("unlimited_blade_works".equals(category)) return Component.translatable("gui.typemoonworld.category.ubw").getString();
+        return Component.translatable("gui.typemoonworld.category.all").getString();
     }
 
     @Override
@@ -188,7 +199,6 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             // ... (comments unchanged)
         }
         
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         if (Basic_information_back_player_self.execute(entity) instanceof LivingEntity livingEntity) {
             // Reposition entity to align with Left Panel (Left Panel: 0-80)
@@ -692,9 +702,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             
             boolean learned = vars.learned_magics.contains(entry.id);
             if (!learned && "reinforcement".equals(entry.id)) {
-                learned = vars.learned_magics.contains("reinforcement_self") || 
-                          vars.learned_magics.contains("reinforcement_other") || 
-                          vars.learned_magics.contains("reinforcement_item");
+                learned = vars.learned_magics.contains("reinforcement")
+                        || vars.learned_magics.contains("reinforcement_self")
+                        || vars.learned_magics.contains("reinforcement_other")
+                        || vars.learned_magics.contains("reinforcement_item");
             }
             return learned;
         });

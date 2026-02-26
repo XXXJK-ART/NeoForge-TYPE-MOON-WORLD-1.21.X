@@ -57,6 +57,12 @@ public class ReinforcementRenderType extends RenderType {
             RenderSystem::resetTextureMatrix
     );
 
+    private static final TexturingStateShard REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK = new TexturingStateShard(
+            "reinforcement_item_glint_texturing_block",
+            () -> setupReinforcementGlintTexturing(10f, -45.0f, 520000L, 180000L),
+            RenderSystem::resetTextureMatrix
+    );
+
     private static final RenderType REINFORCEMENT_GLINT_TRANSLUCENT = create(
             "reinforcement_glint_translucent",
             DefaultVertexFormat.POSITION_TEX,
@@ -259,6 +265,88 @@ public class ReinforcementRenderType extends RenderType {
                     .createCompositeState(false)
     );
 
+    private static final RenderType REINFORCEMENT_GLINT_TRANSLUCENT_BLOCK = create(
+            "reinforcement_glint_translucent_block",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            CompositeState.builder()
+                    .setShaderState(RENDERTYPE_GLINT_TRANSLUCENT_SHADER)
+                    .setTextureState(new TextureStateShard(REINFORCEMENT_ITEM_GLINT, false, false))
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(EQUAL_DEPTH_TEST)
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setTexturingState(REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK)
+                    .setOutputState(ITEM_ENTITY_TARGET)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType REINFORCEMENT_GLINT_BLOCK = create(
+            "reinforcement_glint_block",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            CompositeState.builder()
+                    .setShaderState(RENDERTYPE_GLINT_SHADER)
+                    .setTextureState(new TextureStateShard(REINFORCEMENT_ITEM_GLINT, false, false))
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(EQUAL_DEPTH_TEST)
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setTexturingState(REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType REINFORCEMENT_ENTITY_GLINT_BLOCK = create(
+            "reinforcement_entity_glint_block",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_GLINT_SHADER)
+                    .setTextureState(new TextureStateShard(REINFORCEMENT_ITEM_GLINT, false, false))
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(EQUAL_DEPTH_TEST)
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setOutputState(ITEM_ENTITY_TARGET)
+                    .setTexturingState(REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType REINFORCEMENT_GLINT_DIRECT_BLOCK = create(
+            "reinforcement_glint_direct_block",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER)
+                    .setTextureState(new TextureStateShard(REINFORCEMENT_ITEM_GLINT, false, false))
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(EQUAL_DEPTH_TEST)
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setTexturingState(REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType REINFORCEMENT_ENTITY_GLINT_DIRECT_BLOCK = create(
+            "reinforcement_entity_glint_direct_block",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER)
+                    .setTextureState(new TextureStateShard(REINFORCEMENT_ITEM_GLINT, false, false))
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(EQUAL_DEPTH_TEST)
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setTexturingState(REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK)
+                    .createCompositeState(false)
+    );
+
     private ReinforcementRenderType(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
@@ -303,6 +391,26 @@ public class ReinforcementRenderType extends RenderType {
         return REINFORCEMENT_GLINT_DIRECT_3D;
     }
 
+    public static RenderType glintTranslucentBlock() {
+        return REINFORCEMENT_GLINT_TRANSLUCENT_BLOCK;
+    }
+
+    public static RenderType glintBlock() {
+        return REINFORCEMENT_GLINT_BLOCK;
+    }
+
+    public static RenderType entityGlintBlock() {
+        return REINFORCEMENT_ENTITY_GLINT_BLOCK;
+    }
+
+    public static RenderType glintDirectBlock() {
+        return REINFORCEMENT_GLINT_DIRECT_BLOCK;
+    }
+
+    public static RenderType entityGlintDirectBlock() {
+        return REINFORCEMENT_ENTITY_GLINT_DIRECT_BLOCK;
+    }
+
     public static RenderType getReinforcementFoilType(RenderType baseRenderType, boolean useItemGlint) {
         if (Minecraft.useShaderTransparency() && baseRenderType == Sheets.translucentItemSheet()) {
             return glintTranslucent();
@@ -333,6 +441,11 @@ public class ReinforcementRenderType extends RenderType {
         addIfAbsent(map, entityGlint3d());
         addIfAbsent(map, glintDirect3d());
         addIfAbsent(map, entityGlintDirect3d());
+        addIfAbsent(map, glintBlock());
+        addIfAbsent(map, glintTranslucentBlock());
+        addIfAbsent(map, entityGlintBlock());
+        addIfAbsent(map, glintDirectBlock());
+        addIfAbsent(map, entityGlintDirectBlock());
     }
 
     private static void addIfAbsent(Object2ObjectLinkedOpenHashMap<RenderType, ByteBufferBuilder> map, RenderType renderType) {

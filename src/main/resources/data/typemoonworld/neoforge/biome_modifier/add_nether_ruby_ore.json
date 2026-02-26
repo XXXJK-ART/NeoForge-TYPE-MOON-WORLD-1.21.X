@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_nether",
+  "features": "typemoonworld:nether_ruby_mine_placed",
+  "step": "underground_ores"
+}

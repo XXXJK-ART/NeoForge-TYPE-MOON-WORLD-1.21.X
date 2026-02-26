@@ -39,7 +39,7 @@ public class FullManaCarvedGemItem extends Item {
     }
 
     public double getManaAmount() {
-        return quality.getCapacity();
+        return quality.getCapacity(type);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FullManaCarvedGemItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            double manaAmount = quality.getCapacity();
+            double manaAmount = quality.getCapacity(type);
             
             // Allow Overload: Removed check for max mana
             vars.player_mana += manaAmount;

@@ -1,5 +1,8 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.minecraft.world.phys.AABB;
+import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -16,7 +19,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -25,8 +27,6 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
-
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;

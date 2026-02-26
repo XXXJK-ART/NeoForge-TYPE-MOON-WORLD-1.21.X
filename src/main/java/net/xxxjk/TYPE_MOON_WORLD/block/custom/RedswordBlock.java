@@ -76,10 +76,9 @@ public class RedswordBlock extends BaseEntityBlock {
              }
              ItemEntity entityToSpawn = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), stackToDrop);
              entityToSpawn.setPickUpDelay(15);
-             entityToSpawn.setUnlimitedLifetime();
              level.addFreshEntity(entityToSpawn);
              level.destroyBlock(pos, false);
-        }
+         }
         return InteractionResult.SUCCESS;
     }
 }

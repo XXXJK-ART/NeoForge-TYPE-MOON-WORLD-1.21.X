@@ -1,5 +1,9 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works;
 
+import java.util.Iterator;
+import net.minecraft.world.phys.EntityHitResult;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -7,28 +11,21 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import net.minecraft.util.RandomSource;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
-
 import net.minecraft.core.BlockPos;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.ClipContext;
@@ -192,7 +189,7 @@ public class MagicSwordBarrelFullOpen {
         
         if (!ManaHelper.consumeManaOrHealth(player, cost)) {
              // If No Cooldown is active, maybe we allow it even without mana?
-             // "无冷却指令" -> "No Cooldown Command".
+             // "鏃犲喎鍗存寚浠? -> "No Cooldown Command".
              // Let's strictly follow "No Cooldown".
              // Mana is separate.
              
@@ -397,7 +394,7 @@ public class MagicSwordBarrelFullOpen {
             
             // For now, let's just set initial target. The entity tick logic needs to be updated to track player look.
             // OR, the projectile should just turn towards its current target (which is static).
-            // "停滞的时候也跟着玩家看向的位置缓慢变向" -> The target position itself changes?
+            // "鍋滄粸鐨勬椂鍊欎篃璺熺潃鐜╁鐪嬪悜鐨勪綅缃紦鎱㈠彉鍚? -> The target position itself changes?
             // If so, we need to update TARGET_POS from the shooter's tick or projectile's tick.
             
             Vec3 aimTarget = targetEntity != null ? targetEntity.position().add(0, targetEntity.getBbHeight() * 0.5, 0) : targetPos;
@@ -666,11 +663,10 @@ public class MagicSwordBarrelFullOpen {
             Vec3 dir = center.subtract(spawnPos).normalize();
             projectile.setXRot((float)(Math.toDegrees(Math.asin(-dir.y))));
             // Align with Mode 2 flight direction logic (standard atan2)
-            // Fix Mode 2 inversion: if facing Z-axis front,抬头=剑向下, 低头=剑向上, 右转=剑左转, 左转=剑右转
-            // This means Pitch and Yaw are inverted.
+            // Fix Mode 2 inversion: if facing Z-axis front,鎶ご=鍓戝悜涓? 浣庡ご=鍓戝悜涓? 鍙宠浆=鍓戝乏杞? 宸﹁浆=鍓戝彸杞?            // This means Pitch and Yaw are inverted.
             // XRot (Pitch): Minecraft is +90 down, -90 up.
             // asin(-dir.y): if dir.y is positive (up), asin is negative (up). This matches Minecraft standard.
-            // BUT user says "抬头(look up) -> 剑向下(point down)".
+            // BUT user says "鎶ご(look up) -> 鍓戝悜涓?point down)".
             // If player looks up, target is high. dir.y > 0. asin(-y) < 0 (XRot negative).
             // If XRot is negative, renderer (135 - xRot) -> 135 - (-neg) = 135 + pos > 135.
             // If renderer expects standard pitch, then maybe the renderer logic (135 - xRot) is the culprit for the inversion feel?

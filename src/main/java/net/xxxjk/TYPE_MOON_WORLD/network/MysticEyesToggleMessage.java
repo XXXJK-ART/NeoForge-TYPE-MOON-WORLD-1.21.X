@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.network;
 
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.PacketFlow;
@@ -7,11 +9,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
-
 import net.minecraft.network.codec.ByteBufCodecs;
 
 @SuppressWarnings("null")

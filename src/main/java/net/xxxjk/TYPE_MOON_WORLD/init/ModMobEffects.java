@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.init;
 
+import net.xxxjk.TYPE_MOON_WORLD.effect.UncurableEffect;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
@@ -10,7 +12,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.effect.NineLivesEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.ReinforcementEffect;
-import net.xxxjk.TYPE_MOON_WORLD.effect.UncurableEffect;
 
 public class ModMobEffects {
     public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, TYPE_MOON_WORLD.MOD_ID);

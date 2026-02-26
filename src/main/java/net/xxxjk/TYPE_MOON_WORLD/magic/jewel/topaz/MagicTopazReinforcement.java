@@ -1,5 +1,8 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz;
 
+import java.util.List;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -10,14 +13,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
-
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
-
-import java.util.List;
 
 public class MagicTopazReinforcement {
     public static void execute(Entity entity) {
