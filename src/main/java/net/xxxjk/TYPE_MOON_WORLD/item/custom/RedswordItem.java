@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -31,9 +33,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
-
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 
@@ -114,7 +113,7 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
             }
             
             // Feedback
-            player.displayClientMessage(Component.literal("§c蓄力: " + currentCharge + "%"), true);
+            player.displayClientMessage(Component.literal("搂c钃勫姏: " + currentCharge + "%"), true);
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.5f, 1.0f + (currentCharge / 100.0f));
             
             // Surrounding Flame Particles
@@ -138,7 +137,7 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
         } else {
             // Out of mana, release immediately
             player.releaseUsingItem();
-            player.displayClientMessage(Component.literal("§c魔力不足!"), true);
+            player.displayClientMessage(Component.literal("搂c榄斿姏涓嶈冻!"), true);
         }
     }
 

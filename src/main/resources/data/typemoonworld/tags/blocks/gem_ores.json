@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:emerald_mine",
+    "typemoonworld:ruby_mine",
+    "typemoonworld:sapphire_mine",
+    "typemoonworld:topaz_mine",
+    "typemoonworld:white_gemstone_mine",
+    "typemoonworld:cyan_gemstone_mine"
+  ]
+}
+

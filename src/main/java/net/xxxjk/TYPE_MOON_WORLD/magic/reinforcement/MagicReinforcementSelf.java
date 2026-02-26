@@ -1,18 +1,18 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement;
 
+import java.util.ArrayList;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
-
-import java.util.ArrayList;
 
 public class MagicReinforcementSelf {
     public static void execute(Entity entity) {

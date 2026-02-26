@@ -1,5 +1,9 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -9,7 +13,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
-
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -24,16 +27,12 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.core.particles.BlockParticleOption;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -45,7 +44,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.damagesource.DamageTypes;
 import java.util.List;
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public class CommonEvents {

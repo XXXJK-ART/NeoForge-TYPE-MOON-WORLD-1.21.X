@@ -182,19 +182,19 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL = ITEMS.register("magic_scroll_basic_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
-                    "jewel_magic_shoot"));
+                    "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw", "jewel_magic_shoot"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL_BROKEN = ITEMS.register("magic_scroll_basic_jewel_broken",
-            () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, // Hard to learn (20%), Low Durability (5)
-                    "jewel_magic_shoot"));
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, // Random learning, Low Durability (5)
+                    "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw", "jewel_magic_shoot"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL = ITEMS.register("magic_scroll_advanced_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
-                    "jewel_magic_release"));
+                    "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL_BROKEN = ITEMS.register("magic_scroll_advanced_jewel_broken",
-            () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, // Hard to learn (20%), Low Durability (5)
-                    "jewel_magic_release"));
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, // Random learning, Low Durability (5)
+                    "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION = ITEMS.register("magic_scroll_projection",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
@@ -218,7 +218,7 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, 
-                    "reinforcement"));
+                    "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));

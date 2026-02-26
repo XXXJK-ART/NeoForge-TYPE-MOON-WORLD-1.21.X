@@ -1,14 +1,15 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement;
 
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -84,7 +85,7 @@ public class MagicReinforcementEventHandler {
                             mutable.set(holder, 0); // Remove it
                         } else {
                             // If current level is higher (maybe player enchanted it manually?), we keep it or reduce it?
-                            // The instruction says "强化消失", so we should at least remove the part we added.
+                            // The instruction says "寮哄寲娑堝け", so we should at least remove the part we added.
                             mutable.set(holder, currentLevel - levelToRemove);
                         }
                     });
@@ -111,6 +112,7 @@ public class MagicReinforcementEventHandler {
         }
 
         // Clear Metadata
+        boolean injectedGlint = tag.getBoolean("ReinforcementInjectedGlint");
         tag.remove("Reinforced");
         tag.remove("ReinforcedLevel");
         tag.remove("ReinforcementTime");
@@ -119,9 +121,22 @@ public class MagicReinforcementEventHandler {
         tag.remove("ReinforcementHitsLeft");
         tag.remove("ReinforcedEnchantment");
         tag.remove("ReinforcedEnchantmentLevel");
+        tag.remove("ReinforcementInjectedGlint");
         tag.remove("CasterUUID");
+
+        if (injectedGlint && !shouldKeepForcedGlint(stack, tag)) {
+            stack.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
+        }
         
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.item.expired"), true);
+    }
+
+    private static boolean shouldKeepForcedGlint(ItemStack stack, net.minecraft.nbt.CompoundTag tag) {
+        if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
+            return true;
+        }
+        ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        return enchantments.size() > 0;
     }
 }

@@ -359,6 +359,7 @@ public class ProjectionTickHandler {
                 }
             }
         }
+        stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
         player.displayClientMessage(net.minecraft.network.chat.Component.translatable(net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants.MSG_PROJECTION_TOOLTIP).withStyle(net.minecraft.ChatFormatting.AQUA), true);
     }
 

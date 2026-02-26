@@ -1,9 +1,10 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.world.inventory;
 
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
-
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.ItemStack;
@@ -15,16 +16,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
-
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
-
 import java.util.function.Supplier;
 import java.util.Map;
 import java.util.HashMap;

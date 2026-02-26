@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.sapphire;
 
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -7,8 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
-
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 

@@ -1,36 +1,33 @@
 package net.xxxjk.TYPE_MOON_WORLD.init;
 
-/*
- *	MCreator note: This file will be REGENERATED on each build.
- */
-
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import org.lwjgl.glfw.GLFW;
-
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.api.distmarker.Dist;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
-
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
-
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
+import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 
+/*
+ *	MCreator note: This file will be REGENERATED on each build.
+ */
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = {Dist.CLIENT})
 public class TypeMoonWorldModKeyMappings {
     public static final String KEY_CATEGORY = "key.categories.typemoonworld";
@@ -60,12 +57,19 @@ public class TypeMoonWorldModKeyMappings {
     public static class KeyEventListener {
         private static boolean isTabDown = false;
         private static boolean isModeSwitchDown = false;
+        private static long castPressStartMs = -1L;
+        private static boolean castLongTriggered = false;
 
         @SubscribeEvent
         public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
             if (Minecraft.getInstance().screen == null) {
                 double scrollDelta = event.getScrollDeltaY();
                 if (scrollDelta == 0) return;
+
+                if (StructuralProjectionPlacementClient.handleScroll(scrollDelta)) {
+                    event.setCanceled(true);
+                    return;
+                }
 
                 // Priority 1: Mode Switch (Ctrl + Scroll)
                 if (MAGIC_MODE_SWITCH.isDown()) {
@@ -102,6 +106,7 @@ public class TypeMoonWorldModKeyMappings {
                 if (player == null) return;
                 
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                StructuralProjectionPlacementClient.cancelIfInvalid(vars);
 
                 // Open Mode Switcher Menu on Ctrl Key Press (if correct magic selected)
                 if (MAGIC_MODE_SWITCH.isDown()) {
@@ -153,12 +158,7 @@ public class TypeMoonWorldModKeyMappings {
                         MagicCircuitSwitchMessage.pressAction(player, 0, 0);
                     }
                 }
-                if (CAST_MAGIC.consumeClick()) {
-                    if (vars.is_magus) {
-                        PacketDistributor.sendToServer(new CastMagicMessage());
-                        CastMagicMessage.pressAction(player);
-                    }
-                }
+                handleCastKey(player, vars);
                 if (LOSE_HEALTH_REGAIN_MANA.consumeClick()) {
                     // Always allow X key to trigger unlock logic
                     PacketDistributor.sendToServer(new Lose_health_regain_mana_Message(0, 0));
@@ -197,6 +197,83 @@ public class TypeMoonWorldModKeyMappings {
                     isTabDown = false;
                 }
             }
+        }
+
+        private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+            boolean selectionActive = StructuralAnalysisSelectionClient.isActive();
+            boolean structuralSelected = isStructuralAnalysisSelected(vars);
+            boolean projectionStructureSelected = isStructureProjectionSelected(vars);
+
+            if (projectionStructureSelected) {
+                if (CAST_MAGIC.consumeClick() && vars.is_magus) {
+                    if (!StructuralProjectionPlacementClient.isActive()) {
+                        StructuralProjectionPlacementClient.startPreview();
+                    } else if (!StructuralProjectionPlacementClient.isLocked()) {
+                        StructuralProjectionPlacementClient.confirmPlacement();
+                    } else {
+                        StructuralProjectionPlacementClient.startProjection();
+                    }
+                }
+                castPressStartMs = -1L;
+                castLongTriggered = false;
+                return;
+            }
+
+            // Keep legacy behavior for all non-structural spells.
+            if (!selectionActive && !structuralSelected) {
+                if (CAST_MAGIC.consumeClick() && vars.is_magus) {
+                    PacketDistributor.sendToServer(new CastMagicMessage());
+                    CastMagicMessage.pressAction(player);
+                }
+                castPressStartMs = -1L;
+                castLongTriggered = false;
+                return;
+            }
+
+            long now = System.currentTimeMillis();
+            if (CAST_MAGIC.isDown()) {
+                if (castPressStartMs < 0L) {
+                    castPressStartMs = now;
+                }
+
+                // Hold C for >1s to enter area selection mode (only when structural analysis is selected).
+                if (!selectionActive && structuralSelected && !castLongTriggered && now - castPressStartMs >= 1000L) {
+                    StructuralAnalysisSelectionClient.startSelectionFromCrosshair();
+                    castLongTriggered = true;
+                }
+                return;
+            }
+
+            if (castPressStartMs >= 0L) {
+                // Short press behavior.
+                if (!castLongTriggered) {
+                    if (StructuralAnalysisSelectionClient.isActive()) {
+                        StructuralAnalysisSelectionClient.confirmWithCrosshair();
+                    } else if (vars.is_magus) {
+                        PacketDistributor.sendToServer(new CastMagicMessage());
+                        CastMagicMessage.pressAction(player);
+                    }
+                }
+                castPressStartMs = -1L;
+                castLongTriggered = false;
+            }
+        }
+
+        private static boolean isStructuralAnalysisSelected(TypeMoonWorldModVariables.PlayerVariables vars) {
+            if (!vars.is_magus || !vars.is_magic_circuit_open) return false;
+            if (vars.selected_magics.isEmpty()) return false;
+            int index = vars.current_magic_index;
+            if (index < 0 || index >= vars.selected_magics.size()) return false;
+            return "structural_analysis".equals(vars.selected_magics.get(index));
+        }
+
+        private static boolean isStructureProjectionSelected(TypeMoonWorldModVariables.PlayerVariables vars) {
+            if (!vars.is_magus || !vars.is_magic_circuit_open) return false;
+            if (vars.selected_magics.isEmpty()) return false;
+            int index = vars.current_magic_index;
+            if (index < 0 || index >= vars.selected_magics.size()) return false;
+            if (!"projection".equals(vars.selected_magics.get(index))) return false;
+            return vars.projection_selected_structure_id != null && !vars.projection_selected_structure_id.isEmpty();
         }
     }
 }

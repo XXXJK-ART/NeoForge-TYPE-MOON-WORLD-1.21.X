@@ -3,20 +3,29 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.PacketFlow;
-
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-
 import net.minecraft.resources.ResourceLocation;
-
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import java.util.Set;
+
 public record SelectMagicMessage(String magicId, boolean add) implements CustomPacketPayload {
+    private static final int MAX_MAGIC_ID_LENGTH = 64;
+    private static final Set<String> ALLOWED_MAGIC_IDS = Set.of(
+            "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+            "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
+            "jewel_magic_shoot", "jewel_magic_release",
+            "projection", "structural_analysis", "broken_phantasm",
+            "unlimited_blade_works", "sword_barrel_full_open",
+            "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"
+    );
+
     public static final Type<SelectMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "select_magic"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SelectMagicMessage> STREAM_CODEC = StreamCodec.of(
             (RegistryFriendlyByteBuf buffer, SelectMagicMessage message) -> {
                 buffer.writeUtf(message.magicId);
                 buffer.writeBoolean(message.add);
             },
-            (RegistryFriendlyByteBuf buffer) -> new SelectMagicMessage(buffer.readUtf(), buffer.readBoolean())
+            (RegistryFriendlyByteBuf buffer) -> new SelectMagicMessage(buffer.readUtf(MAX_MAGIC_ID_LENGTH), buffer.readBoolean())
     );
 
     @Override
@@ -29,8 +38,20 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
             context.enqueueWork(() -> {
                 net.minecraft.world.entity.player.Player player = context.player();
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+
+                if (!isValidMagicId(message.magicId)) {
+                    return;
+                }
+
+                boolean isLearned = vars.learned_magics.contains(message.magicId);
+                if (!isLearned && "reinforcement".equals(message.magicId)) {
+                    isLearned = vars.learned_magics.contains("reinforcement_self")
+                            || vars.learned_magics.contains("reinforcement_other")
+                            || vars.learned_magics.contains("reinforcement_item");
+                }
+
                 if (message.add) {
-                    if (!vars.selected_magics.contains(message.magicId) && vars.selected_magics.size() < 20) {
+                    if (isLearned && !vars.selected_magics.contains(message.magicId) && vars.selected_magics.size() < 20) {
                         vars.selected_magics.add(message.magicId);
                     }
                 } else {
@@ -45,5 +66,13 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                 return null;
             });
         }
+    }
+
+    private static boolean isValidMagicId(String magicId) {
+        return magicId != null
+                && !magicId.isEmpty()
+                && magicId.length() <= MAX_MAGIC_ID_LENGTH
+                && magicId.matches("[a-z0-9_]+")
+                && ALLOWED_MAGIC_IDS.contains(magicId);
     }
 }

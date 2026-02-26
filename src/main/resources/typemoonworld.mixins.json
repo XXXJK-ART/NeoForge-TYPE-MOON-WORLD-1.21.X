@@ -1,16 +1,19 @@
-{
-  "required": true,
-  "minVersion": "0.8",
-  "package": "net.xxxjk.TYPE_MOON_WORLD.mixin",
-  "compatibilityLevel": "JAVA_17",
-  "mixins": [],
-  "client": [
-    "ItemRendererMixin",
-    "client.MixinMinecraft",
-    "client.PlayerRendererMixin",
-    "client.RenderBuffersMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
+﻿{
+    "required":  true,
+    "minVersion":  "0.8",
+    "package":  "net.xxxjk.TYPE_MOON_WORLD.mixin",
+    "compatibilityLevel":  "JAVA_17",
+    "mixins":  [
+
+               ],
+    "client":  [
+                   "ItemRendererMixin",
+                   "client.HumanoidArmorLayerMixin",
+                   "client.MixinMinecraft",
+                   "client.PlayerRendererMixin",
+                   "client.RenderBuffersMixin"
+               ],
+    "injectors":  {
+                      "defaultRequire":  1
+                  }
 }

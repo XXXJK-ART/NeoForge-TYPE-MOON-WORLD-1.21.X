@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
@@ -8,7 +10,6 @@ import net.xxxjk.TYPE_MOON_WORLD.procedures.*;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Quaternionf;
-
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,13 +18,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.BasicInformationMenu;
-
 import java.util.HashMap;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 
 @SuppressWarnings({"null", "unused"})
@@ -51,7 +48,6 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         if (Basic_information_back_player_self.execute(entity) instanceof LivingEntity livingEntity) {
             // Reposition entity to align with new larger UI (Left side)
@@ -98,10 +94,10 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
         int spacing = 15;
         
         // Helper to draw label: value
-        drawStat(guiGraphics, "当前魔力:", Back_mana.execute(entity), startX, startY);
-        drawStat(guiGraphics, "魔力上限:", Back_max_mana.execute(entity).replace("魔力值上限：", ""), startX, startY + spacing);
-        drawStat(guiGraphics, "魔力回复:", Back_player_mana_egenerated_every_moment.execute(entity), startX, startY + spacing * 2);
-        drawStat(guiGraphics, "回复间隔:", Back_player_restore_magic_moment.execute(entity), startX, startY + spacing * 3);
+        drawStat(guiGraphics, Component.translatable("gui.typemoonworld.basic_info.current_mana").getString(), Back_mana.execute(entity), startX, startY);
+        drawStat(guiGraphics, Component.translatable("gui.typemoonworld.basic_info.max_mana").getString(), Back_max_mana.execute(entity).replace("魔力值上限：", ""), startX, startY + spacing);
+        drawStat(guiGraphics, Component.translatable("gui.typemoonworld.basic_info.mana_regen").getString(), Back_player_mana_egenerated_every_moment.execute(entity), startX, startY + spacing * 2);
+        drawStat(guiGraphics, Component.translatable("gui.typemoonworld.basic_info.regen_interval").getString(), Back_player_restore_magic_moment.execute(entity), startX, startY + spacing * 3);
         
         // Proficiency Stats (Removed)
         // TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);

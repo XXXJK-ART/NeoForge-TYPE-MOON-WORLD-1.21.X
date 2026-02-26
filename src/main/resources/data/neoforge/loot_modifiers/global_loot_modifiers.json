@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "entries": [
+    "typemoonworld:gem_resonance_bonus",
+    "typemoonworld:add_magic_scroll_fragments_to_simple_dungeon",
+    "typemoonworld:add_magic_scroll_fragments_to_abandoned_mineshaft",
+    "typemoonworld:add_magic_scroll_fragments_to_desert_pyramid",
+    "typemoonworld:add_magic_scroll_fragments_to_jungle_temple",
+    "typemoonworld:add_magic_scroll_fragments_to_stronghold_library",
+    "typemoonworld:add_magic_scroll_fragments_to_ancient_city",
+    "typemoonworld:add_magic_scroll_fragments_to_bastion_treasure",
+    "typemoonworld:add_magic_scroll_fragments_to_shipwreck_treasure",
+    "typemoonworld:add_magic_scroll_fragments_to_shrine",
+    "typemoonworld:add_magic_scroll_fragments_to_graveyard"
+  ]
+}

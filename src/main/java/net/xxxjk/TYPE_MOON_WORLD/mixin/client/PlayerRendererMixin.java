@@ -51,10 +51,10 @@ public abstract class PlayerRendererMixin {
     private static boolean shouldRenderArm(AbstractClientPlayer player, HumanoidArm armSide) {
         boolean hasStrength = player.hasEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH)
                 || player.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_STRENGTH);
-        return hasStrength || isArmHoldingReinforcedItem(player, armSide);
+        return hasStrength || isArmHoldingMagicTextureItem(player, armSide);
     }
 
-    private static boolean isArmHoldingReinforcedItem(AbstractClientPlayer player, HumanoidArm armSide) {
+    private static boolean isArmHoldingMagicTextureItem(AbstractClientPlayer player, HumanoidArm armSide) {
         ItemStack stack = getArmStack(player, armSide);
         if (stack.isEmpty()) {
             return false;
@@ -64,7 +64,15 @@ public abstract class PlayerRendererMixin {
             return false;
         }
         var tag = customData.copyTag();
-        return tag.contains("Reinforced") && tag.getBoolean("Reinforced");
+        if (tag.contains("Reinforced") && tag.getBoolean("Reinforced")) {
+            return true;
+        }
+        if (tag.contains("ReinforcedLevel")
+                || tag.contains("ReinforcedEnchantment")
+                || tag.contains("ReinforcementTemporary")) {
+            return true;
+        }
+        return tag.contains("is_projected") || tag.contains("is_infinite_projection");
     }
 
     private static ItemStack getArmStack(AbstractClientPlayer player, HumanoidArm armSide) {

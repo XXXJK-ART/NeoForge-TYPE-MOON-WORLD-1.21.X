@@ -13,11 +13,13 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("null")
 public class CarvedGemItem extends Item {
+    private final GemType type;
     private final GemQuality quality;
     private final Supplier<Item> fullGemSupplier;
 
     public CarvedGemItem(Properties properties, GemType type, GemQuality quality, Supplier<Item> fullGemSupplier) {
         super(properties);
+        this.type = type;
         this.quality = quality;
         this.fullGemSupplier = fullGemSupplier;
     }
@@ -40,7 +42,7 @@ public class CarvedGemItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            double manaAmount = quality.getCapacity();
+            double manaAmount = quality.getCapacity(type);
             
             // Check if mana is sufficient
             if (vars.player_mana >= manaAmount) {

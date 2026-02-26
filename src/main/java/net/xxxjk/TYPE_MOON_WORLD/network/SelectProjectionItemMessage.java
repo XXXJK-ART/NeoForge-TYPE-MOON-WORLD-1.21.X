@@ -24,6 +24,7 @@ public record SelectProjectionItemMessage(int index) implements CustomPacketPayl
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                 if (message.index >= 0 && message.index < vars.analyzed_items.size()) {
                     vars.projection_selected_item = vars.analyzed_items.get(message.index).copy();
+                    vars.projection_selected_structure_id = "";
                     vars.syncPlayerVariables(player);
                 }
             }

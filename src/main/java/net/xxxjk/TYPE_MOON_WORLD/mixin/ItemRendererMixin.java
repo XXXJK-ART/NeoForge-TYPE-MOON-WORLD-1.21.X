@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -37,53 +38,73 @@ public abstract class ItemRendererMixin {
 
     @ModifyExpressionValue(method = "getFoilBuffer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;glintTranslucent()Lnet/minecraft/client/renderer/RenderType;"))
     private static RenderType replaceGlintTranslucent(RenderType prev) {
-        if (!shouldUseReinforcementGlint()) {
+        if (!shouldUseMagicGlint()) {
             return prev;
+        }
+        if (isBlockItemTarget()) {
+            return ReinforcementRenderType.glintTranslucentBlock();
         }
         return isTarget3D() ? ReinforcementRenderType.glintTranslucent3d() : ReinforcementRenderType.glintTranslucent();
     }
 
     @ModifyExpressionValue(method = "getFoilBuffer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;glint()Lnet/minecraft/client/renderer/RenderType;"))
     private static RenderType replaceGlint(RenderType prev) {
-        if (!shouldUseReinforcementGlint()) {
+        if (!shouldUseMagicGlint()) {
             return prev;
+        }
+        if (isBlockItemTarget()) {
+            return ReinforcementRenderType.glintBlock();
         }
         return isTarget3D() ? ReinforcementRenderType.glint3d() : ReinforcementRenderType.glint();
     }
 
     @ModifyExpressionValue(method = "getFoilBuffer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;entityGlint()Lnet/minecraft/client/renderer/RenderType;"))
     private static RenderType replaceEntityGlint(RenderType prev) {
-        if (!shouldUseReinforcementGlint()) {
+        if (!shouldUseMagicGlint()) {
             return prev;
+        }
+        if (isBlockItemTarget()) {
+            return ReinforcementRenderType.entityGlintBlock();
         }
         return isTarget3D() ? ReinforcementRenderType.entityGlint3d() : ReinforcementRenderType.entityGlint();
     }
 
     @ModifyExpressionValue(method = "getFoilBufferDirect", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;glint()Lnet/minecraft/client/renderer/RenderType;"))
     private static RenderType replaceGlintDirect(RenderType prev) {
-        if (!shouldUseReinforcementGlint()) {
+        if (!shouldUseMagicGlint()) {
             return prev;
+        }
+        if (isBlockItemTarget()) {
+            return ReinforcementRenderType.glintDirectBlock();
         }
         return isTarget3D() ? ReinforcementRenderType.glintDirect3d() : ReinforcementRenderType.glintDirect();
     }
 
     @ModifyExpressionValue(method = "getFoilBufferDirect", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;entityGlintDirect()Lnet/minecraft/client/renderer/RenderType;"))
     private static RenderType replaceEntityGlintDirect(RenderType prev) {
-        if (!shouldUseReinforcementGlint()) {
+        if (!shouldUseMagicGlint()) {
             return prev;
+        }
+        if (isBlockItemTarget()) {
+            return ReinforcementRenderType.entityGlintDirectBlock();
         }
         return isTarget3D() ? ReinforcementRenderType.entityGlintDirect3d() : ReinforcementRenderType.entityGlintDirect();
     }
 
-    private static boolean shouldUseReinforcementGlint() {
-        return isReinforced(TARGET_STACK.get());
+    private static boolean shouldUseMagicGlint() {
+        return hasMagicTextureTag(TARGET_STACK.get());
     }
 
     private static boolean isTarget3D() {
         return Boolean.TRUE.equals(TARGET_IS_GUI_3D.get());
     }
 
-    private static boolean isReinforced(ItemStack stack) {
+    private static boolean isBlockItemTarget() {
+        ItemStack stack = TARGET_STACK.get();
+        return stack != null && !stack.isEmpty() && stack.getItem() instanceof BlockItem;
+    }
+
+    private static boolean hasMagicTextureTag(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
@@ -95,8 +116,11 @@ public abstract class ItemRendererMixin {
         if (tag.contains("Reinforced") && tag.getBoolean("Reinforced")) {
             return true;
         }
-        return tag.contains("ReinforcedLevel")
+        if (tag.contains("ReinforcedLevel")
                 || tag.contains("ReinforcedEnchantment")
-                || tag.contains("ReinforcementTemporary");
+                || tag.contains("ReinforcementTemporary")) {
+            return true;
+        }
+        return tag.contains("is_projected") || tag.contains("is_infinite_projection");
     }
 }

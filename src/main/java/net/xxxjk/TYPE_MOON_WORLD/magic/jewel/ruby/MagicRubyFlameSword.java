@@ -1,5 +1,9 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.ruby;
 
+import java.util.ArrayList;
+import java.util.List;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -10,13 +14,9 @@ import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
-
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
-import java.util.List;
-import java.util.ArrayList;
 
 public class MagicRubyFlameSword {
     public static void execute(Entity entity) {

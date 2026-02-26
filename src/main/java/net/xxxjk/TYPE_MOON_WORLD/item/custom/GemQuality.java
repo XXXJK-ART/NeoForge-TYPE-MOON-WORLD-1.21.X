@@ -19,6 +19,17 @@ public enum GemQuality {
         return capacity;
     }
 
+    public int getCapacity(GemType type) {
+        if (type == GemType.WHITE_GEMSTONE) {
+            return switch (this) {
+                case POOR -> 100;
+                case NORMAL -> 200;
+                case HIGH -> 300;
+            };
+        }
+        return capacity;
+    }
+
     public float getEffectMultiplier() {
         return effectMultiplier;
     }

@@ -1,49 +1,47 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 
-import net.minecraft.world.entity.Entity;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.item.component.CustomData;
-
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
-import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public class MagicStructuralAnalysis {
+    private static final double STRUCTURE_COST_NORMAL_FACTOR = 1.0 / 20.0;
+    private static final double STRUCTURE_COST_SWORD_FACTOR = 1.0 / 30.0;
+
     public static void execute(Entity entity) {
         if (!(entity instanceof ServerPlayer player)) return;
 
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         ItemStack heldItem = player.getMainHandItem();
         ItemStack targetItem = ItemStack.EMPTY;
-        
-        // 1. Check Held Item
+
         if (!heldItem.isEmpty()) {
             targetItem = heldItem;
         } else {
-            // 2. Raytrace for Block or Entity
-            HitResult hitResult = rayTrace(player, 5.0); // 5 blocks range
-            
+            HitResult hitResult = rayTrace(player, 5.0);
             if (hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockHitResult blockHit = (BlockHitResult) hitResult;
                 BlockState state = player.level().getBlockState(blockHit.getBlockPos());
@@ -62,16 +60,14 @@ public class MagicStructuralAnalysis {
         }
 
         if (targetItem.isEmpty()) {
-             player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_NO_TARGET), true);
-             return;
+            player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_NO_TARGET), true);
+            return;
         }
 
-        // Process Target Item
         analyzeItem(player, vars, targetItem);
     }
 
     private static void analyzeItem(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack target) {
-        // Avalon is a special Noble Phantasm that is explicitly blocked from analysis
         if (target.getItem() instanceof AvalonItem) {
             player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_CANNOT_ANALYZE_DIVINE), true);
             return;
@@ -86,39 +82,37 @@ public class MagicStructuralAnalysis {
                 isProjected = tag.contains("is_projected") || tag.contains("projection_time");
             }
         }
+
         if (isProjected && !isTempleStone) {
             player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_ANALYZE_PROJECTED), true);
             return;
         }
-        if (isProjected && isTempleStone) {
+
+        if (isProjected) {
             double specialCost = calculateCost(target, vars.player_magic_attributes_sword);
-            if (vars.player_mana >= specialCost) {
-                vars.player_mana -= specialCost;
-                vars.syncMana(player);
-                
-                player.displayClientMessage(Component.literal("Trigger off."), true);
-                player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
-                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
-            } else {
-                player.displayClientMessage(Component.literal("魔力不足"), true);
+            if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
+                return;
             }
+            player.displayClientMessage(Component.literal("Trigger off."), true);
+            player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
             return;
         }
-        
-        // Clean Item (Remove container contents)
+
         ItemStack toSave = target.copy();
         toSave.setCount(1);
-        
-        // Strip Container Data (Shulker Box, Bundle, etc.)
-        // In 1.21, container data is stored in DataComponents.CONTAINER or DataComponents.BUNDLE_CONTENTS
+
         if (toSave.has(DataComponents.CONTAINER)) {
             toSave.remove(DataComponents.CONTAINER);
         }
         if (toSave.has(DataComponents.BUNDLE_CONTENTS)) {
             toSave.remove(DataComponents.BUNDLE_CONTENTS);
         }
-        // Also check for legacy BlockEntityTag if any custom data remains
+        if (toSave.has(DataComponents.BLOCK_ENTITY_DATA)) {
+            toSave.remove(DataComponents.BLOCK_ENTITY_DATA);
+        }
         if (toSave.has(DataComponents.CUSTOM_DATA)) {
             CustomData cd = toSave.get(DataComponents.CUSTOM_DATA);
             if (cd != null) {
@@ -126,7 +120,7 @@ public class MagicStructuralAnalysis {
                 if (customTag.contains("BlockEntityTag")) {
                     CompoundTag bet = customTag.getCompound("BlockEntityTag");
                     if (bet.contains("Items")) {
-                        bet.remove("Items"); // Remove items from block entity tag
+                        bet.remove("Items");
                         if (bet.isEmpty()) {
                             customTag.remove("BlockEntityTag");
                         } else {
@@ -142,55 +136,47 @@ public class MagicStructuralAnalysis {
             }
         }
 
-        // Check if already analyzed
         boolean known = false;
         for (ItemStack s : vars.analyzed_items) {
-             // Use stricter check? Or just Item check?
-             // "unable to normally analyze other items" -> implies bug in this check.
-             // ItemStack.isSameItemSameComponents checks components too.
-             // If we analyzed a Sword with 100 durability, and try to analyze a Sword with 99 durability,
-             // isSameItemSameComponents might return false (different components if damage is component).
-             // But if we use isSameItem, we can't distinguish enchanted/special items.
-             
-             // However, user said "unable to project analyzed things after death" AND "unable to analyze other items".
-             // This suggests the list might be corrupted or state is weird.
-             
-             if (ItemStack.isSameItemSameComponents(s, toSave)) {
-                 known = true;
-                 break;
-             }
+            if (ItemStack.isSameItemSameComponents(s, toSave)) {
+                known = true;
+                break;
+            }
         }
-        
-        if (!known) {
-            double cost = calculateCost(toSave, vars.player_magic_attributes_sword);
-            
-            // Proficiency Logic
-            double successRate = 0.5 + (vars.proficiency_structural_analysis * 0.005); // Base 50% + 0.5% per level (max 100%)
-            if (vars.player_magic_attributes_sword && toSave.getItem() instanceof net.minecraft.world.item.SwordItem) {
-                successRate = 1.0; // Sword attribute makes sword analysis 100% success
-            }
-            if (successRate > 1.0) successRate = 1.0;
-
-            boolean success = player.getRandom().nextDouble() < successRate;
-
-            if (success) {
-                if (ManaHelper.consumeManaOrHealth(player, cost)) {
-                    vars.analyzed_items.add(toSave);
-                    vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.5);
-                    vars.syncPlayerVariables(player);
-                    player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ANALYSIS_COMPLETE, (int)cost), true);
-                }
-            } else {
-                double failCost = cost * 0.3; // 30% cost on fail
-                if (ManaHelper.consumeManaOrHealth(player, failCost)) {
-                    vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.1);
-                    vars.syncPlayerVariables(player);
-                    player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
-                }
-            }
-        } else {
+        if (known) {
             player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ALREADY_ANALYZED), true);
+            return;
         }
+
+        double cost = calculateCost(toSave, vars.player_magic_attributes_sword);
+        double successRate = 0.5 + (vars.proficiency_structural_analysis * 0.005);
+        if (vars.player_magic_attributes_sword && toSave.getItem() instanceof net.minecraft.world.item.SwordItem) {
+            successRate = 1.0;
+        }
+        if (successRate > 1.0) successRate = 1.0;
+
+        boolean success = player.getRandom().nextDouble() < successRate;
+        if (success) {
+            if (!consumeAnalysisManaOrFail(player, vars, cost)) {
+                player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
+                return;
+            }
+            vars.analyzed_items.add(toSave);
+            vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.5);
+            vars.syncPlayerVariables(player);
+            player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_ANALYSIS_COMPLETE, (int) cost), true);
+            return;
+        }
+
+        double failCost = cost * 0.3;
+        consumeAnalysisManaOrFail(player, vars, failCost);
+        vars.proficiency_structural_analysis = Math.min(100, vars.proficiency_structural_analysis + 0.1);
+        vars.syncPlayerVariables(player);
+        player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
+    }
+
+    public static boolean consumeAnalysisManaOrFail(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double cost) {
+        return ManaHelper.consumeManaWithInventoryOrHealth(player, cost);
     }
 
     private static HitResult rayTrace(ServerPlayer player, double range) {
@@ -198,23 +184,21 @@ public class MagicStructuralAnalysis {
         HitResult blockHit = player.pick(range, partialTicks, false);
         Vec3 eyePos = player.getEyePosition(partialTicks);
         double distToBlock = blockHit.getType() != HitResult.Type.MISS ? blockHit.getLocation().distanceTo(eyePos) : range;
-        
+
         Vec3 lookDir = player.getViewVector(partialTicks);
         Vec3 endPos = eyePos.add(lookDir.x * range, lookDir.y * range, lookDir.z * range);
         AABB searchBox = player.getBoundingBox().expandTowards(lookDir.scale(range)).inflate(1.0D);
-        
+
         EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(player, eyePos, endPos, searchBox, (e) -> !e.isSpectator() && e.isPickable(), distToBlock * distToBlock);
-        
         if (entityHit != null) {
             return entityHit;
         }
         return blockHit;
     }
 
-    private static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
+    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
         double baseCost = 10;
-        
-        // Noble Phantasms have a fixed base cost of 500
+
         if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
             baseCost = 500;
         } else {
@@ -223,46 +207,44 @@ public class MagicStructuralAnalysis {
             else if (rarity == Rarity.RARE) baseCost = 100;
             else if (rarity == Rarity.EPIC) baseCost = 300;
         }
-        
-        // Multipliers
-        // Enchantments
+
         int enchantCount = stack.getOrDefault(DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY).size();
         if (enchantCount > 0) {
-            baseCost *= (1 + enchantCount * 0.2); 
+            baseCost *= (1 + enchantCount * 0.2);
         }
-        
-        // Durability
+
         if (stack.getMaxDamage() > 0) {
-             baseCost *= (1 + stack.getMaxDamage() / 1000.0);
+            baseCost *= (1 + stack.getMaxDamage() / 1000.0);
         }
-        
-        // Block Hardness
+
         if (stack.getItem() instanceof BlockItem blockItem) {
-             BlockState state = blockItem.getBlock().defaultBlockState();
-             float hardness = state.getDestroySpeed(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, net.minecraft.core.BlockPos.ZERO);
-             if (hardness > 0) {
-                 baseCost += hardness * 5; 
-             }
+            BlockState state = blockItem.getBlock().defaultBlockState();
+            float hardness = state.getDestroySpeed(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, net.minecraft.core.BlockPos.ZERO);
+            if (hardness > 0) {
+                baseCost += hardness * 5;
+            }
         }
-        
-        // Attack Damage Calculation
+
         ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-        double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND); 
+        double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND);
         if (damage > 0) {
-            // Add damage to cost (e.g., 1 damage = 5 mana)
             baseCost += damage * 5;
         }
-        
-        // Sword Attribute Discount / Cost Modification
+
         if (hasSwordAttribute) {
             boolean isSword = stack.getItem() instanceof net.minecraft.world.item.SwordItem;
             if (isSword) {
-                baseCost *= 0.1; // 10% cost for swords
+                baseCost *= 0.1;
             } else {
-                baseCost *= 0.5; // 50% cost for other items
+                baseCost *= 0.5;
             }
         }
-        
+
         return baseCost;
+    }
+
+    public static double calculateStructureCost(ItemStack stack, boolean hasSwordAttribute) {
+        double factor = hasSwordAttribute ? STRUCTURE_COST_SWORD_FACTOR : STRUCTURE_COST_NORMAL_FACTOR;
+        return calculateCost(stack, hasSwordAttribute) * factor;
     }
 }

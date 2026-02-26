@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import javax.annotation.Nonnull;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -28,7 +30,6 @@ import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
-
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -37,14 +38,12 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.chat.Component;
-import javax.annotation.Nonnull;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.state.BlockState;
-
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
@@ -1176,7 +1175,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             boolean isTarget = (e == this.getTarget());
             
             // Or if it's hostile and we are in combat?
-            // User requirement: "Skills only affect targeted creatures" (索敌的生物)
+            // User requirement: "Skills only affect targeted creatures" (绱㈡晫鐨勭敓鐗?
             // So strictly enforce isTarget check for skills?
             // "Skills only have effect on targeted mobs"
             

@@ -1,6 +1,6 @@
-﻿{
+{
   "type": "neoforge:add_features",
-  "biomes": "#typemoonworld:is_gem_terrain",
+  "biomes": "typemoonworld:gem_biome",
   "features": "typemoonworld:ore_topaz_mine_placed",
   "step": "underground_ores"
 }

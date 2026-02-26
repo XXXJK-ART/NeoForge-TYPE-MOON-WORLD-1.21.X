@@ -1,5 +1,8 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.block.custom;
 
+import net.minecraft.world.item.Item;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
@@ -24,11 +27,9 @@ import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Blocks;
-
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
-
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -38,9 +39,6 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
-
-import net.minecraft.world.item.Item;
 
 public class SwordBarrelBlock extends BaseEntityBlock {
     public static final MapCodec<SwordBarrelBlock> CODEC = simpleCodec(SwordBarrelBlock::new);

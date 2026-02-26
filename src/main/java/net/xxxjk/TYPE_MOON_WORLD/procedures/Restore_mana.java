@@ -235,4 +235,5 @@ public class Restore_mana {
 
     private record SourceCandidate(int slot, double mana, ItemStack remainder) {
     }
+
 }

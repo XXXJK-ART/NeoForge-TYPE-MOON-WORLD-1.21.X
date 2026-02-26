@@ -82,8 +82,7 @@ public class MagicModeSwitcherScreen extends Screen {
                 if (vars.learned_magics.contains("ruby_flame_sword")) addMode(0, Component.translatable("gui.typemoonworld.mode.ruby").withStyle(net.minecraft.ChatFormatting.RED));
                 if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(1, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
                 if (vars.learned_magics.contains("emerald_winter_river")) addMode(2, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
-                // Topaz reinforcement is part of jewel magic release
-                addMode(3, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                if (vars.learned_magics.contains("topaz_reinforcement")) addMode(3, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
                 if (vars.learned_magics.contains("cyan_wind")) addMode(4, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
             } else if ("reinforcement".equals(currentMagic) || "reinforcement_self".equals(currentMagic) || "reinforcement_other".equals(currentMagic) || "reinforcement_item".equals(currentMagic)) {
                 isReinforcement = true;
@@ -179,13 +178,19 @@ public class MagicModeSwitcherScreen extends Screen {
     }
     
     private void closeAndSelect() {
+        Player player = Minecraft.getInstance().player;
+        if (player == null) {
+            isClosing = true;
+            this.onClose();
+            return;
+        }
+
         if (isReinforcement) {
             int selectedId = 0;
             if (selectedIndex >= 0 && selectedIndex < modeIds.size()) {
                 selectedId = modeIds.get(selectedIndex);
             }
-            
-            Player player = Minecraft.getInstance().player;
+
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
 
             if (reinforcementStage == 0) {
@@ -234,7 +239,7 @@ public class MagicModeSwitcherScreen extends Screen {
                 // Level Selection: 1-5
                 int maxLevel = Math.min(5, 1 + (int)(vars.proficiency_reinforcement / 20));
                 if (selectedId > maxLevel) {
-                    player.displayClientMessage(Component.literal("§c熟练度不足，无法选择该等级 (当前最大: " + maxLevel + ")"), true);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.reinforcement.level_too_high", maxLevel), true);
                     return;
                 }
                 

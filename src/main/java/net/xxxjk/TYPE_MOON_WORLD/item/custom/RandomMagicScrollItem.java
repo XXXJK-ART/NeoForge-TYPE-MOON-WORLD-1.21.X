@@ -1,19 +1,19 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.minecraft.world.item.TooltipFlag;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,15 +61,15 @@ public class RandomMagicScrollItem extends Item {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magicToLearn + ".name")), true);
                 player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
                 
-                // Consume item
-                stack.shrink(1);
+                // Damage Item (Reduce Durability)
+                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
                 return InteractionResultHolder.consume(stack);
             } else {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_failed"), true);
                 player.playNotifySound(SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
                 
-                // Consume item on failure too (it's a consumable page)
-                stack.shrink(1);
+                // Damage Item (Reduce Durability)
+                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
                 return InteractionResultHolder.consume(stack);
             }
         }

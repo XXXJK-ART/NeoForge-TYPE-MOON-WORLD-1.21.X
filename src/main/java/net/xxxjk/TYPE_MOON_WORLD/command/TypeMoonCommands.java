@@ -1,5 +1,7 @@
+
 package net.xxxjk.TYPE_MOON_WORLD.command;
 
+import java.util.List;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -15,7 +17,6 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerLevel;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
-import java.util.List;
 
 @SuppressWarnings({"null", "unchecked"})
 public class TypeMoonCommands {
