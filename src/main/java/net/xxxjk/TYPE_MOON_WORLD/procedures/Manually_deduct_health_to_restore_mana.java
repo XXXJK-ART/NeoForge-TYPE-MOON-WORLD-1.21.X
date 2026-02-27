@@ -25,11 +25,11 @@ public class Manually_deduct_health_to_restore_mana {
                 _entity.setHealth((float) (_livEnt.getHealth() - 1));
             } else {
                 if (entity instanceof Player _player && !_player.level().isClientSide())
-                    _player.displayClientMessage(Component.literal("生命力已耗尽..."), true);
+                    _player.displayClientMessage(Component.translatable("message.typemoonworld.health.depleted"), true);
             }
         } else {
             if (entity instanceof Player _player && !_player.level().isClientSide())
-                _player.displayClientMessage(Component.literal("魔力已满"), true);
+                _player.displayClientMessage(Component.translatable("message.typemoonworld.mana.already_full"), true);
         }
     }
 

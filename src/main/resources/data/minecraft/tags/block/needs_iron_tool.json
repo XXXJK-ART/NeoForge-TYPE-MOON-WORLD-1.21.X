@@ -5,14 +5,28 @@
     "typemoonworld:spirit_vein_node",
 
     "typemoonworld:emerald_block",
+    "typemoonworld:emerald_block_poor",
+    "typemoonworld:emerald_block_high",
     "typemoonworld:emerald_mine",
     "typemoonworld:ruby_block",
+    "typemoonworld:ruby_block_poor",
+    "typemoonworld:ruby_block_high",
     "typemoonworld:ruby_mine",
     "typemoonworld:sapphire_block",
+    "typemoonworld:sapphire_block_poor",
+    "typemoonworld:sapphire_block_high",
     "typemoonworld:sapphire_mine",
     "typemoonworld:topaz_block",
+    "typemoonworld:topaz_block_poor",
+    "typemoonworld:topaz_block_high",
     "typemoonworld:topaz_mine",
     "typemoonworld:white_gemstone_block",
-    "typemoonworld:white_gemstone_mine"
+    "typemoonworld:white_gemstone_block_poor",
+    "typemoonworld:white_gemstone_block_high",
+    "typemoonworld:white_gemstone_mine",
+    "typemoonworld:cyan_gemstone_block",
+    "typemoonworld:cyan_gemstone_block_poor",
+    "typemoonworld:cyan_gemstone_block_high",
+    "typemoonworld:cyan_gemstone_mine"
   ]
 }

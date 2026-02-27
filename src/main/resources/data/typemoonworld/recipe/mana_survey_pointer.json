@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": {
+      "tag": "typemoonworld:full_mana_high_gems"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    "  G",
+    " I "
+  ],
+  "result": {
+    "count": 1,
+    "id": "typemoonworld:mana_survey_pointer"
+  }
+}

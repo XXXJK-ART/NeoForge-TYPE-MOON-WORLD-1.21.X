@@ -80,7 +80,17 @@ description='''${mod_description}'''
 [[dependencies.typemoonworld]]
     modId="geckolib"
     type="required"
+    reason="Type Moon World requires GeckoLib to load entity/item animations."
     versionRange="[4.7,)"
+    ordering="NONE"
+    side="BOTH"
+
+# Dependency for TerraBlender
+[[dependencies.typemoonworld]]
+    modId="terrablender"
+    type="required"
+    reason="Type Moon World requires TerraBlender for biome/worldgen integration."
+    versionRange="[4.0,)"
     ordering="NONE"
     side="BOTH"
 

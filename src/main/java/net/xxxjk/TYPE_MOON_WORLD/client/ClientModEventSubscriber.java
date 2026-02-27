@@ -22,12 +22,28 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEventSubscriber {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-
+        event.enqueueWork(() -> {
+            CompassItemPropertyFunction baseCompassProperty = new CompassItemPropertyFunction(
+                    (level, stack, entity) -> ManaSurveyCompassItem.getStoredTarget(level, stack)
+            );
+            ItemProperties.register(
+                    ModItems.MANA_SURVEY_COMPASS.get(),
+                    ResourceLocation.withDefaultNamespace("angle"),
+                    (stack, level, livingEntity, seed) -> {
+                        float baseAngle = baseCompassProperty.unclampedCall(stack, level, livingEntity, seed);
+                        float corrected = baseAngle + 0.5F;
+                        return corrected >= 1.0F ? corrected - 1.0F : corrected;
+                    }
+            );
+        });
     }
 
     @SubscribeEvent

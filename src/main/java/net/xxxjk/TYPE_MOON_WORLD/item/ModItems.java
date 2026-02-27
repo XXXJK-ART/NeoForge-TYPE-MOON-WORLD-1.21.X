@@ -21,6 +21,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -82,6 +84,18 @@ public class ModItems {
 
     public static final DeferredItem<Item> CHISEL = ITEMS.register("chisel",
             () -> new ChiselItem(new Item.Properties().durability(100)));
+
+    public static final DeferredItem<Item> MANA_SURVEY_COMPASS = ITEMS.register("mana_survey_compass",
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+
+    public static final DeferredItem<Item> LEYLINE_SURVEY_MAP = ITEMS.register("leyline_survey_map",
+            () -> new LeylineSurveyMapItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+
+    public static final DeferredItem<Item> MANA_SURVEY_BASE = ITEMS.register("mana_survey_base",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> MANA_SURVEY_POINTER = ITEMS.register("mana_survey_pointer",
+            () -> new Item(new Item.Properties()));
 
     // EMERALD (Green)
     public static final DeferredItem<Item> CARVED_EMERALD = ITEMS.register("carved_emerald",

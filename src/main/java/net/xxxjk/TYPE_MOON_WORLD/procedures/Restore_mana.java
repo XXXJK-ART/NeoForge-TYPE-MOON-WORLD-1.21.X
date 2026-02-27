@@ -6,6 +6,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -13,12 +14,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.server.level.ServerLevel;
 
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 import javax.annotation.Nullable;
 
@@ -57,6 +60,11 @@ public class Restore_mana {
 
         double manaRegen = vars.player_mana_egenerated_every_moment;
         double regenInterval = vars.player_restore_magic_moment;
+        double regenMultiplier = 1.0;
+        if (entity.level() instanceof ServerLevel serverLevel) {
+            regenMultiplier = LeylineService.getRegenMultiplier(serverLevel, entity.blockPosition());
+        }
+        vars.current_mana_regen_multiplier = regenMultiplier;
 
         if (vars.is_magic_circuit_open) {
             regenInterval /= 2.0;
@@ -74,7 +82,7 @@ public class Restore_mana {
                     living.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 1200, 1));
                 }
                 if (entity instanceof Player player && !player.level().isClientSide()) {
-                    player.displayClientMessage(Component.literal("魔术回路因过载而强制关闭!"), true);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.circuit.forced_close"), true);
                 }
             }
         } else {
@@ -85,23 +93,31 @@ public class Restore_mana {
         double currentMana = vars.player_mana;
         if (currentMana > maxMana) {
             if (entity instanceof Player player && !player.level().isClientSide()) {
-                String color = "\u00A7e";
+                ChatFormatting color = ChatFormatting.YELLOW;
                 if (currentMana > maxMana * 1.25) {
-                    color = "\u00A74";
+                    color = ChatFormatting.DARK_RED;
                 } else if (currentMana > maxMana * 1.2) {
-                    color = "\u00A7c";
+                    color = ChatFormatting.RED;
                 }
-                player.displayClientMessage(Component.literal(color + "警告: 魔力过载! (" + (int) currentMana + "/" + (int) maxMana + ")"), true);
+                player.displayClientMessage(
+                        Component.translatable("message.typemoonworld.mana.overload.warning", (int) currentMana, (int) maxMana)
+                                .withStyle(color),
+                        true
+                );
             }
 
             if (currentMana > maxMana * 1.3 && entity instanceof LivingEntity living) {
                 living.hurt(living.damageSources().magic(), Float.MAX_VALUE);
                 if (entity instanceof Player player) {
-                    player.sendSystemMessage(Component.literal("\u00A74你因无法承受过量魔力而爆体身亡!"));
+                    player.sendSystemMessage(
+                            Component.translatable("message.typemoonworld.mana.overload.death")
+                                    .withStyle(ChatFormatting.DARK_RED)
+                    );
                 }
             }
         } else {
-            vars.player_mana = Math.min(vars.player_mana + manaRegen, vars.player_max_mana);
+            double effectiveRegen = manaRegen * regenMultiplier;
+            vars.player_mana = Math.min(vars.player_mana + effectiveRegen, vars.player_max_mana);
         }
 
         if (vars.magic_cooldown > 0) {

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "typemoonworld:item/mana_survey_pointer"
+  }
+}

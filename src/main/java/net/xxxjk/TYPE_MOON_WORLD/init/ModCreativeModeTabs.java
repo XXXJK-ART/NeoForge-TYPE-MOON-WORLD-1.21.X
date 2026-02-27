@@ -48,6 +48,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.REDSWORD_BLOCK);
 
                         output.accept(ModItems.CHISEL);
+                        output.accept(ModItems.MANA_SURVEY_BASE);
+                        output.accept(ModItems.MANA_SURVEY_POINTER);
+                        output.accept(ModItems.MANA_SURVEY_COMPASS);
+                        output.accept(ModItems.LEYLINE_SURVEY_MAP);
 
                         output.accept(ModItems.RAW_EMERALD);
                         output.accept(ModItems.RAW_RUBY);

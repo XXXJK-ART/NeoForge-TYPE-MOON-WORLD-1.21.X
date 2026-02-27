@@ -97,7 +97,7 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
                  player.getCooldowns().addCooldown(this, 200); // 10s cooldown
                  return InteractionResultHolder.success(player.getItemInHand(usedHand));
              } else {
-                 player.displayClientMessage(Component.literal("§c缺少Saber的魔力，无法激活阿瓦隆。"), true);
+                 player.displayClientMessage(Component.translatable("message.typemoonworld.avalon.no_saber_mana"), true);
                  return InteractionResultHolder.fail(player.getItemInHand(usedHand));
              }
          }

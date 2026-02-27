@@ -1,7 +1,6 @@
 
 package net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement;
 
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -22,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 
 public class MagicReinforcementItem {
     public static void execute(Entity entity) {
@@ -35,8 +35,14 @@ public class MagicReinforcementItem {
             return;
         }
 
+        boolean isNoblePhantasm = heldItem.getItem() instanceof NoblePhantasmItem;
+
         // Determine if reinforceable (Now includes almost anything)
-        boolean isStandardReinforceable = heldItem.isDamageableItem() || heldItem.getItem() instanceof TieredItem || heldItem.getItem() instanceof ArmorItem || heldItem.getItem() instanceof BowItem;
+        boolean isStandardReinforceable = isNoblePhantasm
+                || heldItem.isDamageableItem()
+                || heldItem.getItem() instanceof TieredItem
+                || heldItem.getItem() instanceof ArmorItem
+                || heldItem.getItem() instanceof BowItem;
         
         // Calculate Max Level based on Proficiency (1 level per 20 proficiency, max 5)
         int maxLevel = Math.min(5, 1 + (int)(vars.proficiency_reinforcement / 20));
@@ -51,10 +57,19 @@ public class MagicReinforcementItem {
             if (heldItem.isDamaged()) wouldChange = true;
             
             Registry<Enchantment> registry = player.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-            Holder<Enchantment> enchantmentToApply = getEnchantmentForItem(heldItem, registry);
-            if (enchantmentToApply != null) {
-                int currentLevel = EnchantmentHelper.getEnchantmentsForCrafting(heldItem).getLevel(enchantmentToApply);
-                if (level > currentLevel) wouldChange = true;
+            Holder<Enchantment> primaryEnchantment = getPrimaryEnchantmentForItem(heldItem, registry, isNoblePhantasm);
+            Holder<Enchantment> secondaryEnchantment = getSecondaryNoblePhantasmEnchantment(heldItem, registry, isNoblePhantasm, primaryEnchantment);
+            if (primaryEnchantment != null) {
+                int currentLevel = EnchantmentHelper.getEnchantmentsForCrafting(heldItem).getLevel(primaryEnchantment);
+                if (level > currentLevel) {
+                    wouldChange = true;
+                }
+            }
+            if (secondaryEnchantment != null) {
+                int currentLevel = EnchantmentHelper.getEnchantmentsForCrafting(heldItem).getLevel(secondaryEnchantment);
+                if (level > currentLevel) {
+                    wouldChange = true;
+                }
             }
         }
 
@@ -193,30 +208,20 @@ public class MagicReinforcementItem {
             // Standard Item Reinforcement (Enchantment based)
             // Apply Efficiency/Sharpness/Protection based on item type
             Registry<Enchantment> registry = player.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-            Holder<Enchantment> enchantmentToApply = getEnchantmentForItem(heldItem, registry);
-            
-            if (enchantmentToApply != null) {
-                // Store original level if needed? Or just overwrite?
-                // Instruction says "temporary", so we should probably revert it later.
-                // For now, let's just apply it and rely on expiry to remove it.
-                // But EnchantmentHelper.updateEnchantments modifies the stack permanently unless we track it.
-                
-                int currentLevel = EnchantmentHelper.getEnchantmentsForCrafting(heldItem).getLevel(enchantmentToApply);
-                if (level > currentLevel) {
-                    tag.putString("ReinforcedEnchantment", enchantmentToApply.unwrapKey().get().location().toString());
-                    tag.putInt("ReinforcedEnchantmentLevel", level - currentLevel); // Store how much we added
-                    
-                    EnchantmentHelper.updateEnchantments(heldItem, mutable -> {
-                        mutable.set(enchantmentToApply, level);
-                    });
-                    didSomething = true;
-                }
-                
-                // Repair item slightly
-                if (heldItem.isDamaged()) {
-                    heldItem.setDamageValue(Math.max(0, heldItem.getDamageValue() - (level * 50)));
-                    didSomething = true;
-                }
+            Holder<Enchantment> primaryEnchantment = getPrimaryEnchantmentForItem(heldItem, registry, isNoblePhantasm);
+            Holder<Enchantment> secondaryEnchantment = getSecondaryNoblePhantasmEnchantment(heldItem, registry, isNoblePhantasm, primaryEnchantment);
+
+            if (applyEnchantmentUpgrade(heldItem, tag, primaryEnchantment, level, "ReinforcedEnchantment", "ReinforcedEnchantmentLevel")) {
+                didSomething = true;
+            }
+            if (applyEnchantmentUpgrade(heldItem, tag, secondaryEnchantment, level, "ReinforcedEnchantmentExtra", "ReinforcedEnchantmentExtraLevel")) {
+                didSomething = true;
+            }
+
+            // Repair item slightly
+            if (heldItem.isDamaged()) {
+                heldItem.setDamageValue(Math.max(0, heldItem.getDamageValue() - (level * 50)));
+                didSomething = true;
             }
         }
         
@@ -242,7 +247,43 @@ public class MagicReinforcementItem {
         vars.syncPlayerVariables(player);
     }
 
-    private static Holder<Enchantment> getEnchantmentForItem(ItemStack stack, Registry<Enchantment> registry) {
+    private static boolean applyEnchantmentUpgrade(ItemStack stack, net.minecraft.nbt.CompoundTag tag, Holder<Enchantment> enchantment,
+                                                   int level, String idTagKey, String deltaTagKey) {
+        if (enchantment == null) {
+            return false;
+        }
+
+        int currentLevel = EnchantmentHelper.getEnchantmentsForCrafting(stack).getLevel(enchantment);
+        if (level <= currentLevel) {
+            return false;
+        }
+
+        enchantment.unwrapKey().ifPresent(key -> tag.putString(idTagKey, key.location().toString()));
+        tag.putInt(deltaTagKey, level - currentLevel);
+        EnchantmentHelper.updateEnchantments(stack, mutable -> mutable.set(enchantment, level));
+        return true;
+    }
+
+    private static Holder<Enchantment> getPrimaryEnchantmentForItem(ItemStack stack, Registry<Enchantment> registry, boolean isNoblePhantasm) {
+        if (isNoblePhantasm) {
+            return registry.getHolderOrThrow(Enchantments.UNBREAKING);
+        }
+        return getTypeBasedEnchantmentForItem(stack, registry);
+    }
+
+    private static Holder<Enchantment> getSecondaryNoblePhantasmEnchantment(ItemStack stack, Registry<Enchantment> registry,
+                                                                             boolean isNoblePhantasm, Holder<Enchantment> primary) {
+        if (!isNoblePhantasm) {
+            return null;
+        }
+        Holder<Enchantment> typeEnchantment = getTypeBasedEnchantmentForItem(stack, registry);
+        if (typeEnchantment == null || (primary != null && typeEnchantment.equals(primary))) {
+            return null;
+        }
+        return typeEnchantment;
+    }
+
+    private static Holder<Enchantment> getTypeBasedEnchantmentForItem(ItemStack stack, Registry<Enchantment> registry) {
         if (stack.getItem() instanceof SwordItem) {
             return registry.getHolderOrThrow(Enchantments.SHARPNESS);
         } else if (stack.getItem() instanceof ArmorItem) {

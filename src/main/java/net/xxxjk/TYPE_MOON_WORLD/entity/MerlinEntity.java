@@ -118,7 +118,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.mental_pulse", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.prank_positive", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.prank_negative", 1);
-        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.hostile_player", 1);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.hostile_player", 11);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.buff_support_high", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.guard_summon", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.crowded", 1);
@@ -131,12 +131,15 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_skeleton", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_creeper", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_enderman", 1);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_player_taunt", 7);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_boss_taunt", 5);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.target_summon_taunt", 5);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.avalon_barrier", 1);
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.death", 1);
-        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_dodge", 4);
-        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_recovery", 4);
-        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_avalon_hit", 4);
-        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_death", 4);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_dodge", 9);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_recovery", 9);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_avalon_hit", 9);
+        SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.combat_death", 9);
     }
 
     public MerlinEntity(EntityType<? extends PathfinderMob> type, Level level) {
@@ -446,7 +449,15 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
             if (hasEnemy && this.targetLockTicks == 1) {
                 LivingEntity t = this.getTarget();
-                if (t instanceof net.minecraft.world.entity.monster.Zombie) {
+                if (t instanceof Player) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_player_taunt", 22.0);
+                } else if ((t instanceof net.minecraft.world.entity.OwnableEntity ownable && ownable.getOwnerUUID() != null)
+                        || (t instanceof net.minecraft.world.entity.TamableAnimal tamable && tamable.isTame())) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_summon_taunt", 20.0);
+                } else if (t instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon
+                        || t instanceof net.minecraft.world.entity.boss.wither.WitherBoss) {
+                    broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_boss_taunt", 24.0);
+                } else if (t instanceof net.minecraft.world.entity.monster.Zombie) {
                     broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_zombie", 20.0);
                 } else if (t instanceof net.minecraft.world.entity.monster.Skeleton) {
                     broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_skeleton", 20.0);
@@ -460,10 +471,6 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                     broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_witch", 20.0);
                 } else if (t instanceof net.minecraft.world.entity.monster.Phantom) {
                     broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_phantom", 20.0);
-                } else if (t instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
-                    broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_ender_dragon", 24.0);
-                } else if (t instanceof net.minecraft.world.entity.boss.wither.WitherBoss) {
-                    broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_wither", 24.0);
                 } else if (t instanceof net.minecraft.world.entity.animal.Animal) {
                     broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.target_animal", 16.0);
                 } else if (t instanceof net.minecraft.world.entity.npc.Villager) {

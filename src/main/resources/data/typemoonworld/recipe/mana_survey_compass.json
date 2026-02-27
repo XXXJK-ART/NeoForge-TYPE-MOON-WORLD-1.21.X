@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": {
+      "item": "typemoonworld:mana_survey_pointer"
+    },
+    "B": {
+      "item": "typemoonworld:mana_survey_base"
+    }
+  },
+  "pattern": [
+    " P ",
+    " B "
+  ],
+  "result": {
+    "count": 1,
+    "id": "typemoonworld:mana_survey_compass"
+  }
+}

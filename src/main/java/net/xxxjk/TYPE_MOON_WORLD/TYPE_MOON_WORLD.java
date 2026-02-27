@@ -45,6 +45,7 @@ import terrablender.api.SurfaceRuleManager;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenLeylineSurveyMapMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
@@ -183,6 +184,7 @@ public class TYPE_MOON_WORLD {
         registrar.playToClient(TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE, TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData);
         registrar.playToClient(TypeMoonWorldModVariables.ManaSyncMessage.TYPE, TypeMoonWorldModVariables.ManaSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.ManaSyncMessage::handleData);
         registrar.playToClient(TypeMoonWorldModVariables.ProficiencySyncMessage.TYPE, TypeMoonWorldModVariables.ProficiencySyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.ProficiencySyncMessage::handleData);
+        registrar.playToClient(OpenLeylineSurveyMapMessage.TYPE, OpenLeylineSurveyMapMessage.STREAM_CODEC, OpenLeylineSurveyMapMessage::handleData);
         
         networkingRegistered = true;
     }

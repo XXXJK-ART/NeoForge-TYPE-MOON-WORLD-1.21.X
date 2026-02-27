@@ -11,6 +11,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
@@ -158,9 +159,33 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
             
             float radius = MagicConstants.RUBY_EXPLOSION_RADIUS * multiplier;
 
-            // 参数说明：source, x, y, z, radius, fire, interaction
-            // 将 fire 参数设置为 true 以产生火焰
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, true, Level.ExplosionInteraction.TNT);
+            // 随机投掷模式：基于玩家魔力量决定爆炸半径，仅造成范围与伤害与特效，不破坏地形
+            if (isRandomMode) {
+                int gemType = this.getGemType();
+                
+                // 以玩家当前魔力量占比进行缩放：半径 = 基础半径 * 质量/附加倍率 * (0.8 + 1.2 * manaRatio) * typeWeight
+                float manaScale = 1.0f;
+                if (this.getOwner() instanceof net.minecraft.world.entity.player.Player p) {
+                    TypeMoonWorldModVariables.PlayerVariables vars = p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                    double maxMana = Math.max(vars.player_max_mana, 1.0);
+                    double manaRatio = Math.max(0.0, Math.min(vars.player_mana / maxMana, 1.0));
+                    manaScale = (float)(0.8 + 1.2 * manaRatio); // 0.8x ~ 2.0x
+                }
+                
+                // 不点燃、且不破坏方块
+                this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, false, Level.ExplosionInteraction.NONE);
+                
+                // 额外的范围爆炸特效，随半径提升粒子数量
+                if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    int particleCount = Math.max(6, (int)(8 + radius * 2));
+                    serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, this.getX(), this.getY(), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+                    serverLevel.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY(), this.getZ(), particleCount, radius * 0.4, radius * 0.3, radius * 0.4, 0.02);
+                }
+            } else {
+                // 标准红宝石投掷保持原有行为（可点燃、可破坏地形）
+                // 参数说明：source, x, y, z, radius, fire, interaction
+                this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, true, Level.ExplosionInteraction.TNT);
+            }
             
             if (this.getOwner() instanceof LivingEntity owner) {
                  java.util.List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius));

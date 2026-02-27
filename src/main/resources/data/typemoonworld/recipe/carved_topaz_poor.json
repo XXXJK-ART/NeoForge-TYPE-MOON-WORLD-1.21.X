@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "typemoonworld:topaz_block_poor"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "typemoonworld:carved_topaz_poor"
+  }
+}
