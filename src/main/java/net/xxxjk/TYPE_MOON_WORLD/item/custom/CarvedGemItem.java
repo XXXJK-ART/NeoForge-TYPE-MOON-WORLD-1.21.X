@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.network.chat.Component;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
@@ -63,11 +64,11 @@ public class CarvedGemItem extends Item {
                                           // Or simpler: we paid the mana cost using all mana + some health.
                     vars.syncMana(player);
                     
-                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("\u00A7c魔力不足！消耗了 " + (int)healthCost + " 点生命值来补充魔力。"), true);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.gem.convert_health", (int) healthCost), true);
                     
                     giveFullGem(player, hand, stack, world);
                 } else {
-                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("魔力与生命力均不足！"), true);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.gem.not_enough_mana_and_health"), true);
                 }
             }
         }

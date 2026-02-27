@@ -83,6 +83,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     private static final int START_OFFSET_Y = 10;
     private static final int VISIBLE_ROWS = 4; // Should match calculation
     private static final int COLUMNS = 2;
+    private static final int FILTER_LABEL_X = 200;
+    private static final int FILTER_LABEL_Y = 28;
+    private static final int FILTER_BUTTON_Y = 25;
     
     // Magic Entry Class
     static class MagicEntry {
@@ -185,11 +188,49 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/basic_information.png");
 
     // Helper method to get category label from ID
-    private String getCategoryLabel(String category) {
-        if ("jewel".equals(category)) return Component.translatable("gui.typemoonworld.category.jewel").getString();
-        if ("basic".equals(category)) return Component.translatable("gui.typemoonworld.category.basic").getString();
-        if ("unlimited_blade_works".equals(category)) return Component.translatable("gui.typemoonworld.category.ubw").getString();
-        return Component.translatable("gui.typemoonworld.category.all").getString();
+    private String getCategoryLabelKey(String category) {
+        if ("jewel".equals(category)) return "gui.typemoonworld.category.jewel";
+        if ("basic".equals(category)) return "gui.typemoonworld.category.basic";
+        if ("unlimited_blade_works".equals(category)) return "gui.typemoonworld.category.ubw";
+        return "gui.typemoonworld.category.all";
+    }
+
+    private int getFilterButtonWidth() {
+        int maxCategoryWidth = Math.max(
+                Math.max(this.font.width(Component.translatable("gui.typemoonworld.category.all")),
+                        this.font.width(Component.translatable("gui.typemoonworld.category.jewel"))),
+                Math.max(this.font.width(Component.translatable("gui.typemoonworld.category.basic")),
+                        this.font.width(Component.translatable("gui.typemoonworld.category.ubw"))));
+        return Math.max(44, maxCategoryWidth + 12);
+    }
+
+    private int getFilterButtonX() {
+        int labelWidth = this.font.width(Component.translatable("gui.typemoonworld.category.label"));
+        return this.leftPos + FILTER_LABEL_X + labelWidth + 6;
+    }
+
+    private String clampTextToWidth(String text, int maxWidth) {
+        if (this.font.width(text) <= maxWidth) {
+            return text;
+        }
+        String ellipsis = "...";
+        int ellipsisWidth = this.font.width(ellipsis);
+        if (ellipsisWidth >= maxWidth) {
+            return this.font.plainSubstrByWidth(text, maxWidth);
+        }
+        return this.font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + ellipsis;
+    }
+
+    private Component getMagicListButtonText(MagicEntry entry, int availableWidth) {
+        String shortLabel = Component.translatable(entry.nameKey).getString();
+        if (shortLabel.equals(entry.nameKey)) {
+            String fullKey = entry.nameKey.replace(".short", ".selected");
+            shortLabel = Component.translatable(fullKey).getString();
+            if (shortLabel.equals(fullKey)) {
+                shortLabel = entry.id;
+            }
+        }
+        return Component.literal(clampTextToWidth(shortLabel, availableWidth));
     }
 
     @Override
@@ -212,7 +253,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             // Update filter button text based on current category
             if (filterButton != null) {
                 filterButton.visible = true;
-                filterButton.setMessage(Component.literal(getCategoryLabel(filterCategory)));
+                filterButton.setMessage(Component.translatable(getCategoryLabelKey(filterCategory)));
             }
             
             // Render Magic List (Center-Left)
@@ -281,11 +322,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             guiGraphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, fillColor);
             guiGraphics.renderOutline(btnX, btnY, btnW, btnH, borderColor);
             
-            Component msg = Component.translatable(entry.nameKey.replace(".short", ".selected"));
-            if (msg.getString().equals(entry.nameKey)) {
-                 msg = Component.translatable(entry.nameKey); 
-            }
-            
+            Component msg = getMagicListButtonText(entry, btnW - 8);
             guiGraphics.drawCenteredString(this.font, msg, btnX + btnW / 2, btnY + (btnH - 8) / 2, textColor);
         }
         
@@ -683,10 +720,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             // For now, keep it clean as requested previously.
         } else {
             guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.screen.learned_magic"), 125, 28, 0xFF00E0E0, false);
-            // Label for filter
-            // Button is at 230, 25. Text should be left of it.
-            // "分类:"
-            guiGraphics.drawString(this.font, "分类:", 200, 28, 0xFFAAAAAA, false);
+            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.category.label"), FILTER_LABEL_X, FILTER_LABEL_Y, 0xFFAAAAAA, false);
         }
     }
 
@@ -747,7 +781,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // "分类:" text will be drawn at x=200, y=28 (aligned with title)
         // Button should be after that.
         // Let's place label at x=200. Width ~25. Button at x=230.
-        this.filterButton = new NeonButton(this.leftPos + 230, this.topPos + 25, 40, 14, Component.literal("全部"), e -> {
+        int filterButtonWidth = getFilterButtonWidth();
+        this.filterButton = new NeonButton(getFilterButtonX(), this.topPos + FILTER_BUTTON_Y, filterButtonWidth, 14, Component.translatable("gui.typemoonworld.category.all"), e -> {
             TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
             // Cycle filters logic with unlock check
@@ -757,12 +792,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             String nextCategory = getNextCategory(filterCategory, vars);
             filterCategory = nextCategory;
             
-            String label = "全部";
-            if ("jewel".equals(filterCategory)) label = "宝石";
-            else if ("basic".equals(filterCategory)) label = "基础";
-            else if ("unlimited_blade_works".equals(filterCategory)) label = "无限剑制";
-            
-            e.setMessage(Component.literal(label));
+            e.setMessage(Component.translatable(getCategoryLabelKey(filterCategory)));
             updateFilteredMagics();
             // Reset scroll on filter change
             startIndex = 0;
@@ -775,13 +805,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // --- Magic Buttons are now dynamic in render() ---
         
         // Tab Buttons
-        imagebutton_basic_attributes = new NeonButton(tabX, tabY, tabWidth, tabHeight, Component.literal("基础属性"), e -> {
+        imagebutton_basic_attributes = new NeonButton(tabX, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {
             PacketDistributor.sendToServer(new Magical_attributes_Button_Message(0, x, y, z));
             Magical_attributes_Button_Message.handleButtonAction(entity, 0, x, y, z);
         });
         this.addRenderableWidget(imagebutton_basic_attributes);
         
-        imagebutton_magical_attributes = new NeonButton(tabX + tabWidth + 2, tabY, tabWidth, tabHeight, Component.literal("身体改造"), e -> {
+        imagebutton_magical_attributes = new NeonButton(tabX + tabWidth + 2, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.body_modification"), e -> {
             this.pageMode = 0;
             this.menu.setPage(0);
             PacketDistributor.sendToServer(new PageChangeMessage(0));
@@ -789,7 +819,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         });
         this.addRenderableWidget(imagebutton_magical_attributes);
         
-        imagebutton_magical_properties = new NeonButton(tabX + (tabWidth + 2) * 2, tabY, tabWidth, tabHeight, Component.literal("魔术知识"), e -> {
+        imagebutton_magical_properties = new NeonButton(tabX + (tabWidth + 2) * 2, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.magic_knowledge"), e -> {
             this.pageMode = 1;
             this.menu.setPage(1);
             PacketDistributor.sendToServer(new PageChangeMessage(1));

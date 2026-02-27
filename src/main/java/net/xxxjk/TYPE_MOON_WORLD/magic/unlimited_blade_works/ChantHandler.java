@@ -904,23 +904,23 @@ public class ChantHandler {
                 PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0, offsetZ));
              }
         } else if (progress == 2) {
-            chantText = "搂bSteel is my body, and fire is my blood.";
+            chantText = "§bSteel is my body, and fire is my blood.";
         } else if (progress == 3) {
-            chantText = "搂bI have created over a thousand blades.";
+            chantText = "§bI have created over a thousand blades.";
             // Initial burst spawn - slightly increased from 8
             spawnVisualSwords(player, vars, 10, 10.0);
         } else if (progress == 4) {
-            chantText = "搂bUnaware of loss.";
+            chantText = "§bUnaware of loss.";
         } else if (progress == 5) {
-            chantText = "搂bNor aware of gain.";
+            chantText = "§bNor aware of gain.";
         } else if (progress == 6) {
-            chantText = "搂bWithstood pain to create weapons,waiting for one's arrival.";
+            chantText = "§bWithstood pain to create weapons,waiting for one's arrival.";
         } else if (progress == 7) {
-            chantText = "搂bI have no regrets.";
+            chantText = "§bI have no regrets.";
         } else if (progress == 8) {
-            chantText = "搂bThis is the only path.";
+            chantText = "§bThis is the only path.";
         } else if (progress == 9) {
-            chantText = "搂bMy whole life was,";
+            chantText = "§bMy whole life was,";
         } else if (progress > 9) {
             // Activation Phase
             if (ManaHelper.consumeManaOrHealth(player, cost)) {

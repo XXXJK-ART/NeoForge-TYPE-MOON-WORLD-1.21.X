@@ -1,15 +1,12 @@
-
 package net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement;
 
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -71,33 +68,15 @@ public class MagicReinforcementEventHandler {
     }
 
     public static void removeReinforcement(Player player, ItemStack stack, net.minecraft.nbt.CompoundTag tag) {
-        // Remove Enchantments if any
-        if (tag.contains("ReinforcedEnchantment")) {
-            String enchantmentId = tag.getString("ReinforcedEnchantment");
-            int levelToRemove = tag.getInt("ReinforcedEnchantmentLevel");
-            
-            player.registryAccess().registry(net.minecraft.core.registries.Registries.ENCHANTMENT).ifPresent(registry -> {
-                net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.parse(enchantmentId);
-                registry.getHolder(rl).ifPresent(holder -> {
-                    EnchantmentHelper.updateEnchantments(stack, mutable -> {
-                        int currentLevel = mutable.getLevel(holder);
-                        if (currentLevel <= levelToRemove) {
-                            mutable.set(holder, 0); // Remove it
-                        } else {
-                            // If current level is higher (maybe player enchanted it manually?), we keep it or reduce it?
-                            // The instruction says "寮哄寲娑堝け", so we should at least remove the part we added.
-                            mutable.set(holder, currentLevel - levelToRemove);
-                        }
-                    });
-                });
-            });
-        }
+        // Remove enchantments injected by reinforcement (primary + extra).
+        removeStoredReinforcementEnchantment(player, stack, tag, "ReinforcedEnchantment", "ReinforcedEnchantmentLevel");
+        removeStoredReinforcementEnchantment(player, stack, tag, "ReinforcedEnchantmentExtra", "ReinforcedEnchantmentExtraLevel");
 
         // Remove Attribute Modifiers
         if (stack.has(DataComponents.ATTRIBUTE_MODIFIERS)) {
             net.minecraft.world.item.component.ItemAttributeModifiers modifiers = stack.get(DataComponents.ATTRIBUTE_MODIFIERS);
             net.minecraft.world.item.component.ItemAttributeModifiers.Builder builder = net.minecraft.world.item.component.ItemAttributeModifiers.builder();
-            
+
             boolean found = false;
             for (net.minecraft.world.item.component.ItemAttributeModifiers.Entry entry : modifiers.modifiers()) {
                 if (!entry.modifier().id().equals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "reinforcement_item_damage"))) {
@@ -121,15 +100,50 @@ public class MagicReinforcementEventHandler {
         tag.remove("ReinforcementHitsLeft");
         tag.remove("ReinforcedEnchantment");
         tag.remove("ReinforcedEnchantmentLevel");
+        tag.remove("ReinforcedEnchantmentExtra");
+        tag.remove("ReinforcedEnchantmentExtraLevel");
         tag.remove("ReinforcementInjectedGlint");
         tag.remove("CasterUUID");
 
         if (injectedGlint && !shouldKeepForcedGlint(stack, tag)) {
             stack.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
         }
-        
+
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.item.expired"), true);
+    }
+
+    private static void removeStoredReinforcementEnchantment(Player player, ItemStack stack, net.minecraft.nbt.CompoundTag tag,
+                                                             String enchantmentIdKey, String levelKey) {
+        if (!tag.contains(enchantmentIdKey)) {
+            return;
+        }
+
+        String enchantmentId = tag.getString(enchantmentIdKey);
+        int levelToRemove = tag.getInt(levelKey);
+        if (levelToRemove <= 0) {
+            return;
+        }
+
+        player.registryAccess().registry(net.minecraft.core.registries.Registries.ENCHANTMENT).ifPresent(registry -> {
+            net.minecraft.resources.ResourceLocation rl;
+            try {
+                rl = net.minecraft.resources.ResourceLocation.parse(enchantmentId);
+            } catch (Exception ignored) {
+                return;
+            }
+
+            registry.getHolder(rl).ifPresent(holder ->
+                    EnchantmentHelper.updateEnchantments(stack, mutable -> {
+                        int currentLevel = mutable.getLevel(holder);
+                        if (currentLevel <= levelToRemove) {
+                            mutable.set(holder, 0);
+                        } else {
+                            mutable.set(holder, currentLevel - levelToRemove);
+                        }
+                    })
+            );
+        });
     }
 
     private static boolean shouldKeepForcedGlint(ItemStack stack, net.minecraft.nbt.CompoundTag tag) {

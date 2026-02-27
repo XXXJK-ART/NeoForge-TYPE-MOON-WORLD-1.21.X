@@ -8,6 +8,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
@@ -63,13 +65,17 @@ public class FullManaCarvedGemItem extends Item {
             double current = vars.player_mana;
             double max = vars.player_max_mana;
             if (current > max) {
-                 String color = "\u00A7e"; // Yellow
+                 ChatFormatting color = ChatFormatting.YELLOW;
                  if (current > max * 1.25) {
-                      color = "\u00A74"; // Dark Red
+                      color = ChatFormatting.DARK_RED;
                  } else if (current > max * 1.2) {
-                      color = "\u00A7c"; // Red
+                      color = ChatFormatting.RED;
                  }
-                 player.displayClientMessage(net.minecraft.network.chat.Component.literal(color + "警告：魔力过载！ (" + (int)current + "/" + (int)max + ")"), true);
+                 player.displayClientMessage(
+                         Component.translatable("message.typemoonworld.mana.overload.warning", (int) current, (int) max)
+                                 .withStyle(color),
+                         true
+                 );
             }
             
             if (stack.getCount() <= 1) {

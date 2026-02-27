@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -113,7 +114,11 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
             }
             
             // Feedback
-            player.displayClientMessage(Component.literal("搂c钃勫姏: " + currentCharge + "%"), true);
+            player.displayClientMessage(
+                    Component.translatable("message.typemoonworld.redsword.charge", currentCharge)
+                            .withStyle(ChatFormatting.RED),
+                    true
+            );
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.5f, 1.0f + (currentCharge / 100.0f));
             
             // Surrounding Flame Particles
@@ -137,7 +142,7 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
         } else {
             // Out of mana, release immediately
             player.releaseUsingItem();
-            player.displayClientMessage(Component.literal("搂c榄斿姏涓嶈冻!"), true);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
         }
     }
 

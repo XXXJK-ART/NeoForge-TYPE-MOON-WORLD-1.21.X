@@ -72,7 +72,7 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
                     }
 
                     if (!hasModItem) {
-                        player.displayClientMessage(Component.literal("§c你还没有获得魔术的媒介."), true);
+                        player.displayClientMessage(Component.translatable("message.typemoonworld.awaken.missing_catalyst"), true);
                         return;
                     }
 
@@ -143,7 +143,7 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
                     vars.syncPlayerVariables(player);
                     vars.syncMana(player);
                     
-                    player.displayClientMessage(Component.literal("§b魔术回路已接通. 你现在是一名魔术师了."), false);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.awaken.success"), false);
                     world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
                     
                     if (world instanceof ServerLevel serverLevel) {

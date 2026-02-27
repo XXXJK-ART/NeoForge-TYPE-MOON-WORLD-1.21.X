@@ -22,8 +22,9 @@ public class GemRegion extends Region {
         ResourceKey<Biome> gemBiome = ResourceKey.create(registry.key(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gem_biome"));
 
         this.addModifiedVanillaOverworldBiomes(mapper, builder -> {
-            // Only replace Cherry Grove to make it rare
-            builder.replaceBiome(net.minecraft.world.level.biome.Biomes.CHERRY_GROVE, gemBiome);
+            // Replace selected mountain biomes with gem biome
+            builder.replaceBiome(net.minecraft.world.level.biome.Biomes.WINDSWEPT_HILLS, gemBiome);
+            builder.replaceBiome(net.minecraft.world.level.biome.Biomes.STONY_PEAKS, gemBiome);
         });
     }
 }

@@ -32,7 +32,7 @@ public class MagicBrokenPhantasm {
                 if (heldItem.isEmpty() || offhandItem.isEmpty()) {
                     net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection.execute(player);
                 } else {
-                    player.displayClientMessage(Component.literal("手中没有投影物品或宝具"), true);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.broken_phantasm.no_valid_item"), true);
                 }
                 return;
             }
@@ -63,7 +63,7 @@ public class MagicBrokenPhantasm {
         // Consume Item
         heldItem.shrink(1);
         
-        player.displayClientMessage(Component.literal("投影崩坏！(威力: " + String.format("%.1f", explosionPower) + ")"), true);
+        player.displayClientMessage(Component.translatable("message.typemoonworld.broken_phantasm.cast", String.format("%.1f", explosionPower)), true);
     }
 
     public static void execute(Entity entity) {

@@ -73,7 +73,7 @@ public class TypeMoonWorldModVariables {
                     ItemStack stack = event.getOriginalStack();
                     ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                     if (id != null && TYPE_MOON_WORLD.MOD_ID.equals(id.getNamespace())) {
-                        player.displayClientMessage(Component.literal("§b你感受到了一股微弱的魔力波动... 按下 §eX §f键以觉醒魔术回路."), true);
+                        player.displayClientMessage(Component.translatable("message.typemoonworld.awaken.hint"), true);
                     }
                 }
             }
@@ -86,6 +86,7 @@ public class TypeMoonWorldModVariables {
             clone.player_max_mana = original.player_max_mana;
             clone.player_mana_egenerated_every_moment = original.player_mana_egenerated_every_moment;
             clone.player_restore_magic_moment = original.player_restore_magic_moment;
+            clone.current_mana_regen_multiplier = original.current_mana_regen_multiplier;
             clone.player_magic_attributes_earth = original.player_magic_attributes_earth;
             clone.player_magic_attributes_water = original.player_magic_attributes_water;
             clone.player_magic_attributes_fire = original.player_magic_attributes_fire;
@@ -190,6 +191,7 @@ public class TypeMoonWorldModVariables {
         public double player_max_mana = 0;
         public double player_mana_egenerated_every_moment = 0;
         public double player_restore_magic_moment = 0;
+        public double current_mana_regen_multiplier = 1.0;
         public boolean player_magic_attributes_earth = false;
         public boolean player_magic_attributes_water = false;
         public boolean player_magic_attributes_fire = false;
@@ -444,6 +446,7 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("player_max_mana", player_max_mana);
             nbt.putDouble("player_mana_egenerated_every_moment", player_mana_egenerated_every_moment);
             nbt.putDouble("player_restore_magic_moment", player_restore_magic_moment);
+            nbt.putDouble("current_mana_regen_multiplier", current_mana_regen_multiplier);
             nbt.putBoolean("player_magic_attributes_earth", player_magic_attributes_earth);
             nbt.putBoolean("player_magic_attributes_water", player_magic_attributes_water);
             nbt.putBoolean("player_magic_attributes_fire", player_magic_attributes_fire);
@@ -532,6 +535,9 @@ public class TypeMoonWorldModVariables {
             player_max_mana = nbt.getDouble("player_max_mana");
             player_mana_egenerated_every_moment = nbt.getDouble("player_mana_egenerated_every_moment");
             player_restore_magic_moment = nbt.getDouble("player_restore_magic_moment");
+            current_mana_regen_multiplier = nbt.contains("current_mana_regen_multiplier")
+                    ? nbt.getDouble("current_mana_regen_multiplier")
+                    : 1.0;
             player_magic_attributes_earth = nbt.getBoolean("player_magic_attributes_earth");
             player_magic_attributes_water = nbt.getBoolean("player_magic_attributes_water");
             player_magic_attributes_fire = nbt.getBoolean("player_magic_attributes_fire");
@@ -734,7 +740,14 @@ public class TypeMoonWorldModVariables {
         }
     }
 
-    public record ManaSyncMessage(double player_mana, double player_max_mana, double magic_cooldown, double magic_circuit_open_timer, boolean is_magic_circuit_open) implements CustomPacketPayload {
+    public record ManaSyncMessage(
+            double player_mana,
+            double player_max_mana,
+            double magic_cooldown,
+            double magic_circuit_open_timer,
+            boolean is_magic_circuit_open,
+            double current_mana_regen_multiplier
+    ) implements CustomPacketPayload {
         public static final Type<ManaSyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "mana_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ManaSyncMessage> STREAM_CODEC = StreamCodec.of(
                 (RegistryFriendlyByteBuf buffer, ManaSyncMessage message) -> {
@@ -743,18 +756,27 @@ public class TypeMoonWorldModVariables {
                     buffer.writeDouble(message.magic_cooldown);
                     buffer.writeDouble(message.magic_circuit_open_timer);
                     buffer.writeBoolean(message.is_magic_circuit_open);
+                    buffer.writeDouble(message.current_mana_regen_multiplier);
                 },
                 (RegistryFriendlyByteBuf buffer) -> new ManaSyncMessage(
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
-                        buffer.readBoolean()
+                        buffer.readBoolean(),
+                        buffer.readDouble()
                 )
         );
 
         public ManaSyncMessage(PlayerVariables vars) {
-            this(vars.player_mana, vars.player_max_mana, vars.magic_cooldown, vars.magic_circuit_open_timer, vars.is_magic_circuit_open);
+            this(
+                    vars.player_mana,
+                    vars.player_max_mana,
+                    vars.magic_cooldown,
+                    vars.magic_circuit_open_timer,
+                    vars.is_magic_circuit_open,
+                    vars.current_mana_regen_multiplier
+            );
         }
 
         @Override
@@ -771,6 +793,7 @@ public class TypeMoonWorldModVariables {
                     vars.magic_cooldown = message.magic_cooldown;
                     vars.magic_circuit_open_timer = message.magic_circuit_open_timer;
                     vars.is_magic_circuit_open = message.is_magic_circuit_open;
+                    vars.current_mana_regen_multiplier = message.current_mana_regen_multiplier;
                 });
             }
         }

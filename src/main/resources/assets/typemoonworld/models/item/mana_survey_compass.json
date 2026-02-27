@@ -1,0 +1,200 @@
+﻿{
+    "parent":  "minecraft:item/generated",
+    "textures":  {
+                     "layer0":  "typemoonworld:item/mana_survey_compass_00"
+                 },
+    "overrides":  [
+                      {
+                          "predicate":  {
+                                            "angle":  0
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_00"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.03125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_01"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.0625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_02"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.09375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_03"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_04"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.15625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_05"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.1875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_06"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.21875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_07"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.25
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_08"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.28125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_09"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.3125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_10"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.34375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_11"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_12"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.40625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_13"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.4375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_14"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.46875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_15"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.5
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_16"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.53125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_17"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.5625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_18"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.59375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_19"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_20"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.65625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_21"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.6875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_22"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.71875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_23"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.75
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_24"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.78125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_25"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.8125
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_26"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.84375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_27"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_28"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.90625
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_29"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.9375
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_30"
+                      },
+                      {
+                          "predicate":  {
+                                            "angle":  0.96875
+                                        },
+                          "model":  "typemoonworld:item/mana_survey_compass_31"
+                      }
+                  ]
+}

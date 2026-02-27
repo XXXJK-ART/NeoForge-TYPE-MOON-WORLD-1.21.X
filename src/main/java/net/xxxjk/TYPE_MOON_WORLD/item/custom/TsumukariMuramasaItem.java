@@ -14,6 +14,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
@@ -176,7 +177,9 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             }
             
             // Feedback
-            player.displayClientMessage(Component.literal(currentCharge > 60 ? "§4蓄力: " + currentCharge + "%" : "§c蓄力: " + currentCharge + "%"), true);
+            Component chargeText = Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", currentCharge)
+                    .withStyle(currentCharge > 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED);
+            player.displayClientMessage(chargeText, true);
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.5f, 1.0f + (currentCharge / 100.0f));
             
             // Surrounding Flame Particles
@@ -209,7 +212,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
         } else {
             // Out of mana, release immediately
             player.releaseUsingItem();
-            player.displayClientMessage(Component.literal("§c魔力不足!"), true);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
         }
     }
 
