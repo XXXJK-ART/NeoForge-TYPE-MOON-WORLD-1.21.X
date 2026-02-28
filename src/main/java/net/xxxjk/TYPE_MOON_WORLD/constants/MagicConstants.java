@@ -122,6 +122,11 @@ public class MagicConstants {
     public static final String KEY_MAGIC_REINFORCEMENT_ITEM = "key.typemoonworld.magic.reinforcement_item";
     public static final String KEY_MAGIC_REINFORCEMENT_ITEM_SELECTED = "key.typemoonworld.magic.reinforcement_item.selected";
     public static final String KEY_MAGIC_REINFORCEMENT_ITEM_SHORT = "key.typemoonworld.magic.reinforcement_item.short";
+    
+    // Other Magic
+    public static final String KEY_MAGIC_GRAVITY = "key.typemoonworld.magic.gravity_magic";
+    public static final String KEY_MAGIC_GRAVITY_SELECTED = "key.typemoonworld.magic.gravity_magic.selected";
+    public static final String KEY_MAGIC_GRAVITY_SHORT = "key.typemoonworld.magic.gravity_magic.short";
 
     // General Magic Messages
     public static final String MSG_TRACE_ON = "message.typemoonworld.trace_on";

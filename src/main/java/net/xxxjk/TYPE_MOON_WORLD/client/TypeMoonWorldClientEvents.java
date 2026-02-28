@@ -28,6 +28,7 @@ public class TypeMoonWorldClientEvents {
                 ModItems.CARVED_RUBY_POOR.get(), ModItems.CARVED_RUBY_POOR_FULL.get(),
                 ModItems.CARVED_SAPPHIRE_POOR.get(), ModItems.CARVED_SAPPHIRE_POOR_FULL.get(),
                 ModItems.CARVED_TOPAZ_POOR.get(), ModItems.CARVED_TOPAZ_POOR_FULL.get(),
+                ModItems.CARVED_BLACK_SHARD_POOR.get(), ModItems.CARVED_BLACK_SHARD_POOR_FULL.get(),
                 ModBlocks.EMERALD_BLOCK_POOR.get(), ModBlocks.RUBY_BLOCK_POOR.get(),
                 ModBlocks.SAPPHIRE_BLOCK_POOR.get(), ModBlocks.TOPAZ_BLOCK_POOR.get(),
                 ModBlocks.WHITE_GEMSTONE_BLOCK_POOR.get()
@@ -39,6 +40,7 @@ public class TypeMoonWorldClientEvents {
                 ModItems.CARVED_RUBY.get(), ModItems.CARVED_RUBY_FULL.get(),
                 ModItems.CARVED_SAPPHIRE.get(), ModItems.CARVED_SAPPHIRE_FULL.get(),
                 ModItems.CARVED_TOPAZ.get(), ModItems.CARVED_TOPAZ_FULL.get(),
+                ModItems.CARVED_BLACK_SHARD.get(), ModItems.CARVED_BLACK_SHARD_FULL.get(),
                 ModBlocks.EMERALD_BLOCK.get(), ModBlocks.RUBY_BLOCK.get(),
                 ModBlocks.SAPPHIRE_BLOCK.get(), ModBlocks.TOPAZ_BLOCK.get(),
                 ModBlocks.WHITE_GEMSTONE_BLOCK.get()
@@ -50,6 +52,7 @@ public class TypeMoonWorldClientEvents {
                 ModItems.CARVED_RUBY_HIGH.get(), ModItems.CARVED_RUBY_HIGH_FULL.get(),
                 ModItems.CARVED_SAPPHIRE_HIGH.get(), ModItems.CARVED_SAPPHIRE_HIGH_FULL.get(),
                 ModItems.CARVED_TOPAZ_HIGH.get(), ModItems.CARVED_TOPAZ_HIGH_FULL.get(),
+                ModItems.CARVED_BLACK_SHARD_HIGH.get(), ModItems.CARVED_BLACK_SHARD_HIGH_FULL.get(),
                 ModBlocks.EMERALD_BLOCK_HIGH.get(), ModBlocks.RUBY_BLOCK_HIGH.get(),
                 ModBlocks.SAPPHIRE_BLOCK_HIGH.get(), ModBlocks.TOPAZ_BLOCK_HIGH.get(),
                 ModBlocks.WHITE_GEMSTONE_BLOCK_HIGH.get()

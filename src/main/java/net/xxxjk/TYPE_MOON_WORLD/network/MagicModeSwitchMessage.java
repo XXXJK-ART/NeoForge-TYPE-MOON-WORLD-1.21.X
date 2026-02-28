@@ -36,6 +36,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 1: Cycle Mode (Default/Legacy) - value is direction (1 or -1)
                 // 2: Set Reinforcement Target - value is target index
                 // 3: Set Reinforcement Mode - value is mode index
+                // 6: Toggle Gravity Target (Self/Other)
                 
                 if (message.actionType == 2) {
                     vars.reinforcement_target = message.value;
@@ -86,6 +87,24 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                     return;
                 } else if (message.actionType == 5) {
                     // This is now handled in CastMagic when reinforcement_target == 3
+                    return;
+                } else if (message.actionType == 6) {
+                    if (vars.selected_magics.isEmpty() || vars.current_magic_index < 0 || vars.current_magic_index >= vars.selected_magics.size()) {
+                        return;
+                    }
+                    String currentMagic = vars.selected_magics.get(vars.current_magic_index);
+                    if (!"gravity_magic".equals(currentMagic)) {
+                        return;
+                    }
+
+                    vars.gravity_magic_target = vars.gravity_magic_target == 0 ? 1 : 0;
+                    Component targetComp = Component.translatable(
+                            vars.gravity_magic_target == 0
+                                    ? "gui.typemoonworld.mode.self"
+                                    : "gui.typemoonworld.mode.other"
+                    );
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gravity.target_changed", targetComp), true);
+                    vars.syncPlayerVariables(player);
                     return;
                 }
 
@@ -143,7 +162,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         // Switch between 6 modes (0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random)
                         int maxModes = 6;
                         if ("jewel_magic_release".equals(currentMagic)) {
-                            maxModes = 5; // Release has no Random mode
+                            maxModes = 4; // Release has no Random and no Ruby mode
                         }
                         
                         if (message.actionType == 0) {
@@ -181,6 +200,15 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             case 4: modeStr = "Cyan"; break;
                             case 5: modeStr = "Random"; break;
                         }
+                        if ("jewel_magic_release".equals(currentMagic)) {
+                            switch (vars.jewel_magic_mode) {
+                                case 0 -> modeStr = "Sapphire";
+                                case 1 -> modeStr = "Emerald";
+                                case 2 -> modeStr = "Topaz";
+                                case 3 -> modeStr = "Cyan";
+                                default -> modeStr = "Sapphire";
+                            }
+                        }
                         
                         player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_JEWEL_MODE_CHANGE, modeStr), true);
                         vars.syncPlayerVariables(player);
@@ -208,11 +236,10 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
             }
         } else if ("jewel_magic_release".equals(magicType)) {
             switch (mode) {
-                case 0: return vars.learned_magics.contains("ruby_flame_sword");
-                case 1: return vars.learned_magics.contains("sapphire_winter_frost");
-                case 2: return vars.learned_magics.contains("emerald_winter_river");
-                case 3: return vars.learned_magics.contains("topaz_reinforcement");
-                case 4: return vars.learned_magics.contains("cyan_wind");
+                case 0: return vars.learned_magics.contains("sapphire_winter_frost");
+                case 1: return vars.learned_magics.contains("emerald_winter_river");
+                case 2: return vars.learned_magics.contains("topaz_reinforcement");
+                case 3: return vars.learned_magics.contains("cyan_wind");
                 default: return false;
             }
         }

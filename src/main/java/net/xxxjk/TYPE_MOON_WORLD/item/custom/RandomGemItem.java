@@ -54,6 +54,10 @@ public class RandomGemItem extends Item {
                 visualItem = ModItems.CARVED_CYAN_GEMSTONE.get();
                 typeId = 4;
                 powerMultiplier = 0.5f;
+            } else if (t == GemType.BLACK_SHARD) {
+                visualItem = ModItems.CARVED_BLACK_SHARD.get();
+                typeId = 6;
+                powerMultiplier = 0.5f;
             } else { // WHITE_GEMSTONE
                 visualItem = ModItems.CARVED_WHITE_GEMSTONE.get();
                 typeId = 5;

@@ -51,12 +51,12 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer renderer;
+            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer renderer;
 
             @Override
             public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer();
+                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer();
                 return this.renderer;
             }
         });
@@ -128,11 +128,11 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
     }
 
     public int getMaxManaCost() {
-        return 1000;
+        return 2000;
     }
 
     public double getManaCostPerTick() {
-        return 10.0;
+        return 20.0;
     }
 
     public int getMaxSlashDistance() {
@@ -149,7 +149,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        // Do not call super to avoid Redsword's debuffs
+        // Do not call super to avoid Muramasa's debuffs
         if (isSelected && entity instanceof LivingEntity livingEntity && !level.isClientSide) {
             livingEntity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20, 1, false, false));
         }
@@ -166,13 +166,13 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
         int currentCharge = useDuration;
         if (currentCharge > 100) currentCharge = 100;
         
-        // Mana Cost: 10 per point (every tick), but stop at 100%
+        // Mana Cost: 20 per point (every tick), but stop at 100%
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         boolean isMaxCharge = currentCharge >= 100;
         
-        if (isMaxCharge || vars.player_mana >= 10) {
+        if (isMaxCharge || vars.player_mana >= 20) {
             if (!isMaxCharge) {
-                vars.player_mana -= 10;
+                vars.player_mana -= 20;
                 vars.syncMana(player);
             }
             

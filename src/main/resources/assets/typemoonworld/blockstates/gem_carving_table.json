@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "typemoonworld:block/gem_carving_table"
+    },
+    "facing=east": {
+      "model": "typemoonworld:block/gem_carving_table",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "typemoonworld:block/gem_carving_table",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "typemoonworld:block/gem_carving_table",
+      "y": 270
+    }
+  }
+}

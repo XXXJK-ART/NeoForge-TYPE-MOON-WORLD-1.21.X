@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
@@ -140,12 +141,12 @@ public class CommonEvents {
                 if (serverPlayer.level() instanceof ServerLevel serverLevel) {
                     float chance = 0.15F;
                     if (serverLevel.random.nextFloat() < chance) {
-                        if (favor <= -1) {
+                        if (favor <= -1 && MerlinWorldEventLimiter.tryConsume(serverLevel)) {
                             serverPlayer.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 600, 0));
                             serverPlayer.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 600, 0));
                             Component msg = Component.translatable("entity.typemoonworld.merlin.speech.sleep_negative");
                             serverPlayer.displayClientMessage(msg, false);
-                        } else if (favor >= 3) {
+                        } else if (favor >= 3 && MerlinWorldEventLimiter.tryConsume(serverLevel)) {
                             serverPlayer.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 600, 0));
                             serverPlayer.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 600, 0));
                             Component msg = Component.translatable("entity.typemoonworld.merlin.speech.sleep_positive");
@@ -160,18 +161,22 @@ public class CommonEvents {
             if (serverPlayer.level() instanceof ServerLevel serverLevel) {
                 if (favor < 0) {
                     if (serverLevel.random.nextInt(2000) == 0) {
-                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0));
-                        Component msg = Component.translatable("entity.typemoonworld.merlin.speech.prank_negative");
-                        serverPlayer.displayClientMessage(msg, false);
+                        if (MerlinWorldEventLimiter.tryConsume(serverLevel)) {
+                            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0));
+                            Component msg = Component.translatable("entity.typemoonworld.merlin.speech.prank_negative");
+                            serverPlayer.displayClientMessage(msg, false);
+                        }
                     }
                 } else if (favor > 0 && favor < 3) {
                     if (serverLevel.random.nextInt(2600) == 0) {
-                        double baseY = player.getY() + 0.8D + player.level().random.nextDouble() * 0.8D;
-                        serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
-                                player.getX(), baseY, player.getZ(),
-                                24, 0.8D, 0.6D, 0.8D, 0.02D);
-                        Component msg = Component.translatable("entity.typemoonworld.merlin.speech.prank_positive");
-                        serverPlayer.displayClientMessage(msg, false);
+                        if (MerlinWorldEventLimiter.tryConsume(serverLevel)) {
+                            double baseY = player.getY() + 0.8D + player.level().random.nextDouble() * 0.8D;
+                            serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
+                                    player.getX(), baseY, player.getZ(),
+                                    24, 0.8D, 0.6D, 0.8D, 0.02D);
+                            Component msg = Component.translatable("entity.typemoonworld.merlin.speech.prank_positive");
+                            serverPlayer.displayClientMessage(msg, false);
+                        }
                     }
                 }
             }
@@ -206,7 +211,7 @@ public class CommonEvents {
             if (event.getEntity() instanceof LivingEntity && player.level() instanceof ServerLevel serverLevel) {
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                 if (vars.merlin_favor >= 3) {
-                    if (serverLevel.random.nextFloat() < 0.05F) {
+                    if (serverLevel.random.nextFloat() < 0.05F && MerlinWorldEventLimiter.tryConsume(serverLevel)) {
                         int duration = 1200;
                         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, 0, true, true));
                         player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, duration, 0, true, true));
@@ -244,50 +249,52 @@ public class CommonEvents {
                     if (serverLevel.random.nextFloat() >= 0.15F) {
                         return;
                     }
-                    double radius = 24.0D;
-                    net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(
-                            damagedPlayer.getX() - radius, damagedPlayer.getY() - 4.0D, damagedPlayer.getZ() - radius,
-                            damagedPlayer.getX() + radius, damagedPlayer.getY() + 4.0D, damagedPlayer.getZ() + radius
-                    );
-
-                    java.util.List<MerlinEntity> merlins = serverLevel.getEntitiesOfClass(MerlinEntity.class, box, MerlinEntity::isAlive);
-                    MerlinEntity helper = merlins.isEmpty() ? null : merlins.get(0);
-
-                    if (helper == null) {
-                        helper = ModEntities.MERLIN.get().create(serverLevel);
-                        if (helper != null) {
-                            double dx = (serverLevel.random.nextDouble() - 0.5D) * 2.0D;
-                            double dz = (serverLevel.random.nextDouble() - 0.5D) * 2.0D;
-                            helper.moveTo(damagedPlayer.getX() + dx, damagedPlayer.getY(), damagedPlayer.getZ() + dz, damagedPlayer.getYRot(), damagedPlayer.getXRot());
-                            if (helper.getAttribute(Attributes.MAX_HEALTH) != null) {
-                                helper.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200.0D);
-                            }
-                            helper.setHealth(200.0F);
-                            var htag = helper.getPersistentData();
-                            htag.putBoolean("TypeMoonHelperClone", true);
-                            htag.putString("TypeMoonHelperOwner", damagedPlayer.getUUID().toString());
-                            serverLevel.addFreshEntity(helper);
-                        }
-                    }
-
-                    if (helper != null) {
-                        var htag = helper.getPersistentData();
-                        if (!htag.getBoolean("TypeMoonHelperClone")) {
-                            htag.putBoolean("TypeMoonSummonedFull", true);
-                        }
-                        net.minecraft.world.phys.AABB mobBox = new net.minecraft.world.phys.AABB(
+                    if (MerlinWorldEventLimiter.tryConsume(serverLevel)) {
+                        double radius = 24.0D;
+                        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(
                                 damagedPlayer.getX() - radius, damagedPlayer.getY() - 4.0D, damagedPlayer.getZ() - radius,
                                 damagedPlayer.getX() + radius, damagedPlayer.getY() + 4.0D, damagedPlayer.getZ() + radius
                         );
-                        java.util.List<Monster> mobs = serverLevel.getEntitiesOfClass(Monster.class, mobBox, m -> m.getTarget() == damagedPlayer);
-                        for (Monster mob : mobs) {
-                            mob.setTarget(helper);
+
+                        java.util.List<MerlinEntity> merlins = serverLevel.getEntitiesOfClass(MerlinEntity.class, box, MerlinEntity::isAlive);
+                        MerlinEntity helper = merlins.isEmpty() ? null : merlins.get(0);
+
+                        if (helper == null) {
+                            helper = ModEntities.MERLIN.get().create(serverLevel);
+                            if (helper != null) {
+                                double dx = (serverLevel.random.nextDouble() - 0.5D) * 2.0D;
+                                double dz = (serverLevel.random.nextDouble() - 0.5D) * 2.0D;
+                                helper.moveTo(damagedPlayer.getX() + dx, damagedPlayer.getY(), damagedPlayer.getZ() + dz, damagedPlayer.getYRot(), damagedPlayer.getXRot());
+                                if (helper.getAttribute(Attributes.MAX_HEALTH) != null) {
+                                    helper.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200.0D);
+                                }
+                                helper.setHealth(200.0F);
+                                var htag = helper.getPersistentData();
+                                htag.putBoolean("TypeMoonHelperClone", true);
+                                htag.putString("TypeMoonHelperOwner", damagedPlayer.getUUID().toString());
+                                serverLevel.addFreshEntity(helper);
+                            }
                         }
 
-                        net.minecraft.network.chat.Component message = net.minecraft.network.chat.Component.translatable("entity.typemoonworld.merlin.speech.guard_summon");
-                        for (ServerPlayer sp : serverLevel.players()) {
-                            if (sp.distanceToSqr(damagedPlayer) <= radius * radius) {
-                                sp.displayClientMessage(message, false);
+                        if (helper != null) {
+                            var htag = helper.getPersistentData();
+                            if (!htag.getBoolean("TypeMoonHelperClone")) {
+                                htag.putBoolean("TypeMoonSummonedFull", true);
+                            }
+                            net.minecraft.world.phys.AABB mobBox = new net.minecraft.world.phys.AABB(
+                                    damagedPlayer.getX() - radius, damagedPlayer.getY() - 4.0D, damagedPlayer.getZ() - radius,
+                                    damagedPlayer.getX() + radius, damagedPlayer.getY() + 4.0D, damagedPlayer.getZ() + radius
+                            );
+                            java.util.List<Monster> mobs = serverLevel.getEntitiesOfClass(Monster.class, mobBox, m -> m.getTarget() == damagedPlayer);
+                            for (Monster mob : mobs) {
+                                mob.setTarget(helper);
+                            }
+
+                            net.minecraft.network.chat.Component message = net.minecraft.network.chat.Component.translatable("entity.typemoonworld.merlin.speech.guard_summon");
+                            for (ServerPlayer sp : serverLevel.players()) {
+                                if (sp.distanceToSqr(damagedPlayer) <= radius * radius) {
+                                    sp.displayClientMessage(message, false);
+                                }
                             }
                         }
                     }

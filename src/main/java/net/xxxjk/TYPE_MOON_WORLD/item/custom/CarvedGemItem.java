@@ -5,11 +5,16 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.minecraft.server.level.ServerPlayer;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemManaStorageService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 @SuppressWarnings("null")
@@ -38,53 +43,73 @@ public class CarvedGemItem extends Item {
         return quality;
     }
 
+    public GemType getType() {
+        return type;
+    }
+
+    @Override
+    public @NotNull Component getName(@NotNull ItemStack stack) {
+        if (GemEngravingService.getEngravedMagicId(stack) == null) {
+            return super.getName(stack);
+        }
+        return Component.translatable(
+                "item.typemoonworld.engraved_gem",
+                Component.translatable(getGemColorKey(this.type))
+        );
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        tooltip.addAll(GemEngravingService.getEngravingDetailLines(stack));
+    }
+
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level world, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!world.isClientSide) {
-            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            double manaAmount = quality.getCapacity(type);
-            
-            // Check if mana is sufficient
-            if (vars.player_mana >= manaAmount) {
-                vars.player_mana -= manaAmount;
-                vars.syncMana(player);
-                giveFullGem(player, hand, stack, world);
-            } else {
-                // Auto Health Conversion
-                // Logic: 1 HP (0.5 heart) -> 10 Mana. (Based on Manually_deduct_health_to_restore_mana)
-                double deficit = manaAmount - vars.player_mana;
-                float healthCost = (float) Math.ceil(deficit / 10.0); // 1 HP per 10 Mana
-                
-                if (player.getHealth() > healthCost) {
-                    player.setHealth(player.getHealth() - healthCost);
-                    
-                    // Consume all remaining mana
-                    vars.player_mana = 0; // Technically it becomes negative then filled by HP, ending at exactly 0 relative to cost. 
-                                          // Or simpler: we paid the mana cost using all mana + some health.
-                    vars.syncMana(player);
-                    
-                    player.displayClientMessage(Component.translatable("message.typemoonworld.gem.convert_health", (int) healthCost), true);
-                    
-                    giveFullGem(player, hand, stack, world);
-                } else {
-                    player.displayClientMessage(Component.translatable("message.typemoonworld.gem.not_enough_mana_and_health"), true);
-                }
-            }
+        if (world.isClientSide) {
+            return InteractionResultHolder.sidedSuccess(stack, true);
         }
-        return InteractionResultHolder.sidedSuccess(stack, world.isClientSide);
+
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResultHolder.pass(stack);
+        }
+
+        stack = normalizeEngravedVariant(serverPlayer, hand, stack);
+
+        if (player.isShiftKeyDown()) {
+            ItemStack result = GemManaStorageService.storeIntoGem(serverPlayer, hand, stack, fullGemItem(), type, quality);
+            return InteractionResultHolder.sidedSuccess(result, false);
+        }
+
+        player.displayClientMessage(Component.translatable("message.typemoonworld.gem.use.empty"), true);
+        return InteractionResultHolder.fail(stack);
     }
 
-    private void giveFullGem(Player player, InteractionHand hand, ItemStack stack, Level world) {
-        if (stack.getCount() <= 1) {
-            ItemStack fullGem = new ItemStack(fullGemItem());
-            player.setItemInHand(hand, fullGem);
-        } else {
-            stack.shrink(1);
-            ItemStack fullGem = new ItemStack(fullGemItem());
-            if (!player.addItem(fullGem)) {
-                player.drop(fullGem, false);
-            }
+    private static String getGemColorKey(GemType type) {
+        return switch (type) {
+            case RUBY -> "item.typemoonworld.gem_color.ruby";
+            case SAPPHIRE -> "item.typemoonworld.gem_color.sapphire";
+            case EMERALD -> "item.typemoonworld.gem_color.emerald";
+            case TOPAZ -> "item.typemoonworld.gem_color.topaz";
+            case WHITE_GEMSTONE -> "item.typemoonworld.gem_color.white";
+            case CYAN -> "item.typemoonworld.gem_color.cyan";
+            case BLACK_SHARD -> "item.typemoonworld.gem_color.black";
+        };
+    }
+
+    private ItemStack normalizeEngravedVariant(ServerPlayer player, InteractionHand hand, ItemStack stack) {
+        if (GemEngravingService.getEngravedMagicId(stack) == null) {
+            return stack;
         }
+        Item normalizedItem = ModItems.getNormalizedCarvedGem(this.type);
+        if (stack.getItem() == normalizedItem) {
+            return stack;
+        }
+
+        ItemStack normalized = new ItemStack(normalizedItem, stack.getCount());
+        GemEngravingService.copyEngravingData(stack, normalized);
+        player.setItemInHand(hand, normalized);
+        return normalized;
     }
 }

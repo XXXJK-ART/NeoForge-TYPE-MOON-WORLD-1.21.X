@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "top": "typemoonworld:block/gem_crafting_table_top",
+    "front": "typemoonworld:block/gem_crafting_table_front",
+    "side": "typemoonworld:block/gem_crafting_table_side",
+    "bottom": "minecraft:block/oak_planks"
+  }
+}

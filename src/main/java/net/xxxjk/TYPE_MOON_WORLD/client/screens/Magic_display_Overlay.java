@@ -108,6 +108,16 @@ public class Magic_display_Overlay {
                                 Component.translatable(translationKey),
                                 vars.sword_barrel_mode
                         );
+                    } else if ("gravity_magic".equals(magicId)) {
+                        magicColor = 0xFF8A7CFF;
+                        String targetKey = vars.gravity_magic_target == 0
+                                ? "gui.typemoonworld.overlay.gravity.target.self.short"
+                                : "gui.typemoonworld.overlay.gravity.target.other.short";
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.gravity.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(targetKey)
+                        );
                     } else if ("reinforcement".equals(magicId)
                             || "reinforcement_self".equals(magicId)
                             || "reinforcement_other".equals(magicId)

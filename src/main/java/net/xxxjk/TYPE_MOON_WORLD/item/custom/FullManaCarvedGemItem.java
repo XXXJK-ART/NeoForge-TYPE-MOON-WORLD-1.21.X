@@ -7,12 +7,17 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraft.ChatFormatting;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemManaStorageService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemUseService;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 @SuppressWarnings("null")
@@ -40,8 +45,41 @@ public class FullManaCarvedGemItem extends Item {
         return emptyGemSupplier.get();
     }
 
+    public double getManaAmount(ItemStack stack) {
+        int manaAmount = quality.getCapacity(type);
+        if (stack == null || stack.isEmpty()) {
+            return manaAmount;
+        }
+
+        if (GemEngravingService.getEngravedMagicId(stack) != null) {
+            double engravedCost = GemEngravingService.getEngravedManaCost(stack);
+            if (engravedCost > 0.0D) {
+                manaAmount = Math.max(1, (int) Math.ceil(engravedCost));
+            }
+        }
+        return manaAmount;
+    }
+
+    @Deprecated(forRemoval = false)
     public double getManaAmount() {
         return quality.getCapacity(type);
+    }
+
+    @Override
+    public @NotNull Component getName(@NotNull ItemStack stack) {
+        if (GemEngravingService.getEngravedMagicId(stack) == null) {
+            return super.getName(stack);
+        }
+        return Component.translatable(
+                "item.typemoonworld.engraved_gem_full",
+                Component.translatable(getGemColorKey(this.type))
+        );
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        tooltip.addAll(GemEngravingService.getEngravingDetailLines(stack));
     }
 
     @Override
@@ -53,43 +91,68 @@ public class FullManaCarvedGemItem extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level world, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!world.isClientSide) {
-            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            double manaAmount = quality.getCapacity(type);
-            
-            // Allow Overload: Removed check for max mana
-            vars.player_mana += manaAmount;
-            vars.syncMana(player);
-            
-            // Overload warning
-            double current = vars.player_mana;
-            double max = vars.player_max_mana;
-            if (current > max) {
-                 ChatFormatting color = ChatFormatting.YELLOW;
-                 if (current > max * 1.25) {
-                      color = ChatFormatting.DARK_RED;
-                 } else if (current > max * 1.2) {
-                      color = ChatFormatting.RED;
-                 }
-                 player.displayClientMessage(
-                         Component.translatable("message.typemoonworld.mana.overload.warning", (int) current, (int) max)
-                                 .withStyle(color),
-                         true
-                 );
+        String engravedMagicId = GemEngravingService.getEngravedMagicId(stack);
+        boolean shiftGravitySelfCast = player.isShiftKeyDown() && "gravity_magic".equals(engravedMagicId);
+
+        if (world.isClientSide) {
+            if (shiftGravitySelfCast && net.neoforged.fml.loading.FMLEnvironment.dist == Dist.CLIENT) {
+                ClientHandler.openGravitySelector(hand);
             }
-            
-            if (stack.getCount() <= 1) {
-                ItemStack emptyGem = new ItemStack(emptyGemSupplier.get());
-                player.setItemInHand(hand, emptyGem);
-                return InteractionResultHolder.sidedSuccess(emptyGem, world.isClientSide);
-            } else {
-                stack.shrink(1);
-                ItemStack emptyGem = new ItemStack(emptyGemSupplier.get());
-                if (!player.addItem(emptyGem)) {
-                    player.drop(emptyGem, false);
-                }
-            }
+            return InteractionResultHolder.sidedSuccess(stack, true);
         }
-        return InteractionResultHolder.sidedSuccess(stack, world.isClientSide);
+
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResultHolder.pass(stack);
+        }
+
+        stack = normalizeEngravedVariant(serverPlayer, hand, stack);
+
+        if (shiftGravitySelfCast) {
+            return InteractionResultHolder.sidedSuccess(stack, false);
+        }
+
+        if (player.isShiftKeyDown()) {
+            ItemStack result = GemManaStorageService.withdrawFromGem(serverPlayer, hand, stack, emptyGemSupplier.get(), type, quality);
+            return InteractionResultHolder.sidedSuccess(result, false);
+        }
+
+        ItemStack result = GemUseService.useFilledGem(world, player, hand, stack, type);
+        return InteractionResultHolder.sidedSuccess(result, false);
+    }
+
+    private static String getGemColorKey(GemType type) {
+        return switch (type) {
+            case RUBY -> "item.typemoonworld.gem_color.ruby";
+            case SAPPHIRE -> "item.typemoonworld.gem_color.sapphire";
+            case EMERALD -> "item.typemoonworld.gem_color.emerald";
+            case TOPAZ -> "item.typemoonworld.gem_color.topaz";
+            case WHITE_GEMSTONE -> "item.typemoonworld.gem_color.white";
+            case CYAN -> "item.typemoonworld.gem_color.cyan";
+            case BLACK_SHARD -> "item.typemoonworld.gem_color.black";
+        };
+    }
+
+    private static final class ClientHandler {
+        private ClientHandler() {
+        }
+
+        private static void openGravitySelector(InteractionHand hand) {
+            net.xxxjk.TYPE_MOON_WORLD.client.GemGravityModeClient.openSelector(hand);
+        }
+    }
+
+    private ItemStack normalizeEngravedVariant(ServerPlayer player, InteractionHand hand, ItemStack stack) {
+        if (GemEngravingService.getEngravedMagicId(stack) == null) {
+            return stack;
+        }
+        Item normalizedItem = ModItems.getNormalizedFullCarvedGem(this.type);
+        if (stack.getItem() == normalizedItem) {
+            return stack;
+        }
+
+        ItemStack normalized = new ItemStack(normalizedItem, stack.getCount());
+        GemEngravingService.copyEngravingData(stack, normalized);
+        player.setItemInHand(hand, normalized);
+        return normalized;
     }
 }

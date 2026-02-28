@@ -52,12 +52,20 @@ public class StructureProjectionBuildHandler {
     }
 
     public static boolean startProjection(Player player, String structureId, BlockPos anchorPos, int rotationIndex) {
+        return startProjectionInternal(player, structureId, anchorPos, rotationIndex, false, false, false);
+    }
+
+    public static boolean startProjectionFromGem(ServerPlayer player, String structureId, BlockPos anchorPos, int rotationIndex) {
+        return startProjectionInternal(player, structureId, anchorPos, rotationIndex, true, true, true);
+    }
+
+    private static boolean startProjectionInternal(Player player, String structureId, BlockPos anchorPos, int rotationIndex, boolean bypassSelectionCheck, boolean freeManaCost, boolean silentTips) {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
 
         TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        if (!isProjectionSelected(vars)) {
+        if (!bypassSelectionCheck && !isProjectionSelected(vars)) {
             return false;
         }
 
@@ -67,12 +75,15 @@ public class StructureProjectionBuildHandler {
             return false;
         }
         if (!TypeMoonWorldModVariables.PlayerVariables.isTrustedStructure(structure)) {
-            serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.start_failed"), true);
+            if (!silentTips) {
+                serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.start_failed"), true);
+            }
             return false;
         }
 
         Rotation rotation = rotationFromIndex(rotationIndex);
-        List<LayerPlacement> layers = buildLayers(structure, anchorPos, rotation, vars.player_magic_attributes_sword);
+        double costMultiplier = freeManaCost ? 0.0 : 1.0;
+        List<LayerPlacement> layers = buildLayers(structure, anchorPos, rotation, vars.player_magic_attributes_sword, costMultiplier);
         if (layers.isEmpty()) {
             return false;
         }
@@ -88,11 +99,14 @@ public class StructureProjectionBuildHandler {
                 minPos,
                 maxPos,
                 layers,
-                !vars.player_magic_attributes_sword
+                !vars.player_magic_attributes_sword,
+                silentTips
         );
         ACTIVE_BUILDS.put(serverPlayer.getUUID(), build);
 
-        serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.started", structure.name), true);
+        if (!silentTips) {
+            serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.started", structure.name), true);
+        }
         return true;
     }
 
@@ -156,13 +170,17 @@ public class StructureProjectionBuildHandler {
         if (!build.areaCleared) {
             clearArea(level, build.minPos, build.maxPos);
             build.areaCleared = true;
-            player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.cleared"), true);
+            if (!build.silentTips) {
+                player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.cleared"), true);
+            }
             return;
         }
 
         if (build.layerIndex >= build.layers.size()) {
             iterator.remove();
-            player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.completed"), true);
+            if (!build.silentTips) {
+                player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.completed"), true);
+            }
             return;
         }
 
@@ -184,7 +202,7 @@ public class StructureProjectionBuildHandler {
                 if (changedMana) {
                     vars.syncMana(player);
                 }
-                if (level.getGameTime() - build.lastPauseTipTick >= 20) {
+                if (!build.silentTips && level.getGameTime() - build.lastPauseTipTick >= 20) {
                     player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.paused_mana"), true);
                     build.lastPauseTipTick = level.getGameTime();
                 }
@@ -225,7 +243,7 @@ public class StructureProjectionBuildHandler {
                 if (changedMana) {
                     vars.syncMana(player);
                 }
-                if (level.getGameTime() - build.lastPauseTipTick >= 20) {
+                if (!build.silentTips && level.getGameTime() - build.lastPauseTipTick >= 20) {
                     player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.paused_mana"), true);
                     build.lastPauseTipTick = level.getGameTime();
                 }
@@ -291,7 +309,7 @@ public class StructureProjectionBuildHandler {
         };
     }
 
-    private static List<LayerPlacement> buildLayers(TypeMoonWorldModVariables.PlayerVariables.SavedStructure structure, BlockPos anchorPos, Rotation rotation, boolean hasSwordAttribute) {
+    private static List<LayerPlacement> buildLayers(TypeMoonWorldModVariables.PlayerVariables.SavedStructure structure, BlockPos anchorPos, Rotation rotation, boolean hasSwordAttribute, double costMultiplier) {
         Map<Integer, List<BlockPlacement>> byLayer = new ConcurrentHashMap<>();
 
         for (TypeMoonWorldModVariables.PlayerVariables.SavedStructureBlock savedBlock : structure.blocks) {
@@ -315,7 +333,7 @@ public class StructureProjectionBuildHandler {
             if (item == Items.AIR) continue;
             ItemStack costStack = item.getDefaultInstance();
             costStack.setCount(1);
-            double cost = MagicStructuralAnalysis.calculateStructureCost(costStack, hasSwordAttribute);
+            double cost = MagicStructuralAnalysis.calculateStructureCost(costStack, hasSwordAttribute) * Math.max(0.0, costMultiplier);
 
             byLayer.computeIfAbsent(savedBlock.y, k -> new ArrayList<>()).add(new BlockPlacement(worldPos, state, cost));
         }
@@ -394,12 +412,13 @@ public class StructureProjectionBuildHandler {
         private final BlockPos maxPos;
         private final List<LayerPlacement> layers;
         private final boolean noDropsWhenBroken;
+        private final boolean silentTips;
 
         private boolean areaCleared = false;
         private int layerIndex = 0;
         private long lastPauseTipTick = 0;
 
-        private ActiveBuild(UUID playerId, net.minecraft.resources.ResourceKey<Level> dimension, String structureName, BlockPos minPos, BlockPos maxPos, List<LayerPlacement> layers, boolean noDropsWhenBroken) {
+        private ActiveBuild(UUID playerId, net.minecraft.resources.ResourceKey<Level> dimension, String structureName, BlockPos minPos, BlockPos maxPos, List<LayerPlacement> layers, boolean noDropsWhenBroken, boolean silentTips) {
             this.playerId = playerId;
             this.dimension = dimension;
             this.structureName = structureName;
@@ -407,6 +426,7 @@ public class StructureProjectionBuildHandler {
             this.maxPos = maxPos;
             this.layers = layers;
             this.noDropsWhenBroken = noDropsWhenBroken;
+            this.silentTips = silentTips;
         }
     }
 }

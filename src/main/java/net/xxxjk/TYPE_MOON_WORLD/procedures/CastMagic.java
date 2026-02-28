@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
+import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 
 @SuppressWarnings("null")
@@ -192,6 +193,9 @@ public class CastMagic {
                 castSuccess = true;
             } else if ("sword_barrel_full_open".equals(magicId)) {
                 net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen.execute(entity);
+                castSuccess = true;
+            } else if ("gravity_magic".equals(magicId)) {
+                MagicGravity.execute(entity);
                 castSuccess = true;
             }
             

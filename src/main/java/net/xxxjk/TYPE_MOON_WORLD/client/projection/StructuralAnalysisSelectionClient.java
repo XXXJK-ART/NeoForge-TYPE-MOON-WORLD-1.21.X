@@ -73,7 +73,7 @@ public final class StructuralAnalysisSelectionClient {
         active = true;
         pendingSelection = null;
 
-        mc.player.displayClientMessage(Component.literal("[Analysis Selection] Step 1/3: Aim to define a face line, then press C."), true);
+        mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.step1"), true);
         return true;
     }
 
@@ -88,7 +88,7 @@ public final class StructuralAnalysisSelectionClient {
         if (stage == SelectionStage.LINE) {
             facePos = getPreviewFacePos(mc, maxSideLength);
             stage = SelectionStage.VOLUME;
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Step 2/3: Aim to pull depth and form a volume, then press C."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.step2"), true);
             return;
         }
 
@@ -99,7 +99,7 @@ public final class StructuralAnalysisSelectionClient {
             return;
         }
 
-        mc.player.displayClientMessage(Component.literal("[Analysis Selection] Confirm pending. Choose Yes/No or press ESC to go back."), true);
+        mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.confirm_pending"), true);
     }
 
     public static void onSaveDecision(boolean save) {
@@ -116,7 +116,7 @@ public final class StructuralAnalysisSelectionClient {
             return;
         }
         if (mc.player != null) {
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Discarded."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.discarded"), true);
         }
         cancelSelection();
     }
@@ -155,7 +155,7 @@ public final class StructuralAnalysisSelectionClient {
         stage = SelectionStage.VOLUME;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Back to Step 2/3."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.back_step2"), true);
         }
     }
 
@@ -165,7 +165,7 @@ public final class StructuralAnalysisSelectionClient {
         stage = SelectionStage.CONFIRM;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Back to confirmation."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.back_confirm"), true);
         }
         mc.setScreen(new StructuralSelectionConfirmScreen());
     }
@@ -182,24 +182,24 @@ public final class StructuralAnalysisSelectionClient {
 
         if (stage == SelectionStage.CONFIRM) {
             stage = SelectionStage.VOLUME;
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Back to Step 2/3."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.back_step2"), true);
             return;
         }
 
         if (stage == SelectionStage.NAMING) {
             stage = SelectionStage.CONFIRM;
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Back to confirmation."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.back_confirm"), true);
             return;
         }
 
         if (stage == SelectionStage.VOLUME) {
             stage = SelectionStage.LINE;
-            mc.player.displayClientMessage(Component.literal("[Analysis Selection] Back to Step 1/3."), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.back_step1"), true);
             return;
         }
 
         cancelSelection();
-        mc.player.displayClientMessage(Component.literal("[Analysis Selection] Cancelled."), true);
+        mc.player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.selection.cancelled"), true);
     }
 
     public static void cancelSelection() {

@@ -86,6 +86,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     private static final int FILTER_LABEL_X = 200;
     private static final int FILTER_LABEL_Y = 28;
     private static final int FILTER_BUTTON_Y = 25;
+    private static final int FILTER_BUTTON_MIN_WIDTH = 44;
+    private static final int FILTER_BUTTON_MAX_WIDTH = 72;
     
     // Magic Entry Class
     static class MagicEntry {
@@ -133,6 +135,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
         // Reinforcement - Now part of "basic" category
         allMagics.add(new MagicEntry("reinforcement", MagicConstants.KEY_MAGIC_REINFORCEMENT_SHORT, "basic,reinforcement", 0xFF00AA00));
+        // Other Magic
+        allMagics.add(new MagicEntry("gravity_magic", MagicConstants.KEY_MAGIC_GRAVITY_SHORT, "other", 0xFF8A7CFF));
         
         updateFilteredMagics();
         
@@ -146,6 +150,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // String query = searchBox != null ? searchBox.getValue().toLowerCase() : "";
         String query = ""; // No search box
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+
+        if ("unlimited_blade_works".equals(filterCategory) && !vars.learned_magics.contains("unlimited_blade_works")) {
+            filterCategory = "all";
+        }
         
         filteredMagics = allMagics.stream().filter(entry -> {
             boolean matchCategory = "all".equals(filterCategory) || entry.category.contains(filterCategory);
@@ -162,17 +170,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                         || vars.learned_magics.contains("reinforcement_other")
                         || vars.learned_magics.contains("reinforcement_item");
             } else if ("jewel_magic_shoot".equals(entry.id)) {
-                learned = vars.learned_magics.contains("ruby_throw") ||
-                          vars.learned_magics.contains("sapphire_throw") ||
-                          vars.learned_magics.contains("emerald_use") ||
-                          vars.learned_magics.contains("topaz_throw") ||
-                          vars.learned_magics.contains("cyan_throw");
+                learned = vars.learned_magics.contains("jewel_magic_shoot");
             } else if ("jewel_magic_release".equals(entry.id)) {
-                learned = vars.learned_magics.contains("ruby_flame_sword") ||
-                          vars.learned_magics.contains("sapphire_winter_frost") ||
-                          vars.learned_magics.contains("emerald_winter_river") ||
-                          vars.learned_magics.contains("topaz_reinforcement") ||
-                          vars.learned_magics.contains("cyan_wind");
+                learned = vars.learned_magics.contains("jewel_magic_release");
             }
             
             return matchCategory && matchSearch && learned;
@@ -192,21 +192,31 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         if ("jewel".equals(category)) return "gui.typemoonworld.category.jewel";
         if ("basic".equals(category)) return "gui.typemoonworld.category.basic";
         if ("unlimited_blade_works".equals(category)) return "gui.typemoonworld.category.ubw";
+        if ("other".equals(category)) return "gui.typemoonworld.category.other";
         return "gui.typemoonworld.category.all";
     }
 
     private int getFilterButtonWidth() {
-        int maxCategoryWidth = Math.max(
-                Math.max(this.font.width(Component.translatable("gui.typemoonworld.category.all")),
-                        this.font.width(Component.translatable("gui.typemoonworld.category.jewel"))),
-                Math.max(this.font.width(Component.translatable("gui.typemoonworld.category.basic")),
-                        this.font.width(Component.translatable("gui.typemoonworld.category.ubw"))));
-        return Math.max(44, maxCategoryWidth + 12);
+        String[] categoryKeys = {
+                "gui.typemoonworld.category.all",
+                "gui.typemoonworld.category.jewel",
+                "gui.typemoonworld.category.basic",
+                "gui.typemoonworld.category.ubw",
+                "gui.typemoonworld.category.other"
+        };
+        int maxCategoryWidth = 0;
+        for (String key : categoryKeys) {
+            maxCategoryWidth = Math.max(maxCategoryWidth, this.font.width(Component.translatable(key)));
+        }
+        return Mth.clamp(maxCategoryWidth + 8, FILTER_BUTTON_MIN_WIDTH, FILTER_BUTTON_MAX_WIDTH);
     }
 
     private int getFilterButtonX() {
         int labelWidth = this.font.width(Component.translatable("gui.typemoonworld.category.label"));
-        return this.leftPos + FILTER_LABEL_X + labelWidth + 6;
+        int desiredX = this.leftPos + FILTER_LABEL_X + labelWidth + 6;
+        int buttonWidth = getFilterButtonWidth();
+        int maxX = this.leftPos + this.imageWidth - buttonWidth - 6;
+        return Math.min(desiredX, maxX);
     }
 
     private String clampTextToWidth(String text, int maxWidth) {
@@ -233,6 +243,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         return Component.literal(clampTextToWidth(shortLabel, availableWidth));
     }
 
+    private Component getFilterButtonText(String category) {
+        String label = Component.translatable(getCategoryLabelKey(category)).getString();
+        int availableWidth = getFilterButtonWidth() - 8;
+        return Component.literal(clampTextToWidth(label, availableWidth));
+    }
+
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         // Hide player inventory when not on page 0
@@ -253,7 +269,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             // Update filter button text based on current category
             if (filterButton != null) {
                 filterButton.visible = true;
-                filterButton.setMessage(Component.translatable(getCategoryLabelKey(filterCategory)));
+                filterButton.setMessage(getFilterButtonText(filterCategory));
             }
             
             // Render Magic List (Center-Left)
@@ -492,7 +508,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                 lines.add(Component.empty());
              }
 
-             int maxModes = entry.id.equals("jewel_magic_shoot") ? 6 : 5;
+             int maxModes = entry.id.equals("jewel_magic_shoot") ? 6 : 4;
              
              for (int i = 0; i < maxModes; i++) {
                  String modeName = "";
@@ -510,11 +526,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                      }
                  } else { // release
                      switch(i) {
-                         case 0: modeName = "Ruby"; subSkillId = "ruby_flame_sword"; color = 0xFFFF5555; break;
-                         case 1: modeName = "Sapphire"; subSkillId = "sapphire_winter_frost"; color = 0xFF5555FF; break;
-                         case 2: modeName = "Emerald"; subSkillId = "emerald_winter_river"; color = 0xFF55FF55; break;
-                         case 3: modeName = "Topaz"; subSkillId = "jewel_magic_release"; color = 0xFFFFFF55; break; // Topaz reinforcement is part of jewel magic release
-                         case 4: modeName = "Cyan"; subSkillId = "cyan_wind"; color = 0xFF00FFFF; break;
+                         case 0: modeName = "Sapphire"; subSkillId = "sapphire_winter_frost"; color = 0xFF5555FF; break;
+                         case 1: modeName = "Emerald"; subSkillId = "emerald_winter_river"; color = 0xFF55FF55; break;
+                         case 2: modeName = "Topaz"; subSkillId = "topaz_reinforcement"; color = 0xFFFFFF55; break;
+                         case 3: modeName = "Cyan"; subSkillId = "cyan_wind"; color = 0xFF00FFFF; break;
                      }
                  }
                  
@@ -585,6 +600,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             showProficiency = true;
         } else if ("jewel_magic_release".equals(entry.id)) {
             proficiency = vars.proficiency_jewel_magic_release;
+            showProficiency = true;
+        } else if ("gravity_magic".equals(entry.id)) {
+            proficiency = vars.proficiency_gravity_magic;
             showProficiency = true;
         } else if ("reinforcement".equals(entry.id) || "reinforcement_self".equals(entry.id) || "reinforcement_other".equals(entry.id) || "reinforcement_item".equals(entry.id)) {
             proficiency = vars.proficiency_reinforcement;
@@ -729,6 +747,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     // Helper to check if a category is unlocked (has at least one learned magic)
     private boolean isCategoryUnlocked(String category, TypeMoonWorldModVariables.PlayerVariables vars) {
         if ("all".equals(category)) return true;
+        if ("unlimited_blade_works".equals(category)) {
+            return vars.learned_magics.contains("unlimited_blade_works");
+        }
         
         return allMagics.stream().anyMatch(entry -> {
             boolean matchCategory = entry.category.contains(category);
@@ -745,22 +766,23 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         });
     }
 
+    private String nextCategoryRaw(String current) {
+        // Order: all -> jewel -> basic -> unlimited_blade_works -> other -> all
+        if ("all".equals(current)) return "jewel";
+        if ("jewel".equals(current)) return "basic";
+        if ("basic".equals(current)) return "unlimited_blade_works";
+        if ("unlimited_blade_works".equals(current)) return "other";
+        return "all";
+    }
+
     private String getNextCategory(String current, TypeMoonWorldModVariables.PlayerVariables vars) {
-        // Order: all -> jewel -> basic -> unlimited_blade_works -> all
-        String next = "all";
-        if ("all".equals(current)) next = "jewel";
-        else if ("jewel".equals(current)) next = "basic";
-        else if ("basic".equals(current)) next = "unlimited_blade_works";
-        else next = "all"; // Loop back
-        
+        String next = nextCategoryRaw(current);
+
         // If next is not unlocked (and not "all"), skip it
         int safety = 0;
-        while (!"all".equals(next) && !isCategoryUnlocked(next, vars) && safety < 5) {
-             // Calculate next of next
-             if ("jewel".equals(next)) next = "basic";
-             else if ("basic".equals(next)) next = "unlimited_blade_works";
-             else if ("unlimited_blade_works".equals(next)) next = "all";
-             safety++;
+        while (!"all".equals(next) && !isCategoryUnlocked(next, vars) && safety < 6) {
+            next = nextCategoryRaw(next);
+            safety++;
         }
         return next;
     }
@@ -782,7 +804,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // Button should be after that.
         // Let's place label at x=200. Width ~25. Button at x=230.
         int filterButtonWidth = getFilterButtonWidth();
-        this.filterButton = new NeonButton(getFilterButtonX(), this.topPos + FILTER_BUTTON_Y, filterButtonWidth, 14, Component.translatable("gui.typemoonworld.category.all"), e -> {
+        this.filterButton = new NeonButton(getFilterButtonX(), this.topPos + FILTER_BUTTON_Y, filterButtonWidth, 14, getFilterButtonText("all"), e -> {
             TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
             // Cycle filters logic with unlock check
@@ -792,7 +814,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             String nextCategory = getNextCategory(filterCategory, vars);
             filterCategory = nextCategory;
             
-            e.setMessage(Component.translatable(getCategoryLabelKey(filterCategory)));
+            e.setMessage(getFilterButtonText(filterCategory));
             updateFilteredMagics();
             // Reset scroll on filter change
             startIndex = 0;

@@ -37,6 +37,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
+import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.minecraft.nbt.CompoundTag;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -101,6 +102,10 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
     private int infightingCooldown = 0;
     private int outOfCombatTicks = 0;
     private static final java.util.Map<String, Integer> SPEECH_VARIANTS = new java.util.HashMap<>();
+    private static final long SPEECH_MIN_INTERVAL_TICKS = 40L;
+    private static final long SPEECH_MIN_INTERVAL_COMBAT_TICKS = 14L;
+    private static final long SPEECH_REPEAT_COOLDOWN_TICKS = 1200L;
+    private static final long SPEECH_REPEAT_COOLDOWN_COMBAT_TICKS = 260L;
 
     static {
         SPEECH_VARIANTS.put("entity.typemoonworld.merlin.speech.idle", 2);
@@ -160,11 +165,15 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
     private void broadcastToNearbyPlayers(String baseKey, double radius) {
         if (this.isClone) return;
         if (!this.level().isClientSide) {
+            boolean inCombat = isInCombatNow();
+            boolean combatSpeech = isCombatSpeechKey(baseKey);
+            long minInterval = (inCombat && combatSpeech) ? SPEECH_MIN_INTERVAL_COMBAT_TICKS : SPEECH_MIN_INTERVAL_TICKS;
+            long repeatCooldown = (inCombat && combatSpeech) ? SPEECH_REPEAT_COOLDOWN_COMBAT_TICKS : SPEECH_REPEAT_COOLDOWN_TICKS;
             long currentTime = this.level().getGameTime();
-            if (currentTime - lastSpeechTime < 40) return;
+            if (currentTime - lastSpeechTime < minInterval) return;
             if (messageCooldowns.containsKey(baseKey)) {
                 long lastTime = messageCooldowns.get(baseKey);
-                if (currentTime - lastTime < 1200) return;
+                if (currentTime - lastTime < repeatCooldown) return;
             }
             lastSpeechTime = currentTime;
             messageCooldowns.put(baseKey, currentTime);
@@ -187,9 +196,29 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
     }
     private void broadcastToNearbyPlayers(String translationKey, double radius, float probability) {
         if (this.isClone) return;
-        if (this.random.nextFloat() < probability) {
+        float actualProbability = probability;
+        if (isInCombatNow() && isCombatSpeechKey(translationKey)) {
+            actualProbability = Math.min(1.0F, probability + 0.15F);
+        }
+        if (this.random.nextFloat() < actualProbability) {
             broadcastToNearbyPlayers(translationKey, radius);
         }
+    }
+
+    private boolean isInCombatNow() {
+        LivingEntity target = this.getTarget();
+        return target != null && target.isAlive();
+    }
+
+    private boolean isCombatSpeechKey(String key) {
+        return key.contains(".combat_")
+                || key.contains(".target_")
+                || key.contains(".hostile_player")
+                || key.contains(".hurt_high")
+                || key.contains(".low_health")
+                || key.contains(".attack_blocked")
+                || key.contains(".multi_kill")
+                || key.contains(".avalon_");
     }
 
     @Override
@@ -537,15 +566,19 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                     AABB box = this.getBoundingBox().inflate(16.0D);
                     java.util.List<net.minecraft.world.entity.monster.Monster> mobs = serverLevel.getEntitiesOfClass(net.minecraft.world.entity.monster.Monster.class, box, m -> m.isAlive() && m.getTarget() == this);
                     if (mobs.size() >= 2) {
-                        java.util.Collections.shuffle(mobs);
-                        for (int i = 0; i < mobs.size(); i++) {
-                            net.minecraft.world.entity.monster.Monster m1 = mobs.get(i);
-                            net.minecraft.world.entity.monster.Monster m2 = mobs.get((i + 1) % mobs.size());
-                            m1.setTarget(m2);
-                            serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, m1.getX(), m1.getEyeY(), m1.getZ(), 5, 0.5D, 0.5D, 0.5D, 0.0D);
+                        if (!MerlinWorldEventLimiter.tryConsume(serverLevel)) {
+                            this.infightingCooldown = 80;
+                        } else {
+                            java.util.Collections.shuffle(mobs);
+                            for (int i = 0; i < mobs.size(); i++) {
+                                net.minecraft.world.entity.monster.Monster m1 = mobs.get(i);
+                                net.minecraft.world.entity.monster.Monster m2 = mobs.get((i + 1) % mobs.size());
+                                m1.setTarget(m2);
+                                serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, m1.getX(), m1.getEyeY(), m1.getZ(), 5, 0.5D, 0.5D, 0.5D, 0.0D);
+                            }
+                            broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.prank_positive", 16.0D);
+                            this.infightingCooldown = 300;
                         }
-                        broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.prank_positive", 16.0D);
-                        this.infightingCooldown = 300;
                     }
                 }
 
@@ -570,55 +603,59 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
             if (health > 900.0F && hasEnemy && this.level() instanceof ServerLevel serverLevel) {
                 if (this.supportAuraCooldown <= 0) {
-                    double radius = 12.0D;
-                    AABB box = new AABB(
-                            this.getX() - radius, this.getY() - 2.0D, this.getZ() - radius,
-                            this.getX() + radius, this.getY() + 2.0D, this.getZ() + radius
-                    );
+                    if (!MerlinWorldEventLimiter.tryConsume(serverLevel)) {
+                        this.supportAuraCooldown = 100;
+                    } else {
+                        double radius = 12.0D;
+                        AABB box = new AABB(
+                                this.getX() - radius, this.getY() - 2.0D, this.getZ() - radius,
+                                this.getX() + radius, this.getY() + 2.0D, this.getZ() + radius
+                        );
 
-                    List<Player> players = serverLevel.getEntitiesOfClass(Player.class, box, p -> p.isAlive() && !p.isSpectator());
-                    for (Player player : players) {
-                        if (this.hostilePlayers.contains(player.getUUID())) {
-                            continue;
+                        List<Player> players = serverLevel.getEntitiesOfClass(Player.class, box, p -> p.isAlive() && !p.isSpectator());
+                        for (Player player : players) {
+                            if (this.hostilePlayers.contains(player.getUUID())) {
+                                continue;
+                            }
+
+                            player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 0, true, true));
+                            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 0, true, true));
+
+                            int enchantCount = 10 + this.random.nextInt(15);
+                            int sakuraCount = 8 + this.random.nextInt(16);
+
+                            double playerBaseY = player.getY() + 0.6D + this.random.nextDouble() * 0.6D;
+
+                            serverLevel.sendParticles(ParticleTypes.ENCHANT,
+                                    player.getX(), playerBaseY + 0.4D, player.getZ(),
+                                    enchantCount, 0.6D, 0.6D, 0.6D, 0.12D);
+
+                            serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
+                                    player.getX(), playerBaseY, player.getZ(),
+                                    sakuraCount, 1.0D, 0.8D, 1.0D, 0.03D);
                         }
 
-                        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 0, true, true));
-                        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 0, true, true));
+                        List<MerlinEntity> clones = serverLevel.getEntitiesOfClass(MerlinEntity.class, box, e -> e.isAlive() && e.isClone);
+                        for (MerlinEntity clone : clones) {
+                            clone.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 0, true, true));
+                            clone.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 0, true, true));
 
-                        int enchantCount = 10 + this.random.nextInt(15);
-                        int sakuraCount = 8 + this.random.nextInt(16);
+                            int sakuraCount = 8 + this.random.nextInt(16);
+                            double cloneBaseY = clone.getY() + 0.8D + this.random.nextDouble() * 0.8D;
+                            serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
+                                    clone.getX(), cloneBaseY, clone.getZ(),
+                                    sakuraCount, 1.0D, 0.9D, 1.0D, 0.03D);
+                        }
 
-                        double playerBaseY = player.getY() + 0.6D + this.random.nextDouble() * 0.6D;
-
-                        serverLevel.sendParticles(ParticleTypes.ENCHANT,
-                                player.getX(), playerBaseY + 0.4D, player.getZ(),
-                                enchantCount, 0.6D, 0.6D, 0.6D, 0.12D);
-
+                        int selfSakura = 20 + this.random.nextInt(20);
+                        double selfBaseY = this.getY() + 0.8D + this.random.nextDouble() * 0.8D;
                         serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
-                                player.getX(), playerBaseY, player.getZ(),
-                                sakuraCount, 1.0D, 0.8D, 1.0D, 0.03D);
+                                this.getX(), selfBaseY, this.getZ(),
+                                selfSakura, 1.2D, 0.9D, 1.2D, 0.03D);
+
+                        this.supportAuraCooldown = 100;
+                        broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.support_aura", 18.0);
                     }
-
-                    List<MerlinEntity> clones = serverLevel.getEntitiesOfClass(MerlinEntity.class, box, e -> e.isAlive() && e.isClone);
-                    for (MerlinEntity clone : clones) {
-                        clone.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 0, true, true));
-                        clone.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 0, true, true));
-
-                        int sakuraCount = 8 + this.random.nextInt(16);
-                        double cloneBaseY = clone.getY() + 0.8D + this.random.nextDouble() * 0.8D;
-                        serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
-                                clone.getX(), cloneBaseY, clone.getZ(),
-                                sakuraCount, 1.0D, 0.9D, 1.0D, 0.03D);
-                    }
-
-                    int selfSakura = 20 + this.random.nextInt(20);
-                    double selfBaseY = this.getY() + 0.8D + this.random.nextDouble() * 0.8D;
-                    serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES,
-                            this.getX(), selfBaseY, this.getZ(),
-                            selfSakura, 1.2D, 0.9D, 1.2D, 0.03D);
-
-                    this.supportAuraCooldown = 100;
-                    broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.support_aura", 18.0);
                 }
             }
 

@@ -6,18 +6,12 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import java.util.Set;
 
 public record SelectMagicMessage(String magicId, boolean add) implements CustomPacketPayload {
     private static final int MAX_MAGIC_ID_LENGTH = 64;
-    private static final Set<String> ALLOWED_MAGIC_IDS = Set.of(
-            "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
-            "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
-            "jewel_magic_shoot", "jewel_magic_release",
-            "projection", "structural_analysis", "broken_phantasm",
-            "unlimited_blade_works", "sword_barrel_full_open",
-            "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"
-    );
+    private static final Set<String> ALLOWED_MAGIC_IDS = MagicClassification.getAllMagicIds();
 
     public static final Type<SelectMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "select_magic"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SelectMagicMessage> STREAM_CODEC = StreamCodec.of(

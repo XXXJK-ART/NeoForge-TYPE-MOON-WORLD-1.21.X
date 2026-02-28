@@ -28,8 +28,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public class MagicStructuralAnalysis {
-    private static final double STRUCTURE_COST_NORMAL_FACTOR = 1.0 / 20.0;
-    private static final double STRUCTURE_COST_SWORD_FACTOR = 1.0 / 30.0;
+    private static final double STRUCTURE_COST_NORMAL_FACTOR = 1.0 / 10.0;
+    private static final double STRUCTURE_COST_SWORD_FACTOR = 1.0 / 20.0;
 
     public static void execute(Entity entity) {
         if (!(entity instanceof ServerPlayer player)) return;
@@ -89,12 +89,12 @@ public class MagicStructuralAnalysis {
         }
 
         if (isProjected) {
-            double specialCost = calculateCost(target, vars.player_magic_attributes_sword);
+            double specialCost = calculateCost(target, vars.player_magic_attributes_sword, vars.proficiency_structural_analysis);
             if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
                 return;
             }
-            player.displayClientMessage(Component.literal("Trigger off."), true);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.trigger_off"), true);
             player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
             player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
@@ -148,7 +148,7 @@ public class MagicStructuralAnalysis {
             return;
         }
 
-        double cost = calculateCost(toSave, vars.player_magic_attributes_sword);
+        double cost = calculateCost(toSave, vars.player_magic_attributes_sword, vars.proficiency_structural_analysis);
         double successRate = 0.5 + (vars.proficiency_structural_analysis * 0.005);
         if (vars.player_magic_attributes_sword && toSave.getItem() instanceof net.minecraft.world.item.SwordItem) {
             successRate = 1.0;
@@ -176,7 +176,7 @@ public class MagicStructuralAnalysis {
     }
 
     public static boolean consumeAnalysisManaOrFail(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double cost) {
-        return ManaHelper.consumeManaWithInventoryOrHealth(player, cost);
+        return ManaHelper.consumeOneTimeMagicCost(player, cost);
     }
 
     private static HitResult rayTrace(ServerPlayer player, double range) {
@@ -196,11 +196,11 @@ public class MagicStructuralAnalysis {
         return blockHit;
     }
 
-    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
+    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
         double baseCost = 10;
 
         if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
-            baseCost = 500;
+            baseCost = 1000;
         } else {
             Rarity rarity = stack.getRarity();
             if (rarity == Rarity.UNCOMMON) baseCost = 50;
@@ -240,7 +240,13 @@ public class MagicStructuralAnalysis {
             }
         }
 
+        baseCost *= (1.0 - (proficiency * 0.005));
+
         return baseCost;
+    }
+
+    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute) {
+        return calculateCost(stack, hasSwordAttribute, 0.0);
     }
 
     public static double calculateStructureCost(ItemStack stack, boolean hasSwordAttribute) {

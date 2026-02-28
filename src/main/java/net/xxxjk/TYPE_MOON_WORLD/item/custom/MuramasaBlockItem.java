@@ -16,22 +16,22 @@ import software.bernie.geckolib.animation.RawAnimation;
 
 import java.util.function.Consumer;
 
-public class RedswordBlockItem extends BlockItem implements GeoItem {
+public class MuramasaBlockItem extends BlockItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public RedswordBlockItem(Block block, Properties properties) {
+    public MuramasaBlockItem(Block block, Properties properties) {
         super(block, properties);
     }
 
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordBlockItemRenderer renderer;
+            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockItemRenderer renderer;
 
             @Override
             public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordBlockItemRenderer();
+                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockItemRenderer();
                 return this.renderer;
             }
         });
@@ -42,7 +42,7 @@ public class RedswordBlockItem extends BlockItem implements GeoItem {
         controllers.add(new AnimationController<>(this, "controller", 0, this::predicate));
     }
 
-    private PlayState predicate(AnimationState<RedswordBlockItem> event) {
+    private PlayState predicate(AnimationState<MuramasaBlockItem> event) {
         event.getController().setAnimation(RawAnimation.begin().thenLoop("red"));
         return PlayState.CONTINUE;
     }
