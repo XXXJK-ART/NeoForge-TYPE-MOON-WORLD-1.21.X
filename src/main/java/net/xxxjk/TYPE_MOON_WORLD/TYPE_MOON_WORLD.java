@@ -54,6 +54,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SaveStructuralSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionStructureMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
 
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
@@ -179,6 +181,8 @@ public class TYPE_MOON_WORLD {
         registrar.playToServer(SelectProjectionStructureMessage.TYPE, SelectProjectionStructureMessage.STREAM_CODEC, SelectProjectionStructureMessage::handleData);
         registrar.playToServer(DeleteProjectionStructureMessage.TYPE, DeleteProjectionStructureMessage.STREAM_CODEC, DeleteProjectionStructureMessage::handleData);
         registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
+        registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
+        registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
 
         // Client Bound Packets (Server -> Client)
         registrar.playToClient(TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE, TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData);

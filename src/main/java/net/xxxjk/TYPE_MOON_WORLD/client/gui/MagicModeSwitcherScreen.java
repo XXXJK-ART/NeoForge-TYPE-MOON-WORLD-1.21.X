@@ -78,12 +78,11 @@ public class MagicModeSwitcherScreen extends Screen {
                 if (vars.learned_magics.contains("cyan_throw")) addMode(4, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
                 addMode(5, Component.translatable("gui.typemoonworld.mode.random").withStyle(net.minecraft.ChatFormatting.WHITE));
             } else if ("jewel_magic_release".equals(currentMagic)) {
-                // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan
-                if (vars.learned_magics.contains("ruby_flame_sword")) addMode(0, Component.translatable("gui.typemoonworld.mode.ruby").withStyle(net.minecraft.ChatFormatting.RED));
-                if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(1, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
-                if (vars.learned_magics.contains("emerald_winter_river")) addMode(2, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
-                if (vars.learned_magics.contains("topaz_reinforcement")) addMode(3, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
-                if (vars.learned_magics.contains("cyan_wind")) addMode(4, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+                // Ruby advanced mode is removed. Release keeps: Sapphire, Emerald, Topaz, Cyan.
+                if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(0, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
+                if (vars.learned_magics.contains("emerald_winter_river")) addMode(1, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
+                if (vars.learned_magics.contains("topaz_reinforcement")) addMode(2, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                if (vars.learned_magics.contains("cyan_wind")) addMode(3, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
             } else if ("reinforcement".equals(currentMagic) || "reinforcement_self".equals(currentMagic) || "reinforcement_other".equals(currentMagic) || "reinforcement_item".equals(currentMagic)) {
                 isReinforcement = true;
                 if (reinforcementStage == 0) {
@@ -323,6 +322,7 @@ public class MagicModeSwitcherScreen extends Screen {
         boolean isSwordBarrel = false;
         boolean isJewelMagic = false;
         boolean isReinforcement = false;
+        boolean isJewelRelease = false;
         if (!modes.isEmpty()) {
             // Check magic type from player vars directly for accuracy
             Player player = Minecraft.getInstance().player;
@@ -337,6 +337,7 @@ public class MagicModeSwitcherScreen extends Screen {
                     isSwordBarrel = true;
                 } else if (currentMagic.startsWith("jewel_magic")) {
                     isJewelMagic = true;
+                    isJewelRelease = "jewel_magic_release".equals(currentMagic);
                 } else if ("reinforcement".equals(currentMagic) || currentMagic.startsWith("reinforcement_")) {
                     isReinforcement = true;
                 } else {
@@ -449,8 +450,19 @@ public class MagicModeSwitcherScreen extends Screen {
                         guiGraphics.blit(iconLoc, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
                         guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
                     }
-                } else if (isJewelMagic && modeId >= 0 && modeId < JEWEL_ICONS.length) {
-                    if (modeId != 5) {
+                } else if (isJewelMagic && modeId >= 0) {
+                    if (isJewelRelease) {
+                        int releaseIconIndex = switch (modeId) {
+                            case 0 -> 1; // Sapphire
+                            case 1 -> 2; // Emerald
+                            case 2 -> 3; // Topaz
+                            case 3 -> 4; // Cyan
+                            default -> -1;
+                        };
+                        if (releaseIconIndex >= 0 && releaseIconIndex < JEWEL_ICONS.length) {
+                            guiGraphics.blit(JEWEL_ICONS[releaseIconIndex], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                        }
+                    } else if (modeId != 5 && modeId < JEWEL_ICONS.length) {
                         guiGraphics.blit(JEWEL_ICONS[modeId], iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
                     } else { // Random: Stacked 5 icons (Ruby, Sapphire, Emerald, Topaz, White)
                         // Draw 5 small icons arranged in a pattern

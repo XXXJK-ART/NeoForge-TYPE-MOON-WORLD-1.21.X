@@ -13,9 +13,9 @@ public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, TYPE_MOON_WORLD.MOD_ID);
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RedswordBlockEntity>> REDSWORD_BLOCK_ENTITY =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MuramasaBlockEntity>> MURAMASA_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("redswordblock", () ->
-                    BlockEntityType.Builder.of(RedswordBlockEntity::new, ModBlocks.REDSWORD_BLOCK.get()).build(null));
+                    BlockEntityType.Builder.of(MuramasaBlockEntity::new, ModBlocks.MURAMASA_BLOCK.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<UBWWeaponBlockEntity>> UBW_WEAPON_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("ubw_weapon_block_entity", () ->
@@ -24,6 +24,10 @@ public class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity>> SWORD_BARREL_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("sword_barrel_block_entity", () ->
                     BlockEntityType.Builder.of(net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity::new, ModBlocks.SWORD_BARREL_BLOCK.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GemCarvingTableBlockEntity>> GEM_CARVING_TABLE_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("gem_carving_table_block_entity", () ->
+                    BlockEntityType.Builder.of(GemCarvingTableBlockEntity::new, ModBlocks.GEM_CARVING_TABLE.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

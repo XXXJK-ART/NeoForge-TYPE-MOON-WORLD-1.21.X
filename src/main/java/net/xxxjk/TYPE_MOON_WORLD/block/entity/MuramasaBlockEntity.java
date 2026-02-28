@@ -12,11 +12,11 @@ import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class RedswordBlockEntity extends BlockEntity implements GeoBlockEntity {
+public class MuramasaBlockEntity extends BlockEntity implements GeoBlockEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public RedswordBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.REDSWORD_BLOCK_ENTITY.get(), pos, state);
+    public MuramasaBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.MURAMASA_BLOCK_ENTITY.get(), pos, state);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class RedswordBlockEntity extends BlockEntity implements GeoBlockEntity {
         controllers.add(new AnimationController<>(this, "controller", 0, this::predicate));
     }
 
-    private PlayState predicate(AnimationState<RedswordBlockEntity> event) {
+    private PlayState predicate(AnimationState<MuramasaBlockEntity> event) {
         return event.setAndContinue(RawAnimation.begin().thenLoop("red"));
     }
 

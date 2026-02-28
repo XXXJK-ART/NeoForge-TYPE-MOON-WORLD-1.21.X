@@ -41,13 +41,14 @@ public class MagicRubyThrow {
                     RubyProjectileEntity projectile = new RubyProjectileEntity(level, player);
                     
                     // Determine internal type ID for renderer
-                    // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: White
+                    // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: White, 6: Black
                     int typeId = 0;
                     if (t == GemType.RUBY) typeId = 0;
                     else if (t == GemType.SAPPHIRE) typeId = 1;
                     else if (t == GemType.EMERALD) typeId = 2;
                     else if (t == GemType.TOPAZ) typeId = 3;
                     else if (t == GemType.CYAN) typeId = 4;
+                    else if (t == GemType.BLACK_SHARD) typeId = 6;
                     else typeId = 5; // White
                     
                     projectile.setGemType(typeId);

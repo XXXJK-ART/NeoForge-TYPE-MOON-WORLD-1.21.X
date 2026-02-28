@@ -13,10 +13,11 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-import net.xxxjk.TYPE_MOON_WORLD.block.custom.RedswordBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.MuramasaBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.GreenTransparentBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.GemCarvingTableBlock;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordBlockItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaBlockItem;
 import java.util.function.Supplier;
 import net.minecraft.world.level.block.Blocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
@@ -25,8 +26,8 @@ import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(TYPE_MOON_WORLD.MOD_ID);
 
-    public static final DeferredBlock<Block> REDSWORD_BLOCK = registerBlock("redswordblock",
-            () -> new RedswordBlock(BlockBehaviour.Properties.of()));
+    public static final DeferredBlock<Block> MURAMASA_BLOCK = registerBlock("redswordblock",
+            () -> new MuramasaBlock(BlockBehaviour.Properties.of()));
 
     public static final DeferredBlock<Block> SPIRIT_VEIN_NODE = registerBlock("spirit_vein_node",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
@@ -35,6 +36,9 @@ public class ModBlocks {
     public static final DeferredBlock<Block> SPIRIT_VEIN_BLOCK = registerBlock("spirit_vein_block",
             () -> new Block(BlockBehaviour.Properties.of()
                     .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 10)));
+
+    public static final DeferredBlock<GemCarvingTableBlock> GEM_CARVING_TABLE = registerBlock("gem_carving_table",
+            () -> new GemCarvingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.CRAFTING_TABLE).strength(2.5F)));
 
 
     public static final DeferredBlock<Block> EMERALD_BLOCK = registerBlock("emerald_block",
@@ -149,7 +153,7 @@ public class ModBlocks {
     
     private static <T extends Block> DeferredBlock<T> registerBlockWithCustomItem(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
-        ModItems.ITEMS.register(name, () -> new RedswordBlockItem(toReturn.get(), new Item.Properties()));
+        ModItems.ITEMS.register(name, () -> new MuramasaBlockItem(toReturn.get(), new Item.Properties()));
         return toReturn;
     }
 

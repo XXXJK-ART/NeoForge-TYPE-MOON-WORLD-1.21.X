@@ -86,8 +86,7 @@ public class MagicEmeraldUse {
                                 BlockPos targetPos = layerStartPos.offset(rx * w, 0, rz * w).relative(up, h);
                                 
                                 if (level.getBlockState(targetPos).getDestroySpeed(level, targetPos) >= 0) {
-                                    level.destroyBlock(targetPos, true);
-                                    if (level.setBlock(targetPos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState(), 3)) {
+                                    if (replaceBlockWithoutDrops(level, targetPos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState())) {
                                         placedBlocks.add(targetPos);
                                         
                                         // Particles
@@ -118,5 +117,12 @@ public class MagicEmeraldUse {
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_EMERALD_USE_NEED_GEM), true);
             }
         }
+    }
+
+    private static boolean replaceBlockWithoutDrops(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState targetState) {
+        if (level.getBlockEntity(pos) != null) {
+            level.removeBlockEntity(pos);
+        }
+        return level.setBlock(pos, targetState, 3);
     }
 }

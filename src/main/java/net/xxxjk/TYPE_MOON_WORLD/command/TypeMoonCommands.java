@@ -40,7 +40,8 @@ public class TypeMoonCommands {
         "jewel_magic_shoot", "jewel_magic_release",
         "projection", "structural_analysis", "broken_phantasm",
         "unlimited_blade_works", "sword_barrel_full_open",
-        "reinforcement_self", "reinforcement_other", "reinforcement_item"
+        "reinforcement_self", "reinforcement_other", "reinforcement_item",
+        "gravity_magic"
     };
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -97,7 +98,7 @@ public class TypeMoonCommands {
             // Proficiency
             .then(Commands.literal("proficiency")
                 .then(Commands.argument("type", StringArgumentType.word())
-                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic", "unlimited_blade_works", "reinforcement"}, builder))
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic", "unlimited_blade_works", "reinforcement", "gravity_magic"}, builder))
                     .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
                         .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
             
@@ -199,6 +200,7 @@ public class TypeMoonCommands {
             vars.proficiency_jewel_magic_shoot = 0.0;
             vars.proficiency_jewel_magic_release = 0.0;
             vars.proficiency_unlimited_blade_works = 0.0;
+            vars.proficiency_gravity_magic = 0.0;
             vars.proficiency_reinforcement = 0.0;
             
             // Reset Magics
@@ -286,6 +288,7 @@ public class TypeMoonCommands {
             vars.proficiency_jewel_magic_release = 100.0;
             vars.proficiency_unlimited_blade_works = 100.0;
             vars.proficiency_sword_barrel_full_open = 100.0;
+            vars.proficiency_gravity_magic = 100.0;
             vars.proficiency_reinforcement = 100.0;
             
             // Learn All Magics
@@ -605,6 +608,7 @@ public class TypeMoonCommands {
                     vars.proficiency_jewel_magic_release = value;
                     break;
                 case "unlimited_blade_works": vars.proficiency_unlimited_blade_works = value; break;
+                case "gravity_magic": vars.proficiency_gravity_magic = value; break;
                 case "reinforcement": vars.proficiency_reinforcement = value; break;
             }
             

@@ -4,7 +4,6 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -60,7 +59,7 @@ public class MagicProjection {
             }
             
             double cost = calculateCost(target, vars.player_magic_attributes_sword, vars.proficiency_projection);
-            if (ManaHelper.consumeManaWithInventoryOrHealth(player, cost)) {
+            if (ManaHelper.consumeOneTimeMagicCost(player, cost)) {
                 
                 // Proficiency Increase
                 vars.proficiency_projection = Math.min(100, vars.proficiency_projection + 0.2);
@@ -130,12 +129,12 @@ public class MagicProjection {
         }
     }
     
-    private static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
+    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
         double baseCost = 10;
         
-        // Noble Phantasms have a fixed base cost of 500
+        // Noble Phantasms have a fixed base cost of 1000
         if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
-            baseCost = 500;
+            baseCost = 1000;
         } else {
             Rarity rarity = stack.getRarity();
             if (rarity == Rarity.UNCOMMON) baseCost = 50;

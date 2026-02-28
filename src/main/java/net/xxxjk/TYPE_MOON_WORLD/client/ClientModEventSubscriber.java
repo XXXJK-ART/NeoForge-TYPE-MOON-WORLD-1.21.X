@@ -60,15 +60,15 @@ public class ClientModEventSubscriber {
         }, ModItems.AVALON.get());
 
         event.registerItem(new IClientItemExtensions() {
-            private RedswordRenderer renderer;
+            private MuramasaRenderer renderer;
 
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new RedswordRenderer();
+                    this.renderer = new MuramasaRenderer();
                 return this.renderer;
             }
-        }, ModItems.REDSWORD.get());
+        }, ModItems.MURAMASA.get());
 
         event.registerItem(new IClientItemExtensions() {
             private TsumukariMuramasaRenderer renderer;
@@ -102,7 +102,7 @@ public class ClientModEventSubscriber {
         
         event.registerEntityRenderer(ModEntities.UBW_PROJECTILE.get(), UBWProjectileRenderer::new);
         
-        event.registerBlockEntityRenderer(ModBlockEntities.REDSWORD_BLOCK_ENTITY.get(), context -> new RedswordBlockRenderer());
+        event.registerBlockEntityRenderer(ModBlockEntities.MURAMASA_BLOCK_ENTITY.get(), context -> new MuramasaBlockRenderer());
         event.registerBlockEntityRenderer(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), UBWWeaponBlockEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MURAMASA_SLASH.get(), MuramasaSlashProjectileRenderer::new);
     }

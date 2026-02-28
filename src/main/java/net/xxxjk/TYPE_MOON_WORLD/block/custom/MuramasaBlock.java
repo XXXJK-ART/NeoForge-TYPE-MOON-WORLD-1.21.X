@@ -19,18 +19,18 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
-import net.xxxjk.TYPE_MOON_WORLD.block.entity.RedswordBlockEntity;
+import net.xxxjk.TYPE_MOON_WORLD.block.entity.MuramasaBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import com.mojang.serialization.MapCodec;
 
-public class RedswordBlock extends BaseEntityBlock {
+public class MuramasaBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final IntegerProperty ANIMATION = IntegerProperty.create("animation", 0, 1);
-    public static final MapCodec<RedswordBlock> CODEC = simpleCodec(RedswordBlock::new);
+    public static final MapCodec<MuramasaBlock> CODEC = simpleCodec(MuramasaBlock::new);
 
-    public RedswordBlock(Properties properties) {
+    public MuramasaBlock(Properties properties) {
         super(properties.strength(10f).sound(SoundType.WOOD).noCollission());
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ANIMATION, 0));
     }
@@ -61,7 +61,7 @@ public class RedswordBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
-        return new RedswordBlockEntity(pos, state);
+        return new MuramasaBlockEntity(pos, state);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class RedswordBlock extends BaseEntityBlock {
              if (level.random.nextFloat() < 0.1f) {
                  stackToDrop = new ItemStack(ModItems.TSUMUKARI_MURAMASA.get());
              } else {
-                 stackToDrop = new ItemStack(ModItems.REDSWORD.get());
+                 stackToDrop = new ItemStack(ModItems.MURAMASA.get());
              }
              ItemEntity entityToSpawn = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), stackToDrop);
              entityToSpawn.setPickUpDelay(15);

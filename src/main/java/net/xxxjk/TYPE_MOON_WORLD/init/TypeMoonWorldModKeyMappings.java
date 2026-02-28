@@ -118,16 +118,14 @@ public class TypeMoonWorldModKeyMappings {
                                     Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.sword_barrel_mode));
                                     isModeSwitchDown = true;
                                 }
-                            } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
-                                if (Minecraft.getInstance().screen == null) {
-                                    Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.jewel_magic_mode));
-                                    isModeSwitchDown = true;
-                                }
                             } else if ("reinforcement".equals(currentMagic) || "reinforcement_self".equals(currentMagic) || "reinforcement_other".equals(currentMagic)) {
                                 if (Minecraft.getInstance().screen == null) {
                                     Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));
                                     isModeSwitchDown = true;
                                 }
+                            } else if ("gravity_magic".equals(currentMagic)) {
+                                PacketDistributor.sendToServer(new MagicModeSwitchMessage(6, 0));
+                                isModeSwitchDown = true;
                             }
                         }
                          // If we didn't open the screen (e.g. wrong magic), we still mark key as down to prevent retry every tick? 

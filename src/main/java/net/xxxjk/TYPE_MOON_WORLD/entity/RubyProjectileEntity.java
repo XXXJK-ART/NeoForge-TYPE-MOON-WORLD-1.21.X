@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
@@ -38,7 +39,7 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(GEM_TYPE, 0); // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Random/White
+        builder.define(GEM_TYPE, 0); // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: White, 6: Black
         builder.define(VISUAL_SCALE, 1.0f);
         builder.define(VISUAL_END_X, 0.0f);
         builder.define(VISUAL_END_Y, 0.0f);
@@ -114,13 +115,19 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                 }
             }
 
+            if (GemGravityFieldMagic.tryHandleProjectileImpact(this, stack)) {
+                this.discard();
+                return;
+            }
+
             if (this.getGemType() == 4 && !isRandomMode) {
                  float cyanMultiplier = 1.0f;
                  if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
                       cyanMultiplier = gemItem.getQuality().getEffectMultiplier();
                  }
                  
-                 if (customTag != null && customTag.getBoolean("IsCyanTornado")) {
+                 if (customTag != null && customTag.getBoolean("IsCyanTornado")
+                         && result.getType() == HitResult.Type.BLOCK) {
                      float radius = MagicConstants.CYAN_WIND_RADIUS * cyanMultiplier;
                      if (customTag.contains("CyanRadius")) {
                          radius = customTag.getFloat("CyanRadius");
@@ -275,7 +282,11 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                  this.level().addParticle(ParticleTypes.WAX_ON, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
             } else if (type == 4) { // Cyan
                  this.level().addParticle(ParticleTypes.CLOUD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
-            } else { // White
+            } else if (type == 5) { // White
+                 this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else if (type == 6) { // Black
+                 this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+            } else {
                  this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
             }
             

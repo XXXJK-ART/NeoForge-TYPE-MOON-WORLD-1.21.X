@@ -2,12 +2,14 @@ package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.network.chat.Component;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.jetbrains.annotations.NotNull;
 import java.util.Random;
@@ -47,10 +49,14 @@ public class ChiselItem extends Item {
             if (offhandStack.isEmpty()) {
                 return InteractionResultHolder.pass(chiselStack);
             }
+
+            if (player.isShiftKeyDown() && offhandStack.getItem() instanceof CarvedGemItem) {
+                player.displayClientMessage(Component.translatable("message.typemoonworld.gem.engrave.need_table"), true);
+                return InteractionResultHolder.fail(chiselStack);
+            }
             
             Item rawItem = offhandStack.getItem();
             ItemStack resultGem = ItemStack.EMPTY;
-            int count = 1; // Default count
             
             // Raw Gems Logic
             if (rawItem == ModItems.RAW_EMERALD.get()) {
@@ -65,6 +71,8 @@ public class ChiselItem extends Item {
                 resultGem = getRandomQualityGem(ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), ModItems.CARVED_WHITE_GEMSTONE.get(), ModItems.CARVED_WHITE_GEMSTONE_HIGH.get());
             } else if (rawItem == ModItems.RAW_CYAN_GEMSTONE.get()) {
                 resultGem = getRandomQualityGem(ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), ModItems.CARVED_CYAN_GEMSTONE.get(), ModItems.CARVED_CYAN_GEMSTONE_HIGH.get());
+            } else if (rawItem == Items.OBSIDIAN) {
+                resultGem = getRandomQualityGem(ModItems.CARVED_BLACK_SHARD_POOR.get(), ModItems.CARVED_BLACK_SHARD.get(), ModItems.CARVED_BLACK_SHARD_HIGH.get());
             }
             if (!resultGem.isEmpty()) {
                 // Success

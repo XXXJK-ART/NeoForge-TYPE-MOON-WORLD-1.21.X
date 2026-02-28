@@ -6,6 +6,6 @@ public enum GemType {
     SAPPHIRE,
     TOPAZ,
     WHITE_GEMSTONE,
-    CYAN
+    CYAN,
+    BLACK_SHARD
 }
-

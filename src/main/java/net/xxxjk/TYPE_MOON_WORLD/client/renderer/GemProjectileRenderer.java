@@ -86,9 +86,13 @@ public class GemProjectileRenderer<T extends ThrowableItemProjectile> extends En
                  r = 1.0f; g = 1.0f; b = 0.2f;
              } else if (type == 4) { // Cyan
                  r = 0.0f; g = 1.0f; b = 1.0f;
+             } else if (type == 5) { // White
+                 r = 1.0f; g = 1.0f; b = 1.0f;
+             } else if (type == 6) { // Black
+                 r = 0.15f; g = 0.15f; b = 0.15f;
              } else if (type == 99) { // Visual Slash (Nine Lives)
                  r = 1.0f; g = 1.0f; b = 1.0f;
-             } else { // Random/White
+             } else {
                  r = 1.0f; g = 1.0f; b = 1.0f;
              }
         } else if (entity instanceof SapphireProjectileEntity) {

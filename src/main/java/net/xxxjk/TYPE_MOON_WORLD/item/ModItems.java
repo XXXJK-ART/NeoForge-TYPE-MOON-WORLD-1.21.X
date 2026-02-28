@@ -17,7 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomMagicScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.RedswordItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
@@ -43,8 +43,8 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
-    public static final DeferredItem<Item> REDSWORD = ITEMS.register("redsword",
-            () -> new RedswordItem(new Item.Properties().durability(2000).fireResistant().rarity(Rarity.RARE)
+    public static final DeferredItem<Item> MURAMASA = ITEMS.register("redsword",
+            () -> new MuramasaItem(new Item.Properties().durability(2000).fireResistant().rarity(Rarity.RARE)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
                     .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
@@ -181,6 +181,20 @@ public class ModItems {
     public static final DeferredItem<Item> CARVED_CYAN_GEMSTONE_HIGH_FULL = ITEMS.register("carved_cyan_gemstone_high_full",
             () -> new FullManaCarvedGemItem(new Item.Properties(), () -> ModItems.CARVED_CYAN_GEMSTONE_HIGH.get(), GemQuality.HIGH, GemType.CYAN));
 
+    // BLACK SHARD (Obsidian)
+    public static final DeferredItem<Item> CARVED_BLACK_SHARD = ITEMS.register("carved_black_shard",
+            () -> new CarvedGemItem(new Item.Properties(), GemType.BLACK_SHARD, GemQuality.NORMAL, () -> ModItems.CARVED_BLACK_SHARD_FULL.get()));
+    public static final DeferredItem<Item> CARVED_BLACK_SHARD_FULL = ITEMS.register("carved_black_shard_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> ModItems.CARVED_BLACK_SHARD.get(), GemQuality.NORMAL, GemType.BLACK_SHARD));
+    public static final DeferredItem<Item> CARVED_BLACK_SHARD_POOR = ITEMS.register("carved_black_shard_poor",
+            () -> new CarvedGemItem(new Item.Properties(), GemType.BLACK_SHARD, GemQuality.POOR, () -> ModItems.CARVED_BLACK_SHARD_POOR_FULL.get()));
+    public static final DeferredItem<Item> CARVED_BLACK_SHARD_POOR_FULL = ITEMS.register("carved_black_shard_poor_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> ModItems.CARVED_BLACK_SHARD_POOR.get(), GemQuality.POOR, GemType.BLACK_SHARD));
+    public static final DeferredItem<Item> CARVED_BLACK_SHARD_HIGH = ITEMS.register("carved_black_shard_high",
+            () -> new CarvedGemItem(new Item.Properties(), GemType.BLACK_SHARD, GemQuality.HIGH, () -> ModItems.CARVED_BLACK_SHARD_HIGH_FULL.get()));
+    public static final DeferredItem<Item> CARVED_BLACK_SHARD_HIGH_FULL = ITEMS.register("carved_black_shard_high_full",
+            () -> new FullManaCarvedGemItem(new Item.Properties(), () -> ModItems.CARVED_BLACK_SHARD_HIGH.get(), GemQuality.HIGH, GemType.BLACK_SHARD));
+
     public static final DeferredItem<Item> RAW_CYAN_GEMSTONE = ITEMS.register("raw_cyan_gemstone",
             () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> RAW_EMERALD = ITEMS.register("raw_emerald",
@@ -204,11 +218,11 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL = ITEMS.register("magic_scroll_advanced_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
-                    "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind"));
+                    "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind", "jewel_magic_release"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL_BROKEN = ITEMS.register("magic_scroll_advanced_jewel_broken",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, // Random learning, Low Durability (5)
-                    "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind"));
+                    "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind", "jewel_magic_release"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION = ITEMS.register("magic_scroll_projection",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
@@ -217,6 +231,14 @@ public class ModItems {
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION_BROKEN = ITEMS.register("magic_scroll_projection_broken",
             () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, // Hard to learn (20%), Low Durability (5)
                     "projection", "structural_analysis"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GRAVITY = ITEMS.register("magic_scroll_gravity",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8,
+                    "gravity_magic"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GRAVITY_BROKEN = ITEMS.register("magic_scroll_gravity_broken",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.2,
+                    "gravity_magic"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM = ITEMS.register("magic_scroll_broken_phantasm",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
@@ -277,6 +299,30 @@ public class ModItems {
 
     public static final DeferredItem<Item> MERLIN_SPAWN_EGG = ITEMS.register("merlin_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MERLIN, 0xFFFFFF, 0xD8B0FF, new Item.Properties()));
+
+    public static Item getNormalizedCarvedGem(GemType type) {
+        return switch (type) {
+            case RUBY -> CARVED_RUBY.get();
+            case SAPPHIRE -> CARVED_SAPPHIRE.get();
+            case EMERALD -> CARVED_EMERALD.get();
+            case TOPAZ -> CARVED_TOPAZ.get();
+            case WHITE_GEMSTONE -> CARVED_WHITE_GEMSTONE.get();
+            case CYAN -> CARVED_CYAN_GEMSTONE.get();
+            case BLACK_SHARD -> CARVED_BLACK_SHARD.get();
+        };
+    }
+
+    public static Item getNormalizedFullCarvedGem(GemType type) {
+        return switch (type) {
+            case RUBY -> CARVED_RUBY_FULL.get();
+            case SAPPHIRE -> CARVED_SAPPHIRE_FULL.get();
+            case EMERALD -> CARVED_EMERALD_FULL.get();
+            case TOPAZ -> CARVED_TOPAZ_FULL.get();
+            case WHITE_GEMSTONE -> CARVED_WHITE_GEMSTONE_FULL.get();
+            case CYAN -> CARVED_CYAN_GEMSTONE_FULL.get();
+            case BLACK_SHARD -> CARVED_BLACK_SHARD_FULL.get();
+        };
+    }
 
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

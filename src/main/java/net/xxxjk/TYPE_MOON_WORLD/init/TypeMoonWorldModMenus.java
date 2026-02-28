@@ -9,6 +9,7 @@ import net.minecraft.core.registries.Registries;
 
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.BasicInformationMenu;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.world.inventory.GemCarvingTableMenu;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 
 public class TypeMoonWorldModMenus {
@@ -19,5 +20,8 @@ public class TypeMoonWorldModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<MagicalattributesMenu>> MAGICAL_ATTRIBUTES
             = REGISTRY.register("magicalattributes",
             () -> IMenuTypeExtension.create(MagicalattributesMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<GemCarvingTableMenu>> GEM_CARVING_TABLE
+            = REGISTRY.register("gem_carving_table",
+            () -> IMenuTypeExtension.create(GemCarvingTableMenu::new));
 
 }

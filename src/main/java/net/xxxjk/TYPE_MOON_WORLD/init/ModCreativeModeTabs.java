@@ -31,6 +31,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION);
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
+                        output.accept(ModItems.MAGIC_SCROLL_GRAVITY);
+                        output.accept(ModItems.MAGIC_SCROLL_GRAVITY_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
@@ -40,14 +42,15 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
                         
                         output.accept(ModItems.AVALON);
-                        output.accept(ModItems.REDSWORD);
+                        output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
-                        output.accept(ModBlocks.REDSWORD_BLOCK);
+                        output.accept(ModBlocks.MURAMASA_BLOCK);
 
                         output.accept(ModItems.CHISEL);
+                        output.accept(ModBlocks.GEM_CARVING_TABLE);
                         output.accept(ModItems.MANA_SURVEY_BASE);
                         output.accept(ModItems.MANA_SURVEY_POINTER);
                         output.accept(ModItems.MANA_SURVEY_COMPASS);
@@ -84,6 +87,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CARVED_CYAN_GEMSTONE);
                         output.accept(ModItems.CARVED_CYAN_GEMSTONE_HIGH);
 
+                        output.accept(ModItems.CARVED_BLACK_SHARD_POOR);
+                        output.accept(ModItems.CARVED_BLACK_SHARD);
+                        output.accept(ModItems.CARVED_BLACK_SHARD_HIGH);
+
                         output.accept(ModItems.CARVED_EMERALD_POOR_FULL);
                         output.accept(ModItems.CARVED_EMERALD_FULL);
                         output.accept(ModItems.CARVED_EMERALD_HIGH_FULL);
@@ -107,6 +114,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CARVED_CYAN_GEMSTONE_POOR_FULL);
                         output.accept(ModItems.CARVED_CYAN_GEMSTONE_FULL);
                         output.accept(ModItems.CARVED_CYAN_GEMSTONE_HIGH_FULL);
+
+                        output.accept(ModItems.CARVED_BLACK_SHARD_POOR_FULL);
+                        output.accept(ModItems.CARVED_BLACK_SHARD_FULL);
+                        output.accept(ModItems.CARVED_BLACK_SHARD_HIGH_FULL);
 
                         output.accept(ModBlocks.EMERALD_BLOCK_POOR);
                         output.accept(ModBlocks.EMERALD_BLOCK);

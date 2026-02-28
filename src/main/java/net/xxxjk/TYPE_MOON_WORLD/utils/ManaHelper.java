@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -90,6 +91,46 @@ public class ManaHelper {
         if (vars.player_mana >= amount) {
             vars.player_mana -= amount;
             vars.syncMana(player);
+            return true;
+        }
+
+        return consumeManaOrHealth(player, amount);
+    }
+
+    /**
+     * One-time magic consume rule:
+     * 1) If main/off hand has mana medium, only medium can pay and it must cover full cost in one shot.
+     * 2) If no hand medium exists, consume from player mana and convert missing part from health.
+     * 3) Inventory emergency mana sources are never used in this flow.
+     */
+    public static boolean consumeOneTimeMagicCost(ServerPlayer player, double amount) {
+        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        if (!vars.is_magus) {
+            return false;
+        }
+        if (amount <= 0) {
+            return true;
+        }
+
+        HandSourceCandidate mainHandMedium = createHandCandidate(player.getMainHandItem(), InteractionHand.MAIN_HAND);
+        HandSourceCandidate offHandMedium = createHandCandidate(player.getOffhandItem(), InteractionHand.OFF_HAND);
+        boolean hasHandMedium = mainHandMedium != null || offHandMedium != null;
+
+        if (hasHandMedium) {
+            HandSourceCandidate chosen = null;
+            if (mainHandMedium != null && mainHandMedium.mana >= amount) {
+                chosen = mainHandMedium;
+            } else if (offHandMedium != null && offHandMedium.mana >= amount) {
+                chosen = offHandMedium;
+            }
+
+            if (chosen == null) {
+                suppressEmergencyManaRestore(player, 40);
+                player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+                return false;
+            }
+
+            consumeHandCandidate(player, chosen);
             return true;
         }
 
@@ -213,6 +254,47 @@ public class ManaHelper {
         player.getInventory().setChanged();
     }
 
+    private static HandSourceCandidate createHandCandidate(ItemStack stack, InteractionHand hand) {
+        if (stack.isEmpty()) return null;
+        if (stack.getItem() instanceof FullManaCarvedGemItem fullGemItem) {
+            return new HandSourceCandidate(hand, fullGemItem.getManaAmount(), new ItemStack(fullGemItem.getEmptyGemItem()));
+        }
+        if (stack.is(ModItems.MAGIC_FRAGMENTS.get())) {
+            return new HandSourceCandidate(hand, MAGIC_FRAGMENT_MANA, ItemStack.EMPTY);
+        }
+        if (stack.is(ModBlocks.SPIRIT_VEIN_BLOCK.get().asItem())) {
+            return new HandSourceCandidate(hand, SPIRIT_VEIN_BLOCK_MANA, ItemStack.EMPTY);
+        }
+        return null;
+    }
+
+    private static void consumeHandCandidate(ServerPlayer player, HandSourceCandidate candidate) {
+        ItemStack handStack = player.getItemInHand(candidate.hand);
+        if (handStack.isEmpty()) {
+            return;
+        }
+
+        if (handStack.getCount() > 1) {
+            handStack.shrink(1);
+            if (!candidate.remainder.isEmpty()) {
+                ItemStack remainderCopy = candidate.remainder.copy();
+                if (!player.getInventory().add(remainderCopy)) {
+                    player.drop(remainderCopy, false);
+                }
+            }
+        } else {
+            if (candidate.remainder.isEmpty()) {
+                player.setItemInHand(candidate.hand, ItemStack.EMPTY);
+            } else {
+                player.setItemInHand(candidate.hand, candidate.remainder.copy());
+            }
+        }
+        player.getInventory().setChanged();
+    }
+
     private record SourceCandidate(int slot, double mana, ItemStack remainder) {
+    }
+
+    private record HandSourceCandidate(InteractionHand hand, double mana, ItemStack remainder) {
     }
 }

@@ -105,9 +105,8 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
     }
 
     private boolean hasSaberMana(Player player) {
-        // TODO: Implement Saber's Mana check when available.
-        // Currently disabled as requested by user ("currently not implemented in mod").
-        // Return false to block usage until implemented.
+        // Saber mana linkage is intentionally gated for now.
+        // Return false to block usage until the linkage is enabled.
         return false;
     }
 

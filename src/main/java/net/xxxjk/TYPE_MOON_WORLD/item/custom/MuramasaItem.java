@@ -37,22 +37,22 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 
-public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public RedswordItem(Properties properties) {
+    public MuramasaItem(Properties properties) {
         super(Tiers.NETHERITE, properties);
     }
 
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer renderer;
+            private net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer renderer;
 
             @Override
             public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedswordRenderer();
+                    this.renderer = new net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer();
                 return this.renderer;
             }
         });
@@ -63,7 +63,7 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
         controllers.add(new AnimationController<>(this, "controller", 0, this::predicate));
     }
 
-    private PlayState predicate(AnimationState<RedswordItem> event) {
+    private PlayState predicate(AnimationState<MuramasaItem> event) {
         event.getController().setAnimation(RawAnimation.begin().thenLoop("red"));
         return PlayState.CONTINUE;
     }
@@ -107,15 +107,15 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         boolean isMaxCharge = currentCharge >= 100;
         
-        if (isMaxCharge || vars.player_mana >= 5) {
+        if (isMaxCharge || vars.player_mana >= 10) {
             if (!isMaxCharge) {
-                vars.player_mana -= 5;
+                vars.player_mana -= 10;
                 vars.syncMana(player);
             }
             
             // Feedback
             player.displayClientMessage(
-                    Component.translatable("message.typemoonworld.redsword.charge", currentCharge)
+                    Component.translatable("message.typemoonworld.muramasa.charge", currentCharge)
                             .withStyle(ChatFormatting.RED),
                     true
             );
@@ -216,11 +216,11 @@ public class RedswordItem extends SwordItem implements GeoItem, NoblePhantasmIte
     }
 
     public int getMaxManaCost() {
-        return 500;
+        return 1000;
     }
 
     public double getManaCostPerTick() {
-        return 5.0;
+        return 10.0;
     }
 
     public int getMaxSlashDistance() {
