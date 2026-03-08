@@ -13,22 +13,10 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class GemManaStorageService {
-    private static final String BASIC_JEWEL_MAGIC_ID = "jewel_magic_shoot";
-
     private GemManaStorageService() {
     }
 
-    public static boolean hasStorageUnlock(ServerPlayer player) {
-        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        return vars.learned_magics.contains(BASIC_JEWEL_MAGIC_ID);
-    }
-
     public static ItemStack storeIntoGem(ServerPlayer player, InteractionHand hand, ItemStack heldStack, Item fullGemItem, GemType type, GemQuality quality) {
-        if (!hasStorageUnlock(player)) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.gem.storage.locked"), true);
-            return heldStack;
-        }
-
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         int manaAmount = getStorageManaAmount(heldStack, type, quality);
         if (vars.player_mana < manaAmount) {
@@ -51,11 +39,6 @@ public final class GemManaStorageService {
     }
 
     public static ItemStack withdrawFromGem(ServerPlayer player, InteractionHand hand, ItemStack heldStack, Item emptyGemItem, GemType type, GemQuality quality) {
-        if (!hasStorageUnlock(player)) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.gem.storage.locked"), true);
-            return heldStack;
-        }
-
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         int manaAmount = getStorageManaAmount(heldStack, type, quality);
         vars.player_mana += manaAmount;

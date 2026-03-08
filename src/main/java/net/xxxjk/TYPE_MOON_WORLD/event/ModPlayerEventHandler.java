@@ -22,9 +22,12 @@ public class ModPlayerEventHandler {
     }
 
     private static boolean checkMagus(Player player) {
-        if (player.level().isClientSide()) return true; // Client side check handled by server sync or just allowed for now
-        // But interactions are server authoritative mostly.
-        // Let's check server side.
+        if (player.level().isClientSide()) return true;
+
+        if (player.isSpectator()) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.spectator_no_mod_item"), true);
+            return false;
+        }
         
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         if (!vars.is_magus) {

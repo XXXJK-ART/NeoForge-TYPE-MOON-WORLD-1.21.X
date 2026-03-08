@@ -77,6 +77,7 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
 
     public RubyProjectileEntity(Level level, LivingEntity shooter) {
         super(ModEntities.RUBY_PROJECTILE.get(), shooter, level);
+        this.setPos(EntityUtils.getRightHandCastAnchor(shooter));
     }
 
     public RubyProjectileEntity(Level level, double x, double y, double z) {
@@ -105,6 +106,7 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
             }
 
             boolean isRandomMode = false;
+            boolean isMachineGunMode = false;
             ItemStack stack = this.getItem();
             net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
             net.minecraft.nbt.CompoundTag customTag = null;
@@ -113,9 +115,55 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                 if (customTag.getBoolean("IsRandomMode")) {
                     isRandomMode = true;
                 }
+                if (customTag.getBoolean("IsMachineGunMode")) {
+                    isMachineGunMode = true;
+                }
             }
 
             if (GemGravityFieldMagic.tryHandleProjectileImpact(this, stack)) {
+                this.discard();
+                return;
+            }
+
+            // Machine Gun Logic
+            if (isMachineGunMode) {
+                if (result instanceof net.minecraft.world.phys.EntityHitResult entityResult) {
+                    Entity target = entityResult.getEntity();
+                    if (target instanceof LivingEntity livingTarget) {
+                        if (EntityUtils.isImmunePlayerTarget(target)) {
+                            this.discard();
+                            return;
+                        }
+                        // Remove i-frames
+                        livingTarget.invulnerableTime = 0;
+                        
+                        // Calculate damage
+                        float damage = 6.0f; // Base damage
+                        if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
+                             damage *= gemItem.getQuality().getEffectMultiplier();
+                        } else if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem gemItem) {
+                             damage *= gemItem.getQuality().getEffectMultiplier();
+                        }
+                        
+                        target.hurt(this.damageSources().magic(), damage);
+                        
+                        // Random Curse
+                        if (this.level().random.nextFloat() < 0.3f) { // 30% chance
+                            int effectId = this.level().random.nextInt(4);
+                            switch(effectId) {
+                                case 0: livingTarget.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 100, 1)); break;
+                                case 1: livingTarget.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 100, 1)); break;
+                                case 2: livingTarget.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 100, 0)); break;
+                                case 3: livingTarget.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WITHER, 100, 0)); break;
+                            }
+                        }
+                    }
+                }
+                // Visual particles
+                if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 5, 0.2, 0.2, 0.2, 0.1);
+                }
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), net.minecraft.sounds.SoundEvents.AMETHYST_BLOCK_HIT, net.minecraft.sounds.SoundSource.NEUTRAL, 0.5f, 1.5f);
                 this.discard();
                 return;
             }
@@ -319,32 +367,40 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
         }
 
         if (this.tickCount > MagicConstants.RUBY_LIFETIME_TICKS && !this.level().isClientSide) { // 10 seconds = 200 ticks
-             float multiplier = 1.0f;
              ItemStack stack = this.getItem();
+             net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+             net.minecraft.nbt.CompoundTag tag = customData == null ? null : customData.copyTag();
+             boolean isMachineGunMode = tag != null && tag.getBoolean("IsMachineGunMode");
+             boolean isRandomMode = tag != null && tag.getBoolean("IsRandomMode");
+
+             if (isMachineGunMode) {
+                 this.discard();
+                 return;
+             }
+
+             float multiplier = 1.0f;
              if (stack.getItem() instanceof FullManaCarvedGemItem gemItem) {
                   multiplier = gemItem.getQuality().getEffectMultiplier();
              }
-             
-             // Check for custom power multiplier
-             net.minecraft.world.item.component.CustomData customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-             if (customData != null) {
-                 net.minecraft.nbt.CompoundTag tag = customData.copyTag();
-                 if (tag.contains("ExplosionPowerMultiplier")) {
-                     multiplier *= tag.getFloat("ExplosionPowerMultiplier");
-                 }
-             }
-             
-             float radius = MagicConstants.RUBY_EXPLOSION_RADIUS * multiplier;
 
-             this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, true, Level.ExplosionInteraction.TNT);
-             
+             if (tag != null && tag.contains("ExplosionPowerMultiplier")) {
+                 multiplier *= tag.getFloat("ExplosionPowerMultiplier");
+             }
+
+             float radius = MagicConstants.RUBY_EXPLOSION_RADIUS * multiplier;
+             if (isRandomMode) {
+                 this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, false, Level.ExplosionInteraction.NONE);
+             } else {
+                 this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, true, Level.ExplosionInteraction.TNT);
+             }
+
              if (this.getOwner() instanceof LivingEntity owner) {
                  java.util.List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius));
                  for (LivingEntity t : targets) {
                      EntityUtils.triggerSwarmAnger(this.level(), owner, t);
                  }
              }
-             
+
              this.discard();
         }
     }

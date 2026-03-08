@@ -124,6 +124,9 @@ public class MagicSapphireWinterFrost {
             if (target == player) {
                 continue;
             }
+            if (EntityUtils.isImmunePlayerTarget(target)) {
+                continue;
+            }
             int duration = Math.round(200 * multiplier);
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 4));
             EntityUtils.triggerSwarmAnger(level, player, target);

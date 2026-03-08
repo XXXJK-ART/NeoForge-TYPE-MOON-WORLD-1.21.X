@@ -10,6 +10,7 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModEventBusEvents {
@@ -17,5 +18,6 @@ public class ModEventBusEvents {
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.RYOUGI_SHIKI.get(), RyougiShikiEntity.createAttributes().build());
         event.put(ModEntities.MERLIN.get(), MerlinEntity.createAttributes().build());
+        event.put(ModEntities.STONE_MAN.get(), StoneManEntity.createAttributes().build());
     }
 }

@@ -40,9 +40,11 @@ public class MagicModeSwitcherScreen extends Screen {
     private int selectedIndex = 0;
     private boolean isClosing = false;
     private boolean isReinforcement = false;
+    private boolean isGravity = false;
     private int reinforcementStage = 0; // 0: Target, 1: Body Part, 2: Level
     private int selectedTarget = 0;
     private int selectedBodyPart = 0;
+    private int gravityStage = 0; // 0: Target, 1: Mode
 
     public MagicModeSwitcherScreen(int currentMode) {
         super(Component.translatable("gui.typemoonworld.mode_switcher.title"));
@@ -52,6 +54,8 @@ public class MagicModeSwitcherScreen extends Screen {
     private void initModes(int currentMode) {
         modes.clear();
         modeIds.clear();
+        isReinforcement = false;
+        isGravity = false;
         
         // Define modes
         Player player = Minecraft.getInstance().player;
@@ -77,12 +81,25 @@ public class MagicModeSwitcherScreen extends Screen {
                 if (vars.learned_magics.contains("topaz_throw")) addMode(3, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
                 if (vars.learned_magics.contains("cyan_throw")) addMode(4, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
                 addMode(5, Component.translatable("gui.typemoonworld.mode.random").withStyle(net.minecraft.ChatFormatting.WHITE));
+            } else if ("jewel_machine_gun".equals(currentMagic)) {
+                // No modes for machine gun currently, it's a direct cast
+                // But if we want to add modes later (e.g. speed vs power), we can.
+                // For now, maybe just show one "Fire" mode or nothing?
+                // The switcher is usually for "Switching Modes". If a magic has only one mode, this screen might be empty or show just one.
+                // Let's add a dummy mode "Auto"
+                addMode(0, Component.translatable("gui.typemoonworld.mode.auto"));
+            } else if ("gandr_machine_gun".equals(currentMagic)) {
+                addMode(0, Component.translatable("gui.typemoonworld.mode.gandr_rapid"));
+                addMode(1, Component.translatable("gui.typemoonworld.mode.gandr_barrage"));
             } else if ("jewel_magic_release".equals(currentMagic)) {
                 // Ruby advanced mode is removed. Release keeps: Sapphire, Emerald, Topaz, Cyan.
-                if (vars.learned_magics.contains("sapphire_winter_frost")) addMode(0, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
-                if (vars.learned_magics.contains("emerald_winter_river")) addMode(1, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
-                if (vars.learned_magics.contains("topaz_reinforcement")) addMode(2, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
-                if (vars.learned_magics.contains("cyan_wind")) addMode(3, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+                // Now unlocked directly by learning "jewel_magic_release"
+                if (vars.learned_magics.contains("jewel_magic_release")) {
+                    addMode(0, Component.translatable("gui.typemoonworld.mode.sapphire").withStyle(net.minecraft.ChatFormatting.BLUE));
+                    addMode(1, Component.translatable("gui.typemoonworld.mode.emerald").withStyle(net.minecraft.ChatFormatting.GREEN));
+                    addMode(2, Component.translatable("gui.typemoonworld.mode.topaz").withStyle(net.minecraft.ChatFormatting.YELLOW));
+                    addMode(3, Component.translatable("gui.typemoonworld.mode.cyan").withStyle(net.minecraft.ChatFormatting.AQUA));
+                }
             } else if ("reinforcement".equals(currentMagic) || "reinforcement_self".equals(currentMagic) || "reinforcement_other".equals(currentMagic) || "reinforcement_item".equals(currentMagic)) {
                 isReinforcement = true;
                 if (reinforcementStage == 0) {
@@ -106,6 +123,18 @@ public class MagicModeSwitcherScreen extends Screen {
                     addMode(1, Component.translatable("gui.typemoonworld.mode.cancel.other"));
                     addMode(2, Component.translatable("gui.typemoonworld.mode.cancel.item"));
                 }
+            } else if ("gravity_magic".equals(currentMagic)) {
+                isGravity = true;
+                if (gravityStage == 0) {
+                    addMode(0, Component.translatable("gui.typemoonworld.mode.self"));
+                    addMode(1, Component.translatable("gui.typemoonworld.mode.other"));
+                } else {
+                    addMode(-2, Component.translatable("gui.typemoonworld.mode.gravity.ultra_light"));
+                    addMode(-1, Component.translatable("gui.typemoonworld.mode.gravity.light"));
+                    addMode(0, Component.translatable("gui.typemoonworld.mode.gravity.normal"));
+                    addMode(1, Component.translatable("gui.typemoonworld.mode.gravity.heavy"));
+                    addMode(2, Component.translatable("gui.typemoonworld.mode.gravity.ultra_heavy"));
+                }
             }
         }
         
@@ -115,10 +144,14 @@ public class MagicModeSwitcherScreen extends Screen {
         
         // Find index matching currentMode
         this.selectedIndex = 0;
-        // Only try to match currentMode if we are NOT in reinforcement (or need better logic)
-        // For reinforcement, we always start at 0 (Self/Body) or try to remember?
-        // Let's just default to 0 for simplicity in 2-stage
-        if (!isReinforcement) {
+        if (isGravity && gravityStage == 1) {
+            for (int i = 0; i < modeIds.size(); i++) {
+                if (modeIds.get(i) == currentMode) {
+                    this.selectedIndex = i;
+                    break;
+                }
+            }
+        } else if (!isReinforcement && !isGravity) {
             for (int i = 0; i < modeIds.size(); i++) {
                 if (modeIds.get(i) == currentMode) {
                     this.selectedIndex = i;
@@ -167,7 +200,8 @@ public class MagicModeSwitcherScreen extends Screen {
             }
             
             if (!isDown && !isClosing) {
-                if (isReinforcement && (reinforcementStage == 1 || reinforcementStage == 2 || reinforcementStage == 3)) {
+                if ((isReinforcement && (reinforcementStage == 1 || reinforcementStage == 2 || reinforcementStage == 3))
+                        || (isGravity && gravityStage == 1)) {
                     // Do not auto-close in Stage 1/2/3 on key release, wait for click
                 } else {
                     closeAndSelect();
@@ -254,6 +288,26 @@ public class MagicModeSwitcherScreen extends Screen {
             return;
         }
 
+        if (isGravity) {
+            int selectedId = 0;
+            if (selectedIndex >= 0 && selectedIndex < modeIds.size()) {
+                selectedId = modeIds.get(selectedIndex);
+            }
+
+            if (gravityStage == 0) {
+                PacketDistributor.sendToServer(new MagicModeSwitchMessage(6, selectedId));
+                TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                gravityStage = 1;
+                initModes(vars.gravity_magic_mode);
+                return;
+            }
+
+            PacketDistributor.sendToServer(new MagicModeSwitchMessage(7, selectedId));
+            isClosing = true;
+            this.onClose();
+            return;
+        }
+
         isClosing = true;
         // Send packet to set mode
         int targetMode = 0;
@@ -322,24 +376,28 @@ public class MagicModeSwitcherScreen extends Screen {
         boolean isSwordBarrel = false;
         boolean isJewelMagic = false;
         boolean isReinforcement = false;
+        boolean isGravity = false;
         boolean isJewelRelease = false;
+        String currentMagic = "";
+
         if (!modes.isEmpty()) {
             // Check magic type from player vars directly for accuracy
             Player player = Minecraft.getInstance().player;
             if (player != null) {
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-                String currentMagic = "";
                 if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                     currentMagic = vars.selected_magics.get(vars.current_magic_index);
                 }
                 
                 if ("sword_barrel_full_open".equals(currentMagic)) {
                     isSwordBarrel = true;
-                } else if (currentMagic.startsWith("jewel_magic")) {
+                } else if (currentMagic.startsWith("jewel_magic") || "jewel_machine_gun".equals(currentMagic)) {
                     isJewelMagic = true;
                     isJewelRelease = "jewel_magic_release".equals(currentMagic);
                 } else if ("reinforcement".equals(currentMagic) || currentMagic.startsWith("reinforcement_")) {
                     isReinforcement = true;
+                } else if ("gravity_magic".equals(currentMagic)) {
+                    isGravity = true;
                 } else {
                     showIcons = false;
                 }
@@ -450,8 +508,40 @@ public class MagicModeSwitcherScreen extends Screen {
                         guiGraphics.blit(iconLoc, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
                         guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
                     }
+                } else if (isGravity) {
+                    ResourceLocation iconLoc = null;
+                    if (gravityStage == 0) {
+                        iconLoc = modeId == 0
+                                ? ResourceLocation.withDefaultNamespace("textures/mob_effect/resistance.png")
+                                : ResourceLocation.withDefaultNamespace("textures/item/totem_of_undying.png");
+                    } else {
+                        iconLoc = switch (modeId) {
+                            case -2 -> ResourceLocation.withDefaultNamespace("textures/mob_effect/jump_boost.png");
+                            case -1 -> ResourceLocation.withDefaultNamespace("textures/mob_effect/slow_falling.png");
+                            case 0 -> ResourceLocation.withDefaultNamespace("textures/mob_effect/glowing.png");
+                            case 1 -> ResourceLocation.withDefaultNamespace("textures/mob_effect/slowness.png");
+                            case 2 -> ResourceLocation.withDefaultNamespace("textures/mob_effect/mining_fatigue.png");
+                            default -> null;
+                        };
+                    }
+                    if (iconLoc != null) {
+                        guiGraphics.setColor(0.54f, 0.49f, 1.0f, 0.75f);
+                        guiGraphics.blit(iconLoc, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+                        guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+                    }
                 } else if (isJewelMagic && modeId >= 0) {
-                    if (isJewelRelease) {
+                    if ("jewel_machine_gun".equals(currentMagic)) {
+                        // Use Random Icon (Stacked 5 gems)
+                        int smallSize = 12;
+                        int cx = iconX + (iconSize - smallSize) / 2;
+                        int cy = iconY + (iconSize - smallSize) / 2;
+                        
+                        guiGraphics.blit(JEWEL_ICONS[5], cx, cy, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        guiGraphics.blit(JEWEL_ICONS[0], cx - 6, cy - 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        guiGraphics.blit(JEWEL_ICONS[1], cx + 6, cy - 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        guiGraphics.blit(JEWEL_ICONS[2], cx - 6, cy + 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                        guiGraphics.blit(JEWEL_ICONS[3], cx + 6, cy + 6, 0, 0, smallSize, smallSize, smallSize, smallSize);
+                    } else if (isJewelRelease) {
                         int releaseIconIndex = switch (modeId) {
                             case 0 -> 1; // Sapphire
                             case 1 -> 2; // Emerald

@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.item;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.flag.FeatureFlags;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -23,6 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.StoneManSpawnEggItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -75,6 +77,10 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_FRAGMENTS = ITEMS.register("magic_fragments",
             () -> new Magic_fragmentsItem(new Item.Properties()));
+    // Internal visual item used by Gander projectile (OBJ model: models/item/gander.obj).
+    // Keep it off normal creative/mod item pages by gating behind an experimental feature flag.
+    public static final DeferredItem<Item> GANDER = ITEMS.register("gander",
+            () -> new Item(new Item.Properties().requiredFeatures(FeatureFlags.TRADE_REBALANCE)));
 
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));
@@ -86,7 +92,7 @@ public class ModItems {
             () -> new ChiselItem(new Item.Properties().durability(100)));
 
     public static final DeferredItem<Item> MANA_SURVEY_COMPASS = ITEMS.register("mana_survey_compass",
-            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 80, 80));
 
     public static final DeferredItem<Item> LEYLINE_SURVEY_MAP = ITEMS.register("leyline_survey_map",
             () -> new LeylineSurveyMapItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
@@ -95,6 +101,15 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> MANA_SURVEY_POINTER = ITEMS.register("mana_survey_pointer",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> COPPER_MANA_SURVEY_COMPASS = ITEMS.register("copper_mana_survey_compass",
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1), 50, 80));
+
+    public static final DeferredItem<Item> COPPER_MANA_SURVEY_BASE = ITEMS.register("copper_mana_survey_base",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> COPPER_MANA_SURVEY_POINTER = ITEMS.register("copper_mana_survey_pointer",
             () -> new Item(new Item.Properties()));
 
     // EMERALD (Green)
@@ -209,51 +224,75 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL = ITEMS.register("magic_scroll_basic_jewel",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
-                    "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw", "jewel_magic_shoot"));
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, true, (String)null, 
+                    "jewel_magic_shoot", "jewel_random_shoot"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL_BROKEN = ITEMS.register("magic_scroll_basic_jewel_broken",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, // Random learning, Low Durability (5)
-                    "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw", "jewel_magic_shoot"));
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, 
+                    "jewel_magic_shoot", "jewel_random_shoot"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL = ITEMS.register("magic_scroll_advanced_jewel",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
-                    "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind", "jewel_magic_release"));
-                    
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, "jewel_magic_shoot", // Require Basic Jewel Magic
+                    "jewel_magic_release"));
+
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL_BROKEN = ITEMS.register("magic_scroll_advanced_jewel_broken",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, // Random learning, Low Durability (5)
-                    "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind", "jewel_magic_release"));
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, "jewel_magic_shoot", // Require Basic Jewel Magic
+                    "jewel_magic_release"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_MACHINE_GUN = ITEMS.register("magic_scroll_machine_gun",
+            () -> new MagicScrollItem(new Item.Properties().durability(1), 1.0, false, new String[] {"jewel_magic_shoot", "gander"}, // Require Basic Jewel Magic + Gander
+                    "jewel_machine_gun"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_MACHINE_GUN_BROKEN = ITEMS.register("magic_scroll_machine_gun_broken",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(1), 0.3, new String[] {"jewel_magic_shoot", "gander"}, // Require Basic Jewel Magic + Gander, Low Chance
+                    "jewel_machine_gun"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION = ITEMS.register("magic_scroll_projection",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.5, true, (String)null, 
                     "projection", "structural_analysis"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION_BROKEN = ITEMS.register("magic_scroll_projection_broken",
-            () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, // Hard to learn (20%), Low Durability (5)
+            () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, true, (String)null, 
                     "projection", "structural_analysis"));
 
-    public static final DeferredItem<Item> MAGIC_SCROLL_GRAVITY = ITEMS.register("magic_scroll_gravity",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8,
-                    "gravity_magic"));
-
-    public static final DeferredItem<Item> MAGIC_SCROLL_GRAVITY_BROKEN = ITEMS.register("magic_scroll_gravity_broken",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.2,
-                    "gravity_magic"));
-
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM = ITEMS.register("magic_scroll_broken_phantasm",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, // Easy to learn (80%), High Durability (20)
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.5, false, "projection", // Require Projection
                     "broken_phantasm"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN = ITEMS.register("magic_scroll_broken_phantasm_broken",
-            () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, // Hard to learn (20%), Low Durability (5)
+            () -> new MagicScrollItem(new Item.Properties().durability(5), 0.1, false, "projection", // Require Projection
                     "broken_phantasm"));
+    
+    public static final DeferredItem<Item> MAGIC_SCROLL_GRAVITY = ITEMS.register("magic_scroll_gravity",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, false, (String)null, 
+                    "gravity_magic"));
+                    
+    public static final DeferredItem<Item> MAGIC_SCROLL_GRAVITY_BROKEN = ITEMS.register("magic_scroll_gravity_broken",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, (String)null, 
+                    "gravity_magic"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GANDER = ITEMS.register("magic_scroll_gander",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, false, (String)null,
+                    "gander"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GANDER_BROKEN = ITEMS.register("magic_scroll_gander_broken",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, (String)null,
+                    "gander"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GANDR_MACHINE_GUN = ITEMS.register("magic_scroll_gandr_machine_gun",
+            () -> new MagicScrollItem(new Item.Properties().durability(1), 1.0, false, new String[] {"gander"},
+                    "gandr_machine_gun"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GANDR_MACHINE_GUN_BROKEN = ITEMS.register("magic_scroll_gandr_machine_gun_broken",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(1), 0.3, new String[] {"gander"},
+                    "gandr_machine_gun"));
 
     public static final DeferredItem<Item> MAGIC_BOOK_REINFORCEMENT = ITEMS.register("magic_book_reinforcement",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, 
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, // learnAll=false (default), no req
                     "reinforcement"));
 
     public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, 
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, // no req
                     "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
@@ -299,6 +338,9 @@ public class ModItems {
 
     public static final DeferredItem<Item> MERLIN_SPAWN_EGG = ITEMS.register("merlin_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MERLIN, 0xFFFFFF, 0xD8B0FF, new Item.Properties()));
+
+    public static final DeferredItem<Item> STONE_MAN_SPAWN_EGG = ITEMS.register("stone_man_spawn_egg",
+            () -> new StoneManSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.STONE_MAN, 0x6E6E6E, 0xBFBFBF, new Item.Properties()));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

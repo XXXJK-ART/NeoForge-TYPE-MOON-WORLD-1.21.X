@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -74,7 +75,17 @@ public class MagicEmeraldWinterRiver {
         int height = 2 * radius;
 
         BlockPos center = player.blockPosition();
-        if (player.isInWater() || player.isInLava()) {
+        boolean airborneCast = !player.onGround() && !player.isInWater() && !player.isInLava() && !player.isFallFlying();
+        if (airborneCast) {
+            radius = Math.max(2, radius);
+            height = 2 * radius;
+            Vec3 pos = player.position();
+            center = new BlockPos(
+                    Mth.floor(pos.x),
+                    Mth.floor(pos.y) - radius + 1,
+                    Mth.floor(pos.z)
+            );
+        } else if (player.isInWater() || player.isInLava()) {
             center = center.below(radius);
         }
 
@@ -125,6 +136,14 @@ public class MagicEmeraldWinterRiver {
                     }
                 }
             }
+        }
+
+        if (airborneCast) {
+            Vec3 lockPos = geometricCenter.getCenter();
+            double targetY = lockPos.y - (player.getBbHeight() * 0.5D);
+            player.teleportTo(lockPos.x, targetY, lockPos.z);
+            player.setDeltaMovement(Vec3.ZERO);
+            player.fallDistance = 0;
         }
     }
 

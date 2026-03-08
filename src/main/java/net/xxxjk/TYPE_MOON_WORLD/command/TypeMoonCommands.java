@@ -1,7 +1,6 @@
 
 package net.xxxjk.TYPE_MOON_WORLD.command;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.SplittableRandom;
 import com.mojang.brigadier.CommandDispatcher;
@@ -25,6 +24,12 @@ import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 @SuppressWarnings({"null", "unchecked"})
 public class TypeMoonCommands {
+    private static final String BASIC_JEWEL_MAGIC_ID = "jewel_magic_shoot";
+    private static final String ADVANCED_JEWEL_MAGIC_ID = "jewel_magic_release";
+    private static final String RANDOM_JEWEL_MAGIC_ID = "jewel_random_shoot";
+    private static final String MACHINE_GUN_MAGIC_ID = "jewel_machine_gun";
+    private static final String GANDER_MAGIC_ID = "gander";
+    private static final String GANDR_MACHINE_GUN_MAGIC_ID = "gandr_machine_gun";
     private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200_000;
     private static final int SAMPLE_COORD_RANGE = 2_000_000;
     private static final double ACCEPT_MEAN_MIN = 9.0;
@@ -33,83 +38,99 @@ public class TypeMoonCommands {
     private static final double ACCEPT_P50_79_MAX = 0.20;
     private static final double ACCEPT_P_LT_30_MIN = 0.80;
     private static final double ACCEPT_P_LT_50_MIN = 0.90;
+    private static final String[] PROFICIENCY_TYPES = {
+        "structural_analysis",
+        "projection",
+        "jewel_magic",
+        "jewel_magic_shoot",
+        "jewel_magic_release",
+        "unlimited_blade_works",
+        "sword_barrel_full_open",
+        "reinforcement",
+        "gravity_magic",
+        "gander"
+    };
 
     private static final String[] ALL_MAGICS = {
         "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
         "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
-        "jewel_magic_shoot", "jewel_magic_release",
+        "jewel_magic_shoot", "jewel_magic_release", "jewel_random_shoot", "jewel_machine_gun",
+        "gandr_machine_gun",
         "projection", "structural_analysis", "broken_phantasm",
         "unlimited_blade_works", "sword_barrel_full_open",
+        "reinforcement",
         "reinforcement_self", "reinforcement_other", "reinforcement_item",
-        "gravity_magic"
+        "gravity_magic", "gander"
     };
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("typemoon")
             .requires(source -> source.hasPermission(2)) // Requires OP level 2
-            
-            // Basic Stats
-            .then(Commands.literal("stats")
-                .then(Commands.literal("mana")
-                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
-                        .executes(ctx -> setMana(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
-                .then(Commands.literal("max_mana")
-                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
-                        .executes(ctx -> setMaxMana(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
-                .then(Commands.literal("regen")
-                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
-                        .executes(ctx -> setRegen(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
-                .then(Commands.literal("restore")
-                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
-                        .executes(ctx -> setRestore(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
-            )
-            
-            // Attributes
-            .then(Commands.literal("attr")
-                // 5 Basic Elements
-                .then(Commands.literal("earth")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "earth", BoolArgumentType.getBool(ctx, "enabled")))))
-                .then(Commands.literal("water")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "water", BoolArgumentType.getBool(ctx, "enabled")))))
-                .then(Commands.literal("fire")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "fire", BoolArgumentType.getBool(ctx, "enabled")))))
-                .then(Commands.literal("wind")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "wind", BoolArgumentType.getBool(ctx, "enabled")))))
-                .then(Commands.literal("ether")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "ether", BoolArgumentType.getBool(ctx, "enabled")))))
-                
-                // 3 Special Elements
-                .then(Commands.literal("none")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "none", BoolArgumentType.getBool(ctx, "enabled")))))
-                .then(Commands.literal("imaginary_number")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "imaginary_number", BoolArgumentType.getBool(ctx, "enabled")))))
-                .then(Commands.literal("sword")
-                    .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(ctx -> setAttribute(ctx, "sword", BoolArgumentType.getBool(ctx, "enabled")))))
+
+            // Player data commands
+            .then(Commands.literal("player")
+                .then(Commands.literal("stats")
+                    .then(Commands.literal("mana")
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                            .executes(ctx -> setMana(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
+                    .then(Commands.literal("max_mana")
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                            .executes(ctx -> setMaxMana(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
+                    .then(Commands.literal("regen")
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                            .executes(ctx -> setRegen(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
+                    .then(Commands.literal("restore")
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                            .executes(ctx -> setRestore(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
+                )
+                .then(Commands.literal("attr")
+                    .then(Commands.literal("earth")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "earth", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("water")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "water", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("fire")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "fire", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("wind")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "wind", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("ether")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "ether", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("none")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "none", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("imaginary_number")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "imaginary_number", BoolArgumentType.getBool(ctx, "enabled")))))
+                    .then(Commands.literal("sword")
+                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                            .executes(ctx -> setAttribute(ctx, "sword", BoolArgumentType.getBool(ctx, "enabled")))))
+                )
+                .then(Commands.literal("proficiency")
+                    .then(Commands.argument("type", StringArgumentType.word())
+                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(PROFICIENCY_TYPES, builder))
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                            .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
+                .then(Commands.literal("reset")
+                    .executes(TypeMoonCommands::resetPlayer))
+                .then(Commands.literal("max")
+                    .executes(TypeMoonCommands::setMaxLevel))
+                .then(Commands.literal("cooldown")
+                    .then(Commands.literal("toggle")
+                        .executes(TypeMoonCommands::toggleCooldown)))
             )
 
-            // Proficiency
-            .then(Commands.literal("proficiency")
-                .then(Commands.argument("type", StringArgumentType.word())
-                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"structural_analysis", "projection", "jewel_magic", "unlimited_blade_works", "reinforcement", "gravity_magic"}, builder))
-                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
-                        .executes(ctx -> setProficiency(ctx, StringArgumentType.getString(ctx, "type"), DoubleArgumentType.getDouble(ctx, "value"))))))
-            
-            // Magic Learning
+            // Magic learning commands
             .then(Commands.literal("magic")
                 .then(Commands.literal("learn")
-                    .then(Commands.argument("magic_id", StringArgumentType.string())
+                    .then(Commands.argument("magic_id", StringArgumentType.word())
                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ALL_MAGICS, builder))
                         .executes(ctx -> learnMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))))
                 .then(Commands.literal("forget")
-                    .then(Commands.argument("magic_id", StringArgumentType.string())
+                    .then(Commands.argument("magic_id", StringArgumentType.word())
                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ALL_MAGICS, builder))
                         .executes(ctx -> forgetMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))))
                 .then(Commands.literal("learn_all")
@@ -118,57 +139,53 @@ public class TypeMoonCommands {
                     .executes(TypeMoonCommands::forgetAllMagics))
             )
 
-            // Reset Command
-            .then(Commands.literal("reset")
-                .executes(TypeMoonCommands::resetPlayer))
-            
-            // Max Level & All Skills Command
-            .then(Commands.literal("max")
-                .executes(TypeMoonCommands::setMaxLevel))
-            
-            // No Cooldown Command (Toggle)
-            .then(Commands.literal("cooldown")
-                .then(Commands.literal("toggle")
-                    .executes(TypeMoonCommands::toggleCooldown)))
-
-            // Clear Shiki Entity
-            .then(Commands.literal("shiki")
-                .then(Commands.literal("clear")
-                    .executes(TypeMoonCommands::clearShiki))
-                .then(Commands.literal("health")
-                    .then(Commands.argument("value", DoubleArgumentType.doubleArg(1.0))
-                        .executes(ctx -> setShikiHealth(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
-            )
-            // King Qualification (Advancement)
-            .then(Commands.literal("king")
-                .then(Commands.literal("grant")
-                    .executes(TypeMoonCommands::grantKing))
-                .then(Commands.literal("revoke")
-                    .executes(TypeMoonCommands::revokeKing))
-            )
-            .then(Commands.literal("favor")
-                .then(Commands.literal("merlin")
-                    .then(Commands.argument("value", IntegerArgumentType.integer(-5, 5))
-                        .executes(ctx -> setMerlinFavor(ctx, IntegerArgumentType.getInteger(ctx, "value")))))
+            // NPC-related commands
+            .then(Commands.literal("npc")
                 .then(Commands.literal("shiki")
-                    .then(Commands.argument("value", IntegerArgumentType.integer(-5, 5))
-                        .executes(ctx -> setShikiFavor(ctx, IntegerArgumentType.getInteger(ctx, "value")))))
+                    .then(Commands.literal("clear")
+                        .executes(TypeMoonCommands::clearShiki))
+                    .then(Commands.literal("health")
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(1.0))
+                            .executes(ctx -> setShikiHealth(ctx, DoubleArgumentType.getDouble(ctx, "value")))))
+                )
+                .then(Commands.literal("favor")
+                    .then(Commands.literal("merlin")
+                        .then(Commands.argument("value", IntegerArgumentType.integer(-5, 5))
+                            .executes(ctx -> setMerlinFavor(ctx, IntegerArgumentType.getInteger(ctx, "value")))))
+                    .then(Commands.literal("shiki")
+                        .then(Commands.argument("value", IntegerArgumentType.integer(-5, 5))
+                            .executes(ctx -> setShikiFavor(ctx, IntegerArgumentType.getInteger(ctx, "value")))))
+                )
             )
-            .then(Commands.literal("leyline")
-                .then(Commands.literal("here")
-                    .executes(TypeMoonCommands::showLeylineHere))
-                .then(Commands.literal("chunk")
-                    .then(Commands.argument("x", IntegerArgumentType.integer())
-                        .then(Commands.argument("z", IntegerArgumentType.integer())
-                            .executes(ctx -> showLeylineChunk(
-                                    ctx,
-                                    IntegerArgumentType.getInteger(ctx, "x"),
-                                    IntegerArgumentType.getInteger(ctx, "z")
-                            )))))
-                .then(Commands.literal("verify_distribution")
-                    .executes(ctx -> verifyLeylineDistribution(ctx, DEFAULT_DISTRIBUTION_SAMPLES))
-                    .then(Commands.argument("samples", IntegerArgumentType.integer(10_000, 1_000_000))
-                        .executes(ctx -> verifyLeylineDistribution(ctx, IntegerArgumentType.getInteger(ctx, "samples")))))
+
+            // Progression commands
+            .then(Commands.literal("progress")
+                .then(Commands.literal("king")
+                    .then(Commands.literal("grant")
+                        .executes(TypeMoonCommands::grantKing))
+                    .then(Commands.literal("revoke")
+                        .executes(TypeMoonCommands::revokeKing))
+                )
+            )
+
+            // World commands
+            .then(Commands.literal("world")
+                .then(Commands.literal("leyline")
+                    .then(Commands.literal("here")
+                        .executes(TypeMoonCommands::showLeylineHere))
+                    .then(Commands.literal("chunk")
+                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                            .then(Commands.argument("z", IntegerArgumentType.integer())
+                                .executes(ctx -> showLeylineChunk(
+                                        ctx,
+                                        IntegerArgumentType.getInteger(ctx, "x"),
+                                        IntegerArgumentType.getInteger(ctx, "z")
+                                )))))
+                    .then(Commands.literal("verify_distribution")
+                        .executes(ctx -> verifyLeylineDistribution(ctx, DEFAULT_DISTRIBUTION_SAMPLES))
+                        .then(Commands.argument("samples", IntegerArgumentType.integer(10_000, 1_000_000))
+                            .executes(ctx -> verifyLeylineDistribution(ctx, IntegerArgumentType.getInteger(ctx, "samples")))))
+                )
             )
         );
     }
@@ -202,6 +219,7 @@ public class TypeMoonCommands {
             vars.proficiency_unlimited_blade_works = 0.0;
             vars.proficiency_gravity_magic = 0.0;
             vars.proficiency_reinforcement = 0.0;
+            vars.proficiency_gander = 0.0;
             
             // Reset Magics
             vars.learned_magics.clear();
@@ -290,6 +308,7 @@ public class TypeMoonCommands {
             vars.proficiency_sword_barrel_full_open = 100.0;
             vars.proficiency_gravity_magic = 100.0;
             vars.proficiency_reinforcement = 100.0;
+            vars.proficiency_gander = 100.0;
             
             // Learn All Magics
             for (String m : ALL_MAGICS) {
@@ -377,8 +396,42 @@ public class TypeMoonCommands {
         try {
             ServerPlayer player = ctx.getSource().getPlayerOrException();
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            
-            if (!vars.learned_magics.contains(magicId)) {
+
+            if ((ADVANCED_JEWEL_MAGIC_ID.equals(magicId) || MACHINE_GUN_MAGIC_ID.equals(magicId))
+                    && !vars.learned_magics.contains(BASIC_JEWEL_MAGIC_ID)) {
+                ctx.getSource().sendFailure(Component.literal("Learn basic jewel magic first: " + BASIC_JEWEL_MAGIC_ID));
+                return 0;
+            }
+            if (MACHINE_GUN_MAGIC_ID.equals(magicId) && !vars.learned_magics.contains(GANDER_MAGIC_ID)) {
+                ctx.getSource().sendFailure(Component.literal("Learn gander first: " + GANDER_MAGIC_ID));
+                return 0;
+            }
+            if (GANDR_MACHINE_GUN_MAGIC_ID.equals(magicId) && !vars.learned_magics.contains(GANDER_MAGIC_ID)) {
+                ctx.getSource().sendFailure(Component.literal("Learn gander first: " + GANDER_MAGIC_ID));
+                return 0;
+            }
+            if (GANDR_MACHINE_GUN_MAGIC_ID.equals(magicId) && vars.proficiency_gander < 50.0D) {
+                ctx.getSource().sendFailure(Component.literal("Gandr machine gun requires gander proficiency >= 50."));
+                return 0;
+            }
+
+            if (isBasicOrRandomJewelMagic(magicId)) {
+                boolean changed = false;
+                if (!vars.learned_magics.contains(BASIC_JEWEL_MAGIC_ID)) {
+                    vars.learned_magics.add(BASIC_JEWEL_MAGIC_ID);
+                    changed = true;
+                }
+                if (!vars.learned_magics.contains(RANDOM_JEWEL_MAGIC_ID)) {
+                    vars.learned_magics.add(RANDOM_JEWEL_MAGIC_ID);
+                    changed = true;
+                }
+                vars.syncPlayerVariables(player);
+                if (changed) {
+                    ctx.getSource().sendSuccess(() -> Component.literal("Learned magics: " + BASIC_JEWEL_MAGIC_ID + ", " + RANDOM_JEWEL_MAGIC_ID), true);
+                } else {
+                    ctx.getSource().sendSuccess(() -> Component.literal("Magics already learned: " + BASIC_JEWEL_MAGIC_ID + ", " + RANDOM_JEWEL_MAGIC_ID), false);
+                }
+            } else if (!vars.learned_magics.contains(magicId)) {
                 vars.learned_magics.add(magicId);
                 vars.syncPlayerVariables(player);
                 ctx.getSource().sendSuccess(() -> Component.literal("Learned magic: " + magicId), true);
@@ -395,8 +448,16 @@ public class TypeMoonCommands {
         try {
             ServerPlayer player = ctx.getSource().getPlayerOrException();
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            
-            if (vars.learned_magics.contains(magicId)) {
+
+            if (isBasicOrRandomJewelMagic(magicId)) {
+                boolean removed = vars.learned_magics.remove(BASIC_JEWEL_MAGIC_ID) | vars.learned_magics.remove(RANDOM_JEWEL_MAGIC_ID);
+                vars.syncPlayerVariables(player);
+                if (removed) {
+                    ctx.getSource().sendSuccess(() -> Component.literal("Forgot magics: " + BASIC_JEWEL_MAGIC_ID + ", " + RANDOM_JEWEL_MAGIC_ID), true);
+                } else {
+                    ctx.getSource().sendSuccess(() -> Component.literal("Magics not found: " + BASIC_JEWEL_MAGIC_ID + ", " + RANDOM_JEWEL_MAGIC_ID), false);
+                }
+            } else if (vars.learned_magics.contains(magicId)) {
                 vars.learned_magics.remove(magicId);
                 vars.syncPlayerVariables(player);
                 ctx.getSource().sendSuccess(() -> Component.literal("Forgot magic: " + magicId), true);
@@ -407,6 +468,10 @@ public class TypeMoonCommands {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    private static boolean isBasicOrRandomJewelMagic(String magicId) {
+        return BASIC_JEWEL_MAGIC_ID.equals(magicId) || RANDOM_JEWEL_MAGIC_ID.equals(magicId);
     }
     
     private static int learnAllMagics(CommandContext<CommandSourceStack> ctx) {
@@ -600,16 +665,27 @@ public class TypeMoonCommands {
             // Limit Proficiency to 0-100
             value = Math.max(0.0, Math.min(100.0, value));
             
+            boolean validType = true;
             switch (type) {
                 case "structural_analysis": vars.proficiency_structural_analysis = value; break;
                 case "projection": vars.proficiency_projection = value; break;
-                case "jewel_magic": 
-                    vars.proficiency_jewel_magic_shoot = value; 
+                case "jewel_magic":
+                    vars.proficiency_jewel_magic_shoot = value;
                     vars.proficiency_jewel_magic_release = value;
                     break;
+                case "jewel_magic_shoot": vars.proficiency_jewel_magic_shoot = value; break;
+                case "jewel_magic_release": vars.proficiency_jewel_magic_release = value; break;
                 case "unlimited_blade_works": vars.proficiency_unlimited_blade_works = value; break;
+                case "sword_barrel_full_open": vars.proficiency_sword_barrel_full_open = value; break;
                 case "gravity_magic": vars.proficiency_gravity_magic = value; break;
                 case "reinforcement": vars.proficiency_reinforcement = value; break;
+                case "gander": vars.proficiency_gander = value; break;
+                default: validType = false; break;
+            }
+
+            if (!validType) {
+                ctx.getSource().sendFailure(Component.literal("Unknown proficiency type: " + type));
+                return 0;
             }
             
             vars.syncPlayerVariables(player);
@@ -666,7 +742,6 @@ public class TypeMoonCommands {
                 if (entity instanceof RyougiShikiEntity shiki) {
                     if (value < -5) value = -5;
                     if (value > 5) value = 5;
-                    int current = shiki.getFriendshipLevel();
                     shiki.setFriendshipLevel(value);
                     count++;
                 }

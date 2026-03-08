@@ -33,13 +33,18 @@ public class ManaSurveyCompassItem extends Item {
 
     private static final int FALLBACK_SCAN_RADIUS_CHUNKS = 8;
     private static final int MAX_SCAN_RADIUS_CHUNKS = 8;
-    private static final int MIN_REQUIRED_CONCENTRATION_EXCLUSIVE = 50;
-    private static final int VERY_HIGH_CONCENTRATION_THRESHOLD = 80;
-    private static final int APPROX_COORDINATE_STEP_BLOCKS = 32;
     private static final double SURVEY_MANA_COST = 10.0;
+    private final int minRequiredConcentrationExclusive;
+    private final int veryHighConcentrationThreshold;
 
-    public ManaSurveyCompassItem(Properties properties) {
+    public ManaSurveyCompassItem(
+            Properties properties,
+            int minRequiredConcentrationExclusive,
+            int veryHighConcentrationThreshold
+    ) {
         super(properties);
+        this.minRequiredConcentrationExclusive = minRequiredConcentrationExclusive;
+        this.veryHighConcentrationThreshold = veryHighConcentrationThreshold;
     }
 
     @Override
@@ -51,7 +56,7 @@ public class ManaSurveyCompassItem extends Item {
 
         CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         int currentConcentration = LeylineService.getConcentration(serverPlayer.serverLevel(), serverPlayer.blockPosition());
-        if (currentConcentration > MIN_REQUIRED_CONCENTRATION_EXCLUSIVE) {
+        if (currentConcentration > minRequiredConcentrationExclusive) {
             clearTarget(tag);
             stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             serverPlayer.displayClientMessage(
@@ -70,21 +75,17 @@ public class ManaSurveyCompassItem extends Item {
         }
 
         ScanResult result = scanBestTarget(serverPlayer);
-        if (result == null || result.concentration <= MIN_REQUIRED_CONCENTRATION_EXCLUSIVE) {
+        if (result == null || result.concentration <= minRequiredConcentrationExclusive) {
             clearTarget(tag);
             serverPlayer.displayClientMessage(
-                    Component.translatable("message.typemoonworld.mana_survey_compass.no_high_mana", MIN_REQUIRED_CONCENTRATION_EXCLUSIVE),
+                    Component.translatable("message.typemoonworld.mana_survey_compass.no_high_mana", minRequiredConcentrationExclusive),
                     false
             );
         } else {
             storeTarget(tag, result.targetPos, result.concentration, serverPlayer.serverLevel());
-            int approxX = approximateCoordinate(result.targetPos.getX());
-            int approxZ = approximateCoordinate(result.targetPos.getZ());
             serverPlayer.displayClientMessage(
                     Component.translatable(
                             "message.typemoonworld.mana_survey_compass.found_target",
-                            approxX,
-                            approxZ,
                             result.concentration
                     ),
                     false
@@ -124,7 +125,7 @@ public class ManaSurveyCompassItem extends Item {
         tag.putBoolean(TAG_TARGET_ARRIVED, true);
         if (!tag.getBoolean(TAG_TARGET_ARRIVAL_NOTIFIED)) {
             int concentration = tag.getInt(TAG_TARGET_CONCENTRATION);
-            boolean veryHigh = concentration >= VERY_HIGH_CONCENTRATION_THRESHOLD;
+            boolean veryHigh = concentration >= veryHighConcentrationThreshold;
             int notifyCount = veryHigh ? 3 : 1;
             String key = veryHigh
                     ? "message.typemoonworld.mana_survey_compass.arrived_very_high"
@@ -254,10 +255,6 @@ public class ManaSurveyCompassItem extends Item {
     private static boolean isPlayerInTargetChunk(ServerPlayer player, BlockPos targetPos) {
         ChunkPos playerChunk = player.chunkPosition();
         return playerChunk.x == (targetPos.getX() >> 4) && playerChunk.z == (targetPos.getZ() >> 4);
-    }
-
-    private static int approximateCoordinate(int value) {
-        return Math.round(value / (float) APPROX_COORDINATE_STEP_BLOCKS) * APPROX_COORDINATE_STEP_BLOCKS;
     }
 
     private static final class ScanResult {

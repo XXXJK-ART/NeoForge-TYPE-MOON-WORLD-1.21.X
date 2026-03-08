@@ -184,6 +184,9 @@ public class MuramasaSlashHandler {
             
             for (Entity e : entities) {
                 if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID)) {
+                    if (EntityUtils.isImmunePlayerTarget(e)) {
+                        continue;
+                    }
                     // Damage
                     // Base 20 + 5 per charge. Max 520.
                     float damage = 20.0f + (slash.charge * 5.0f);

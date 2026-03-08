@@ -1,0 +1,16 @@
+{
+  "cym_gem_biubiubiu": {
+    "category": "player",
+    "subtitle": "subtitles.typemoonworld.cym_gem_biubiubiu",
+    "sounds": [
+      "typemoonworld:cym_gem_biubiubiu"
+    ]
+  },
+  "cyq_gem_shoot_star": {
+    "category": "player",
+    "subtitle": "subtitles.typemoonworld.cyq_gem_shoot_star",
+    "sounds": [
+      "typemoonworld:cyq_gem_shoot_star"
+    ]
+  }
+}

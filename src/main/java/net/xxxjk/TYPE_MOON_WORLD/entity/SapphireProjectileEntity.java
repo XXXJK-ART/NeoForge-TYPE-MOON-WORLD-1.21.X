@@ -42,6 +42,7 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
 
     public SapphireProjectileEntity(Level level, LivingEntity shooter) {
         super(ModEntities.SAPPHIRE_PROJECTILE.get(), shooter, level);
+        this.setPos(EntityUtils.getRightHandCastAnchor(shooter));
     }
 
     public SapphireProjectileEntity(Level level, double x, double y, double z) {
@@ -141,7 +142,7 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
             for (LivingEntity entity : entities) {
                 if (entity == owner) continue;
-                if (entity instanceof net.minecraft.world.entity.player.Player player && player.isCreative()) continue;
+                if (EntityUtils.isImmunePlayerTarget(entity)) continue;
                 entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MagicConstants.SAPPHIRE_DEBUFF_DURATION, 1));
                 if (owner instanceof LivingEntity livingOwner) {
                     EntityUtils.triggerSwarmAnger(level, livingOwner, entity);

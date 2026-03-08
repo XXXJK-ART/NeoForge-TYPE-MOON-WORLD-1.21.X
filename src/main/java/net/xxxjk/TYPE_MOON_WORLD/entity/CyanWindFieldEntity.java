@@ -16,6 +16,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import java.util.UUID;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
@@ -172,7 +173,7 @@ public class CyanWindFieldEntity extends Entity {
             boolean tornado = this.isTornadoMode();
             
             for (LivingEntity entity : list) {
-                if (entity instanceof Player player && player.isCreative()) continue;
+                if (EntityUtils.isImmunePlayerTarget(entity)) continue;
                 double dx = entity.getX() - this.getX();
                 double dz = entity.getZ() - this.getZ();
                 if (dx * dx + dz * dz > currentRadius * currentRadius) continue;

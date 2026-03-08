@@ -14,7 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import org.jetbrains.annotations.NotNull;
 
-public record GemGravitySelfCastMessage(int hand, int mode) implements CustomPacketPayload {
+public record GemGravitySelfCastMessage(int hand, int targetMode, int mode) implements CustomPacketPayload {
     public static final Type<GemGravitySelfCastMessage> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gem_gravity_self_cast")
     );
@@ -22,9 +22,11 @@ public record GemGravitySelfCastMessage(int hand, int mode) implements CustomPac
     public static final StreamCodec<RegistryFriendlyByteBuf, GemGravitySelfCastMessage> STREAM_CODEC = StreamCodec.of(
             (RegistryFriendlyByteBuf buffer, GemGravitySelfCastMessage message) -> {
                 buffer.writeInt(message.hand);
+                buffer.writeInt(message.targetMode);
                 buffer.writeInt(message.mode);
             },
             (RegistryFriendlyByteBuf buffer) -> new GemGravitySelfCastMessage(
+                    buffer.readInt(),
                     buffer.readInt(),
                     buffer.readInt()
             )
@@ -45,6 +47,10 @@ public record GemGravitySelfCastMessage(int hand, int mode) implements CustomPac
                 return;
             }
             if (message.mode < MagicGravity.MODE_ULTRA_LIGHT || message.mode > MagicGravity.MODE_ULTRA_HEAVY) {
+                return;
+            }
+            // Engraved gravity gem selector is self-only.
+            if (message.targetMode != 0) {
                 return;
             }
 

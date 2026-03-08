@@ -22,10 +22,16 @@ import java.util.List;
 public class RandomMagicScrollItem extends Item {
     private final List<String> magicsToLearn;
     private final double successRate;
+    private final List<String> requiredMagics;
 
-    public RandomMagicScrollItem(Properties properties, double successRate, String... magics) {
+    public RandomMagicScrollItem(Properties properties, double successRate, String requiredMagic, String... magics) {
+        this(properties, successRate, requiredMagic == null ? new String[0] : new String[] { requiredMagic }, magics);
+    }
+
+    public RandomMagicScrollItem(Properties properties, double successRate, String[] requiredMagics, String... magics) {
         super(properties);
         this.successRate = successRate;
+        this.requiredMagics = Arrays.asList(requiredMagics == null ? new String[0] : requiredMagics);
         this.magicsToLearn = Arrays.asList(magics);
     }
 
@@ -36,22 +42,42 @@ public class RandomMagicScrollItem extends Item {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
-            // Filter out already learned magics
-            List<String> unlearned = new ArrayList<>();
+            // Check requirements
+            for (String requiredMagic : requiredMagics) {
+                if (requiredMagic == null || requiredMagic.isEmpty()) {
+                    continue;
+                }
+                if (!vars.learned_magics.contains(requiredMagic)) {
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.requirement_not_met", 
+                        Component.translatable("magic.typemoonworld." + requiredMagic + ".name")), true);
+                    return InteractionResultHolder.fail(stack);
+                }
+            }
+
             for (String magic : magicsToLearn) {
-                if (!vars.learned_magics.contains(magic)) {
-                    unlearned.add(magic);
+                if (vars.learned_magics.contains(magic)) {
+                    continue;
+                }
+                if (!meetsExtraLearningRequirement(serverPlayer, vars, magic)) {
+                    return InteractionResultHolder.fail(stack);
                 }
             }
             
-            if (unlearned.isEmpty()) {
+            List<String> unlearnedMagics = new ArrayList<>();
+            for (String magic : magicsToLearn) {
+                if (!vars.learned_magics.contains(magic)) {
+                    unlearnedMagics.add(magic);
+                }
+            }
+            
+            if (unlearnedMagics.isEmpty()) {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.already_learned"), true);
                 return InteractionResultHolder.fail(stack);
             }
             
             // Shuffle to pick random
-            Collections.shuffle(unlearned);
-            String magicToLearn = unlearned.get(0);
+            Collections.shuffle(unlearnedMagics);
+            String magicToLearn = unlearnedMagics.get(0);
             
             // Attempt to learn
             if (player.getRandom().nextDouble() < successRate) {
@@ -75,5 +101,19 @@ public class RandomMagicScrollItem extends Item {
         }
         
         return InteractionResultHolder.pass(stack);
+    }
+
+    private static boolean meetsExtraLearningRequirement(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+        if ("gandr_machine_gun".equals(magicId) && vars.proficiency_gander < 50.0D) {
+            player.displayClientMessage(
+                    Component.translatable(
+                            "message.typemoonworld.magic.gandr_machine_gun.learn_requirement",
+                            50
+                    ),
+                    true
+            );
+            return false;
+        }
+        return true;
     }
 }

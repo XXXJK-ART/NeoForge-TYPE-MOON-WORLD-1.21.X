@@ -1,0 +1,12 @@
+﻿{
+  "replace": false,
+  "values": [
+    "typemoonworld:carved_emerald",
+    "typemoonworld:carved_ruby",
+    "typemoonworld:carved_sapphire",
+    "typemoonworld:carved_topaz",
+    "typemoonworld:carved_white_gemstone",
+    "typemoonworld:carved_cyan_gemstone",
+    "typemoonworld:carved_black_shard"
+  ]
+}

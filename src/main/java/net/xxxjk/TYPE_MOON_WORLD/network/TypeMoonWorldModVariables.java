@@ -111,6 +111,7 @@ public class TypeMoonWorldModVariables {
             clone.proficiency_unlimited_blade_works = original.proficiency_unlimited_blade_works;
             clone.proficiency_sword_barrel_full_open = original.proficiency_sword_barrel_full_open;
             clone.proficiency_gravity_magic = original.proficiency_gravity_magic;
+            clone.proficiency_gander = original.proficiency_gander;
             
             clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
             clone.is_magus = original.is_magus;
@@ -127,8 +128,10 @@ public class TypeMoonWorldModVariables {
                 clone.ubw_return_dimension = original.ubw_return_dimension;
                 
             clone.sword_barrel_mode = original.sword_barrel_mode;
+            clone.gandr_machine_gun_mode = original.gandr_machine_gun_mode;
             clone.jewel_magic_mode = original.jewel_magic_mode;
             clone.gravity_magic_target = original.gravity_magic_target;
+            clone.gravity_magic_mode = original.gravity_magic_mode;
             clone.is_sword_barrel_active = false; // Reset on death
             } else {
                 // Reset UBW states on death
@@ -219,6 +222,7 @@ public class TypeMoonWorldModVariables {
         public double proficiency_unlimited_blade_works = 0;
         public double proficiency_sword_barrel_full_open = 0;
         public double proficiency_gravity_magic = 0;
+        public double proficiency_gander = 0;
         
         // Projection Magic Data
         public java.util.List<ItemStack> analyzed_items = new java.util.ArrayList<>();
@@ -247,8 +251,10 @@ public class TypeMoonWorldModVariables {
 
         // Magic Modes
         public int sword_barrel_mode = 0; // 0: Default, 1: Mode 2, etc.
+        public int gandr_machine_gun_mode = 0; // 0: Rapid Burst, 1: Gate Barrage
         public int jewel_magic_mode = 0; // 0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz
         public int gravity_magic_target = 0; // 0: Self, 1: Other
+        public int gravity_magic_mode = 0; // -2: Ultra Light, -1: Light, 0: Normal, 1: Heavy, 2: Ultra Heavy
         public int reinforcement_mode = 0; // 0: Body, 1: Hand, 2: Leg, 3: Eye
         public int reinforcement_target = 0; // 0: Self, 1: Other, 2: Item
         public boolean is_sword_barrel_active = false; // Toggle state for continuous fire
@@ -470,6 +476,7 @@ public class TypeMoonWorldModVariables {
             nbt.putDouble("proficiency_unlimited_blade_works", proficiency_unlimited_blade_works);
             nbt.putDouble("proficiency_sword_barrel_full_open", proficiency_sword_barrel_full_open);
             nbt.putDouble("proficiency_gravity_magic", proficiency_gravity_magic);
+            nbt.putDouble("proficiency_gander", proficiency_gander);
             nbt.putDouble("proficiency_reinforcement", proficiency_reinforcement);
             
             nbt.putBoolean("is_chanting_ubw", is_chanting_ubw);
@@ -485,8 +492,10 @@ public class TypeMoonWorldModVariables {
             nbt.putString("ubw_return_dimension", ubw_return_dimension);
             
             nbt.putInt("sword_barrel_mode", sword_barrel_mode);
+            nbt.putInt("gandr_machine_gun_mode", gandr_machine_gun_mode);
             nbt.putInt("jewel_magic_mode", jewel_magic_mode);
             nbt.putInt("gravity_magic_target", gravity_magic_target);
+            nbt.putInt("gravity_magic_mode", gravity_magic_mode);
             nbt.putInt("reinforcement_mode", reinforcement_mode);
             nbt.putInt("reinforcement_target", reinforcement_target);
             nbt.putInt("reinforcement_level", reinforcement_level);
@@ -569,6 +578,7 @@ public class TypeMoonWorldModVariables {
             proficiency_unlimited_blade_works = nbt.getDouble("proficiency_unlimited_blade_works");
             proficiency_sword_barrel_full_open = nbt.getDouble("proficiency_sword_barrel_full_open");
             proficiency_gravity_magic = nbt.getDouble("proficiency_gravity_magic");
+            proficiency_gander = nbt.getDouble("proficiency_gander");
             proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
             
             is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
@@ -584,8 +594,12 @@ public class TypeMoonWorldModVariables {
             if (nbt.contains("ubw_return_dimension")) ubw_return_dimension = nbt.getString("ubw_return_dimension");
             
             if (nbt.contains("sword_barrel_mode")) sword_barrel_mode = nbt.getInt("sword_barrel_mode");
+            if (nbt.contains("gandr_machine_gun_mode")) gandr_machine_gun_mode = nbt.getInt("gandr_machine_gun_mode");
+            gandr_machine_gun_mode = Math.max(0, Math.min(1, gandr_machine_gun_mode));
             if (nbt.contains("jewel_magic_mode")) jewel_magic_mode = nbt.getInt("jewel_magic_mode");
             if (nbt.contains("gravity_magic_target")) gravity_magic_target = nbt.getInt("gravity_magic_target");
+            if (nbt.contains("gravity_magic_mode")) gravity_magic_mode = nbt.getInt("gravity_magic_mode");
+            gravity_magic_mode = Math.max(-2, Math.min(2, gravity_magic_mode));
             if (nbt.contains("reinforcement_mode")) reinforcement_mode = nbt.getInt("reinforcement_mode");
             if (nbt.contains("reinforcement_target")) reinforcement_target = nbt.getInt("reinforcement_target");
             if (nbt.contains("reinforcement_level")) reinforcement_level = nbt.getInt("reinforcement_level");
@@ -696,7 +710,29 @@ public class TypeMoonWorldModVariables {
                 if (!this.learned_magics.contains("jewel_magic_release")) {
                     this.learned_magics.add("jewel_magic_release");
                 }
+                if (!this.learned_magics.contains("jewel_random_shoot")) {
+                    this.learned_magics.add("jewel_random_shoot");
+                }
             }
+
+            // Ensure split skill compatibility:
+            // if player already has basic jewel knowledge, they should also own random jewel shoot.
+            if (this.learned_magics.contains("jewel_magic_shoot") && !this.learned_magics.contains("jewel_random_shoot")) {
+                this.learned_magics.add("jewel_random_shoot");
+            }
+
+            // Enforce jewel prerequisites for migrated/legacy saves:
+            // advanced jewel and machine gun both require basic jewel knowledge.
+            if ((this.learned_magics.contains("jewel_magic_release") || this.learned_magics.contains("jewel_machine_gun"))
+                    && !this.learned_magics.contains("jewel_magic_shoot")) {
+                this.learned_magics.add("jewel_magic_shoot");
+            }
+            if (this.learned_magics.contains("gandr_machine_gun") && !this.learned_magics.contains("gander")) {
+                this.learned_magics.add("gander");
+            }
+
+            tryAutoUnlockJewelMachineGun(entity);
+            tryAutoUnlockGandrMachineGun(entity);
 
             // Reinforcement compatibility:
             // Legacy/fragment data may only contain reinforcement_* sub skills.
@@ -709,6 +745,15 @@ public class TypeMoonWorldModVariables {
                 this.learned_magics.add("reinforcement");
             }
 
+            // Jewel base/advanced are knowledge entries only and cannot be equipped.
+            this.selected_magics.removeIf(id -> "jewel_magic_shoot".equals(id) || "jewel_magic_release".equals(id));
+            if (this.current_magic_index >= this.selected_magics.size()) {
+                this.current_magic_index = Math.max(0, this.selected_magics.size() - 1);
+            }
+
+            this.gravity_magic_mode = Math.max(-2, Math.min(2, this.gravity_magic_mode));
+            this.gandr_machine_gun_mode = Math.max(0, Math.min(1, this.gandr_machine_gun_mode));
+
             if (entity instanceof ServerPlayer serverPlayer)
                 PacketDistributor.sendToPlayer(serverPlayer, new PlayerVariablesSyncMessage(this));
         }
@@ -719,8 +764,53 @@ public class TypeMoonWorldModVariables {
         }
 
         public void syncProficiency(Entity entity) {
+            boolean autoUnlocked = tryAutoUnlockJewelMachineGun(entity) | tryAutoUnlockGandrMachineGun(entity);
+            if (autoUnlocked) {
+                syncPlayerVariables(entity);
+                return;
+            }
             if (entity instanceof ServerPlayer serverPlayer)
                 PacketDistributor.sendToPlayer(serverPlayer, new ProficiencySyncMessage(this));
+        }
+
+        private boolean tryAutoUnlockJewelMachineGun(Entity entity) {
+            if (this.proficiency_gander < 50.0
+                    || !this.learned_magics.contains("jewel_magic_release")
+                    || this.learned_magics.contains("jewel_machine_gun")) {
+                return false;
+            }
+
+            this.learned_magics.add("jewel_machine_gun");
+            if (entity instanceof net.minecraft.world.entity.player.Player player && !player.level().isClientSide()) {
+                player.displayClientMessage(
+                        Component.translatable(
+                                "message.typemoonworld.magic.learned",
+                                Component.translatable("magic.typemoonworld.jewel_machine_gun.name")
+                        ),
+                        false
+                );
+            }
+            return true;
+        }
+
+        private boolean tryAutoUnlockGandrMachineGun(Entity entity) {
+            if (this.proficiency_gander < 100.0
+                    || !this.learned_magics.contains("gander")
+                    || this.learned_magics.contains("gandr_machine_gun")) {
+                return false;
+            }
+
+            this.learned_magics.add("gandr_machine_gun");
+            if (entity instanceof net.minecraft.world.entity.player.Player player && !player.level().isClientSide()) {
+                player.displayClientMessage(
+                        Component.translatable(
+                                "message.typemoonworld.magic.learned",
+                                Component.translatable("magic.typemoonworld.gandr_machine_gun.name")
+                        ),
+                        false
+                );
+            }
+            return true;
         }
     }
 
@@ -807,7 +897,7 @@ public class TypeMoonWorldModVariables {
         }
     }
 
-    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic_shoot, double jewel_magic_release, double unlimited_blade_works, double sword_barrel_full_open, double gravity_magic, double reinforcement) implements CustomPacketPayload {
+    public record ProficiencySyncMessage(double structural_analysis, double projection, double jewel_magic_shoot, double jewel_magic_release, double unlimited_blade_works, double sword_barrel_full_open, double gravity_magic, double gander, double reinforcement) implements CustomPacketPayload {
         public static final Type<ProficiencySyncMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "proficiency_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
                 (RegistryFriendlyByteBuf buffer, ProficiencySyncMessage message) -> {
@@ -818,9 +908,11 @@ public class TypeMoonWorldModVariables {
                     buffer.writeDouble(message.unlimited_blade_works);
                     buffer.writeDouble(message.sword_barrel_full_open);
                     buffer.writeDouble(message.gravity_magic);
+                    buffer.writeDouble(message.gander);
                     buffer.writeDouble(message.reinforcement);
                 },
                 (RegistryFriendlyByteBuf buffer) -> new ProficiencySyncMessage(
+                        buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readDouble(),
@@ -833,7 +925,7 @@ public class TypeMoonWorldModVariables {
         );
 
         public ProficiencySyncMessage(PlayerVariables vars) {
-            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic_shoot, vars.proficiency_jewel_magic_release, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open, vars.proficiency_gravity_magic, vars.proficiency_reinforcement);
+            this(vars.proficiency_structural_analysis, vars.proficiency_projection, vars.proficiency_jewel_magic_shoot, vars.proficiency_jewel_magic_release, vars.proficiency_unlimited_blade_works, vars.proficiency_sword_barrel_full_open, vars.proficiency_gravity_magic, vars.proficiency_gander, vars.proficiency_reinforcement);
         }
 
         @Override
@@ -852,6 +944,7 @@ public class TypeMoonWorldModVariables {
                     vars.proficiency_unlimited_blade_works = message.unlimited_blade_works;
                     vars.proficiency_sword_barrel_full_open = message.sword_barrel_full_open;
                     vars.proficiency_gravity_magic = message.gravity_magic;
+                    vars.proficiency_gander = message.gander;
                     vars.proficiency_reinforcement = message.reinforcement;
                 });
             }

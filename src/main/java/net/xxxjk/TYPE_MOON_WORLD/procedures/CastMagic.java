@@ -19,6 +19,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
+import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGander;
+import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 
 @SuppressWarnings("null")
@@ -30,6 +32,11 @@ public class CastMagic {
         // Magic casting should only happen on server side
         if (entity.level().isClientSide())
             return;
+
+        if (entity instanceof Player player && player.isSpectator()) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.spectator_disabled"), true);
+            return;
+        }
         
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         if (!vars.is_magic_circuit_open) {
@@ -46,7 +53,16 @@ public class CastMagic {
             return;
         }
 
-        if (vars.magic_cooldown > 0) {
+        boolean machineGunSelected = false;
+        if (!vars.selected_magics.isEmpty()) {
+            int selected = vars.current_magic_index;
+            machineGunSelected = selected >= 0
+                    && selected < vars.selected_magics.size()
+                    && ("jewel_machine_gun".equals(vars.selected_magics.get(selected))
+                    || "gandr_machine_gun".equals(vars.selected_magics.get(selected)));
+        }
+
+        if (vars.magic_cooldown > 0 && !machineGunSelected) {
             // Cooldown active, do nothing
             return;
         }
@@ -174,10 +190,15 @@ public class CastMagic {
                 MagicReinforcementItem.execute(entity);
                 castSuccess = true;
             } else if ("jewel_magic_shoot".equals(magicId)) {
-                net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelShoot.execute(entity);
-                castSuccess = true;
+                if (entity instanceof Player player) {
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
+                }
             } else if ("jewel_magic_release".equals(magicId)) {
-                net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelRelease.execute(entity);
+                if (entity instanceof Player player) {
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
+                }
+            } else if ("jewel_random_shoot".equals(magicId)) {
+                MagicRubyThrow.executeRandom(entity, 0);
                 castSuccess = true;
             } else if ("projection".equals(magicId)) {
                 MagicProjection.execute(entity);
@@ -197,6 +218,12 @@ public class CastMagic {
             } else if ("gravity_magic".equals(magicId)) {
                 MagicGravity.execute(entity);
                 castSuccess = true;
+            } else if ("gander".equals(magicId)) {
+                castSuccess = MagicGander.execute(entity);
+            } else if ("jewel_machine_gun".equals(magicId)) {
+                castSuccess = net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun.execute(entity);
+            } else if ("gandr_machine_gun".equals(magicId)) {
+                castSuccess = MagicGandrMachineGun.execute(entity);
             }
             
             if (castSuccess) {
@@ -204,7 +231,8 @@ public class CastMagic {
                 double cooldown = 10;
                 
                 // Jewel Magic Cooldown Logic (Proficiency dependent)
-                if (vars.selected_magics.get(index).startsWith("jewel_magic_shoot")) {
+                if (vars.selected_magics.get(index).startsWith("jewel_magic_shoot")
+                        || "jewel_random_shoot".equals(vars.selected_magics.get(index))) {
                     // Base 20 ticks (1s)
                     double baseCooldown = 20;
                     cooldown = Math.max(1, baseCooldown - (vars.proficiency_jewel_magic_shoot * 0.2));
@@ -212,6 +240,9 @@ public class CastMagic {
                     // Increase proficiency slightly on use
                     vars.proficiency_jewel_magic_shoot = Math.min(100, vars.proficiency_jewel_magic_shoot + 0.1);
                     vars.syncProficiency(entity);
+                } else if ("jewel_machine_gun".equals(vars.selected_magics.get(index))
+                        || "gandr_machine_gun".equals(vars.selected_magics.get(index))) {
+                    cooldown = 0;
                 } else if (vars.selected_magics.get(index).startsWith("jewel_magic_release")) {
                      // Base 20 ticks (1s)
                     double baseCooldown = 20;

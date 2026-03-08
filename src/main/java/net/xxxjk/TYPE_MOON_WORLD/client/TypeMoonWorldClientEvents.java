@@ -13,6 +13,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -89,12 +91,14 @@ public class TypeMoonWorldClientEvents {
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.RYOUGI_SHIKI.get(), RyougiShikiRenderer::new);
         event.registerEntityRenderer(ModEntities.MERLIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer::new);
+        event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);
         event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer::new);
         
         event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer<>(context, 1.0f, 0.0f, 0.0f));
         event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), context -> new GemProjectileRenderer<>(context, 0.0f, 0.0f, 1.0f));
         event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), context -> new GemProjectileRenderer<>(context, 1.0f, 1.0f, 0.0f));
+        event.registerEntityRenderer(ModEntities.GANDER_PROJECTILE.get(), GanderProjectileRenderer::new);
         event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
     }
 

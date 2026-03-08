@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerLevel;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class UBWBrokenPhantasmExplosion {
 
@@ -38,6 +39,7 @@ public class UBWBrokenPhantasmExplosion {
         for (Entity e : entities) {
             if (e instanceof LivingEntity living) {
                 if (owner != null && e.equals(owner)) continue;
+                if (EntityUtils.isImmunePlayerTarget(e)) continue;
                 double distSqr = e.distanceToSqr(pos);
                 if (distSqr <= damageRadius * damageRadius) {
                     float totalDamage = 10.0f + damagePower * 5.0f;

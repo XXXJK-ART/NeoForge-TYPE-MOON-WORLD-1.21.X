@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModBiomes;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModLootModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -102,6 +103,7 @@ public class TYPE_MOON_WORLD {
         ModBlockEntities.register(modEventBus);
         ModEntities.register(modEventBus);
         ModMobEffects.register(modEventBus);
+        ModSounds.register(modEventBus);
         ModLootModifiers.register(modEventBus);
         ModBiomes.register(modEventBus);
         

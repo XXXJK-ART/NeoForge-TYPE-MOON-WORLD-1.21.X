@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -23,6 +24,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.GemCarvingTableBlockEntity;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,5 +93,27 @@ public class GemCarvingTableBlock extends BaseEntityBlock {
         if (blockEntity instanceof GemCarvingTableBlockEntity carvingTableBlockEntity) {
             serverPlayer.openMenu(carvingTableBlockEntity, pos);
         }
+    }
+
+    @Override
+    protected void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            if (!level.isClientSide) {
+                BlockEntity blockEntity = level.getBlockEntity(pos);
+                if (blockEntity instanceof GemCarvingTableBlockEntity carvingTableBlockEntity) {
+                    ItemStackHandler handler = carvingTableBlockEntity.getItems();
+                    for (int slot = 0; slot < handler.getSlots(); slot++) {
+                        ItemStack stack = handler.getStackInSlot(slot);
+                        if (!stack.isEmpty()) {
+                            Containers.dropItemStack(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, stack.copy());
+                            handler.setStackInSlot(slot, ItemStack.EMPTY);
+                        }
+                    }
+                }
+            }
+            super.onRemove(state, level, pos, newState, isMoving);
+            return;
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 }

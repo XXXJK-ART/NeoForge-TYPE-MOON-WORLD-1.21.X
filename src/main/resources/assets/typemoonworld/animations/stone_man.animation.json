@@ -1,0 +1,268 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "idle": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "head": {
+          "rotation": {
+            "vector": [-2.0, 0.0, 0.0]
+          }
+        },
+        "body": {
+          "rotation": {
+            "vector": [3.0, 0.0, 0.0]
+          },
+          "scale": {
+            "vector": [1.0, 1.0, 1.05]
+          }
+        },
+        "left_arm": {
+          "rotation": {
+            "vector": [-6.0, 0.0, -3.0]
+          }
+        },
+        "right_arm": {
+          "rotation": {
+            "vector": [-6.0, 0.0, 3.0]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "vector": [0.0, -2.0, 0.0]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "vector": [0.0, 2.0, 0.0]
+          }
+        }
+      }
+    },
+    "walk": {
+      "loop": true,
+      "animation_length": 1.2,
+      "bones": {
+        "body": {
+          "rotation": {
+            "vector": [4.0, 0.0, 0.0]
+          }
+        },
+        "left_arm": {
+          "rotation": {
+            "0.0": {
+              "vector": [-20.0, 0.0, -4.0]
+            },
+            "0.6": {
+              "vector": [24.0, 0.0, -2.0]
+            },
+            "1.2": {
+              "vector": [-20.0, 0.0, -4.0]
+            }
+          }
+        },
+        "right_arm": {
+          "rotation": {
+            "0.0": {
+              "vector": [24.0, 0.0, 4.0]
+            },
+            "0.6": {
+              "vector": [-20.0, 0.0, 2.0]
+            },
+            "1.2": {
+              "vector": [24.0, 0.0, 4.0]
+            }
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": {
+              "vector": [15.0, -3.0, 0.0]
+            },
+            "0.6": {
+              "vector": [-15.0, -3.0, 0.0]
+            },
+            "1.2": {
+              "vector": [15.0, -3.0, 0.0]
+            }
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": {
+              "vector": [-15.0, 3.0, 0.0]
+            },
+            "0.6": {
+              "vector": [15.0, 3.0, 0.0]
+            },
+            "1.2": {
+              "vector": [-15.0, 3.0, 0.0]
+            }
+          }
+        }
+      }
+    },
+    "attack_uppercut": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.6,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0.0": {
+              "vector": [4.0, 0.0, 0.0]
+            },
+            "0.25": {
+              "vector": [-10.0, 0.0, 0.0]
+            },
+            "0.6": {
+              "vector": [12.0, 0.0, 0.0]
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 0.0, 0.0]
+            },
+            "0.6": {
+              "vector": [-8.0, 0.0, 0.0]
+            }
+          }
+        },
+        "left_arm": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 0.0, -4.0]
+            },
+            "0.25": {
+              "vector": [18.0, 0.0, -7.0]
+            },
+            "0.6": {
+              "vector": [-12.0, 0.0, -4.0]
+            }
+          }
+        },
+        "right_arm": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 0.0, 4.0]
+            },
+            "0.25": {
+              "vector": [-78.0, 8.0, 14.0]
+            },
+            "0.42": {
+              "vector": [-120.0, 10.0, 18.0]
+            },
+            "0.6": {
+              "vector": [-20.0, 0.0, 7.0]
+            }
+          }
+        }
+      }
+    },
+    "attack_ground_slam": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.9,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0.0": {
+              "vector": [4.0, 0.0, 0.0]
+            },
+            "0.3": {
+              "vector": [-18.0, 0.0, 0.0]
+            },
+            "0.6": {
+              "vector": [22.0, 0.0, 0.0]
+            },
+            "0.9": {
+              "vector": [10.0, 0.0, 0.0]
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 0.0, 0.0]
+            },
+            "0.6": {
+              "vector": [14.0, 0.0, 0.0]
+            },
+            "0.9": {
+              "vector": [6.0, 0.0, 0.0]
+            }
+          }
+        },
+        "left_arm": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 0.0, -4.0]
+            },
+            "0.3": {
+              "vector": [-100.0, 0.0, -10.0]
+            },
+            "0.6": {
+              "vector": [58.0, 0.0, -14.0]
+            },
+            "0.9": {
+              "vector": [24.0, 0.0, -8.0]
+            }
+          }
+        },
+        "right_arm": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 0.0, 4.0]
+            },
+            "0.3": {
+              "vector": [-100.0, 0.0, 10.0]
+            },
+            "0.6": {
+              "vector": [58.0, 0.0, 14.0]
+            },
+            "0.9": {
+              "vector": [24.0, 0.0, 8.0]
+            }
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, -2.0, 0.0]
+            },
+            "0.6": {
+              "vector": [9.0, -2.0, 0.0]
+            },
+            "0.9": {
+              "vector": [2.0, -2.0, 0.0]
+            }
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": {
+              "vector": [0.0, 2.0, 0.0]
+            },
+            "0.6": {
+              "vector": [9.0, 2.0, 0.0]
+            },
+            "0.9": {
+              "vector": [2.0, 2.0, 0.0]
+            }
+          }
+        }
+      }
+    },
+    "new": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "rotation": {
+            "vector": [3.0, 0.0, 0.0]
+          }
+        }
+      }
+    }
+  },
+  "geckolib_format_version": 2
+}
