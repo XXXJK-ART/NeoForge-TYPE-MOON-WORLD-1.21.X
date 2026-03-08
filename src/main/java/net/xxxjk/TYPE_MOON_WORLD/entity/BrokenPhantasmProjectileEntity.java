@@ -50,6 +50,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
     public BrokenPhantasmProjectileEntity(Level level, LivingEntity shooter, ItemStack stack) {
         super(ModEntities.BROKEN_PHANTASM_PROJECTILE.get(), shooter, level);
         this.setItem(stack);
+        this.setPos(EntityUtils.getRightHandCastAnchor(shooter));
     }
 
     public BrokenPhantasmProjectileEntity(Level level, double x, double y, double z) {
@@ -163,6 +164,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
              
              for (Entity e : entities) {
                  if (e instanceof LivingEntity) {
+                     if (EntityUtils.isImmunePlayerTarget(e)) continue;
                      // Damage: Power * 10
                      float totalDamage = getExplosionPower() * 10.0f;
                      e.invulnerableTime = 0;
@@ -228,6 +230,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
             for (Entity e : entities) {
                 if (!damagedEntities.contains(e)) {
                     if (e instanceof LivingEntity) {
+                        if (EntityUtils.isImmunePlayerTarget(e)) continue;
                         double dist = e.distanceToSqr(this.getX(), this.getY(), this.getZ());
                         // Only damage if the "wave" has reached them
                         if (dist <= damageRadius * damageRadius) {

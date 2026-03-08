@@ -12,11 +12,15 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
@@ -27,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.StructureProjectionBuildHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +61,7 @@ public final class GemEngravingService {
     private static final String ADVANCED_JEWEL_MAGIC_ID = "jewel_magic_release";
     private static final int GRAVITY_MIN_DURATION_TICKS = 20 * 30;
     private static final int GRAVITY_MAX_DURATION_TICKS = 20 * 180;
+    private static final int GRAVITY_RESULT_MESSAGE_DELAY_TICKS = 12;
 
     private GemEngravingService() {
     }
@@ -521,10 +527,17 @@ public final class GemEngravingService {
     }
 
     public static boolean castGravitySelfFromGem(ServerPlayer player, InteractionHand hand, int mode) {
+        return castGravityFromGem(player, hand, 0, mode);
+    }
+
+    public static boolean castGravityFromGem(ServerPlayer player, InteractionHand hand, int targetMode, int mode) {
         if (player == null) {
             return false;
         }
         if (mode < MagicGravity.MODE_ULTRA_LIGHT || mode > MagicGravity.MODE_ULTRA_HEAVY) {
+            return false;
+        }
+        if (targetMode != 0 && targetMode != 1) {
             return false;
         }
 
@@ -533,15 +546,41 @@ public final class GemEngravingService {
             return false;
         }
 
+        LivingEntity target = resolveGravityTarget(player, targetMode);
+        if (target == null) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gravity.no_target"), true);
+            return false;
+        }
+
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         int duration = calculateGravityDurationTicks(vars.proficiency_gravity_magic);
+        Component targetComp = target == player
+                ? Component.translatable("gui.typemoonworld.mode.self")
+                : target.getDisplayName();
+        player.displayClientMessage(MagicGravity.getChantComponentForMode(mode), true);
+        Component resultMessage;
 
         if (mode == MagicGravity.MODE_NORMAL) {
-            MagicGravityEffectHandler.clearGravityState(player);
+            MagicGravityEffectHandler.clearGravityState(target);
+            resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
         } else {
             long until = player.level().getGameTime() + duration;
-            MagicGravityEffectHandler.applyGravityState(player, mode, until);
+            MagicGravityEffectHandler.applyGravityState(target, mode, until);
+            String modeKey = switch (mode) {
+                case MagicGravity.MODE_ULTRA_LIGHT -> "gui.typemoonworld.mode.gravity.ultra_light";
+                case MagicGravity.MODE_LIGHT -> "gui.typemoonworld.mode.gravity.light";
+                case MagicGravity.MODE_HEAVY -> "gui.typemoonworld.mode.gravity.heavy";
+                case MagicGravity.MODE_ULTRA_HEAVY -> "gui.typemoonworld.mode.gravity.ultra_heavy";
+                default -> "gui.typemoonworld.mode.gravity.normal";
+            };
+            resultMessage = Component.translatable(
+                    "message.typemoonworld.magic.gravity.applied",
+                    targetComp,
+                    Component.translatable(modeKey),
+                    duration / 20
+            );
         }
+        queueGravityActionbarResult(player, resultMessage);
 
         vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.2);
         vars.syncPlayerVariables(player);
@@ -549,9 +588,31 @@ public final class GemEngravingService {
         return true;
     }
 
+    private static LivingEntity resolveGravityTarget(ServerPlayer player, int targetMode) {
+        if (targetMode == 0) {
+            return player;
+        }
+        HitResult hitResult = EntityUtils.getRayTraceTarget(player, 10.0D);
+        if (hitResult instanceof EntityHitResult entityHitResult) {
+            Entity hit = entityHitResult.getEntity();
+            if (hit instanceof LivingEntity living && living.isAlive()) {
+                return living;
+            }
+        }
+        return null;
+    }
+
     private static int calculateGravityDurationTicks(double proficiency) {
         double clamped = Math.max(0.0, Math.min(100.0, proficiency));
         double ratio = clamped / 100.0;
         return GRAVITY_MIN_DURATION_TICKS + (int) Math.round((GRAVITY_MAX_DURATION_TICKS - GRAVITY_MIN_DURATION_TICKS) * ratio);
+    }
+
+    private static void queueGravityActionbarResult(ServerPlayer player, Component message) {
+        TYPE_MOON_WORLD.queueServerWork(GRAVITY_RESULT_MESSAGE_DELAY_TICKS, () -> {
+            if (!player.isRemoved()) {
+                player.displayClientMessage(message, true);
+            }
+        });
     }
 }

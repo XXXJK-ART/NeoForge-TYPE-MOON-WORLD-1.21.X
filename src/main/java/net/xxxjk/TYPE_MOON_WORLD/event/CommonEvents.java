@@ -37,7 +37,11 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGander;
+import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
@@ -110,6 +114,17 @@ public class CommonEvents {
         if (event.getEntity().level().isClientSide) return;
         
         Player player = event.getEntity();
+        if (player instanceof ServerPlayer serverPlayer) {
+            MagicJewelMachineGun.tick(serverPlayer);
+            MagicGandrMachineGun.tick(serverPlayer);
+            MagicGander.tick(serverPlayer);
+        }
+        if (player.isSpectator()) {
+            if (!player.getActiveEffects().isEmpty()) {
+                player.removeAllEffects();
+            }
+            return;
+        }
 
         ItemStack mainHand = player.getMainHandItem();
         if (mainHand.getItem() instanceof TempleStoneSwordAxeItem) {
@@ -186,6 +201,11 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
         if (event.getEntity().level().isClientSide) return;
+
+        if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
+            event.setCanceled(true);
+            return;
+        }
 
         // Reinforcement (Leg): halve fall damage while agility reinforcement effect is active.
         if (event.getSource().is(DamageTypes.FALL) && event.getEntity() instanceof LivingEntity living) {
@@ -356,6 +376,10 @@ public class CommonEvents {
 
     @SubscribeEvent
     public static void onEffectAdded(MobEffectEvent.Added event) {
+        if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
+            event.getEntity().removeAllEffects();
+            return;
+        }
         if (event.getEffectInstance().getEffect() == ModMobEffects.NINE_LIVES && !event.getEntity().level().isClientSide) {
              if (event.getEntity().level() instanceof ServerLevel serverLevel) {
                  // Enhanced Steam Effect (Duration + Density + Fancy)
@@ -424,7 +448,7 @@ public class CommonEvents {
                     serverLevel.addFreshEntity(slash);
                     double radius = ts * 0.75 + 2.0;
                     net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(center.x - radius, center.y - radius, center.z - radius, center.x + radius, center.y + radius, center.z + radius);
-                    List<LivingEntity> victims = serverLevel.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player);
+                    List<LivingEntity> victims = serverLevel.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e));
                     for (LivingEntity e : victims) {
                         e.invulnerableTime = 0;
                         e.hurt(player.damageSources().mobAttack(player), damageBase * 2.0F);
@@ -457,7 +481,7 @@ public class CommonEvents {
                 serverLevel.addFreshEntity(slash);
                 double radius = ts * 0.75 + 2.0;
                 net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(center.x - radius, center.y - radius, center.z - radius, center.x + radius, center.y + radius, center.z + radius);
-                List<LivingEntity> victims = serverLevel.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && (!(e instanceof net.minecraft.world.entity.player.Player p) || !p.isCreative()));
+                List<LivingEntity> victims = serverLevel.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e));
                 for (LivingEntity e : victims) {
                     e.invulnerableTime = 0;
                     e.hurt(player.damageSources().mobAttack(player), damageBase * 5.0F);

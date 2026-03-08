@@ -130,7 +130,7 @@ public class MuramasaSlashProjectileEntity extends Projectile {
         double height = 2.0 + charge;
         
         AABB box = this.getBoundingBox().inflate(radius, height, radius);
-        List<Entity> entities = this.level().getEntities(this, box, e -> e instanceof LivingEntity && e != this.getOwner());
+        List<Entity> entities = this.level().getEntities(this, box, e -> e instanceof LivingEntity && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e));
         
         for (Entity e : entities) {
             e.invulnerableTime = 0;

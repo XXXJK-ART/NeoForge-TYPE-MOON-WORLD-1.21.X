@@ -13,7 +13,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 
 @SuppressWarnings("null")
 public class ModEntities {
@@ -44,6 +46,10 @@ public class ModEntities {
             ENTITY_TYPES.register("ubw_projectile", () -> EntityType.Builder.<UBWProjectileEntity>of(UBWProjectileEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("ubw_projectile"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<GanderProjectileEntity>> GANDER_PROJECTILE =
+            ENTITY_TYPES.register("gander_projectile", () -> EntityType.Builder.<GanderProjectileEntity>of(GanderProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(8).updateInterval(1).build("gander_projectile"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>> RYOUGI_SHIKI =
             ENTITY_TYPES.register("ryougi_shiki", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity::new, MobCategory.CREATURE)
                     .sized(0.6f, 1.8f).build("ryougi_shiki"));
@@ -51,6 +57,10 @@ public class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<MerlinEntity>> MERLIN =
             ENTITY_TYPES.register("merlin", () -> EntityType.Builder.<MerlinEntity>of(MerlinEntity::new, MobCategory.CREATURE)
                     .sized(0.6f, 1.8f).build("merlin"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StoneManEntity>> STONE_MAN =
+            ENTITY_TYPES.register("stone_man", () -> EntityType.Builder.<StoneManEntity>of(StoneManEntity::new, MobCategory.CREATURE)
+                    .sized(1.0f, 2.5f).build("stone_man"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>> SWORD_BARREL_PROJECTILE =
             ENTITY_TYPES.register("sword_barrel_projectile", () -> EntityType.Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity::new, MobCategory.MISC)

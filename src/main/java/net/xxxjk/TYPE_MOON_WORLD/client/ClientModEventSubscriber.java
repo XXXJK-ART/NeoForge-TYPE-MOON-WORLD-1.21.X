@@ -31,19 +31,24 @@ public class ClientModEventSubscriber {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            CompassItemPropertyFunction baseCompassProperty = new CompassItemPropertyFunction(
-                    (level, stack, entity) -> ManaSurveyCompassItem.getStoredTarget(level, stack)
-            );
-            ItemProperties.register(
-                    ModItems.MANA_SURVEY_COMPASS.get(),
-                    ResourceLocation.withDefaultNamespace("angle"),
-                    (stack, level, livingEntity, seed) -> {
-                        float baseAngle = baseCompassProperty.unclampedCall(stack, level, livingEntity, seed);
-                        float corrected = baseAngle + 0.5F;
-                        return corrected >= 1.0F ? corrected - 1.0F : corrected;
-                    }
-            );
+            registerManaSurveyCompassAngle(ModItems.MANA_SURVEY_COMPASS.get());
+            registerManaSurveyCompassAngle(ModItems.COPPER_MANA_SURVEY_COMPASS.get());
         });
+    }
+
+    private static void registerManaSurveyCompassAngle(net.minecraft.world.item.Item item) {
+        CompassItemPropertyFunction baseCompassProperty = new CompassItemPropertyFunction(
+                (level, stack, entity) -> ManaSurveyCompassItem.getStoredTarget(level, stack)
+        );
+        ItemProperties.register(
+                item,
+                ResourceLocation.withDefaultNamespace("angle"),
+                (stack, level, livingEntity, seed) -> {
+                    float baseAngle = baseCompassProperty.unclampedCall(stack, level, livingEntity, seed);
+                    float corrected = baseAngle + 0.5F;
+                    return corrected >= 1.0F ? corrected - 1.0F : corrected;
+                }
+        );
     }
 
     @SubscribeEvent

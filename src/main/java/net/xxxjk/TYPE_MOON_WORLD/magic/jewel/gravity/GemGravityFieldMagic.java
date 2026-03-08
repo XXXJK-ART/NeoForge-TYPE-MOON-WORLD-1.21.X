@@ -13,6 +13,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -31,6 +35,11 @@ public final class GemGravityFieldMagic {
     private static final String TAG_FIELD_DURATION = "TypeMoonGravityFieldDuration";
     private static final String TAG_HEAVY_DURATION = "TypeMoonGravityHeavyDuration";
     private static final String TAG_PARTICLE_COUNT = "TypeMoonGravityParticleCount";
+    private static final String TAG_APPLY_SLOW = "TypeMoonGravityApplySlow";
+    private static final String TAG_SLOW_DURATION = "TypeMoonGravitySlowDuration";
+    private static final String TAG_SLOW_AMPLIFIER = "TypeMoonGravitySlowAmplifier";
+    private static final String TAG_APPLY_DAMAGE = "TypeMoonGravityApplyDamage";
+    private static final String TAG_DAMAGE_PER_PULSE = "TypeMoonGravityDamagePerPulse";
 
     private static final int PULSE_INTERVAL_TICKS = 10;
 
@@ -54,6 +63,80 @@ public final class GemGravityFieldMagic {
         int fieldDuration = 160 + (int) Math.round(proficiency * 2.5D);
         int heavyDuration = 120 + (int) Math.round(proficiency * 3.0D);
         int particleCount = Math.max(72, 72 + (int) Math.round(30 * qualityMultiplier));
+        float damagePerPulse = (float) (0.25D + 0.35D * Math.max(0.0D, Math.min(1.0D, proficiency / 100.0D)));
+
+        return throwConfiguredGravityFieldProjectile(
+                player,
+                sourceGem,
+                radius,
+                fieldDuration,
+                heavyDuration,
+                particleCount,
+                false,
+                0,
+                0,
+                true,
+                damagePerPulse,
+                5
+        );
+    }
+
+    public static boolean throwBlackShardGravityProjectile(ServerPlayer player, ItemStack sourceGem) {
+        if (player == null || sourceGem.isEmpty()) {
+            return false;
+        }
+
+        float qualityMultiplier = 1.0f;
+        double manaAmount = 100.0D;
+        if (sourceGem.getItem() instanceof FullManaCarvedGemItem fullGem) {
+            qualityMultiplier = fullGem.getQuality().getEffectMultiplier();
+            manaAmount = Math.max(1.0D, fullGem.getManaAmount(sourceGem));
+        }
+
+        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        double proficiency = Math.max(vars.proficiency_gravity_magic, vars.proficiency_jewel_magic_release);
+        double manaNormalized = Math.max(0.0D, Math.min(1.0D, (manaAmount - 50.0D) / 150.0D));
+
+        float radius = (float) (1.9D + 1.3D * qualityMultiplier + 0.9D * manaNormalized); // smaller than engraved gravity field
+        int fieldDuration = 90 + (int) Math.round(proficiency * 1.4D + manaNormalized * 30.0D);
+        int heavyDuration = 100 + (int) Math.round(proficiency * 1.6D + manaNormalized * 40.0D);
+        int particleCount = Math.max(56, 56 + (int) Math.round(24 * qualityMultiplier + manaNormalized * 18.0D));
+        int slowDuration = Math.max(80, heavyDuration / 2);
+        int slowAmplifier = manaNormalized >= 0.66D ? 3 : 2;
+
+        return throwConfiguredGravityFieldProjectile(
+                player,
+                sourceGem,
+                radius,
+                fieldDuration,
+                heavyDuration,
+                particleCount,
+                true,
+                slowDuration,
+                slowAmplifier,
+                false,
+                0.0F,
+                6
+        );
+    }
+
+    private static boolean throwConfiguredGravityFieldProjectile(
+            ServerPlayer player,
+            ItemStack sourceGem,
+            float radius,
+            int fieldDuration,
+            int heavyDuration,
+            int particleCount,
+            boolean applySlow,
+            int slowDuration,
+            int slowAmplifier,
+            boolean applyDamage,
+            float damagePerPulse,
+            int projectileGemType
+    ) {
+        if (player == null || sourceGem.isEmpty()) {
+            return false;
+        }
 
         ItemStack projectileStack = sourceGem.copy();
         projectileStack.setCount(1);
@@ -64,10 +147,24 @@ public final class GemGravityFieldMagic {
         tag.putInt(TAG_FIELD_DURATION, fieldDuration);
         tag.putInt(TAG_HEAVY_DURATION, heavyDuration);
         tag.putInt(TAG_PARTICLE_COUNT, particleCount);
+        tag.putBoolean(TAG_APPLY_SLOW, applySlow);
+        if (applySlow) {
+            tag.putInt(TAG_SLOW_DURATION, Math.max(40, slowDuration));
+            tag.putInt(TAG_SLOW_AMPLIFIER, Math.max(0, slowAmplifier));
+        } else {
+            tag.remove(TAG_SLOW_DURATION);
+            tag.remove(TAG_SLOW_AMPLIFIER);
+        }
+        tag.putBoolean(TAG_APPLY_DAMAGE, applyDamage);
+        if (applyDamage) {
+            tag.putFloat(TAG_DAMAGE_PER_PULSE, Math.max(0.0F, damagePerPulse));
+        } else {
+            tag.remove(TAG_DAMAGE_PER_PULSE);
+        }
         projectileStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
 
         RubyProjectileEntity projectile = new RubyProjectileEntity(player.level(), player);
-        projectile.setGemType(5); // White visual trail by default.
+        projectile.setGemType(projectileGemType);
         projectile.setItem(projectileStack);
         projectile.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, MagicConstants.RUBY_THROW_VELOCITY, 0.6F);
         player.level().addFreshEntity(projectile);
@@ -92,9 +189,31 @@ public final class GemGravityFieldMagic {
         int fieldDuration = tag.contains(TAG_FIELD_DURATION) ? tag.getInt(TAG_FIELD_DURATION) : 220;
         int heavyDuration = tag.contains(TAG_HEAVY_DURATION) ? tag.getInt(TAG_HEAVY_DURATION) : 180;
         int particleCount = tag.contains(TAG_PARTICLE_COUNT) ? tag.getInt(TAG_PARTICLE_COUNT) : 90;
+        boolean applySlow = tag.contains(TAG_APPLY_SLOW) && tag.getBoolean(TAG_APPLY_SLOW);
+        int slowDuration = tag.contains(TAG_SLOW_DURATION) ? tag.getInt(TAG_SLOW_DURATION) : Math.max(100, heavyDuration / 2);
+        int slowAmplifier = tag.contains(TAG_SLOW_AMPLIFIER) ? tag.getInt(TAG_SLOW_AMPLIFIER) : 4;
+        boolean applyDamage = tag.contains(TAG_APPLY_DAMAGE) && tag.getBoolean(TAG_APPLY_DAMAGE);
+        float damagePerPulse = tag.contains(TAG_DAMAGE_PER_PULSE) ? tag.getFloat(TAG_DAMAGE_PER_PULSE) : 0.0F;
         Vec3 center = projectile.position();
 
-        spawnGravityField(serverLevel, center, radius, fieldDuration, heavyDuration, particleCount);
+        // Engraved gravity field includes one-time terrain press.
+        if (applyDamage) {
+            compressGroundOnce(serverLevel, center, radius);
+        }
+
+        spawnGravityField(
+                serverLevel,
+                center,
+                radius,
+                fieldDuration,
+                heavyDuration,
+                particleCount,
+                applySlow,
+                slowDuration,
+                slowAmplifier,
+                applyDamage,
+                damagePerPulse
+        );
         serverLevel.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8D, center.z, particleCount * 3, radius * 0.55D, 0.42D, radius * 0.55D, 0.004D);
         serverLevel.sendParticles(ParticleTypes.PORTAL, center.x, center.y + 0.25D, center.z, particleCount * 2, radius * 0.45D, 0.2D, radius * 0.45D, 0.01D);
         serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.45D, center.z, particleCount, radius * 0.35D, 0.25D, radius * 0.35D, 0.0D);
@@ -102,7 +221,60 @@ public final class GemGravityFieldMagic {
         return true;
     }
 
-    private static void spawnGravityField(ServerLevel level, Vec3 center, float radius, int fieldDuration, int heavyDuration, int particleCount) {
+    private static void compressGroundOnce(ServerLevel level, Vec3 center, float radius) {
+        int minX = (int) Math.floor(center.x - radius);
+        int maxX = (int) Math.ceil(center.x + radius);
+        int minZ = (int) Math.floor(center.z - radius);
+        int maxZ = (int) Math.ceil(center.z + radius);
+        double radiusSq = radius * radius;
+        int minY = level.getMinBuildHeight();
+
+        for (int x = minX; x <= maxX; x++) {
+            double dx = x + 0.5D - center.x;
+            for (int z = minZ; z <= maxZ; z++) {
+                double dz = z + 0.5D - center.z;
+                if (dx * dx + dz * dz > radiusSq) {
+                    continue;
+                }
+
+                int topY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                if (topY <= minY + 1) {
+                    continue;
+                }
+
+                BlockPos topPos = new BlockPos(x, topY, z);
+                BlockState topState = level.getBlockState(topPos);
+                if (topState.isAir() || !topState.blocksMotion() || !topState.getFluidState().isEmpty()) {
+                    continue;
+                }
+                if (topState.hasBlockEntity() || topState.getDestroySpeed(level, topPos) < 0.0F) {
+                    continue;
+                }
+
+                BlockPos belowPos = topPos.below();
+                BlockState belowState = level.getBlockState(belowPos);
+                if (belowState.isAir() || !belowState.blocksMotion() || !belowState.getFluidState().isEmpty()) {
+                    continue;
+                }
+
+                level.setBlock(topPos, Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+    }
+
+    private static void spawnGravityField(
+            ServerLevel level,
+            Vec3 center,
+            float radius,
+            int fieldDuration,
+            int heavyDuration,
+            int particleCount,
+            boolean applySlow,
+            int slowDuration,
+            int slowAmplifier,
+            boolean applyDamage,
+            float damagePerPulse
+    ) {
         int pulses = Math.max(1, fieldDuration / PULSE_INTERVAL_TICKS);
         for (int i = 0; i <= pulses; i++) {
             final int pulseIndex = i;
@@ -141,7 +313,21 @@ public final class GemGravityFieldMagic {
                         continue;
                     }
                     MagicGravityEffectHandler.applyGravityState(target, MagicGravity.MODE_ULTRA_HEAVY, until);
-                    target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, Math.max(100, heavyDuration / 2), 4, false, false, true));
+                    if (applySlow) {
+                        target.addEffect(
+                                new MobEffectInstance(
+                                        MobEffects.MOVEMENT_SLOWDOWN,
+                                        Math.max(40, slowDuration),
+                                        Math.max(0, slowAmplifier),
+                                        false,
+                                        false,
+                                        true
+                                )
+                        );
+                    }
+                    if (applyDamage && damagePerPulse > 0.0F) {
+                        target.hurt(level.damageSources().magic(), damagePerPulse);
+                    }
                 }
             });
         }

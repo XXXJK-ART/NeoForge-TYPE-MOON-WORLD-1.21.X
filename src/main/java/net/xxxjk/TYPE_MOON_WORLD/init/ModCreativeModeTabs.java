@@ -29,10 +29,16 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL_BROKEN);
+                        output.accept(ModItems.MAGIC_SCROLL_MACHINE_GUN);
+                        output.accept(ModItems.MAGIC_SCROLL_MACHINE_GUN_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION);
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY_BROKEN);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDER);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDER_BROKEN);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDR_MACHINE_GUN);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDR_MACHINE_GUN_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
@@ -54,6 +60,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MANA_SURVEY_BASE);
                         output.accept(ModItems.MANA_SURVEY_POINTER);
                         output.accept(ModItems.MANA_SURVEY_COMPASS);
+                        output.accept(ModItems.COPPER_MANA_SURVEY_BASE);
+                        output.accept(ModItems.COPPER_MANA_SURVEY_POINTER);
+                        output.accept(ModItems.COPPER_MANA_SURVEY_COMPASS);
                         output.accept(ModItems.LEYLINE_SURVEY_MAP);
 
                         output.accept(ModItems.RAW_EMERALD);
@@ -157,6 +166,7 @@ public class ModCreativeModeTabs {
                         
                         output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
                         output.accept(ModItems.MERLIN_SPAWN_EGG);
+                        output.accept(ModItems.STONE_MAN_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

@@ -37,6 +37,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.minecraft.nbt.CompoundTag;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -1715,6 +1716,9 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                         mob.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, dur, 0));
                     }
                 } else if (entity instanceof Player player) {
+                    if (player.isSpectator()) {
+                        continue;
+                    }
                     player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, dur, 0, true, true));
                     player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, dur, 0, true, true));
                 }
@@ -1846,7 +1850,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                 cx + radius + extra, center.getY() + 8.0D, cz + radius + extra
         );
 
-        java.util.List<Player> players = serverLevel.getEntitiesOfClass(Player.class, box, Player::isAlive);
+        java.util.List<Player> players = serverLevel.getEntitiesOfClass(Player.class, box, p -> p.isAlive() && !p.isSpectator());
         java.util.Set<java.util.UUID> present = new java.util.HashSet<>();
 
         for (Player player : players) {
@@ -1955,6 +1959,9 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
         List<LivingEntity> targets = serverLevel.getEntitiesOfClass(LivingEntity.class, slashBox,
                 e -> e != this && e.isAlive());
         for (LivingEntity target : targets) {
+            if (EntityUtils.isSpectatorPlayer(target)) {
+                continue;
+            }
             if (target instanceof MerlinEntity) {
                 continue;
             }

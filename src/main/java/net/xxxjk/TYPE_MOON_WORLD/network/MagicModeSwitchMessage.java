@@ -36,7 +36,9 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 1: Cycle Mode (Default/Legacy) - value is direction (1 or -1)
                 // 2: Set Reinforcement Target - value is target index
                 // 3: Set Reinforcement Mode - value is mode index
-                // 6: Toggle Gravity Target (Self/Other)
+                // 4: Set Reinforcement Level - value is level
+                // 6: Set Gravity Target - value is target index (0 self / 1 other; <0 toggles for compatibility)
+                // 7: Set Gravity Mode - value is -2..2 (ultra light -> ultra heavy)
                 
                 if (message.actionType == 2) {
                     vars.reinforcement_target = message.value;
@@ -97,13 +99,46 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         return;
                     }
 
-                    vars.gravity_magic_target = vars.gravity_magic_target == 0 ? 1 : 0;
+                    if (message.value < 0) {
+                        vars.gravity_magic_target = vars.gravity_magic_target == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        vars.gravity_magic_target = message.value;
+                    } else {
+                        return;
+                    }
                     Component targetComp = Component.translatable(
                             vars.gravity_magic_target == 0
                                     ? "gui.typemoonworld.mode.self"
                                     : "gui.typemoonworld.mode.other"
                     );
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gravity.target_changed", targetComp), true);
+                    vars.syncPlayerVariables(player);
+                    return;
+                } else if (message.actionType == 7) {
+                    if (vars.selected_magics.isEmpty() || vars.current_magic_index < 0 || vars.current_magic_index >= vars.selected_magics.size()) {
+                        return;
+                    }
+                    String currentMagic = vars.selected_magics.get(vars.current_magic_index);
+                    if (!"gravity_magic".equals(currentMagic)) {
+                        return;
+                    }
+
+                    if (message.value < -2 || message.value > 2) {
+                        return;
+                    }
+                    vars.gravity_magic_mode = message.value;
+
+                    String modeKey = switch (vars.gravity_magic_mode) {
+                        case -2 -> "gui.typemoonworld.mode.gravity.ultra_light";
+                        case -1 -> "gui.typemoonworld.mode.gravity.light";
+                        case 1 -> "gui.typemoonworld.mode.gravity.heavy";
+                        case 2 -> "gui.typemoonworld.mode.gravity.ultra_heavy";
+                        default -> "gui.typemoonworld.mode.gravity.normal";
+                    };
+                    player.displayClientMessage(
+                            Component.translatable("message.typemoonworld.magic.gravity.mode_changed", Component.translatable(modeKey)),
+                            true
+                    );
                     vars.syncPlayerVariables(player);
                     return;
                 }
@@ -158,6 +193,36 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
                             vars.syncPlayerVariables(player);
                         }
+                    } else if ("gandr_machine_gun".equals(currentMagic)) {
+                        int maxModes = 2;
+                        if (message.actionType == 0) {
+                            if (message.value < 0 || message.value >= maxModes) {
+                                return;
+                            }
+                            vars.gandr_machine_gun_mode = message.value;
+                        } else if (message.actionType == 1) {
+                            if (message.value > 0) {
+                                vars.gandr_machine_gun_mode = (vars.gandr_machine_gun_mode + 1) % maxModes;
+                            } else if (message.value < 0) {
+                                vars.gandr_machine_gun_mode = (vars.gandr_machine_gun_mode - 1 + maxModes) % maxModes;
+                            } else {
+                                return;
+                            }
+                        } else {
+                            return;
+                        }
+
+                        String modeKey = vars.gandr_machine_gun_mode == 1
+                                ? "gui.typemoonworld.mode.gandr_barrage"
+                                : "gui.typemoonworld.mode.gandr_rapid";
+                        player.displayClientMessage(
+                                Component.translatable(
+                                        "message.typemoonworld.magic.gandr_machine_gun.mode_change",
+                                        Component.translatable(modeKey)
+                                ),
+                                true
+                        );
+                        vars.syncPlayerVariables(player);
                     } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
                         // Switch between 6 modes (0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random)
                         int maxModes = 6;
@@ -235,13 +300,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 default: return false;
             }
         } else if ("jewel_magic_release".equals(magicType)) {
-            switch (mode) {
-                case 0: return vars.learned_magics.contains("sapphire_winter_frost");
-                case 1: return vars.learned_magics.contains("emerald_winter_river");
-                case 2: return vars.learned_magics.contains("topaz_reinforcement");
-                case 3: return vars.learned_magics.contains("cyan_wind");
-                default: return false;
-            }
+            return vars.learned_magics.contains("jewel_magic_release");
         }
         return true;
     }

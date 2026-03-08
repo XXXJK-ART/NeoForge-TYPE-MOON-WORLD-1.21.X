@@ -126,6 +126,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         // Jewel Magics
         allMagics.add(new MagicEntry("jewel_magic_shoot", MagicConstants.KEY_MAGIC_JEWEL_SHOOT_SHORT, "jewel", 0xFF00FFFF));
         allMagics.add(new MagicEntry("jewel_magic_release", MagicConstants.KEY_MAGIC_JEWEL_RELEASE_SHORT, "jewel", 0xFFFF4000));
+        allMagics.add(new MagicEntry("jewel_random_shoot", MagicConstants.KEY_MAGIC_JEWEL_RANDOM_SHOOT_SHORT, "jewel", 0xFFD6D6D6));
+        allMagics.add(new MagicEntry("jewel_machine_gun", MagicConstants.KEY_MAGIC_JEWEL_MACHINE_GUN_SHORT, "jewel,nordic", 0xFF00FFFF));
         
         allMagics.add(new MagicEntry("projection", MagicConstants.KEY_MAGIC_PROJECTION_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
         allMagics.add(new MagicEntry("structural_analysis", MagicConstants.KEY_MAGIC_STRUCTURAL_ANALYSIS_SHORT, "unlimited_blade_works,basic", 0xFF00FFFF));
@@ -137,6 +139,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         allMagics.add(new MagicEntry("reinforcement", MagicConstants.KEY_MAGIC_REINFORCEMENT_SHORT, "basic,reinforcement", 0xFF00AA00));
         // Other Magic
         allMagics.add(new MagicEntry("gravity_magic", MagicConstants.KEY_MAGIC_GRAVITY_SHORT, "other", 0xFF8A7CFF));
+        allMagics.add(new MagicEntry("gander", MagicConstants.KEY_MAGIC_GANDER_SHORT, "other,nordic", 0xFFB03030));
+        allMagics.add(new MagicEntry("gandr_machine_gun", MagicConstants.KEY_MAGIC_GANDR_MACHINE_GUN_SHORT, "other,nordic", 0xFFC05050));
         
         updateFilteredMagics();
         
@@ -172,7 +176,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             } else if ("jewel_magic_shoot".equals(entry.id)) {
                 learned = vars.learned_magics.contains("jewel_magic_shoot");
             } else if ("jewel_magic_release".equals(entry.id)) {
-                learned = vars.learned_magics.contains("jewel_magic_release");
+                learned = vars.learned_magics.contains("ruby_flame_sword") ||
+                          vars.learned_magics.contains("sapphire_winter_frost") ||
+                          vars.learned_magics.contains("emerald_winter_river") ||
+                          vars.learned_magics.contains("topaz_reinforcement") ||
+                          vars.learned_magics.contains("cyan_wind");
             }
             
             return matchCategory && matchSearch && learned;
@@ -193,6 +201,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         if ("basic".equals(category)) return "gui.typemoonworld.category.basic";
         if ("unlimited_blade_works".equals(category)) return "gui.typemoonworld.category.ubw";
         if ("other".equals(category)) return "gui.typemoonworld.category.other";
+        if ("nordic".equals(category)) return "gui.typemoonworld.category.nordic";
         return "gui.typemoonworld.category.all";
     }
 
@@ -202,7 +211,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                 "gui.typemoonworld.category.jewel",
                 "gui.typemoonworld.category.basic",
                 "gui.typemoonworld.category.ubw",
-                "gui.typemoonworld.category.other"
+                "gui.typemoonworld.category.other",
+                "gui.typemoonworld.category.nordic"
         };
         int maxCategoryWidth = 0;
         for (String key : categoryKeys) {
@@ -314,7 +324,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (index >= filteredMagics.size()) break;
             
             MagicEntry entry = filteredMagics.get(index);
-            boolean isSelected = vars.selected_magics.contains(entry.id);
+            boolean isKnowledgeOnly = isKnowledgeOnlyMagic(entry.id);
+            boolean isSelected = !isKnowledgeOnly && vars.selected_magics.contains(entry.id);
             if (!isSelected && "reinforcement".equals(entry.id)) {
                 isSelected = vars.selected_magics.contains("reinforcement_self") || 
                              vars.selected_magics.contains("reinforcement_other") || 
@@ -331,9 +342,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             boolean hovered = mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH;
             
             // Colors
-            int borderColor = isSelected ? 0xFF00FF00 : (hovered ? entry.color : 0xFF00AAAA); 
-            int fillColor = isSelected ? 0x80005500 : (hovered ? (entry.color & 0x00FFFFFF) | 0x80000000 : 0x80000000);
-            int textColor = isSelected ? 0xFFFFFFFF : (hovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+            int borderColor = isKnowledgeOnly ? 0xFF666666 : (isSelected ? 0xFF00FF00 : (hovered ? entry.color : 0xFF00AAAA));
+            int fillColor = isKnowledgeOnly ? 0x60404040 : (isSelected ? 0x80005500 : (hovered ? (entry.color & 0x00FFFFFF) | 0x80000000 : 0x80000000));
+            int textColor = isKnowledgeOnly ? 0xFFBBBBBB : (isSelected ? 0xFFFFFFFF : (hovered ? 0xFFFFFFFF : 0xFFAAAAAA));
             
             guiGraphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, fillColor);
             guiGraphics.renderOutline(btnX, btnY, btnW, btnH, borderColor);
@@ -507,44 +518,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                 }
                 lines.add(Component.empty());
              }
-
-             int maxModes = entry.id.equals("jewel_magic_shoot") ? 6 : 4;
-             
-             for (int i = 0; i < maxModes; i++) {
-                 String modeName = "";
-                 String subSkillId = "";
-                 int color = 0xFFFFFFFF;
-                 
-                 if (entry.id.equals("jewel_magic_shoot")) {
-                     switch(i) {
-                         case 0: modeName = "Ruby"; subSkillId = "ruby_throw"; color = 0xFFFF5555; break;
-                         case 1: modeName = "Sapphire"; subSkillId = "sapphire_throw"; color = 0xFF5555FF; break;
-                         case 2: modeName = "Emerald"; subSkillId = "emerald_use"; color = 0xFF55FF55; break;
-                         case 3: modeName = "Topaz"; subSkillId = "topaz_throw"; color = 0xFFFFFF55; break;
-                         case 4: modeName = "Cyan"; subSkillId = "cyan_throw"; color = 0xFF00FFFF; break;
-                         case 5: modeName = "Random"; subSkillId = "jewel_magic_shoot"; color = 0xFFFFFFFF; break;
-                     }
-                 } else { // release
-                     switch(i) {
-                         case 0: modeName = "Sapphire"; subSkillId = "sapphire_winter_frost"; color = 0xFF5555FF; break;
-                         case 1: modeName = "Emerald"; subSkillId = "emerald_winter_river"; color = 0xFF55FF55; break;
-                         case 2: modeName = "Topaz"; subSkillId = "topaz_reinforcement"; color = 0xFFFFFF55; break;
-                         case 3: modeName = "Cyan"; subSkillId = "cyan_wind"; color = 0xFF00FFFF; break;
-                     }
-                 }
-                 
-                 if (vars.learned_magics.contains(subSkillId)) {
-                     String specificKey = "magic.typemoonworld." + entry.id + "." + modeName.toLowerCase() + ".desc";
-                     if (net.minecraft.client.resources.language.I18n.exists(specificKey)) {
-                         lines.add(Component.literal("- " + modeName + " -").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(color)));
-                         String translated = net.minecraft.client.resources.language.I18n.get(specificKey);
-                         for (String line : translated.split("\n")) {
-                             lines.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.GRAY));
-                         }
-                         lines.add(Component.empty());
-                     }
-                 }
-             }
+             lines.add(Component.translatable("gui.typemoonworld.magic.knowledge_only.note").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
         } else {
             String baseDescKey = descKey;
             if (vars.player_magic_attributes_sword) {
@@ -601,8 +575,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
         } else if ("jewel_magic_release".equals(entry.id)) {
             proficiency = vars.proficiency_jewel_magic_release;
             showProficiency = true;
+        } else if ("jewel_random_shoot".equals(entry.id)) {
+            proficiency = vars.proficiency_jewel_magic_shoot;
+            showProficiency = true;
         } else if ("gravity_magic".equals(entry.id)) {
             proficiency = vars.proficiency_gravity_magic;
+            showProficiency = true;
+        } else if ("gander".equals(entry.id)) {
+            proficiency = vars.proficiency_gander;
+            showProficiency = true;
+        } else if ("gandr_machine_gun".equals(entry.id)) {
+            proficiency = vars.proficiency_gander;
             showProficiency = true;
         } else if ("reinforcement".equals(entry.id) || "reinforcement_self".equals(entry.id) || "reinforcement_other".equals(entry.id) || "reinforcement_item".equals(entry.id)) {
             proficiency = vars.proficiency_reinforcement;
@@ -767,11 +750,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
     }
 
     private String nextCategoryRaw(String current) {
-        // Order: all -> jewel -> basic -> unlimited_blade_works -> other -> all
+        // Order: all -> jewel -> basic -> unlimited_blade_works -> other -> nordic -> all
         if ("all".equals(current)) return "jewel";
         if ("jewel".equals(current)) return "basic";
         if ("basic".equals(current)) return "unlimited_blade_works";
         if ("unlimited_blade_works".equals(current)) return "other";
+        if ("other".equals(current)) return "nordic";
         return "all";
     }
 
@@ -780,7 +764,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
         // If next is not unlocked (and not "all"), skip it
         int safety = 0;
-        while (!"all".equals(next) && !isCategoryUnlocked(next, vars) && safety < 6) {
+        while (!"all".equals(next) && !isCategoryUnlocked(next, vars) && safety < 8) {
             next = nextCategoryRaw(next);
             safety++;
         }
@@ -894,6 +878,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                 if (mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH) {
                     MagicEntry entry = filteredMagics.get(index);
                     TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+
+                    if (isKnowledgeOnlyMagic(entry.id)) {
+                        entity.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
+                        Minecraft.getInstance().getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 0.8F));
+                        return true;
+                    }
                     
                     String magicToToggle = entry.id;
                     
@@ -983,6 +973,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
     private void updateButtonLabels() {
         // No longer used, handled in render
+    }
+
+    private static boolean isKnowledgeOnlyMagic(String magicId) {
+        return "jewel_magic_shoot".equals(magicId) || "jewel_magic_release".equals(magicId);
     }
 
     private void renderEntityInInventoryFollowsAngle(GuiGraphics guiGraphics, int x, int y,

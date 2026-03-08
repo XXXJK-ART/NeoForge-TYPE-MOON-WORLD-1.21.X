@@ -1,0 +1,25 @@
+{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "misc",
+    "group":  "typemoonworld:gem_carving_table",
+    "key":  {
+                "W":  {
+                          "item":  "minecraft:orange_wool"
+                      },
+                "P":  {
+                          "item":  "minecraft:jungle_planks"
+                      },
+                "T":  {
+                          "item":  "minecraft:crafting_table"
+                      }
+            },
+    "pattern":  [
+                    "WWW",
+                    "PTP",
+                    "PPP"
+                ],
+    "result":  {
+                   "count":  1,
+                   "id":  "typemoonworld:gem_carving_table"
+               }
+}

@@ -1,11 +1,13 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.other;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -22,6 +24,7 @@ public class MagicGravity {
     private static final int MAX_DURATION_TICKS = 20 * 180;  // 180s (3min)
     private static final double CAST_MANA_COST = 20.0D;
     private static final double TARGET_RANGE = 10.0D;
+    private static final int RESULT_MESSAGE_DELAY_TICKS = 12;
 
     public static void execute(Entity entity) {
         if (!(entity instanceof ServerPlayer player)) return;
@@ -39,21 +42,16 @@ public class MagicGravity {
             return;
         }
 
-        int currentMode = MagicGravityEffectHandler.getCurrentMode(target);
-        // Reversed tier direction:
-        // C (up) -> lighter tier, Shift + C (down) -> heavier tier.
-        int step = player.isShiftKeyDown() ? 1 : -1;
-        int nextMode = Math.max(MODE_ULTRA_LIGHT, Math.min(MODE_ULTRA_HEAVY, currentMode + step));
+        int nextMode = Math.max(MODE_ULTRA_LIGHT, Math.min(MODE_ULTRA_HEAVY, vars.gravity_magic_mode));
         Component targetComp = target == player
                 ? Component.translatable("gui.typemoonworld.mode.self")
                 : target.getDisplayName();
+        player.displayClientMessage(getChantComponentForMode(nextMode), true);
+        Component resultMessage;
 
         if (nextMode == MODE_NORMAL) {
             MagicGravityEffectHandler.clearGravityState(target);
-            player.displayClientMessage(
-                    Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp),
-                    true
-            );
+            resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
         } else {
             int duration = getDurationTicks(vars.proficiency_gravity_magic);
             MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration);
@@ -66,11 +64,14 @@ public class MagicGravity {
                 default -> "gui.typemoonworld.mode.gravity.normal";
             };
             int durationSec = duration / 20;
-            player.displayClientMessage(
-                    Component.translatable("message.typemoonworld.magic.gravity.applied", targetComp, Component.translatable(modeKey), durationSec),
-                    true
+            resultMessage = Component.translatable(
+                    "message.typemoonworld.magic.gravity.applied",
+                    targetComp,
+                    Component.translatable(modeKey),
+                    durationSec
             );
         }
+        queueActionbarResult(player, resultMessage);
 
         vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.4);
         vars.syncPlayerVariables(player);
@@ -95,5 +96,32 @@ public class MagicGravity {
         double clamped = Math.max(0.0, Math.min(100.0, proficiency));
         double ratio = clamped / 100.0;
         return MIN_DURATION_TICKS + (int) Math.round((MAX_DURATION_TICKS - MIN_DURATION_TICKS) * ratio);
+    }
+
+    public static String getChantForMode(int mode) {
+        if (mode == MODE_NORMAL) {
+            return "vos Gott es Atlas.";
+        }
+        return "Es ist gros, es ist klein.";
+    }
+
+    public static Component getChantComponentForMode(int mode) {
+        ChatFormatting chantColor;
+        if (mode == MODE_NORMAL) {
+            chantColor = ChatFormatting.GOLD;
+        } else if (mode < MODE_NORMAL) {
+            chantColor = ChatFormatting.AQUA;
+        } else {
+            chantColor = ChatFormatting.RED;
+        }
+        return Component.literal(getChantForMode(mode)).withStyle(chantColor, ChatFormatting.ITALIC);
+    }
+
+    private static void queueActionbarResult(ServerPlayer player, Component message) {
+        TYPE_MOON_WORLD.queueServerWork(RESULT_MESSAGE_DELAY_TICKS, () -> {
+            if (!player.isRemoved()) {
+                player.displayClientMessage(message, true);
+            }
+        });
     }
 }

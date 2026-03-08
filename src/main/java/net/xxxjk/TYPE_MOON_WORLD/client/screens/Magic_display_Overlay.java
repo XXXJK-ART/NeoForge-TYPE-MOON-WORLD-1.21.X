@@ -113,10 +113,34 @@ public class Magic_display_Overlay {
                         String targetKey = vars.gravity_magic_target == 0
                                 ? "gui.typemoonworld.overlay.gravity.target.self.short"
                                 : "gui.typemoonworld.overlay.gravity.target.other.short";
+                        String modeKey = switch (vars.gravity_magic_mode) {
+                            case -2 -> "gui.typemoonworld.overlay.gravity.mode.ultra_light.short";
+                            case -1 -> "gui.typemoonworld.overlay.gravity.mode.light.short";
+                            case 1 -> "gui.typemoonworld.overlay.gravity.mode.heavy.short";
+                            case 2 -> "gui.typemoonworld.overlay.gravity.mode.ultra_heavy.short";
+                            default -> "gui.typemoonworld.overlay.gravity.mode.normal.short";
+                        };
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.gravity.format",
                                 Component.translatable(translationKey),
-                                Component.translatable(targetKey)
+                                Component.translatable(targetKey),
+                                Component.translatable(modeKey)
+                        );
+                    } else if ("gander".equals(magicId)) {
+                        magicColor = 0xFFB03030;
+                    } else if ("jewel_random_shoot".equals(magicId)) {
+                        magicColor = 0xFFEAEAEA;
+                    } else if ("jewel_machine_gun".equals(magicId)) {
+                        magicColor = 0xFFFF00FF;
+                    } else if ("gandr_machine_gun".equals(magicId)) {
+                        magicColor = 0xFFC05050;
+                        String modeKey = vars.gandr_machine_gun_mode == 1
+                                ? "gui.typemoonworld.overlay.gandr.mode.barrage.short"
+                                : "gui.typemoonworld.overlay.gandr.mode.rapid.short";
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.gandr.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(modeKey)
                         );
                     } else if ("reinforcement".equals(magicId)
                             || "reinforcement_self".equals(magicId)

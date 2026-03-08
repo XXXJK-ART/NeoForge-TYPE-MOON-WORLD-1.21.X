@@ -12,6 +12,7 @@ import java.util.Set;
 public record SelectMagicMessage(String magicId, boolean add) implements CustomPacketPayload {
     private static final int MAX_MAGIC_ID_LENGTH = 64;
     private static final Set<String> ALLOWED_MAGIC_IDS = MagicClassification.getAllMagicIds();
+    private static final Set<String> KNOWLEDGE_ONLY_MAGIC_IDS = Set.of("jewel_magic_shoot", "jewel_magic_release");
 
     public static final Type<SelectMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "select_magic"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SelectMagicMessage> STREAM_CODEC = StreamCodec.of(
@@ -34,6 +35,11 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
 
                 if (!isValidMagicId(message.magicId)) {
+                    return;
+                }
+
+                if (message.add && KNOWLEDGE_ONLY_MAGIC_IDS.contains(message.magicId)) {
+                    player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
                     return;
                 }
 

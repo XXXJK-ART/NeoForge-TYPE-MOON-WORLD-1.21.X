@@ -80,6 +80,15 @@ public class MagicConstants {
     public static final String KEY_MAGIC_JEWEL_RELEASE = "key.typemoonworld.magic.jewel_release";
     public static final String KEY_MAGIC_JEWEL_RELEASE_SELECTED = "key.typemoonworld.magic.jewel_release.selected";
     public static final String KEY_MAGIC_JEWEL_RELEASE_SHORT = "key.typemoonworld.magic.jewel_release.short";
+
+    public static final String KEY_MAGIC_JEWEL_RANDOM_SHOOT = "key.typemoonworld.magic.jewel_random_shoot";
+    public static final String KEY_MAGIC_JEWEL_RANDOM_SHOOT_SELECTED = "key.typemoonworld.magic.jewel_random_shoot.selected";
+    public static final String KEY_MAGIC_JEWEL_RANDOM_SHOOT_SHORT = "key.typemoonworld.magic.jewel_random_shoot.short";
+
+    public static final String KEY_MAGIC_JEWEL_MACHINE_GUN_SHORT = "key.typemoonworld.magic.jewel_machine_gun.short";
+    public static final String KEY_MAGIC_GANDR_MACHINE_GUN = "key.typemoonworld.magic.gandr_machine_gun";
+    public static final String KEY_MAGIC_GANDR_MACHINE_GUN_SELECTED = "key.typemoonworld.magic.gandr_machine_gun.selected";
+    public static final String KEY_MAGIC_GANDR_MACHINE_GUN_SHORT = "key.typemoonworld.magic.gandr_machine_gun.short";
     
     public static final String MSG_MAGIC_JEWEL_MODE_CHANGE = "message.typemoonworld.magic.jewel.mode_change";
     public static final String MSG_MAGIC_ANY_GEM_NEED = "message.typemoonworld.magic.any_gem.need";
@@ -127,6 +136,9 @@ public class MagicConstants {
     public static final String KEY_MAGIC_GRAVITY = "key.typemoonworld.magic.gravity_magic";
     public static final String KEY_MAGIC_GRAVITY_SELECTED = "key.typemoonworld.magic.gravity_magic.selected";
     public static final String KEY_MAGIC_GRAVITY_SHORT = "key.typemoonworld.magic.gravity_magic.short";
+    public static final String KEY_MAGIC_GANDER = "key.typemoonworld.magic.gander";
+    public static final String KEY_MAGIC_GANDER_SELECTED = "key.typemoonworld.magic.gander.selected";
+    public static final String KEY_MAGIC_GANDER_SHORT = "key.typemoonworld.magic.gander.short";
 
     // General Magic Messages
     public static final String MSG_TRACE_ON = "message.typemoonworld.trace_on";

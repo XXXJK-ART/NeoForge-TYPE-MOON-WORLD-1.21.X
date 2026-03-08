@@ -7,7 +7,9 @@
   "client": [
     "ItemRendererMixin",
     "client.HumanoidArmorLayerMixin",
+    "client.ItemInHandRendererMixin",
     "client.MixinMinecraft",
+    "client.PlayerModelMixin",
     "client.PlayerRendererMixin",
     "client.RenderBuffersMixin"
   ],

@@ -406,6 +406,9 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                 if (target.equals(this.getOwner())) {
                     return; 
                 }
+                if (EntityUtils.isImmunePlayerTarget(target)) {
+                    return;
+                }
                 
                 // Damage other entities but DO NOT STOP
                 if (!hitEntities.contains(target)) {

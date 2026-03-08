@@ -36,6 +36,7 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
 
     public TopazProjectileEntity(Level level, LivingEntity shooter) {
         super(ModEntities.TOPAZ_PROJECTILE.get(), shooter, level);
+        this.setPos(EntityUtils.getRightHandCastAnchor(shooter));
     }
 
     public TopazProjectileEntity(Level level, double x, double y, double z) {
@@ -92,7 +93,7 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
             Entity owner = this.getOwner();
             for (LivingEntity entity : entities) {
                 if (entity == owner) continue;
-                if (entity instanceof Player player && player.isCreative()) continue;
+                if (EntityUtils.isImmunePlayerTarget(entity)) continue;
                 entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration, 0));
                 entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0));
                 entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1));

@@ -94,7 +94,7 @@ public class MagicStructuralAnalysis {
                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_STRUCTURAL_ANALYSIS_FAILED), true);
                 return;
             }
-            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.trigger_off"), true);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.trigger_on_set"), true);
             player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
             player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
