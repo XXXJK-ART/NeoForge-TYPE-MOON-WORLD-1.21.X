@@ -8,12 +8,14 @@ import net.minecraft.world.level.dimension.DimensionType;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 public class ModDimensions {
-    public static final ResourceKey<Level> UBW_KEY = ResourceKey.create(Registries.DIMENSION,
-            ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "unlimited_blade_works"));
-    public static final ResourceKey<DimensionType> UBW_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE,
-            ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "unlimited_blade_works"));
+   public static final ResourceKey<Level> UBW_KEY = ResourceKey.create(
+      Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works")
+   );
+   public static final ResourceKey<DimensionType> UBW_TYPE = ResourceKey.create(
+      Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works")
+   );
 
-    public static void register() {
-        System.out.println("Registering ModDimensions for " + TYPE_MOON_WORLD.MOD_ID);
-    }
+   public static void register() {
+      TYPE_MOON_WORLD.LOGGER.debug("Registering ModDimensions for {}", "typemoonworld");
+   }
 }

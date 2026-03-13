@@ -7,121 +7,105 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public class MagicGravity {
-    public static final int MODE_ULTRA_LIGHT = -2;
-    public static final int MODE_LIGHT = -1;
-    public static final int MODE_NORMAL = 0;
-    public static final int MODE_HEAVY = 1;
-    public static final int MODE_ULTRA_HEAVY = 2;
+   public static final int MODE_ULTRA_LIGHT = -2;
+   public static final int MODE_LIGHT = -1;
+   public static final int MODE_NORMAL = 0;
+   public static final int MODE_HEAVY = 1;
+   public static final int MODE_ULTRA_HEAVY = 2;
+   private static final int MIN_DURATION_TICKS = 600;
+   private static final int MAX_DURATION_TICKS = 3600;
+   private static final double CAST_MANA_COST = 20.0;
+   private static final double TARGET_RANGE = 10.0;
+   private static final int RESULT_MESSAGE_DELAY_TICKS = 12;
 
-    private static final int MIN_DURATION_TICKS = 20 * 30;   // 30s
-    private static final int MAX_DURATION_TICKS = 20 * 180;  // 180s (3min)
-    private static final double CAST_MANA_COST = 20.0D;
-    private static final double TARGET_RANGE = 10.0D;
-    private static final int RESULT_MESSAGE_DELAY_TICKS = 12;
-
-    public static void execute(Entity entity) {
-        if (!(entity instanceof ServerPlayer player)) return;
-
-        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-
-        LivingEntity target = resolveTarget(player, vars.gravity_magic_target);
-        if (target == null) {
+   public static void execute(Entity entity) {
+      if (entity instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         LivingEntity target = resolveTarget(player, vars.gravity_magic_target);
+         if (target == null) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gravity.no_target"), true);
-            return;
-        }
+         } else if (!ManaHelper.consumeOneTimeMagicCost(player, 20.0)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+         } else {
+            int nextMode = Math.max(-2, Math.min(2, vars.gravity_magic_mode));
+            Component targetComp = (Component)(target == player ? Component.translatable("gui.typemoonworld.mode.self") : target.getDisplayName());
+            player.displayClientMessage(getChantComponentForMode(nextMode), true);
+            Component resultMessage;
+            if (nextMode == 0) {
+               MagicGravityEffectHandler.clearGravityState(target);
+               resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", new Object[]{targetComp});
+            } else {
+               int duration = getDurationTicks(vars.proficiency_gravity_magic);
+               MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration);
 
-        if (!ManaHelper.consumeOneTimeMagicCost(player, CAST_MANA_COST)) {
-            player.displayClientMessage(Component.translatable(MagicConstants.MSG_NOT_ENOUGH_MANA), true);
-            return;
-        }
-
-        int nextMode = Math.max(MODE_ULTRA_LIGHT, Math.min(MODE_ULTRA_HEAVY, vars.gravity_magic_mode));
-        Component targetComp = target == player
-                ? Component.translatable("gui.typemoonworld.mode.self")
-                : target.getDisplayName();
-        player.displayClientMessage(getChantComponentForMode(nextMode), true);
-        Component resultMessage;
-
-        if (nextMode == MODE_NORMAL) {
-            MagicGravityEffectHandler.clearGravityState(target);
-            resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
-        } else {
-            int duration = getDurationTicks(vars.proficiency_gravity_magic);
-            MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration);
-
-            String modeKey = switch (nextMode) {
-                case MODE_ULTRA_LIGHT -> "gui.typemoonworld.mode.gravity.ultra_light";
-                case MODE_LIGHT -> "gui.typemoonworld.mode.gravity.light";
-                case MODE_HEAVY -> "gui.typemoonworld.mode.gravity.heavy";
-                case MODE_ULTRA_HEAVY -> "gui.typemoonworld.mode.gravity.ultra_heavy";
-                default -> "gui.typemoonworld.mode.gravity.normal";
-            };
-            int durationSec = duration / 20;
-            resultMessage = Component.translatable(
-                    "message.typemoonworld.magic.gravity.applied",
-                    targetComp,
-                    Component.translatable(modeKey),
-                    durationSec
-            );
-        }
-        queueActionbarResult(player, resultMessage);
-
-        vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.4);
-        vars.syncPlayerVariables(player);
-    }
-
-    private static LivingEntity resolveTarget(ServerPlayer player, int targetMode) {
-        if (targetMode == 0) {
-            return player;
-        }
-
-        HitResult hitResult = EntityUtils.getRayTraceTarget(player, TARGET_RANGE);
-        if (hitResult.getType() == HitResult.Type.ENTITY) {
-            Entity hit = ((EntityHitResult) hitResult).getEntity();
-            if (hit instanceof LivingEntity living && living.isAlive()) {
-                return living;
+               String modeKey = switch (nextMode) {
+                  case -2 -> "gui.typemoonworld.mode.gravity.ultra_light";
+                  case -1 -> "gui.typemoonworld.mode.gravity.light";
+                  default -> "gui.typemoonworld.mode.gravity.normal";
+                  case 1 -> "gui.typemoonworld.mode.gravity.heavy";
+                  case 2 -> "gui.typemoonworld.mode.gravity.ultra_heavy";
+               };
+               int durationSec = duration / 20;
+               resultMessage = Component.translatable(
+                  "message.typemoonworld.magic.gravity.applied", new Object[]{targetComp, Component.translatable(modeKey), durationSec}
+               );
             }
-        }
-        return null;
-    }
 
-    private static int getDurationTicks(double proficiency) {
-        double clamped = Math.max(0.0, Math.min(100.0, proficiency));
-        double ratio = clamped / 100.0;
-        return MIN_DURATION_TICKS + (int) Math.round((MAX_DURATION_TICKS - MIN_DURATION_TICKS) * ratio);
-    }
+            queueActionbarResult(player, resultMessage);
+            vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.4);
+            vars.syncPlayerVariables(player);
+         }
+      }
+   }
 
-    public static String getChantForMode(int mode) {
-        if (mode == MODE_NORMAL) {
-            return "vos Gott es Atlas.";
-        }
-        return "Es ist gros, es ist klein.";
-    }
+   private static LivingEntity resolveTarget(ServerPlayer player, int targetMode) {
+      if (targetMode == 0) {
+         return player;
+      } else {
+         HitResult hitResult = EntityUtils.getRayTraceTarget(player, 10.0);
+         return hitResult.getType() == Type.ENTITY
+               && ((EntityHitResult)hitResult).getEntity() instanceof LivingEntity living
+               && EntityUtils.isValidCombatTarget(player, living)
+            ? living
+            : EntityUtils.findAutoAimTarget(player, 10.0, 65.0);
+      }
+   }
 
-    public static Component getChantComponentForMode(int mode) {
-        ChatFormatting chantColor;
-        if (mode == MODE_NORMAL) {
-            chantColor = ChatFormatting.GOLD;
-        } else if (mode < MODE_NORMAL) {
-            chantColor = ChatFormatting.AQUA;
-        } else {
-            chantColor = ChatFormatting.RED;
-        }
-        return Component.literal(getChantForMode(mode)).withStyle(chantColor, ChatFormatting.ITALIC);
-    }
+   private static int getDurationTicks(double proficiency) {
+      double clamped = Math.max(0.0, Math.min(100.0, proficiency));
+      double ratio = clamped / 100.0;
+      return 600 + (int)Math.round(3000.0 * ratio);
+   }
 
-    private static void queueActionbarResult(ServerPlayer player, Component message) {
-        TYPE_MOON_WORLD.queueServerWork(RESULT_MESSAGE_DELAY_TICKS, () -> {
-            if (!player.isRemoved()) {
-                player.displayClientMessage(message, true);
-            }
-        });
-    }
+   public static String getChantForMode(int mode) {
+      return mode == 0 ? "vos Gott es Atlas." : "Es ist gros, es ist klein.";
+   }
+
+   public static Component getChantComponentForMode(int mode) {
+      ChatFormatting chantColor;
+      if (mode == 0) {
+         chantColor = ChatFormatting.GOLD;
+      } else if (mode < 0) {
+         chantColor = ChatFormatting.AQUA;
+      } else {
+         chantColor = ChatFormatting.RED;
+      }
+
+      return Component.literal(getChantForMode(mode)).withStyle(new ChatFormatting[]{chantColor, ChatFormatting.ITALIC});
+   }
+
+   private static void queueActionbarResult(ServerPlayer player, Component message) {
+      TYPE_MOON_WORLD.queueServerWork(12, () -> {
+         if (!player.isRemoved()) {
+            player.displayClientMessage(message, true);
+         }
+      });
+   }
 }

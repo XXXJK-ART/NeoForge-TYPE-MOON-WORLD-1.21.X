@@ -1,34 +1,32 @@
-
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz;
 
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
+import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 
 public class MagicTopazThrow {
-    public static void execute(Entity entity) {
-        if (entity == null)
-            return;
-        
-        if (entity instanceof Player player) {
+   public static void execute(Entity entity) {
+      if (entity != null) {
+         if (entity instanceof ServerPlayer player) {
             ItemStack gemStack = GemUtils.consumeGem(player, GemType.TOPAZ);
-            
             if (!gemStack.isEmpty()) {
-                Level level = player.level();
-                TopazProjectileEntity projectile = new TopazProjectileEntity(level, player);
-                projectile.setItem(gemStack);
-                projectile.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, MagicConstants.TOPAZ_THROW_VELOCITY, MagicConstants.TOPAZ_THROW_INACCURACY);
-                level.addFreshEntity(projectile);
+               Level level = player.level();
+               TopazProjectileEntity projectile = new TopazProjectileEntity(level, player);
+               projectile.setItem(gemStack);
+               Vec3 direction = EntityUtils.getAutoAimDirection(player, 48.0, 55.0);
+               projectile.shoot(direction.x, direction.y, direction.z, 2.0F, 1.0F);
+               level.addFreshEntity(projectile);
             } else {
-                player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_TOPAZ_THROW_NEED_GEM), true);
+               player.displayClientMessage(Component.translatable("message.typemoonworld.magic.topaz_throw.need_gem"), true);
             }
-        }
-    }
+         }
+      }
+   }
 }

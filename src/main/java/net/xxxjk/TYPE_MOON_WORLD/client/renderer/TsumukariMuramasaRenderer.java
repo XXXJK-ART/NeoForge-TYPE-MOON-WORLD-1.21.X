@@ -5,7 +5,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
 public class TsumukariMuramasaRenderer extends GeoItemRenderer<TsumukariMuramasaItem> {
-    public TsumukariMuramasaRenderer() {
-        super(new TsumukariMuramasaModel());
-    }
+   public TsumukariMuramasaRenderer() {
+      super(new TsumukariMuramasaModel());
+   }
 }

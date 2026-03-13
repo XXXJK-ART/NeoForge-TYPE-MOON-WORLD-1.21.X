@@ -15,27 +15,25 @@ import net.xxxjk.TYPE_MOON_WORLD.world.inventory.BasicInformationMenu;
 import org.jetbrains.annotations.NotNull;
 
 public class To_basic_information {
-    public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
-        if (entity == null)
-            return;
-        if (entity instanceof ServerPlayer _ent) {
-            BlockPos _bpos = BlockPos.containing(x, y, z);
+   public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
+      if (entity != null) {
+         if (entity instanceof ServerPlayer _ent) {
+            final BlockPos _bpos = BlockPos.containing(x, y, z);
             _ent.openMenu(new MenuProvider() {
-                @Override
-                public @NotNull Component getDisplayName() {
-                    return Component.literal("Basicinformation");
-                }
+               @NotNull
+               public Component getDisplayName() {
+                  return Component.literal("Basicinformation");
+               }
 
-                @Override
-                public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-                    return false;
-                }
+               public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                  return false;
+               }
 
-                @Override
-                public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
-                    return new BasicInformationMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(_bpos));
-                }
+               public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
+                  return new BasicInformationMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(_bpos));
+               }
             }, _bpos);
-        }
-    }
+         }
+      }
+   }
 }

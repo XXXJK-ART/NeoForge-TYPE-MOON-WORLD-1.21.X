@@ -5,7 +5,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
 public class TempleStoneSwordAxeRenderer extends GeoItemRenderer<TempleStoneSwordAxeItem> {
-    public TempleStoneSwordAxeRenderer() {
-        super(new TempleStoneSwordAxeModel());
-    }
+   public TempleStoneSwordAxeRenderer() {
+      super(new TempleStoneSwordAxeModel());
+   }
 }

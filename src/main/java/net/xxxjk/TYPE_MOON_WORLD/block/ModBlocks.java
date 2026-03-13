@@ -1,163 +1,153 @@
-
 package net.xxxjk.TYPE_MOON_WORLD.block;
 
-import net.minecraft.world.level.block.HalfTransparentBlock;
+import java.util.function.Supplier;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DropExperienceBlock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-import net.xxxjk.TYPE_MOON_WORLD.block.custom.MuramasaBlock;
-import net.xxxjk.TYPE_MOON_WORLD.block.custom.GreenTransparentBlock;
+import net.neoforged.neoforge.registries.DeferredRegister.Blocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.GemCarvingTableBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.GreenTransparentBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.MuramasaBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaBlockItem;
-import java.util.function.Supplier;
-import net.minecraft.world.level.block.Blocks;
-import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 
-@SuppressWarnings("null")
 public class ModBlocks {
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(TYPE_MOON_WORLD.MOD_ID);
+   public static final Blocks BLOCKS = DeferredRegister.createBlocks("typemoonworld");
+   public static final DeferredBlock<Block> MURAMASA_BLOCK = registerBlock("redswordblock", () -> new MuramasaBlock(Properties.of()));
+   public static final DeferredBlock<Block> SPIRIT_VEIN_NODE = registerBlock(
+      "spirit_vein_node",
+      () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE).lightLevel(s -> 5))
+   );
+   public static final DeferredBlock<Block> SPIRIT_VEIN_BLOCK = registerBlock(
+      "spirit_vein_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 10))
+   );
+   public static final DeferredBlock<GemCarvingTableBlock> GEM_CARVING_TABLE = registerBlock(
+      "gem_carving_table", () -> new GemCarvingTableBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE).strength(2.5F))
+   );
+   public static final DeferredBlock<Block> EMERALD_BLOCK = registerBlock(
+      "emerald_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
+   );
+   public static final DeferredBlock<Block> EMERALD_BLOCK_POOR = registerBlock(
+      "emerald_block_poor", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 0))
+   );
+   public static final DeferredBlock<Block> EMERALD_BLOCK_HIGH = registerBlock(
+      "emerald_block_high", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 15))
+   );
+   public static final DeferredBlock<Block> EMERALD_MINE = registerBlock(
+      "emerald_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> RUBY_BLOCK = registerBlock(
+      "ruby_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
+   );
+   public static final DeferredBlock<Block> RUBY_BLOCK_POOR = registerBlock(
+      "ruby_block_poor", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 0))
+   );
+   public static final DeferredBlock<Block> RUBY_BLOCK_HIGH = registerBlock(
+      "ruby_block_high", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 15))
+   );
+   public static final DeferredBlock<Block> RUBY_MINE = registerBlock(
+      "ruby_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> SAPPHIRE_BLOCK = registerBlock(
+      "sapphire_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
+   );
+   public static final DeferredBlock<Block> SAPPHIRE_BLOCK_POOR = registerBlock(
+      "sapphire_block_poor", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 0))
+   );
+   public static final DeferredBlock<Block> SAPPHIRE_BLOCK_HIGH = registerBlock(
+      "sapphire_block_high", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 15))
+   );
+   public static final DeferredBlock<Block> SAPPHIRE_MINE = registerBlock(
+      "sapphire_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> TOPAZ_BLOCK = registerBlock(
+      "topaz_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
+   );
+   public static final DeferredBlock<Block> TOPAZ_BLOCK_POOR = registerBlock(
+      "topaz_block_poor", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 0))
+   );
+   public static final DeferredBlock<Block> TOPAZ_BLOCK_HIGH = registerBlock(
+      "topaz_block_high", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 15))
+   );
+   public static final DeferredBlock<Block> TOPAZ_MINE = registerBlock(
+      "topaz_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK = registerBlock(
+      "white_gemstone_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
+   );
+   public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK_POOR = registerBlock(
+      "white_gemstone_block_poor", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 0))
+   );
+   public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK_HIGH = registerBlock(
+      "white_gemstone_block_high", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 15))
+   );
+   public static final DeferredBlock<Block> WHITE_GEMSTONE_MINE = registerBlock(
+      "white_gemstone_mine",
+      () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK = registerBlock(
+      "cyan_gemstone_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
+   );
+   public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK_POOR = registerBlock(
+      "cyan_gemstone_block_poor", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 0))
+   );
+   public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK_HIGH = registerBlock(
+      "cyan_gemstone_block_high", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 15))
+   );
+   public static final DeferredBlock<Block> CYAN_GEMSTONE_MINE = registerBlock(
+      "cyan_gemstone_mine",
+      () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock(
+      "green_transparent_block",
+      () -> new GreenTransparentBlock(
+         Properties.of()
+            .strength(50.0F, 1200.0F)
+            .sound(SoundType.GLASS)
+            .noOcclusion()
+            .isViewBlocking((s, l, p) -> false)
+            .isValidSpawn((s, l, p, e) -> false)
+            .isSuffocating((s, l, p) -> false)
+            .isRedstoneConductor((s, l, p) -> false)
+      )
+   );
+   public static final DeferredBlock<Block> ANCIENT_TEMPLE_STONE = registerBlock(
+      "ancient_temple_stone", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.OBSIDIAN).sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<UBWWeaponBlock> UBW_WEAPON_BLOCK = registerBlock(
+      "ubw_weapon_block",
+      () -> new UBWWeaponBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak())
+   );
+   public static final DeferredBlock<SwordBarrelBlock> SWORD_BARREL_BLOCK = registerBlock(
+      "sword_barrel_block",
+      () -> new SwordBarrelBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak())
+   );
 
-    public static final DeferredBlock<Block> MURAMASA_BLOCK = registerBlock("redswordblock",
-            () -> new MuramasaBlock(BlockBehaviour.Properties.of()));
+   private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
+      DeferredBlock<T> toReturn = BLOCKS.register(name, block);
+      registerBlockItem(name, toReturn);
+      return toReturn;
+   }
 
-    public static final DeferredBlock<Block> SPIRIT_VEIN_NODE = registerBlock("spirit_vein_node",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE).lightLevel((s) -> 5)));
+   private static <T extends Block> void registerBlockItem(String name, DeferredBlock<T> block) {
+      ModItems.ITEMS.register(name, () -> new BlockItem((Block)block.get(), new net.minecraft.world.item.Item.Properties()));
+   }
 
-    public static final DeferredBlock<Block> SPIRIT_VEIN_BLOCK = registerBlock("spirit_vein_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 10)));
+   private static <T extends Block> DeferredBlock<T> registerBlockWithCustomItem(String name, Supplier<T> block) {
+      DeferredBlock<T> toReturn = BLOCKS.register(name, block);
+      ModItems.ITEMS.register(name, () -> new MuramasaBlockItem((Block)toReturn.get(), new net.minecraft.world.item.Item.Properties()));
+      return toReturn;
+   }
 
-    public static final DeferredBlock<GemCarvingTableBlock> GEM_CARVING_TABLE = registerBlock("gem_carving_table",
-            () -> new GemCarvingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.CRAFTING_TABLE).strength(2.5F)));
-
-
-    public static final DeferredBlock<Block> EMERALD_BLOCK = registerBlock("emerald_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
-    public static final DeferredBlock<Block> EMERALD_BLOCK_POOR = registerBlock("emerald_block_poor",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
-    public static final DeferredBlock<Block> EMERALD_BLOCK_HIGH = registerBlock("emerald_block_high",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
-
-    public static final DeferredBlock<Block> EMERALD_MINE = registerBlock("emerald_mine",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<Block> RUBY_BLOCK = registerBlock("ruby_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
-    public static final DeferredBlock<Block> RUBY_BLOCK_POOR = registerBlock("ruby_block_poor",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
-    public static final DeferredBlock<Block> RUBY_BLOCK_HIGH = registerBlock("ruby_block_high",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
-
-    public static final DeferredBlock<Block> RUBY_MINE = registerBlock("ruby_mine",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<Block> SAPPHIRE_BLOCK = registerBlock("sapphire_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
-    public static final DeferredBlock<Block> SAPPHIRE_BLOCK_POOR = registerBlock("sapphire_block_poor",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
-    public static final DeferredBlock<Block> SAPPHIRE_BLOCK_HIGH = registerBlock("sapphire_block_high",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
-
-    public static final DeferredBlock<Block> SAPPHIRE_MINE = registerBlock("sapphire_mine",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<Block> TOPAZ_BLOCK = registerBlock("topaz_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
-    public static final DeferredBlock<Block> TOPAZ_BLOCK_POOR = registerBlock("topaz_block_poor",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
-    public static final DeferredBlock<Block> TOPAZ_BLOCK_HIGH = registerBlock("topaz_block_high",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
-
-    public static final DeferredBlock<Block> TOPAZ_MINE = registerBlock("topaz_mine",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK = registerBlock("white_gemstone_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
-    public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK_POOR = registerBlock("white_gemstone_block_poor",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
-    public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK_HIGH = registerBlock("white_gemstone_block_high",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
-
-    public static final DeferredBlock<Block> WHITE_GEMSTONE_MINE = registerBlock("white_gemstone_mine",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK = registerBlock("cyan_gemstone_block",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 7)));
-    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK_POOR = registerBlock("cyan_gemstone_block_poor",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 0)));
-    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK_HIGH = registerBlock("cyan_gemstone_block_high",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(4f).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel((s) -> 15)));
-
-    public static final DeferredBlock<Block> CYAN_GEMSTONE_MINE = registerBlock("cyan_gemstone_mine",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock("green_transparent_block",
-            () -> new GreenTransparentBlock(BlockBehaviour.Properties.of()
-                    .strength(50f, 1200f).sound(SoundType.GLASS).noOcclusion()
-                    .isViewBlocking((s, l, p) -> false).isValidSpawn((s, l, p, e) -> false)
-                    .isSuffocating((s, l, p) -> false).isRedstoneConductor((s, l, p) -> false)));
-
-    public static final DeferredBlock<Block> ANCIENT_TEMPLE_STONE = registerBlock("ancient_temple_stone",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .strength(50f, 1200f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
-    public static final DeferredBlock<UBWWeaponBlock> UBW_WEAPON_BLOCK = registerBlock("ubw_weapon_block",
-            () -> new UBWWeaponBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak()));
-
-    public static final DeferredBlock<net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock> SWORD_BARREL_BLOCK = registerBlock("sword_barrel_block",
-            () -> new net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().noCollission().instabreak()));
-
-    private static <T extends Block> DeferredBlock<T> registerBlock (String name, Supplier<T> block){
-        DeferredBlock<T> toReturn = BLOCKS.register(name, block);
-        registerBlockItem(name, toReturn);
-        return toReturn;
-    }
-
-    private static <T extends Block> void registerBlockItem(String name, DeferredBlock<T> block) {
-        ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
-    }
-    
-    private static <T extends Block> DeferredBlock<T> registerBlockWithCustomItem(String name, Supplier<T> block) {
-        DeferredBlock<T> toReturn = BLOCKS.register(name, block);
-        ModItems.ITEMS.register(name, () -> new MuramasaBlockItem(toReturn.get(), new Item.Properties()));
-        return toReturn;
-    }
-
-    public static void register(IEventBus eventBus){
-        BLOCKS.register(eventBus);
-    }
+   public static void register(IEventBus eventBus) {
+      BLOCKS.register(eventBus);
+   }
 }

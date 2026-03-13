@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " M ",
+    "MPM",
+    " M "
+  ],
+  "key": {
+    "M": {
+      "item": "typemoonworld:magic_fragments"
+    },
+    "P": {
+      "item": "minecraft:paper"
+    }
+  },
+  "result": {
+    "id": "typemoonworld:magic_crest",
+    "count": 1
+  }
+}
+

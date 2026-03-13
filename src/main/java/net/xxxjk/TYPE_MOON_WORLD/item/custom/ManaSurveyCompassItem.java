@@ -12,258 +12,223 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 public class ManaSurveyCompassItem extends Item {
-    private static final String TAG_HAS_TARGET = "ManaSurveyHasTarget";
-    private static final String TAG_TARGET_X = "ManaSurveyTargetX";
-    private static final String TAG_TARGET_Y = "ManaSurveyTargetY";
-    private static final String TAG_TARGET_Z = "ManaSurveyTargetZ";
-    private static final String TAG_TARGET_DIM = "ManaSurveyTargetDim";
-    private static final String TAG_TARGET_CONCENTRATION = "ManaSurveyTargetConcentration";
-    private static final String TAG_TARGET_ARRIVED = "ManaSurveyTargetArrived";
-    private static final String TAG_TARGET_ARRIVAL_NOTIFIED = "ManaSurveyTargetArrivalNotified";
+   private static final String TAG_HAS_TARGET = "ManaSurveyHasTarget";
+   private static final String TAG_TARGET_X = "ManaSurveyTargetX";
+   private static final String TAG_TARGET_Y = "ManaSurveyTargetY";
+   private static final String TAG_TARGET_Z = "ManaSurveyTargetZ";
+   private static final String TAG_TARGET_DIM = "ManaSurveyTargetDim";
+   private static final String TAG_TARGET_CONCENTRATION = "ManaSurveyTargetConcentration";
+   private static final String TAG_TARGET_ARRIVED = "ManaSurveyTargetArrived";
+   private static final String TAG_TARGET_ARRIVAL_NOTIFIED = "ManaSurveyTargetArrivalNotified";
+   private static final int FALLBACK_SCAN_RADIUS_CHUNKS = 8;
+   private static final int MAX_SCAN_RADIUS_CHUNKS = 8;
+   private static final double SURVEY_MANA_COST = 10.0;
+   private final int minRequiredConcentrationExclusive;
+   private final int veryHighConcentrationThreshold;
 
-    private static final int FALLBACK_SCAN_RADIUS_CHUNKS = 8;
-    private static final int MAX_SCAN_RADIUS_CHUNKS = 8;
-    private static final double SURVEY_MANA_COST = 10.0;
-    private final int minRequiredConcentrationExclusive;
-    private final int veryHighConcentrationThreshold;
+   public ManaSurveyCompassItem(Properties properties, int minRequiredConcentrationExclusive, int veryHighConcentrationThreshold) {
+      super(properties);
+      this.minRequiredConcentrationExclusive = minRequiredConcentrationExclusive;
+      this.veryHighConcentrationThreshold = veryHighConcentrationThreshold;
+   }
 
-    public ManaSurveyCompassItem(
-            Properties properties,
-            int minRequiredConcentrationExclusive,
-            int veryHighConcentrationThreshold
-    ) {
-        super(properties);
-        this.minRequiredConcentrationExclusive = minRequiredConcentrationExclusive;
-        this.veryHighConcentrationThreshold = veryHighConcentrationThreshold;
-    }
-
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
-        ItemStack stack = player.getItemInHand(usedHand);
-        if (!(player instanceof ServerPlayer serverPlayer)) {
-            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
-        }
-
-        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        int currentConcentration = LeylineService.getConcentration(serverPlayer.serverLevel(), serverPlayer.blockPosition());
-        if (currentConcentration > minRequiredConcentrationExclusive) {
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+      ItemStack stack = player.getItemInHand(usedHand);
+      if (!(player instanceof ServerPlayer serverPlayer)) {
+         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+      } else {
+         CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
+         int currentConcentration = LeylineService.getConcentration(serverPlayer.serverLevel(), serverPlayer.blockPosition());
+         if (currentConcentration > this.minRequiredConcentrationExclusive) {
             clearTarget(tag);
             stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             serverPlayer.displayClientMessage(
-                    Component.translatable(
-                            "message.typemoonworld.mana_survey_compass.current_area_high",
-                            currentConcentration
-                    ),
-                    false
+               Component.translatable("message.typemoonworld.mana_survey_compass.current_area_high", new Object[]{currentConcentration}), false
             );
             return InteractionResultHolder.fail(stack);
-        }
-
-        if (!ManaHelper.consumeManaStrict(serverPlayer, SURVEY_MANA_COST, false)) {
+         } else if (!ManaHelper.consumeManaStrict(serverPlayer, 10.0, false)) {
             serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), false);
             return InteractionResultHolder.fail(stack);
-        }
-
-        ScanResult result = scanBestTarget(serverPlayer);
-        if (result == null || result.concentration <= minRequiredConcentrationExclusive) {
-            clearTarget(tag);
-            serverPlayer.displayClientMessage(
-                    Component.translatable("message.typemoonworld.mana_survey_compass.no_high_mana", minRequiredConcentrationExclusive),
-                    false
-            );
-        } else {
-            storeTarget(tag, result.targetPos, result.concentration, serverPlayer.serverLevel());
-            serverPlayer.displayClientMessage(
-                    Component.translatable(
-                            "message.typemoonworld.mana_survey_compass.found_target",
-                            result.concentration
-                    ),
-                    false
-            );
-        }
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
-    }
-
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (level.isClientSide() || !(entity instanceof ServerPlayer serverPlayer)) {
-            return;
-        }
-
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        if (data == null) {
-            return;
-        }
-
-        CompoundTag tag = data.copyTag();
-        if (!tag.getBoolean(TAG_HAS_TARGET) || tag.getBoolean(TAG_TARGET_ARRIVED)) {
-            return;
-        }
-
-        if (!isTagInCurrentDimension(tag, serverPlayer.serverLevel().dimension().location().toString())) {
-            return;
-        }
-
-        BlockPos targetPos = readTargetPos(tag);
-        if (!isPlayerInTargetChunk(serverPlayer, targetPos)) {
-            return;
-        }
-
-        tag.putBoolean(TAG_TARGET_ARRIVED, true);
-        if (!tag.getBoolean(TAG_TARGET_ARRIVAL_NOTIFIED)) {
-            int concentration = tag.getInt(TAG_TARGET_CONCENTRATION);
-            boolean veryHigh = concentration >= veryHighConcentrationThreshold;
-            int notifyCount = veryHigh ? 3 : 1;
-            String key = veryHigh
-                    ? "message.typemoonworld.mana_survey_compass.arrived_very_high"
-                    : "message.typemoonworld.mana_survey_compass.arrived";
-
-            for (int i = 0; i < notifyCount; i++) {
-                serverPlayer.displayClientMessage(Component.translatable(key, concentration), false);
+         } else {
+            ManaSurveyCompassItem.ScanResult result = scanBestTarget(serverPlayer);
+            if (result != null && result.concentration > this.minRequiredConcentrationExclusive) {
+               storeTarget(tag, result.targetPos, result.concentration, serverPlayer.serverLevel());
+               serverPlayer.displayClientMessage(
+                  Component.translatable("message.typemoonworld.mana_survey_compass.found_target", new Object[]{result.concentration}), false
+               );
+            } else {
+               clearTarget(tag);
+               serverPlayer.displayClientMessage(
+                  Component.translatable("message.typemoonworld.mana_survey_compass.no_high_mana", new Object[]{this.minRequiredConcentrationExclusive}), false
+               );
             }
-            tag.putBoolean(TAG_TARGET_ARRIVAL_NOTIFIED, true);
-        }
 
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-    }
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+         }
+      }
+   }
 
-    @Nullable
-    private static ScanResult scanBestTarget(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
-        ChunkPos origin = player.chunkPosition();
-        int radius = getScanRadiusChunks(player);
+   public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+      super.inventoryTick(stack, level, entity, slotId, isSelected);
+      if (!level.isClientSide() && entity instanceof ServerPlayer serverPlayer) {
+         CustomData data = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
+         if (data != null) {
+            CompoundTag tag = data.copyTag();
+            if (tag.getBoolean("ManaSurveyHasTarget") && !tag.getBoolean("ManaSurveyTargetArrived")) {
+               if (isTagInCurrentDimension(tag, serverPlayer.serverLevel().dimension().location().toString())) {
+                  BlockPos targetPos = readTargetPos(tag);
+                  if (isPlayerInTargetChunk(serverPlayer, targetPos)) {
+                     tag.putBoolean("ManaSurveyTargetArrived", true);
+                     if (!tag.getBoolean("ManaSurveyTargetArrivalNotified")) {
+                        int concentration = tag.getInt("ManaSurveyTargetConcentration");
+                        boolean veryHigh = concentration >= this.veryHighConcentrationThreshold;
+                        int notifyCount = veryHigh ? 3 : 1;
+                        String key = veryHigh
+                           ? "message.typemoonworld.mana_survey_compass.arrived_very_high"
+                           : "message.typemoonworld.mana_survey_compass.arrived";
 
-        boolean found = false;
-        int bestChunkX = origin.x;
-        int bestChunkZ = origin.z;
-        int bestConcentration = Integer.MIN_VALUE;
-        double bestDistanceSq = Double.MAX_VALUE;
-        int sampleY = player.getBlockY();
+                        for (int i = 0; i < notifyCount; i++) {
+                           serverPlayer.displayClientMessage(Component.translatable(key, new Object[]{concentration}), false);
+                        }
 
-        for (int dx = -radius; dx <= radius; dx++) {
-            int chunkX = origin.x + dx;
-            for (int dz = -radius; dz <= radius; dz++) {
-                int chunkZ = origin.z + dz;
-                BlockPos samplePos = new BlockPos((chunkX << 4) + 8, sampleY, (chunkZ << 4) + 8);
-                if (!level.isLoaded(samplePos)) {
-                    continue;
-                }
+                        tag.putBoolean("ManaSurveyTargetArrivalNotified", true);
+                     }
 
-                int concentration = LeylineService.getConcentration(level, samplePos);
-                double distanceSq = (dx * (double) dx) + (dz * (double) dz);
-                if (!found
-                        || concentration > bestConcentration
-                        || (concentration == bestConcentration && distanceSq < bestDistanceSq)) {
-                    found = true;
-                    bestChunkX = chunkX;
-                    bestChunkZ = chunkZ;
-                    bestConcentration = concentration;
-                    bestDistanceSq = distanceSq;
-                }
+                     stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+                  }
+               }
             }
-        }
+         }
+      }
+   }
 
-        if (!found) {
-            return null;
-        }
+   @Nullable
+   private static ManaSurveyCompassItem.ScanResult scanBestTarget(ServerPlayer player) {
+      ServerLevel level = player.serverLevel();
+      ChunkPos origin = player.chunkPosition();
+      int radius = getScanRadiusChunks(player);
+      boolean found = false;
+      int bestChunkX = origin.x;
+      int bestChunkZ = origin.z;
+      int bestConcentration = Integer.MIN_VALUE;
+      double bestDistanceSq = Double.MAX_VALUE;
+      int sampleY = player.getBlockY();
 
-        BlockPos targetPos = new BlockPos((bestChunkX << 4) + 8, sampleY, (bestChunkZ << 4) + 8);
-        return new ScanResult(targetPos, bestConcentration);
-    }
+      for (int dx = -radius; dx <= radius; dx++) {
+         int chunkX = origin.x + dx;
 
-    private static void storeTarget(CompoundTag tag, BlockPos targetPos, int concentration, ServerLevel level) {
-        tag.putBoolean(TAG_HAS_TARGET, true);
-        tag.putInt(TAG_TARGET_X, targetPos.getX());
-        tag.putInt(TAG_TARGET_Y, targetPos.getY());
-        tag.putInt(TAG_TARGET_Z, targetPos.getZ());
-        tag.putString(TAG_TARGET_DIM, level.dimension().location().toString());
-        tag.putInt(TAG_TARGET_CONCENTRATION, concentration);
-        tag.putBoolean(TAG_TARGET_ARRIVED, false);
-        tag.putBoolean(TAG_TARGET_ARRIVAL_NOTIFIED, false);
-    }
-
-    private static void clearTarget(CompoundTag tag) {
-        tag.putBoolean(TAG_HAS_TARGET, false);
-        tag.remove(TAG_TARGET_X);
-        tag.remove(TAG_TARGET_Y);
-        tag.remove(TAG_TARGET_Z);
-        tag.remove(TAG_TARGET_DIM);
-        tag.remove(TAG_TARGET_CONCENTRATION);
-        tag.remove(TAG_TARGET_ARRIVED);
-        tag.remove(TAG_TARGET_ARRIVAL_NOTIFIED);
-    }
-
-    private static int getScanRadiusChunks(ServerPlayer player) {
-        if (player.getServer() != null) {
-            int viewDistance = player.getServer().getPlayerList().getViewDistance();
-            if (viewDistance > 0) {
-                return Math.max(1, Math.min(viewDistance, MAX_SCAN_RADIUS_CHUNKS));
+         for (int dz = -radius; dz <= radius; dz++) {
+            int chunkZ = origin.z + dz;
+            BlockPos samplePos = new BlockPos((chunkX << 4) + 8, sampleY, (chunkZ << 4) + 8);
+            if (level.isLoaded(samplePos)) {
+               int concentration = LeylineService.getConcentration(level, samplePos);
+               double distanceSq = (double)dx * dx + (double)dz * dz;
+               if (!found || concentration > bestConcentration || concentration == bestConcentration && distanceSq < bestDistanceSq) {
+                  found = true;
+                  bestChunkX = chunkX;
+                  bestChunkZ = chunkZ;
+                  bestConcentration = concentration;
+                  bestDistanceSq = distanceSq;
+               }
             }
-        }
-        return FALLBACK_SCAN_RADIUS_CHUNKS;
-    }
+         }
+      }
 
-    @Nullable
-    public static GlobalPos getStoredTarget(@Nullable ClientLevel level, ItemStack stack) {
-        if (level == null) {
+      if (!found) {
+         return null;
+      } else {
+         BlockPos targetPos = new BlockPos((bestChunkX << 4) + 8, sampleY, (bestChunkZ << 4) + 8);
+         return new ManaSurveyCompassItem.ScanResult(targetPos, bestConcentration);
+      }
+   }
+
+   private static void storeTarget(CompoundTag tag, BlockPos targetPos, int concentration, ServerLevel level) {
+      tag.putBoolean("ManaSurveyHasTarget", true);
+      tag.putInt("ManaSurveyTargetX", targetPos.getX());
+      tag.putInt("ManaSurveyTargetY", targetPos.getY());
+      tag.putInt("ManaSurveyTargetZ", targetPos.getZ());
+      tag.putString("ManaSurveyTargetDim", level.dimension().location().toString());
+      tag.putInt("ManaSurveyTargetConcentration", concentration);
+      tag.putBoolean("ManaSurveyTargetArrived", false);
+      tag.putBoolean("ManaSurveyTargetArrivalNotified", false);
+   }
+
+   private static void clearTarget(CompoundTag tag) {
+      tag.putBoolean("ManaSurveyHasTarget", false);
+      tag.remove("ManaSurveyTargetX");
+      tag.remove("ManaSurveyTargetY");
+      tag.remove("ManaSurveyTargetZ");
+      tag.remove("ManaSurveyTargetDim");
+      tag.remove("ManaSurveyTargetConcentration");
+      tag.remove("ManaSurveyTargetArrived");
+      tag.remove("ManaSurveyTargetArrivalNotified");
+   }
+
+   private static int getScanRadiusChunks(ServerPlayer player) {
+      if (player.getServer() != null) {
+         int viewDistance = player.getServer().getPlayerList().getViewDistance();
+         if (viewDistance > 0) {
+            return Math.max(1, Math.min(viewDistance, 8));
+         }
+      }
+
+      return 8;
+   }
+
+   @Nullable
+   public static GlobalPos getStoredTarget(@Nullable ClientLevel level, ItemStack stack) {
+      if (level == null) {
+         return null;
+      } else {
+         CustomData data = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
+         if (data == null) {
             return null;
-        }
+         } else {
+            CompoundTag tag = data.copyTag();
+            if (!tag.getBoolean("ManaSurveyHasTarget")) {
+               return null;
+            } else if (tag.getBoolean("ManaSurveyTargetArrived")) {
+               return null;
+            } else {
+               return !isTagInCurrentDimension(tag, level.dimension().location().toString()) ? null : GlobalPos.of(level.dimension(), readTargetPos(tag));
+            }
+         }
+      }
+   }
 
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        if (data == null) {
-            return null;
-        }
+   private static boolean isTagInCurrentDimension(CompoundTag tag, String dimensionId) {
+      String storedDimensionId = tag.getString("ManaSurveyTargetDim");
+      return !storedDimensionId.isEmpty() && storedDimensionId.equals(dimensionId);
+   }
 
-        CompoundTag tag = data.copyTag();
-        if (!tag.getBoolean(TAG_HAS_TARGET)) {
-            return null;
-        }
+   private static BlockPos readTargetPos(CompoundTag tag) {
+      return new BlockPos(tag.getInt("ManaSurveyTargetX"), tag.getInt("ManaSurveyTargetY"), tag.getInt("ManaSurveyTargetZ"));
+   }
 
-        if (tag.getBoolean(TAG_TARGET_ARRIVED)) {
-            return null;
-        }
+   private static boolean isPlayerInTargetChunk(ServerPlayer player, BlockPos targetPos) {
+      ChunkPos playerChunk = player.chunkPosition();
+      return playerChunk.x == targetPos.getX() >> 4 && playerChunk.z == targetPos.getZ() >> 4;
+   }
 
-        if (!isTagInCurrentDimension(tag, level.dimension().location().toString())) {
-            return null;
-        }
+   private static final class ScanResult {
+      private final BlockPos targetPos;
+      private final int concentration;
 
-        return GlobalPos.of(level.dimension(), readTargetPos(tag));
-    }
-
-    private static boolean isTagInCurrentDimension(CompoundTag tag, String dimensionId) {
-        String storedDimensionId = tag.getString(TAG_TARGET_DIM);
-        return !storedDimensionId.isEmpty() && storedDimensionId.equals(dimensionId);
-    }
-
-    private static BlockPos readTargetPos(CompoundTag tag) {
-        return new BlockPos(tag.getInt(TAG_TARGET_X), tag.getInt(TAG_TARGET_Y), tag.getInt(TAG_TARGET_Z));
-    }
-
-    private static boolean isPlayerInTargetChunk(ServerPlayer player, BlockPos targetPos) {
-        ChunkPos playerChunk = player.chunkPosition();
-        return playerChunk.x == (targetPos.getX() >> 4) && playerChunk.z == (targetPos.getZ() >> 4);
-    }
-
-    private static final class ScanResult {
-        private final BlockPos targetPos;
-        private final int concentration;
-
-        private ScanResult(BlockPos targetPos, int concentration) {
-            this.targetPos = targetPos;
-            this.concentration = concentration;
-        }
-    }
+      private ScanResult(BlockPos targetPos, int concentration) {
+         this.targetPos = targetPos;
+         this.concentration = concentration;
+      }
+   }
 }

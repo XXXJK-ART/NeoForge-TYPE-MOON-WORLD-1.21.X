@@ -5,67 +5,54 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 
-@SuppressWarnings({"null", "deprecation", "unchecked"})
-public class UBWProjectileRenderer extends EntityRenderer<net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity> {
+public class UBWProjectileRenderer extends EntityRenderer<UBWProjectileEntity> {
+   public UBWProjectileRenderer(Context context) {
+      super(context);
+   }
 
-    public UBWProjectileRenderer(EntityRendererProvider.Context context) {
-        super(context);
-    }
+   public void render(UBWProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+      poseStack.pushPose();
+      float scale = 1.75F;
+      float ryaw = 90.0F + entity.yRotO + (entity.getYRot() - entity.yRotO) * partialTicks;
+      float rpitch = 135.0F - entity.xRotO + (entity.getXRot() - entity.xRotO) * partialTicks;
+      ItemStack itemStack = entity.getItem();
+      if (!itemStack.isEmpty() && itemStack.getItem() instanceof NoblePhantasmItem) {
+         rpitch -= 45.0F;
+      }
 
-    @Override
-    public void render(net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        poseStack.pushPose();
-        float scale = 1.75F;
-        
-        // Calculate rotation
-        float ryaw = 90.0F + entity.yRotO + (entity.getYRot() - entity.yRotO) * partialTicks;
-        float rpitch = 135.0F - entity.xRotO + (entity.getXRot() - entity.xRotO) * partialTicks;
+      poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(rpitch));
+      poseStack.translate(-0.59, -0.59, 0.0);
+      poseStack.scale(scale, scale, scale);
+      if (itemStack.isEmpty()) {
+         poseStack.popPose();
+      } else {
+         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(itemStack, entity.level(), (LivingEntity)null, entity.getId());
 
-        // Apply Noble Phantasm specific rotation (tip forward)
-        ItemStack itemStack = entity.getItem();
-        if (!itemStack.isEmpty() && itemStack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
-            rpitch -= 45.0F;
-        }
+         try {
+            Minecraft.getInstance()
+               .getItemRenderer()
+               .render(itemStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
+         } catch (Exception var13) {
+         }
 
-        // Apply rotation
-        poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(rpitch));
+         poseStack.popPose();
+         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+      }
+   }
 
-        // Translation and Scale
-        // Consistent with BrokenPhantasmRenderer: -0.59, -0.59, 0.0
-        poseStack.translate(-0.59, -0.59, 0.0F);
-        poseStack.scale(scale, scale, scale);
-
-        if (itemStack.isEmpty()) {
-            poseStack.popPose();
-            return;
-        }
-
-        BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(itemStack, entity.level(), (LivingEntity)null, entity.getId());
-        
-        try {
-            // Render item
-            Minecraft.getInstance().getItemRenderer().render(itemStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
-        } catch (Exception e) {
-            // Silent catch
-        }
-        
-        poseStack.popPose();
-        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(UBWProjectileEntity entity) {
-        return InventoryMenu.BLOCK_ATLAS;
-    }
+   public ResourceLocation getTextureLocation(UBWProjectileEntity entity) {
+      return InventoryMenu.BLOCK_ATLAS;
+   }
 }

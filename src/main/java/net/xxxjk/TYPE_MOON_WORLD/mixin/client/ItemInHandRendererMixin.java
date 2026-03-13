@@ -14,58 +14,43 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ItemInHandRenderer.class)
+@Mixin({ItemInHandRenderer.class})
 public abstract class ItemInHandRendererMixin {
+   @Invoker("renderPlayerArm")
+   protected abstract void typemoonworld$renderPlayerArm(PoseStack var1, MultiBufferSource var2, int var3, float var4, float var5, HumanoidArm var6);
 
-    @Invoker("renderPlayerArm")
-    protected abstract void typemoonworld$renderPlayerArm(
-            PoseStack poseStack,
-            MultiBufferSource buffer,
-            int packedLight,
-            float equippedProgress,
-            float swingProgress,
-            HumanoidArm side
-    );
-
-    @Inject(
-            method = "renderArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void forceRenderEmptyCastingOffhandArm(
-            AbstractClientPlayer player,
-            float partialTicks,
-            float pitch,
-            InteractionHand hand,
-            float swingProgress,
-            ItemStack stack,
-            float equippedProgress,
-            PoseStack poseStack,
-            MultiBufferSource buffer,
-            int combinedLight,
-            CallbackInfo ci
-    ) {
-        if (player.isScoping() || !stack.isEmpty() || hand != InteractionHand.OFF_HAND || player.isInvisible()) {
-            return;
-        }
-
-        boolean ganderCharging = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGanderCharging();
-        boolean gandrMachineGunCasting = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGandrMachineGunCasting();
-        boolean machineGunFiringPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalMachineGunFiringPoseActive();
-        if (!ganderCharging && !gandrMachineGunCasting && !machineGunFiringPose) {
-            return;
-        }
-
-        HumanoidArm offhandArm = player.getMainArm().getOpposite();
-        HumanoidArm castingArm = TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
-        if (castingArm != offhandArm) {
-            return;
-        }
-
-        poseStack.pushPose();
-        this.typemoonworld$renderPlayerArm(poseStack, buffer, combinedLight, equippedProgress, swingProgress, offhandArm);
-        poseStack.popPose();
-        ci.cancel();
-    }
+   @Inject(
+      method = {"renderArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"},
+      at = {@At("HEAD")},
+      cancellable = true
+   )
+   private void forceRenderEmptyCastingOffhandArm(
+      AbstractClientPlayer player,
+      float partialTicks,
+      float pitch,
+      InteractionHand hand,
+      float swingProgress,
+      ItemStack stack,
+      float equippedProgress,
+      PoseStack poseStack,
+      MultiBufferSource buffer,
+      int combinedLight,
+      CallbackInfo ci
+   ) {
+      if (!player.isScoping() && stack.isEmpty() && hand == InteractionHand.OFF_HAND && !player.isInvisible()) {
+         boolean ganderCharging = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGanderCharging();
+         boolean gandrMachineGunCasting = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGandrMachineGunCasting();
+         boolean machineGunFiringPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalMachineGunFiringPoseActive();
+         if (ganderCharging || gandrMachineGunCasting || machineGunFiringPose) {
+            HumanoidArm offhandArm = player.getMainArm().getOpposite();
+            HumanoidArm castingArm = TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
+            if (castingArm == offhandArm) {
+               poseStack.pushPose();
+               this.typemoonworld$renderPlayerArm(poseStack, buffer, combinedLight, equippedProgress, swingProgress, offhandArm);
+               poseStack.popPose();
+               ci.cancel();
+            }
+         }
+      }
+   }
 }
-

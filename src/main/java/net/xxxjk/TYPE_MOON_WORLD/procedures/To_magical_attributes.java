@@ -15,30 +15,28 @@ import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 import org.jetbrains.annotations.NotNull;
 
 public class To_magical_attributes {
-    public static void execute(LevelAccessor world, double x, double y, double z, Entity entity, int pageMode) {
-        if (entity == null)
-            return;
-        if (entity instanceof ServerPlayer _ent) {
-            BlockPos _bpos = BlockPos.containing(x, y, z);
+   public static void execute(LevelAccessor world, double x, double y, double z, Entity entity, final int pageMode) {
+      if (entity != null) {
+         if (entity instanceof ServerPlayer _ent) {
+            final BlockPos _bpos = BlockPos.containing(x, y, z);
             _ent.openMenu(new MenuProvider() {
-                @Override
-                public @NotNull Component getDisplayName() {
-                    return Component.literal("Magicalattributes");
-                }
+               @NotNull
+               public Component getDisplayName() {
+                  return Component.literal("Magicalattributes");
+               }
 
-                @Override
-                public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-                    return false;
-                }
+               public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                  return false;
+               }
 
-                @Override
-                public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
-                    return new MagicalattributesMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(_bpos).writeInt(pageMode));
-                }
+               public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
+                  return new MagicalattributesMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(_bpos).writeInt(pageMode));
+               }
             }, buf -> {
-                buf.writeBlockPos(_bpos);
-                buf.writeInt(pageMode);
+               buf.writeBlockPos(_bpos);
+               buf.writeInt(pageMode);
             });
-        }
-    }
+         }
+      }
+   }
 }

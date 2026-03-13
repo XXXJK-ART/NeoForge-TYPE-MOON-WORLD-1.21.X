@@ -1,229 +1,247 @@
 package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.util.Tuple;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.SurfaceRules;
+import net.minecraft.world.level.levelgen.SurfaceRules.RuleSource;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent.Post;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadHandler;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
+import net.xxxjk.TYPE_MOON_WORLD.command.TypeMoonCommands;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModBiomes;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModLootModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
-import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
-import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ImplantMagicCrestMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenLeylineSurveyMapMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SaveStructuralSelectionMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionStructureMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
-import net.minecraft.resources.ResourceLocation;
-import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.OpenLeylineSurveyMapMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.SaveStructuralSelectionMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionStructureMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
+import terrablender.api.SurfaceRuleManager.RuleCategory;
 
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.levelgen.SurfaceRules;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.xxxjk.TYPE_MOON_WORLD.command.TypeMoonCommands;
-
-// The value here should match an entry in the META-INF/neoforge.mods.toml file.
-//此处的值应与 META-INF/neoforge.mods.toml 文件中的条目匹配。
-
-
-@Mod(TYPE_MOON_WORLD.MOD_ID)
+@Mod("typemoonworld")
 public class TYPE_MOON_WORLD {
-    public static final String MOD_ID = "typemoonworld";
-    public static final Logger LOGGER = LogUtils.getLogger();
+   public static final String MOD_ID = "typemoonworld";
+   public static final Logger LOGGER = LogUtils.getLogger();
+   private static boolean networkingRegistered = false;
+   private static final Map<Type<?>, TYPE_MOON_WORLD.NetworkMessage<?>> MESSAGES = new HashMap<>();
+   private static final Map<Long, Queue<Runnable>> scheduledWork = new ConcurrentHashMap<>();
+   private static volatile long serverTickCounter = 0L;
 
-    public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
-        // Register the registerNetworking method for mod loading
-        //注册 registerNetworking 方法用于 mod 加载。
-        modEventBus.addListener(this::registerNetworking);
-        TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
+   public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
+      modEventBus.addListener(this::registerNetworking);
+      TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
+      NeoForge.EVENT_BUS.register(this);
+      NeoForge.EVENT_BUS.addListener(this::registerCommands);
+      ModCreativeModeTabs.register(modEventBus);
+      ModItems.register(modEventBus);
+      ModBlocks.register(modEventBus);
+      ModBlockEntities.register(modEventBus);
+      ModEntities.register(modEventBus);
+      ModMobEffects.register(modEventBus);
+      ModSounds.register(modEventBus);
+      ModLootModifiers.register(modEventBus);
+      ModBiomes.register(modEventBus);
+      TypeMoonWorldModMenus.REGISTRY.register(modEventBus);
+      modEventBus.addListener(this::addCreative);
+      modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
+      modEventBus.addListener(this::commonSetup);
+   }
 
-        // Register ourselves for server and other game events we are interested in.
-        //注册我们感兴趣的服务器和其他游戏活动。
-
-        // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
-        //请注意，当且仅当我们希望*此*类（ExampleMod）直接响应事件时，这才是必要的。
-
-        // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
-        //如果此类中没有 @SubscribeEvent 注释的函数（如下面的 onServerStarting()），请不要添加此行。
-        NeoForge.EVENT_BUS.register(this);
-        NeoForge.EVENT_BUS.addListener(this::registerCommands);
-
-        ModCreativeModeTabs.register(modEventBus);//添加创造页
-
-        ModItems.register(modEventBus);//添加物品
-        ModBlocks.register(modEventBus);//添加方块
-        ModBlockEntities.register(modEventBus);
-        ModEntities.register(modEventBus);
-        ModMobEffects.register(modEventBus);
-        ModSounds.register(modEventBus);
-        ModLootModifiers.register(modEventBus);
-        ModBiomes.register(modEventBus);
-        
-        TypeMoonWorldModMenus.REGISTRY.register(modEventBus);//添加菜单
-
-        // Register the item to a creative tab
-        //将物品注册到创意标签。
-        modEventBus.addListener(this::addCreative);
-        // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        //注册我们的 mod 的 ModConfigSpec，以便 FML 可以为我们创建并加载配置文件。
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-        
-        modEventBus.addListener(this::commonSetup);
-    }
-
-    private void commonSetup(final net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> {
-            // Register GemRegion with a very low weight (0.5 or 1) to make it rare
-            Regions.register(new GemRegion(ResourceLocation.fromNamespaceAndPath(MOD_ID, "gem_region"), 2));
-            
-            // 注册地表规则：将宝石生物群系的地表改为石头
-            ResourceKey<Biome> gemBiome = ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MOD_ID, "gem_biome"));
-            SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, MOD_ID, 
-                SurfaceRules.ifTrue(SurfaceRules.isBiome(gemBiome), 
-                    SurfaceRules.sequence(
+   private void commonSetup(FMLCommonSetupEvent event) {
+      event.enqueueWork(
+         () -> {
+            MagicModularRegistry.ensureInitialized();
+            Regions.register(new GemRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_region"), 2));
+            ResourceKey<Biome> gemBiome = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_biome"));
+            SurfaceRuleManager.addSurfaceRules(
+               RuleCategory.OVERWORLD,
+               "typemoonworld",
+               SurfaceRules.ifTrue(
+                  SurfaceRules.isBiome(new ResourceKey[]{gemBiome}),
+                  SurfaceRules.sequence(
+                     new RuleSource[]{
                         SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.state(Blocks.STONE.defaultBlockState())),
                         SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.state(Blocks.STONE.defaultBlockState()))
-                    )
-                )
+                     }
+                  )
+               )
             );
-        });
-    }
+         }
+      );
+   }
 
-        private void registerCommands(RegisterCommandsEvent event) {
-        TypeMoonCommands.register(event.getDispatcher());
-    }
+   private void registerCommands(RegisterCommandsEvent event) {
+      TypeMoonCommands.register(event.getDispatcher());
+   }
 
-    // Add the example block item to the building blocks tab
-    //将示例块项目添加到构建块选项卡。
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+   private void addCreative(BuildCreativeModeTabContentsEvent event) {
+   }
 
-    }
+   public static <T extends CustomPacketPayload> void addNetworkMessage(
+      Type<T> id, StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler
+   ) {
+      if (networkingRegistered) {
+         throw new IllegalStateException("Cannot register new network messages after networking has been registered");
+      } else {
+         MESSAGES.put(id, new TYPE_MOON_WORLD.NetworkMessage(reader, handler));
+      }
+   }
 
-    // 用户代码块修改方法开始(以下都是mcr代码模块)
-    // 用户代码块修改方法结束
-    private static boolean networkingRegistered = false;
-    private static final Map<CustomPacketPayload.Type<?>, NetworkMessage<?>> MESSAGES = new HashMap<>();
+   private void registerNetworking(RegisterPayloadHandlersEvent event) {
+      PayloadRegistrar registrar = event.registrar("typemoonworld");
+      registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
+      registrar.playToServer(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
+      registrar.playToServer(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
+      registrar.playToServer(
+         Magical_attributes_Button_Message.TYPE, Magical_attributes_Button_Message.STREAM_CODEC, Magical_attributes_Button_Message::handleData
+      );
+      registrar.playToServer(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
+      registrar.playToServer(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
+      registrar.playToServer(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
+      registrar.playToServer(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
+      registrar.playToServer(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);
+      registrar.playToServer(OpenProjectionGuiMessage.TYPE, OpenProjectionGuiMessage.STREAM_CODEC, OpenProjectionGuiMessage::handleData);
+      registrar.playToServer(MysticEyesToggleMessage.TYPE, MysticEyesToggleMessage.STREAM_CODEC, MysticEyesToggleMessage::handleData);
+      registrar.playToServer(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
+      registrar.playToServer(MagicModeSwitchMessage.TYPE, MagicModeSwitchMessage.STREAM_CODEC, MagicModeSwitchMessage::handleData);
+      registrar.playToServer(SwitchMagicMessage.TYPE, SwitchMagicMessage.STREAM_CODEC, SwitchMagicMessage::handleData);
+      registrar.playToServer(SwitchMagicIndexMessage.TYPE, SwitchMagicIndexMessage.STREAM_CODEC, SwitchMagicIndexMessage::handleData);
+      registrar.playToServer(SwitchMagicWheelMessage.TYPE, SwitchMagicWheelMessage.STREAM_CODEC, SwitchMagicWheelMessage::handleData);
+      registrar.playToServer(MagicWheelSlotEditMessage.TYPE, MagicWheelSlotEditMessage.STREAM_CODEC, MagicWheelSlotEditMessage::handleData);
+      registrar.playToServer(ImplantMagicCrestMessage.TYPE, ImplantMagicCrestMessage.STREAM_CODEC, ImplantMagicCrestMessage::handleData);
+      registrar.playToServer(SaveStructuralSelectionMessage.TYPE, SaveStructuralSelectionMessage.STREAM_CODEC, SaveStructuralSelectionMessage::handleData);
+      registrar.playToServer(SelectProjectionStructureMessage.TYPE, SelectProjectionStructureMessage.STREAM_CODEC, SelectProjectionStructureMessage::handleData);
+      registrar.playToServer(DeleteProjectionStructureMessage.TYPE, DeleteProjectionStructureMessage.STREAM_CODEC, DeleteProjectionStructureMessage::handleData);
+      registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
+      registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
+      registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
+      registrar.playToClient(
+         TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE,
+         TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData
+      );
+      registrar.playToClient(
+         TypeMoonWorldModVariables.RuntimeSelectionSyncMessage.TYPE,
+         TypeMoonWorldModVariables.RuntimeSelectionSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.RuntimeSelectionSyncMessage::handleData
+      );
+      registrar.playToClient(
+         TypeMoonWorldModVariables.ModeStateSyncMessage.TYPE,
+         TypeMoonWorldModVariables.ModeStateSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.ModeStateSyncMessage::handleData
+      );
+      registrar.playToClient(
+         TypeMoonWorldModVariables.ManaSyncMessage.TYPE,
+         TypeMoonWorldModVariables.ManaSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.ManaSyncMessage::handleData
+      );
+      registrar.playToClient(
+         TypeMoonWorldModVariables.ProficiencySyncMessage.TYPE,
+         TypeMoonWorldModVariables.ProficiencySyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.ProficiencySyncMessage::handleData
+      );
+      registrar.playToClient(
+         TypeMoonWorldModVariables.ProjectionDeltaSyncMessage.TYPE,
+         TypeMoonWorldModVariables.ProjectionDeltaSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.ProjectionDeltaSyncMessage::handleData
+      );
+      registrar.playToClient(OpenLeylineSurveyMapMessage.TYPE, OpenLeylineSurveyMapMessage.STREAM_CODEC, OpenLeylineSurveyMapMessage::handleData);
+      networkingRegistered = true;
+   }
 
-    private record NetworkMessage<T extends CustomPacketPayload>(StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {
-    }
+   public static void queueServerWork(int tick, Runnable action) {
+      if (action != null) {
+         int delay = Math.max(1, tick);
+         long executeAt = serverTickCounter + delay;
+         scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(action);
+      }
+   }
 
-    public static <T extends CustomPacketPayload> void addNetworkMessage(CustomPacketPayload.Type<T> id, StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {
-        if (networkingRegistered)
-            throw new IllegalStateException("Cannot register new network messages after networking has been registered");
-        MESSAGES.put(id, new NetworkMessage<>(reader, handler));
-    }
+   @SubscribeEvent
+   public void tick(Post event) {
+      serverTickCounter++;
+      Queue<Runnable> due = scheduledWork.remove(serverTickCounter);
+      if (due != null) {
+         Runnable action;
+         while ((action = due.poll()) != null) {
+            try {
+               action.run();
+            } catch (Exception var5) {
+               LOGGER.error("Error while running scheduled server work", var5);
+            }
+         }
+      }
+   }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private void registerNetworking(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar(MOD_ID);
-        // Server Bound Packets (Client -> Server)
-        registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
-        registrar.playToServer(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
-        registrar.playToServer(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
-        registrar.playToServer(Magical_attributes_Button_Message.TYPE, Magical_attributes_Button_Message.STREAM_CODEC, Magical_attributes_Button_Message::handleData);
-        registrar.playToServer(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
-        registrar.playToServer(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
-        registrar.playToServer(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
-        registrar.playToServer(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
-        registrar.playToServer(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);
-        registrar.playToServer(OpenProjectionGuiMessage.TYPE, OpenProjectionGuiMessage.STREAM_CODEC, OpenProjectionGuiMessage::handleData);
-        registrar.playToServer(MysticEyesToggleMessage.TYPE, MysticEyesToggleMessage.STREAM_CODEC, MysticEyesToggleMessage::handleData);
-        registrar.playToServer(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
-        registrar.playToServer(MagicModeSwitchMessage.TYPE, MagicModeSwitchMessage.STREAM_CODEC, MagicModeSwitchMessage::handleData);
-        registrar.playToServer(SwitchMagicMessage.TYPE, SwitchMagicMessage.STREAM_CODEC, SwitchMagicMessage::handleData);
-        registrar.playToServer(SaveStructuralSelectionMessage.TYPE, SaveStructuralSelectionMessage.STREAM_CODEC, SaveStructuralSelectionMessage::handleData);
-        registrar.playToServer(SelectProjectionStructureMessage.TYPE, SelectProjectionStructureMessage.STREAM_CODEC, SelectProjectionStructureMessage::handleData);
-        registrar.playToServer(DeleteProjectionStructureMessage.TYPE, DeleteProjectionStructureMessage.STREAM_CODEC, DeleteProjectionStructureMessage::handleData);
-        registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
-        registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
-        registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
+   @SubscribeEvent
+   public void onServerStarting(ServerStartingEvent event) {
+      scheduledWork.clear();
+      serverTickCounter = 0L;
+   }
 
-        // Client Bound Packets (Server -> Client)
-        registrar.playToClient(TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE, TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData);
-        registrar.playToClient(TypeMoonWorldModVariables.ManaSyncMessage.TYPE, TypeMoonWorldModVariables.ManaSyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.ManaSyncMessage::handleData);
-        registrar.playToClient(TypeMoonWorldModVariables.ProficiencySyncMessage.TYPE, TypeMoonWorldModVariables.ProficiencySyncMessage.STREAM_CODEC, TypeMoonWorldModVariables.ProficiencySyncMessage::handleData);
-        registrar.playToClient(OpenLeylineSurveyMapMessage.TYPE, OpenLeylineSurveyMapMessage.STREAM_CODEC, OpenLeylineSurveyMapMessage::handleData);
-        
-        networkingRegistered = true;
-    }
+   @SubscribeEvent
+   public void onServerStopping(ServerStoppingEvent event) {
+      scheduledWork.clear();
+      serverTickCounter = 0L;
+   }
 
-    private static final Collection<Tuple<Runnable, Integer>> workQueue = new ConcurrentLinkedQueue<>();
-
-    public static void queueServerWork(int tick, Runnable action) {
-        workQueue.add(new Tuple<>(action, tick));
-    }
-
-    @SubscribeEvent
-    public void tick(ServerTickEvent.Post event) {
-        List<Tuple<Runnable, Integer>> actions = new ArrayList<>();
-        workQueue.forEach(work -> {
-            work.setB(work.getB() - 1);
-            if (work.getB() == 0)
-                actions.add(work);
-        });
-        actions.forEach(e -> e.getA().run());
-        workQueue.removeAll(actions);
-    }
-    //以上都是mcr代码模块存放区域
-
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
-    //您可以使用 SubscribeEvent 并让事件总线发现要调用的方法。
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-        workQueue.clear();
-    }
-
-    @SubscribeEvent
-    public void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
-        workQueue.clear();
-    }
-
+   private record NetworkMessage<T extends CustomPacketPayload>(StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {
+   }
 }

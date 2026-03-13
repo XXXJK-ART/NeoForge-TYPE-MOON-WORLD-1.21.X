@@ -1,207 +1,301 @@
-
 package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.network.chat.Component;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.level.block.state.BlockState;
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.minecraft.nbt.CompoundTag;
-import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
-import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public class MagicProjection {
-    public static void execute(Entity entity) {
-        if (!(entity instanceof ServerPlayer player)) return;
-
-        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-
-        ItemStack heldItem = player.getMainHandItem();
-        ItemStack offhandItem = player.getOffhandItem();
-        
-        // Projection Logic
-        boolean canProject = false;
-        net.minecraft.world.InteractionHand handToUse = null;
-
-        if (heldItem.isEmpty()) {
+   public static void execute(Entity entity) {
+      if (entity instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         boolean crestProjectionCast = vars.isCurrentSelectionFromCrest("projection");
+         boolean swordAttributeActive = vars.player_magic_attributes_sword && !crestProjectionCast;
+         boolean ubwAdaptiveProjection = vars.has_unlimited_blade_works && !crestProjectionCast;
+         ItemStack heldItem = player.getMainHandItem();
+         ItemStack offhandItem = player.getOffhandItem();
+         boolean canProject = false;
+         InteractionHand handToUse = null;
+         if (heldItem.isEmpty()) {
             canProject = true;
-            handToUse = net.minecraft.world.InteractionHand.MAIN_HAND;
-        } else if (offhandItem.isEmpty()) {
+            handToUse = InteractionHand.MAIN_HAND;
+         } else if (offhandItem.isEmpty()) {
             canProject = true;
-            handToUse = net.minecraft.world.InteractionHand.OFF_HAND;
-        }
+            handToUse = InteractionHand.OFF_HAND;
+         }
 
-        if (canProject) {
+         if (canProject) {
             ItemStack target = vars.projection_selected_item;
+            ItemStack autoAnalyzeCandidate = ItemStack.EMPTY;
+            if (target.isEmpty() && ubwAdaptiveProjection) {
+               ItemStack dynamicTarget = findProjectionTargetLikeAnalysis(player);
+               if (!dynamicTarget.isEmpty()) {
+                  ItemStack sanitized = sanitizeProjectionTarget(dynamicTarget);
+                  if (!sanitized.isEmpty()) {
+                     target = sanitized;
+                     autoAnalyzeCandidate = sanitized.copy();
+                  }
+               }
+            }
+
             if (target.isEmpty()) {
-                player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_NO_TARGET), true);
-                return;
+               player.displayClientMessage(Component.translatable("message.typemoonworld.projection.no_target"), true);
+               return;
             }
-            
-            // Avalon cannot be projected
+
             if (target.getItem() instanceof AvalonItem) {
-                player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_CANNOT_PROJECT_DIVINE), true);
-                return;
+               player.displayClientMessage(Component.translatable("message.typemoonworld.projection.cannot_project_divine"), true);
+               return;
             }
-            
-            double cost = calculateCost(target, vars.player_magic_attributes_sword, vars.proficiency_projection);
+
+            double cost = calculateCost(target, swordAttributeActive, vars.proficiency_projection);
             if (ManaHelper.consumeOneTimeMagicCost(player, cost)) {
-                
-                // Proficiency Increase
-                vars.proficiency_projection = Math.min(100, vars.proficiency_projection + 0.2);
-                vars.syncPlayerVariables(player);
-                
-                // TODO: Special Effect for Sword Attribute
-                if (vars.player_magic_attributes_sword) {
-                     // Placeholder for different effects when player has sword attribute
-                }
-                
-                ItemStack projected = target.copy();
-                projected.setCount(1);
-                projected.remove(DataComponents.CONTAINER);
-                projected.remove(DataComponents.BUNDLE_CONTENTS);
-                projected.remove(DataComponents.BLOCK_ENTITY_DATA);
-                
-                // Set Durability
-                if (projected.isDamageableItem()) {
-                    if (vars.player_magic_attributes_sword) {
-                        boolean isSword = projected.getItem() instanceof net.minecraft.world.item.SwordItem;
-                        int maxDmg = projected.getMaxDamage();
-                        if (isSword) {
-                            // 2/3 Durability remaining (damage = 1/3)
-                            // damageValue is "damage taken". So set to 1/3 of max.
-                            projected.setDamageValue((int)(maxDmg * 0.333));
-                        } else {
-                            // 1/10 Durability remaining (damage = 9/10)
-                            projected.setDamageValue((int)(maxDmg * 0.9));
-                        }
-                    } else {
-                        // Default: 1 Durability remaining
-                        projected.setDamageValue(projected.getMaxDamage() - 1);
-                    }
-                }
-                
-                // Add Tag
-                CompoundTag tag = new CompoundTag();
-                tag.putBoolean("is_projected", true);
-                if (vars.player_magic_attributes_sword) {
-                    tag.putBoolean("is_infinite_projection", true);
-                }
-                tag.putLong("projection_time", player.level().getGameTime());
-                
-                // Merge with existing custom data if any
-                CustomData existingData = projected.get(DataComponents.CUSTOM_DATA);
-                if (existingData != null) {
-                    CompoundTag existingTag = existingData.copyTag();
-                    existingTag.merge(tag);
-                    projected.set(DataComponents.CUSTOM_DATA, CustomData.of(existingTag));
-                } else {
-                    projected.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-                }
-                
-                // Add Glint
-                projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
-                
-                // Special Effects moved to Structural Analysis when used on projected Temple Stone Axe-Sword
+               if (!crestProjectionCast) {
+                  vars.proficiency_projection = Math.min(100.0, vars.proficiency_projection + 0.2);
+                  vars.syncPlayerVariables(player);
+               }
 
-                player.setItemInHand(handToUse, projected);
-                vars.syncPlayerVariables(player);
-                grantAdvancement(player, "trace_on");
-                player.displayClientMessage(Component.translatable(MagicConstants.MSG_TRACE_ON), true);
+               if (swordAttributeActive) {
+               }
+
+               ItemStack projected = target.copy();
+               projected.setCount(1);
+               projected.remove(DataComponents.CONTAINER);
+               projected.remove(DataComponents.BUNDLE_CONTENTS);
+               projected.remove(DataComponents.BLOCK_ENTITY_DATA);
+               if (projected.isDamageableItem()) {
+                  if (swordAttributeActive) {
+                     boolean isSword = projected.getItem() instanceof SwordItem;
+                     int maxDmg = projected.getMaxDamage();
+                     if (isSword) {
+                        projected.setDamageValue((int)(maxDmg * 0.333));
+                     } else {
+                        projected.setDamageValue((int)(maxDmg * 0.9));
+                     }
+                  } else {
+                     projected.setDamageValue(projected.getMaxDamage() - 1);
+                  }
+               }
+
+               CompoundTag tag = new CompoundTag();
+               tag.putBoolean("is_projected", true);
+               if (swordAttributeActive) {
+                  tag.putBoolean("is_infinite_projection", true);
+               }
+
+               tag.putLong("projection_time", player.level().getGameTime());
+               CustomData existingData = (CustomData)projected.get(DataComponents.CUSTOM_DATA);
+               if (existingData != null) {
+                  CompoundTag existingTag = existingData.copyTag();
+                  existingTag.merge(tag);
+                  projected.set(DataComponents.CUSTOM_DATA, CustomData.of(existingTag));
+               } else {
+                  projected.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+               }
+
+               projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+               player.setItemInHand(handToUse, projected);
+               if (!autoAnalyzeCandidate.isEmpty() && !isAlreadyAnalyzed(vars, autoAnalyzeCandidate)) {
+                  vars.analyzed_items.add(autoAnalyzeCandidate.copy());
+               }
+
+               vars.syncPlayerVariables(player);
+               grantAdvancement(player, "trace_on");
+               player.displayClientMessage(Component.translatable("message.typemoonworld.trace_on"), true);
             }
-        } else {
-            // If both hands are not empty
-            player.displayClientMessage(Component.translatable(MagicConstants.MSG_PROJECTION_HANDS_FULL), true);
-        }
-    }
-    
-    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
-        double baseCost = 10;
-        
-        // Noble Phantasms have a fixed base cost of 1000
-        if (stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
-            baseCost = 1000;
-        } else {
-            Rarity rarity = stack.getRarity();
-            if (rarity == Rarity.UNCOMMON) baseCost = 50;
-            else if (rarity == Rarity.RARE) baseCost = 100;
-            else if (rarity == Rarity.EPIC) baseCost = 300;
-        }
-        
-        // Multipliers
-        // Enchantments
-        int enchantCount = stack.getOrDefault(DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY).size();
-        if (enchantCount > 0) {
-            baseCost *= (1 + enchantCount * 0.2); 
-        }
-        
-        // Durability
-        if (stack.getMaxDamage() > 0) {
-             baseCost *= (1 + stack.getMaxDamage() / 1000.0);
-        }
-        
-        // Block Hardness
-        if (stack.getItem() instanceof BlockItem blockItem) {
-             BlockState state = blockItem.getBlock().defaultBlockState();
-             float hardness = state.getDestroySpeed(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, net.minecraft.core.BlockPos.ZERO);
-             if (hardness > 0) {
-                 baseCost += hardness * 5; 
-             }
-        }
-        
-        // Attack Damage Calculation
-        ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-        double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND); 
-        if (damage > 0) {
-            // Add damage to cost (e.g., 1 damage = 5 mana)
-            baseCost += damage * 5;
-        }
-        
-        // Sword Attribute Discount / Cost Modification
-        if (hasSwordAttribute) {
-            boolean isSword = stack.getItem() instanceof net.minecraft.world.item.SwordItem;
-            if (isSword) {
-                baseCost *= 0.1; // 10% cost for swords
+         } else {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.projection.hands_full"), true);
+         }
+      }
+   }
+
+   public static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {
+      double baseCost = 10.0;
+      if (stack.getItem() instanceof NoblePhantasmItem) {
+         baseCost = 1000.0;
+      } else {
+         Rarity rarity = stack.getRarity();
+         if (rarity == Rarity.UNCOMMON) {
+            baseCost = 50.0;
+         } else if (rarity == Rarity.RARE) {
+            baseCost = 100.0;
+         } else if (rarity == Rarity.EPIC) {
+            baseCost = 300.0;
+         }
+      }
+
+      int enchantCount = ((ItemEnchantments)stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY)).size();
+      if (enchantCount > 0) {
+         baseCost *= 1.0 + enchantCount * 0.2;
+      }
+
+      if (stack.getMaxDamage() > 0) {
+         baseCost *= 1.0 + stack.getMaxDamage() / 1000.0;
+      }
+
+      if (stack.getItem() instanceof BlockItem blockItem) {
+         BlockState state = blockItem.getBlock().defaultBlockState();
+         float hardness = state.getDestroySpeed(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+         if (hardness > 0.0F) {
+            baseCost += hardness * 5.0F;
+         }
+      }
+
+      ItemAttributeModifiers modifiers = (ItemAttributeModifiers)stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+      double damage = modifiers.compute(0.0, EquipmentSlot.MAINHAND);
+      if (damage > 0.0) {
+         baseCost += damage * 5.0;
+      }
+
+      if (hasSwordAttribute) {
+         boolean isSword = stack.getItem() instanceof SwordItem;
+         if (isSword) {
+            baseCost *= 0.1;
+         } else {
+            baseCost *= 0.5;
+         }
+      }
+
+      return baseCost * (1.0 - proficiency * 0.005);
+   }
+
+   private static boolean isNoblePhantasm(ItemStack stack) {
+      return stack.getItem() instanceof NoblePhantasmItem;
+   }
+
+   private static void grantAdvancement(ServerPlayer player, String idPath) {
+      if (player.getServer() != null) {
+         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("typemoonworld", idPath);
+         AdvancementHolder holder = player.getServer().getAdvancements().get(id);
+         if (holder != null) {
+            AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+
+            for (String criterion : progress.getRemainingCriteria()) {
+               player.getAdvancements().award(holder, criterion);
+            }
+         }
+      }
+   }
+
+   private static ItemStack findProjectionTargetLikeAnalysis(ServerPlayer player) {
+      ItemStack heldItem = player.getMainHandItem();
+      if (!heldItem.isEmpty()) {
+         return heldItem;
+      } else {
+         HitResult hitResult = rayTrace(player, 5.0);
+         if (hitResult.getType() == Type.BLOCK) {
+            BlockHitResult blockHit = (BlockHitResult)hitResult;
+            BlockState state = player.level().getBlockState(blockHit.getBlockPos());
+            return state.getBlock().asItem().getDefaultInstance();
+         } else {
+            if (hitResult.getType() == Type.ENTITY) {
+               EntityHitResult entityHit = (EntityHitResult)hitResult;
+               Entity hitEntity = entityHit.getEntity();
+               if (hitEntity instanceof ItemEntity itemEntity) {
+                  return itemEntity.getItem();
+               }
+
+               if (hitEntity instanceof LivingEntity livingEntity) {
+                  ItemStack mainHand = livingEntity.getMainHandItem();
+                  if (!mainHand.isEmpty()) {
+                     return mainHand;
+                  }
+
+                  ItemStack offHand = livingEntity.getOffhandItem();
+                  if (!offHand.isEmpty()) {
+                     return offHand;
+                  }
+               }
+            }
+
+            return ItemStack.EMPTY;
+         }
+      }
+   }
+
+   private static ItemStack sanitizeProjectionTarget(ItemStack original) {
+      ItemStack sanitized = original.copy();
+      sanitized.setCount(1);
+      sanitized.remove(DataComponents.CONTAINER);
+      sanitized.remove(DataComponents.BUNDLE_CONTENTS);
+      sanitized.remove(DataComponents.BLOCK_ENTITY_DATA);
+      if (sanitized.has(DataComponents.CUSTOM_DATA)) {
+         CustomData customData = (CustomData)sanitized.get(DataComponents.CUSTOM_DATA);
+         if (customData != null) {
+            CompoundTag tag = customData.copyTag();
+            if (tag.contains("BlockEntityTag")) {
+               CompoundTag blockEntityTag = tag.getCompound("BlockEntityTag");
+               if (blockEntityTag.contains("Items")) {
+                  blockEntityTag.remove("Items");
+                  if (blockEntityTag.isEmpty()) {
+                     tag.remove("BlockEntityTag");
+                  } else {
+                     tag.put("BlockEntityTag", blockEntityTag);
+                  }
+               }
+            }
+
+            if (tag.isEmpty()) {
+               sanitized.remove(DataComponents.CUSTOM_DATA);
             } else {
-                baseCost *= 0.5; // 50% cost for other items
+               sanitized.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             }
-        }
-        
-        // Proficiency Discount (up to 50% reduction)
-        // 0 proficiency = 0% reduction
-        // 100 proficiency = 50% reduction
-        // cost = cost * (1 - (proficiency * 0.005))
-        baseCost *= (1.0 - (proficiency * 0.005));
-        
-        return baseCost;
-    }
+         }
+      }
 
-    private static boolean isNoblePhantasm(ItemStack stack) {
-        return stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
-    }
+      return sanitized;
+   }
 
-    private static void grantAdvancement(ServerPlayer player, String idPath) {
-        if (player.getServer() == null) return;
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, idPath);
-        net.minecraft.advancements.AdvancementHolder holder = player.getServer().getAdvancements().get(id);
-        if (holder == null) return;
-        net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
-        for (String criterion : progress.getRemainingCriteria()) {
-            player.getAdvancements().award(holder, criterion);
-        }
-    }
+   private static boolean isAlreadyAnalyzed(TypeMoonWorldModVariables.PlayerVariables vars, ItemStack stack) {
+      for (ItemStack analyzed : vars.analyzed_items) {
+         if (ItemStack.isSameItemSameComponents(analyzed, stack)) {
+            return true;
+         }
+      }
+
+      return false;
+   }
+
+   private static HitResult rayTrace(ServerPlayer player, double range) {
+      float partialTicks = 1.0F;
+      HitResult blockHit = player.pick(range, partialTicks, false);
+      Vec3 eyePos = player.getEyePosition(partialTicks);
+      double distToBlock = blockHit.getType() != Type.MISS ? blockHit.getLocation().distanceTo(eyePos) : range;
+      Vec3 lookDir = player.getViewVector(partialTicks);
+      Vec3 endPos = eyePos.add(lookDir.x * range, lookDir.y * range, lookDir.z * range);
+      AABB searchBox = player.getBoundingBox().expandTowards(lookDir.scale(range)).inflate(1.0);
+      EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(
+         player, eyePos, endPos, searchBox, e -> !e.isSpectator() && e.isPickable(), distToBlock * distToBlock
+      );
+      return (HitResult)(entityHit != null ? entityHit : blockHit);
+   }
 }
