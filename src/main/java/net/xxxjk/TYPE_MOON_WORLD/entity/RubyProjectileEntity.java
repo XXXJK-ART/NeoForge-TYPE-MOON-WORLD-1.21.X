@@ -102,7 +102,7 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
    }
 
    protected Item getDefaultItem() {
-      return (Item)ModItems.CARVED_RUBY_FULL.get();
+      return ModItems.CARVED_RUBY_FULL.get();
    }
 
    protected boolean canHitEntity(Entity entity) {

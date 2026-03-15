@@ -16,7 +16,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
@@ -94,14 +93,14 @@ public final class MagicGandrMachineGun {
          } else if (!crestCast && !vars.learned_magics.contains("gander")) {
             player.displayClientMessage(
                Component.translatable(
-                  "message.typemoonworld.scroll.requirement_not_met", new Object[]{Component.translatable("magic.typemoonworld.gander.name")}
+                  "message.typemoonworld.scroll.requirement_not_met", Component.translatable("magic.typemoonworld.gander.name")
                ),
                true
             );
             return false;
          } else {
             CompoundTag tag = player.getPersistentData();
-            if (tag.getBoolean("TypeMoonGandrMachineGunActive") || tag.getBoolean("TypeMoonGandrMachineGunChanting")) {
+            if (tag.getBoolean(TAG_ACTIVE) || tag.getBoolean(TAG_CHANTING)) {
                clearState(player);
                return true;
             } else if (!EntityUtils.hasAnyEmptyHand(player)) {
@@ -116,19 +115,19 @@ public final class MagicGandrMachineGun {
                } else {
                   long now = player.level().getGameTime();
                   if (crestCast) {
-                     tag.putBoolean("TypeMoonGandrMachineGunChanting", false);
-                     tag.putBoolean("TypeMoonGandrMachineGunActive", true);
-                     tag.putLong("TypeMoonGandrMachineGunChantEndTick", now);
-                     tag.putLong("TypeMoonGandrMachineGunNextBurstTick", now);
+                     tag.putBoolean(TAG_CHANTING, false);
+                     tag.putBoolean(TAG_ACTIVE, true);
+                     tag.putLong(TAG_CHANT_END_TICK, now);
+                     tag.putLong(TAG_NEXT_BURST_TICK, now);
                   } else {
-                     tag.putBoolean("TypeMoonGandrMachineGunChanting", true);
-                     tag.putBoolean("TypeMoonGandrMachineGunActive", false);
-                     tag.putLong("TypeMoonGandrMachineGunChantEndTick", now + 20L);
-                     tag.putLong("TypeMoonGandrMachineGunNextBurstTick", now + 20L);
+                     tag.putBoolean(TAG_CHANTING, true);
+                     tag.putBoolean(TAG_ACTIVE, false);
+                     tag.putLong(TAG_CHANT_END_TICK, now + CHANT_TICKS);
+                     tag.putLong(TAG_NEXT_BURST_TICK, now + CHANT_TICKS);
                   }
 
-                  tag.putInt("TypeMoonGandrMachineGunMode", mode);
-                  if (!crestCast && mode == 1) {
+                  tag.putInt(TAG_MODE, mode);
+                  if (!crestCast && mode == MODE_GATE_BARRAGE) {
                      player.displayClientMessage(getGateBarrageChantComponent(), true);
                   } else {
                      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gandr_machine_gun.start"), true);
@@ -144,8 +143,8 @@ public final class MagicGandrMachineGun {
    public static void tick(ServerPlayer player) {
       if (!player.level().isClientSide()) {
          CompoundTag tag = player.getPersistentData();
-         boolean chanting = tag.getBoolean("TypeMoonGandrMachineGunChanting");
-         boolean active = tag.getBoolean("TypeMoonGandrMachineGunActive");
+         boolean chanting = tag.getBoolean(TAG_CHANTING);
+         boolean active = tag.getBoolean(TAG_ACTIVE);
          if (chanting || active) {
             TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -155,55 +154,55 @@ public final class MagicGandrMachineGun {
             } else {
                boolean crestCast = vars.isCurrentSelectionFromCrest("gandr_machine_gun");
                double effectiveProficiency = getEffectiveGanderProficiency(vars);
-               int mode = clampMode(tag.getInt("TypeMoonGandrMachineGunMode"));
+               int mode = clampMode(tag.getInt(TAG_MODE));
                long now = player.level().getGameTime();
                if (chanting) {
-                  long chantEndTick = tag.getLong("TypeMoonGandrMachineGunChantEndTick");
+                  long chantEndTick = tag.getLong(TAG_CHANT_END_TICK);
                   if (now < chantEndTick) {
-                     double progress = 1.0 - (chantEndTick - now) / 20.0;
+                     double progress = 1.0 - (chantEndTick - now) / (double)CHANT_TICKS;
                      discardChargingPreview(player);
                      spawnChantParticles(player, progress, mode, effectiveProficiency);
                      return;
                   }
 
                   discardChargingPreview(player);
-                  tag.putBoolean("TypeMoonGandrMachineGunChanting", false);
-                  tag.putBoolean("TypeMoonGandrMachineGunActive", true);
-                  tag.putLong("TypeMoonGandrMachineGunNextBurstTick", now);
+                  tag.putBoolean(TAG_CHANTING, false);
+                  tag.putBoolean(TAG_ACTIVE, true);
+                  tag.putLong(TAG_NEXT_BURST_TICK, now);
                }
 
-               if (tag.getBoolean("TypeMoonGandrMachineGunActive")) {
-                  long nextBurstTick = tag.getLong("TypeMoonGandrMachineGunNextBurstTick");
+               if (tag.getBoolean(TAG_ACTIVE)) {
+                  long nextBurstTick = tag.getLong(TAG_NEXT_BURST_TICK);
                   if (now >= nextBurstTick) {
-                     if (mode == 1) {
+                     if (mode == MODE_GATE_BARRAGE) {
                         boolean fired = fireGateBarrage(player, vars, effectiveProficiency);
                         if (!fired) {
                            clearState(player);
                         } else {
-                           vars.magic_cooldown = 5.0;
+                           vars.magic_cooldown = BARRAGE_INTERVAL_TICKS;
                            if (!crestCast) {
                               vars.proficiency_gander = Math.min(100.0, vars.proficiency_gander + getBarrageShotCount(effectiveProficiency) * 0.02);
                            }
 
                            syncBurstState(player, vars, now, !crestCast);
-                           int jitter = player.getRandom().nextInt(5) - 2;
-                           int nextInterval = Math.max(2, 5 + jitter);
-                           tag.putLong("TypeMoonGandrMachineGunNextBurstTick", now + nextInterval);
-                        }
-                     } else {
+                            int jitter = player.getRandom().nextInt(BARRAGE_INTERVAL_JITTER_TICKS * 2 + 1) - BARRAGE_INTERVAL_JITTER_TICKS;
+                            int nextInterval = Math.max(BURST_INTERVAL_TICKS, BARRAGE_INTERVAL_TICKS + jitter);
+                            tag.putLong(TAG_NEXT_BURST_TICK, now + nextInterval);
+                         }
+                      } else {
                         boolean fired = fireBurst(player, vars, effectiveProficiency);
                         if (!fired) {
                            clearState(player);
                         } else {
-                           vars.magic_cooldown = 2.0;
+                           vars.magic_cooldown = BURST_INTERVAL_TICKS;
                            if (!crestCast) {
                               vars.proficiency_gander = Math.min(100.0, vars.proficiency_gander + 0.05);
                            }
 
                            syncBurstState(player, vars, now, !crestCast);
-                           tag.putLong("TypeMoonGandrMachineGunNextBurstTick", now + 2L);
-                        }
-                     }
+                            tag.putLong(TAG_NEXT_BURST_TICK, now + BURST_INTERVAL_TICKS);
+                         }
+                      }
                   }
                }
             }
@@ -237,7 +236,7 @@ public final class MagicGandrMachineGun {
          vars.player_mana = Math.max(0.0, vars.player_mana - getRapidBurstManaCost());
          Level level = player.level();
 
-         for (int i = 0; i < 3; i++) {
+         for (int i = 0; i < BURST_COUNT; i++) {
             shootRapidBullet(level, player, i, chargeSeconds);
          }
 
@@ -254,7 +253,7 @@ public final class MagicGandrMachineGun {
       projectile.setNoGravity(true);
       projectile.setChargeSeconds(chargeSeconds);
       projectile.setVisualScale(getProjectileScaleForCharge(chargeSeconds));
-      projectile.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+      projectile.setItem(new ItemStack(ModItems.GANDER.get()));
       Vec3 forward = EntityUtils.getAutoAimDirection(player, 48.0, 58.0);
       Vec3 right = forward.cross(new Vec3(0.0, 1.0, 0.0));
       if (right.lengthSqr() < 1.0E-6) {
@@ -265,17 +264,17 @@ public final class MagicGandrMachineGun {
 
       Vec3 up = right.cross(forward).normalize();
       Vec3 handAnchor = EntityUtils.getCurrentEmptyHandCastAnchor(player);
-      double randomSide = (level.random.nextDouble() * 2.0 - 1.0) * 0.06;
-      double randomUp = (level.random.nextDouble() * 2.0 - 1.0) * 0.05;
-      double randomForward = level.random.nextDouble() * 0.03;
-      Vec3 spawnPos = handAnchor.add(forward.scale(0.08 + randomForward))
+      double randomSide = (level.random.nextDouble() * 2.0 - 1.0) * RANDOM_SIDE_JITTER;
+      double randomUp = (level.random.nextDouble() * 2.0 - 1.0) * RANDOM_UP_JITTER;
+      double randomForward = level.random.nextDouble() * RANDOM_FORWARD_JITTER;
+      Vec3 spawnPos = handAnchor.add(forward.scale(RIGHT_HAND_FORWARD_OFFSET + randomForward))
          .add(right.scale(SHOT_SIDE_OFFSETS[pattern]))
          .add(up.scale(SHOT_UP_OFFSETS[pattern]))
          .add(right.scale(randomSide))
          .add(up.scale(randomUp));
       projectile.setPos(spawnPos);
-      float yawOffset = SHOT_YAW_OFFSETS[pattern] + (float)level.random.nextGaussian() * 0.45F;
-      float pitchOffset = SHOT_PITCH_OFFSETS[pattern] + (float)level.random.nextGaussian() * 0.35F;
+      float yawOffset = SHOT_YAW_OFFSETS[pattern] + (float)level.random.nextGaussian() * RANDOM_YAW_JITTER;
+      float pitchOffset = SHOT_PITCH_OFFSETS[pattern] + (float)level.random.nextGaussian() * RANDOM_PITCH_JITTER;
       projectile.shootFromRotation(player, player.getXRot() + pitchOffset, player.getYRot() + yawOffset, 0.0F, 3.8F, 0.1F);
       level.addFreshEntity(projectile);
       spawnShotParticles(level, spawnPos, forward);
@@ -283,7 +282,7 @@ public final class MagicGandrMachineGun {
 
    private static boolean fireGateBarrage(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double effectiveProficiency) {
       int shotCount = getBarrageShotCount(effectiveProficiency);
-      double manaCost = shotCount * 20.0;
+      double manaCost = shotCount * MANA_COST_PER_SHOT;
       if (vars.player_mana < manaCost) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          return false;
@@ -300,10 +299,10 @@ public final class MagicGandrMachineGun {
          }
 
          Vec3 up = right.cross(forward).normalize();
-         Vec3 center = player.getEyePosition().add(forward.scale(-2.2)).add(up.scale(0.72));
+         Vec3 center = player.getEyePosition().add(forward.scale(-BARRAGE_BACK_OFFSET)).add(up.scale(BARRAGE_UP_OFFSET));
          LivingEntity lockTarget = EntityUtils.findAutoAimTarget(player, 52.0, 75.0);
-         Vec3 targetCenter = lockTarget != null ? lockTarget.getEyePosition() : player.getEyePosition().add(forward.scale(36.0));
-         int columns = Math.min(8 + level.random.nextInt(3), Math.max(1, shotCount));
+         Vec3 targetCenter = lockTarget != null ? lockTarget.getEyePosition() : player.getEyePosition().add(forward.scale(BARRAGE_AIM_DISTANCE));
+         int columns = Math.min(BARRAGE_COLUMNS + level.random.nextInt(3), Math.max(1, shotCount));
          columns = Math.max(5, columns);
          int rows = (int)Math.ceil((double)shotCount / columns);
          int[] order = buildShuffledOrder(shotCount, level);
@@ -312,14 +311,16 @@ public final class MagicGandrMachineGun {
             int slot = order[i];
             int row = slot / columns;
             int col = slot % columns;
-            double x = (col - (columns - 1) * 0.5) * 0.52 + (level.random.nextDouble() - 0.5) * 0.2;
-            double y = ((rows - 1) * 0.5 - row) * 0.44 + (level.random.nextDouble() - 0.5) * 0.24;
-            double rowDepthOffset = ((rows - 1) * 0.5 - row) * 0.42;
-            Vec3 spawnPos = center.add(right.scale(x)).add(up.scale(y)).add(forward.scale(rowDepthOffset + (level.random.nextDouble() - 0.5) * 0.58));
-            Vec3 jitter = right.scale((level.random.nextDouble() - 0.5) * 0.85).add(up.scale((level.random.nextDouble() - 0.5) * 0.5525));
+            double x = (col - (columns - 1) * 0.5) * BARRAGE_COL_SPACING + (level.random.nextDouble() - 0.5) * BARRAGE_SIDE_JITTER;
+            double y = ((rows - 1) * 0.5 - row) * BARRAGE_ROW_SPACING + (level.random.nextDouble() - 0.5) * BARRAGE_HEIGHT_JITTER;
+            double rowDepthOffset = ((rows - 1) * 0.5 - row) * BARRAGE_DEPTH_LAYER_SPREAD;
+            Vec3 spawnPos = center.add(right.scale(x)).add(up.scale(y)).add(forward.scale(rowDepthOffset + (level.random.nextDouble() - 0.5) * BARRAGE_DEPTH_JITTER));
+            Vec3 jitter = right.scale((level.random.nextDouble() - 0.5) * BARRAGE_AIM_JITTER)
+               .add(up.scale((level.random.nextDouble() - 0.5) * BARRAGE_AIM_JITTER * 0.65));
             Vec3 direction = targetCenter.add(jitter).subtract(spawnPos).normalize();
-            float speed = 3.4F + level.random.nextFloat() * 0.7999997F;
-            float inaccuracy = 0.05F + level.random.nextFloat() * 0.120000005F;
+            float speed = BARRAGE_PROJECTILE_SPEED_MIN + level.random.nextFloat() * (BARRAGE_PROJECTILE_SPEED_MAX - BARRAGE_PROJECTILE_SPEED_MIN);
+            float inaccuracy = BARRAGE_PROJECTILE_INACCURACY_MIN
+               + level.random.nextFloat() * (BARRAGE_PROJECTILE_INACCURACY_MAX - BARRAGE_PROJECTILE_INACCURACY_MIN);
             shootBarrageBullet(level, player, spawnPos, direction, chargeSeconds, speed, inaccuracy);
          }
 
@@ -333,7 +334,7 @@ public final class MagicGandrMachineGun {
       projectile.setNoGravity(true);
       projectile.setChargeSeconds(chargeSeconds);
       projectile.setVisualScale(getProjectileScaleForCharge(chargeSeconds));
-      projectile.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+      projectile.setItem(new ItemStack(ModItems.GANDER.get()));
       projectile.setPos(spawnPos);
       projectile.shoot(direction.x, direction.y, direction.z, speed, inaccuracy);
       level.addFreshEntity(projectile);
@@ -394,16 +395,16 @@ public final class MagicGandrMachineGun {
    }
 
    private static double getRapidBurstManaCost() {
-      return 60.0;
+      return BURST_COUNT * MANA_COST_PER_SHOT;
    }
 
    private static double getBarrageManaCost(double proficiency) {
-      return getBarrageShotCount(proficiency) * 20.0;
+      return getBarrageShotCount(proficiency) * MANA_COST_PER_SHOT;
    }
 
    private static int getBarrageShotCount(double proficiency) {
       double t = Math.max(0.0, Math.min(100.0, proficiency)) / 100.0;
-      return (int)Math.round(12.0 + 3.0 * t);
+      return (int)Math.round(BARRAGE_MIN_SHOTS + (BARRAGE_MAX_SHOTS - BARRAGE_MIN_SHOTS) * t);
    }
 
    private static int getEquivalentChargeSeconds(double proficiency) {
@@ -418,7 +419,7 @@ public final class MagicGandrMachineGun {
    private static float getProjectileScaleForCharge(int chargeSeconds) {
       int clamped = Math.max(1, Math.min(5, chargeSeconds));
       double ratio = (clamped - 1) / 4.0;
-      return (float)(0.207F + 0.163F * ratio);
+      return (float)(PROJECTILE_SCALE_MIN + (PROJECTILE_SCALE_MAX - PROJECTILE_SCALE_MIN) * ratio);
    }
 
    private static int clampMode(int mode) {
@@ -428,28 +429,28 @@ public final class MagicGandrMachineGun {
    private static void clearState(ServerPlayer player) {
       discardChargingPreview(player);
       CompoundTag tag = player.getPersistentData();
-      tag.putBoolean("TypeMoonGandrMachineGunActive", false);
-      tag.putBoolean("TypeMoonGandrMachineGunChanting", false);
-      tag.putLong("TypeMoonGandrMachineGunChantEndTick", 0L);
-      tag.putLong("TypeMoonGandrMachineGunNextBurstTick", 0L);
-      tag.putInt("TypeMoonGandrMachineGunMode", 0);
-      tag.remove("TypeMoonGandrMachineGunLastManaSyncTick");
-      tag.remove("TypeMoonGandrMachineGunLastProfSyncTick");
+      tag.putBoolean(TAG_ACTIVE, false);
+      tag.putBoolean(TAG_CHANTING, false);
+      tag.putLong(TAG_CHANT_END_TICK, 0L);
+      tag.putLong(TAG_NEXT_BURST_TICK, 0L);
+      tag.putInt(TAG_MODE, MODE_RAPID_BURST);
+      tag.remove(TAG_LAST_MANA_SYNC_TICK);
+      tag.remove(TAG_LAST_PROF_SYNC_TICK);
    }
 
    private static void syncBurstState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, long now, boolean syncProficiency) {
       CompoundTag tag = player.getPersistentData();
-      long lastManaSync = tag.getLong("TypeMoonGandrMachineGunLastManaSyncTick");
-      if (now - lastManaSync >= 4L || vars.player_mana <= 0.0) {
+      long lastManaSync = tag.getLong(TAG_LAST_MANA_SYNC_TICK);
+      if (now - lastManaSync >= MANA_SYNC_INTERVAL_TICKS || vars.player_mana <= 0.0) {
          vars.syncMana(player);
-         tag.putLong("TypeMoonGandrMachineGunLastManaSyncTick", now);
+         tag.putLong(TAG_LAST_MANA_SYNC_TICK, now);
       }
 
       if (syncProficiency) {
-         long lastProfSync = tag.getLong("TypeMoonGandrMachineGunLastProfSyncTick");
-         if (now - lastProfSync >= 20L) {
+         long lastProfSync = tag.getLong(TAG_LAST_PROF_SYNC_TICK);
+         if (now - lastProfSync >= PROF_SYNC_INTERVAL_TICKS) {
             vars.syncProficiency(player);
-            tag.putLong("TypeMoonGandrMachineGunLastProfSyncTick", now);
+            tag.putLong(TAG_LAST_PROF_SYNC_TICK, now);
          }
       }
    }
@@ -468,7 +469,7 @@ public final class MagicGandrMachineGun {
             int chargeSeconds = getEquivalentChargeSeconds(proficiency);
             float targetScale = getProjectileScaleForCharge(chargeSeconds);
             double t = Math.max(0.0, Math.min(1.0, progressRatio));
-            float scale = (float)(0.207F + (targetScale - 0.207F) * t);
+            float scale = (float)(PROJECTILE_SCALE_MIN + (targetScale - PROJECTILE_SCALE_MIN) * t);
 
             for (int i = 0; i < previews.size(); i++) {
                GanderProjectileEntity preview = previews.get(i);
@@ -500,7 +501,7 @@ public final class MagicGandrMachineGun {
    private static Vec3 getRapidChargeAnchor(ServerPlayer player) {
       Vec3 handAnchor = EntityUtils.getCurrentEmptyHandCastAnchor(player);
       Vec3 forward = player.getLookAngle().normalize();
-      return handAnchor.add(forward.scale(0.54)).add(new Vec3(0.0, 0.1, 0.0));
+      return handAnchor.add(forward.scale(CHARGE_ANCHOR_FORWARD_FROM_HAND)).add(new Vec3(0.0, CHARGE_ANCHOR_UP_FROM_HAND, 0.0));
    }
 
    private static Vec3 getBarrageFormationCenter(ServerPlayer player) {
@@ -513,7 +514,7 @@ public final class MagicGandrMachineGun {
       }
 
       Vec3 up = right.cross(forward).normalize();
-      return player.getEyePosition().add(forward.scale(-2.2)).add(up.scale(0.72));
+      return player.getEyePosition().add(forward.scale(-BARRAGE_BACK_OFFSET)).add(up.scale(BARRAGE_UP_OFFSET));
    }
 
    private static List<Vec3> getBarrageChargeAnchors(ServerPlayer player, int shotCount) {
@@ -528,16 +529,16 @@ public final class MagicGandrMachineGun {
 
       Vec3 up = right.cross(forward).normalize();
       Vec3 center = getBarrageFormationCenter(player);
-      int columns = Math.min(8, Math.max(1, shotCount));
+      int columns = Math.min(BARRAGE_COLUMNS, Math.max(1, shotCount));
       int rows = (int)Math.ceil((double)shotCount / columns);
 
       for (int i = 0; i < shotCount; i++) {
          int row = i / columns;
          int col = i % columns;
-         double x = (col - (columns - 1) * 0.5) * 0.52 + signedSlotNoise(i, 1) * 0.2;
-         double y = ((rows - 1) * 0.5 - row) * 0.44 + signedSlotNoise(i, 2) * 0.24;
-         double rowDepthOffset = ((rows - 1) * 0.5 - row) * 0.42;
-         double z = rowDepthOffset + signedSlotNoise(i, 3) * 0.58;
+         double x = (col - (columns - 1) * 0.5) * BARRAGE_COL_SPACING + signedSlotNoise(i, 1) * BARRAGE_SIDE_JITTER;
+         double y = ((rows - 1) * 0.5 - row) * BARRAGE_ROW_SPACING + signedSlotNoise(i, 2) * BARRAGE_HEIGHT_JITTER;
+         double rowDepthOffset = ((rows - 1) * 0.5 - row) * BARRAGE_DEPTH_LAYER_SPREAD;
+         double z = rowDepthOffset + signedSlotNoise(i, 3) * BARRAGE_DEPTH_JITTER;
          anchors.add(center.add(right.scale(x)).add(up.scale(y)).add(forward.scale(z)));
       }
 
@@ -563,12 +564,12 @@ public final class MagicGandrMachineGun {
             List<GanderProjectileEntity> var6 = new ArrayList<>(count);
             Vec3 fallbackPos = player.position();
 
-            for (int i = 0; i < count; i++) {
+             for (int i = 0; i < count; i++) {
                GanderProjectileEntity preview = new GanderProjectileEntity(player.level(), player);
                preview.setNoGravity(true);
                preview.setChargingPreview(true);
-               preview.setVisualScale(0.207F);
-               preview.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+               preview.setVisualScale(PROJECTILE_SCALE_MIN);
+               preview.setItem(new ItemStack(ModItems.GANDER.get()));
                preview.setPos(fallbackPos);
                player.level().addFreshEntity(preview);
                var6.add(preview);
@@ -588,11 +589,11 @@ public final class MagicGandrMachineGun {
          list.add(StringTag.valueOf(preview.getUUID().toString()));
       }
 
-      tag.put("TypeMoonGandrMachineGunChargePreviewUUIDs", list);
+      tag.put(TAG_CHARGE_PREVIEW_UUIDS, list);
       if (previews.size() == 1) {
-         tag.putUUID("TypeMoonGandrMachineGunChargePreviewUUID", previews.get(0).getUUID());
+         tag.putUUID(TAG_CHARGE_PREVIEW_UUID, previews.get(0).getUUID());
       } else {
-         tag.remove("TypeMoonGandrMachineGunChargePreviewUUID");
+         tag.remove(TAG_CHARGE_PREVIEW_UUID);
       }
    }
 
@@ -602,8 +603,8 @@ public final class MagicGandrMachineGun {
          return previews;
       } else {
          CompoundTag tag = player.getPersistentData();
-         if (tag.contains("TypeMoonGandrMachineGunChargePreviewUUIDs", 9)) {
-            ListTag list = tag.getList("TypeMoonGandrMachineGunChargePreviewUUIDs", 8);
+         if (tag.contains(TAG_CHARGE_PREVIEW_UUIDS, 9)) {
+            ListTag list = tag.getList(TAG_CHARGE_PREVIEW_UUIDS, 8);
 
             for (int i = 0; i < list.size(); i++) {
                String raw = list.getString(i);
@@ -622,8 +623,8 @@ public final class MagicGandrMachineGun {
             }
          }
 
-         if (tag.hasUUID("TypeMoonGandrMachineGunChargePreviewUUID")) {
-            UUID legacy = tag.getUUID("TypeMoonGandrMachineGunChargePreviewUUID");
+         if (tag.hasUUID(TAG_CHARGE_PREVIEW_UUID)) {
+            UUID legacy = tag.getUUID(TAG_CHARGE_PREVIEW_UUID);
             if (serverLevel.getEntity(legacy) instanceof GanderProjectileEntity preview && preview.isChargingPreview()) {
                previews.add(preview);
             }
@@ -641,15 +642,15 @@ public final class MagicGandrMachineGun {
             preview.discard();
          }
 
-         if (var7.hasUUID("TypeMoonGandrMachineGunChargePreviewUUID")) {
-            UUID legacy = var7.getUUID("TypeMoonGandrMachineGunChargePreviewUUID");
+         if (var7.hasUUID(TAG_CHARGE_PREVIEW_UUID)) {
+            UUID legacy = var7.getUUID(TAG_CHARGE_PREVIEW_UUID);
             if (serverLevel.getEntity(legacy) instanceof GanderProjectileEntity preview) {
                preview.discard();
             }
          }
 
-         var7.remove("TypeMoonGandrMachineGunChargePreviewUUIDs");
-         var7.remove("TypeMoonGandrMachineGunChargePreviewUUID");
+         var7.remove(TAG_CHARGE_PREVIEW_UUIDS);
+         var7.remove(TAG_CHARGE_PREVIEW_UUID);
       }
    }
 

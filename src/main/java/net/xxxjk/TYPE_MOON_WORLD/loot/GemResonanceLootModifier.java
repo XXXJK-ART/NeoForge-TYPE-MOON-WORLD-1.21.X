@@ -8,7 +8,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -74,17 +73,17 @@ public class GemResonanceLootModifier extends LootModifier {
 
    private ItemStack getBonusDrop(Block block) {
       if (block == ModBlocks.EMERALD_MINE.get()) {
-         return new ItemStack((ItemLike)ModItems.RAW_EMERALD.get());
+         return new ItemStack(ModItems.RAW_EMERALD.get());
       } else if (block == ModBlocks.RUBY_MINE.get()) {
-         return new ItemStack((ItemLike)ModItems.RAW_RUBY.get());
+         return new ItemStack(ModItems.RAW_RUBY.get());
       } else if (block == ModBlocks.SAPPHIRE_MINE.get()) {
-         return new ItemStack((ItemLike)ModItems.RAW_SAPPHIRE.get());
+         return new ItemStack(ModItems.RAW_SAPPHIRE.get());
       } else if (block == ModBlocks.TOPAZ_MINE.get()) {
-         return new ItemStack((ItemLike)ModItems.RAW_TOPAZ.get());
+         return new ItemStack(ModItems.RAW_TOPAZ.get());
       } else if (block == ModBlocks.WHITE_GEMSTONE_MINE.get()) {
-         return new ItemStack((ItemLike)ModItems.RAW_WHITE_GEMSTONE.get());
+         return new ItemStack(ModItems.RAW_WHITE_GEMSTONE.get());
       } else {
-         return block == ModBlocks.CYAN_GEMSTONE_MINE.get() ? new ItemStack((ItemLike)ModItems.RAW_CYAN_GEMSTONE.get()) : ItemStack.EMPTY;
+         return block == ModBlocks.CYAN_GEMSTONE_MINE.get() ? new ItemStack(ModItems.RAW_CYAN_GEMSTONE.get()) : ItemStack.EMPTY;
       }
    }
 

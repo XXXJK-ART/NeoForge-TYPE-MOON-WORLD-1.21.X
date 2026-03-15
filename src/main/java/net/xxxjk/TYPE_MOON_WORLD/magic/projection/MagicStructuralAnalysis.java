@@ -177,7 +177,7 @@ public class MagicStructuralAnalysis {
                      }
 
                      vars.syncPlayerVariables(player);
-                     player.displayClientMessage(Component.translatable("message.typemoonworld.projection.analysis_complete", new Object[]{(int)cost}), true);
+                     player.displayClientMessage(Component.translatable("message.typemoonworld.projection.analysis_complete", (int)cost), true);
                   }
                } else {
                   double failCost = cost * 0.3;

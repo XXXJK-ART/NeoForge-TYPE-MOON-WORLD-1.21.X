@@ -42,8 +42,8 @@ public class ClientModEventSubscriber {
    @SubscribeEvent
    public static void onClientSetup(FMLClientSetupEvent event) {
       event.enqueueWork(() -> {
-         registerManaSurveyCompassAngle((Item)ModItems.MANA_SURVEY_COMPASS.get());
-         registerManaSurveyCompassAngle((Item)ModItems.COPPER_MANA_SURVEY_COMPASS.get());
+         registerManaSurveyCompassAngle(ModItems.MANA_SURVEY_COMPASS.get());
+         registerManaSurveyCompassAngle(ModItems.COPPER_MANA_SURVEY_COMPASS.get());
       });
    }
 
@@ -70,7 +70,7 @@ public class ClientModEventSubscriber {
 
             return this.renderer;
          }
-      }, new Item[]{(Item)ModItems.AVALON.get()});
+      }, new Item[]{ModItems.AVALON.get()});
       event.registerItem(new IClientItemExtensions() {
          private MuramasaRenderer renderer;
 
@@ -81,7 +81,7 @@ public class ClientModEventSubscriber {
 
             return this.renderer;
          }
-      }, new Item[]{(Item)ModItems.MURAMASA.get()});
+      }, new Item[]{ModItems.MURAMASA.get()});
       event.registerItem(new IClientItemExtensions() {
          private TsumukariMuramasaRenderer renderer;
 
@@ -92,7 +92,7 @@ public class ClientModEventSubscriber {
 
             return this.renderer;
          }
-      }, new Item[]{(Item)ModItems.TSUMUKARI_MURAMASA.get()});
+      }, new Item[]{ModItems.TSUMUKARI_MURAMASA.get()});
       event.registerMobEffect(
          new IClientMobEffectExtensions() {
             private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/mob_effect/nine_lives.jpg");

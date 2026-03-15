@@ -109,25 +109,25 @@ public final class GemGravityFieldMagic {
          ItemStack projectileStack = sourceGem.copy();
          projectileStack.setCount(1);
          CompoundTag tag = ((CustomData)projectileStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-         tag.putBoolean("TypeMoonIsGravityFieldGem", true);
-         tag.putFloat("TypeMoonGravityFieldRadius", radius);
-         tag.putInt("TypeMoonGravityFieldDuration", fieldDuration);
-         tag.putInt("TypeMoonGravityHeavyDuration", heavyDuration);
-         tag.putInt("TypeMoonGravityParticleCount", particleCount);
-         tag.putBoolean("TypeMoonGravityApplySlow", applySlow);
+         tag.putBoolean(TAG_IS_GRAVITY_FIELD_GEM, true);
+         tag.putFloat(TAG_FIELD_RADIUS, radius);
+         tag.putInt(TAG_FIELD_DURATION, fieldDuration);
+         tag.putInt(TAG_HEAVY_DURATION, heavyDuration);
+         tag.putInt(TAG_PARTICLE_COUNT, particleCount);
+         tag.putBoolean(TAG_APPLY_SLOW, applySlow);
          if (applySlow) {
-            tag.putInt("TypeMoonGravitySlowDuration", Math.max(40, slowDuration));
-            tag.putInt("TypeMoonGravitySlowAmplifier", Math.max(0, slowAmplifier));
+            tag.putInt(TAG_SLOW_DURATION, Math.max(40, slowDuration));
+            tag.putInt(TAG_SLOW_AMPLIFIER, Math.max(0, slowAmplifier));
          } else {
-            tag.remove("TypeMoonGravitySlowDuration");
-            tag.remove("TypeMoonGravitySlowAmplifier");
+            tag.remove(TAG_SLOW_DURATION);
+            tag.remove(TAG_SLOW_AMPLIFIER);
          }
 
-         tag.putBoolean("TypeMoonGravityApplyDamage", applyDamage);
+         tag.putBoolean(TAG_APPLY_DAMAGE, applyDamage);
          if (applyDamage) {
-            tag.putFloat("TypeMoonGravityDamagePerPulse", Math.max(0.0F, damagePerPulse));
+            tag.putFloat(TAG_DAMAGE_PER_PULSE, Math.max(0.0F, damagePerPulse));
          } else {
-            tag.remove("TypeMoonGravityDamagePerPulse");
+            tag.remove(TAG_DAMAGE_PER_PULSE);
          }
 
          projectileStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
@@ -147,18 +147,18 @@ public final class GemGravityFieldMagic {
    public static boolean tryHandleProjectileImpact(RubyProjectileEntity projectile, ItemStack stack) {
       if (projectile != null && !stack.isEmpty()) {
          CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-         if (!tag.getBoolean("TypeMoonIsGravityFieldGem")) {
+         if (!tag.getBoolean(TAG_IS_GRAVITY_FIELD_GEM)) {
             return false;
          } else if (projectile.level() instanceof ServerLevel serverLevel) {
-            float radius = tag.contains("TypeMoonGravityFieldRadius") ? tag.getFloat("TypeMoonGravityFieldRadius") : 4.6F;
-            int fieldDuration = tag.contains("TypeMoonGravityFieldDuration") ? tag.getInt("TypeMoonGravityFieldDuration") : 220;
-            int heavyDuration = tag.contains("TypeMoonGravityHeavyDuration") ? tag.getInt("TypeMoonGravityHeavyDuration") : 180;
-            int particleCount = tag.contains("TypeMoonGravityParticleCount") ? tag.getInt("TypeMoonGravityParticleCount") : 90;
-            boolean applySlow = tag.contains("TypeMoonGravityApplySlow") && tag.getBoolean("TypeMoonGravityApplySlow");
-            int slowDuration = tag.contains("TypeMoonGravitySlowDuration") ? tag.getInt("TypeMoonGravitySlowDuration") : Math.max(100, heavyDuration / 2);
-            int slowAmplifier = tag.contains("TypeMoonGravitySlowAmplifier") ? tag.getInt("TypeMoonGravitySlowAmplifier") : 4;
-            boolean applyDamage = tag.contains("TypeMoonGravityApplyDamage") && tag.getBoolean("TypeMoonGravityApplyDamage");
-            float damagePerPulse = tag.contains("TypeMoonGravityDamagePerPulse") ? tag.getFloat("TypeMoonGravityDamagePerPulse") : 0.0F;
+            float radius = tag.contains(TAG_FIELD_RADIUS) ? tag.getFloat(TAG_FIELD_RADIUS) : 4.6F;
+            int fieldDuration = tag.contains(TAG_FIELD_DURATION) ? tag.getInt(TAG_FIELD_DURATION) : 220;
+            int heavyDuration = tag.contains(TAG_HEAVY_DURATION) ? tag.getInt(TAG_HEAVY_DURATION) : 180;
+            int particleCount = tag.contains(TAG_PARTICLE_COUNT) ? tag.getInt(TAG_PARTICLE_COUNT) : 90;
+            boolean applySlow = tag.contains(TAG_APPLY_SLOW) && tag.getBoolean(TAG_APPLY_SLOW);
+            int slowDuration = tag.contains(TAG_SLOW_DURATION) ? tag.getInt(TAG_SLOW_DURATION) : Math.max(100, heavyDuration / 2);
+            int slowAmplifier = tag.contains(TAG_SLOW_AMPLIFIER) ? tag.getInt(TAG_SLOW_AMPLIFIER) : 4;
+            boolean applyDamage = tag.contains(TAG_APPLY_DAMAGE) && tag.getBoolean(TAG_APPLY_DAMAGE);
+            float damagePerPulse = tag.contains(TAG_DAMAGE_PER_PULSE) ? tag.getFloat(TAG_DAMAGE_PER_PULSE) : 0.0F;
             Vec3 center = projectile.position();
             if (applyDamage) {
                compressGroundOnce(serverLevel, center, radius);
@@ -240,11 +240,11 @@ public final class GemGravityFieldMagic {
       boolean applyDamage,
       float damagePerPulse
    ) {
-      int pulses = Math.max(1, fieldDuration / 10);
+      int pulses = Math.max(1, fieldDuration / PULSE_INTERVAL_TICKS);
 
       for (int i = 0; i <= pulses; i++) {
          int pulseIndex = i;
-         int delay = i * 10;
+         int delay = i * PULSE_INTERVAL_TICKS;
          TYPE_MOON_WORLD.queueServerWork(
             delay,
             () -> {

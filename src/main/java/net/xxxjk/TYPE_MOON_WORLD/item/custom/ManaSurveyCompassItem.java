@@ -54,10 +54,10 @@ public class ManaSurveyCompassItem extends Item {
             clearTarget(tag);
             stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             serverPlayer.displayClientMessage(
-               Component.translatable("message.typemoonworld.mana_survey_compass.current_area_high", new Object[]{currentConcentration}), false
+               Component.translatable("message.typemoonworld.mana_survey_compass.current_area_high", currentConcentration), false
             );
             return InteractionResultHolder.fail(stack);
-         } else if (!ManaHelper.consumeManaStrict(serverPlayer, 10.0, false)) {
+         } else if (!ManaHelper.consumeManaStrict(serverPlayer, SURVEY_MANA_COST, false)) {
             serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), false);
             return InteractionResultHolder.fail(stack);
          } else {
@@ -65,12 +65,12 @@ public class ManaSurveyCompassItem extends Item {
             if (result != null && result.concentration > this.minRequiredConcentrationExclusive) {
                storeTarget(tag, result.targetPos, result.concentration, serverPlayer.serverLevel());
                serverPlayer.displayClientMessage(
-                  Component.translatable("message.typemoonworld.mana_survey_compass.found_target", new Object[]{result.concentration}), false
+                  Component.translatable("message.typemoonworld.mana_survey_compass.found_target", result.concentration), false
                );
             } else {
                clearTarget(tag);
                serverPlayer.displayClientMessage(
-                  Component.translatable("message.typemoonworld.mana_survey_compass.no_high_mana", new Object[]{this.minRequiredConcentrationExclusive}), false
+                  Component.translatable("message.typemoonworld.mana_survey_compass.no_high_mana", this.minRequiredConcentrationExclusive), false
                );
             }
 
@@ -86,13 +86,13 @@ public class ManaSurveyCompassItem extends Item {
          CustomData data = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
          if (data != null) {
             CompoundTag tag = data.copyTag();
-            if (tag.getBoolean("ManaSurveyHasTarget") && !tag.getBoolean("ManaSurveyTargetArrived")) {
+            if (tag.getBoolean(TAG_HAS_TARGET) && !tag.getBoolean(TAG_TARGET_ARRIVED)) {
                if (isTagInCurrentDimension(tag, serverPlayer.serverLevel().dimension().location().toString())) {
                   BlockPos targetPos = readTargetPos(tag);
                   if (isPlayerInTargetChunk(serverPlayer, targetPos)) {
-                     tag.putBoolean("ManaSurveyTargetArrived", true);
-                     if (!tag.getBoolean("ManaSurveyTargetArrivalNotified")) {
-                        int concentration = tag.getInt("ManaSurveyTargetConcentration");
+                     tag.putBoolean(TAG_TARGET_ARRIVED, true);
+                     if (!tag.getBoolean(TAG_TARGET_ARRIVAL_NOTIFIED)) {
+                        int concentration = tag.getInt(TAG_TARGET_CONCENTRATION);
                         boolean veryHigh = concentration >= this.veryHighConcentrationThreshold;
                         int notifyCount = veryHigh ? 3 : 1;
                         String key = veryHigh
@@ -100,10 +100,10 @@ public class ManaSurveyCompassItem extends Item {
                            : "message.typemoonworld.mana_survey_compass.arrived";
 
                         for (int i = 0; i < notifyCount; i++) {
-                           serverPlayer.displayClientMessage(Component.translatable(key, new Object[]{concentration}), false);
+                           serverPlayer.displayClientMessage(Component.translatable(key, concentration), false);
                         }
 
-                        tag.putBoolean("ManaSurveyTargetArrivalNotified", true);
+                        tag.putBoolean(TAG_TARGET_ARRIVAL_NOTIFIED, true);
                      }
 
                      stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
@@ -155,36 +155,36 @@ public class ManaSurveyCompassItem extends Item {
    }
 
    private static void storeTarget(CompoundTag tag, BlockPos targetPos, int concentration, ServerLevel level) {
-      tag.putBoolean("ManaSurveyHasTarget", true);
-      tag.putInt("ManaSurveyTargetX", targetPos.getX());
-      tag.putInt("ManaSurveyTargetY", targetPos.getY());
-      tag.putInt("ManaSurveyTargetZ", targetPos.getZ());
-      tag.putString("ManaSurveyTargetDim", level.dimension().location().toString());
-      tag.putInt("ManaSurveyTargetConcentration", concentration);
-      tag.putBoolean("ManaSurveyTargetArrived", false);
-      tag.putBoolean("ManaSurveyTargetArrivalNotified", false);
+      tag.putBoolean(TAG_HAS_TARGET, true);
+      tag.putInt(TAG_TARGET_X, targetPos.getX());
+      tag.putInt(TAG_TARGET_Y, targetPos.getY());
+      tag.putInt(TAG_TARGET_Z, targetPos.getZ());
+      tag.putString(TAG_TARGET_DIM, level.dimension().location().toString());
+      tag.putInt(TAG_TARGET_CONCENTRATION, concentration);
+      tag.putBoolean(TAG_TARGET_ARRIVED, false);
+      tag.putBoolean(TAG_TARGET_ARRIVAL_NOTIFIED, false);
    }
 
    private static void clearTarget(CompoundTag tag) {
-      tag.putBoolean("ManaSurveyHasTarget", false);
-      tag.remove("ManaSurveyTargetX");
-      tag.remove("ManaSurveyTargetY");
-      tag.remove("ManaSurveyTargetZ");
-      tag.remove("ManaSurveyTargetDim");
-      tag.remove("ManaSurveyTargetConcentration");
-      tag.remove("ManaSurveyTargetArrived");
-      tag.remove("ManaSurveyTargetArrivalNotified");
+      tag.putBoolean(TAG_HAS_TARGET, false);
+      tag.remove(TAG_TARGET_X);
+      tag.remove(TAG_TARGET_Y);
+      tag.remove(TAG_TARGET_Z);
+      tag.remove(TAG_TARGET_DIM);
+      tag.remove(TAG_TARGET_CONCENTRATION);
+      tag.remove(TAG_TARGET_ARRIVED);
+      tag.remove(TAG_TARGET_ARRIVAL_NOTIFIED);
    }
 
    private static int getScanRadiusChunks(ServerPlayer player) {
       if (player.getServer() != null) {
          int viewDistance = player.getServer().getPlayerList().getViewDistance();
          if (viewDistance > 0) {
-            return Math.max(1, Math.min(viewDistance, 8));
+            return Math.max(1, Math.min(viewDistance, MAX_SCAN_RADIUS_CHUNKS));
          }
       }
 
-      return 8;
+      return FALLBACK_SCAN_RADIUS_CHUNKS;
    }
 
    @Nullable
@@ -197,9 +197,9 @@ public class ManaSurveyCompassItem extends Item {
             return null;
          } else {
             CompoundTag tag = data.copyTag();
-            if (!tag.getBoolean("ManaSurveyHasTarget")) {
+            if (!tag.getBoolean(TAG_HAS_TARGET)) {
                return null;
-            } else if (tag.getBoolean("ManaSurveyTargetArrived")) {
+            } else if (tag.getBoolean(TAG_TARGET_ARRIVED)) {
                return null;
             } else {
                return !isTagInCurrentDimension(tag, level.dimension().location().toString()) ? null : GlobalPos.of(level.dimension(), readTargetPos(tag));
@@ -209,12 +209,12 @@ public class ManaSurveyCompassItem extends Item {
    }
 
    private static boolean isTagInCurrentDimension(CompoundTag tag, String dimensionId) {
-      String storedDimensionId = tag.getString("ManaSurveyTargetDim");
+      String storedDimensionId = tag.getString(TAG_TARGET_DIM);
       return !storedDimensionId.isEmpty() && storedDimensionId.equals(dimensionId);
    }
 
    private static BlockPos readTargetPos(CompoundTag tag) {
-      return new BlockPos(tag.getInt("ManaSurveyTargetX"), tag.getInt("ManaSurveyTargetY"), tag.getInt("ManaSurveyTargetZ"));
+      return new BlockPos(tag.getInt(TAG_TARGET_X), tag.getInt(TAG_TARGET_Y), tag.getInt(TAG_TARGET_Z));
    }
 
    private static boolean isPlayerInTargetChunk(ServerPlayer player, BlockPos targetPos) {

@@ -40,7 +40,7 @@ public class ManaHelper {
             DamageSource source = player.damageSources().magic();
             player.hurt(source, (float)healthCost);
             player.displayClientMessage(
-               Component.translatable("message.typemoonworld.mana.health_conversion", new Object[]{String.format("%.1f", healthCost), (int)amount}), true
+               Component.translatable("message.typemoonworld.mana.health_conversion", String.format("%.1f", healthCost), (int)amount), true
             );
             return true;
          } else {
@@ -180,7 +180,7 @@ public class ManaHelper {
    private static ManaHelper.SourceCandidate createCandidate(int slot, ItemStack stack) {
       if (stack.getItem() instanceof FullManaCarvedGemItem fullGemItem) {
          return new ManaHelper.SourceCandidate(slot, fullGemItem.getManaAmount(), new ItemStack(fullGemItem.getEmptyGemItem()));
-      } else if (stack.is((Item)ModItems.MAGIC_FRAGMENTS.get())) {
+      } else if (stack.is(ModItems.MAGIC_FRAGMENTS.get())) {
          return new ManaHelper.SourceCandidate(slot, 10.0, ItemStack.EMPTY);
       } else {
          return stack.is(((Block)ModBlocks.SPIRIT_VEIN_BLOCK.get()).asItem()) ? new ManaHelper.SourceCandidate(slot, 90.0, ItemStack.EMPTY) : null;
@@ -213,7 +213,7 @@ public class ManaHelper {
          return null;
       } else if (stack.getItem() instanceof FullManaCarvedGemItem fullGemItem) {
          return new ManaHelper.HandSourceCandidate(hand, fullGemItem.getManaAmount(), new ItemStack(fullGemItem.getEmptyGemItem()));
-      } else if (stack.is((Item)ModItems.MAGIC_FRAGMENTS.get())) {
+      } else if (stack.is(ModItems.MAGIC_FRAGMENTS.get())) {
          return new ManaHelper.HandSourceCandidate(hand, 10.0, ItemStack.EMPTY);
       } else {
          return stack.is(((Block)ModBlocks.SPIRIT_VEIN_BLOCK.get()).asItem()) ? new ManaHelper.HandSourceCandidate(hand, 90.0, ItemStack.EMPTY) : null;

@@ -26,7 +26,7 @@ import net.minecraft.world.item.component.ItemAttributeModifiers.Entry;
 
 public final class NpcMagicFilterService {
    private static final Set<String> CANDIDATE_MAGIC_POOL = Set.of(
-      "gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "projection", "broken_phantasm", "jewel_random_shoot", "jewel_machine_gun"
+      "gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_random_shoot", "jewel_machine_gun"
    );
    private static final Set<String> HARD_EXCLUDED_MAGICS = Set.of(
       "unlimited_blade_works", "sword_barrel_full_open", "structural_analysis", "jewel_magic_shoot", "jewel_magic_release"
@@ -77,19 +77,8 @@ public final class NpcMagicFilterService {
             case "gandr_machine_gun":
                payload.putInt("gandr_machine_gun_mode", random.nextBoolean() ? 1 : 0);
                return payload;
-            case "projection":
-               ItemStack stack = chooseRandomCombatProjectionItem(random);
-               if (!stack.isEmpty()) {
-                  payload.put("projection_item", stack.save(lookupProvider));
-               }
-
-               return payload;
-            case "broken_phantasm":
-               ItemStack bpStack = chooseRandomCombatProjectionItem(random);
-               if (!bpStack.isEmpty()) {
-                  payload.put("bp_item", bpStack.save(lookupProvider));
-               }
-
+            case "jewel_machine_gun":
+               payload.putInt("jewel_machine_gun_mode", random.nextBoolean() ? 1 : 0);
                return payload;
             default:
                return payload;
@@ -128,34 +117,10 @@ public final class NpcMagicFilterService {
                CompoundTag outxx = new CompoundTag();
                outxx.putInt("gandr_machine_gun_mode", Mth.clamp(source.contains("gandr_machine_gun_mode") ? source.getInt("gandr_machine_gun_mode") : 0, 0, 1));
                return outxx;
-            case "projection":
-               CompoundTag outx = new CompoundTag();
-               ItemStack itemx = readItem(source, "projection_item", lookupProvider);
-               if (!isCombatProjectionItem(itemx)) {
-                  itemx = chooseRandomCombatProjectionItem(random);
-               }
-
-               if (!itemx.isEmpty()) {
-                  outx.put("projection_item", itemx.save(lookupProvider));
-               }
-
-               return outx;
-            case "broken_phantasm":
-               CompoundTag out = new CompoundTag();
-               ItemStack item = readItem(source, "bp_item", lookupProvider);
-               if (item.isEmpty()) {
-                  item = readItem(source, "projection_item", lookupProvider);
-               }
-
-               if (!isCombatProjectionItem(item)) {
-                  item = chooseRandomCombatProjectionItem(random);
-               }
-
-               if (!item.isEmpty()) {
-                  out.put("bp_item", item.save(lookupProvider));
-               }
-
-               return out;
+            case "jewel_machine_gun":
+               CompoundTag outj = new CompoundTag();
+               outj.putInt("jewel_machine_gun_mode", Mth.clamp(source.contains("jewel_machine_gun_mode") ? source.getInt("jewel_machine_gun_mode") : 0, 0, 1));
+               return outj;
             default:
                return source;
          }
@@ -173,24 +138,9 @@ public final class NpcMagicFilterService {
                int mode = source.contains("reinforcement_mode") ? source.getInt("reinforcement_mode") : 0;
                int level = source.contains("reinforcement_level") ? source.getInt("reinforcement_level") : 1;
                return target == 0 && mode >= 0 && mode <= 3 && level >= 1 && level <= 5;
-            case "projection":
-               if (source.getBoolean("projection_lock_empty")) {
-                  return false;
-               } else {
-                  if (source.contains("projection_structure_id")) {
-                     return false;
-                  }
-
-                  ItemStack stack = readItem(source, "projection_item", lookupProvider);
-                  return isCombatProjectionItem(stack);
-               }
-            case "broken_phantasm":
-               ItemStack stack = readItem(source, "bp_item", lookupProvider);
-               if (stack.isEmpty()) {
-                  stack = readItem(source, "projection_item", lookupProvider);
-               }
-
-               return isCombatProjectionItem(stack);
+            case "jewel_machine_gun":
+               int jewelMode = source.contains("jewel_machine_gun_mode") ? source.getInt("jewel_machine_gun_mode") : 0;
+               return jewelMode >= 0 && jewelMode <= 1;
             default:
                return true;
          }

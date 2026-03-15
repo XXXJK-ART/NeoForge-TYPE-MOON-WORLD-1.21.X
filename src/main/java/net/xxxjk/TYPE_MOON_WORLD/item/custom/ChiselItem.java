@@ -55,29 +55,29 @@ public class ChiselItem extends Item {
          ItemStack resultGem = ItemStack.EMPTY;
          if (rawItem == ModItems.RAW_EMERALD.get()) {
             resultGem = this.getRandomQualityGem(
-               (Item)ModItems.CARVED_EMERALD_POOR.get(), (Item)ModItems.CARVED_EMERALD.get(), (Item)ModItems.CARVED_EMERALD_HIGH.get()
+               ModItems.CARVED_EMERALD_POOR.get(), ModItems.CARVED_EMERALD.get(), ModItems.CARVED_EMERALD_HIGH.get()
             );
          } else if (rawItem == ModItems.RAW_RUBY.get()) {
-            resultGem = this.getRandomQualityGem((Item)ModItems.CARVED_RUBY_POOR.get(), (Item)ModItems.CARVED_RUBY.get(), (Item)ModItems.CARVED_RUBY_HIGH.get());
+            resultGem = this.getRandomQualityGem(ModItems.CARVED_RUBY_POOR.get(), ModItems.CARVED_RUBY.get(), ModItems.CARVED_RUBY_HIGH.get());
          } else if (rawItem == ModItems.RAW_SAPPHIRE.get()) {
             resultGem = this.getRandomQualityGem(
-               (Item)ModItems.CARVED_SAPPHIRE_POOR.get(), (Item)ModItems.CARVED_SAPPHIRE.get(), (Item)ModItems.CARVED_SAPPHIRE_HIGH.get()
+               ModItems.CARVED_SAPPHIRE_POOR.get(), ModItems.CARVED_SAPPHIRE.get(), ModItems.CARVED_SAPPHIRE_HIGH.get()
             );
          } else if (rawItem == ModItems.RAW_TOPAZ.get()) {
             resultGem = this.getRandomQualityGem(
-               (Item)ModItems.CARVED_TOPAZ_POOR.get(), (Item)ModItems.CARVED_TOPAZ.get(), (Item)ModItems.CARVED_TOPAZ_HIGH.get()
+               ModItems.CARVED_TOPAZ_POOR.get(), ModItems.CARVED_TOPAZ.get(), ModItems.CARVED_TOPAZ_HIGH.get()
             );
          } else if (rawItem == ModItems.RAW_WHITE_GEMSTONE.get()) {
             resultGem = this.getRandomQualityGem(
-               (Item)ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), (Item)ModItems.CARVED_WHITE_GEMSTONE.get(), (Item)ModItems.CARVED_WHITE_GEMSTONE_HIGH.get()
+               ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), ModItems.CARVED_WHITE_GEMSTONE.get(), ModItems.CARVED_WHITE_GEMSTONE_HIGH.get()
             );
          } else if (rawItem == ModItems.RAW_CYAN_GEMSTONE.get()) {
             resultGem = this.getRandomQualityGem(
-               (Item)ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), (Item)ModItems.CARVED_CYAN_GEMSTONE.get(), (Item)ModItems.CARVED_CYAN_GEMSTONE_HIGH.get()
+               ModItems.CARVED_CYAN_GEMSTONE_POOR.get(), ModItems.CARVED_CYAN_GEMSTONE.get(), ModItems.CARVED_CYAN_GEMSTONE_HIGH.get()
             );
          } else if (rawItem == Items.OBSIDIAN) {
             resultGem = this.getRandomQualityGem(
-               (Item)ModItems.CARVED_BLACK_SHARD_POOR.get(), (Item)ModItems.CARVED_BLACK_SHARD.get(), (Item)ModItems.CARVED_BLACK_SHARD_HIGH.get()
+               ModItems.CARVED_BLACK_SHARD_POOR.get(), ModItems.CARVED_BLACK_SHARD.get(), ModItems.CARVED_BLACK_SHARD_HIGH.get()
             );
          }
 

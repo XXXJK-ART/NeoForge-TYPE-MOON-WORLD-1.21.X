@@ -53,7 +53,7 @@ public class MagicUnlimitedBladeWorks {
          vars.syncPlayerVariables(player);
          player.displayClientMessage(
             Component.translatable(
-               "message.typemoonworld.magic.learned", new Object[]{Component.translatable("key.typemoonworld.magic.sword_barrel_full_open")}
+               "message.typemoonworld.magic.learned", Component.translatable("key.typemoonworld.magic.sword_barrel_full_open")
             ),
             false
          );

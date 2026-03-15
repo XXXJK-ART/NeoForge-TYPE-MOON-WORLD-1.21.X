@@ -65,7 +65,7 @@ public class LeylineSurveyMapItem extends Item {
                new CustomPacketPayload[0]
             );
             serverPlayer.displayClientMessage(
-               Component.translatable("message.typemoonworld.leyline_map.scanned_opened", new Object[]{result.loadedSamples()}), false
+               Component.translatable("message.typemoonworld.leyline_map.scanned_opened", result.loadedSamples()), false
             );
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
          }
@@ -82,7 +82,7 @@ public class LeylineSurveyMapItem extends Item {
          tooltip.add(
             Component.translatable(
                   "tooltip.typemoonworld.leyline_map.snapshot",
-                  new Object[]{snapshot.gridSize(), snapshot.gridSize(), snapshot.centerChunkX(), snapshot.centerChunkZ(), snapshot.dimensionId()}
+                  snapshot.gridSize(), snapshot.gridSize(), snapshot.centerChunkX(), snapshot.centerChunkZ(), snapshot.dimensionId()
                )
                .withStyle(ChatFormatting.AQUA)
          );
@@ -90,14 +90,14 @@ public class LeylineSurveyMapItem extends Item {
    }
 
    private static void writeSnapshot(CompoundTag tag, LeylineSurveyMapItem.ScanResult result, ServerLevel level) {
-      tag.putBoolean("LeylineMapHasSnapshot", true);
-      tag.putInt("LeylineMapGridSize", result.gridSize());
-      tag.remove("LeylineMapRadius");
-      tag.putInt("LeylineMapCenterChunkX", result.centerChunkX());
-      tag.putInt("LeylineMapCenterChunkZ", result.centerChunkZ());
-      tag.putString("LeylineMapDimension", level.dimension().location().toString());
-      tag.putByteArray("LeylineMapData", result.concentrations());
-      tag.putLong("LeylineMapGameTime", level.getGameTime());
+      tag.putBoolean(TAG_HAS_SNAPSHOT, true);
+      tag.putInt(TAG_GRID_SIZE, result.gridSize());
+      tag.remove(TAG_RADIUS);
+      tag.putInt(TAG_CENTER_CHUNK_X, result.centerChunkX());
+      tag.putInt(TAG_CENTER_CHUNK_Z, result.centerChunkZ());
+      tag.putString(TAG_DIMENSION, level.dimension().location().toString());
+      tag.putByteArray(TAG_SNAPSHOT_DATA, result.concentrations());
+      tag.putLong(TAG_SNAPSHOT_TIME, level.getGameTime());
    }
 
    @Nullable
@@ -107,23 +107,23 @@ public class LeylineSurveyMapItem extends Item {
          return null;
       } else {
          CompoundTag tag = data.copyTag();
-         if (!tag.getBoolean("LeylineMapHasSnapshot")) {
+         if (!tag.getBoolean(TAG_HAS_SNAPSHOT)) {
             return null;
          } else {
-            int gridSize = tag.contains("LeylineMapGridSize") ? tag.getInt("LeylineMapGridSize") : 0;
-            if (gridSize <= 0 && tag.contains("LeylineMapRadius")) {
-               int legacyRadius = tag.getInt("LeylineMapRadius");
+            int gridSize = tag.contains(TAG_GRID_SIZE) ? tag.getInt(TAG_GRID_SIZE) : 0;
+            if (gridSize <= 0 && tag.contains(TAG_RADIUS)) {
+               int legacyRadius = tag.getInt(TAG_RADIUS);
                gridSize = legacyRadius * 2 + 1;
             }
 
             if (gridSize <= 0) {
                return null;
             } else {
-               byte[] concentrations = tag.getByteArray("LeylineMapData");
+               byte[] concentrations = tag.getByteArray(TAG_SNAPSHOT_DATA);
                return concentrations.length != gridSize * gridSize
                   ? null
                   : new LeylineSurveyMapItem.Snapshot(
-                     gridSize, tag.getInt("LeylineMapCenterChunkX"), tag.getInt("LeylineMapCenterChunkZ"), tag.getString("LeylineMapDimension"), concentrations
+                     gridSize, tag.getInt(TAG_CENTER_CHUNK_X), tag.getInt(TAG_CENTER_CHUNK_Z), tag.getString(TAG_DIMENSION), concentrations
                   );
             }
          }
@@ -135,7 +135,7 @@ public class LeylineSurveyMapItem extends Item {
       ServerLevel level = player.serverLevel();
       ChunkPos origin = player.chunkPosition();
       preloadNearbyChunks(level, origin);
-      int size = 100;
+      int size = GRID_SIZE_CHUNKS;
       int half = size / 2;
       int startChunkX = origin.x - half;
       int startChunkZ = origin.z - half;
@@ -162,9 +162,9 @@ public class LeylineSurveyMapItem extends Item {
    private static void preloadNearbyChunks(ServerLevel level, ChunkPos origin) {
       int preloaded = 0;
 
-      for (int radius = 0; radius <= 5 && preloaded < 80; radius++) {
-         for (int dz = -radius; dz <= radius && preloaded < 80; dz++) {
-            for (int dx = -radius; dx <= radius && preloaded < 80; dx++) {
+      for (int radius = 0; radius <= PRELOAD_RADIUS_CHUNKS && preloaded < PRELOAD_MAX_CHUNKS; radius++) {
+         for (int dz = -radius; dz <= radius && preloaded < PRELOAD_MAX_CHUNKS; dz++) {
+            for (int dx = -radius; dx <= radius && preloaded < PRELOAD_MAX_CHUNKS; dx++) {
                if (Math.max(Math.abs(dx), Math.abs(dz)) == radius) {
                   int chunkX = origin.x + dx;
                   int chunkZ = origin.z + dz;

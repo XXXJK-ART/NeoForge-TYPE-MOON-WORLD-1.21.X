@@ -28,31 +28,31 @@ public class RandomGemItem extends Item {
          int typeId;
          float powerMultiplier;
          if (t == GemType.RUBY) {
-            visualItem = (Item)ModItems.CARVED_RUBY.get();
+            visualItem = ModItems.CARVED_RUBY.get();
             typeId = 0;
             powerMultiplier = 1.0F;
          } else if (t == GemType.SAPPHIRE) {
-            visualItem = (Item)ModItems.CARVED_SAPPHIRE.get();
+            visualItem = ModItems.CARVED_SAPPHIRE.get();
             typeId = 1;
             powerMultiplier = 0.5F;
          } else if (t == GemType.EMERALD) {
-            visualItem = (Item)ModItems.CARVED_EMERALD.get();
+            visualItem = ModItems.CARVED_EMERALD.get();
             typeId = 2;
             powerMultiplier = 0.5F;
          } else if (t == GemType.TOPAZ) {
-            visualItem = (Item)ModItems.CARVED_TOPAZ.get();
+            visualItem = ModItems.CARVED_TOPAZ.get();
             typeId = 3;
             powerMultiplier = 0.5F;
          } else if (t == GemType.CYAN) {
-            visualItem = (Item)ModItems.CARVED_CYAN_GEMSTONE.get();
+            visualItem = ModItems.CARVED_CYAN_GEMSTONE.get();
             typeId = 4;
             powerMultiplier = 0.5F;
          } else if (t == GemType.BLACK_SHARD) {
-            visualItem = (Item)ModItems.CARVED_BLACK_SHARD.get();
+            visualItem = ModItems.CARVED_BLACK_SHARD.get();
             typeId = 6;
             powerMultiplier = 0.5F;
          } else {
-            visualItem = (Item)ModItems.CARVED_WHITE_GEMSTONE.get();
+            visualItem = ModItems.CARVED_WHITE_GEMSTONE.get();
             typeId = 5;
             powerMultiplier = 0.5F;
          }

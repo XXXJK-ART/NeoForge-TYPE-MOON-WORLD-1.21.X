@@ -1204,7 +1204,7 @@ public class TypeMoonWorldModVariables {
                      if (entity instanceof Player player && !player.level().isClientSide()) {
                         player.displayClientMessage(
                            Component.translatable(
-                              "message.typemoonworld.magic.learned", new Object[]{Component.translatable("magic.typemoonworld." + magicId + ".name")}
+                              "message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magicId + ".name")
                            ),
                            false
                         );
@@ -1811,7 +1811,7 @@ public class TypeMoonWorldModVariables {
             if (entity instanceof Player player && !player.level().isClientSide()) {
                player.displayClientMessage(
                   Component.translatable(
-                     "message.typemoonworld.magic.learned", new Object[]{Component.translatable("magic.typemoonworld.jewel_machine_gun.name")}
+                     "message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld.jewel_machine_gun.name")
                   ),
                   false
                );
@@ -1829,7 +1829,7 @@ public class TypeMoonWorldModVariables {
             if (entity instanceof Player player && !player.level().isClientSide()) {
                player.displayClientMessage(
                   Component.translatable(
-                     "message.typemoonworld.magic.learned", new Object[]{Component.translatable("magic.typemoonworld.gandr_machine_gun.name")}
+                     "message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld.gandr_machine_gun.name")
                   ),
                   false
                );

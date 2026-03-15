@@ -48,7 +48,6 @@ public class ProjectionPresetScreen extends Screen {
    private int imageHeight = 200;
    private float scrollOffs = 0.0F;
    private int startIndex = 0;
-   private boolean scrolling;
    private String currentFilter = "all";
    private final List<Button> filterButtons = new ArrayList<>();
    private List<ItemStack> filteredItems = new ArrayList<>();
@@ -85,7 +84,7 @@ public class ProjectionPresetScreen extends Screen {
    private void initFilterButtons() {
       int btnY = this.topPos + 5;
       int btnH = 20;
-      int startX = this.leftPos + 10;
+      int startX = this.leftPos + LIST_X_OFFSET;
       int gap = 2;
       String[] filters = new String[]{"all", "structure", "noble_phantasm", "combat", "tools", "building", "misc", "special"};
       String[] labels = new String[]{
@@ -196,12 +195,12 @@ public class ProjectionPresetScreen extends Screen {
       int w = this.imageWidth;
       int h = this.imageHeight;
       GuiUtils.renderBackground(guiGraphics, x, y, w, h);
-      int listX = this.leftPos + 10;
-      int listY = this.topPos + 40;
+      int listX = this.leftPos + LIST_X_OFFSET;
+      int listY = this.topPos + LIST_Y_OFFSET;
       int listW = w - 20;
       int listH = h - 40 - 10;
       GuiUtils.renderTechFrame(guiGraphics, listX - 2, listY - 2, listW + 4, listH + 4, -16733526, -16711681);
-      int totalVisible = 144;
+      int totalVisible = COLS * ROWS;
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)this.player
          .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
 
@@ -211,21 +210,21 @@ public class ProjectionPresetScreen extends Screen {
             break;
          }
 
-         int col = i % 18;
-         int row = i / 18;
-         int slotX = listX + col * 18;
-         int slotY = listY + row * 18;
+         int col = i % COLS;
+         int row = i / COLS;
+         int slotX = listX + col * SLOT_SIZE;
+         int slotY = listY + row * SLOT_SIZE;
          if (this.isStructureFilter()) {
             TypeMoonWorldModVariables.PlayerVariables.SavedStructure structure = this.filteredStructures.get(index);
             ItemStack icon = structure.icon.isEmpty() ? new ItemStack(Items.STONE) : structure.icon.copy();
             icon.setCount(1);
             boolean isSelected = structure.id != null && structure.id.equals(vars.projection_selected_structure_id);
             if (isSelected) {
-               guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, -2147418368);
+               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2147418368);
             }
 
-            if (mouseX >= slotX && mouseX < slotX + 18 && mouseY >= slotY && mouseY < slotY + 18) {
-               guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, -2130706433);
+            if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
+               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2130706433);
                guiGraphics.renderTooltip(this.font, Component.literal(structure.name), mouseX, mouseY);
             }
 
@@ -237,11 +236,11 @@ public class ProjectionPresetScreen extends Screen {
             displayStack.setCount(1);
             boolean isSelectedx = ItemStack.isSameItemSameComponents(stack, vars.projection_selected_item);
             if (isSelectedx) {
-               guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, -2147418368);
+               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2147418368);
             }
 
-            if (mouseX >= slotX && mouseX < slotX + 18 && mouseY >= slotY && mouseY < slotY + 18) {
-               guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, -2130706433);
+            if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
+               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2130706433);
                guiGraphics.renderTooltip(this.font, displayStack, mouseX, mouseY);
             }
 
@@ -250,13 +249,13 @@ public class ProjectionPresetScreen extends Screen {
          }
       }
 
-      this.renderScrollBar(guiGraphics, listY, 144, x + w - 8);
+      this.renderScrollBar(guiGraphics, listY, ROWS * SLOT_SIZE, x + w - 8);
    }
 
    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-      int listX = this.leftPos + 10;
-      int listY = this.topPos + 40;
-      int totalVisible = 144;
+      int listX = this.leftPos + LIST_X_OFFSET;
+      int listY = this.topPos + LIST_Y_OFFSET;
+      int totalVisible = COLS * ROWS;
 
       for (int i = 0; i < totalVisible; i++) {
          int index = this.startIndex + i;
@@ -264,11 +263,11 @@ public class ProjectionPresetScreen extends Screen {
             break;
          }
 
-         int col = i % 18;
-         int row = i / 18;
-         int slotX = listX + col * 18;
-         int slotY = listY + row * 18;
-         if (mouseX >= slotX && mouseX < slotX + 18 && mouseY >= slotY && mouseY < slotY + 18) {
+         int col = i % COLS;
+         int row = i / COLS;
+         int slotX = listX + col * SLOT_SIZE;
+         int slotY = listY + row * SLOT_SIZE;
+         if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
             if (this.isStructureFilter()) {
                TypeMoonWorldModVariables.PlayerVariables.SavedStructure structure = this.filteredStructures.get(index);
                if (structure.id != null && !structure.id.isEmpty()) {
@@ -314,13 +313,13 @@ public class ProjectionPresetScreen extends Screen {
    }
 
    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-      int totalRows = (this.getCurrentEntryCount() + 18 - 1) / 18;
-      if (totalRows > 8) {
-         float scrollStep = 1.0F / (totalRows - 8);
+      int totalRows = (this.getCurrentEntryCount() + COLS - 1) / COLS;
+      if (totalRows > ROWS) {
+         float scrollStep = 1.0F / (totalRows - ROWS);
          this.scrollOffs = Mth.clamp(this.scrollOffs - (float)deltaY * scrollStep, 0.0F, 1.0F);
-         int maxStartRow = totalRows - 8;
+         int maxStartRow = totalRows - ROWS;
          int startRow = Math.round(this.scrollOffs * maxStartRow);
-         this.startIndex = startRow * 18;
+         this.startIndex = startRow * COLS;
          return true;
       } else {
          return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
@@ -343,22 +342,22 @@ public class ProjectionPresetScreen extends Screen {
    }
 
    private void clampScrollState() {
-      int totalRows = (this.getCurrentEntryCount() + 18 - 1) / 18;
-      if (totalRows <= 8) {
+      int totalRows = (this.getCurrentEntryCount() + COLS - 1) / COLS;
+      if (totalRows <= ROWS) {
          this.scrollOffs = 0.0F;
          this.startIndex = 0;
       } else {
          this.scrollOffs = Mth.clamp(this.scrollOffs, 0.0F, 1.0F);
-         int maxStartRow = totalRows - 8;
+         int maxStartRow = totalRows - ROWS;
          int startRow = Math.round(this.scrollOffs * maxStartRow);
-         this.startIndex = Mth.clamp(startRow * 18, 0, Math.max(0, this.getCurrentEntryCount() - 1));
+         this.startIndex = Mth.clamp(startRow * COLS, 0, Math.max(0, this.getCurrentEntryCount() - 1));
       }
    }
 
    private void renderScrollBar(GuiGraphics guiGraphics, int scrollBarY, int scrollBarH, int scrollBarX) {
-      int totalRows = (this.getCurrentEntryCount() + 18 - 1) / 18;
-      if (totalRows > 8) {
-         int barHeight = (int)((float)(8 * scrollBarH) / totalRows);
+      int totalRows = (this.getCurrentEntryCount() + COLS - 1) / COLS;
+      if (totalRows > ROWS) {
+         int barHeight = (int)((float)(ROWS * scrollBarH) / totalRows);
          if (barHeight < 20) {
             barHeight = 20;
          }
@@ -395,7 +394,7 @@ public class ProjectionPresetScreen extends Screen {
          boolean leftDown = GLFW.glfwGetMouseButton(window, 0) == 1;
          if (!leftDown) {
             this.clearStructureLongPressState();
-         } else if (System.currentTimeMillis() - this.holdStartMs >= 700L) {
+         } else if (System.currentTimeMillis() - this.holdStartMs >= STRUCTURE_DELETE_HOLD_MS) {
             String hoveredId = this.getHoveredStructureId(this.lastMouseX, this.lastMouseY);
             if (this.holdingStructureId.equals(hoveredId)) {
                this.holdDialogOpened = true;
@@ -408,9 +407,9 @@ public class ProjectionPresetScreen extends Screen {
    }
 
    private String getHoveredStructureId(double mouseX, double mouseY) {
-      int listX = this.leftPos + 10;
-      int listY = this.topPos + 40;
-      int totalVisible = 144;
+      int listX = this.leftPos + LIST_X_OFFSET;
+      int listY = this.topPos + LIST_Y_OFFSET;
+      int totalVisible = COLS * ROWS;
 
       for (int i = 0; i < totalVisible; i++) {
          int index = this.startIndex + i;
@@ -418,11 +417,11 @@ public class ProjectionPresetScreen extends Screen {
             break;
          }
 
-         int col = i % 18;
-         int row = i / 18;
-         int slotX = listX + col * 18;
-         int slotY = listY + row * 18;
-         if (mouseX >= slotX && mouseX < slotX + 18 && mouseY >= slotY && mouseY < slotY + 18) {
+         int col = i % COLS;
+         int row = i / COLS;
+         int slotX = listX + col * SLOT_SIZE;
+         int slotY = listY + row * SLOT_SIZE;
+         if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
             return this.filteredStructures.get(index).id;
          }
       }

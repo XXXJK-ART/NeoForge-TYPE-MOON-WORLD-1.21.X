@@ -59,7 +59,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    }
 
    protected Item getDefaultItem() {
-      return (Item)ModItems.GANDER.get();
+      return ModItems.GANDER.get();
    }
 
    protected void defineSynchedData(Builder builder) {
@@ -69,7 +69,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setChargeSeconds(int value) {
-      this.chargeSeconds = Math.max(1, Math.min(5, value));
+      this.chargeSeconds = Math.max(1, Math.min(MAX_CHARGE_SECONDS, value));
    }
 
    public void setChargingPreview(boolean chargingPreview) {
@@ -154,7 +154,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                      int amplifier = Math.max(0, this.chargeSeconds - 1);
                      int duration = 80 + this.chargeSeconds * 40;
                      float curseDamage = 2.0F + this.chargeSeconds;
-                     livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), 1.5F);
+                     livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
                      livingTarget.hurt(this.damageSources().magic(), curseDamage);
                      livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, amplifier, false, true, true));
                      livingTarget.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, amplifier, false, true, true));
@@ -259,7 +259,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    }
 
    private boolean canBreakImpactBlocks() {
-      return this.chargeSeconds >= 5;
+      return this.chargeSeconds >= MAX_CHARGE_SECONDS;
    }
 
    private void breakBlocksFromImpact(BlockHitResult hitResult) {
@@ -268,7 +268,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
       Entity breaker = (Entity)(this.getOwner() != null ? this.getOwner() : this);
       BlockPos start = hitResult.getBlockPos();
 
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < BREAK_BLOCK_COUNT; i++) {
          BlockPos target = start.relative(forward, i);
          BlockState state = this.level().getBlockState(target);
          if (!state.isAir() && !(state.getDestroySpeed(this.level(), target) < 0.0F)) {
@@ -282,13 +282,13 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
       if (this.isChargingPreview()) {
          if (!(owner instanceof LivingEntity livingOwner && livingOwner.isAlive() && !livingOwner.isRemoved() && livingOwner.level() == this.level())) {
             return true;
-         } else if (this.tickCount > 600) {
+         } else if (this.tickCount > PREVIEW_MAX_LIFETIME_TICKS) {
             return true;
          } else {
             Vec3 anchor = MagicGander.getChargeAnchor(livingOwner);
-            return this.position().distanceToSqr(anchor) > 256.0;
+            return this.position().distanceToSqr(anchor) > PREVIEW_MAX_ANCHOR_DISTANCE_SQR;
          }
-      } else if (this.tickCount > 160) {
+      } else if (this.tickCount > PROJECTILE_MAX_LIFETIME_TICKS) {
          return true;
       } else {
          if (owner != null) {
@@ -296,7 +296,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                return true;
             }
 
-            if (this.distanceToSqr(owner) > 36864.0) {
+            if (this.distanceToSqr(owner) > PROJECTILE_MAX_OWNER_DISTANCE_SQR) {
                return true;
             }
          }

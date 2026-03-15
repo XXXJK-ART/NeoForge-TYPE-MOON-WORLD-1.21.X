@@ -174,7 +174,7 @@ public record SaveStructuralSelectionMessage(String structureName, int minX, int
                                  var32.syncProjectionDelta(player, 0, delta);
                                  int roundedCost = (int)Math.ceil(totalCost);
                                  player.displayClientMessage(
-                                    Component.translatable("message.typemoonworld.structure.saved", new Object[]{requestedName, roundedCost, 0}), true
+                                    Component.translatable("message.typemoonworld.structure.saved", requestedName, roundedCost, 0), true
                                  );
                               }
                            }

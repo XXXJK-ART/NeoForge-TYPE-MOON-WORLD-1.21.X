@@ -50,7 +50,7 @@ public class CarvedGemItem extends Item {
    public Component getName(@NotNull ItemStack stack) {
       return (Component)(GemEngravingService.getEngravedMagicId(stack) == null
          ? super.getName(stack)
-         : Component.translatable("item.typemoonworld.engraved_gem", new Object[]{Component.translatable(getGemColorKey(this.type))}));
+         : Component.translatable("item.typemoonworld.engraved_gem", Component.translatable(getGemColorKey(this.type))));
    }
 
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {

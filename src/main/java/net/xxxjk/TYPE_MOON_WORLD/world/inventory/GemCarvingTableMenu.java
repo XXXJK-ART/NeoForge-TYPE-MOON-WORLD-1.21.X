@@ -68,12 +68,12 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
       this.access = ContainerLevelAccess.create(this.level, pos);
       this.blockEntity = blockEntity;
       this.itemHandler = blockEntity.getItems();
-      this.addSlot(new SlotItemHandler(this.itemHandler, 0, 26, 34) {
+      this.addSlot(new SlotItemHandler(this.itemHandler, SLOT_GEM, 26, 34) {
          public boolean mayPlace(@NotNull ItemStack stack) {
             return stack.getItem() instanceof CarvedGemItem && GemEngravingService.getEngravedMagicId(stack) == null;
          }
       });
-      this.addSlot(new SlotItemHandler(this.itemHandler, 1, 26, 65) {
+      this.addSlot(new SlotItemHandler(this.itemHandler, SLOT_TOOL, 26, 65) {
          public boolean mayPlace(@NotNull ItemStack stack) {
             return stack.getItem() instanceof ChiselItem;
          }
@@ -113,28 +113,28 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
       if (slot != null && slot.hasItem()) {
          ItemStack stack = slot.getItem();
          result = stack.copy();
-         if (index < 2) {
-            if (!this.moveItemStackTo(stack, 2, 38, true)) {
+         if (index < SLOT_COUNT) {
+            if (!this.moveItemStackTo(stack, PLAYER_INV_START, HOTBAR_END, true)) {
                return ItemStack.EMPTY;
             }
          } else if (stack.getItem() instanceof CarvedGemItem && GemEngravingService.getEngravedMagicId(stack) == null) {
-            if (!this.moveItemStackTo(stack, 0, 1, false)) {
+            if (!this.moveItemStackTo(stack, SLOT_GEM, SLOT_TOOL, false)) {
                return ItemStack.EMPTY;
             }
          } else if (stack.getItem() instanceof ChiselItem) {
-            if (!this.moveItemStackTo(stack, 1, 2, false)) {
+            if (!this.moveItemStackTo(stack, SLOT_TOOL, SLOT_COUNT, false)) {
                return ItemStack.EMPTY;
             }
-         } else if (index >= 2 && index < 29) {
-            if (!this.moveItemStackTo(stack, 29, 38, false)) {
+         } else if (index >= PLAYER_INV_START && index < PLAYER_INV_END) {
+            if (!this.moveItemStackTo(stack, HOTBAR_START, HOTBAR_END, false)) {
                return ItemStack.EMPTY;
             }
          } else {
-            if (index < 29 || index >= 38) {
+            if (index < HOTBAR_START || index >= HOTBAR_END) {
                return ItemStack.EMPTY;
             }
 
-            if (!this.moveItemStackTo(stack, 2, 29, false)) {
+            if (!this.moveItemStackTo(stack, PLAYER_INV_START, PLAYER_INV_END, false)) {
                return ItemStack.EMPTY;
             }
          }
@@ -169,7 +169,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
          return GemCarvingTableMenu.EngravePreview.error("message.typemoonworld.gem.engrave.not_supported");
       } else {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (!vars.learned_magics.contains("jewel_magic_release") || !hasLearnedMagic(vars, magicId)) {
+         if (!vars.learned_magics.contains(ADVANCED_JEWEL_MAGIC_ID) || !hasLearnedMagic(vars, magicId)) {
             return GemCarvingTableMenu.EngravePreview.error("message.typemoonworld.gem.engrave.locked");
          } else if (!GemCompatibilityService.isWhitelistedMagic(magicId)) {
             return GemCarvingTableMenu.EngravePreview.error("message.typemoonworld.gem.engrave.not_supported");
@@ -184,7 +184,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                int capacity = carvedGem.getQuality().getCapacity(carvedGem.getType());
                int appliedPart = Math.max(0, Math.min(3, reinforcementPart));
                int appliedLevel = clampReinforcementLevel(vars, reinforcementLevel);
-               int appliedProjectionMode = projectionMode == 1 ? 1 : 0;
+               int appliedProjectionMode = projectionMode == PROJECTION_MODE_STRUCTURE ? PROJECTION_MODE_STRUCTURE : PROJECTION_MODE_ITEM;
                double requiredMana = 0.0;
                ItemStack projectionTemplate = ItemStack.EMPTY;
                String projectionStructureId = "";
@@ -302,7 +302,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                            engravedStack, preview.reinforcementPart(), preview.reinforcementLevel(), preview.requiredMana()
                         );
                      } else if ("projection".equals(magicId)) {
-                        if (preview.projectionMode() == 1) {
+                        if (preview.projectionMode() == PROJECTION_MODE_STRUCTURE) {
                            GemEngravingService.setProjectionStructureConfig(
                               engravedStack, preview.projectionStructureId(), preview.projectionStructureName(), preview.requiredMana()
                            );
@@ -340,18 +340,18 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                   if (attempts == 1) {
                      if (successCount > 0) {
                         player.displayClientMessage(
-                           Component.translatable("message.typemoonworld.gem.engrave.success", new Object[]{GemEngravingService.getMagicName(magicId)}), true
+                           Component.translatable("message.typemoonworld.gem.engrave.success", GemEngravingService.getMagicName(magicId)), true
                         );
                      } else {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.gem.engrave.failed"), true);
                      }
                   } else {
                      player.displayClientMessage(
-                        Component.translatable("message.typemoonworld.gem.engrave.batch.result", new Object[]{successCount, failCount}), true
+                        Component.translatable("message.typemoonworld.gem.engrave.batch.result", successCount, failCount), true
                      );
                      if (untouchedCount > 0) {
                         player.displayClientMessage(
-                           Component.translatable("message.typemoonworld.gem.engrave.batch.remaining", new Object[]{untouchedCount}), true
+                           Component.translatable("message.typemoonworld.gem.engrave.batch.remaining", untouchedCount), true
                         );
                      }
                   }
@@ -415,7 +415,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
    }
 
    private static boolean isValidMagicId(String magicId) {
-      return magicId != null && !magicId.isEmpty() && magicId.length() <= 64 && magicId.matches("[a-z0-9_]+");
+      return magicId != null && !magicId.isEmpty() && magicId.length() <= MAX_MAGIC_ID_LENGTH && magicId.matches("[a-z0-9_]+");
    }
 
    private static double calculateStructureProjectionCost(TypeMoonWorldModVariables.PlayerVariables.SavedStructure structure, boolean hasSwordAttribute) {

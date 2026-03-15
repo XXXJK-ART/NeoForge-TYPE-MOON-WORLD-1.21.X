@@ -55,14 +55,14 @@ public class MagicJewelMachineGun {
          } else if (!crestCast && !vars.learned_magics.contains("gander")) {
             player.displayClientMessage(
                Component.translatable(
-                  "message.typemoonworld.scroll.requirement_not_met", new Object[]{Component.translatable("magic.typemoonworld.gander.name")}
+                  "message.typemoonworld.scroll.requirement_not_met", Component.translatable("magic.typemoonworld.gander.name")
                ),
                true
             );
             return false;
          } else {
             CompoundTag state = player.getPersistentData();
-            if (state.getBoolean("TypeMoonMachineGunActive") || state.getBoolean("TypeMoonMachineGunChanting")) {
+            if (state.getBoolean(TAG_ACTIVE) || state.getBoolean(TAG_CHANTING)) {
                clearState(player);
                return true;
             } else if (!EntityUtils.hasAnyEmptyHand(player)) {
@@ -73,15 +73,15 @@ public class MagicJewelMachineGun {
             } else {
                long gameTime = player.level().getGameTime();
                if (crestCast) {
-                  state.putBoolean("TypeMoonMachineGunChanting", false);
-                  state.putBoolean("TypeMoonMachineGunActive", true);
-                  state.putLong("TypeMoonMachineGunChantEndTick", gameTime);
-                  state.putLong("TypeMoonMachineGunNextBurstTick", gameTime);
+                  state.putBoolean(TAG_CHANTING, false);
+                  state.putBoolean(TAG_ACTIVE, true);
+                  state.putLong(TAG_CHANT_END_TICK, gameTime);
+                  state.putLong(TAG_NEXT_BURST_TICK, gameTime);
                } else {
-                  state.putBoolean("TypeMoonMachineGunChanting", true);
-                  state.putBoolean("TypeMoonMachineGunActive", false);
-                  state.putLong("TypeMoonMachineGunChantEndTick", gameTime + 20L);
-                  state.putLong("TypeMoonMachineGunNextBurstTick", gameTime + 20L);
+                  state.putBoolean(TAG_CHANTING, true);
+                  state.putBoolean(TAG_ACTIVE, false);
+                  state.putLong(TAG_CHANT_END_TICK, gameTime + CHANT_TICKS);
+                  state.putLong(TAG_NEXT_BURST_TICK, gameTime + CHANT_TICKS);
                   player.displayClientMessage(getMachineGunChantComponent(), true);
                }
 
@@ -96,8 +96,8 @@ public class MagicJewelMachineGun {
    public static void tick(ServerPlayer player) {
       if (!player.level().isClientSide()) {
          CompoundTag state = player.getPersistentData();
-         boolean chanting = state.getBoolean("TypeMoonMachineGunChanting");
-         boolean active = state.getBoolean("TypeMoonMachineGunActive");
+         boolean chanting = state.getBoolean(TAG_CHANTING);
+         boolean active = state.getBoolean(TAG_ACTIVE);
          if (chanting || active) {
             TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -107,35 +107,35 @@ public class MagicJewelMachineGun {
             } else {
                long now = player.level().getGameTime();
                if (chanting) {
-                  long chantEndTick = state.getLong("TypeMoonMachineGunChantEndTick");
+                  long chantEndTick = state.getLong(TAG_CHANT_END_TICK);
                   if (now < chantEndTick) {
                      return;
                   }
 
-                  state.putBoolean("TypeMoonMachineGunChanting", false);
-                  state.putBoolean("TypeMoonMachineGunActive", true);
-                  state.putLong("TypeMoonMachineGunNextBurstTick", now);
+                  state.putBoolean(TAG_CHANTING, false);
+                  state.putBoolean(TAG_ACTIVE, true);
+                  state.putLong(TAG_NEXT_BURST_TICK, now);
                   player.level()
                      .playSound(
                         null, player.getX(), player.getY(), player.getZ(), (SoundEvent)ModSounds.CYQ_GEM_SHOOT_STAR.get(), SoundSource.PLAYERS, 1.0F, 1.0F
                      );
                }
 
-               if (state.getBoolean("TypeMoonMachineGunActive")) {
-                  long nextBurstTick = state.getLong("TypeMoonMachineGunNextBurstTick");
+               if (state.getBoolean(TAG_ACTIVE)) {
+                  long nextBurstTick = state.getLong(TAG_NEXT_BURST_TICK);
                   if (now >= nextBurstTick) {
                      boolean fired = fireBurst(player, vars);
                      if (!fired) {
                         clearState(player);
                      } else {
-                        vars.magic_cooldown = 2.0;
+                        vars.magic_cooldown = BURST_INTERVAL_TICKS;
                         boolean crestCast = vars.isCurrentSelectionFromCrest("jewel_machine_gun");
                         if (!crestCast) {
                            vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + 0.1);
                         }
 
                         syncBurstState(player, vars, now, !crestCast);
-                        state.putLong("TypeMoonMachineGunNextBurstTick", now + 2L);
+                        state.putLong(TAG_NEXT_BURST_TICK, now + BURST_INTERVAL_TICKS);
                      }
                   }
                }
@@ -163,39 +163,39 @@ public class MagicJewelMachineGun {
 
    private static void clearState(ServerPlayer player) {
       CompoundTag state = player.getPersistentData();
-      state.putBoolean("TypeMoonMachineGunActive", false);
-      state.putBoolean("TypeMoonMachineGunChanting", false);
-      state.putLong("TypeMoonMachineGunChantEndTick", 0L);
-      state.putLong("TypeMoonMachineGunNextBurstTick", 0L);
-      state.remove("TypeMoonMachineGunLastManaSyncTick");
-      state.remove("TypeMoonMachineGunLastProfSyncTick");
+      state.putBoolean(TAG_ACTIVE, false);
+      state.putBoolean(TAG_CHANTING, false);
+      state.putLong(TAG_CHANT_END_TICK, 0L);
+      state.putLong(TAG_NEXT_BURST_TICK, 0L);
+      state.remove(TAG_LAST_MANA_SYNC_TICK);
+      state.remove(TAG_LAST_PROF_SYNC_TICK);
    }
 
    private static void syncBurstState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, long now, boolean syncProficiency) {
       CompoundTag state = player.getPersistentData();
-      long lastManaSync = state.getLong("TypeMoonMachineGunLastManaSyncTick");
-      if (now - lastManaSync >= 4L || vars.player_mana <= 0.0) {
+      long lastManaSync = state.getLong(TAG_LAST_MANA_SYNC_TICK);
+      if (now - lastManaSync >= MANA_SYNC_INTERVAL_TICKS || vars.player_mana <= 0.0) {
          vars.syncMana(player);
-         state.putLong("TypeMoonMachineGunLastManaSyncTick", now);
+         state.putLong(TAG_LAST_MANA_SYNC_TICK, now);
       }
 
       if (syncProficiency) {
-         long lastProfSync = state.getLong("TypeMoonMachineGunLastProfSyncTick");
-         if (now - lastProfSync >= 20L) {
+         long lastProfSync = state.getLong(TAG_LAST_PROF_SYNC_TICK);
+         if (now - lastProfSync >= PROF_SYNC_INTERVAL_TICKS) {
             vars.syncProficiency(player);
-            state.putLong("TypeMoonMachineGunLastProfSyncTick", now);
+            state.putLong(TAG_LAST_PROF_SYNC_TICK, now);
          }
       }
    }
 
    private static boolean hasEnoughResourceForBurst(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       int availableGems = countAvailableUnengravedGems(player);
-      if (availableGems < 3) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.jewel_machine_gun.not_enough_gems", new Object[]{3}), true);
+      if (availableGems < MIN_GEMS_REQUIRED) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.jewel_machine_gun.not_enough_gems", MIN_GEMS_REQUIRED), true);
          return false;
       } else {
-         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.player_mana, 3);
-         if (shotPlans.size() < 3) {
+         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.player_mana, BURST_COUNT);
+         if (shotPlans.size() < BURST_COUNT) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.not_enough_mana"), true);
             return false;
          } else {
@@ -208,9 +208,9 @@ public class MagicJewelMachineGun {
       if (!hasEnoughResourceForBurst(player, vars)) {
          return false;
       } else {
-         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.player_mana, 3);
+         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.player_mana, BURST_COUNT);
          List<ItemStack> consumed = consumePlannedGems(player, shotPlans);
-         if (consumed.size() < 3) {
+         if (consumed.size() < BURST_COUNT) {
             return false;
          } else {
             int emptyUsed = 0;
@@ -222,7 +222,7 @@ public class MagicJewelMachineGun {
             }
 
             if (emptyUsed > 0) {
-               vars.player_mana = Math.max(0.0, vars.player_mana - emptyUsed * 50.0);
+               vars.player_mana = Math.max(0.0, vars.player_mana - emptyUsed * EMPTY_GEM_MANA_COST);
             }
 
             for (int i = 0; i < consumed.size(); i++) {
@@ -271,21 +271,21 @@ public class MagicJewelMachineGun {
          } else if (fullHigh > 0) {
             fullHigh--;
             plans.add(new MagicJewelMachineGun.ShotPlan(true, GemQuality.HIGH));
-         } else if (emptyPoor > 0 && manaLeft >= 50.0) {
+         } else if (emptyPoor > 0 && manaLeft >= EMPTY_GEM_MANA_COST) {
             emptyPoor--;
-            manaLeft -= 50.0;
+            manaLeft -= EMPTY_GEM_MANA_COST;
             plans.add(new MagicJewelMachineGun.ShotPlan(false, GemQuality.POOR));
-         } else if (emptyNormal > 0 && manaLeft >= 50.0) {
+         } else if (emptyNormal > 0 && manaLeft >= EMPTY_GEM_MANA_COST) {
             emptyNormal--;
-            manaLeft -= 50.0;
+            manaLeft -= EMPTY_GEM_MANA_COST;
             plans.add(new MagicJewelMachineGun.ShotPlan(false, GemQuality.NORMAL));
          } else {
-            if (emptyHigh <= 0 || !(manaLeft >= 50.0)) {
+            if (emptyHigh <= 0 || !(manaLeft >= EMPTY_GEM_MANA_COST)) {
                break;
             }
 
             emptyHigh--;
-            manaLeft -= 50.0;
+            manaLeft -= EMPTY_GEM_MANA_COST;
             plans.add(new MagicJewelMachineGun.ShotPlan(false, GemQuality.HIGH));
          }
       }
@@ -419,7 +419,7 @@ public class MagicJewelMachineGun {
             }
          }
 
-         int pattern = Math.floorMod(shotIndex, 3);
+         int pattern = Math.floorMod(shotIndex, BURST_COUNT);
          Vec3 forward = EntityUtils.getAutoAimDirection(player, 48.0, 58.0);
          Vec3 right = forward.cross(new Vec3(0.0, 1.0, 0.0));
          if (right.lengthSqr() < 1.0E-6) {

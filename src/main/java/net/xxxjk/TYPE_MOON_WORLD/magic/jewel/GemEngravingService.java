@@ -77,7 +77,7 @@ public final class GemEngravingService {
             TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                TypeMoonWorldModVariables.PLAYER_VARIABLES
             );
-            if (!vars.learned_magics.contains("jewel_magic_release")) {
+            if (!vars.learned_magics.contains(ADVANCED_JEWEL_MAGIC_ID)) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.gem.engrave.locked"), true);
                return true;
             } else {
@@ -110,7 +110,7 @@ public final class GemEngravingService {
                      vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + 0.3);
                      vars.syncPlayerVariables(player);
                      player.displayClientMessage(
-                        Component.translatable("message.typemoonworld.gem.engrave.success", new Object[]{getMagicName(selectedMagic)}), true
+                        Component.translatable("message.typemoonworld.gem.engrave.success", getMagicName(selectedMagic)), true
                      );
                      player.level().playSound(null, player.blockPosition(), SoundEvents.UI_STONECUTTER_TAKE_RESULT, SoundSource.PLAYERS, 0.8F, 1.2F);
                   } else {
@@ -155,10 +155,10 @@ public final class GemEngravingService {
          return null;
       } else {
          CompoundTag tag = customData.copyTag();
-         if (!tag.contains("TypeMoonGemEngravedMagic", 8)) {
+         if (!tag.contains(TAG_ENGRAVED_MAGIC, 8)) {
             return null;
          } else {
-            String id = tag.getString("TypeMoonGemEngravedMagic");
+            String id = tag.getString(TAG_ENGRAVED_MAGIC);
             return id.isEmpty() ? null : id;
          }
       }
@@ -170,7 +170,7 @@ public final class GemEngravingService {
          to.remove(DataComponents.CUSTOM_DATA);
       } else {
          CompoundTag tag = customData.copyTag();
-         tag.remove("TypeMoonGemEngravedAt");
+         tag.remove(TAG_ENGRAVED_AT);
          ensureContentKey(tag);
          to.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
       }
@@ -178,24 +178,24 @@ public final class GemEngravingService {
 
    public static void setEngravedMagic(ItemStack stack, String magicId) {
       CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-      tag.putString("TypeMoonGemEngravedMagic", magicId);
-      tag.remove("TypeMoonGemEngravedAt");
-      tag.remove("TypeMoonGemEngravedManaCost");
-      tag.remove("TypeMoonGemEngravedContentKey");
-      tag.remove("TypeMoonGemReinforcementPart");
-      tag.remove("TypeMoonGemReinforcementLevel");
-      tag.remove("TypeMoonGemProjectionKind");
-      tag.remove("TypeMoonGemProjectionItem");
-      tag.remove("TypeMoonGemProjectionItemName");
-      tag.remove("TypeMoonGemProjectionStructureId");
-      tag.remove("TypeMoonGemProjectionStructureName");
-      tag.putString("TypeMoonGemEngravedContentKey", magicId == null ? "" : magicId);
+      tag.putString(TAG_ENGRAVED_MAGIC, magicId);
+      tag.remove(TAG_ENGRAVED_AT);
+      tag.remove(TAG_ENGRAVED_MANA_COST);
+      tag.remove(TAG_ENGRAVED_CONTENT_KEY);
+      tag.remove(TAG_REINFORCEMENT_PART);
+      tag.remove(TAG_REINFORCEMENT_LEVEL);
+      tag.remove(TAG_PROJECTION_KIND);
+      tag.remove(TAG_PROJECTION_ITEM);
+      tag.remove(TAG_PROJECTION_ITEM_NAME);
+      tag.remove(TAG_PROJECTION_STRUCTURE_ID);
+      tag.remove(TAG_PROJECTION_STRUCTURE_NAME);
+      tag.putString(TAG_ENGRAVED_CONTENT_KEY, magicId == null ? "" : magicId);
       stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
    }
 
    public static void setEngravedManaCost(ItemStack stack, double manaCost) {
       CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-      tag.putDouble("TypeMoonGemEngravedManaCost", Math.max(0.0, manaCost));
+      tag.putDouble(TAG_ENGRAVED_MANA_COST, Math.max(0.0, manaCost));
       stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
    }
 
@@ -205,7 +205,7 @@ public final class GemEngravingService {
          return 0.0;
       } else {
          CompoundTag tag = customData.copyTag();
-         return !tag.contains("TypeMoonGemEngravedManaCost") ? 0.0 : Math.max(0.0, tag.getDouble("TypeMoonGemEngravedManaCost"));
+         return !tag.contains(TAG_ENGRAVED_MANA_COST) ? 0.0 : Math.max(0.0, tag.getDouble(TAG_ENGRAVED_MANA_COST));
       }
    }
 
@@ -213,10 +213,10 @@ public final class GemEngravingService {
       int clampedPart = Math.max(0, Math.min(3, part));
       int clampedLevel = Math.max(1, Math.min(5, level));
       CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-      tag.putInt("TypeMoonGemReinforcementPart", clampedPart);
-      tag.putInt("TypeMoonGemReinforcementLevel", clampedLevel);
-      tag.putDouble("TypeMoonGemEngravedManaCost", Math.max(0.0, manaCost));
-      tag.putString("TypeMoonGemEngravedContentKey", "reinforcement:" + clampedPart + ":" + clampedLevel);
+      tag.putInt(TAG_REINFORCEMENT_PART, clampedPart);
+      tag.putInt(TAG_REINFORCEMENT_LEVEL, clampedLevel);
+      tag.putDouble(TAG_ENGRAVED_MANA_COST, Math.max(0.0, manaCost));
+      tag.putString(TAG_ENGRAVED_CONTENT_KEY, "reinforcement:" + clampedPart + ":" + clampedLevel);
       stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
    }
 
@@ -225,28 +225,28 @@ public final class GemEngravingService {
       String itemId = BuiltInRegistries.ITEM.getKey(sanitized.getItem()).toString();
       int payloadHash = sanitized.save(registries).hashCode();
       CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-      tag.putString("TypeMoonGemProjectionKind", "item");
-      tag.put("TypeMoonGemProjectionItem", sanitized.save(registries));
-      tag.putString("TypeMoonGemProjectionItemName", sanitized.getHoverName().getString());
-      tag.putDouble("TypeMoonGemEngravedManaCost", Math.max(0.0, manaCost));
-      tag.putString("TypeMoonGemEngravedContentKey", "projection:item:" + itemId + ":" + Integer.toHexString(payloadHash));
+      tag.putString(TAG_PROJECTION_KIND, PROJECTION_KIND_ITEM);
+      tag.put(TAG_PROJECTION_ITEM, sanitized.save(registries));
+      tag.putString(TAG_PROJECTION_ITEM_NAME, sanitized.getHoverName().getString());
+      tag.putDouble(TAG_ENGRAVED_MANA_COST, Math.max(0.0, manaCost));
+      tag.putString(TAG_ENGRAVED_CONTENT_KEY, "projection:item:" + itemId + ":" + Integer.toHexString(payloadHash));
       stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
    }
 
    public static void setProjectionStructureConfig(ItemStack stack, String structureId, String structureName, double manaCost) {
       String normalizedStructureId = structureId == null ? "" : structureId;
       CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-      tag.putString("TypeMoonGemProjectionKind", "structure");
-      tag.putString("TypeMoonGemProjectionStructureId", normalizedStructureId);
-      tag.putString("TypeMoonGemProjectionStructureName", structureName == null ? "" : structureName);
-      tag.putDouble("TypeMoonGemEngravedManaCost", Math.max(0.0, manaCost));
-      tag.putString("TypeMoonGemEngravedContentKey", "projection:structure:" + normalizedStructureId);
+      tag.putString(TAG_PROJECTION_KIND, PROJECTION_KIND_STRUCTURE);
+      tag.putString(TAG_PROJECTION_STRUCTURE_ID, normalizedStructureId);
+      tag.putString(TAG_PROJECTION_STRUCTURE_NAME, structureName == null ? "" : structureName);
+      tag.putDouble(TAG_ENGRAVED_MANA_COST, Math.max(0.0, manaCost));
+      tag.putString(TAG_ENGRAVED_CONTENT_KEY, "projection:structure:" + normalizedStructureId);
       stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
    }
 
    public static boolean isProjectionStructure(ItemStack stack) {
       CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-      return customData == null ? false : "structure".equals(customData.copyTag().getString("TypeMoonGemProjectionKind"));
+      return customData == null ? false : PROJECTION_KIND_STRUCTURE.equals(customData.copyTag().getString(TAG_PROJECTION_KIND));
    }
 
    public static int getReinforcementPart(ItemStack stack, int fallback) {
@@ -255,7 +255,7 @@ public final class GemEngravingService {
          return fallback;
       } else {
          CompoundTag tag = customData.copyTag();
-         return !tag.contains("TypeMoonGemReinforcementPart") ? fallback : Math.max(0, Math.min(3, tag.getInt("TypeMoonGemReinforcementPart")));
+         return !tag.contains(TAG_REINFORCEMENT_PART) ? fallback : Math.max(0, Math.min(3, tag.getInt(TAG_REINFORCEMENT_PART)));
       }
    }
 
@@ -265,23 +265,23 @@ public final class GemEngravingService {
          return fallback;
       } else {
          CompoundTag tag = customData.copyTag();
-         return !tag.contains("TypeMoonGemReinforcementLevel") ? fallback : Math.max(1, Math.min(5, tag.getInt("TypeMoonGemReinforcementLevel")));
+         return !tag.contains(TAG_REINFORCEMENT_LEVEL) ? fallback : Math.max(1, Math.min(5, tag.getInt(TAG_REINFORCEMENT_LEVEL)));
       }
    }
 
    public static String getProjectionStructureId(ItemStack stack) {
       CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-      return customData == null ? "" : customData.copyTag().getString("TypeMoonGemProjectionStructureId");
+      return customData == null ? "" : customData.copyTag().getString(TAG_PROJECTION_STRUCTURE_ID);
    }
 
    public static String getProjectionStructureName(ItemStack stack) {
       CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-      return customData == null ? "" : customData.copyTag().getString("TypeMoonGemProjectionStructureName");
+      return customData == null ? "" : customData.copyTag().getString(TAG_PROJECTION_STRUCTURE_NAME);
    }
 
    public static String getProjectionItemName(ItemStack stack) {
       CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-      return customData == null ? "" : customData.copyTag().getString("TypeMoonGemProjectionItemName");
+      return customData == null ? "" : customData.copyTag().getString(TAG_PROJECTION_ITEM_NAME);
    }
 
    public static ItemStack getProjectionItemTemplate(ItemStack stack, Provider registries) {
@@ -290,9 +290,9 @@ public final class GemEngravingService {
          return ItemStack.EMPTY;
       } else {
          CompoundTag tag = customData.copyTag();
-         return !tag.contains("TypeMoonGemProjectionItem", 10)
+         return !tag.contains(TAG_PROJECTION_ITEM, 10)
             ? ItemStack.EMPTY
-            : ItemStack.parseOptional(registries, tag.getCompound("TypeMoonGemProjectionItem"));
+            : ItemStack.parseOptional(registries, tag.getCompound(TAG_PROJECTION_ITEM));
       }
    }
 
@@ -302,12 +302,12 @@ public final class GemEngravingService {
       if (magicId == null) {
          return lines;
       } else {
-         lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.magic", new Object[]{getMagicName(magicId)}));
+         lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.magic", getMagicName(magicId)));
          switch (magicId) {
             case "reinforcement":
                int part = getReinforcementPart(stack, 0);
                int level = getReinforcementLevel(stack, 1);
-               lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.reinforcement", new Object[]{getReinforcementPartName(part), level}));
+               lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.reinforcement", getReinforcementPartName(part), level));
                break;
             case "projection":
                if (isProjectionStructure(stack)) {
@@ -315,22 +315,22 @@ public final class GemEngravingService {
                   lines.add(
                      Component.translatable(
                         "tooltip.typemoonworld.gem.engraved.projection.mode",
-                        new Object[]{Component.translatable("tooltip.typemoonworld.gem.engraved.projection.mode.structure")}
+                        Component.translatable("tooltip.typemoonworld.gem.engraved.projection.mode.structure")
                      )
                   );
                   if (!name.isEmpty()) {
-                     lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.projection.target", new Object[]{Component.literal(name)}));
+                     lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.projection.target", Component.literal(name)));
                   }
                } else {
                   String itemName = getProjectionItemName(stack);
                   lines.add(
                      Component.translatable(
                         "tooltip.typemoonworld.gem.engraved.projection.mode",
-                        new Object[]{Component.translatable("tooltip.typemoonworld.gem.engraved.projection.mode.item")}
+                        Component.translatable("tooltip.typemoonworld.gem.engraved.projection.mode.item")
                      )
                   );
                   if (!itemName.isEmpty()) {
-                     lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.projection.target", new Object[]{Component.literal(itemName)}));
+                     lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.projection.target", Component.literal(itemName)));
                   }
                }
                break;
@@ -340,7 +340,7 @@ public final class GemEngravingService {
 
          double manaCost = getEngravedManaCost(stack);
          if (manaCost > 0.0) {
-            lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.mana_cost", new Object[]{(int)Math.ceil(manaCost)}));
+            lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.mana_cost", (int)Math.ceil(manaCost)));
          }
 
          return lines;
@@ -380,25 +380,25 @@ public final class GemEngravingService {
    }
 
    private static void ensureContentKey(CompoundTag tag) {
-      if (tag != null && tag.contains("TypeMoonGemEngravedMagic", 8)) {
-         String key = tag.getString("TypeMoonGemEngravedContentKey");
+      if (tag != null && tag.contains(TAG_ENGRAVED_MAGIC, 8)) {
+         String key = tag.getString(TAG_ENGRAVED_CONTENT_KEY);
          if (key.isEmpty()) {
-            String magicId = tag.getString("TypeMoonGemEngravedMagic");
+            String magicId = tag.getString(TAG_ENGRAVED_MAGIC);
             if ("reinforcement".equals(magicId)) {
-               int part = Math.max(0, Math.min(3, tag.getInt("TypeMoonGemReinforcementPart")));
-               int level = Math.max(1, Math.min(5, tag.getInt("TypeMoonGemReinforcementLevel")));
-               tag.putString("TypeMoonGemEngravedContentKey", "reinforcement:" + part + ":" + level);
+               int part = Math.max(0, Math.min(3, tag.getInt(TAG_REINFORCEMENT_PART)));
+               int level = Math.max(1, Math.min(5, tag.getInt(TAG_REINFORCEMENT_LEVEL)));
+               tag.putString(TAG_ENGRAVED_CONTENT_KEY, "reinforcement:" + part + ":" + level);
             } else if ("projection".equals(magicId)) {
-               String kind = tag.getString("TypeMoonGemProjectionKind");
-               if ("structure".equals(kind)) {
-                  tag.putString("TypeMoonGemEngravedContentKey", "projection:structure:" + tag.getString("TypeMoonGemProjectionStructureId"));
-               } else if ("item".equals(kind)) {
-                  tag.putString("TypeMoonGemEngravedContentKey", "projection:item:" + tag.getString("TypeMoonGemProjectionItemName"));
+               String kind = tag.getString(TAG_PROJECTION_KIND);
+               if (PROJECTION_KIND_STRUCTURE.equals(kind)) {
+                  tag.putString(TAG_ENGRAVED_CONTENT_KEY, "projection:structure:" + tag.getString(TAG_PROJECTION_STRUCTURE_ID));
+               } else if (PROJECTION_KIND_ITEM.equals(kind)) {
+                  tag.putString(TAG_ENGRAVED_CONTENT_KEY, "projection:item:" + tag.getString(TAG_PROJECTION_ITEM_NAME));
                } else {
-                  tag.putString("TypeMoonGemEngravedContentKey", "projection");
+                  tag.putString(TAG_ENGRAVED_CONTENT_KEY, "projection");
                }
             } else {
-               tag.putString("TypeMoonGemEngravedContentKey", magicId);
+               tag.putString(TAG_ENGRAVED_CONTENT_KEY, magicId);
             }
          }
       }
@@ -503,8 +503,8 @@ public final class GemEngravingService {
    private static boolean castGander(ServerPlayer player, ItemStack gemStack) {
       GanderProjectileEntity projectile = new GanderProjectileEntity(player.level(), player);
       projectile.setNoGravity(true);
-      projectile.setChargeSeconds(5);
-      projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(5));
+      projectile.setChargeSeconds(GANDER_MAX_CHARGE_SECONDS);
+      projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(GANDER_MAX_CHARGE_SECONDS));
       ItemStack visualGem = gemStack.copy();
       visualGem.setCount(1);
       projectile.setItem(visualGem);
@@ -519,7 +519,7 @@ public final class GemEngravingService {
          }
       }
 
-      Vec3 spawnPos = MagicGander.getChargeAnchor(player).add(direction.scale(0.08));
+      Vec3 spawnPos = MagicGander.getChargeAnchor(player).add(direction.scale(GANDER_RELEASE_FORWARD_FROM_ANCHOR));
       projectile.setPos(spawnPos);
       projectile.shoot(direction.x, direction.y, direction.z, 3.8F, 0.0F);
       player.level().addFreshEntity(projectile);
@@ -535,9 +535,9 @@ public final class GemEngravingService {
    public static boolean castGravityFromGem(ServerPlayer player, InteractionHand hand, int targetMode, int mode) {
       if (player == null) {
          return false;
-      } else if (mode < -2 || mode > 2) {
+      } else if (mode < MagicGravity.MODE_ULTRA_LIGHT || mode > MagicGravity.MODE_ULTRA_HEAVY) {
          return false;
-      } else if (targetMode != 0 && targetMode != 1) {
+      } else if (targetMode != MagicGravity.MODE_NORMAL && targetMode != MagicGravity.MODE_HEAVY) {
          return false;
       } else {
          ItemStack heldStack = player.getItemInHand(hand);
@@ -554,9 +554,9 @@ public final class GemEngravingService {
                Component targetComp = (Component)(target == player ? Component.translatable("gui.typemoonworld.mode.self") : target.getDisplayName());
                player.displayClientMessage(MagicGravity.getChantComponentForMode(mode), true);
                Component resultMessage;
-               if (mode == 0) {
+               if (mode == MagicGravity.MODE_NORMAL) {
                   MagicGravityEffectHandler.clearGravityState(target);
-                  resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", new Object[]{targetComp});
+                  resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
                } else {
                   long until = player.level().getGameTime() + duration;
                   MagicGravityEffectHandler.applyGravityState(target, mode, until);
@@ -569,7 +569,7 @@ public final class GemEngravingService {
                      case 2 -> "gui.typemoonworld.mode.gravity.ultra_heavy";
                   };
                   resultMessage = Component.translatable(
-                     "message.typemoonworld.magic.gravity.applied", new Object[]{targetComp, Component.translatable(modeKey), duration / 20}
+                     "message.typemoonworld.magic.gravity.applied", targetComp, Component.translatable(modeKey), duration / 20
                   );
                }
 
@@ -586,7 +586,7 @@ public final class GemEngravingService {
    }
 
    private static LivingEntity resolveGravityTarget(ServerPlayer player, int targetMode) {
-      if (targetMode == 0) {
+      if (targetMode == MagicGravity.MODE_NORMAL) {
          return player;
       } else {
          return EntityUtils.getRayTraceTarget(player, 10.0) instanceof EntityHitResult entityHitResult
@@ -600,11 +600,11 @@ public final class GemEngravingService {
    private static int calculateGravityDurationTicks(double proficiency) {
       double clamped = Math.max(0.0, Math.min(100.0, proficiency));
       double ratio = clamped / 100.0;
-      return 600 + (int)Math.round(3000.0 * ratio);
+      return GRAVITY_MIN_DURATION_TICKS + (int)Math.round((GRAVITY_MAX_DURATION_TICKS - GRAVITY_MIN_DURATION_TICKS) * ratio);
    }
 
    private static void queueGravityActionbarResult(ServerPlayer player, Component message) {
-      TYPE_MOON_WORLD.queueServerWork(12, () -> {
+      TYPE_MOON_WORLD.queueServerWork(GRAVITY_RESULT_MESSAGE_DELAY_TICKS, () -> {
          if (!player.isRemoved()) {
             player.displayClientMessage(message, true);
          }

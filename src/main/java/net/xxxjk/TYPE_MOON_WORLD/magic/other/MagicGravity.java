@@ -31,16 +31,16 @@ public class MagicGravity {
          LivingEntity target = resolveTarget(player, vars.gravity_magic_target);
          if (target == null) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gravity.no_target"), true);
-         } else if (!ManaHelper.consumeOneTimeMagicCost(player, 20.0)) {
+         } else if (!ManaHelper.consumeOneTimeMagicCost(player, CAST_MANA_COST)) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          } else {
-            int nextMode = Math.max(-2, Math.min(2, vars.gravity_magic_mode));
+            int nextMode = Math.max(MODE_ULTRA_LIGHT, Math.min(MODE_ULTRA_HEAVY, vars.gravity_magic_mode));
             Component targetComp = (Component)(target == player ? Component.translatable("gui.typemoonworld.mode.self") : target.getDisplayName());
             player.displayClientMessage(getChantComponentForMode(nextMode), true);
             Component resultMessage;
-            if (nextMode == 0) {
+            if (nextMode == MODE_NORMAL) {
                MagicGravityEffectHandler.clearGravityState(target);
-               resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", new Object[]{targetComp});
+               resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
             } else {
                int duration = getDurationTicks(vars.proficiency_gravity_magic);
                MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration);
@@ -54,7 +54,7 @@ public class MagicGravity {
                };
                int durationSec = duration / 20;
                resultMessage = Component.translatable(
-                  "message.typemoonworld.magic.gravity.applied", new Object[]{targetComp, Component.translatable(modeKey), durationSec}
+                  "message.typemoonworld.magic.gravity.applied", targetComp, Component.translatable(modeKey), durationSec
                );
             }
 
@@ -66,22 +66,22 @@ public class MagicGravity {
    }
 
    private static LivingEntity resolveTarget(ServerPlayer player, int targetMode) {
-      if (targetMode == 0) {
+      if (targetMode == MODE_NORMAL) {
          return player;
       } else {
-         HitResult hitResult = EntityUtils.getRayTraceTarget(player, 10.0);
+         HitResult hitResult = EntityUtils.getRayTraceTarget(player, TARGET_RANGE);
          return hitResult.getType() == Type.ENTITY
                && ((EntityHitResult)hitResult).getEntity() instanceof LivingEntity living
                && EntityUtils.isValidCombatTarget(player, living)
             ? living
-            : EntityUtils.findAutoAimTarget(player, 10.0, 65.0);
+            : EntityUtils.findAutoAimTarget(player, TARGET_RANGE, 65.0);
       }
    }
 
    private static int getDurationTicks(double proficiency) {
       double clamped = Math.max(0.0, Math.min(100.0, proficiency));
       double ratio = clamped / 100.0;
-      return 600 + (int)Math.round(3000.0 * ratio);
+      return MIN_DURATION_TICKS + (int)Math.round((MAX_DURATION_TICKS - MIN_DURATION_TICKS) * ratio);
    }
 
    public static String getChantForMode(int mode) {
@@ -102,7 +102,7 @@ public class MagicGravity {
    }
 
    private static void queueActionbarResult(ServerPlayer player, Component message) {
-      TYPE_MOON_WORLD.queueServerWork(12, () -> {
+      TYPE_MOON_WORLD.queueServerWork(RESULT_MESSAGE_DELAY_TICKS, () -> {
          if (!player.isRemoved()) {
             player.displayClientMessage(message, true);
          }

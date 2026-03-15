@@ -132,7 +132,7 @@ public class MagicWheelSwitchScreen extends Screen {
       }
 
       guiGraphics.drawCenteredString(
-         this.font, Component.translatable("gui.typemoonworld.magic_wheel.current", new Object[]{this.currentWheel}), centerX, centerY - 5, -16711681
+         this.font, Component.translatable("gui.typemoonworld.magic_wheel.current", this.currentWheel), centerX, centerY - 5, -16711681
       );
       guiGraphics.drawCenteredString(this.font, this.title, centerX, centerY - 18, -1250068);
       RenderSystem.disableBlend();

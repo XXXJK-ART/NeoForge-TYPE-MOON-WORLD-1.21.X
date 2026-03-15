@@ -140,7 +140,7 @@ public class TYPE_MOON_WORLD {
       if (networkingRegistered) {
          throw new IllegalStateException("Cannot register new network messages after networking has been registered");
       } else {
-         MESSAGES.put(id, new TYPE_MOON_WORLD.NetworkMessage(reader, handler));
+         MESSAGES.put(id, new TYPE_MOON_WORLD.NetworkMessage<>(reader, handler));
       }
    }
 

@@ -109,7 +109,7 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
             }
 
             player.displayClientMessage(
-               Component.translatable("message.typemoonworld.muramasa.charge", new Object[]{currentCharge}).withStyle(ChatFormatting.RED), true
+               Component.translatable("message.typemoonworld.muramasa.charge", currentCharge).withStyle(ChatFormatting.RED), true
             );
             level.playSound(
                null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.5F, 1.0F + currentCharge / 100.0F

@@ -14,7 +14,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -72,12 +71,12 @@ public final class MagicGander {
       } else {
          CompoundTag tag = player.getPersistentData();
          long now = player.level().getGameTime();
-         tag.putBoolean("TypeMoonGanderCharging", true);
-         tag.putLong("TypeMoonGanderChargeStartTick", now);
-         tag.putInt("TypeMoonGanderChargeSeconds", 0);
+         tag.putBoolean(TAG_CHARGING, true);
+         tag.putLong(TAG_CHARGE_START_TICK, now);
+         tag.putInt(TAG_CHARGE_SECONDS, 0);
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          int maxChargeSeconds = getMaxChargeSeconds(getEffectiveGanderProficiency(vars));
-         updateChargingPreview(player, now, now, 20, 0, maxChargeSeconds);
+         updateChargingPreview(player, now, now, BASE_CHARGE_STEP_TICKS, 0, maxChargeSeconds);
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gander.charge.start"), true);
          return true;
       }
@@ -94,7 +93,7 @@ public final class MagicGander {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          boolean crestCast = vars.isCurrentSelectionFromCrest("gander");
          int maxChargeSeconds = getMaxChargeSeconds(getEffectiveGanderProficiency(vars));
-         int chargeSeconds = Math.max(0, Math.min(maxChargeSeconds, player.getPersistentData().getInt("TypeMoonGanderChargeSeconds")));
+         int chargeSeconds = Math.max(0, Math.min(maxChargeSeconds, player.getPersistentData().getInt(TAG_CHARGE_SECONDS)));
          clearCharge(player);
          if (chargeSeconds <= 0) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gander.charge.too_low"), true);
@@ -103,9 +102,9 @@ public final class MagicGander {
             GanderProjectileEntity projectile = new GanderProjectileEntity(player.level(), player);
             projectile.setNoGravity(true);
             projectile.setChargeSeconds(chargeSeconds);
-            projectile.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+            projectile.setItem(new ItemStack(ModItems.GANDER.get()));
             Vec3 direction = EntityUtils.getAutoAimDirection(player, 48.0, 55.0);
-            Vec3 spawnPos = getChargeAnchor(player).add(direction.scale(0.08));
+            Vec3 spawnPos = getChargeAnchor(player).add(direction.scale(RELEASE_FORWARD_FROM_ANCHOR));
             projectile.setPos(spawnPos);
             projectile.setVisualScale(getChargeVisualScaleBySeconds(chargeSeconds, maxChargeSeconds));
             projectile.shoot(direction.x, direction.y, direction.z, 3.8F, 0.0F);
@@ -120,7 +119,7 @@ public final class MagicGander {
             }
 
             player.displayClientMessage(
-               Component.translatable("message.typemoonworld.magic.gander.cast", new Object[]{chargeSeconds, (int)(chargeSeconds * 5.0)}), true
+               Component.translatable("message.typemoonworld.magic.gander.cast", chargeSeconds, (int)(chargeSeconds * 5.0)), true
             );
             return true;
          }
@@ -134,27 +133,27 @@ public final class MagicGander {
          } else {
             CompoundTag tag = player.getPersistentData();
             long now = player.level().getGameTime();
-            long startTick = tag.getLong("TypeMoonGanderChargeStartTick");
+            long startTick = tag.getLong(TAG_CHARGE_START_TICK);
             TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                TypeMoonWorldModVariables.PLAYER_VARIABLES
             );
             double proficiency = getEffectiveGanderProficiency(vars);
             int maxChargeSeconds = getMaxChargeSeconds(proficiency);
-            int chargedSeconds = Math.max(0, Math.min(maxChargeSeconds, tag.getInt("TypeMoonGanderChargeSeconds")));
+            int chargedSeconds = Math.max(0, Math.min(maxChargeSeconds, tag.getInt(TAG_CHARGE_SECONDS)));
             int chargeStepTicks = getChargeStepTicks(proficiency);
             int shouldReachSeconds = Math.max(0, Math.min(maxChargeSeconds, (int)((now - startTick) / chargeStepTicks)));
             updateChargingPreview(player, now, startTick, chargeStepTicks, chargedSeconds, maxChargeSeconds);
             if (chargedSeconds < shouldReachSeconds) {
                while (chargedSeconds < shouldReachSeconds) {
-                  if (!ManaHelper.consumeManaOrHealth(player, 5.0)) {
+                  if (!ManaHelper.consumeManaOrHealth(player, MANA_PER_SECOND)) {
                      releaseCharge(player);
                      return;
                   }
 
-                  tag.putInt("TypeMoonGanderChargeSeconds", ++chargedSeconds);
+                  tag.putInt(TAG_CHARGE_SECONDS, ++chargedSeconds);
                   vars.syncMana(player);
                   player.displayClientMessage(
-                     Component.translatable("message.typemoonworld.magic.gander.charge.progress", new Object[]{chargedSeconds, maxChargeSeconds}), true
+                     Component.translatable("message.typemoonworld.magic.gander.charge.progress", chargedSeconds, maxChargeSeconds), true
                   );
                   applySelfChargeFeedback(player, chargedSeconds);
                   if (chargedSeconds >= maxChargeSeconds) {
@@ -170,8 +169,8 @@ public final class MagicGander {
    private static int getChargeStepTicks(double proficiency) {
       double clamped = Math.max(0.0, Math.min(100.0, proficiency));
       double t = clamped / 100.0;
-      int stepTicks = (int)Math.round(20.0 - 18.0 * t);
-      return Math.max(2, Math.min(20, stepTicks));
+      int stepTicks = (int)Math.round(BASE_CHARGE_STEP_TICKS - (BASE_CHARGE_STEP_TICKS - MIN_CHARGE_STEP_TICKS) * t);
+      return Math.max(MIN_CHARGE_STEP_TICKS, Math.min(BASE_CHARGE_STEP_TICKS, stepTicks));
    }
 
    private static double getEffectiveGanderProficiency(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -179,7 +178,7 @@ public final class MagicGander {
    }
 
    private static int getMaxChargeSeconds(double proficiency) {
-      return proficiency >= 50.0 ? 5 : 4;
+      return proficiency >= ADVANCED_CHARGE_PROFICIENCY_THRESHOLD ? ADVANCED_MAX_CHARGE_SECONDS : BASE_MAX_CHARGE_SECONDS;
    }
 
    private static float getChargeVisualScaleBySeconds(int chargeSeconds, int maxChargeSeconds) {
@@ -191,7 +190,7 @@ public final class MagicGander {
 
    private static float getChargeVisualScaleByRatio(double ratio) {
       double progressRatio = Math.max(0.0, Math.min(1.0, ratio));
-      return (float)(0.207F + 0.163F * progressRatio);
+      return (float)(CHARGE_PREVIEW_SCALE_MIN + (CHARGE_PREVIEW_SCALE_MAX - CHARGE_PREVIEW_SCALE_MIN) * progressRatio);
    }
 
    private static void updateChargingPreview(ServerPlayer player, long now, long startTick, int chargeStepTicks, int chargedSeconds, int maxChargeSeconds) {
@@ -250,15 +249,15 @@ public final class MagicGander {
    }
 
    private static boolean isCharging(ServerPlayer player) {
-      return player.getPersistentData().getBoolean("TypeMoonGanderCharging");
+      return player.getPersistentData().getBoolean(TAG_CHARGING);
    }
 
    private static void clearCharge(ServerPlayer player) {
       discardChargingPreview(player);
       CompoundTag tag = player.getPersistentData();
-      tag.putBoolean("TypeMoonGanderCharging", false);
-      tag.putLong("TypeMoonGanderChargeStartTick", 0L);
-      tag.putInt("TypeMoonGanderChargeSeconds", 0);
+      tag.putBoolean(TAG_CHARGING, false);
+      tag.putLong(TAG_CHARGE_START_TICK, 0L);
+      tag.putInt(TAG_CHARGE_SECONDS, 0);
    }
 
    public static void forceCleanup(ServerPlayer player) {
@@ -271,7 +270,7 @@ public final class MagicGander {
       Vec3 worldUp = new Vec3(0.0, 1.0, 0.0);
       if (caster instanceof Player player) {
          Vec3 handAnchor = EntityUtils.getCurrentEmptyHandCastAnchor(player);
-         return handAnchor.add(forward.scale(0.54)).add(worldUp.scale(0.1));
+         return handAnchor.add(forward.scale(CHARGE_ANCHOR_FORWARD_FROM_HAND)).add(worldUp.scale(CHARGE_ANCHOR_UP_FROM_HAND));
       } else {
          Vec3 sideBase = forward.cross(worldUp);
          if (sideBase.lengthSqr() < 1.0E-6) {
@@ -280,12 +279,15 @@ public final class MagicGander {
             sideBase = sideBase.normalize();
          }
 
-         return caster.getEyePosition().add(forward.scale(1.32)).add(sideBase.scale(0.3)).add(worldUp.scale(-0.12));
+         return caster.getEyePosition()
+            .add(forward.scale(CHARGE_ANCHOR_FORWARD))
+            .add(sideBase.scale(CHARGE_ANCHOR_RIGHT))
+            .add(worldUp.scale(CHARGE_ANCHOR_DOWN));
       }
    }
 
    public static float getVisualScaleForChargeSeconds(int chargeSeconds) {
-      return getChargeVisualScaleBySeconds(chargeSeconds, 5);
+      return getChargeVisualScaleBySeconds(chargeSeconds, ADVANCED_MAX_CHARGE_SECONDS);
    }
 
    private static GanderProjectileEntity getOrCreateChargingPreview(ServerPlayer player) {
@@ -298,11 +300,11 @@ public final class MagicGander {
          preview = new GanderProjectileEntity(player.level(), player);
          preview.setNoGravity(true);
          preview.setChargingPreview(true);
-         preview.setVisualScale(0.207F);
-         preview.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+         preview.setVisualScale(CHARGE_PREVIEW_SCALE_MIN);
+         preview.setItem(new ItemStack(ModItems.GANDER.get()));
          preview.setPos(getChargeAnchor(player));
          player.level().addFreshEntity(preview);
-         player.getPersistentData().putUUID("TypeMoonGanderChargePreviewUUID", preview.getUUID());
+         player.getPersistentData().putUUID(TAG_CHARGE_PREVIEW_UUID, preview.getUUID());
          return preview;
       }
    }
@@ -310,10 +312,10 @@ public final class MagicGander {
    private static GanderProjectileEntity getChargingPreview(ServerPlayer player) {
       if (player.level() instanceof ServerLevel serverLevel) {
          CompoundTag tag = player.getPersistentData();
-         if (!tag.hasUUID("TypeMoonGanderChargePreviewUUID")) {
+         if (!tag.hasUUID(TAG_CHARGE_PREVIEW_UUID)) {
             return null;
          } else {
-            UUID uuid = tag.getUUID("TypeMoonGanderChargePreviewUUID");
+            UUID uuid = tag.getUUID(TAG_CHARGE_PREVIEW_UUID);
             return serverLevel.getEntity(uuid) instanceof GanderProjectileEntity preview && preview.isChargingPreview() ? preview : null;
          }
       } else {
@@ -324,13 +326,13 @@ public final class MagicGander {
    private static void discardChargingPreview(ServerPlayer player) {
       if (player.level() instanceof ServerLevel serverLevel) {
          CompoundTag tag = player.getPersistentData();
-         if (tag.hasUUID("TypeMoonGanderChargePreviewUUID")) {
-            UUID uuid = tag.getUUID("TypeMoonGanderChargePreviewUUID");
+         if (tag.hasUUID(TAG_CHARGE_PREVIEW_UUID)) {
+            UUID uuid = tag.getUUID(TAG_CHARGE_PREVIEW_UUID);
             if (serverLevel.getEntity(uuid) instanceof GanderProjectileEntity preview) {
                preview.discard();
             }
 
-            tag.remove("TypeMoonGanderChargePreviewUUID");
+            tag.remove(TAG_CHARGE_PREVIEW_UUID);
          }
       }
    }

@@ -168,7 +168,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
                vars.syncMana(player);
             }
 
-            Component chargeText = Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", new Object[]{currentCharge})
+            Component chargeText = Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", currentCharge)
                .withStyle(currentCharge > 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED);
             player.displayClientMessage(chargeText, true);
             level.playSound(

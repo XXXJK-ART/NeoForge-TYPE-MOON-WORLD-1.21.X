@@ -36,16 +36,16 @@ public class TypeMoonWorldClientEvents {
       event.register(
          (stack, tintIndex) -> -6250336,
          new ItemLike[]{
-            (ItemLike)ModItems.CARVED_EMERALD_POOR.get(),
-            (ItemLike)ModItems.CARVED_EMERALD_POOR_FULL.get(),
-            (ItemLike)ModItems.CARVED_RUBY_POOR.get(),
-            (ItemLike)ModItems.CARVED_RUBY_POOR_FULL.get(),
-            (ItemLike)ModItems.CARVED_SAPPHIRE_POOR.get(),
-            (ItemLike)ModItems.CARVED_SAPPHIRE_POOR_FULL.get(),
-            (ItemLike)ModItems.CARVED_TOPAZ_POOR.get(),
-            (ItemLike)ModItems.CARVED_TOPAZ_POOR_FULL.get(),
-            (ItemLike)ModItems.CARVED_BLACK_SHARD_POOR.get(),
-            (ItemLike)ModItems.CARVED_BLACK_SHARD_POOR_FULL.get(),
+            ModItems.CARVED_EMERALD_POOR.get(),
+            ModItems.CARVED_EMERALD_POOR_FULL.get(),
+            ModItems.CARVED_RUBY_POOR.get(),
+            ModItems.CARVED_RUBY_POOR_FULL.get(),
+            ModItems.CARVED_SAPPHIRE_POOR.get(),
+            ModItems.CARVED_SAPPHIRE_POOR_FULL.get(),
+            ModItems.CARVED_TOPAZ_POOR.get(),
+            ModItems.CARVED_TOPAZ_POOR_FULL.get(),
+            ModItems.CARVED_BLACK_SHARD_POOR.get(),
+            ModItems.CARVED_BLACK_SHARD_POOR_FULL.get(),
             (ItemLike)ModBlocks.EMERALD_BLOCK_POOR.get(),
             (ItemLike)ModBlocks.RUBY_BLOCK_POOR.get(),
             (ItemLike)ModBlocks.SAPPHIRE_BLOCK_POOR.get(),
@@ -56,16 +56,16 @@ public class TypeMoonWorldClientEvents {
       event.register(
          (stack, tintIndex) -> -2039584,
          new ItemLike[]{
-            (ItemLike)ModItems.CARVED_EMERALD.get(),
-            (ItemLike)ModItems.CARVED_EMERALD_FULL.get(),
-            (ItemLike)ModItems.CARVED_RUBY.get(),
-            (ItemLike)ModItems.CARVED_RUBY_FULL.get(),
-            (ItemLike)ModItems.CARVED_SAPPHIRE.get(),
-            (ItemLike)ModItems.CARVED_SAPPHIRE_FULL.get(),
-            (ItemLike)ModItems.CARVED_TOPAZ.get(),
-            (ItemLike)ModItems.CARVED_TOPAZ_FULL.get(),
-            (ItemLike)ModItems.CARVED_BLACK_SHARD.get(),
-            (ItemLike)ModItems.CARVED_BLACK_SHARD_FULL.get(),
+            ModItems.CARVED_EMERALD.get(),
+            ModItems.CARVED_EMERALD_FULL.get(),
+            ModItems.CARVED_RUBY.get(),
+            ModItems.CARVED_RUBY_FULL.get(),
+            ModItems.CARVED_SAPPHIRE.get(),
+            ModItems.CARVED_SAPPHIRE_FULL.get(),
+            ModItems.CARVED_TOPAZ.get(),
+            ModItems.CARVED_TOPAZ_FULL.get(),
+            ModItems.CARVED_BLACK_SHARD.get(),
+            ModItems.CARVED_BLACK_SHARD_FULL.get(),
             (ItemLike)ModBlocks.EMERALD_BLOCK.get(),
             (ItemLike)ModBlocks.RUBY_BLOCK.get(),
             (ItemLike)ModBlocks.SAPPHIRE_BLOCK.get(),
@@ -76,16 +76,16 @@ public class TypeMoonWorldClientEvents {
       event.register(
          (stack, tintIndex) -> -1,
          new ItemLike[]{
-            (ItemLike)ModItems.CARVED_EMERALD_HIGH.get(),
-            (ItemLike)ModItems.CARVED_EMERALD_HIGH_FULL.get(),
-            (ItemLike)ModItems.CARVED_RUBY_HIGH.get(),
-            (ItemLike)ModItems.CARVED_RUBY_HIGH_FULL.get(),
-            (ItemLike)ModItems.CARVED_SAPPHIRE_HIGH.get(),
-            (ItemLike)ModItems.CARVED_SAPPHIRE_HIGH_FULL.get(),
-            (ItemLike)ModItems.CARVED_TOPAZ_HIGH.get(),
-            (ItemLike)ModItems.CARVED_TOPAZ_HIGH_FULL.get(),
-            (ItemLike)ModItems.CARVED_BLACK_SHARD_HIGH.get(),
-            (ItemLike)ModItems.CARVED_BLACK_SHARD_HIGH_FULL.get(),
+            ModItems.CARVED_EMERALD_HIGH.get(),
+            ModItems.CARVED_EMERALD_HIGH_FULL.get(),
+            ModItems.CARVED_RUBY_HIGH.get(),
+            ModItems.CARVED_RUBY_HIGH_FULL.get(),
+            ModItems.CARVED_SAPPHIRE_HIGH.get(),
+            ModItems.CARVED_SAPPHIRE_HIGH_FULL.get(),
+            ModItems.CARVED_TOPAZ_HIGH.get(),
+            ModItems.CARVED_TOPAZ_HIGH_FULL.get(),
+            ModItems.CARVED_BLACK_SHARD_HIGH.get(),
+            ModItems.CARVED_BLACK_SHARD_HIGH_FULL.get(),
             (ItemLike)ModBlocks.EMERALD_BLOCK_HIGH.get(),
             (ItemLike)ModBlocks.RUBY_BLOCK_HIGH.get(),
             (ItemLike)ModBlocks.SAPPHIRE_BLOCK_HIGH.get(),
@@ -95,14 +95,14 @@ public class TypeMoonWorldClientEvents {
       );
       event.register(
          (stack, tintIndex) -> -6250336,
-         new ItemLike[]{(ItemLike)ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), (ItemLike)ModItems.CARVED_WHITE_GEMSTONE_POOR_FULL.get()}
+         new ItemLike[]{ModItems.CARVED_WHITE_GEMSTONE_POOR.get(), ModItems.CARVED_WHITE_GEMSTONE_POOR_FULL.get()}
       );
       event.register(
-         (stack, tintIndex) -> -2039584, new ItemLike[]{(ItemLike)ModItems.CARVED_WHITE_GEMSTONE.get(), (ItemLike)ModItems.CARVED_WHITE_GEMSTONE_FULL.get()}
+         (stack, tintIndex) -> -2039584, new ItemLike[]{ModItems.CARVED_WHITE_GEMSTONE.get(), ModItems.CARVED_WHITE_GEMSTONE_FULL.get()}
       );
       event.register(
          (stack, tintIndex) -> -1,
-         new ItemLike[]{(ItemLike)ModItems.CARVED_WHITE_GEMSTONE_HIGH.get(), (ItemLike)ModItems.CARVED_WHITE_GEMSTONE_HIGH_FULL.get()}
+         new ItemLike[]{ModItems.CARVED_WHITE_GEMSTONE_HIGH.get(), ModItems.CARVED_WHITE_GEMSTONE_HIGH_FULL.get()}
       );
    }
 

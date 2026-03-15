@@ -40,7 +40,7 @@ public class MagicReinforcementSelf {
             MobEffectInstance existing = player.getEffect(effect.getEffect());
             if (existing != null && existing.getAmplifier() >= effect.getAmplifier() && existing.getDuration() >= duration) {
                player.displayClientMessage(
-                  Component.translatable("message.typemoonworld.magic.reinforcement.item.already_better", new Object[]{existing.getAmplifier() + 1}), true
+                  Component.translatable("message.typemoonworld.magic.reinforcement.item.already_better", existing.getAmplifier() + 1), true
                );
                return;
             }

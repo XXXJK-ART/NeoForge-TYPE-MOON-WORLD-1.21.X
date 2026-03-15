@@ -481,6 +481,7 @@
   "message.typemoonworld.awaken.success": "§b魔术回路已接通.你现在是一名魔术师了.",
   "message.typemoonworld.broken_phantasm.cast": "投影崩坏!(威力: %s)",
   "message.typemoonworld.broken_phantasm.no_valid_item": "手中没有投影物品或宝具",
+  "message.typemoonworld.broken_phantasm.requires_ubw_projection": "只有 UBW 投影物可以用于投影崩坏.",
   "message.typemoonworld.circuit.forced_close": "魔术回路因过载而强制关闭!",
   "message.typemoonworld.gem.convert_health": "§c魔力不足!消耗了 %s 点生命值来补充魔力.",
   "message.typemoonworld.gem.not_enough_mana_and_health": "魔力与生命力均不足!",

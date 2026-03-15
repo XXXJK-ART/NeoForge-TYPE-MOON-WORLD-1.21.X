@@ -30,6 +30,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatPersonality;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatStyle;
+import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcMagicCastBridge;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,8 +38,16 @@ public class MysticMagicianEntity extends PathfinderMob {
    private static final EntityDataAccessor<Integer> SKIN_VARIANT = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> NPC_PERSONALITY = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> NPC_COMBAT_STYLE = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> NPC_TEMPERAMENT = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> CAST_POSE_TICKS = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> MELEE_SKILL_POSE = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> MELEE_SKILL_POSE_TICKS = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    public static final int SKIN_VARIANT_COUNT = 6;
+   public static final int MELEE_POSE_NONE = 0;
+   public static final int MELEE_POSE_PUNCH = 1;
+   public static final int MELEE_POSE_WHIP_KICK = 2;
+   public static final int MELEE_POSE_UPPER_THROW = 3;
+   public static final int MELEE_POSE_SLAM = 4;
    private static final String INITIAL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
    private static final String NAME_SEPARATOR = "·";
    private static final int THREAT_SCAN_INTERVAL_TICKS = 5;
@@ -271,21 +280,7 @@ public class MysticMagicianEntity extends PathfinderMob {
          .addGoal(
             2,
             new NearestAttackableTargetGoal<>(
-               this, Monster.class, 8, true, false, living -> living instanceof Monster monster && this.canTargetMonster(monster)
-            )
-         );
-      this.targetSelector
-         .addGoal(
-            3,
-            new NearestAttackableTargetGoal<>(
-               this, Player.class, 8, true, false, living -> living instanceof Player player && this.canTargetPlayer(player)
-            )
-         );
-      this.targetSelector
-         .addGoal(
-            4,
-            new NearestAttackableTargetGoal<>(
-               this, Animal.class, 8, true, false, living -> living instanceof Animal animal && this.canTargetAnimal(animal)
+               this, LivingEntity.class, 8, true, false, this::canTargetLiving
             )
          );
    }
@@ -303,7 +298,10 @@ public class MysticMagicianEntity extends PathfinderMob {
       builder.define(SKIN_VARIANT, 0);
       builder.define(NPC_PERSONALITY, NpcCombatPersonality.NEUTRAL.id());
       builder.define(NPC_COMBAT_STYLE, NpcCombatStyle.BALANCED.id());
+      builder.define(NPC_TEMPERAMENT, NpcCombatTemperament.STEADY.id());
       builder.define(CAST_POSE_TICKS, 0);
+      builder.define(MELEE_SKILL_POSE, MELEE_POSE_NONE);
+      builder.define(MELEE_SKILL_POSE_TICKS, 0);
    }
 
    public int getSkinVariant() {
@@ -332,6 +330,15 @@ public class MysticMagicianEntity extends PathfinderMob {
       this.entityData.set(NPC_COMBAT_STYLE, resolved.id());
    }
 
+   public NpcCombatTemperament getCombatTemperament() {
+      return NpcCombatTemperament.fromId((Integer)this.entityData.get(NPC_TEMPERAMENT));
+   }
+
+   public void setCombatTemperament(NpcCombatTemperament temperament) {
+      NpcCombatTemperament resolved = temperament == null ? NpcCombatTemperament.STEADY : temperament;
+      this.entityData.set(NPC_TEMPERAMENT, resolved.id());
+   }
+
    public boolean isCastingPoseActive() {
       return (Integer)this.entityData.get(CAST_POSE_TICKS) > 0;
    }
@@ -344,6 +351,28 @@ public class MysticMagicianEntity extends PathfinderMob {
             if (clamped > current) {
                this.entityData.set(CAST_POSE_TICKS, clamped);
             }
+         }
+      }
+   }
+
+   public boolean isMeleeSkillPoseActive() {
+      return (Integer)this.entityData.get(MELEE_SKILL_POSE_TICKS) > 0 && (Integer)this.entityData.get(MELEE_SKILL_POSE) != MELEE_POSE_NONE;
+   }
+
+   public int getMeleeSkillPose() {
+      return (Integer)this.entityData.get(MELEE_SKILL_POSE);
+   }
+
+   public void triggerMeleeSkillPose(int pose, int ticks) {
+      if (!this.level().isClientSide()) {
+         int clampedPose = Mth.clamp(pose, MELEE_POSE_NONE, MELEE_POSE_SLAM);
+         int clampedTicks = Mth.clamp(ticks, 0, 30);
+         if (clampedPose == MELEE_POSE_NONE || clampedTicks <= 0) {
+            this.entityData.set(MELEE_SKILL_POSE, MELEE_POSE_NONE);
+            this.entityData.set(MELEE_SKILL_POSE_TICKS, 0);
+         } else {
+            this.entityData.set(MELEE_SKILL_POSE, clampedPose);
+            this.entityData.set(MELEE_SKILL_POSE_TICKS, clampedTicks);
          }
       }
    }
@@ -363,12 +392,13 @@ public class MysticMagicianEntity extends PathfinderMob {
       if (!this.hasCustomName()) {
          MysticMagicianEntity.GeneratedName generated = generateRandomEuropeanName(this.random, isFemaleVariant(variant));
          this.setCustomName(
-            Component.translatable("entity.typemoonworld.mystic_magician.generated_name", new Object[]{generated.english(), generated.chinese()})
+            Component.translatable("entity.typemoonworld.mystic_magician.generated_name", generated.english(), generated.chinese())
          );
          this.setCustomNameVisible(true);
       }
 
       this.setCombatPersonality(NpcCombatPersonality.random(this.random));
+      this.setCombatTemperament(NpcCombatTemperament.random(this.random));
       NpcMagicCastBridge.onSpawnInitialized(this);
       this.setPersistenceRequired();
       return data;
@@ -379,6 +409,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       compound.putInt("SkinVariant", this.getSkinVariant());
       compound.putInt("NpcPersonality", this.getCombatPersonality().id());
       compound.putInt("NpcCombatStyle", this.getCombatStyle().id());
+      compound.putInt("NpcTemperament", this.getCombatTemperament().id());
    }
 
    public void readAdditionalSaveData(CompoundTag compound) {
@@ -391,12 +422,26 @@ public class MysticMagicianEntity extends PathfinderMob {
       if (compound.contains("NpcCombatStyle")) {
          this.setCombatStyle(NpcCombatStyle.fromId(compound.getInt("NpcCombatStyle")));
       }
+
+      if (compound.contains("NpcTemperament")) {
+         this.setCombatTemperament(NpcCombatTemperament.fromId(compound.getInt("NpcTemperament")));
+      }
    }
 
    protected void customServerAiStep() {
       super.customServerAiStep();
       if ((Integer)this.entityData.get(CAST_POSE_TICKS) > 0) {
          this.entityData.set(CAST_POSE_TICKS, (Integer)this.entityData.get(CAST_POSE_TICKS) - 1);
+      }
+
+      if ((Integer)this.entityData.get(MELEE_SKILL_POSE_TICKS) > 0) {
+         int remaining = (Integer)this.entityData.get(MELEE_SKILL_POSE_TICKS) - 1;
+         if (remaining <= 0) {
+            this.entityData.set(MELEE_SKILL_POSE_TICKS, 0);
+            this.entityData.set(MELEE_SKILL_POSE, MELEE_POSE_NONE);
+         } else {
+            this.entityData.set(MELEE_SKILL_POSE_TICKS, remaining);
+         }
       }
 
       if (!this.level().isClientSide() && this.tickCount % 5 == 0) {
@@ -431,6 +476,25 @@ public class MysticMagicianEntity extends PathfinderMob {
 
    private boolean canTargetAnimal(Animal animal) {
       return animal != null && animal.isAlive() ? this.getCombatPersonality() == NpcCombatPersonality.EVIL : false;
+   }
+
+   private boolean canTargetLiving(LivingEntity living) {
+      if (living == null || !living.isAlive() || living == this) {
+         return false;
+      } else if (living instanceof Player player) {
+         if (player.isCreative() || player.isSpectator()) {
+            return false;
+         }
+
+         return this.getCombatPersonality() == NpcCombatPersonality.EVIL;
+      } else if (this.getCombatPersonality() == NpcCombatPersonality.EVIL) {
+         // Evil personality proactively attacks all living entities (not only players/monsters/animals).
+         return true;
+      } else if (living instanceof Monster monster) {
+         return this.canTargetMonster(monster);
+      } else {
+         return living instanceof Animal animal && this.canTargetAnimal(animal);
+      }
    }
 
    private void acquireAggressorTarget() {

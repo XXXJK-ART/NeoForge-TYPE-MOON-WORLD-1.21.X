@@ -76,18 +76,18 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
 
    public GemCarvingTableScreen(GemCarvingTableMenu menu, Inventory playerInventory, Component title) {
       super(menu, playerInventory, title);
-      this.imageWidth = 320;
-      this.imageHeight = 224;
+      this.imageWidth = PANEL_W;
+      this.imageHeight = PANEL_H;
    }
 
    protected void init() {
       super.init();
       this.magicButtons.clear();
       List<String> availableMagics = this.getAvailableMagics();
-      int buttonX = this.leftPos + 70 + 3;
-      int buttonY = this.topPos + 18 + 14;
-      int buttonWidth = 118;
-      int buttonHeight = 18;
+      int buttonX = this.leftPos + SECTION_MAGIC_X + 3;
+      int buttonY = this.topPos + SECTION_MAGIC_Y + 14;
+      int buttonWidth = SECTION_MAGIC_W - 6;
+      int buttonHeight = ENGRAVE_BUTTON_H;
 
       for (String magicId : availableMagics) {
          Button button = this.vanillaButton(buttonX, buttonY, buttonWidth, buttonHeight, Component.empty(), btn -> {
@@ -100,47 +100,47 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
       }
 
       this.selectedMagicId = availableMagics.isEmpty() ? null : availableMagics.get(0);
-      int ctrlButtonX = this.leftPos + 196 + 4;
-      int ctrlButtonW = 106;
-      this.reinforcementPartButton = this.vanillaButton(ctrlButtonX, this.topPos + 18 + 106, ctrlButtonW, 18, Component.empty(), btn -> {
-         this.reinforcementPart = (this.reinforcementPart + 1) % 4;
-         this.updateUiState();
-      });
-      this.addRenderableWidget(this.reinforcementPartButton);
-      int levelRowY = this.topPos + 18 + 128;
-      this.reinforcementLevelDownButton = this.vanillaButton(ctrlButtonX, levelRowY, 20, 18, Component.literal("-"), btn -> {
-         this.reinforcementLevel = Math.max(1, this.reinforcementLevel - 1);
-         this.updateUiState();
-      });
-      this.addRenderableWidget(this.reinforcementLevelDownButton);
-      this.reinforcementLevelUpButton = this.vanillaButton(ctrlButtonX + ctrlButtonW - 20, levelRowY, 20, 18, Component.literal("+"), btn -> {
-         this.reinforcementLevel = Math.min(5, this.reinforcementLevel + 1);
-         this.updateUiState();
-      });
-      this.addRenderableWidget(this.reinforcementLevelUpButton);
-      this.projectionModeButton = this.vanillaButton(ctrlButtonX, this.topPos + 18 + 84, ctrlButtonW, 18, Component.empty(), btn -> {
-         this.projectionMode = this.projectionMode == 0 ? 1 : 0;
-         this.updateUiState();
-      });
-      this.addRenderableWidget(this.projectionModeButton);
-      int projectionNavY = this.topPos + 18 + 152;
-      this.projectionTargetPrevButton = this.vanillaButton(ctrlButtonX, projectionNavY, 20, 18, Component.literal("<"), btn -> {
-         this.cycleProjectionTarget(-1);
-         this.updateUiState();
-      });
-      this.addRenderableWidget(this.projectionTargetPrevButton);
-      this.projectionTargetNextButton = this.vanillaButton(ctrlButtonX + ctrlButtonW - 20, projectionNavY, 20, 18, Component.literal(">"), btn -> {
-         this.cycleProjectionTarget(1);
-         this.updateUiState();
-      });
-      this.addRenderableWidget(this.projectionTargetNextButton);
-      int engraveButtonY = this.topPos + 224 - 18 - 6;
-      this.engraveButton = this.vanillaButton(
-         ctrlButtonX,
-         engraveButtonY,
-         ctrlButtonW,
-         18,
-         Component.translatable("gui.typemoonworld.gem_carving_table.engrave"),
+       int ctrlButtonX = this.leftPos + SECTION_CTRL_X + 4;
+       int ctrlButtonW = SECTION_CTRL_W - 8;
+       this.reinforcementPartButton = this.vanillaButton(ctrlButtonX, this.topPos + SECTION_CTRL_Y + 106, ctrlButtonW, ENGRAVE_BUTTON_H, Component.empty(), btn -> {
+          this.reinforcementPart = (this.reinforcementPart + 1) % 4;
+          this.updateUiState();
+       });
+       this.addRenderableWidget(this.reinforcementPartButton);
+       int levelRowY = this.topPos + SECTION_CTRL_Y + 128;
+       this.reinforcementLevelDownButton = this.vanillaButton(ctrlButtonX, levelRowY, 20, ENGRAVE_BUTTON_H, Component.literal("-"), btn -> {
+          this.reinforcementLevel = Math.max(1, this.reinforcementLevel - 1);
+          this.updateUiState();
+       });
+       this.addRenderableWidget(this.reinforcementLevelDownButton);
+       this.reinforcementLevelUpButton = this.vanillaButton(ctrlButtonX + ctrlButtonW - 20, levelRowY, 20, ENGRAVE_BUTTON_H, Component.literal("+"), btn -> {
+          this.reinforcementLevel = Math.min(5, this.reinforcementLevel + 1);
+          this.updateUiState();
+       });
+       this.addRenderableWidget(this.reinforcementLevelUpButton);
+       this.projectionModeButton = this.vanillaButton(ctrlButtonX, this.topPos + SECTION_CTRL_Y + 84, ctrlButtonW, ENGRAVE_BUTTON_H, Component.empty(), btn -> {
+          this.projectionMode = this.projectionMode == 0 ? 1 : 0;
+          this.updateUiState();
+       });
+       this.addRenderableWidget(this.projectionModeButton);
+       int projectionNavY = this.topPos + SECTION_CTRL_Y + 152;
+       this.projectionTargetPrevButton = this.vanillaButton(ctrlButtonX, projectionNavY, 20, ENGRAVE_BUTTON_H, Component.literal("<"), btn -> {
+          this.cycleProjectionTarget(-1);
+          this.updateUiState();
+       });
+       this.addRenderableWidget(this.projectionTargetPrevButton);
+       this.projectionTargetNextButton = this.vanillaButton(ctrlButtonX + ctrlButtonW - 20, projectionNavY, 20, ENGRAVE_BUTTON_H, Component.literal(">"), btn -> {
+          this.cycleProjectionTarget(1);
+          this.updateUiState();
+       });
+       this.addRenderableWidget(this.projectionTargetNextButton);
+       int engraveButtonY = this.topPos + PANEL_H - ENGRAVE_BUTTON_H - ENGRAVE_BUTTON_BOTTOM_MARGIN;
+       this.engraveButton = this.vanillaButton(
+          ctrlButtonX,
+          engraveButtonY,
+          ctrlButtonW,
+          ENGRAVE_BUTTON_H,
+          Component.translatable("gui.typemoonworld.gem_carving_table.engrave"),
          btn -> {
             if (this.selectedMagicId != null) {
                PacketDistributor.sendToServer(
@@ -191,18 +191,18 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
       this.reinforcementPartButton
          .setMessage(
             Component.translatable(
-               "gui.typemoonworld.gem_carving_table.reinforcement_part", new Object[]{GemEngravingService.getReinforcementPartName(this.reinforcementPart)}
+               "gui.typemoonworld.gem_carving_table.reinforcement_part", GemEngravingService.getReinforcementPartName(this.reinforcementPart)
             )
          );
       this.projectionModeButton
          .setMessage(
             Component.translatable(
                "gui.typemoonworld.gem_carving_table.projection_mode",
-               new Object[]{
+               
                   this.projectionMode == 1
                      ? Component.translatable("gui.typemoonworld.gem_carving_table.projection_mode.structure")
                      : Component.translatable("gui.typemoonworld.gem_carving_table.projection_mode.item")
-               }
+               
             )
          );
    }
@@ -274,47 +274,47 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
       int x = this.leftPos;
       int y = this.topPos;
-      this.drawPanel(guiGraphics, x + 0, y + 0, 320, 224);
-      this.drawSection(guiGraphics, x + 8, y + 18, 56, 84);
-      this.drawSection(guiGraphics, x + 70, y + 18, 124, 98);
-      this.drawSection(guiGraphics, x + 196, y + 18, 114, 174);
-      this.drawSection(guiGraphics, x + 8, y + 118, 172, 96);
-      guiGraphics.fill(x + 25, y + 33, x + 25 + 18, y + 33 + 18, -13882324);
-      guiGraphics.fill(x + 25, y + 64, x + 25 + 18, y + 64 + 18, -13882324);
-      guiGraphics.renderOutline(x + 25, y + 33, 18, 18, -7566196);
-      guiGraphics.renderOutline(x + 25, y + 64, 18, 18, -7566196);
+      this.drawPanel(guiGraphics, x + PANEL_X, y + PANEL_Y, PANEL_W, PANEL_H);
+      this.drawSection(guiGraphics, x + SECTION_GEM_X, y + SECTION_GEM_Y, SECTION_GEM_W, SECTION_GEM_H);
+      this.drawSection(guiGraphics, x + SECTION_MAGIC_X, y + SECTION_MAGIC_Y, SECTION_MAGIC_W, SECTION_MAGIC_H);
+      this.drawSection(guiGraphics, x + SECTION_CTRL_X, y + SECTION_CTRL_Y, SECTION_CTRL_W, SECTION_CTRL_H);
+      this.drawSection(guiGraphics, x + SECTION_INV_X, y + SECTION_INV_Y, SECTION_INV_W, SECTION_INV_H);
+      guiGraphics.fill(x + SLOT_GEM_X, y + SLOT_GEM_Y, x + SLOT_GEM_X + SLOT_SIZE, y + SLOT_GEM_Y + SLOT_SIZE, COLOR_SLOT_INNER);
+      guiGraphics.fill(x + SLOT_TOOL_X, y + SLOT_TOOL_Y, x + SLOT_TOOL_X + SLOT_SIZE, y + SLOT_TOOL_Y + SLOT_SIZE, COLOR_SLOT_INNER);
+      guiGraphics.renderOutline(x + SLOT_GEM_X, y + SLOT_GEM_Y, SLOT_SIZE, SLOT_SIZE, COLOR_BORDER_LIGHT);
+      guiGraphics.renderOutline(x + SLOT_TOOL_X, y + SLOT_TOOL_Y, SLOT_SIZE, SLOT_SIZE, COLOR_BORDER_LIGHT);
    }
 
    private void drawPanel(GuiGraphics guiGraphics, int x, int y, int w, int h) {
-      guiGraphics.fill(x, y, x + w, y + h, -14869219);
-      guiGraphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, -11184811);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, -12632257);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + 3, -7566196);
-      guiGraphics.fill(x + 2, y + 2, x + 3, y + h - 2, -7566196);
+      guiGraphics.fill(x, y, x + w, y + h, COLOR_BORDER_DARK);
+      guiGraphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, COLOR_PANEL_OUTER);
+      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, COLOR_PANEL_INNER);
+      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + 3, COLOR_BORDER_LIGHT);
+      guiGraphics.fill(x + 2, y + 2, x + 3, y + h - 2, COLOR_BORDER_LIGHT);
    }
 
    private void drawSection(GuiGraphics guiGraphics, int x, int y, int w, int h) {
-      guiGraphics.fill(x, y, x + w, y + h, -14869219);
-      guiGraphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, -10395295);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, -11908534);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + 3, -7566196);
-      guiGraphics.fill(x + 2, y + 2, x + 3, y + h - 2, -7566196);
+      guiGraphics.fill(x, y, x + w, y + h, COLOR_BORDER_DARK);
+      guiGraphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, COLOR_SECTION_OUTER);
+      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, COLOR_SECTION_INNER);
+      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + 3, COLOR_BORDER_LIGHT);
+      guiGraphics.fill(x + 2, y + 2, x + 3, y + h - 2, COLOR_BORDER_LIGHT);
    }
 
    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
       Component title = Component.translatable("gui.typemoonworld.gem_carving_table.title");
       int titleX = (this.imageWidth - this.font.width(title)) / 2;
-      guiGraphics.drawString(this.font, title, titleX, 6, -2039584, false);
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.gem_slot"), 11, 22, -3750202, false);
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.tool_slot"), 11, 53, -3750202, false);
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.magic_list"), 73, 22, -3750202, false);
-      guiGraphics.drawString(this.font, this.playerInventoryTitle, 11, 116, -3750202, false);
+      guiGraphics.drawString(this.font, title, titleX, 6, COLOR_TEXT, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.gem_slot"), 11, 22, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.tool_slot"), 11, 53, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.magic_list"), 73, 22, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, this.playerInventoryTitle, 11, 116, COLOR_TEXT_HINT, false);
       if ("reinforcement".equals(this.selectedMagicId)) {
-         Component lvl = Component.translatable("gui.typemoonworld.gem_carving_table.reinforcement_level", new Object[]{this.reinforcementLevel});
-         int textX = 222 + (62 - this.font.width(lvl)) / 2;
-         guiGraphics.drawString(this.font, lvl, textX, 151, -2039584, false);
+         Component lvl = Component.translatable("gui.typemoonworld.gem_carving_table.reinforcement_level", this.reinforcementLevel);
+         int textX = SECTION_CTRL_X + 26 + (62 - this.font.width(lvl)) / 2;
+         guiGraphics.drawString(this.font, lvl, textX, 151, COLOR_TEXT, false);
       } else if ("projection".equals(this.selectedMagicId)) {
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.projection_target"), 200, 148, -2039584, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.projection_target"), 200, 148, COLOR_TEXT, false);
       }
 
       if (this.selectedMagicId != null && this.minecraft != null && this.minecraft.player != null) {
@@ -333,20 +333,20 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
             this.engraveButton.active = true;
             guiGraphics.drawString(
                this.font,
-               Component.translatable("gui.typemoonworld.gem_carving_table.success_chance", new Object[]{preview.chance() + "%"}),
+               Component.translatable("gui.typemoonworld.gem_carving_table.success_chance", preview.chance() + "%"),
                200,
                46,
-               -6756712,
+               COLOR_TEXT_OK,
                false
             );
             guiGraphics.drawString(
                this.font,
                Component.translatable(
-                  "gui.typemoonworld.gem_carving_table.mana_usage", new Object[]{(int)Math.ceil(preview.requiredMana()), preview.capacity()}
+                  "gui.typemoonworld.gem_carving_table.mana_usage", (int)Math.ceil(preview.requiredMana()), preview.capacity()
                ),
                200,
                58,
-               -2039584,
+               COLOR_TEXT,
                false
             );
             if ("projection".equals(this.selectedMagicId)) {
@@ -356,15 +356,15 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
                }
 
                String clamped = this.font.plainSubstrByWidth(target, 106);
-               guiGraphics.drawString(this.font, Component.literal(clamped), 200, 160, -3750202, false);
+               guiGraphics.drawString(this.font, Component.literal(clamped), 200, 160, COLOR_TEXT_HINT, false);
             }
          } else {
             this.engraveButton.active = false;
-            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.success_chance_invalid"), 200, 46, -32640, false);
+            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.success_chance_invalid"), 200, 46, COLOR_TEXT_WARN, false);
             Component errorText = hasTool
                ? Component.translatable(preview.errorKey(), preview.errorArgs())
                : Component.translatable("message.typemoonworld.gem.engrave.need_tool");
-            guiGraphics.drawWordWrap(this.font, errorText, 200, 58, 106, -32640);
+            guiGraphics.drawWordWrap(this.font, errorText, 200, 58, 106, COLOR_TEXT_WARN);
          }
       } else if (this.engraveButton != null) {
          this.engraveButton.active = false;

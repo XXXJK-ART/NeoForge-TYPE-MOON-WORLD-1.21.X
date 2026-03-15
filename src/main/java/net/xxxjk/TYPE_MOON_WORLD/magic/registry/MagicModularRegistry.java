@@ -35,7 +35,7 @@ public final class MagicModularRegistry implements IMagicRegistry {
                MagicExecutionResult result = registered.executor.execute(context);
                return result == null ? MagicExecutionResult.FAILED : result;
             } catch (Exception var3) {
-               TYPE_MOON_WORLD.LOGGER.error("Magic executor failed. magicId={}, provider={}", new Object[]{context.magicId(), registered.providerId, var3});
+               TYPE_MOON_WORLD.LOGGER.error("Magic executor failed. magicId={}, provider={}", context.magicId(), registered.providerId, var3);
                return MagicExecutionResult.FAILED;
             }
          } else {
@@ -69,7 +69,7 @@ public final class MagicModularRegistry implements IMagicRegistry {
             TYPE_MOON_WORLD.LOGGER
                .warn(
                   "Duplicate magic registration ignored. magicId={}, existingProvider={}, newProvider={}",
-                  new Object[]{magicId, previous.providerId, normalizedProvider}
+                  magicId, previous.providerId, normalizedProvider
                );
             return false;
          } else {

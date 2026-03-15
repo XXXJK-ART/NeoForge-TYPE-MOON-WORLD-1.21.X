@@ -262,7 +262,7 @@ public class ChantHandler {
                         vars.learned_magics.add("sword_barrel_full_open");
                         player.displayClientMessage(
                            Component.translatable(
-                              "message.typemoonworld.magic.learned", new Object[]{Component.translatable("magic.typemoonworld.sword_barrel_full_open")}
+                              "message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld.sword_barrel_full_open")
                            ),
                            true
                         );

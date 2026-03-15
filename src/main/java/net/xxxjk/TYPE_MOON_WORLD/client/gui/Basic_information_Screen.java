@@ -129,7 +129,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       if (Math.abs(leylineDelta) > 1.0E-4) {
          regenReasons.add(
             new Basic_information_Screen.ModifierReason(
-               Component.translatable("gui.typemoonworld.basic_info.mod.reason.leyline", new Object[]{String.format(Locale.ROOT, "%.2fx", regenMultiplier)}),
+               Component.translatable("gui.typemoonworld.basic_info.mod.reason.leyline", String.format(Locale.ROOT, "%.2fx", regenMultiplier)),
                leylineDelta
             )
          );
@@ -241,15 +241,15 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       String unitText = unit.getString();
       lines.add(label.copy().withStyle(ChatFormatting.AQUA));
       lines.add(
-         Component.translatable("gui.typemoonworld.basic_info.tooltip.base", new Object[]{this.formatNumber(baseValue, decimals), unit})
+         Component.translatable("gui.typemoonworld.basic_info.tooltip.base", this.formatNumber(baseValue, decimals), unit)
             .withStyle(ChatFormatting.GRAY)
       );
       lines.add(
-         Component.translatable("gui.typemoonworld.basic_info.tooltip.total_modifier", new Object[]{this.formatSignedNumber(totalModifier, decimals), unit})
+         Component.translatable("gui.typemoonworld.basic_info.tooltip.total_modifier", this.formatSignedNumber(totalModifier, decimals), unit)
             .withStyle((positiveIsBeneficial ? !(totalModifier >= 0.0) : !(totalModifier <= 0.0)) ? ChatFormatting.RED : ChatFormatting.GREEN)
       );
       lines.add(
-         Component.translatable("gui.typemoonworld.basic_info.tooltip.effective", new Object[]{this.formatNumber(baseValue + totalModifier, decimals), unit})
+         Component.translatable("gui.typemoonworld.basic_info.tooltip.effective", this.formatNumber(baseValue + totalModifier, decimals), unit)
             .withStyle(ChatFormatting.WHITE)
       );
       if (!reasons.isEmpty()) {

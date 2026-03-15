@@ -77,7 +77,7 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
       if (minecraft != null && minecraft.getBlockRenderer() != null) {
          BlockState mimicState = animatable.getMimicBlockState();
          StoneManRenderer.TextureSet textureSet = resolveTextureSet(minecraft, mimicState);
-         int variant = Math.floorMod(animatable.getUUID().hashCode(), 16);
+         int variant = Math.floorMod(animatable.getUUID().hashCode(), FACE_VARIANT_COUNT);
          ResourceLocation texture = getOrCreateTiledTexture(textureSet, variant);
          int tint = resolveBodyTint(minecraft, mimicState, animatable);
          return new StoneManRenderer.BodyRenderData(texture, tint);
@@ -267,8 +267,8 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
                         Math.max(Math.max(northImage.getHeight(), southImage.getHeight()), Math.max(westImage.getHeight(), eastImage.getHeight()))
                      )
                   );
-                  int outWidth = Math.min(1024, tileWidth * 16);
-                  int outHeight = Math.min(1024, tileHeight * 16);
+                  int outWidth = Math.min(MAX_TILED_SIZE, tileWidth * TILE_REPEAT);
+                  int outHeight = Math.min(MAX_TILED_SIZE, tileHeight * TILE_REPEAT);
                   NativeImage mixed = new NativeImage(outWidth, outHeight, false);
 
                   for (int y = 0; y < outHeight; y++) {
@@ -367,9 +367,9 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
    ) {
       int hash = hashCell(cellX, cellY, variant);
       int selector = Math.floorMod(hash, 100);
-      if (yPercent <= 18 && selector < 65) {
+      if (yPercent <= TOP_BAND_PERCENT && selector < TOP_FACE_BIAS_PERCENT) {
          return upImage;
-      } else if (yPercent >= 82 && selector < 65) {
+      } else if (yPercent >= (100 - BOTTOM_BAND_PERCENT) && selector < BOTTOM_FACE_BIAS_PERCENT) {
          return downImage;
       } else {
          int face = Math.floorMod(hash >>> 8, 6);
@@ -399,9 +399,9 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
       } else {
          float u = width <= 1 ? 0.5F : (float)x / (width - 1);
          float v = height <= 1 ? 0.5F : (float)y / (height - 1);
-         float verticalFactor = 1.1F - v * 0.2F;
+         float verticalFactor = TOP_LIGHT_BOOST - v * BOTTOM_DARKEN;
          float edgeDistance = Math.abs(u - 0.5F) * 2.0F;
-         float edgeFactor = 1.0F - edgeDistance * 0.12F;
+         float edgeFactor = 1.0F - edgeDistance * EDGE_DARKEN;
          float lightFactor = clamp(verticalFactor * edgeFactor, 0.7F, 1.2F);
          int r = argb >>> 16 & 0xFF;
          int g = argb >>> 8 & 0xFF;
@@ -425,7 +425,7 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
          int c0 = source.getPixelRGBA(x0, y0);
          int c1 = source.getPixelRGBA(x1, y1);
          float gradient = luminance(c1) - luminance(c0);
-         float factor = clamp(1.0F + gradient * 0.35F, 0.78F, 1.22F);
+         float factor = clamp(1.0F + gradient * EMBOSS_STRENGTH, EMBOSS_MIN_FACTOR, EMBOSS_MAX_FACTOR);
          int r = argb >>> 16 & 0xFF;
          int g = argb >>> 8 & 0xFF;
          int b = argb & 0xFF;
@@ -454,9 +454,9 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
          float dy = down - up;
          float gradient = Mth.sqrt(dx * dx + dy * dy);
          float laplacian = (left + right + up + down) * 0.25F - center;
-         float cavity = clamp(laplacian * 1.15F, 0.0F, 0.2F);
-         float ridge = clamp(-laplacian * 0.8F, 0.0F, 0.14F);
-         float microEdge = clamp(gradient * 0.42F, 0.0F, 0.1F);
+         float cavity = clamp(laplacian * CAVITY_AO_STRENGTH, 0.0F, CAVITY_MAX_DARKEN);
+         float ridge = clamp(-laplacian * RIDGE_LIGHT_STRENGTH, 0.0F, RIDGE_MAX_LIGHTEN);
+         float microEdge = clamp(gradient * MICRO_CONTRAST_STRENGTH, 0.0F, MICRO_EDGE_MAX_LIGHTEN);
          float factor = clamp(1.0F - cavity + ridge + microEdge, 0.66F, 1.26F);
          int r = argb >>> 16 & 0xFF;
          int g = argb >>> 8 & 0xFF;
@@ -476,13 +476,13 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
          float u = width <= 1 ? 0.5F : (float)x / (width - 1);
          float v = height <= 1 ? 0.5F : (float)y / (height - 1);
          float centerBias = clamp(1.0F - Math.abs(u - 0.5F) * 2.0F, 0.0F, 1.0F);
-         float shoulderMask = bandMask(v, 0.26F, 0.22F);
-         float chestMask = bandMask(v, 0.48F, 0.2F);
+         float shoulderMask = bandMask(v, SHOULDER_CENTER_V, SHOULDER_HALF_WIDTH);
+         float chestMask = bandMask(v, CHEST_CENTER_V, CHEST_HALF_WIDTH);
          float macroNoise = hashToUnit(hashCell(x / 6, y / 6, variant ^ 1515870810)) * 2.0F - 1.0F;
          float microNoise = hashToUnit(hashCell(x, y, variant ^ 668265261)) * 2.0F - 1.0F;
-         float shoulderRoughDarken = shoulderMask * (0.16F + Math.abs(macroNoise) * 0.05F);
-         float chestBrighten = chestMask * centerBias * 0.11F;
-         float noiseFactor = (macroNoise * 0.65F + microNoise * 0.35F) * 0.07F * (0.35F + shoulderMask * 0.65F);
+         float shoulderRoughDarken = shoulderMask * (SHOULDER_ROUGH_DARKEN + Math.abs(macroNoise) * 0.05F);
+         float chestBrighten = chestMask * centerBias * CHEST_CENTER_BRIGHTEN;
+         float noiseFactor = (macroNoise * 0.65F + microNoise * 0.35F) * REGION_NOISE_STRENGTH * (0.35F + shoulderMask * 0.65F);
          float factor = clamp(1.0F - shoulderRoughDarken + chestBrighten + noiseFactor, 0.64F, 1.24F);
          int r = argb >>> 16 & 0xFF;
          int g = argb >>> 8 & 0xFF;

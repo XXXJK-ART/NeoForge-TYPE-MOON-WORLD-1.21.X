@@ -125,7 +125,7 @@ public final class BuiltinMagicExecutors {
                      livingTarget.removeEffect(MobEffects.NIGHT_VISION);
                      data.casterUUID = null;
                      player.displayClientMessage(
-                        Component.translatable("message.typemoonworld.magic.reinforcement.cancel.other.success", new Object[]{livingTarget.getDisplayName()}),
+                        Component.translatable("message.typemoonworld.magic.reinforcement.cancel.other.success", livingTarget.getDisplayName()),
                         true
                      );
                   } else {

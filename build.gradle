@@ -36,6 +36,58 @@ repositories {
     }
 }
 
+// NeoGradle 7 currently forces launcher metadata refresh every run.
+// Add a resilient local cache bootstrap + force local-read for that specific task
+// to avoid transient network failures blocking IDE runClient startup.
+def ensureLauncherMetadataCache = {
+    File launcherMeta = new File(gradle.gradleUserHomeDir, "caches/minecraft/launcher_metadata.json")
+    if (launcherMeta.exists() && launcherMeta.length() > 1024L) {
+        return
+    }
+
+    launcherMeta.parentFile.mkdirs()
+    List<String> fallbackUrls = [
+            "https://piston-meta.mojang.com/mc/game/version_manifest.json",
+            "https://launchermeta.mojang.com/mc/game/version_manifest.json",
+            "https://bmclapi2.bangbang93.com/mc/game/version_manifest.json"
+    ]
+
+    Exception lastError = null
+    for (String urlStr : fallbackUrls) {
+        try {
+            URLConnection conn = new URL(urlStr).openConnection()
+            conn.setConnectTimeout(15000)
+            conn.setReadTimeout(30000)
+            conn.setRequestProperty("User-Agent", "TypeMoonWorld-Gradle-Bootstrap")
+            launcherMeta.withOutputStream { os ->
+                conn.getInputStream().withCloseable { is ->
+                    is.transferTo(os)
+                }
+            }
+            if (launcherMeta.length() > 1024L) {
+                return
+            }
+        } catch (Exception ex) {
+            lastError = ex
+        }
+    }
+
+    throw new GradleException("Unable to bootstrap launcher_metadata.json from all fallback URLs.", lastError)
+}
+
+ensureLauncherMetadataCache()
+
+tasks.configureEach { task ->
+    // Avoid direct hard type reference here; some IDEs cannot resolve NeoGradle internal task classes in script editor.
+    if (task.class.name == 'net.neoforged.gradle.common.tasks.MinecraftLauncherFileCacheProvider') {
+        def offlineProp = task.properties['isOffline']
+        if (offlineProp instanceof org.gradle.api.provider.Property) {
+            // Use local cached launcher metadata and avoid hard dependency on live network.
+            offlineProp.set(true)
+        }
+    }
+}
+
 base {
     archivesName = mod_id
 }

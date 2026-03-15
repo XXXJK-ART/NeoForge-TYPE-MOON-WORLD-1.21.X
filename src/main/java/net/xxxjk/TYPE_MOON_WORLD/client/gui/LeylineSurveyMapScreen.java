@@ -63,11 +63,11 @@ public class LeylineSurveyMapScreen extends Screen {
       int textY = panelY + 26;
       String dimShort = this.font.plainSubstrByWidth(this.dimensionId, 130);
       guiGraphics.drawString(
-         this.font, Component.translatable("gui.typemoonworld.leyline_map.dimension", new Object[]{dimShort}), textX, textY, 14280447, false
+         this.font, Component.translatable("gui.typemoonworld.leyline_map.dimension", dimShort), textX, textY, 14280447, false
       );
       guiGraphics.drawString(
          this.font,
-         Component.translatable("gui.typemoonworld.leyline_map.center", new Object[]{this.centerChunkX, this.centerChunkZ}),
+         Component.translatable("gui.typemoonworld.leyline_map.center", this.centerChunkX, this.centerChunkZ),
          textX,
          textY + 12,
          14280447,
@@ -168,11 +168,11 @@ public class LeylineSurveyMapScreen extends Screen {
             int index = sampleZ * size + sampleX;
             int concentration = this.concentrations[index] < 0 ? -1 : this.concentrations[index] & 255;
             List<Component> lines = new ArrayList<>();
-            lines.add(Component.translatable("gui.typemoonworld.leyline_map.tooltip.chunk", new Object[]{chunkX, chunkZ}));
+            lines.add(Component.translatable("gui.typemoonworld.leyline_map.tooltip.chunk", chunkX, chunkZ));
             if (concentration < 0) {
                lines.add(Component.translatable("gui.typemoonworld.leyline_map.tooltip.unloaded"));
             } else {
-               lines.add(Component.translatable("gui.typemoonworld.leyline_map.tooltip.concentration", new Object[]{concentration}));
+               lines.add(Component.translatable("gui.typemoonworld.leyline_map.tooltip.concentration", concentration));
             }
 
             guiGraphics.renderTooltip(this.font, lines, Optional.empty(), mouseX, mouseY);

@@ -50,7 +50,7 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
    }
 
    protected Item getDefaultItem() {
-      return (Item)ModItems.CARVED_SAPPHIRE_FULL.get();
+      return ModItems.CARVED_SAPPHIRE_FULL.get();
    }
 
    public void tick() {

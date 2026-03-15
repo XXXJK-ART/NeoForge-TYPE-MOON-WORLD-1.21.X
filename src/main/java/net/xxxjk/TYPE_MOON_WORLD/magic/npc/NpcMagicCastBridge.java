@@ -21,8 +21,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -31,13 +31,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -45,19 +44,15 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
-import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
-import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 public final class NpcMagicCastBridge {
-   private static final String TAG_MAGIC_INIT = "TypeMoonNpcMagicInitV1";
+   private static final String TAG_MAGIC_INIT = "TypeMoonNpcMagicInitV3";
    private static final String TAG_LAST_DECISION_TICK = "TypeMoonNpcLastDecisionTick";
    private static final String TAG_LAST_COMBAT_TICK = "TypeMoonNpcLastCombatTick";
    private static final String TAG_NEXT_GLOBAL_CAST_TICK = "TypeMoonNpcNextGlobalCastTick";
@@ -73,9 +68,30 @@ public final class NpcMagicCastBridge {
    private static final String TAG_THREAT_COUNTER_TICK = "TypeMoonNpcThreatCounterTick";
    private static final String TAG_ENV_UTILITY_TICK = "TypeMoonNpcEnvUtilityTick";
    private static final String TAG_ENV_MOVE_TICK = "TypeMoonNpcEnvMoveTick";
+   private static final String TAG_FIRE_IGNITE_TICK = "TypeMoonNpcFireIgniteTick";
+   private static final String TAG_FIRE_NEXT_WATER_SEARCH_TICK = "TypeMoonNpcFireNextWaterSearchTick";
    private static final String TAG_CAP_HAS_RANGED = "TypeMoonNpcCapHasRanged";
    private static final String TAG_CAP_HAS_MELEE_BURST = "TypeMoonNpcCapHasMeleeBurst";
    private static final String TAG_CAP_ONLY_MELEE = "TypeMoonNpcCapOnlyMelee";
+   private static final String TAG_MIGRATION_CLEANED_V3 = "TypeMoonNpcMigrationCleanedV3";
+   private static final String TAG_FIXED_LEVEL = "TypeMoonNpcFixedLevel";
+   private static final String TAG_COMBAT_LEVEL_BONUS = "TypeMoonNpcCombatLevelBonus";
+   private static final String TAG_REINF_BODY_CD = "TypeMoonNpcReinfBodyCd";
+   private static final String TAG_REINF_HAND_CD = "TypeMoonNpcReinfHandCd";
+   private static final String TAG_REINF_LEG_CD = "TypeMoonNpcReinfLegCd";
+   private static final String TAG_REINF_EYE_CD = "TypeMoonNpcReinfEyeCd";
+   private static final String TAG_MELEE_PUNCH_CD = "TypeMoonNpcMeleePunchCd";
+   private static final String TAG_MELEE_KICK_CD = "TypeMoonNpcMeleeKickCd";
+   private static final String TAG_MELEE_THROW_CD = "TypeMoonNpcMeleeThrowCd";
+   private static final String TAG_MELEE_SLAM_CD = "TypeMoonNpcMeleeSlamCd";
+   private static final String TAG_PENDING_MG_MAGIC = "TypeMoonNpcPendingMgMagic";
+   private static final String TAG_PENDING_MG_TARGET = "TypeMoonNpcPendingMgTarget";
+   private static final String TAG_PENDING_MG_NEXT_TICK = "TypeMoonNpcPendingMgNextTick";
+   private static final String TAG_PENDING_MG_WAVES_LEFT = "TypeMoonNpcPendingMgWavesLeft";
+   private static final String TAG_PENDING_MG_INTERVAL = "TypeMoonNpcPendingMgInterval";
+   private static final String TAG_PENDING_MG_MODE = "TypeMoonNpcPendingMgMode";
+   private static final String TAG_PENDING_MG_CHARGE = "TypeMoonNpcPendingMgCharge";
+   private static final String TAG_PENDING_MG_SHOT_COUNT = "TypeMoonNpcPendingMgShotCount";
    private static final String TAG_JEWEL_ITEM_NEXT_TICK = "TypeMoonNpcJewelItemNextTick";
    private static final String TAG_ATTR_INIT = "TypeMoonNpcAttrInitV1";
    private static final String TAG_BASE_MAX_HEALTH = "TypeMoonNpcBaseMaxHealth";
@@ -104,6 +120,10 @@ public final class NpcMagicCastBridge {
    private static final double HIGH_THREAT_POWER_RATIO = 1.18;
    private static final double THREAT_SCAN_RANGE = 20.0;
    private static final int ENV_SCAN_RADIUS = 4;
+   private static final int FIRE_AUTO_EXTINGUISH_TICKS = 200;
+   private static final int FIRE_WATER_SEARCH_INTERVAL_TICKS = 10;
+   private static final int FIRE_WATER_SEARCH_HORIZONTAL_RADIUS = 12;
+   private static final int FIRE_WATER_SEARCH_VERTICAL_RADIUS = 5;
    private static final float[] RAPID_YAW = new float[]{0.0F, -1.2F, 1.2F};
    private static final float[] RAPID_PITCH = new float[]{0.0F, -0.8F, 0.8F};
    private static final double[] RAPID_SIDE = new double[]{0.0, -0.12, 0.12};
@@ -115,13 +135,33 @@ public final class NpcMagicCastBridge {
    private static final double MELEE_ENGAGE_DISTANCE = 4.2;
    private static final double RANGED_ONLY_RETREAT_DISTANCE = 5.0;
    private static final double ADVANCED_PREFERRED_MANA_RATIO = 0.42;
-   private static final float NPC_PROJECTION_DUAL_WIELD_CHANCE = 0.12F;
+   private static final int LEVEL_MIN = 1;
+   private static final int LEVEL_MAX = 5;
+   private static final int COMBAT_BONUS_MIN = 0;
+   private static final int COMBAT_BONUS_MAX = 2;
    private static final GemType[] NPC_BASIC_JEWEL_TYPES = new GemType[]{
       GemType.RUBY, GemType.SAPPHIRE, GemType.TOPAZ, GemType.CYAN, GemType.WHITE_GEMSTONE, GemType.BLACK_SHARD
    };
    private static final Set<String> VALID_MAGIC_IDS = Set.of(
-      "gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "projection", "broken_phantasm", "jewel_random_shoot", "jewel_machine_gun"
+      "gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_random_shoot", "jewel_machine_gun"
    );
+   private static final NpcMagicCastBridge.BehaviorProfile[][] BEHAVIOR_PROFILE_MATRIX = new NpcMagicCastBridge.BehaviorProfile[][]{
+      {
+         new NpcMagicCastBridge.BehaviorProfile(0.43, 9.5, 17.5, 3.4, 2.0),
+         new NpcMagicCastBridge.BehaviorProfile(0.34, 8.2, 15.5, 3.9, 2.3),
+         new NpcMagicCastBridge.BehaviorProfile(0.27, 7.2, 13.8, 4.4, 2.6)
+      },
+      {
+         new NpcMagicCastBridge.BehaviorProfile(0.4, 9.0, 16.8, 3.7, 2.1),
+         new NpcMagicCastBridge.BehaviorProfile(0.31, 7.8, 14.6, 4.2, 2.4),
+         new NpcMagicCastBridge.BehaviorProfile(0.24, 6.8, 13.0, 4.7, 2.8)
+      },
+      {
+         new NpcMagicCastBridge.BehaviorProfile(0.37, 8.4, 16.0, 4.0, 2.3),
+         new NpcMagicCastBridge.BehaviorProfile(0.29, 7.3, 14.0, 4.5, 2.6),
+         new NpcMagicCastBridge.BehaviorProfile(0.2, 6.2, 12.2, 5.0, 3.0)
+      }
+   };
 
    private NpcMagicCastBridge() {
    }
@@ -138,18 +178,30 @@ public final class NpcMagicCastBridge {
          return true;
       } else {
          CompoundTag data = npc.getPersistentData();
-         boolean hasRanged = data.getBoolean("TypeMoonNpcCapHasRanged");
-         boolean hasMeleeBurst = data.getBoolean("TypeMoonNpcCapHasMeleeBurst");
-         boolean onlyMelee = data.getBoolean("TypeMoonNpcCapOnlyMelee");
+         boolean hasRanged = data.getBoolean(TAG_CAP_HAS_RANGED);
+         boolean hasMeleeBurst = data.getBoolean(TAG_CAP_HAS_MELEE_BURST);
+         boolean onlyMelee = data.getBoolean(TAG_CAP_ONLY_MELEE);
+         NpcCombatTemperament temperament = npc.getCombatTemperament();
          LivingEntity target = npc.getTarget();
          if (target != null && target.isAlive()) {
             double distanceSqr = npc.distanceToSqr(target);
             if (onlyMelee) {
-               return distanceSqr <= 100.0;
+               return distanceSqr <= 121.0;
             } else if (hasRanged && hasMeleeBurst) {
-               return distanceSqr <= 17.64;
+               return distanceSqr <= switch (temperament) {
+                  case TIMID -> 12.25;
+                  case BOLD -> 25.0;
+                  default -> 17.64;
+               };
+            } else if (hasRanged) {
+               // Ranged-only (typically no reinforcement): avoid committing to melee unless target is very close.
+               return distanceSqr <= switch (temperament) {
+                  case TIMID -> 2.25;
+                  case BOLD -> 6.25;
+                  default -> 4.0;
+               };
             } else {
-               return hasRanged ? distanceSqr <= 7.839999999999999 : distanceSqr <= 20.25;
+               return distanceSqr <= 25.0;
             }
          } else {
             return !hasRanged;
@@ -162,6 +214,7 @@ public final class NpcMagicCastBridge {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          initializeIfNeeded(npc, vars);
          long gameTime = npc.level().getGameTime();
+         handleOnFireEmergency(npc, gameTime);
          tickProjectedHandItemExpiry(npc, gameTime);
          tickManaRecovery(npc, vars);
          tickLocalCooldown(vars);
@@ -177,22 +230,40 @@ public final class NpcMagicCastBridge {
 
          LivingEntity target = npc.getTarget();
          boolean validTarget = isValidCombatTarget(npc, target);
-         long lastCombatTick = npc.getPersistentData().getLong("TypeMoonNpcLastCombatTick");
+         long lastCombatTick = npc.getPersistentData().getLong(TAG_LAST_COMBAT_TICK);
          boolean combatMoveState = validTarget || gameTime - lastCombatTick <= 40L;
          applyCombatMovementState(npc, combatMoveState);
          if (validTarget) {
-            npc.getPersistentData().putLong("TypeMoonNpcLastCombatTick", gameTime);
+            npc.getPersistentData().putLong(TAG_LAST_COMBAT_TICK, gameTime);
             vars.is_magic_circuit_open = true;
             vars.magic_circuit_open_timer = 0.0;
             NpcMagicCastBridge.ThreatProfile threat = analyzeThreat(npc, target);
-            maintainPreferredCombatDistance(npc, target, capabilities, threat);
-            if (shouldRetreat(npc, target)) {
+            NpcMagicCastBridge.BehaviorProfile behavior = buildBehaviorProfile(npc.getCombatPersonality(), npc.getCombatTemperament());
+            updateCombatLevelBonus(npc, target, threat);
+            maintainPreferredCombatDistance(npc, target, capabilities, threat, behavior);
+
+            if (trySelfGravityStabilize(npc, vars, gameTime, false)) {
+               return;
+            }
+
+            // Reinforcement is treated as a parallel support cast and should not block offensive casting flow.
+            tryAdaptiveReinforcement(npc, target, vars, gameTime, threat, capabilities, behavior);
+
+            if (shouldRetreat(npc, target, threat, behavior)) {
                handleRetreat(npc, target, vars, gameTime);
             } else {
+               if (processPendingMachineGun(npc, target, vars, gameTime)) {
+                  return;
+               }
+
                double distance = Math.sqrt(npc.distanceToSqr(target));
                if (shouldForceRangedRetreat(capabilities, distance)) {
                   steerAwayFromTarget(npc, target, 14.0, 1.3);
                } else {
+                  if (gameTime >= getCastLockUntil(npc) && tryMeleeSkillCombo(npc, target, vars, gameTime, capabilities, behavior)) {
+                     return;
+                  }
+
                   if (threat.requiresDefensiveTactics()) {
                      boolean consumedCast = handleHighThreatTactics(npc, target, vars, gameTime, threat, capabilities);
                      if (consumedCast) {
@@ -201,10 +272,10 @@ public final class NpcMagicCastBridge {
                   }
 
                   if (gameTime >= getCastLockUntil(npc)) {
-                     long lastDecision = npc.getPersistentData().getLong("TypeMoonNpcLastDecisionTick");
+                     long lastDecision = npc.getPersistentData().getLong(TAG_LAST_DECISION_TICK);
                      if (gameTime - lastDecision >= 5L) {
-                        npc.getPersistentData().putLong("TypeMoonNpcLastDecisionTick", gameTime);
-                        if (gameTime >= npc.getPersistentData().getLong("TypeMoonNpcNextGlobalCastTick")) {
+                        npc.getPersistentData().putLong(TAG_LAST_DECISION_TICK, gameTime);
+                        if (gameTime >= npc.getPersistentData().getLong(TAG_NEXT_GLOBAL_CAST_TICK)) {
                            if (!(vars.player_mana <= 1.0)) {
                               if (!tryUseJewelItemSkill(npc, target, vars, gameTime, threat)) {
                                  TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slot = chooseNextMagic(npc, vars, target, gameTime, capabilities);
@@ -213,12 +284,12 @@ public final class NpcMagicCastBridge {
                                  } else if (isResourceMagicAvailable(npc, slot.magicId, gameTime)) {
                                     if (gameTime >= getMagicCooldownUntil(npc, slot.magicId)) {
                                        boolean crestCast = "crest".equals(slot.sourceType);
-                                       double effectiveProficiency = getEffectiveProficiency(vars, slot.magicId, crestCast);
+                                       double effectiveProficiency = getEffectiveProficiency(npc, vars, slot.magicId, crestCast);
                                        boolean castSuccess = castMagic(npc, target, vars, slot, effectiveProficiency, gameTime);
                                        if (castSuccess) {
                                           int gcd = getGlobalCooldownAfterCast(slot.magicId, slot.presetPayload);
                                           vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
-                                          npc.getPersistentData().putLong("TypeMoonNpcNextGlobalCastTick", gameTime + gcd);
+                                          npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                                           setMagicCooldown(npc, slot.magicId, gameTime + getPerMagicCooldown(slot.magicId, slot.presetPayload));
                                           recordResourceMagicUse(npc, slot.magicId, gameTime);
                                           recordMagicCast(npc, slot.magicId);
@@ -234,6 +305,8 @@ public final class NpcMagicCastBridge {
                }
             }
          } else {
+            npc.getPersistentData().putInt(TAG_COMBAT_LEVEL_BONUS, 0);
+            clearPendingMachineGun(npc);
             maybeCloseCircuit(npc, vars, gameTime);
          }
       }
@@ -242,32 +315,61 @@ public final class NpcMagicCastBridge {
    public static void cleanup(MysticMagicianEntity npc) {
       if (npc != null) {
          CompoundTag data = npc.getPersistentData();
-         data.remove("TypeMoonNpcLastDecisionTick");
-         data.remove("TypeMoonNpcLastCombatTick");
-         data.remove("TypeMoonNpcNextGlobalCastTick");
-         data.remove("TypeMoonNpcMagicCd");
-         data.remove("TypeMoonNpcCastLockUntil");
-         data.remove("TypeMoonNpcResourceUse");
-         data.remove("TypeMoonNpcLastCastMagic");
-         data.remove("TypeMoonNpcCastRepeatCount");
-         data.remove("TypeMoonNpcRetreatCounterTick");
-         data.remove("TypeMoonNpcRetreatUtilityTick");
-         data.remove("TypeMoonNpcThreatUtilityTick");
-         data.remove("TypeMoonNpcThreatControlTick");
-         data.remove("TypeMoonNpcThreatCounterTick");
-         data.remove("TypeMoonNpcEnvUtilityTick");
-         data.remove("TypeMoonNpcEnvMoveTick");
-         data.remove("TypeMoonNpcCapHasRanged");
-         data.remove("TypeMoonNpcCapHasMeleeBurst");
-         data.remove("TypeMoonNpcCapOnlyMelee");
-         data.remove("TypeMoonNpcJewelItemNextTick");
+         data.remove(TAG_LAST_DECISION_TICK);
+         data.remove(TAG_LAST_COMBAT_TICK);
+         data.remove(TAG_NEXT_GLOBAL_CAST_TICK);
+         data.remove(TAG_MAGIC_CD);
+         data.remove(TAG_CAST_LOCK_UNTIL);
+         data.remove(TAG_RESOURCE_USE);
+         data.remove(TAG_LAST_CAST_MAGIC);
+         data.remove(TAG_CAST_REPEAT_COUNT);
+         data.remove(TAG_RETREAT_COUNTER_TICK);
+         data.remove(TAG_RETREAT_UTILITY_TICK);
+         data.remove(TAG_THREAT_UTILITY_TICK);
+         data.remove(TAG_THREAT_CONTROL_TICK);
+         data.remove(TAG_THREAT_COUNTER_TICK);
+         data.remove(TAG_ENV_UTILITY_TICK);
+         data.remove(TAG_ENV_MOVE_TICK);
+         data.remove(TAG_CAP_HAS_RANGED);
+         data.remove(TAG_CAP_HAS_MELEE_BURST);
+         data.remove(TAG_CAP_ONLY_MELEE);
+         data.remove(TAG_REINF_BODY_CD);
+         data.remove(TAG_REINF_HAND_CD);
+         data.remove(TAG_REINF_LEG_CD);
+         data.remove(TAG_REINF_EYE_CD);
+         data.remove(TAG_MELEE_PUNCH_CD);
+         data.remove(TAG_MELEE_KICK_CD);
+         data.remove(TAG_MELEE_THROW_CD);
+         data.remove(TAG_MELEE_SLAM_CD);
+         data.remove(TAG_PENDING_MG_MAGIC);
+         data.remove(TAG_PENDING_MG_TARGET);
+         data.remove(TAG_PENDING_MG_NEXT_TICK);
+         data.remove(TAG_PENDING_MG_WAVES_LEFT);
+         data.remove(TAG_PENDING_MG_INTERVAL);
+         data.remove(TAG_PENDING_MG_MODE);
+         data.remove(TAG_PENDING_MG_CHARGE);
+         data.remove(TAG_PENDING_MG_SHOT_COUNT);
+         data.remove(TAG_JEWEL_ITEM_NEXT_TICK);
       }
    }
 
    private static void initializeIfNeeded(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = npc.getPersistentData();
       ensureCombatAttributesInitialized(npc, data, npc.getRandom());
-      if (!data.getBoolean("TypeMoonNpcMagicInitV1")) {
+      if (!data.getBoolean(TAG_MIGRATION_CLEANED_V3)) {
+         boolean legacy = data.getBoolean("TypeMoonNpcMagicInitV1");
+         int purged = purgeDeprecatedProjectionChain(vars, data);
+         data.putBoolean(TAG_MIGRATION_CLEANED_V3, true);
+         if (legacy || purged > 0) {
+            TYPE_MOON_WORLD.LOGGER.info(
+               "Migrated Mystic Magician {} to V3. Purged projection-chain entries={}",
+               npc.getUUID(),
+               purged
+            );
+         }
+      }
+
+      if (!data.getBoolean(TAG_MAGIC_INIT)) {
          RandomSource random = npc.getRandom();
          vars.ensureMagicSystemInitialized();
          vars.clearAllWheelSlots();
@@ -279,9 +381,12 @@ public final class NpcMagicCastBridge {
          vars.selected_magic_display_names.clear();
          vars.current_magic_index = 0;
          vars.active_wheel_index = 0;
+         int fixedLevel = Mth.clamp(data.contains(TAG_FIXED_LEVEL) ? data.getInt(TAG_FIXED_LEVEL) : Mth.nextInt(random, LEVEL_MIN, LEVEL_MAX), LEVEL_MIN, LEVEL_MAX);
+         data.putInt(TAG_FIXED_LEVEL, fixedLevel);
+         data.putInt(TAG_COMBAT_LEVEL_BONUS, 0);
          randomizeBaseStats(vars, random);
          randomizeMagicAttributes(vars, random);
-         seedSelfKnowledge(vars, random);
+         seedSelfKnowledge(vars, random, fixedLevel);
          seedCrestKnowledge(npc, vars, random);
          buildWheelEntries(npc, vars, random);
          vars.rebuildSelectedMagicsFromActiveWheel();
@@ -291,30 +396,30 @@ public final class NpcMagicCastBridge {
          vars.magic_circuit_open_timer = 0.0;
          vars.magic_cooldown = 0.0;
          npc.setCombatStyle(NpcCombatStyle.fromAttributes(vars));
-         data.putBoolean("TypeMoonNpcMagicInitV1", true);
-         data.putLong("TypeMoonNpcLastDecisionTick", 0L);
-         data.putLong("TypeMoonNpcLastCombatTick", npc.level().getGameTime());
-         data.putLong("TypeMoonNpcNextGlobalCastTick", 0L);
-         data.putLong("TypeMoonNpcCastLockUntil", 0L);
-         data.putLong("TypeMoonNpcRetreatCounterTick", 0L);
-         data.putLong("TypeMoonNpcRetreatUtilityTick", 0L);
-         data.putLong("TypeMoonNpcThreatUtilityTick", 0L);
-         data.putLong("TypeMoonNpcThreatControlTick", 0L);
-         data.putLong("TypeMoonNpcThreatCounterTick", 0L);
-         data.putLong("TypeMoonNpcEnvUtilityTick", 0L);
-         data.putLong("TypeMoonNpcEnvMoveTick", 0L);
+         data.putBoolean(TAG_MAGIC_INIT, true);
+         data.putLong(TAG_LAST_DECISION_TICK, 0L);
+         data.putLong(TAG_LAST_COMBAT_TICK, npc.level().getGameTime());
+         data.putLong(TAG_NEXT_GLOBAL_CAST_TICK, 0L);
+         data.putLong(TAG_CAST_LOCK_UNTIL, 0L);
+         data.putLong(TAG_RETREAT_COUNTER_TICK, 0L);
+         data.putLong(TAG_RETREAT_UTILITY_TICK, 0L);
+         data.putLong(TAG_THREAT_UTILITY_TICK, 0L);
+         data.putLong(TAG_THREAT_CONTROL_TICK, 0L);
+         data.putLong(TAG_THREAT_COUNTER_TICK, 0L);
+         data.putLong(TAG_ENV_UTILITY_TICK, 0L);
+         data.putLong(TAG_ENV_MOVE_TICK, 0L);
       }
    }
 
    private static void ensureCombatAttributesInitialized(MysticMagicianEntity npc, CompoundTag data, RandomSource random) {
       if (npc != null && data != null) {
-         boolean initialized = data.getBoolean("TypeMoonNpcAttrInitV1");
-         double baseHealth = data.contains("TypeMoonNpcBaseMaxHealth") ? data.getDouble("TypeMoonNpcBaseMaxHealth") : randomZombieComparableStat(random, 20.0);
-         double baseSpeed = data.contains("TypeMoonNpcBaseMoveSpeed") ? data.getDouble("TypeMoonNpcBaseMoveSpeed") : randomZombieComparableStat(random, 0.23);
-         double baseAttack = data.contains("TypeMoonNpcBaseAttackDamage")
-            ? data.getDouble("TypeMoonNpcBaseAttackDamage")
+         boolean initialized = data.getBoolean(TAG_ATTR_INIT);
+         double baseHealth = data.contains(TAG_BASE_MAX_HEALTH) ? data.getDouble(TAG_BASE_MAX_HEALTH) : randomZombieComparableStat(random, 20.0);
+         double baseSpeed = data.contains(TAG_BASE_MOVE_SPEED) ? data.getDouble(TAG_BASE_MOVE_SPEED) : randomZombieComparableStat(random, 0.23);
+         double baseAttack = data.contains(TAG_BASE_ATTACK_DAMAGE)
+            ? data.getDouble(TAG_BASE_ATTACK_DAMAGE)
             : randomZombieComparableStat(random, 3.0);
-         double combatSpeed = data.contains("TypeMoonNpcCombatMoveSpeed") ? data.getDouble("TypeMoonNpcCombatMoveSpeed") : round3(baseSpeed * 1.45);
+         double combatSpeed = data.contains(TAG_COMBAT_MOVE_SPEED) ? data.getDouble(TAG_COMBAT_MOVE_SPEED) : round3(baseSpeed * 1.45);
          baseHealth = clampZombieComparableStat(baseHealth, 20.0);
          baseSpeed = clampZombieComparableStat(baseSpeed, 0.23);
          baseAttack = clampZombieComparableStat(baseAttack, 3.0);
@@ -335,19 +440,19 @@ public final class NpcMagicCastBridge {
          }
 
          if (!initialized) {
-            data.putDouble("TypeMoonNpcBaseMaxHealth", baseHealth);
-            data.putDouble("TypeMoonNpcBaseMoveSpeed", baseSpeed);
-            data.putDouble("TypeMoonNpcBaseAttackDamage", baseAttack);
-            data.putDouble("TypeMoonNpcCombatMoveSpeed", combatSpeed);
-            data.putBoolean("TypeMoonNpcAttrInitV1", true);
+            data.putDouble(TAG_BASE_MAX_HEALTH, baseHealth);
+            data.putDouble(TAG_BASE_MOVE_SPEED, baseSpeed);
+            data.putDouble(TAG_BASE_ATTACK_DAMAGE, baseAttack);
+            data.putDouble(TAG_COMBAT_MOVE_SPEED, combatSpeed);
+            data.putBoolean(TAG_ATTR_INIT, true);
             if (healthAttr != null) {
                npc.setHealth((float)healthAttr.getBaseValue());
             }
          } else if (healthAttr != null) {
-            data.putDouble("TypeMoonNpcBaseMaxHealth", baseHealth);
-            data.putDouble("TypeMoonNpcBaseMoveSpeed", baseSpeed);
-            data.putDouble("TypeMoonNpcBaseAttackDamage", baseAttack);
-            data.putDouble("TypeMoonNpcCombatMoveSpeed", combatSpeed);
+            data.putDouble(TAG_BASE_MAX_HEALTH, baseHealth);
+            data.putDouble(TAG_BASE_MOVE_SPEED, baseSpeed);
+            data.putDouble(TAG_BASE_ATTACK_DAMAGE, baseAttack);
+            data.putDouble(TAG_COMBAT_MOVE_SPEED, combatSpeed);
             float clamped = Mth.clamp(npc.getHealth(), 1.0F, (float)healthAttr.getBaseValue());
             if (Math.abs(clamped - npc.getHealth()) > 0.01F) {
                npc.setHealth(clamped);
@@ -359,8 +464,8 @@ public final class NpcMagicCastBridge {
    private static void applyCombatMovementState(MysticMagicianEntity npc, boolean inCombat) {
       if (npc != null) {
          CompoundTag data = npc.getPersistentData();
-         double baseSpeed = data.contains("TypeMoonNpcBaseMoveSpeed") ? data.getDouble("TypeMoonNpcBaseMoveSpeed") : 0.23;
-         double combatSpeed = data.contains("TypeMoonNpcCombatMoveSpeed") ? data.getDouble("TypeMoonNpcCombatMoveSpeed") : round3(baseSpeed * 1.45);
+         double baseSpeed = data.contains(TAG_BASE_MOVE_SPEED) ? data.getDouble(TAG_BASE_MOVE_SPEED) : 0.23;
+         double combatSpeed = data.contains(TAG_COMBAT_MOVE_SPEED) ? data.getDouble(TAG_COMBAT_MOVE_SPEED) : round3(baseSpeed * 1.45);
          double targetSpeed = inCombat ? combatSpeed : baseSpeed;
          AttributeInstance speedAttr = npc.getAttribute(Attributes.MOVEMENT_SPEED);
          if (speedAttr != null) {
@@ -437,7 +542,7 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void seedSelfKnowledge(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random) {
+   private static void seedSelfKnowledge(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random, int fixedLevel) {
       List<String> pool = new ArrayList<>();
 
       for (String id : NpcMagicFilterService.candidateMagicPool()) {
@@ -450,12 +555,38 @@ public final class NpcMagicCastBridge {
          Collections.shuffle(pool, new Random(random.nextLong()));
          int max = Math.min(8, pool.size());
          int selfCount = Mth.nextInt(random, 4, Math.max(4, max));
+         boolean reinforcementPicked = false;
+         boolean reinforcementInPool = pool.remove("reinforcement");
+         // 90% have reinforcement; 10% get ranged/control compensation and avoid melee preference.
+         if (reinforcementInPool && random.nextFloat() < 0.9F) {
+            vars.learned_magics.add("reinforcement");
+            seedSelfProficiency(vars, "reinforcement", random, fixedLevel);
+            reinforcementPicked = true;
+         }
 
          for (int i = 0; i < selfCount && i < pool.size(); i++) {
             String magicId = pool.get(i);
             vars.learned_magics.add(magicId);
             ensurePrerequisites(vars, magicId);
-            seedSelfProficiency(vars, magicId, random);
+            seedSelfProficiency(vars, magicId, random, fixedLevel);
+         }
+
+         if (!reinforcementPicked) {
+            String[] compensation = new String[]{"gandr_machine_gun", "jewel_machine_gun", "jewel_random_shoot", "gravity_magic", "gander"};
+            int compensationCount = Mth.nextInt(random, 2, 3);
+            int added = 0;
+
+            for (String extra : compensation) {
+               if (NpcMagicFilterService.isMagicAllowedForNpc(extra) && !vars.learned_magics.contains(extra)) {
+                  vars.learned_magics.add(extra);
+                  ensurePrerequisites(vars, extra);
+                  seedSelfProficiency(vars, extra, random, fixedLevel);
+                  added++;
+                  if (added >= compensationCount) {
+                     break;
+                  }
+               }
+            }
          }
 
          if (!vars.learned_magics.contains("gander")) {
@@ -470,7 +601,7 @@ public final class NpcMagicCastBridge {
       if (!hasCrest) {
          vars.magicCrestInventory.setStackInSlot(0, ItemStack.EMPTY);
       } else {
-         vars.magicCrestInventory.setStackInSlot(0, new ItemStack((ItemLike)ModItems.MAGIC_CREST.get()));
+         vars.magicCrestInventory.setStackInSlot(0, new ItemStack(ModItems.MAGIC_CREST.get()));
          int crestCount = Mth.nextInt(random, 1, 4);
          Provider lookup = npc.registryAccess();
          List<String> pool = new ArrayList<>();
@@ -510,17 +641,29 @@ public final class NpcMagicCastBridge {
       Provider lookup = npc.registryAccess();
       List<NpcMagicCastBridge.SlotSeed> seeds = new ArrayList<>();
       Set<String> selfAdded = new HashSet<>();
+      int fixedLevel = getFixedLevel(npc);
 
       for (String learned : vars.learned_magics) {
          if (VALID_MAGIC_IDS.contains(learned) && !selfAdded.contains(learned)) {
-            CompoundTag payload = NpcMagicFilterService.sanitizePresetForNpc(
-               learned, NpcMagicFilterService.buildRandomPresetForMagic(learned, lookup, random), lookup, random
-            );
-            if (!NpcMagicFilterService.isPresetValidForNpc(learned, payload, lookup)) {
-               payload = new CompoundTag();
+            if ("reinforcement".equals(learned)) {
+               for (int mode = 0; mode < 4; mode++) {
+                  CompoundTag payload = new CompoundTag();
+                  payload.putInt("reinforcement_target", 0);
+                  payload.putInt("reinforcement_mode", mode);
+                  payload.putInt("reinforcement_level", Mth.clamp(fixedLevel + (mode == 0 ? 1 : 0), 1, 5));
+                  seeds.add(new NpcMagicCastBridge.SlotSeed("self", learned, payload, ""));
+               }
+            } else {
+               CompoundTag payload = NpcMagicFilterService.sanitizePresetForNpc(
+                  learned, NpcMagicFilterService.buildRandomPresetForMagic(learned, lookup, random), lookup, random
+               );
+               if (!NpcMagicFilterService.isPresetValidForNpc(learned, payload, lookup)) {
+                  payload = new CompoundTag();
+               }
+
+               seeds.add(new NpcMagicCastBridge.SlotSeed("self", learned, payload, ""));
             }
 
-            seeds.add(new NpcMagicCastBridge.SlotSeed("self", learned, payload, ""));
             selfAdded.add(learned);
          }
       }
@@ -542,11 +685,22 @@ public final class NpcMagicCastBridge {
          }
       }
 
-      Collections.shuffle(seeds, new Random(random.nextLong()));
-      int slots = Math.min(12, seeds.size());
+      List<NpcMagicCastBridge.SlotSeed> ordered = new ArrayList<>();
+      List<NpcMagicCastBridge.SlotSeed> remainder = new ArrayList<>();
+      for (NpcMagicCastBridge.SlotSeed seed : seeds) {
+         if ("reinforcement".equals(seed.magicId())) {
+            ordered.add(seed);
+         } else {
+            remainder.add(seed);
+         }
+      }
+
+      Collections.shuffle(remainder, new Random(random.nextLong()));
+      ordered.addAll(remainder);
+      int slots = Math.min(12, ordered.size());
 
       for (int i = 0; i < slots; i++) {
-         NpcMagicCastBridge.SlotSeed seed = seeds.get(i);
+         NpcMagicCastBridge.SlotSeed seed = ordered.get(i);
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, i);
          entry.sourceType = seed.sourceType();
          entry.magicId = seed.magicId();
@@ -560,8 +714,10 @@ public final class NpcMagicCastBridge {
       vars.rebuildSelectedMagicsFromActiveWheel();
    }
 
-   private static void seedSelfProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, RandomSource random) {
-      double p = 15.0 + random.nextDouble() * 75.0;
+   private static void seedSelfProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, RandomSource random, int fixedLevel) {
+      double min = 10.0 + (Mth.clamp(fixedLevel, LEVEL_MIN, LEVEL_MAX) - 1) * 15.0;
+      double max = Math.min(100.0, min + 30.0);
+      double p = min + random.nextDouble() * Math.max(5.0, max - min);
       switch (magicId) {
          case "gander":
          case "gandr_machine_gun":
@@ -571,11 +727,8 @@ public final class NpcMagicCastBridge {
             vars.proficiency_gravity_magic = Math.max(vars.proficiency_gravity_magic, p);
             break;
          case "reinforcement":
-            vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, p);
-            break;
-         case "projection":
-         case "broken_phantasm":
-            vars.proficiency_projection = Math.max(vars.proficiency_projection, p);
+            double reinforcementFloor = 40.0 + (Mth.clamp(fixedLevel, LEVEL_MIN, LEVEL_MAX) - 1) * 10.0;
+            vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, Math.max(p, reinforcementFloor));
             break;
          case "jewel_random_shoot":
             vars.proficiency_jewel_magic_shoot = Math.max(vars.proficiency_jewel_magic_shoot, p);
@@ -595,8 +748,6 @@ public final class NpcMagicCastBridge {
                ensureLearned(vars, "gander");
                ensureLearned(vars, "jewel_magic_shoot");
                break;
-            case "broken_phantasm":
-               ensureLearned(vars, "projection");
          }
       }
    }
@@ -632,7 +783,7 @@ public final class NpcMagicCastBridge {
    }
 
    private static void maybeCloseCircuit(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime) {
-      long lastCombat = npc.getPersistentData().getLong("TypeMoonNpcLastCombatTick");
+      long lastCombat = npc.getPersistentData().getLong(TAG_LAST_COMBAT_TICK);
       if (vars.is_magic_circuit_open && gameTime - lastCombat >= 120L) {
          vars.is_magic_circuit_open = false;
          vars.magic_circuit_open_timer = 0.0;
@@ -681,11 +832,25 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static boolean shouldRetreat(MysticMagicianEntity npc, LivingEntity target) {
+   private static boolean shouldRetreat(
+      MysticMagicianEntity npc, LivingEntity target, NpcMagicCastBridge.ThreatProfile threat, NpcMagicCastBridge.BehaviorProfile behavior
+   ) {
       if (npc != null && target != null && target.isAlive()) {
          double maxHealth = Math.max(1.0, (double)npc.getMaxHealth());
          double ratio = npc.getHealth() / maxHealth;
-         return ratio <= 0.28;
+         double threshold = behavior == null ? RETREAT_HEALTH_RATIO : behavior.retreatHealthRatio();
+         if (threat != null) {
+            if (threat.strongTarget()) {
+               threshold += 0.07;
+            }
+
+            if (threat.enemyCount() >= 3) {
+               threshold += 0.08;
+            }
+         }
+
+         threshold = Mth.clamp(threshold, 0.16, 0.58);
+         return ratio <= threshold;
       } else {
          return false;
       }
@@ -746,7 +911,7 @@ public final class NpcMagicCastBridge {
       if (vars == null) {
          return NpcMagicCastBridge.MagicCapabilityProfile.NONE;
       } else {
-         boolean hasBuff = false;
+         boolean hasBuff = vars.learned_magics.contains("reinforcement");
          boolean hasControl = false;
          boolean hasRanged = false;
          boolean hasMeleeBurst = false;
@@ -760,6 +925,7 @@ public final class NpcMagicCastBridge {
                switch (var8) {
                   case "reinforcement":
                      hasBuff = true;
+                     hasMeleeBurst = true;
                      break;
                   case "gravity_magic":
                      hasControl = true;
@@ -770,9 +936,6 @@ public final class NpcMagicCastBridge {
                   case "jewel_machine_gun":
                      hasRanged = true;
                      break;
-                  case "projection":
-                  case "broken_phantasm":
-                     hasMeleeBurst = true;
                }
             }
          }
@@ -785,14 +948,18 @@ public final class NpcMagicCastBridge {
       if (npc != null && profile != null) {
          CompoundTag data = npc.getPersistentData();
          boolean onlyMelee = !profile.hasRanged() && profile.hasMeleeBurst();
-         data.putBoolean("TypeMoonNpcCapHasRanged", profile.hasRanged());
-         data.putBoolean("TypeMoonNpcCapHasMeleeBurst", profile.hasMeleeBurst());
-         data.putBoolean("TypeMoonNpcCapOnlyMelee", onlyMelee);
+         data.putBoolean(TAG_CAP_HAS_RANGED, profile.hasRanged());
+         data.putBoolean(TAG_CAP_HAS_MELEE_BURST, profile.hasMeleeBurst());
+         data.putBoolean(TAG_CAP_ONLY_MELEE, onlyMelee);
       }
    }
 
    private static void maintainPreferredCombatDistance(
-      MysticMagicianEntity npc, LivingEntity target, NpcMagicCastBridge.MagicCapabilityProfile capabilities, NpcMagicCastBridge.ThreatProfile threat
+      MysticMagicianEntity npc,
+      LivingEntity target,
+      NpcMagicCastBridge.MagicCapabilityProfile capabilities,
+      NpcMagicCastBridge.ThreatProfile threat,
+      NpcMagicCastBridge.BehaviorProfile behavior
    ) {
       if (npc != null && target != null && target.isAlive() && capabilities != null) {
          double distance = Math.sqrt(npc.distanceToSqr(target));
@@ -801,15 +968,15 @@ public final class NpcMagicCastBridge {
             npc.lookAt(target, 45.0F, 45.0F);
          } else if (!capabilities.hasRanged()) {
             if (capabilities.hasMeleeBurst()) {
-               if (distance > 4.2) {
+               if (distance > (behavior == null ? MELEE_ENGAGE_DISTANCE : behavior.meleeEngageDistance())) {
                   npc.getNavigation().moveTo(target, 1.1);
                }
 
                npc.lookAt(target, 35.0F, 35.0F);
             }
          } else {
-            double min = 7.0;
-            double max = 14.0;
+            double min = behavior == null ? RANGED_KEEP_MIN_DISTANCE : behavior.rangedKeepMinDistance();
+            double max = behavior == null ? RANGED_KEEP_MAX_DISTANCE : behavior.rangedKeepMaxDistance();
             if (threat != null && threat.requiresDefensiveTactics()) {
                min += 3.0;
                max += 4.0;
@@ -845,6 +1012,10 @@ public final class NpcMagicCastBridge {
             if (entry != null && !entry.isEmpty() && magicId.equals(entry.magicId) && vars.isWheelSlotEntryCastable(entry)) {
                return true;
             }
+         }
+
+         if ("reinforcement".equals(magicId) && vars.learned_magics.contains("reinforcement")) {
+            return true;
          }
 
          return false;
@@ -889,17 +1060,17 @@ public final class NpcMagicCastBridge {
          return false;
       } else {
          CompoundTag data = npc.getPersistentData();
-         if (gameTime >= data.getLong("TypeMoonNpcEnvMoveTick")) {
+         if (gameTime >= data.getLong(TAG_ENV_MOVE_TICK)) {
             Vec3 safe = findNearestSafeStandPos(npc, 4);
             if (safe != null) {
                double speed = hazard.severe() ? 1.3 : 1.08;
                npc.getNavigation().moveTo(safe.x, safe.y, safe.z, speed);
-               data.putLong("TypeMoonNpcEnvMoveTick", gameTime + (hazard.severe() ? 6L : 10L));
+               data.putLong(TAG_ENV_MOVE_TICK, gameTime + (hazard.severe() ? 6L : 10L));
             }
          }
 
          if (gameTime >= getCastLockUntil(npc) && !(vars.player_mana <= 1.0)) {
-            if (gameTime >= data.getLong("TypeMoonNpcEnvUtilityTick")) {
+            if (gameTime >= data.getLong(TAG_ENV_UTILITY_TICK)) {
                if (capabilities.hasBuff() && hasCastableMagic(vars, "reinforcement") && gameTime >= getMagicCooldownUntil(npc, "reinforcement")) {
                   CompoundTag payload = new CompoundTag();
                   payload.putInt("reinforcement_mode", hazard.severe() ? 0 : 2);
@@ -907,7 +1078,7 @@ public final class NpcMagicCastBridge {
                   if (castReinforcement(npc, vars, payload, Math.max(65.0, vars.proficiency_reinforcement))) {
                      setMagicCooldown(npc, "reinforcement", gameTime + 120L);
                      setCastLockUntil(npc, gameTime + 10L);
-                     data.putLong("TypeMoonNpcEnvUtilityTick", gameTime + 30L);
+                     data.putLong(TAG_ENV_UTILITY_TICK, gameTime + 30L);
                      return true;
                   }
                }
@@ -926,7 +1097,7 @@ public final class NpcMagicCastBridge {
                   }
 
                   setCastLockUntil(npc, gameTime + 8L);
-                  data.putLong("TypeMoonNpcEnvUtilityTick", gameTime + 24L);
+                  data.putLong(TAG_ENV_UTILITY_TICK, gameTime + 24L);
                   return true;
                }
             }
@@ -1028,7 +1199,7 @@ public final class NpcMagicCastBridge {
             if (castGravity(npc, target, vars, gravityPayload, Math.max(55.0, vars.proficiency_gravity_magic))) {
                int gcd = 18;
                vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
-               npc.getPersistentData().putLong("TypeMoonNpcNextGlobalCastTick", gameTime + gcd);
+               npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                setMagicCooldown(npc, "gravity_magic", gameTime + 50L);
                setCastLockUntil(npc, gameTime + 10L);
                return;
@@ -1057,7 +1228,13 @@ public final class NpcMagicCastBridge {
                   setCastLockUntil(npc, gameTime + 6L);
                }
             } else if (capabilities.hasRanged()) {
-               maintainPreferredCombatDistance(npc, target, capabilities, threat);
+               maintainPreferredCombatDistance(
+                  npc,
+                  target,
+                  capabilities,
+                  threat,
+                  buildBehaviorProfile(npc.getCombatPersonality(), npc.getCombatTemperament())
+               );
             } else {
                npc.getNavigation().moveTo(target, 1.1);
             }
@@ -1095,10 +1272,13 @@ public final class NpcMagicCastBridge {
                applyPostCastCooldown(npc, vars, "jewel_random_shoot", new CompoundTag(), gameTime, 8);
                return true;
             } else if (hasCastableMagic(vars, "jewel_machine_gun")
-               && gameTime >= getMagicCooldownUntil(npc, "jewel_machine_gun")
-               && castJewelMachineGun(npc, target, vars, vars.proficiency_jewel_magic_release)) {
-               applyPostCastCooldown(npc, vars, "jewel_machine_gun", new CompoundTag(), gameTime, 8);
-               return true;
+               && gameTime >= getMagicCooldownUntil(npc, "jewel_machine_gun")) {
+               CompoundTag jewelPayload = buildCombatJewelMachineGunPayload(npc, target, threat);
+               if (castJewelMachineGun(npc, target, vars, jewelPayload, vars.proficiency_jewel_magic_release)) {
+                  applyPostCastCooldown(npc, vars, "jewel_machine_gun", jewelPayload, gameTime, 8);
+                  return true;
+               }
+               return tryUseJewelItemSkill(npc, target, vars, gameTime, threat);
             } else {
                return tryUseJewelItemSkill(npc, target, vars, gameTime, threat);
             }
@@ -1113,7 +1293,7 @@ public final class NpcMagicCastBridge {
    ) {
       int gcd = getGlobalCooldownAfterCast(magicId, payload);
       vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
-      npc.getPersistentData().putLong("TypeMoonNpcNextGlobalCastTick", gameTime + gcd);
+      npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
       setMagicCooldown(npc, magicId, gameTime + getPerMagicCooldown(magicId, payload));
       setCastLockUntil(npc, gameTime + Math.max(minCastLock, gcd / 2));
       recordResourceMagicUse(npc, magicId, gameTime);
@@ -1128,56 +1308,60 @@ public final class NpcMagicCastBridge {
       } else if (!hasJewelItemAccess(vars)) {
          return false;
       } else if (!(vars.player_mana < 18.0) && gameTime >= getCastLockUntil(npc)) {
-         if (gameTime < npc.getPersistentData().getLong("TypeMoonNpcJewelItemNextTick")) {
+         if (gameTime < npc.getPersistentData().getLong(TAG_JEWEL_ITEM_NEXT_TICK)) {
             return false;
          } else {
             double distanceSqr = npc.distanceToSqr(target);
             if (!(distanceSqr < 16.0) && !(distanceSqr > 576.0)) {
-               int triggerChance = threat != null && threat.requiresDefensiveTactics() ? 42 : 26;
+               boolean highThreat = threat != null && threat.requiresDefensiveTactics();
+               int triggerChance = highThreat ? 34 : 20;
                if (npc.getRandom().nextInt(100) >= triggerChance) {
                   return false;
                } else {
                   String usedSkillId = null;
                   double manaRatio = vars.player_max_mana <= 0.0 ? 0.0 : Mth.clamp(vars.player_mana / vars.player_max_mana, 0.0, 1.0);
-                  boolean highThreat = threat != null && threat.requiresDefensiveTactics();
+                  int advancedChance = highThreat ? 14 : 8;
+                  int engravedChance = highThreat ? 9 : 4;
                   if ((highThreat || manaRatio >= 0.45)
-                     && isResourceMagicAvailable(npc, "npc_jewel_item_engraved", gameTime)
+                     && isResourceMagicAvailable(npc, NPC_JEWEL_ITEM_ENGRAVED, gameTime)
+                     && npc.getRandom().nextInt(100) < engravedChance
                      && castJewelItemEngraved(npc, target, vars, highThreat)) {
-                     usedSkillId = "npc_jewel_item_engraved";
+                     usedSkillId = NPC_JEWEL_ITEM_ENGRAVED;
                   }
 
                   if (usedSkillId == null
                      && (highThreat || manaRatio >= 0.55)
-                     && isResourceMagicAvailable(npc, "npc_jewel_item_advanced", gameTime)
+                     && isResourceMagicAvailable(npc, NPC_JEWEL_ITEM_ADVANCED, gameTime)
+                     && npc.getRandom().nextInt(100) < advancedChance
                      && castJewelItemAdvanced(npc, target, vars, highThreat)) {
-                     usedSkillId = "npc_jewel_item_advanced";
+                     usedSkillId = NPC_JEWEL_ITEM_ADVANCED;
                   }
 
-                  if (usedSkillId == null && isResourceMagicAvailable(npc, "npc_jewel_item_basic", gameTime) && castJewelItemBasic(npc, target, vars)) {
-                     usedSkillId = "npc_jewel_item_basic";
+                  if (usedSkillId == null && isResourceMagicAvailable(npc, NPC_JEWEL_ITEM_BASIC, gameTime) && castJewelItemBasic(npc, target, vars)) {
+                     usedSkillId = NPC_JEWEL_ITEM_BASIC;
                   }
 
                   if (usedSkillId == null) {
                      return false;
                   } else {
                      int gcd = switch (usedSkillId) {
-                        case "npc_jewel_item_engraved" -> 16;
-                        case "npc_jewel_item_advanced" -> 14;
+                        case NPC_JEWEL_ITEM_ENGRAVED -> 16;
+                        case NPC_JEWEL_ITEM_ADVANCED -> 14;
                         default -> 10;
                      };
 
                      int perCd = switch (usedSkillId) {
-                        case "npc_jewel_item_engraved" -> 1900;
-                        case "npc_jewel_item_advanced" -> 1400;
-                        default -> 900;
+                        case NPC_JEWEL_ITEM_ENGRAVED -> 3600;
+                        case NPC_JEWEL_ITEM_ADVANCED -> 2600;
+                        default -> 1200;
                      };
                      vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
-                     npc.getPersistentData().putLong("TypeMoonNpcNextGlobalCastTick", gameTime + gcd);
+                     npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                      setMagicCooldown(npc, usedSkillId, gameTime + perCd);
                      recordResourceMagicUse(npc, usedSkillId, gameTime);
                      recordMagicCast(npc, usedSkillId);
                      setCastLockUntil(npc, gameTime + gcd);
-                     npc.getPersistentData().putLong("TypeMoonNpcJewelItemNextTick", gameTime + 30L);
+                     npc.getPersistentData().putLong(TAG_JEWEL_ITEM_NEXT_TICK, gameTime + 40L);
                      return true;
                   }
                }
@@ -1253,10 +1437,6 @@ public final class NpcMagicCastBridge {
             choices.add(2);
          }
 
-         if (hasCastableMagic(vars, "projection")) {
-            choices.add(3);
-         }
-
          int pick = choices.get(caster.getRandom().nextInt(choices.size()));
          switch (pick) {
             case 1: {
@@ -1271,17 +1451,571 @@ public final class NpcMagicCastBridge {
                payload.putInt("reinforcement_level", highThreat ? 3 : 2);
                return castReinforcement(caster, vars, payload, Math.max(80.0, vars.proficiency_reinforcement));
             }
-            case 3:
-               CompoundTag payload = new CompoundTag();
-               ItemStack item = NpcMagicFilterService.chooseRandomCombatProjectionItem(caster.getRandom());
-               if (!item.isEmpty()) {
-                  payload.put("projection_item", item.save(caster.registryAccess()));
-               }
-
-               return castProjection(caster, vars, payload, Math.max(80.0, vars.proficiency_projection), true);
             default:
                return castGander(caster, target, vars, new CompoundTag(), Math.max(80.0, vars.proficiency_gander));
          }
+      }
+   }
+
+   private static void handleOnFireEmergency(MysticMagicianEntity npc, long gameTime) {
+      if (npc == null) {
+         return;
+      }
+
+      CompoundTag data = npc.getPersistentData();
+      if (!npc.isOnFire()) {
+         data.remove(TAG_FIRE_IGNITE_TICK);
+         data.remove(TAG_FIRE_NEXT_WATER_SEARCH_TICK);
+         return;
+      }
+
+      long igniteTick = data.contains(TAG_FIRE_IGNITE_TICK) ? data.getLong(TAG_FIRE_IGNITE_TICK) : gameTime;
+      if (!data.contains(TAG_FIRE_IGNITE_TICK)) {
+         data.putLong(TAG_FIRE_IGNITE_TICK, gameTime);
+      }
+
+      if (gameTime - igniteTick >= FIRE_AUTO_EXTINGUISH_TICKS) {
+         npc.clearFire();
+         data.remove(TAG_FIRE_IGNITE_TICK);
+         data.remove(TAG_FIRE_NEXT_WATER_SEARCH_TICK);
+         return;
+      }
+
+      if (gameTime >= data.getLong(TAG_FIRE_NEXT_WATER_SEARCH_TICK)) {
+         BlockPos waterPos = findNearbyWaterPos(npc, FIRE_WATER_SEARCH_HORIZONTAL_RADIUS, FIRE_WATER_SEARCH_VERTICAL_RADIUS);
+         if (waterPos != null) {
+            npc.getNavigation().moveTo(waterPos.getX() + 0.5, waterPos.getY(), waterPos.getZ() + 0.5, 1.35);
+         }
+
+         data.putLong(TAG_FIRE_NEXT_WATER_SEARCH_TICK, gameTime + FIRE_WATER_SEARCH_INTERVAL_TICKS);
+      }
+   }
+
+   private static BlockPos findNearbyWaterPos(MysticMagicianEntity npc, int horizontalRadius, int verticalRadius) {
+      if (npc == null) {
+         return null;
+      }
+
+      Level level = npc.level();
+      BlockPos center = npc.blockPosition();
+      BlockPos best = null;
+      double bestDist = Double.MAX_VALUE;
+
+      for (BlockPos pos : BlockPos.betweenClosed(
+         center.offset(-horizontalRadius, -verticalRadius, -horizontalRadius), center.offset(horizontalRadius, verticalRadius, horizontalRadius)
+      )) {
+         if (level.getFluidState(pos).is(FluidTags.WATER)) {
+            double dist = center.distSqr(pos);
+            if (dist < bestDist) {
+               bestDist = dist;
+               best = pos.immutable();
+            }
+         }
+      }
+
+      return best;
+   }
+
+   private static int purgeDeprecatedProjectionChain(TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag data) {
+      int removed = 0;
+      if (vars != null) {
+         removed += vars.learned_magics.removeIf(m -> "projection".equals(m) || "broken_phantasm".equals(m)) ? 1 : 0;
+         removed += vars.crest_entries.removeIf(e -> e != null && ("projection".equals(e.magicId) || "broken_phantasm".equals(e.magicId)) ? true : false)
+            ? 1
+            : 0;
+
+         for (int wheel = 0; wheel < 10; wheel++) {
+            for (int slot = 0; slot < 12; slot++) {
+               TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(wheel, slot);
+               if (entry != null && ("projection".equals(entry.magicId) || "broken_phantasm".equals(entry.magicId))) {
+                  vars.setWheelSlotEntry(wheel, slot, new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(wheel, slot));
+                  removed++;
+               }
+            }
+         }
+
+         vars.rebuildSelectedMagicsFromActiveWheel();
+      }
+
+      if (data != null) {
+         if (data.contains(TAG_MAGIC_CD, 10)) {
+            CompoundTag cd = data.getCompound(TAG_MAGIC_CD);
+            if (cd.contains("projection")) {
+               cd.remove("projection");
+               removed++;
+            }
+
+            if (cd.contains("broken_phantasm")) {
+               cd.remove("broken_phantasm");
+               removed++;
+            }
+
+            data.put(TAG_MAGIC_CD, cd);
+         }
+
+         if (data.contains(TAG_RESOURCE_USE, 10)) {
+            CompoundTag rs = data.getCompound(TAG_RESOURCE_USE);
+            if (rs.contains("projection")) {
+               rs.remove("projection");
+               removed++;
+            }
+
+            if (rs.contains("broken_phantasm")) {
+               rs.remove("broken_phantasm");
+               removed++;
+            }
+
+            data.put(TAG_RESOURCE_USE, rs);
+         }
+      }
+
+      return removed;
+   }
+
+   private static int getFixedLevel(MysticMagicianEntity npc) {
+      if (npc == null) {
+         return LEVEL_MIN;
+      } else {
+         CompoundTag data = npc.getPersistentData();
+         int level = Mth.clamp(data.contains(TAG_FIXED_LEVEL) ? data.getInt(TAG_FIXED_LEVEL) : LEVEL_MIN, LEVEL_MIN, LEVEL_MAX);
+         data.putInt(TAG_FIXED_LEVEL, level);
+         return level;
+      }
+   }
+
+   private static int getCombatLevelBonus(MysticMagicianEntity npc) {
+      if (npc == null) {
+         return 0;
+      } else {
+         CompoundTag data = npc.getPersistentData();
+         int bonus = Mth.clamp(data.contains(TAG_COMBAT_LEVEL_BONUS) ? data.getInt(TAG_COMBAT_LEVEL_BONUS) : 0, COMBAT_BONUS_MIN, COMBAT_BONUS_MAX);
+         data.putInt(TAG_COMBAT_LEVEL_BONUS, bonus);
+         return bonus;
+      }
+   }
+
+   private static void updateCombatLevelBonus(MysticMagicianEntity npc, LivingEntity target, NpcMagicCastBridge.ThreatProfile threat) {
+      if (npc != null && target != null && target.isAlive()) {
+         int bonus = 0;
+         double healthRatio = npc.getHealth() / Math.max(1.0, (double)npc.getMaxHealth());
+         if (threat != null && (threat.strongTarget() || threat.enemyCount() >= 3)) {
+            bonus++;
+         }
+
+         if (healthRatio <= 0.7 || npc.distanceToSqr(target) <= 49.0) {
+            bonus++;
+         }
+
+         npc.getPersistentData().putInt(TAG_COMBAT_LEVEL_BONUS, Mth.clamp(bonus, COMBAT_BONUS_MIN, COMBAT_BONUS_MAX));
+      }
+   }
+
+   private static boolean tryAdaptiveReinforcement(
+      MysticMagicianEntity npc,
+      LivingEntity target,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      long gameTime,
+      NpcMagicCastBridge.ThreatProfile threat,
+      NpcMagicCastBridge.MagicCapabilityProfile capabilities,
+      NpcMagicCastBridge.BehaviorProfile behavior
+   ) {
+      if (npc == null || target == null || vars == null || !target.isAlive()) {
+         return false;
+      } else if (capabilities == null || !capabilities.hasBuff() || !hasCastableMagic(vars, "reinforcement")) {
+         return false;
+      } else if (gameTime < getMagicCooldownUntil(npc, "reinforcement")) {
+         return false;
+      } else {
+         CompoundTag data = npc.getPersistentData();
+         int level = Mth.clamp(getFixedLevel(npc) + getCombatLevelBonus(npc), 1, 5);
+         double healthRatio = npc.getHealth() / Math.max(1.0, (double)npc.getMaxHealth());
+         double distance = Math.sqrt(npc.distanceToSqr(target));
+         boolean highThreat = threat != null && threat.requiresDefensiveTactics();
+         boolean lostSight = !npc.hasLineOfSight(target);
+         boolean retreatOrChase = distance < behavior.rangedKeepMinDistance() || distance > behavior.rangedKeepMaxDistance();
+         int mode = -1;
+         String cdKey = "";
+         if ((healthRatio <= 0.56 || highThreat) && gameTime >= data.getLong(TAG_REINF_BODY_CD)) {
+            mode = 0;
+            cdKey = TAG_REINF_BODY_CD;
+         } else if ((distance <= behavior.meleeSkillTriggerDistance() + 0.4 || shouldForceMeleeEngage(capabilities, distance))
+            && gameTime >= data.getLong(TAG_REINF_HAND_CD)) {
+            mode = 1;
+            cdKey = TAG_REINF_HAND_CD;
+         } else if (retreatOrChase && gameTime >= data.getLong(TAG_REINF_LEG_CD)) {
+            mode = 2;
+            cdKey = TAG_REINF_LEG_CD;
+         } else if ((distance >= 12.0 || lostSight || threat.enemyCount() >= 2) && gameTime >= data.getLong(TAG_REINF_EYE_CD)) {
+            mode = 3;
+            cdKey = TAG_REINF_EYE_CD;
+         }
+
+         if (mode < 0 && !hasAnyReinforcementEffect(npc)) {
+            if (gameTime >= data.getLong(TAG_REINF_BODY_CD) && (highThreat || healthRatio <= 0.75)) {
+               mode = 0;
+               cdKey = TAG_REINF_BODY_CD;
+            } else if (gameTime >= data.getLong(TAG_REINF_LEG_CD) && retreatOrChase) {
+               mode = 2;
+               cdKey = TAG_REINF_LEG_CD;
+            } else if (gameTime >= data.getLong(TAG_REINF_EYE_CD)) {
+               mode = 3;
+               cdKey = TAG_REINF_EYE_CD;
+            }
+         }
+
+         if (mode < 0) {
+            return false;
+         } else {
+            CompoundTag payload = new CompoundTag();
+            payload.putInt("reinforcement_mode", mode);
+            payload.putInt("reinforcement_level", level);
+            if (!castReinforcement(npc, vars, payload, Math.max(72.0, vars.proficiency_reinforcement))) {
+               return false;
+            } else {
+               // Support-cast cooldown only: do not consume global cast slot/cast-lock.
+               setMagicCooldown(npc, "reinforcement", gameTime + getPerMagicCooldown("reinforcement", payload));
+               recordResourceMagicUse(npc, "reinforcement", gameTime);
+               data.putLong(cdKey, gameTime + 80L + mode * 15L);
+               return true;
+            }
+         }
+      }
+   }
+
+   private static boolean hasAnyReinforcementEffect(MysticMagicianEntity npc) {
+      if (npc == null) {
+         return false;
+      }
+
+      return npc.hasEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE)
+         || npc.hasEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH)
+         || npc.hasEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY)
+         || npc.hasEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT)
+         || npc.hasEffect(MobEffects.DAMAGE_RESISTANCE)
+         || npc.hasEffect(MobEffects.DAMAGE_BOOST)
+         || npc.hasEffect(MobEffects.MOVEMENT_SPEED)
+         || npc.hasEffect(MobEffects.NIGHT_VISION);
+   }
+
+   private static boolean trySelfGravityStabilize(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime, boolean retreatContext) {
+      if (npc == null || vars == null) {
+         return false;
+      } else if (!hasCastableMagic(vars, "gravity_magic")) {
+         return false;
+      } else if (gameTime < getCastLockUntil(npc) || gameTime < getMagicCooldownUntil(npc, "gravity_magic")) {
+         return false;
+      } else {
+         boolean fallingRisk = npc.fallDistance >= 3.5F || !npc.onGround() && npc.getDeltaMovement().y < -0.35;
+         if (!retreatContext && !fallingRisk) {
+            return false;
+         } else {
+            CompoundTag payload = new CompoundTag();
+            payload.putInt("gravity_target", 0);
+            payload.putInt("gravity_mode", -1);
+            if (!castGravity(npc, npc.getTarget(), vars, payload, Math.max(60.0, vars.proficiency_gravity_magic))) {
+               return false;
+            } else {
+               int cd = retreatContext ? 45 : 30;
+               setMagicCooldown(npc, "gravity_magic", gameTime + cd);
+               setCastLockUntil(npc, gameTime + 8L);
+               return true;
+            }
+         }
+      }
+   }
+
+   private static void clearPendingMachineGun(MysticMagicianEntity npc) {
+      if (npc != null) {
+         CompoundTag data = npc.getPersistentData();
+         data.remove(TAG_PENDING_MG_MAGIC);
+         data.remove(TAG_PENDING_MG_TARGET);
+         data.remove(TAG_PENDING_MG_NEXT_TICK);
+         data.remove(TAG_PENDING_MG_WAVES_LEFT);
+         data.remove(TAG_PENDING_MG_INTERVAL);
+         data.remove(TAG_PENDING_MG_MODE);
+         data.remove(TAG_PENDING_MG_CHARGE);
+         data.remove(TAG_PENDING_MG_SHOT_COUNT);
+      }
+   }
+
+   private static void startPendingMachineGun(
+      MysticMagicianEntity npc, LivingEntity target, String magicId, int wavesLeft, int interval, int mode, int chargeOrPower, int shotCount
+   ) {
+      CompoundTag data = npc.getPersistentData();
+      data.putString(TAG_PENDING_MG_MAGIC, magicId);
+      data.putString(TAG_PENDING_MG_TARGET, target == null ? "" : target.getUUID().toString());
+      data.putLong(TAG_PENDING_MG_NEXT_TICK, npc.level().getGameTime() + interval);
+      data.putInt(TAG_PENDING_MG_WAVES_LEFT, Math.max(0, wavesLeft));
+      data.putInt(TAG_PENDING_MG_INTERVAL, Math.max(2, interval));
+      data.putInt(TAG_PENDING_MG_MODE, mode);
+      data.putInt(TAG_PENDING_MG_CHARGE, chargeOrPower);
+      data.putInt(TAG_PENDING_MG_SHOT_COUNT, Math.max(1, shotCount));
+   }
+
+   private static boolean processPendingMachineGun(
+      MysticMagicianEntity npc, LivingEntity currentTarget, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime
+   ) {
+      CompoundTag data = npc.getPersistentData();
+      if (!data.contains(TAG_PENDING_MG_MAGIC)) {
+         return false;
+      } else {
+         String magicId = data.getString(TAG_PENDING_MG_MAGIC);
+         if (magicId == null || magicId.isEmpty()) {
+            clearPendingMachineGun(npc);
+            return false;
+         } else if (gameTime < data.getLong(TAG_PENDING_MG_NEXT_TICK)) {
+            return true;
+         } else {
+            LivingEntity target = currentTarget;
+            if ((target == null || !target.isAlive()) && data.contains(TAG_PENDING_MG_TARGET)) {
+               try {
+                  UUID id = UUID.fromString(data.getString(TAG_PENDING_MG_TARGET));
+                  Entity maybe = ((ServerLevel)npc.level()).getEntity(id);
+                  if (maybe instanceof LivingEntity living && living.isAlive()) {
+                     target = living;
+                  }
+               } catch (Exception ignored) {
+               }
+            }
+
+            if (target == null || !target.isAlive()) {
+               clearPendingMachineGun(npc);
+               return false;
+            } else {
+               int left = data.getInt(TAG_PENDING_MG_WAVES_LEFT);
+               if (left <= 0) {
+                  clearPendingMachineGun(npc);
+                  return false;
+               } else {
+                  int mode = data.getInt(TAG_PENDING_MG_MODE);
+                  int charge = Math.max(1, data.getInt(TAG_PENDING_MG_CHARGE));
+                  int shotCount = Math.max(1, data.getInt(TAG_PENDING_MG_SHOT_COUNT));
+                  if ("gandr_machine_gun".equals(magicId)) {
+                     markCastingPose(npc, 8);
+                     if (mode == 1) {
+                        fireNpcBarrage(npc, target, shotCount, charge);
+                     } else {
+                        fireGandrRapidWave(npc, target, charge);
+                     }
+                  } else if ("jewel_machine_gun".equals(magicId)) {
+                     markCastingPose(npc, 8);
+                     fireJewelMachineGunWave(npc, target, vars, mode == 1);
+                  }
+
+                  data.putInt(TAG_PENDING_MG_WAVES_LEFT, left - 1);
+                  data.putLong(TAG_PENDING_MG_NEXT_TICK, gameTime + Math.max(2, data.getInt(TAG_PENDING_MG_INTERVAL)));
+                  if (left - 1 <= 0) {
+                     clearPendingMachineGun(npc);
+                  }
+
+                  setCastLockUntil(npc, gameTime + 4L);
+                  return true;
+               }
+            }
+         }
+      }
+   }
+
+   private static NpcMagicCastBridge.BehaviorProfile buildBehaviorProfile(
+      NpcCombatPersonality personality, NpcCombatTemperament temperament
+   ) {
+      int p = switch (personality == null ? NpcCombatPersonality.NEUTRAL : personality) {
+         case GOOD -> 0;
+         case NEUTRAL -> 1;
+         case EVIL -> 2;
+      };
+      int t = switch (temperament == null ? NpcCombatTemperament.STEADY : temperament) {
+         case TIMID -> 0;
+         case STEADY -> 1;
+         case BOLD -> 2;
+      };
+      return BEHAVIOR_PROFILE_MATRIX[p][t];
+   }
+
+   private static boolean tryMeleeSkillCombo(
+      MysticMagicianEntity npc,
+      LivingEntity target,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      long gameTime,
+      NpcMagicCastBridge.MagicCapabilityProfile capabilities,
+      NpcMagicCastBridge.BehaviorProfile behavior
+   ) {
+      if (npc == null || target == null || !target.isAlive()) {
+         return false;
+      } else {
+         double distance = Math.sqrt(npc.distanceToSqr(target));
+         double trigger = behavior == null ? 2.4 : behavior.meleeSkillTriggerDistance();
+         if (distance > trigger + 0.8) {
+            return false;
+         } else {
+            CompoundTag data = npc.getPersistentData();
+            boolean rangedOnly = capabilities.hasRanged() && !capabilities.hasMeleeBurst();
+            if (rangedOnly) {
+               if (distance <= 2.2 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 24L);
+                  return true;
+               }
+
+               if (distance <= 1.9 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 12L);
+                  return true;
+               }
+
+               return false;
+            } else {
+               if (distance <= 2.0 && gameTime >= data.getLong(TAG_MELEE_THROW_CD) && npc.getRandom().nextFloat() < 0.38F && performUpperThrow(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_THROW_CD, gameTime + 70L);
+                  if (gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && performSlam(npc, target, vars, gameTime, 2.6)) {
+                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 95L);
+                  }
+
+                  return true;
+               } else if (distance <= 2.4 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 26L);
+                  return true;
+               } else if (distance <= 1.9 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 12L);
+                  return true;
+               } else if (distance <= 2.5 && gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && npc.getRandom().nextFloat() < 0.24F) {
+                  if (performSlam(npc, target, vars, gameTime, 3.2)) {
+                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 100L);
+                     return true;
+                  } else {
+                     return false;
+                  }
+               } else {
+                  return false;
+               }
+            }
+         }
+      }
+   }
+
+   private static boolean performPunch(MysticMagicianEntity npc, LivingEntity target, long gameTime) {
+      if (npc == null || target == null || !target.isAlive()) {
+         return false;
+      } else {
+         faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
+         markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_PUNCH, 8);
+         float damage = computeMartialDamage(npc, 1.25, 1.0, 3.0, 14.0);
+         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+            return false;
+         } else {
+            target.knockback(0.4, npc.getX() - target.getX(), npc.getZ() - target.getZ());
+            setCastLockUntil(npc, gameTime + 8L);
+            return true;
+         }
+      }
+   }
+
+   private static boolean performWhipKick(MysticMagicianEntity npc, LivingEntity target, long gameTime) {
+      if (npc == null || target == null || !target.isAlive()) {
+         return false;
+      } else {
+         faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
+         markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_WHIP_KICK, 10);
+         float damage = computeMartialDamage(npc, 1.45, 1.4, 4.0, 16.0);
+         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+            return false;
+         } else {
+            target.knockback(1.05, npc.getX() - target.getX(), npc.getZ() - target.getZ());
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, true, true));
+            setCastLockUntil(npc, gameTime + 10L);
+            return true;
+         }
+      }
+   }
+
+   private static boolean performUpperThrow(MysticMagicianEntity npc, LivingEntity target, long gameTime) {
+      if (npc == null || target == null || !target.isAlive()) {
+         return false;
+      } else {
+         faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
+         markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_UPPER_THROW, 12);
+         float damage = computeMartialDamage(npc, 1.3, 1.8, 4.0, 15.0);
+         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+            return false;
+         } else {
+            Vec3 push = target.getDeltaMovement().add(0.0, 0.8, 0.0);
+            target.setDeltaMovement(push.x, push.y, push.z);
+            target.hurtMarked = true;
+            setCastLockUntil(npc, gameTime + 11L);
+            return true;
+         }
+      }
+   }
+
+   private static boolean performSlam(
+      MysticMagicianEntity npc, LivingEntity primaryTarget, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime, double radius
+   ) {
+      if (npc == null || primaryTarget == null || !primaryTarget.isAlive()) {
+         return false;
+      } else if (!consumeMana(vars, 8.0)) {
+         return false;
+      } else {
+         faceCasterToDirection(npc, primaryTarget.position().subtract(npc.position()).normalize());
+         markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_SLAM, 12);
+         float baseDamage = computeMartialDamage(npc, 1.1, 2.2, 4.0, 14.0);
+         boolean hit = false;
+
+         for (LivingEntity nearby : npc.level()
+            .getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(radius, 1.5, radius), e -> e != npc && e.isAlive())) {
+            if (nearby.hurt(npc.damageSources().mobAttack(npc), baseDamage)) {
+               nearby.knockback(0.6, npc.getX() - nearby.getX(), npc.getZ() - nearby.getZ());
+               nearby.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 28, 0, false, true, true));
+               hit = true;
+            }
+         }
+
+         if (hit) {
+            setCastLockUntil(npc, gameTime + 12L);
+         }
+
+         return hit;
+      }
+   }
+
+   private static float computeMartialDamage(MysticMagicianEntity npc, double multiplier, double flat, double min, double max) {
+      if (npc == null) {
+         return (float)min;
+      } else {
+         double damage = readAttributeValue(npc, Attributes.ATTACK_DAMAGE, 3.0) * multiplier + flat;
+         MobEffectInstance selfStrength = npc.getEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH);
+         if (selfStrength != null) {
+            damage += (selfStrength.getAmplifier() + 1) * 1.8;
+         }
+
+         MobEffectInstance otherStrength = npc.getEffect(ModMobEffects.REINFORCEMENT_OTHER_STRENGTH);
+         if (otherStrength != null) {
+            damage += (otherStrength.getAmplifier() + 1) * 1.2;
+         }
+
+         MobEffectInstance damageBoost = npc.getEffect(MobEffects.DAMAGE_BOOST);
+         if (damageBoost != null) {
+            damage += (damageBoost.getAmplifier() + 1) * 3.0;
+         }
+
+         MobEffectInstance agility = npc.getEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY);
+         if (agility != null) {
+            damage *= 1.0 + (agility.getAmplifier() + 1) * 0.07;
+         }
+
+         MobEffectInstance sight = npc.getEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT);
+         if (sight != null) {
+            damage *= 1.0 + (sight.getAmplifier() + 1) * 0.03;
+         }
+
+         MobEffectInstance defense = npc.getEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE);
+         if (defense != null) {
+            damage *= 1.0 + (defense.getAmplifier() + 1) * 0.02;
+         }
+
+         MobEffectInstance weakness = npc.getEffect(MobEffects.WEAKNESS);
+         if (weakness != null) {
+            damage -= (weakness.getAmplifier() + 1) * 4.0;
+         }
+
+         return (float)Mth.clamp(damage, min, max);
       }
    }
 
@@ -1357,18 +2091,19 @@ public final class NpcMagicCastBridge {
    ) {
       steerAwayFromTarget(npc, target);
       if (gameTime >= getCastLockUntil(npc) && !(vars.player_mana <= 1.0)) {
-         if (gameTime >= npc.getPersistentData().getLong("TypeMoonNpcThreatUtilityTick") && tryPreBuffForHighThreat(npc, vars, gameTime, threat, capabilities)) {
-            npc.getPersistentData().putLong("TypeMoonNpcThreatUtilityTick", gameTime + 35L);
-            return true;
-         } else if (capabilities.hasControl()
-            && gameTime >= npc.getPersistentData().getLong("TypeMoonNpcThreatControlTick")
+         if (gameTime >= npc.getPersistentData().getLong(TAG_THREAT_UTILITY_TICK) && tryPreBuffForHighThreat(npc, vars, gameTime, threat, capabilities)) {
+            npc.getPersistentData().putLong(TAG_THREAT_UTILITY_TICK, gameTime + 35L);
+         }
+
+         if (capabilities.hasControl()
+            && gameTime >= npc.getPersistentData().getLong(TAG_THREAT_CONTROL_TICK)
             && tryHighThreatControl(npc, target, vars, gameTime, threat)) {
-            npc.getPersistentData().putLong("TypeMoonNpcThreatControlTick", gameTime + 26L);
+            npc.getPersistentData().putLong(TAG_THREAT_CONTROL_TICK, gameTime + 26L);
             return true;
          } else if (capabilities.hasRanged()
-            && gameTime >= npc.getPersistentData().getLong("TypeMoonNpcThreatCounterTick")
+            && gameTime >= npc.getPersistentData().getLong(TAG_THREAT_COUNTER_TICK)
             && tryHighThreatCounterFire(npc, target, vars, gameTime, threat)) {
-            npc.getPersistentData().putLong("TypeMoonNpcThreatCounterTick", gameTime + 20L);
+            npc.getPersistentData().putLong(TAG_THREAT_COUNTER_TICK, gameTime + 20L);
             return true;
          } else if (!capabilities.hasAnyOffense()) {
             steerAwayFromTarget(npc, target);
@@ -1403,14 +2138,12 @@ public final class NpcMagicCastBridge {
          payload.putInt("reinforcement_level", threat.enemyCount() >= 3 ? 3 : 2);
          if (threat.strongTarget() && !hasDefense && castReinforcement(npc, vars, payload, Math.max(70.0, vars.proficiency_reinforcement))) {
             setMagicCooldown(npc, "reinforcement", gameTime + 120L);
-            setCastLockUntil(npc, gameTime + 12L);
             return true;
          } else {
             if (threat.outnumberedOrPressured() && !hasAgility) {
                payload.putInt("reinforcement_mode", 2);
                if (castReinforcement(npc, vars, payload, Math.max(70.0, vars.proficiency_reinforcement))) {
                   setMagicCooldown(npc, "reinforcement", gameTime + 120L);
-                  setCastLockUntil(npc, gameTime + 12L);
                   return true;
                }
             }
@@ -1436,7 +2169,7 @@ public final class NpcMagicCastBridge {
          } else {
             int gcd = 18;
             vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
-            npc.getPersistentData().putLong("TypeMoonNpcNextGlobalCastTick", gameTime + gcd);
+            npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
             setMagicCooldown(npc, "gravity_magic", gameTime + 55L);
             setCastLockUntil(npc, gameTime + 12L);
             return true;
@@ -1455,6 +2188,7 @@ public final class NpcMagicCastBridge {
    }
 
    private static void handleRetreat(MysticMagicianEntity npc, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime) {
+      clearPendingMachineGun(npc);
       steerAwayFromTarget(npc, target, 16.0, 1.42);
       if (!npc.hasEffect(MobEffects.MOVEMENT_SPEED)) {
          npc.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 80, 1, false, true, true));
@@ -1462,24 +2196,29 @@ public final class NpcMagicCastBridge {
 
       long lockUntil = getCastLockUntil(npc);
       if (gameTime >= lockUntil && !(vars.player_mana <= 1.0)) {
-         if (gameTime >= npc.getPersistentData().getLong("TypeMoonNpcRetreatUtilityTick")) {
+         if (trySelfGravityStabilize(npc, vars, gameTime, true)) {
+            npc.getPersistentData().putLong(TAG_RETREAT_UTILITY_TICK, gameTime + 16L);
+            return;
+         }
+
+         if (gameTime >= npc.getPersistentData().getLong(TAG_RETREAT_UTILITY_TICK)) {
             boolean usedUtility = tryRetreatRecoveryOrEscapeMagic(npc, target, vars, gameTime);
             if (usedUtility) {
-               npc.getPersistentData().putLong("TypeMoonNpcRetreatUtilityTick", gameTime + 30L);
+               npc.getPersistentData().putLong(TAG_RETREAT_UTILITY_TICK, gameTime + 30L);
                return;
             }
          }
 
-         if (gameTime >= npc.getPersistentData().getLong("TypeMoonNpcRetreatCounterTick") && npc.distanceToSqr(target) <= 484.0) {
+         if (gameTime >= npc.getPersistentData().getLong(TAG_RETREAT_COUNTER_TICK) && npc.distanceToSqr(target) <= 484.0) {
             CompoundTag payload = new CompoundTag();
             boolean cast = castGander(npc, target, vars, payload, Math.max(40.0, vars.proficiency_gander));
             if (cast) {
                int gcd = 14;
                vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
-               npc.getPersistentData().putLong("TypeMoonNpcNextGlobalCastTick", gameTime + gcd);
+               npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                setMagicCooldown(npc, "gander", gameTime + 26L);
                setCastLockUntil(npc, gameTime + 10L);
-               npc.getPersistentData().putLong("TypeMoonNpcRetreatCounterTick", gameTime + 22L);
+               npc.getPersistentData().putLong(TAG_RETREAT_COUNTER_TICK, gameTime + 22L);
             }
          }
       }
@@ -1536,58 +2275,50 @@ public final class NpcMagicCastBridge {
    }
 
    private static long getCastLockUntil(MysticMagicianEntity npc) {
-      return npc.getPersistentData().getLong("TypeMoonNpcCastLockUntil");
+      return npc.getPersistentData().getLong(TAG_CAST_LOCK_UNTIL);
    }
 
    private static void setCastLockUntil(MysticMagicianEntity npc, long until) {
-      npc.getPersistentData().putLong("TypeMoonNpcCastLockUntil", until);
+      npc.getPersistentData().putLong(TAG_CAST_LOCK_UNTIL, until);
    }
 
    private static boolean isResourceMagic(String magicId) {
-      return "projection".equals(magicId)
-         || "broken_phantasm".equals(magicId)
-         || "jewel_random_shoot".equals(magicId)
+      return "jewel_random_shoot".equals(magicId)
          || "jewel_machine_gun".equals(magicId)
-         || "npc_jewel_item_basic".equals(magicId)
-         || "npc_jewel_item_advanced".equals(magicId)
-         || "npc_jewel_item_engraved".equals(magicId);
+         || NPC_JEWEL_ITEM_BASIC.equals(magicId)
+         || NPC_JEWEL_ITEM_ADVANCED.equals(magicId)
+         || NPC_JEWEL_ITEM_ENGRAVED.equals(magicId);
    }
 
    private static int getResourceWindowTicks(String magicId) {
       return switch (magicId) {
-         case "projection" -> 900;
-         case "broken_phantasm" -> 1200;
          case "jewel_random_shoot" -> 600;
-         case "jewel_machine_gun" -> 1000;
-         case "npc_jewel_item_basic" -> 1800;
-         case "npc_jewel_item_advanced" -> 3000;
-         case "npc_jewel_item_engraved" -> 3600;
+         case "jewel_machine_gun" -> 1400;
+         case NPC_JEWEL_ITEM_BASIC -> 1800;
+         case NPC_JEWEL_ITEM_ADVANCED -> 3000;
+         case NPC_JEWEL_ITEM_ENGRAVED -> 3600;
          default -> 0;
       };
    }
 
    private static int getResourceUseLimit(String magicId) {
       return switch (magicId) {
-         case "projection" -> 2;
-         case "broken_phantasm" -> 1;
          case "jewel_random_shoot" -> 6;
-         case "jewel_machine_gun" -> 2;
-         case "npc_jewel_item_basic" -> 3;
-         case "npc_jewel_item_advanced" -> 2;
-         case "npc_jewel_item_engraved" -> 1;
+         case "jewel_machine_gun" -> 1;
+         case NPC_JEWEL_ITEM_BASIC -> 3;
+         case NPC_JEWEL_ITEM_ADVANCED -> 2;
+         case NPC_JEWEL_ITEM_ENGRAVED -> 1;
          default -> Integer.MAX_VALUE;
       };
    }
 
    private static int getResourceExhaustionCooldown(String magicId) {
       return switch (magicId) {
-         case "projection" -> 2400;
-         case "broken_phantasm" -> 3600;
          case "jewel_random_shoot" -> 1800;
-         case "jewel_machine_gun" -> 2400;
-         case "npc_jewel_item_basic" -> 2400;
-         case "npc_jewel_item_advanced" -> 4400;
-         case "npc_jewel_item_engraved" -> 5200;
+         case "jewel_machine_gun" -> 3200;
+         case NPC_JEWEL_ITEM_BASIC -> 2400;
+         case NPC_JEWEL_ITEM_ADVANCED -> 4400;
+         case NPC_JEWEL_ITEM_ENGRAVED -> 5200;
          default -> 0;
       };
    }
@@ -1598,7 +2329,7 @@ public final class NpcMagicCastBridge {
       } else if (gameTime < getMagicCooldownUntil(npc, magicId)) {
          return false;
       } else {
-         CompoundTag all = npc.getPersistentData().getCompound("TypeMoonNpcResourceUse");
+         CompoundTag all = npc.getPersistentData().getCompound(TAG_RESOURCE_USE);
          CompoundTag per = all.contains(magicId, 10) ? all.getCompound(magicId) : new CompoundTag();
          long windowStart = per.contains("window_start") ? per.getLong("window_start") : gameTime;
          int used = per.contains("used") ? per.getInt("used") : 0;
@@ -1615,7 +2346,7 @@ public final class NpcMagicCastBridge {
    private static void recordResourceMagicUse(MysticMagicianEntity npc, String magicId, long gameTime) {
       if (isResourceMagic(magicId)) {
          CompoundTag root = npc.getPersistentData();
-         CompoundTag all = root.getCompound("TypeMoonNpcResourceUse");
+         CompoundTag all = root.getCompound(TAG_RESOURCE_USE);
          CompoundTag per = all.contains(magicId, 10) ? all.getCompound(magicId) : new CompoundTag();
          int window = getResourceWindowTicks(magicId);
          int limit = getResourceUseLimit(magicId);
@@ -1630,7 +2361,7 @@ public final class NpcMagicCastBridge {
          per.putLong("window_start", start);
          per.putInt("used", used);
          all.put(magicId, per);
-         root.put("TypeMoonNpcResourceUse", all);
+         root.put(TAG_RESOURCE_USE, all);
          if (used >= limit) {
             int longCd = getResourceExhaustionCooldown(magicId);
             setMagicCooldown(npc, magicId, Math.max(getMagicCooldownUntil(npc, magicId), gameTime + longCd));
@@ -1666,7 +2397,7 @@ public final class NpcMagicCastBridge {
                }
 
                boolean crestCast = "crest".equals(entry.sourceType);
-               double proficiency = getEffectiveProficiency(vars, entry.magicId, crestCast);
+               double proficiency = getEffectiveProficiency(npc, vars, entry.magicId, crestCast);
                if (canCastWithMana(vars, entry.magicId, entry.presetPayload, proficiency)
                   && gameTime >= getMagicCooldownUntil(npc, entry.magicId)
                   && isResourceMagicAvailable(npc, entry.magicId, gameTime)
@@ -1695,10 +2426,8 @@ public final class NpcMagicCastBridge {
          boolean hasGander = hasMagicChoice(choices, "gander");
          boolean hasJewelMachineGun = hasMagicChoice(choices, "jewel_machine_gun");
          boolean hasJewelRandom = hasMagicChoice(choices, "jewel_random_shoot");
-         boolean hasBrokenPhantasm = hasMagicChoice(choices, "broken_phantasm");
-         boolean hasProjection = hasMagicChoice(choices, "projection");
-         String lastMagic = npc.getPersistentData().getString("TypeMoonNpcLastCastMagic");
-         int repeat = npc.getPersistentData().getInt("TypeMoonNpcCastRepeatCount");
+         String lastMagic = npc.getPersistentData().getString(TAG_LAST_CAST_MAGIC);
+         int repeat = npc.getPersistentData().getInt(TAG_CAST_REPEAT_COUNT);
 
          for (int i = 0; i < choices.size(); i++) {
             NpcMagicCastBridge.Choice c = choices.get(i);
@@ -1717,14 +2446,6 @@ public final class NpcMagicCastBridge {
                   w *= 1.6;
                } else if ("jewel_random_shoot".equals(magicId)) {
                   w *= 0.7;
-               }
-            }
-
-            if (hasBrokenPhantasm && hasProjection && manaRatio >= 0.55) {
-               if ("broken_phantasm".equals(magicId)) {
-                  w *= 1.35;
-               } else if ("projection".equals(magicId)) {
-                  w *= 0.78;
                }
             }
 
@@ -1803,8 +2524,8 @@ public final class NpcMagicCastBridge {
                weight += 2.8;
             }
 
-            if ("projection".equals(magicId) || "broken_phantasm".equals(magicId)) {
-               weight += 2.2;
+            if ("gravity_magic".equals(magicId)) {
+               weight += 1.5;
             }
 
             if ("gander".equals(magicId)) {
@@ -1844,7 +2565,7 @@ public final class NpcMagicCastBridge {
       }
 
       if (distance < 5.0) {
-         if ("projection".equals(magicId) || "reinforcement".equals(magicId) || "broken_phantasm".equals(magicId)) {
+         if ("reinforcement".equals(magicId) || "gravity_magic".equals(magicId)) {
             weight++;
          }
 
@@ -1852,7 +2573,7 @@ public final class NpcMagicCastBridge {
             weight *= 0.65;
          }
       } else if (distance > 14.0) {
-         if ("projection".equals(magicId) || "broken_phantasm".equals(magicId) || "reinforcement".equals(magicId)) {
+         if ("reinforcement".equals(magicId)) {
             weight *= 0.45;
          }
 
@@ -1862,7 +2583,7 @@ public final class NpcMagicCastBridge {
       }
 
       if (manaRatio < 0.3) {
-         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId) || "broken_phantasm".equals(magicId)) {
+         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId)) {
             weight *= 0.2;
          } else if ("gander".equals(magicId) || "jewel_random_shoot".equals(magicId) || "gravity_magic".equals(magicId)) {
             weight *= 0.75;
@@ -1871,6 +2592,15 @@ public final class NpcMagicCastBridge {
 
       if ("gravity_magic".equals(magicId) && payload.contains("gravity_target") && payload.getInt("gravity_target") == 0 && distance < 6.0) {
          weight += 0.5;
+      }
+
+      if ("jewel_machine_gun".equals(magicId) && payload != null && payload.contains("jewel_machine_gun_mode")) {
+         int mode = Mth.clamp(payload.getInt("jewel_machine_gun_mode"), 0, 1);
+         if (mode == 1 && distance < 7.0) {
+            weight += 1.2;
+         } else if (mode == 1) {
+            weight *= 0.8;
+         }
       }
 
       return weight;
@@ -1902,13 +2632,17 @@ public final class NpcMagicCastBridge {
    private static double estimateManaCost(String magicId, CompoundTag payload, double proficiency) {
       return switch (magicId) {
          case "gander" -> getGanderChargeSeconds(proficiency) * 5.0;
-         case "gandr_machine_gun" -> isBarrageMode(payload) ? getBarrageShotCount(proficiency) * 20.0 : 60.0;
+         case "gandr_machine_gun" -> isBarrageMode(payload)
+            ? getGandrBarrageWaveCount(proficiency) * Math.max(4, Math.min(8, getBarrageShotCount(proficiency) / 2)) * 20.0
+            : getGandrRapidWaveCount(proficiency) * 3.0 * 20.0;
          case "gravity_magic" -> 20.0;
          case "reinforcement" -> 20.0 * Mth.clamp(payload.getInt("reinforcement_level"), 1, 5);
-         case "projection" -> 45.0;
-         case "broken_phantasm" -> 70.0;
          case "jewel_random_shoot" -> 30.0;
-         case "jewel_machine_gun" -> 90.0;
+         case "jewel_machine_gun" -> {
+            boolean defensive = payload != null && payload.contains("jewel_machine_gun_mode") && Mth.clamp(payload.getInt("jewel_machine_gun_mode"), 0, 1) == 1;
+            int waves = getJewelMachineGunWaveCount(proficiency, defensive);
+            yield defensive ? 45.0 + waves * 18.0 : 60.0 + waves * 22.0;
+         }
          default -> 40.0;
       };
    }
@@ -1921,7 +2655,6 @@ public final class NpcMagicCastBridge {
       double effectiveProficiency,
       long gameTime
    ) {
-      boolean crestCast = "crest".equals(slot.sourceType);
       String var9 = slot.magicId;
 
       return switch (var9) {
@@ -1929,10 +2662,8 @@ public final class NpcMagicCastBridge {
          case "gandr_machine_gun" -> castGandrMachineGun(caster, target, vars, slot.presetPayload, effectiveProficiency);
          case "gravity_magic" -> castGravity(caster, target, vars, slot.presetPayload, effectiveProficiency);
          case "reinforcement" -> castReinforcement(caster, vars, slot.presetPayload, effectiveProficiency);
-         case "projection" -> castProjection(caster, vars, slot.presetPayload, effectiveProficiency, crestCast);
-         case "broken_phantasm" -> castBrokenPhantasm(caster, target, vars, slot.presetPayload, effectiveProficiency, crestCast);
          case "jewel_random_shoot" -> castJewelRandomShoot(caster, target, vars, effectiveProficiency);
-         case "jewel_machine_gun" -> castJewelMachineGun(caster, target, vars, effectiveProficiency);
+         case "jewel_machine_gun" -> castJewelMachineGun(caster, target, vars, slot.presetPayload, effectiveProficiency);
          default -> false;
       };
    }
@@ -1940,13 +2671,11 @@ public final class NpcMagicCastBridge {
    private static int getGlobalCooldownAfterCast(String magicId, CompoundTag payload) {
       return switch (magicId) {
          case "gander" -> 16;
-         case "gandr_machine_gun" -> isBarrageMode(payload) ? 24 : 10;
+         case "gandr_machine_gun" -> isBarrageMode(payload) ? 30 : 14;
          case "gravity_magic" -> 24;
          case "reinforcement" -> 30;
-         case "projection" -> 20;
-         case "broken_phantasm" -> 26;
          case "jewel_random_shoot" -> 10;
-         case "jewel_machine_gun" -> 8;
+         case "jewel_machine_gun" -> 14;
          default -> 12;
       };
    }
@@ -1954,13 +2683,11 @@ public final class NpcMagicCastBridge {
    private static int getPerMagicCooldown(String magicId, CompoundTag payload) {
       return switch (magicId) {
          case "gander" -> 18;
-         case "gandr_machine_gun" -> isBarrageMode(payload) ? 36 : 16;
+         case "gandr_machine_gun" -> isBarrageMode(payload) ? 54 : 30;
          case "gravity_magic" -> 60;
          case "reinforcement" -> 120;
-         case "projection" -> 80;
-         case "broken_phantasm" -> 120;
          case "jewel_random_shoot" -> 10;
-         case "jewel_machine_gun" -> 14;
+         case "jewel_machine_gun" -> 100;
          default -> 20;
       };
    }
@@ -1981,7 +2708,7 @@ public final class NpcMagicCastBridge {
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
-         projectile.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+         projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          projectile.setPos(spawnPos);
          projectile.shoot(direction.x, direction.y, direction.z, 3.8F, 0.08F);
          caster.level().addFreshEntity(projectile);
@@ -1997,47 +2724,42 @@ public final class NpcMagicCastBridge {
       MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
    ) {
       boolean barrage = isBarrageMode(payload);
+      if (!barrage && target != null && target.isAlive() && caster.distanceToSqr(target) > 49.0 && vars.player_mana > 220.0 && caster.getRandom().nextFloat() < 0.35F) {
+         barrage = true;
+      }
+
       if (barrage) {
-         int shotCount = getBarrageShotCount(proficiency);
-         double cost = shotCount * 20.0;
+         int waveCount = getGandrBarrageWaveCount(proficiency);
+         int shotCountPerWave = Math.max(4, Math.min(8, getBarrageShotCount(proficiency) / 2));
+         int totalShots = waveCount * shotCountPerWave;
+         double cost = totalShots * 20.0;
          if (!consumeMana(vars, cost)) {
             return false;
          } else {
             markCastingPose(caster, 16);
             int chargeSeconds = getGanderChargeSeconds(proficiency);
-            fireNpcBarrage(caster, target, shotCount, chargeSeconds);
+            fireNpcBarrage(caster, target, shotCountPerWave, chargeSeconds);
+            startPendingMachineGun(
+               caster, target, "gandr_machine_gun", waveCount - 1, 4, 1, chargeSeconds, shotCountPerWave
+            );
             caster.level()
                .playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.HOSTILE, 0.65F, 1.2F);
             return true;
          }
       } else {
-         double cost = 60.0;
+         int waveCount = getGandrRapidWaveCount(proficiency);
+         int totalShots = waveCount * 3;
+         double cost = totalShots * 20.0;
          if (!consumeMana(vars, cost)) {
             return false;
          } else {
             markCastingPose(caster, 12);
             int chargeSeconds = getGanderChargeSeconds(proficiency);
-            Level level = caster.level();
-            Vec3 forward = getAimDirection(caster, target, 3.8, 0.0);
-            faceCasterToDirection(caster, forward);
-            Vec3 right = getRightVector(forward);
-            Vec3 up = right.cross(forward).normalize();
-            Vec3 hand = EntityUtils.getRightHandCastAnchor(caster);
-
-            for (int i = 0; i < 3; i++) {
-               GanderProjectileEntity projectile = new GanderProjectileEntity(level, caster);
-               projectile.setNoGravity(true);
-               projectile.setChargeSeconds(chargeSeconds);
-               projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
-               projectile.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
-               Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i])).add(up.scale(RAPID_UP[i]));
-               projectile.setPos(spawn);
-               Vec3 spreadDir = applyDirectionalSpread(forward, right, up, RAPID_YAW[i], RAPID_PITCH[i]);
-               projectile.shoot(spreadDir.x, spreadDir.y, spreadDir.z, 3.8F, 0.1F);
-               level.addFreshEntity(projectile);
-            }
-
-            level.playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.55F, 1.12F);
+            fireGandrRapidWave(caster, target, chargeSeconds);
+            startPendingMachineGun(
+               caster, target, "gandr_machine_gun", waveCount - 1, 3, 0, chargeSeconds, 3
+            );
+            caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.55F, 1.12F);
             return true;
          }
       }
@@ -2070,10 +2792,96 @@ public final class NpcMagicCastBridge {
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
-         projectile.setItem(new ItemStack((ItemLike)ModItems.GANDER.get()));
+         projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          projectile.setPos(spawn);
          projectile.shoot(dir.x, dir.y, dir.z, 3.5F + random.nextFloat() * 0.7F, 0.12F);
          level.addFreshEntity(projectile);
+      }
+   }
+
+   private static void fireGandrRapidWave(MysticMagicianEntity caster, LivingEntity target, int chargeSeconds) {
+      Level level = caster.level();
+      Vec3 forward = getAimDirection(caster, target, 3.8, 0.0);
+      faceCasterToDirection(caster, forward);
+      Vec3 right = getRightVector(forward);
+      Vec3 up = right.cross(forward).normalize();
+      Vec3 hand = EntityUtils.getRightHandCastAnchor(caster);
+
+      for (int i = 0; i < 3; i++) {
+         GanderProjectileEntity projectile = new GanderProjectileEntity(level, caster);
+         projectile.setNoGravity(true);
+         projectile.setChargeSeconds(chargeSeconds);
+         projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
+         projectile.setItem(new ItemStack(ModItems.GANDER.get()));
+         Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i])).add(up.scale(RAPID_UP[i]));
+         projectile.setPos(spawn);
+         Vec3 spreadDir = applyDirectionalSpread(forward, right, up, RAPID_YAW[i], RAPID_PITCH[i]);
+         projectile.shoot(spreadDir.x, spreadDir.y, spreadDir.z, 3.8F, 0.1F);
+         level.addFreshEntity(projectile);
+      }
+   }
+
+   private static void fireJewelMachineGunWave(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, boolean defensiveMode
+   ) {
+      if (defensiveMode) {
+         if (target != null && target.isAlive()) {
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 45, 0, false, true, true));
+            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 30, 0, false, true, true));
+         }
+
+         caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 0, false, true, true));
+         caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 0, false, true, true));
+         spawnNpcGemProjectile(caster, target, GemType.TOPAZ, 2.7, 0.06F, false, true, false);
+         spawnNpcGemProjectile(caster, target, GemType.EMERALD, 2.6, 0.06F, false, true, false);
+      } else {
+         Vec3 forward = getAimDirection(caster, target, 2.8, 0.05);
+         faceCasterToDirection(caster, forward);
+         Vec3 right = getRightVector(forward);
+         Vec3 up = right.cross(forward).normalize();
+         Vec3 hand = EntityUtils.getRightHandCastAnchor(caster);
+         RandomSource random = caster.getRandom();
+
+         for (int i = 0; i < 3; i++) {
+            GemType type = GemType.values()[random.nextInt(GemType.values().length)];
+            ItemStack gem = new ItemStack(ModItems.getNormalizedFullCarvedGem(type));
+            int gemTypeId = toGemTypeId(type);
+            CompoundTag custom = ((CustomData)gem.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
+            custom.putBoolean("IsMachineGunMode", true);
+            gem.set(DataComponents.CUSTOM_DATA, CustomData.of(custom));
+            RubyProjectileEntity projectile = new RubyProjectileEntity(caster.level(), caster);
+            projectile.setGemType(gemTypeId);
+            projectile.setItem(gem);
+            Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i])).add(up.scale(RAPID_UP[i]));
+            projectile.setPos(spawn);
+            Vec3 spreadDir = applyDirectionalSpread(forward, right, up, RAPID_YAW[i], RAPID_PITCH[i]);
+            projectile.shoot(spreadDir.x, spreadDir.y, spreadDir.z, 2.8F, 0.08F);
+            caster.level().addFreshEntity(projectile);
+         }
+      }
+   }
+
+   private static CompoundTag buildCombatJewelMachineGunPayload(
+      MysticMagicianEntity caster, LivingEntity target, NpcMagicCastBridge.ThreatProfile threat
+   ) {
+      CompoundTag payload = new CompoundTag();
+      boolean defensive = false;
+      if (caster != null && target != null && target.isAlive()) {
+         double healthRatio = caster.getHealth() / Math.max(1.0, (double)caster.getMaxHealth());
+         defensive = caster.distanceToSqr(target) <= 16.0 || healthRatio <= 0.62 || threat != null && threat.requiresDefensiveTactics();
+      }
+
+      payload.putInt("jewel_machine_gun_mode", defensive ? 1 : 0);
+      return payload;
+   }
+
+   private static boolean isJewelDefenseMode(CompoundTag payload, MysticMagicianEntity caster, LivingEntity target) {
+      if (payload != null && payload.contains("jewel_machine_gun_mode")) {
+         return Mth.clamp(payload.getInt("jewel_machine_gun_mode"), 0, 1) == 1;
+      } else if (caster != null && target != null && target.isAlive()) {
+         return caster.distanceToSqr(target) <= 16.0 || caster.getHealth() / Math.max(1.0, (double)caster.getMaxHealth()) <= 0.62;
+      } else {
+         return false;
       }
    }
 
@@ -2103,7 +2911,13 @@ public final class NpcMagicCastBridge {
       MysticMagicianEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
    ) {
       int mode = payload.contains("reinforcement_mode") ? Mth.clamp(payload.getInt("reinforcement_mode"), 0, 3) : 0;
-      int level = payload.contains("reinforcement_level") ? Mth.clamp(payload.getInt("reinforcement_level"), 1, 5) : 1;
+      int requestedLevel = payload.contains("reinforcement_level") ? Mth.clamp(payload.getInt("reinforcement_level"), 1, 5) : 1;
+      int manaAffordableLevel = Mth.clamp((int)Math.floor(vars.player_mana / 20.0), 0, 5);
+      int level = Math.min(requestedLevel, manaAffordableLevel);
+      if (level <= 0) {
+         return false;
+      }
+
       double cost = 20.0 * level;
       if (!consumeMana(vars, cost)) {
          return false;
@@ -2125,99 +2939,6 @@ public final class NpcMagicCastBridge {
                caster.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, duration, 0, false, false, false));
          }
 
-         return true;
-      }
-   }
-
-   private static boolean castProjection(
-      MysticMagicianEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency, boolean crestCast
-   ) {
-      Provider lookup = caster.registryAccess();
-      ItemStack target = readItem(payload, "projection_item", lookup);
-      if (!NpcMagicFilterService.isCombatProjectionItem(target)) {
-         target = NpcMagicFilterService.chooseRandomCombatProjectionItem(caster.getRandom());
-      }
-
-      if (!target.isEmpty() && !(target.getItem() instanceof AvalonItem)) {
-         boolean hasSwordAttribute = vars.player_magic_attributes_sword && !crestCast;
-         double cost = MagicProjection.calculateCost(target, hasSwordAttribute, proficiency);
-         if (!consumeMana(vars, cost)) {
-            return false;
-         } else {
-            ItemStack projected = target.copy();
-            projected.setCount(1);
-            projected.remove(DataComponents.CONTAINER);
-            projected.remove(DataComponents.BUNDLE_CONTENTS);
-            projected.remove(DataComponents.BLOCK_ENTITY_DATA);
-            if (projected.isDamageableItem()) {
-               projected.setDamageValue(projected.getMaxDamage() - 1);
-            }
-
-            CompoundTag tag = ((CustomData)projected.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-            tag.putBoolean("is_projected", true);
-            tag.putLong("projection_time", caster.level().getGameTime());
-            projected.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
-            boolean canDualWield = caster.getMainHandItem().isEmpty() && caster.getOffhandItem().isEmpty() && caster.getRandom().nextFloat() < 0.12F;
-            EquipmentSlot primarySlot;
-            if (caster.getMainHandItem().isEmpty()) {
-               primarySlot = EquipmentSlot.MAINHAND;
-            } else if (caster.getOffhandItem().isEmpty()) {
-               primarySlot = EquipmentSlot.OFFHAND;
-            } else {
-               primarySlot = caster.getMainArm() == HumanoidArm.RIGHT ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-            }
-
-            caster.setItemSlot(primarySlot, projected.copy());
-            if (canDualWield) {
-               EquipmentSlot secondary = primarySlot == EquipmentSlot.MAINHAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
-               if (caster.getItemBySlot(secondary).isEmpty()) {
-                  caster.setItemSlot(secondary, projected.copy());
-               }
-            }
-
-            vars.projection_selected_item = target.copy();
-            return true;
-         }
-      } else {
-         return false;
-      }
-   }
-
-   private static boolean castBrokenPhantasm(
-      MysticMagicianEntity caster,
-      LivingEntity target,
-      TypeMoonWorldModVariables.PlayerVariables vars,
-      CompoundTag payload,
-      double proficiency,
-      boolean crestCast
-   ) {
-      ItemStack source = findValidBrokenPhantasmItem(caster);
-      if (source.isEmpty()) {
-         boolean projected = castProjection(caster, vars, payload, proficiency, crestCast);
-         if (!projected) {
-            return false;
-         }
-
-         source = findValidBrokenPhantasmItem(caster);
-         if (source.isEmpty()) {
-            return false;
-         }
-      }
-
-      double manaCost = Math.min(220.0, Math.max(40.0, MagicBrokenPhantasm.calculateCost(source, false) * 0.2));
-      if (!consumeMana(vars, manaCost)) {
-         return false;
-      } else {
-         float power = (float)(MagicBrokenPhantasm.calculateCost(source, false) / 20.0);
-         BrokenPhantasmProjectileEntity projectile = new BrokenPhantasmProjectileEntity(caster.level(), caster, source.copy());
-         projectile.setExplosionPower(power);
-         markCastingPose(caster, 10);
-         Vec3 direction = getAimDirection(caster, target, 3.0, 0.04);
-         faceCasterToDirection(caster, direction);
-         projectile.shoot(direction.x, direction.y, direction.z, 3.0F, 1.0F);
-         caster.level().addFreshEntity(projectile);
-         source.shrink(1);
          return true;
       }
    }
@@ -2253,36 +2974,17 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean castJewelMachineGun(
-      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
    ) {
-      if (!consumeMana(vars, 90.0)) {
+      boolean defensiveMode = isJewelDefenseMode(payload, caster, target);
+      int waves = getJewelMachineGunWaveCount(proficiency, defensiveMode);
+      double cost = defensiveMode ? 45.0 + waves * 18.0 : 60.0 + waves * 22.0;
+      if (!consumeMana(vars, cost)) {
          return false;
       } else {
          markCastingPose(caster, 12);
-         Vec3 forward = getAimDirection(caster, target, 2.8, 0.05);
-         faceCasterToDirection(caster, forward);
-         Vec3 right = getRightVector(forward);
-         Vec3 up = right.cross(forward).normalize();
-         Vec3 hand = EntityUtils.getRightHandCastAnchor(caster);
-         RandomSource random = caster.getRandom();
-
-         for (int i = 0; i < 3; i++) {
-            GemType type = GemType.values()[random.nextInt(GemType.values().length)];
-            ItemStack gem = new ItemStack(ModItems.getNormalizedFullCarvedGem(type));
-            int gemTypeId = toGemTypeId(type);
-            CompoundTag custom = ((CustomData)gem.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-            custom.putBoolean("IsMachineGunMode", true);
-            gem.set(DataComponents.CUSTOM_DATA, CustomData.of(custom));
-            RubyProjectileEntity projectile = new RubyProjectileEntity(caster.level(), caster);
-            projectile.setGemType(gemTypeId);
-            projectile.setItem(gem);
-            Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i])).add(up.scale(RAPID_UP[i]));
-            projectile.setPos(spawn);
-            Vec3 spreadDir = applyDirectionalSpread(forward, right, up, RAPID_YAW[i], RAPID_PITCH[i]);
-            projectile.shoot(spreadDir.x, spreadDir.y, spreadDir.z, 2.8F, 0.08F);
-            caster.level().addFreshEntity(projectile);
-         }
-
+         fireJewelMachineGunWave(caster, target, vars, defensiveMode);
+         startPendingMachineGun(caster, target, "jewel_machine_gun", waves - 1, defensiveMode ? 5 : 4, defensiveMode ? 1 : 0, 0, 3);
          return true;
       }
    }
@@ -2297,32 +2999,6 @@ public final class NpcMagicCastBridge {
          case WHITE_GEMSTONE -> 5;
          case BLACK_SHARD -> 6;
       };
-   }
-
-   private static ItemStack findValidBrokenPhantasmItem(MysticMagicianEntity caster) {
-      ItemStack main = caster.getMainHandItem();
-      if (isValidBrokenPhantasmItem(main)) {
-         return main;
-      } else {
-         ItemStack off = caster.getOffhandItem();
-         return isValidBrokenPhantasmItem(off) ? off : ItemStack.EMPTY;
-      }
-   }
-
-   private static boolean isValidBrokenPhantasmItem(ItemStack stack) {
-      if (stack == null || stack.isEmpty()) {
-         return false;
-      } else if (stack.getItem() instanceof NoblePhantasmItem && !(stack.getItem() instanceof AvalonItem)) {
-         return true;
-      } else {
-         CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-         if (customData == null) {
-            return false;
-         } else {
-            CompoundTag tag = customData.copyTag();
-            return tag.getBoolean("is_projected");
-         }
-      }
    }
 
    private static Vec3 getAimDirection(LivingEntity caster, LivingEntity target) {
@@ -2387,6 +3063,12 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   private static void markMeleePose(MysticMagicianEntity caster, int pose, int ticks) {
+      if (caster != null) {
+         caster.triggerMeleeSkillPose(pose, ticks);
+      }
+   }
+
    private static Vec3 getRightVector(Vec3 forward) {
       Vec3 right = forward.cross(new Vec3(0.0, 1.0, 0.0));
       return right.lengthSqr() < 1.0E-6 ? new Vec3(1.0, 0.0, 0.0) : right.normalize();
@@ -2429,6 +3111,20 @@ public final class NpcMagicCastBridge {
       return (int)Math.round(12.0 + 3.0 * t);
    }
 
+   private static int getGandrRapidWaveCount(double proficiency) {
+      return Mth.clamp(2 + (int)Math.floor(Mth.clamp(proficiency, 0.0, 100.0) / 35.0), 2, 5);
+   }
+
+   private static int getGandrBarrageWaveCount(double proficiency) {
+      return Mth.clamp(2 + (int)Math.floor(Mth.clamp(proficiency, 0.0, 100.0) / 50.0), 2, 4);
+   }
+
+   private static int getJewelMachineGunWaveCount(double proficiency, boolean defensiveMode) {
+      int base = defensiveMode ? 3 : 4;
+      int extra = (int)Math.floor(Mth.clamp(proficiency, 0.0, 100.0) / 40.0);
+      return Mth.clamp(base + extra, 3, defensiveMode ? 5 : 6);
+   }
+
    private static int getGravityDurationTicks(double proficiency) {
       double t = Mth.clamp(proficiency, 0.0, 100.0) / 100.0;
       return 600 + (int)Math.round(3000.0 * t);
@@ -2439,43 +3135,52 @@ public final class NpcMagicCastBridge {
    }
 
    private static long getMagicCooldownUntil(MysticMagicianEntity npc, String magicId) {
-      CompoundTag all = npc.getPersistentData().getCompound("TypeMoonNpcMagicCd");
+      CompoundTag all = npc.getPersistentData().getCompound(TAG_MAGIC_CD);
       return all.contains(magicId) ? all.getLong(magicId) : 0L;
    }
 
    private static void setMagicCooldown(MysticMagicianEntity npc, String magicId, long until) {
-      CompoundTag all = npc.getPersistentData().getCompound("TypeMoonNpcMagicCd");
+      CompoundTag all = npc.getPersistentData().getCompound(TAG_MAGIC_CD);
       all.putLong(magicId, until);
-      npc.getPersistentData().put("TypeMoonNpcMagicCd", all);
+      npc.getPersistentData().put(TAG_MAGIC_CD, all);
    }
 
    private static void recordMagicCast(MysticMagicianEntity npc, String magicId) {
       if (npc != null && magicId != null && !magicId.isEmpty()) {
          CompoundTag data = npc.getPersistentData();
-         String last = data.getString("TypeMoonNpcLastCastMagic");
+         String last = data.getString(TAG_LAST_CAST_MAGIC);
          if (magicId.equals(last)) {
-            int repeat = data.getInt("TypeMoonNpcCastRepeatCount");
-            data.putInt("TypeMoonNpcCastRepeatCount", Math.min(8, repeat + 1));
+            int repeat = data.getInt(TAG_CAST_REPEAT_COUNT);
+            data.putInt(TAG_CAST_REPEAT_COUNT, Math.min(8, repeat + 1));
          } else {
-            data.putString("TypeMoonNpcLastCastMagic", magicId);
-            data.putInt("TypeMoonNpcCastRepeatCount", 1);
+            data.putString(TAG_LAST_CAST_MAGIC, magicId);
+            data.putInt(TAG_CAST_REPEAT_COUNT, 1);
          }
       }
    }
 
-   private static double getEffectiveProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, boolean crestCast) {
+   private static double getEffectiveProficiency(
+      MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId, boolean crestCast
+   ) {
       if (crestCast) {
          return 100.0;
       } else {
-         return switch (magicId) {
+         double base = switch (magicId) {
             case "gander", "gandr_machine_gun" -> vars.proficiency_gander;
             case "gravity_magic" -> vars.proficiency_gravity_magic;
             case "reinforcement" -> vars.proficiency_reinforcement;
-            case "projection", "broken_phantasm" -> vars.proficiency_projection;
             case "jewel_random_shoot" -> vars.proficiency_jewel_magic_shoot;
             case "jewel_machine_gun" -> vars.proficiency_jewel_magic_release;
             default -> 0.0;
          };
+         int fixedLevel = getFixedLevel(npc);
+         int combatBonus = getCombatLevelBonus(npc);
+         double levelBonus = (fixedLevel - 1) * 7.0 + combatBonus * 5.0;
+         if ("reinforcement".equals(magicId) && fixedLevel >= 3) {
+            levelBonus += 6.0;
+         }
+
+         return Mth.clamp(base + levelBonus, 0.0, 100.0);
       }
    }
 
@@ -2530,6 +3235,15 @@ public final class NpcMagicCastBridge {
 
    private record EnvironmentHazardProfile(boolean anyHazard, boolean severe, int hazardScore) {
       private static final NpcMagicCastBridge.EnvironmentHazardProfile NONE = new NpcMagicCastBridge.EnvironmentHazardProfile(false, false, 0);
+   }
+
+   private record BehaviorProfile(
+      double retreatHealthRatio,
+      double rangedKeepMinDistance,
+      double rangedKeepMaxDistance,
+      double meleeEngageDistance,
+      double meleeSkillTriggerDistance
+   ) {
    }
 
    private record MagicCapabilityProfile(boolean hasBuff, boolean hasControl, boolean hasRanged, boolean hasMeleeBurst, boolean hasAnyCastable) {

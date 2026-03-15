@@ -51,7 +51,7 @@ public class MagicReinforcementEventHandler {
                } else {
                   tag.putInt("ReinforcementHitsLeft", hits);
                   stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-                  player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.item.hits_left", new Object[]{hits}), true);
+                  player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.item.hits_left", hits), true);
                }
             }
          }

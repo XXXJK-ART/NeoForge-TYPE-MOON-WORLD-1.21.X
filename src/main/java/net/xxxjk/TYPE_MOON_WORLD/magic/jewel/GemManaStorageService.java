@@ -32,7 +32,7 @@ public final class GemManaStorageService {
          ItemStack filled = new ItemStack(targetFullGem);
          GemEngravingService.copyEngravingData(heldStack, filled);
          ItemStack result = replaceHeldSingle(player, hand, heldStack, filled);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gem.storage.stored", new Object[]{manaAmount}), true);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.gem.storage.stored", manaAmount), true);
          return result;
       }
    }
@@ -59,13 +59,13 @@ public final class GemManaStorageService {
          }
 
          player.displayClientMessage(
-            Component.translatable("message.typemoonworld.mana.overload.warning", new Object[]{(int)vars.player_mana, (int)vars.player_max_mana})
+            Component.translatable("message.typemoonworld.mana.overload.warning", (int)vars.player_mana, (int)vars.player_max_mana)
                .withStyle(color),
             true
          );
       }
 
-      player.displayClientMessage(Component.translatable("message.typemoonworld.gem.storage.withdrawn", new Object[]{manaAmount}), true);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.gem.storage.withdrawn", manaAmount), true);
       return result;
    }
 

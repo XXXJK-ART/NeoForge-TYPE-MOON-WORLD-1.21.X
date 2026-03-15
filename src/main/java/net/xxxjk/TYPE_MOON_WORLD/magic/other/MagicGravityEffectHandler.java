@@ -27,14 +27,14 @@ public class MagicGravityEffectHandler {
    public static void applyGravityState(LivingEntity target, int mode, long untilGameTime) {
       CompoundTag tag = target.getPersistentData();
       long now = target.level().getGameTime();
-      int currentMode = tag.contains("TypeMoonGravityMode") ? tag.getInt("TypeMoonGravityMode") : 0;
-      long currentUntil = tag.contains("TypeMoonGravityUntil") ? tag.getLong("TypeMoonGravityUntil") : 0L;
+      int currentMode = tag.contains(TAG_MODE) ? tag.getInt(TAG_MODE) : 0;
+      long currentUntil = tag.contains(TAG_UNTIL) ? tag.getLong(TAG_UNTIL) : 0L;
       int stacks = 1;
       if (currentMode == mode && now < currentUntil) {
-         stacks = Math.max(1, tag.getInt("TypeMoonGravityStacks"));
-         long stackWindowUntil = tag.contains("TypeMoonGravityStackWindowUntil") ? tag.getLong("TypeMoonGravityStackWindowUntil") : 0L;
+         stacks = Math.max(1, tag.getInt(TAG_STACKS));
+         long stackWindowUntil = tag.contains(TAG_STACK_WINDOW_UNTIL) ? tag.getLong(TAG_STACK_WINDOW_UNTIL) : 0L;
          if (now <= stackWindowUntil) {
-            stacks = Math.min(5, stacks + 1);
+            stacks = Math.min(MAX_STACKS, stacks + 1);
          } else if (stacks > 1) {
             stacks--;
          }
@@ -42,30 +42,30 @@ public class MagicGravityEffectHandler {
          untilGameTime = Math.max(untilGameTime, currentUntil);
       }
 
-      tag.putInt("TypeMoonGravityMode", mode);
-      tag.putLong("TypeMoonGravityUntil", untilGameTime);
-      tag.putInt("TypeMoonGravityStacks", stacks);
-      tag.putLong("TypeMoonGravityStackWindowUntil", now + 2L);
+      tag.putInt(TAG_MODE, mode);
+      tag.putLong(TAG_UNTIL, untilGameTime);
+      tag.putInt(TAG_STACKS, stacks);
+      tag.putLong(TAG_STACK_WINDOW_UNTIL, now + STACK_WINDOW_TICKS);
    }
 
    public static void clearGravityState(LivingEntity target) {
       CompoundTag tag = target.getPersistentData();
-      tag.remove("TypeMoonGravityMode");
-      tag.remove("TypeMoonGravityUntil");
-      tag.remove("TypeMoonGravityStacks");
-      tag.remove("TypeMoonGravityStackWindowUntil");
+      tag.remove(TAG_MODE);
+      tag.remove(TAG_UNTIL);
+      tag.remove(TAG_STACKS);
+      tag.remove(TAG_STACK_WINDOW_UNTIL);
    }
 
    public static int getCurrentMode(LivingEntity target) {
       CompoundTag tag = target.getPersistentData();
-      if (tag.contains("TypeMoonGravityMode") && tag.contains("TypeMoonGravityUntil")) {
+      if (tag.contains(TAG_MODE) && tag.contains(TAG_UNTIL)) {
          long now = target.level().getGameTime();
-         long until = tag.getLong("TypeMoonGravityUntil");
+         long until = tag.getLong(TAG_UNTIL);
          if (now >= until) {
             clearGravityState(target);
             return 0;
          } else {
-            int mode = tag.getInt("TypeMoonGravityMode");
+            int mode = tag.getInt(TAG_MODE);
             if (mode >= -2 && mode <= 2) {
                return mode;
             } else {
@@ -80,7 +80,7 @@ public class MagicGravityEffectHandler {
 
    public static int getCurrentStacks(LivingEntity target) {
       int mode = getCurrentMode(target);
-      return mode == 0 ? 1 : Math.max(1, Math.min(5, target.getPersistentData().getInt("TypeMoonGravityStacks")));
+      return mode == 0 ? 1 : Math.max(1, Math.min(MAX_STACKS, target.getPersistentData().getInt(TAG_STACKS)));
    }
 
    @SubscribeEvent
@@ -97,7 +97,7 @@ public class MagicGravityEffectHandler {
                   if (!living.onGround() && !living.isInWaterOrBubble() && !living.isFallFlying()) {
                      Vec3 motion = living.getDeltaMovement();
                      double stackScale = 1.0 + 0.28 * (stacks - 1);
-                     double extraFallAccel = (mode == 2 ? 0.16 : 0.09) * stackScale;
+                     double extraFallAccel = (mode == 2 ? ULTRA_HEAVY_EXTRA_FALL_ACCEL : HEAVY_EXTRA_FALL_ACCEL) * stackScale;
                      double minY = (mode == 2 ? -3.6 : -3.0) - 0.35 * (stacks - 1);
                      double newY = Math.max(minY, motion.y - extraFallAccel);
                      living.setDeltaMovement(motion.x, newY, motion.z);

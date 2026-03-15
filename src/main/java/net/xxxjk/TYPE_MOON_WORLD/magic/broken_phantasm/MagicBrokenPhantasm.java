@@ -30,6 +30,11 @@ public class MagicBrokenPhantasm {
       if (!isValidBPItem(heldItem)) {
          ItemStack offhandItem = player.getOffhandItem();
          if (!isValidBPItem(offhandItem)) {
+            if (isNonUbwProjectedItem(heldItem) || isNonUbwProjectedItem(offhandItem)) {
+               player.displayClientMessage(Component.translatable("message.typemoonworld.broken_phantasm.requires_ubw_projection"), true);
+               return;
+            }
+
             if (!heldItem.isEmpty() && !offhandItem.isEmpty()) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.broken_phantasm.no_valid_item"), true);
             } else {
@@ -53,7 +58,7 @@ public class MagicBrokenPhantasm {
       player.level().addFreshEntity(projectile);
       heldItem.shrink(1);
       player.displayClientMessage(
-         Component.translatable("message.typemoonworld.broken_phantasm.cast", new Object[]{String.format("%.1f", explosionPower)}), true
+         Component.translatable("message.typemoonworld.broken_phantasm.cast", String.format("%.1f", explosionPower)), true
       );
    }
 
@@ -72,7 +77,7 @@ public class MagicBrokenPhantasm {
             CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
             if (customData != null) {
                CompoundTag tag = customData.copyTag();
-               if (tag.contains("is_projected")) {
+               if (tag.contains("is_infinite_projection") && tag.getBoolean("is_infinite_projection")) {
                   return true;
                }
             }
@@ -82,7 +87,7 @@ public class MagicBrokenPhantasm {
       }
    }
 
-   private static boolean isProjectedItem(ItemStack stack) {
+   private static boolean isNonUbwProjectedItem(ItemStack stack) {
       if (stack.isEmpty()) {
          return false;
       } else {
@@ -90,7 +95,7 @@ public class MagicBrokenPhantasm {
             CustomData customData = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
             if (customData != null) {
                CompoundTag tag = customData.copyTag();
-               return tag.contains("is_projected");
+               return tag.contains("is_projected") && (!tag.contains("is_infinite_projection") || !tag.getBoolean("is_infinite_projection"));
             }
          }
 

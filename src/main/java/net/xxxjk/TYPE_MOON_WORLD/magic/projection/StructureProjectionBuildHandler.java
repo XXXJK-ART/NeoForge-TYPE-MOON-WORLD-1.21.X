@@ -110,7 +110,7 @@ public class StructureProjectionBuildHandler {
                   ACTIVE_BUILDS.put(serverPlayer.getUUID(), build);
                   if (!silentTips) {
                      serverPlayer.displayClientMessage(
-                        Component.translatable("message.typemoonworld.projection.structure.started", new Object[]{structure.name}), true
+                        Component.translatable("message.typemoonworld.projection.structure.started", structure.name), true
                      );
                   }
 

@@ -91,7 +91,7 @@ public final class StructuralProjectionPlacementClient {
          rotationIndex = Math.floorMod(rotationIndex + (deltaY > 0.0 ? 1 : -1), 4);
          Minecraft mc = Minecraft.getInstance();
          if (mc.player != null) {
-            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.rotation", new Object[]{rotationIndex}), true);
+            mc.player.displayClientMessage(Component.translatable("message.typemoonworld.projection.structure.rotation", rotationIndex), true);
          }
 
          return true;

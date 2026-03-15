@@ -61,7 +61,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -392,7 +391,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                      this.hostilePlayers.add(player.getUUID());
                      ItemStack mainHandNow = this.getMainHandItem();
                      if (mainHandNow.isEmpty() || mainHandNow.getItem() != ModItems.EXCALIBUR.get()) {
-                        this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack((ItemLike)ModItems.EXCALIBUR.get()));
+                        this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EXCALIBUR.get()));
                      }
 
                      this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.hostile_player", 20.0);
@@ -716,7 +715,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
             }
          } else {
             if (mainHand.isEmpty() || mainHand.getItem() != ModItems.EXCALIBUR.get()) {
-               this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack((ItemLike)ModItems.EXCALIBUR.get()));
+               this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EXCALIBUR.get()));
             }
 
             if (this.excaliburSlashCooldown <= 0 && this.level() instanceof ServerLevel serverLevelxxx) {
@@ -1180,7 +1179,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
          this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34);
       }
 
-      this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack((ItemLike)ModItems.EXCALIBUR.get()));
+      this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EXCALIBUR.get()));
       this.setTarget(target);
    }
 
@@ -1942,32 +1941,32 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
          } else if (itemstack.is(Items.CHERRY_SAPLING) || itemstack.is(Items.PINK_PETALS) || itemstack.is(Items.PEONY) || itemstack.is(Items.AZURE_BLUET)) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_flower", 20.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.AVALON.get())) {
+         } else if (itemstack.is(ModItems.AVALON.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.avalon_start", 24.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.EXCALIBUR.get()) || itemstack.is((Item)ModItems.EXCALIBUR2.get())) {
+         } else if (itemstack.is(ModItems.EXCALIBUR.get()) || itemstack.is(ModItems.EXCALIBUR2.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.trace_on", 20.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION.get())
-            || itemstack.is((Item)ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR.get())) {
+         } else if (itemstack.is(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION.get())
+            || itemstack.is(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_mystic_eyes", 20.0);
             return InteractionResult.SUCCESS;
          } else if (itemstack.getItem() instanceof MagicScrollItem) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_magic_scroll", 20.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.TSUMUKARI_MURAMASA.get())) {
+         } else if (itemstack.is(ModItems.TSUMUKARI_MURAMASA.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_muramasa", 20.0);
             return InteractionResult.SUCCESS;
          } else if (itemstack.getItem() instanceof CarvedGemItem || itemstack.getItem() instanceof FullManaCarvedGemItem) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_carved_gem", 20.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.RANDOM_GEM.get())) {
+         } else if (itemstack.is(ModItems.RANDOM_GEM.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_random_gem", 20.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.CHISEL.get())) {
+         } else if (itemstack.is(ModItems.CHISEL.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_chisel", 20.0);
             return InteractionResult.SUCCESS;
-         } else if (itemstack.is((Item)ModItems.HOLY_SHROUD.get())) {
+         } else if (itemstack.is(ModItems.HOLY_SHROUD.get())) {
             this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.see_holy_shroud", 20.0);
             return InteractionResult.SUCCESS;
          } else {

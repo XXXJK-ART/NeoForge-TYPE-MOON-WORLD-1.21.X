@@ -105,7 +105,7 @@ public class MagicModeSwitcherScreen extends Screen {
                this.addMode(3, Component.translatable("gui.typemoonworld.mode.eye"));
             } else if (this.reinforcementStage == 2) {
                for (int i = 1; i <= 5; i++) {
-                  this.addMode(i, Component.translatable("gui.typemoonworld.mode.level", new Object[]{i}));
+                  this.addMode(i, Component.translatable("gui.typemoonworld.mode.level", i));
                }
             } else if (this.reinforcementStage == 3) {
                this.addMode(0, Component.translatable("gui.typemoonworld.mode.cancel.self"));
@@ -229,7 +229,7 @@ public class MagicModeSwitcherScreen extends Screen {
          } else if (this.reinforcementStage == 2) {
             int maxLevel = Math.min(5, 1 + (int)(vars.proficiency_reinforcement / 20.0));
             if (selectedId > maxLevel) {
-               player.displayClientMessage(Component.translatable("message.typemoonworld.reinforcement.level_too_high", new Object[]{maxLevel}), true);
+               player.displayClientMessage(Component.translatable("message.typemoonworld.reinforcement.level_too_high", maxLevel), true);
                return;
             }
 

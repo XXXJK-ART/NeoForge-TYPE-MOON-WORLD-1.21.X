@@ -57,7 +57,7 @@ public class MagicReinforcementOther {
                MobEffectInstance existing = livingTarget.getEffect(effect.getEffect());
                if (existing != null && existing.getAmplifier() >= effect.getAmplifier() && existing.getDuration() >= duration) {
                   player.displayClientMessage(
-                     Component.translatable("message.typemoonworld.magic.reinforcement.item.already_better", new Object[]{existing.getAmplifier() + 1}), true
+                     Component.translatable("message.typemoonworld.magic.reinforcement.item.already_better", existing.getAmplifier() + 1), true
                   );
                   return;
                }
@@ -77,7 +77,7 @@ public class MagicReinforcementOther {
                );
                targetData.casterUUID = player.getUUID();
                player.displayClientMessage(
-                  Component.translatable("message.typemoonworld.magic.reinforcement.success", new Object[]{livingTarget.getDisplayName()}), true
+                  Component.translatable("message.typemoonworld.magic.reinforcement.success", livingTarget.getDisplayName()), true
                );
                player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement." + partKey), true);
                vars.proficiency_reinforcement = Math.min(100.0, vars.proficiency_reinforcement + 0.5);

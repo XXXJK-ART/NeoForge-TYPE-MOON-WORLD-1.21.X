@@ -476,6 +476,7 @@
   "message.typemoonworld.awaken.success": "§bMagic circuits connected. You are now a magus.",
   "message.typemoonworld.broken_phantasm.cast": "Broken Phantasm! (Power: %s)",
   "message.typemoonworld.broken_phantasm.no_valid_item": "No projected item or Noble Phantasm in hand.",
+  "message.typemoonworld.broken_phantasm.requires_ubw_projection": "Only UBW projection items can be used for Broken Phantasm.",
   "message.typemoonworld.circuit.forced_close": "Magic circuits forcibly closed due to overload!",
   "message.typemoonworld.gem.convert_health": "§cNot enough mana. Consumed %s health to compensate.",
   "message.typemoonworld.gem.not_enough_mana_and_health": "Not enough mana or health!",

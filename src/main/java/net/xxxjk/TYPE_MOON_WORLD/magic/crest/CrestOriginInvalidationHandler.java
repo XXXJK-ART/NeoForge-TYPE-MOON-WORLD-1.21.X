@@ -25,7 +25,7 @@ public class CrestOriginInvalidationHandler {
                   int removed = vars.invalidateNpcOriginCrestEntries(dead.getUUID());
                   if (removed > 0) {
                      holder.displayClientMessage(
-                        Component.translatable("message.typemoonworld.crest.origin_invalidated", new Object[]{dead.getDisplayName(), removed}), true
+                        Component.translatable("message.typemoonworld.crest.origin_invalidated", dead.getDisplayName(), removed), true
                      );
                      vars.syncPlayerVariables(holder);
                   }

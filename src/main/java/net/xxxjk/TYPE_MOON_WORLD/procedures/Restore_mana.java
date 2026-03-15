@@ -97,7 +97,7 @@ public class Restore_mana {
                   }
 
                   player.displayClientMessage(
-                     Component.translatable("message.typemoonworld.mana.overload.warning", new Object[]{(int)currentMana, (int)maxMana}).withStyle(color), true
+                     Component.translatable("message.typemoonworld.mana.overload.warning", (int)currentMana, (int)maxMana).withStyle(color), true
                   );
                }
 
@@ -187,7 +187,7 @@ public class Restore_mana {
    private static Restore_mana.SourceCandidate createCandidate(int slot, ItemStack stack) {
       if (stack.getItem() instanceof FullManaCarvedGemItem fullGemItem) {
          return new Restore_mana.SourceCandidate(slot, fullGemItem.getManaAmount(), new ItemStack(fullGemItem.getEmptyGemItem()));
-      } else if (stack.is((Item)ModItems.MAGIC_FRAGMENTS.get())) {
+      } else if (stack.is(ModItems.MAGIC_FRAGMENTS.get())) {
          return new Restore_mana.SourceCandidate(slot, 10.0, ItemStack.EMPTY);
       } else {
          return stack.is(((Block)ModBlocks.SPIRIT_VEIN_BLOCK.get()).asItem()) ? new Restore_mana.SourceCandidate(slot, 90.0, ItemStack.EMPTY) : null;

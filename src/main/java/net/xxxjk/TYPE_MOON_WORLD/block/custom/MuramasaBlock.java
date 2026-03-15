@@ -8,7 +8,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -69,9 +68,9 @@ public class MuramasaBlock extends BaseEntityBlock {
       if (!level.isClientSide) {
          ItemStack stackToDrop;
          if (level.random.nextFloat() < 0.1F) {
-            stackToDrop = new ItemStack((ItemLike)ModItems.TSUMUKARI_MURAMASA.get());
+            stackToDrop = new ItemStack(ModItems.TSUMUKARI_MURAMASA.get());
          } else {
-            stackToDrop = new ItemStack((ItemLike)ModItems.MURAMASA.get());
+            stackToDrop = new ItemStack(ModItems.MURAMASA.get());
          }
 
          ItemEntity entityToSpawn = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), stackToDrop);

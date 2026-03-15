@@ -91,7 +91,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    final Map<String, Magical_attributes_Screen.MagicEntry> magicCatalogById = new HashMap<>();
    List<Magical_attributes_Screen.MagicEntry> sourceMagics = new ArrayList<>();
    List<Magical_attributes_Screen.MagicEntry> filteredMagics = new ArrayList<>();
-   int magicSourceTab = 0;
+   int magicSourceTab = MAGIC_SOURCE_SELF;
    String filterCategory = "all";
    float scrollOffs;
    boolean scrolling;
@@ -134,7 +134,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    private void ensureCrestSourceAvailability() {
       if (this.magicSourceTab == 1 && !this.hasUsableMagicCrest()) {
-         this.magicSourceTab = 0;
+         this.magicSourceTab = MAGIC_SOURCE_SELF;
       }
    }
 
@@ -173,7 +173,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
       this.ensureCrestSourceAvailability();
       List<Magical_attributes_Screen.MagicEntry> rebuilt = new ArrayList<>();
-      if (this.magicSourceTab == 0) {
+      if (this.magicSourceTab == MAGIC_SOURCE_SELF) {
          for (Magical_attributes_Screen.MagicEntry base : this.baseMagicCatalog) {
             if (hasLearnedMagic(vars, base.id)) {
                rebuilt.add(base.copy());
@@ -291,12 +291,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          maxCategoryWidth = Math.max(maxCategoryWidth, this.font.width(Component.translatable(key)));
       }
 
-      return Mth.clamp(maxCategoryWidth + 8, 40, 72);
+      return Mth.clamp(maxCategoryWidth + 8, FILTER_BUTTON_MIN_WIDTH, FILTER_BUTTON_MAX_WIDTH);
    }
 
    private int getFilterButtonX() {
       int labelWidth = this.font.width(Component.translatable("gui.typemoonworld.category.label"));
-      int desiredX = this.leftPos + 120 + labelWidth + 6;
+      int desiredX = this.leftPos + FILTER_LABEL_X + labelWidth + 6;
       int buttonWidth = this.getFilterButtonWidth();
       int maxX = this.leftPos + this.imageWidth - buttonWidth - 6;
       return Math.min(desiredX, maxX);
@@ -401,7 +401,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       int sourceTabsY = this.topPos + 30;
       this.tabSelfKnowledge = new NeonButton(
          sourceTabsX, sourceTabsY, sourceTabWidth, sourceTabHeight, Component.translatable("gui.typemoonworld.magic_knowledge.source.self"), e -> {
-            this.magicSourceTab = 0;
+            this.magicSourceTab = MAGIC_SOURCE_SELF;
             this.rebuildSourceMagics();
             this.updateFilteredMagics();
             this.updateSourceTabLabels();
@@ -418,7 +418,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (!this.hasUsableMagicCrest()) {
                this.entity.displayClientMessage(Component.translatable("gui.typemoonworld.magic_knowledge.crest_inactive"), true);
             } else {
-               this.magicSourceTab = 1;
+               this.magicSourceTab = MAGIC_SOURCE_CREST;
                this.rebuildSourceMagics();
                this.updateFilteredMagics();
                this.updateSourceTabLabels();
@@ -429,7 +429,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addRenderableWidget(this.tabCrestKnowledge);
       int filterButtonWidth = this.getFilterButtonWidth();
       this.filterButton = new NeonButton(
-         this.getFilterButtonX(), this.topPos + 31, filterButtonWidth, 14, this.getFilterButtonText(this.filterCategory), e -> {
+         this.getFilterButtonX(), this.topPos + FILTER_BUTTON_Y, filterButtonWidth, 14, this.getFilterButtonText(this.filterCategory), e -> {
             this.filterCategory = this.getNextCategory(this.filterCategory);
             this.rebuildSourceMagics();
             this.updateFilteredMagics();
@@ -442,8 +442,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       for (int i = 0; i < 10; i++) {
          int wheel = i;
          Button wheelBtn = new NeonButton(
-            this.leftPos + 120 + i * 18, this.topPos + 182, 16, 14, Component.literal(String.valueOf(i)), e -> this.switchWheel(wheel)
-         );
+             this.leftPos + LIST_X_OFFSET + i * PRESET_DIALOG_OPTION_HEIGHT, this.topPos + 182, 16, 14, Component.literal(String.valueOf(i)), e -> this.switchWheel(wheel)
+          );
          this.addRenderableWidget(wheelBtn);
          this.wheelSwitchButtons.add(wheelBtn);
       }
@@ -527,18 +527,22 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          this.tabSelfKnowledge
             .setMessage(
                Component.translatable(
-                  this.magicSourceTab == 0 ? "gui.typemoonworld.magic_knowledge.source.self.active" : "gui.typemoonworld.magic_knowledge.source.self"
-               )
-            );
+                  this.magicSourceTab == MAGIC_SOURCE_SELF
+                     ? "gui.typemoonworld.magic_knowledge.source.self.active"
+                     : "gui.typemoonworld.magic_knowledge.source.self"
+                )
+             );
       }
 
       if (this.tabCrestKnowledge != null) {
          this.tabCrestKnowledge
             .setMessage(
                Component.translatable(
-                  this.magicSourceTab == 1 ? "gui.typemoonworld.magic_knowledge.source.crest.active" : "gui.typemoonworld.magic_knowledge.source.crest"
-               )
-            );
+                  this.magicSourceTab == MAGIC_SOURCE_CREST
+                     ? "gui.typemoonworld.magic_knowledge.source.crest.active"
+                     : "gui.typemoonworld.magic_knowledge.source.crest"
+                )
+             );
       }
    }
 
@@ -578,9 +582,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private void renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-      int listX = this.leftPos + 120;
-      int listY = this.topPos + 52;
-      int visibleItems = 8;
+      int listX = this.leftPos + LIST_X_OFFSET;
+      int listY = this.topPos + LIST_Y_OFFSET;
+      int visibleItems = CARD_COLUMNS * CARD_ROWS_VISIBLE;
 
       for (int i = 0; i < visibleItems; i++) {
          int index = this.startIndex + i;
@@ -591,9 +595,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          Magical_attributes_Screen.MagicEntry entry = this.filteredMagics.get(index);
          int col = i % 2;
          int row = i / 2;
-         int cardX = listX + col * 70;
-         int cardY = listY + row * 30;
-         boolean hovered = mouseX >= cardX && mouseX < cardX + 62 && mouseY >= cardY && mouseY < cardY + 22;
+          int cardX = listX + col * (CARD_WIDTH + CARD_GAP_X);
+          int cardY = listY + row * (CARD_HEIGHT + CARD_GAP_Y);
+          boolean hovered = mouseX >= cardX && mouseX < cardX + CARD_WIDTH && mouseY >= cardY && mouseY < cardY + CARD_HEIGHT;
          boolean disabled = !entry.active || isKnowledgeOnlyMagic(entry.id);
          boolean crest = "crest".equals(entry.sourceType);
          int borderColor = crest ? -1811878 : -11557889;
@@ -607,8 +611,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             fillColor = 1613968179;
          }
 
-         guiGraphics.fill(cardX, cardY, cardX + 62, cardY + 22, fillColor);
-         guiGraphics.renderOutline(cardX, cardY, 62, 22, borderColor);
+          guiGraphics.fill(cardX, cardY, cardX + CARD_WIDTH, cardY + CARD_HEIGHT, fillColor);
+          guiGraphics.renderOutline(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, borderColor);
          guiGraphics.fill(cardX + 2, cardY + 2, cardX + 6, cardY + 6, crest ? -1811878 : -11557889);
          String name = this.getMagicShortName(entry);
          int textColor = disabled ? -6645094 : -1;
@@ -619,18 +623,18 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             this.drawMarqueeText(guiGraphics, name, textX, textY, textMaxWidth, textColor);
          } else {
             String shortName = this.clampTextToWidth(name, textMaxWidth);
-            guiGraphics.drawCenteredString(this.font, Component.literal(shortName), cardX + 31, textY, textColor);
-         }
-      }
+             guiGraphics.drawCenteredString(this.font, Component.literal(shortName), cardX + CARD_WIDTH / 2, textY, textColor);
+          }
+       }
 
-      int totalRows = (this.filteredMagics.size() + 2 - 1) / 2;
-      if (totalRows > 4) {
-         int scrollBarX = listX + 132 + 4;
-         int scrollBarHeight = 124;
-         int barHeight = Math.max(24, (int)((float)(4 * scrollBarHeight) / totalRows));
-         int barTop = listY + (int)(this.scrollOffs * (scrollBarHeight - barHeight));
-         guiGraphics.fill(scrollBarX, listY, scrollBarX + 6, listY + scrollBarHeight, Integer.MIN_VALUE);
-         guiGraphics.fill(scrollBarX, barTop, scrollBarX + 6, barTop + barHeight, -16711681);
+       int totalRows = (this.filteredMagics.size() + 2 - 1) / 2;
+       if (totalRows > CARD_ROWS_VISIBLE) {
+          int scrollBarX = listX + LIST_WIDTH + 4;
+          int scrollBarHeight = LIST_HEIGHT;
+          int barHeight = Math.max(24, (int)((float)(CARD_ROWS_VISIBLE * scrollBarHeight) / totalRows));
+          int barTop = listY + (int)(this.scrollOffs * (scrollBarHeight - barHeight));
+          guiGraphics.fill(scrollBarX, listY, scrollBarX + 6, listY + scrollBarHeight, Integer.MIN_VALUE);
+          guiGraphics.fill(scrollBarX, barTop, scrollBarX + 6, barTop + barHeight, -16711681);
       }
    }
 
@@ -640,11 +644,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       int currentSlot = this.getCurrentSelectedRuntimeSlot(vars);
 
       for (int slot = 0; slot < 12; slot++) {
-         int col = slot % 3;
-         int row = slot / 3;
-         int slotX = this.leftPos + 272 + col * 25;
-         int slotY = this.topPos + 60 + row * 25;
-         boolean hovered = mouseX >= slotX && mouseX < slotX + 22 && mouseY >= slotY && mouseY < slotY + 22;
+         int col = slot % WHEEL_COLUMNS;
+         int row = slot / WHEEL_COLUMNS;
+          int slotX = this.leftPos + WHEEL_X_OFFSET + col * 25;
+          int slotY = this.topPos + WHEEL_Y_OFFSET + row * 25;
+          boolean hovered = mouseX >= slotX && mouseX < slotX + WHEEL_SLOT_SIZE && mouseY >= slotY && mouseY < slotY + WHEEL_SLOT_SIZE;
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry wheelEntry = vars.getWheelSlotEntry(activeWheel, slot);
          boolean empty = wheelEntry == null || wheelEntry.isEmpty();
          boolean crest = !empty && "crest".equals(wheelEntry.sourceType);
@@ -665,8 +669,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             fillColor |= 536870912;
          }
 
-         guiGraphics.fill(slotX, slotY, slotX + 22, slotY + 22, fillColor);
-         guiGraphics.renderOutline(slotX, slotY, 22, 22, borderColor);
+          guiGraphics.fill(slotX, slotY, slotX + WHEEL_SLOT_SIZE, slotY + WHEEL_SLOT_SIZE, fillColor);
+          guiGraphics.renderOutline(slotX, slotY, WHEEL_SLOT_SIZE, WHEEL_SLOT_SIZE, borderColor);
          if (slot == currentSlot) {
             guiGraphics.renderOutline(slotX - 1, slotY - 1, 24, 24, -11174);
          }
@@ -682,9 +686,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                ? wheelEntry.displayNameCache
                : this.getFallbackMagicName(wheelEntry.magicId);
             String shortName = this.clampTextToWidth(name, 20);
-            guiGraphics.drawCenteredString(this.font, Component.literal(shortName), slotX + 11, slotY + 12, -1);
-         }
-      }
+             guiGraphics.drawCenteredString(this.font, Component.literal(shortName), slotX + WHEEL_SLOT_SIZE / 2, slotY + 12, -1);
+          }
+       }
    }
 
    private int getCurrentSelectedRuntimeSlot(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -793,9 +797,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          this.descScrollOffs = 0.0F;
          this.tooltipActive = false;
       } else {
-         this.tooltipActive = System.currentTimeMillis() - this.hoverStartTime >= 1000L;
-      }
-   }
+          this.tooltipActive = System.currentTimeMillis() - this.hoverStartTime >= TOOLTIP_DELAY_MS;
+       }
+    }
 
    private boolean isSameMagicEntry(Magical_attributes_Screen.MagicEntry a, Magical_attributes_Screen.MagicEntry b) {
       if (a == b) {
@@ -812,10 +816,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private Magical_attributes_Screen.MagicEntry getMagicEntryAt(double mouseX, double mouseY) {
-      int listX = this.leftPos + 120;
-      int listY = this.topPos + 52;
-      if (!(mouseX < listX) && !(mouseX >= listX + 132) && !(mouseY < listY) && !(mouseY >= listY + 124)) {
-         int visibleItems = 8;
+       int listX = this.leftPos + LIST_X_OFFSET;
+       int listY = this.topPos + LIST_Y_OFFSET;
+       if (!(mouseX < listX) && !(mouseX >= listX + LIST_WIDTH) && !(mouseY < listY) && !(mouseY >= listY + LIST_HEIGHT)) {
+          int visibleItems = CARD_COLUMNS * CARD_ROWS_VISIBLE;
 
          for (int i = 0; i < visibleItems; i++) {
             int index = this.startIndex + i;
@@ -825,12 +829,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
             int col = i % 2;
             int row = i / 2;
-            int cardX = listX + col * 70;
-            int cardY = listY + row * 30;
-            if (mouseX >= cardX && mouseX < cardX + 62 && mouseY >= cardY && mouseY < cardY + 22) {
-               return this.filteredMagics.get(index);
-            }
-         }
+             int cardX = listX + col * (CARD_WIDTH + CARD_GAP_X);
+             int cardY = listY + row * (CARD_HEIGHT + CARD_GAP_Y);
+             if (mouseX >= cardX && mouseX < cardX + CARD_WIDTH && mouseY >= cardY && mouseY < cardY + CARD_HEIGHT) {
+                return this.filteredMagics.get(index);
+             }
+          }
 
          return null;
       } else {
@@ -864,7 +868,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          int lineHeight = 9 + 1;
          int padding = 5;
          int contentHeight = wrappedLines.size() * lineHeight;
-         int tooltipHeight = Math.min(contentHeight + padding * 2, 126);
+          int tooltipHeight = Math.min(contentHeight + padding * 2, MAX_TOOLTIP_HEIGHT);
          int tooltipX = mouseX + 12;
          int tooltipY = mouseY - 12;
          if (tooltipX + tooltipWidth > this.width) {
@@ -952,7 +956,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          );
          if (entry.originName != null && !entry.originName.isEmpty()) {
             lines.add(
-               Component.translatable("gui.typemoonworld.magic_knowledge.crest_origin", new Object[]{entry.originName}).withStyle(ChatFormatting.DARK_RED)
+               Component.translatable("gui.typemoonworld.magic_knowledge.crest_origin", entry.originName).withStyle(ChatFormatting.DARK_RED)
             );
          }
 
@@ -969,7 +973,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       double proficiency = this.getMagicProficiency(entry);
       if (proficiency >= 0.0) {
          lines.add(Component.empty());
-         lines.add(Component.translatable("gui.typemoonworld.proficiency", new Object[]{String.format("%.1f%%", proficiency)}).withStyle(ChatFormatting.GOLD));
+         lines.add(Component.translatable("gui.typemoonworld.proficiency", String.format("%.1f%%", proficiency)).withStyle(ChatFormatting.GOLD));
       }
 
       if (isKnowledgeOnlyMagic(entry.id)) {
@@ -1013,7 +1017,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                   lines.add(Component.literal(" - " + partName).withStyle(ChatFormatting.YELLOW));
                }
 
-               lines.add(Component.translatable("gui.typemoonworld.mode.level", new Object[]{level}).withStyle(ChatFormatting.YELLOW));
+               lines.add(Component.translatable("gui.typemoonworld.mode.level", level).withStyle(ChatFormatting.YELLOW));
             }
          } else if ("gravity_magic".equals(magicId)) {
             int target = payload.contains("gravity_target") ? payload.getInt("gravity_target") : 0;
@@ -1164,10 +1168,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else {
          TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.screen.learned_magic"), 120, 24, -16719648, false);
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.category.label"), 120, 34, -5592406, false);
+         guiGraphics.drawString(
+            this.font,
+            Component.translatable("gui.typemoonworld.category.label"),
+            FILTER_LABEL_X,
+            FILTER_LABEL_Y,
+            -5592406,
+            false
+         );
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_slots"), 272, 50, -1811878, false);
          guiGraphics.drawString(
-            this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_page", new Object[]{vars.active_wheel_index}), 120, 170, -3355444, false
+            this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_page", vars.active_wheel_index), 120, 170, -3355444, false
          );
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.drag_hint"), 120, 150, -7697782, false);
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.clear_hint"), 120, 160, -7697782, false);
@@ -1376,8 +1387,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    private int getWheelSlotAt(double mouseX, double mouseY) {
       for (int slot = 0; slot < 12; slot++) {
-         int col = slot % 3;
-         int row = slot / 3;
+         int col = slot % WHEEL_COLUMNS;
+         int row = slot / WHEEL_COLUMNS;
          int slotX = this.leftPos + 272 + col * 25;
          int slotY = this.topPos + 60 + row * 25;
          if (mouseX >= slotX && mouseX < slotX + 22 && mouseY >= slotY && mouseY < slotY + 22) {
@@ -1564,7 +1575,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       if (options.isEmpty()) {
          this.sendSetWheelSlot(targetSlot, entry, draftPayload);
       } else {
-         Component title = Component.translatable("gui.typemoonworld.magic_knowledge.preset.title", new Object[]{this.getMagicCardName(entry).getString()});
+         Component title = Component.translatable("gui.typemoonworld.magic_knowledge.preset.title", this.getMagicCardName(entry).getString());
          this.presetDialogState = new Magical_attributes_Screen.PresetDialogState(entry, targetSlot, stageId, draftPayload, title, options);
          this.presetDialogScrollOffs = 0.0F;
       }
@@ -1624,7 +1635,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          for (int level = 1; level <= maxLevel; level++) {
             CompoundTag patch = new CompoundTag();
             patch.putInt("reinforcement_level", level);
-            options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.level", new Object[]{level}), patch));
+            options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.level", level), patch));
          }
 
          return options;
@@ -1781,7 +1792,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private int getPresetDialogPanelWidth(Magical_attributes_Screen.PresetDialogState state) {
-      return isProjectionPresetStage(state) ? 320 : 232;
+      return isProjectionPresetStage(state) ? PRESET_DIALOG_WIDTH_PROJECTION : PRESET_DIALOG_WIDTH_DEFAULT;
    }
 
    private int getPresetDialogHeaderHeight(Magical_attributes_Screen.PresetDialogState state) {
@@ -1795,14 +1806,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private int getPresetDialogPanelHeight(Magical_attributes_Screen.PresetDialogState state) {
       int header = this.getPresetDialogHeaderHeight(state);
       int footer = this.getPresetDialogFooterHeight();
-      int desired = header + footer + state.options.size() * 18 + 10;
-      int maxHeight = isProjectionPresetStage(state) ? 300 : 260;
-      int allowed = Math.max(header + footer + 18 + 10, Math.min(maxHeight, this.height - 20));
+      int desired = header + footer + state.options.size() * PRESET_DIALOG_OPTION_HEIGHT + 10;
+      int maxHeight = isProjectionPresetStage(state) ? PRESET_DIALOG_MAX_HEIGHT_PROJECTION : PRESET_DIALOG_MAX_HEIGHT_DEFAULT;
+      int allowed = Math.max(header + footer + PRESET_DIALOG_OPTION_HEIGHT + 10, Math.min(maxHeight, this.height - 20));
       return Math.min(desired, allowed);
    }
 
    private int getPresetDialogContentScrollPixels(Magical_attributes_Screen.PresetDialogState state, int optionsAreaHeight) {
-      int contentHeight = state.options.size() * 18;
+      int contentHeight = state.options.size() * PRESET_DIALOG_OPTION_HEIGHT;
       return Math.max(0, contentHeight - optionsAreaHeight);
    }
 
@@ -1828,7 +1839,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                && !(mouseX >= optionsAreaX + optionsAreaW)
                && !(mouseY < optionsAreaY)
                && !(mouseY >= optionsAreaY + optionsAreaH)) {
-               float step = 18.0F / scrollPixels;
+               float step = (float)PRESET_DIALOG_OPTION_HEIGHT / scrollPixels;
                this.presetDialogScrollOffs = Mth.clamp(this.presetDialogScrollOffs - (float)deltaY * step * 1.5F, 0.0F, 1.0F);
                return true;
             } else {
@@ -1874,7 +1885,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          RenderSystem.enableScissor(scX, scY, scW, scH);
 
          for (int i = 0; i < this.presetDialogState.options.size(); i++) {
-            int optionY = startY + i * 18;
+             int optionY = startY + i * PRESET_DIALOG_OPTION_HEIGHT;
             int optionW = optionsAreaW - (scrollPixels > 0 ? 6 : 0);
             int optionH = 16;
             if (optionY + optionH >= optionsAreaY && optionY <= optionsAreaY + optionsAreaH) {
@@ -1890,14 +1901,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          RenderSystem.disableScissor();
          if (scrollPixels > 0) {
             int scrollBarX = panelX + panelWidth - 14;
-            int barHeight = Math.max(12, (int)((float)(optionsAreaH * optionsAreaH) / (this.presetDialogState.options.size() * 18)));
+            int barHeight = Math.max(
+               12, (int)((float)(optionsAreaH * optionsAreaH) / (this.presetDialogState.options.size() * PRESET_DIALOG_OPTION_HEIGHT))
+            );
             int barTop = optionsAreaY + (int)(this.presetDialogScrollOffs * (optionsAreaH - barHeight));
             guiGraphics.fill(scrollBarX, optionsAreaY, scrollBarX + 4, optionsAreaY + optionsAreaH, Integer.MIN_VALUE);
             guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, -1);
          }
 
          int cancelX = panelX + panelWidth - 62;
-         int cancelY = panelY + panelHeight - 18;
+         int cancelY = panelY + panelHeight - PRESET_DIALOG_OPTION_HEIGHT;
          guiGraphics.fill(cancelX, cancelY, cancelX + 52, cancelY + 14, 1884311632);
          guiGraphics.renderOutline(cancelX, cancelY, 52, 14, -5592406);
          guiGraphics.drawCenteredString(this.font, Component.translatable("gui.cancel"), cancelX + 26, cancelY + 3, -1);
@@ -1927,7 +1940,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             return true;
          } else {
             for (int i = 0; i < this.presetDialogState.options.size(); i++) {
-               int optionY = startY + i * 18;
+               int optionY = startY + i * PRESET_DIALOG_OPTION_HEIGHT;
                int optionW = optionsAreaW - (scrollPixels > 0 ? 6 : 0);
                int optionH = 16;
                if (optionY + optionH >= optionsAreaY
@@ -1955,7 +1968,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             }
 
             int cancelX = panelX + panelWidth - 62;
-            int cancelY = panelY + panelHeight - 18;
+            int cancelY = panelY + panelHeight - PRESET_DIALOG_OPTION_HEIGHT;
             if (mouseX >= cancelX && mouseX < cancelX + 52 && mouseY >= cancelY && mouseY < cancelY + 14) {
                this.presetDialogState = null;
                this.presetDialogScrollOffs = 0.0F;

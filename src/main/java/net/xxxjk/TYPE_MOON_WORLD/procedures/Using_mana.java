@@ -5,7 +5,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -16,7 +15,7 @@ public class Using_mana {
          vars.player_mana += 10.0;
          vars.syncMana(entity);
          if (entity instanceof Player player) {
-            ItemStack toRemove = new ItemStack((ItemLike)ModItems.MAGIC_FRAGMENTS.get());
+            ItemStack toRemove = new ItemStack(ModItems.MAGIC_FRAGMENTS.get());
             player.getInventory().clearOrCountMatchingItems(p -> toRemove.getItem() == p.getItem(), 1, player.inventoryMenu.getCraftSlots());
             double current = vars.player_mana;
             double max = vars.player_max_mana;
@@ -29,7 +28,7 @@ public class Using_mana {
                }
 
                player.displayClientMessage(
-                  Component.translatable("message.typemoonworld.mana.overload.warning", new Object[]{(int)current, (int)max}).withStyle(color), true
+                  Component.translatable("message.typemoonworld.mana.overload.warning", (int)current, (int)max).withStyle(color), true
                );
             }
          }

@@ -40,7 +40,7 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
    }
 
    protected Item getDefaultItem() {
-      return (Item)ModItems.CARVED_TOPAZ_FULL.get();
+      return ModItems.CARVED_TOPAZ_FULL.get();
    }
 
    public void tick() {

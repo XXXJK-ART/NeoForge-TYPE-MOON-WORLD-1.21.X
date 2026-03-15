@@ -855,7 +855,7 @@ public class TypeMoonCommands {
          int finalValue = value;
          int finalCount = count;
          ((CommandSourceStack)ctx.getSource())
-            .sendSuccess(() -> Component.translatable("command.typemoonworld.favor.shiki.set", new Object[]{finalCount, finalValue}), true);
+            .sendSuccess(() -> Component.translatable("command.typemoonworld.favor.shiki.set", finalCount, finalValue), true);
          return count;
       } catch (Exception var7) {
          return 0;
@@ -878,7 +878,7 @@ public class TypeMoonCommands {
          vars.syncPlayerVariables(player);
          int finalValue = value;
          ((CommandSourceStack)ctx.getSource())
-            .sendSuccess(() -> Component.translatable("command.typemoonworld.favor.merlin.set", new Object[]{finalValue}), true);
+            .sendSuccess(() -> Component.translatable("command.typemoonworld.favor.merlin.set", finalValue), true);
          return 1;
       } catch (Exception var5) {
          return 0;
