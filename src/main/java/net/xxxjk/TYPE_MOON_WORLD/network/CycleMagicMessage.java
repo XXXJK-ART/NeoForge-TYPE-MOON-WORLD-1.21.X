@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public record CycleMagicMessage(boolean forward) implements CustomPacketPayload {
    public static final Type<CycleMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "cycle_magic"));
@@ -44,7 +45,7 @@ public record CycleMagicMessage(boolean forward) implements CustomPacketPayload 
                      }
                   }
 
-                  vars.syncRuntimeSelection(player);
+                  PlayerMagicSelectionService.syncCurrentSelection(player, vars);
                }
             )
             .exceptionally(e -> {

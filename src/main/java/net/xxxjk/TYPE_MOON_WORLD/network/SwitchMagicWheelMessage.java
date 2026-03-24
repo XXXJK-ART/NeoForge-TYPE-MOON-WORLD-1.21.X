@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public record SwitchMagicWheelMessage(int wheelIndex) implements CustomPacketPayload {
    public static final Type<SwitchMagicWheelMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "switch_magic_wheel"));
@@ -32,10 +33,9 @@ public record SwitchMagicWheelMessage(int wheelIndex) implements CustomPacketPay
                   int wheel = message.wheelIndex;
                   if (wheel >= 0 && wheel < 10) {
                      vars.switchActiveWheel(wheel);
-                     vars.syncRuntimeSelection(player);
-                  } else {
-                     vars.syncRuntimeSelection(player);
                   }
+
+                  PlayerMagicSelectionService.syncCurrentSelection(player, vars);
                }
             )
             .exceptionally(e -> {

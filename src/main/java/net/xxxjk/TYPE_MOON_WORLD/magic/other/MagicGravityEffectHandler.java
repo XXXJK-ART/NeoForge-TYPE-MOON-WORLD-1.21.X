@@ -1,15 +1,23 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.other;
 
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent.Post;
+import org.joml.Vector3f;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -21,6 +29,9 @@ public class MagicGravityEffectHandler {
    private static final String TAG_STACK_WINDOW_UNTIL = "TypeMoonGravityStackWindowUntil";
    private static final int STACK_WINDOW_TICKS = 2;
    private static final int MAX_STACKS = 5;
+   private static final int AURA_INTERVAL_TICKS = 6;
+   private static final DustParticleOptions LIGHT_DUST = new DustParticleOptions(new Vector3f(0.4F, 0.95F, 1.0F), 1.1F);
+   private static final DustParticleOptions HEAVY_DUST = new DustParticleOptions(new Vector3f(0.42F, 0.06F, 0.08F), 1.15F);
    private static final double HEAVY_EXTRA_FALL_ACCEL = 0.09;
    private static final double ULTRA_HEAVY_EXTRA_FALL_ACCEL = 0.16;
 
@@ -83,6 +94,64 @@ public class MagicGravityEffectHandler {
       return mode == 0 ? 1 : Math.max(1, Math.min(MAX_STACKS, target.getPersistentData().getInt(TAG_STACKS)));
    }
 
+   public static void playGravityCastFx(LivingEntity caster, LivingEntity target, int mode) {
+      if (caster != null && target != null && target.level() instanceof ServerLevel serverLevel && mode != MagicGravity.MODE_NORMAL) {
+         SoundSource soundSource = resolveSoundSource(caster);
+         boolean selfCast = caster == target;
+         if (selfCast) {
+            spawnGravityBurst(serverLevel, target.position(), 0.6, 0.9, mode, true);
+         } else {
+            spawnCasterBurst(serverLevel, caster);
+            spawnGravityBurst(serverLevel, target.position(), 0.8, 1.15, mode, false);
+         }
+
+         serverLevel.playSound(
+            null, target.getX(), target.getY(), target.getZ(), resolveGravitySound(mode), soundSource, selfCast ? 0.8F : 0.95F, resolveGravityPitch(mode)
+         );
+      }
+   }
+
+   public static void playGravityNormalizeFx(LivingEntity caster, LivingEntity target) {
+      if (caster != null && target != null && target.level() instanceof ServerLevel serverLevel) {
+         boolean selfCast = caster == target;
+         if (selfCast) {
+            spawnNormalizeBurst(serverLevel, target.position(), 0.55, 1.0);
+         } else {
+            spawnCasterBurst(serverLevel, caster);
+            spawnNormalizeBurst(serverLevel, target.position(), 0.75, 1.1);
+         }
+
+         serverLevel.playSound(
+            null,
+            target.getX(),
+            target.getY(),
+            target.getZ(),
+            SoundEvents.AMETHYST_BLOCK_CHIME,
+            resolveSoundSource(caster),
+            selfCast ? 0.45F : 0.55F,
+            1.08F
+         );
+      }
+   }
+
+   public static void emitGravityAura(LivingEntity target, int mode, int stacks) {
+      if (target != null && mode != MagicGravity.MODE_NORMAL && target.level() instanceof ServerLevel serverLevel) {
+         Vec3 center = target.position();
+         double radius = 0.32 + 0.05 * Math.max(0, stacks - 1);
+         int primary = Math.max(2, 3 + Math.max(0, stacks - 1));
+         int secondary = Math.max(1, 1 + Math.max(0, stacks - 1) / 2);
+         if (mode < 0) {
+            serverLevel.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 1.0, center.z, primary, radius * 0.82, 0.34, radius * 0.82, 0.02);
+            serverLevel.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.72, center.z, primary + 1, radius, 0.3, radius, 0.14);
+            serverLevel.sendParticles(LIGHT_DUST, center.x, center.y + 0.82, center.z, secondary + 1, radius * 0.52, 0.18, radius * 0.52, 0.0);
+         } else {
+            serverLevel.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.68, center.z, primary + 2, radius, 0.34, radius, 0.003);
+            serverLevel.sendParticles(ParticleTypes.FALLING_OBSIDIAN_TEAR, center.x, center.y + 0.94, center.z, secondary + 2, radius * 0.56, 0.22, radius * 0.56, 0.01);
+            serverLevel.sendParticles(HEAVY_DUST, center.x, center.y + 0.62, center.z, secondary + 1, radius * 0.48, 0.14, radius * 0.48, 0.0);
+         }
+      }
+   }
+
    @SubscribeEvent
    public static void onEntityTick(Post event) {
       if (event.getEntity() instanceof LivingEntity living) {
@@ -90,6 +159,10 @@ public class MagicGravityEffectHandler {
             int mode = getCurrentMode(living);
             if (mode != 0) {
                int stacks = getCurrentStacks(living);
+               if (living.tickCount % AURA_INTERVAL_TICKS == 0) {
+                  emitGravityAura(living, mode, stacks);
+               }
+
                if (mode != -1 && mode != -2) {
                   living.removeEffect(MobEffects.SLOW_FALLING);
                   int slowAmplifier = (mode == 2 ? 1 : 0) + (stacks - 1);
@@ -143,5 +216,59 @@ public class MagicGravityEffectHandler {
             event.setDamageMultiplier(event.getDamageMultiplier() * scale);
          }
       }
+   }
+
+   private static void spawnCasterBurst(ServerLevel serverLevel, LivingEntity caster) {
+      Vec3 center = caster.position();
+      serverLevel.sendParticles(ParticleTypes.PORTAL, center.x, center.y + 1.0, center.z, 8, 0.24, 0.2, 0.24, 0.01);
+      serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.88, center.z, 6, 0.18, 0.16, 0.18, 0.0);
+   }
+
+   private static void spawnGravityBurst(ServerLevel serverLevel, Vec3 center, double xzSpread, double ySpread, int mode, boolean selfCast) {
+      if (mode < 0) {
+         int shimmer = mode == MagicGravity.MODE_ULTRA_LIGHT ? 16 : 12;
+         int sparkle = mode == MagicGravity.MODE_ULTRA_LIGHT ? 12 : 8;
+         serverLevel.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 1.0, center.z, shimmer, xzSpread * 0.75, ySpread * 0.48, xzSpread * 0.75, 0.025);
+         serverLevel.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.84, center.z, sparkle, xzSpread * 0.92, ySpread * 0.42, xzSpread * 0.92, 0.16);
+         serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.64, center.z, 8, xzSpread * 0.72, ySpread * 0.24, xzSpread * 0.72, 0.0);
+         serverLevel.sendParticles(LIGHT_DUST, center.x, center.y + 0.78, center.z, mode == MagicGravity.MODE_ULTRA_LIGHT ? 14 : 10, xzSpread * 0.58, ySpread * 0.3, xzSpread * 0.58, 0.0);
+      } else {
+         int pressure = mode == MagicGravity.MODE_ULTRA_HEAVY ? 18 : 13;
+         int fallout = mode == MagicGravity.MODE_ULTRA_HEAVY ? 12 : 8;
+         serverLevel.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.76, center.z, pressure, xzSpread, ySpread * 0.34, xzSpread, 0.004);
+         serverLevel.sendParticles(ParticleTypes.FALLING_OBSIDIAN_TEAR, center.x, center.y + 1.02, center.z, fallout, xzSpread * 0.64, ySpread * 0.28, xzSpread * 0.64, 0.01);
+         serverLevel.sendParticles(ParticleTypes.SMOKE, center.x, center.y + 0.52, center.z, 7, xzSpread * 0.55, ySpread * 0.16, xzSpread * 0.55, 0.01);
+         serverLevel.sendParticles(HEAVY_DUST, center.x, center.y + 0.66, center.z, mode == MagicGravity.MODE_ULTRA_HEAVY ? 12 : 8, xzSpread * 0.56, ySpread * 0.22, xzSpread * 0.56, 0.0);
+      }
+
+      if (selfCast) {
+         if (mode < 0) {
+            serverLevel.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 1.08, center.z, 5, xzSpread * 0.36, 0.18, xzSpread * 0.36, 0.02);
+         } else {
+            serverLevel.sendParticles(ParticleTypes.FALLING_OBSIDIAN_TEAR, center.x, center.y + 1.02, center.z, 4, xzSpread * 0.34, 0.14, xzSpread * 0.34, 0.01);
+         }
+      }
+   }
+
+   private static void spawnNormalizeBurst(ServerLevel serverLevel, Vec3 center, double xzSpread, double ySpread) {
+      serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.82, center.z, 8, xzSpread, ySpread * 0.32, xzSpread, 0.0);
+      serverLevel.sendParticles(ParticleTypes.PORTAL, center.x, center.y + 0.66, center.z, 5, xzSpread * 0.72, ySpread * 0.22, xzSpread * 0.72, 0.008);
+   }
+
+   private static SoundEvent resolveGravitySound(int mode) {
+      return mode < 0 ? SoundEvents.AMETHYST_BLOCK_CHIME : SoundEvents.BEACON_ACTIVATE;
+   }
+
+   private static float resolveGravityPitch(int mode) {
+      return switch (mode) {
+         case MagicGravity.MODE_ULTRA_LIGHT -> 1.2F;
+         case MagicGravity.MODE_LIGHT -> 1.05F;
+         case MagicGravity.MODE_ULTRA_HEAVY -> 0.45F;
+         default -> 0.55F;
+      };
+   }
+
+   private static SoundSource resolveSoundSource(LivingEntity caster) {
+      return caster instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
    }
 }

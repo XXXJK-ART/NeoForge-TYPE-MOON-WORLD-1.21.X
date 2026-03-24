@@ -19,7 +19,16 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.cyan.MagicCyanThrow;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.cyan.MagicCyanWind;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldUse;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.emerald.MagicEmeraldWinterRiver;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.ruby.MagicRubyThrow;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.ruby.MagicRubyFlameSword;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.sapphire.MagicSapphireThrow;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.sapphire.MagicSapphireWinterFrost;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
@@ -41,6 +50,16 @@ public final class BuiltinMagicExecutors {
    }
 
    public static void registerBuiltin(IMagicRegistry registry) {
+      registry.register("ruby_throw", ctx -> executeSimple(ctx, MagicRubyThrow::execute), PROVIDER);
+      registry.register("sapphire_throw", ctx -> executeSimple(ctx, MagicSapphireThrow::execute), PROVIDER);
+      registry.register("emerald_use", ctx -> executeSimple(ctx, MagicEmeraldUse::execute), PROVIDER);
+      registry.register("topaz_throw", ctx -> executeSimple(ctx, MagicTopazThrow::execute), PROVIDER);
+      registry.register("cyan_throw", ctx -> executeSimple(ctx, MagicCyanThrow::execute), PROVIDER);
+      registry.register("ruby_flame_sword", ctx -> executeSimple(ctx, MagicRubyFlameSword::execute), PROVIDER);
+      registry.register("sapphire_winter_frost", ctx -> executeSimple(ctx, MagicSapphireWinterFrost::execute), PROVIDER);
+      registry.register("emerald_winter_river", ctx -> executeSimple(ctx, MagicEmeraldWinterRiver::execute), PROVIDER);
+      registry.register("topaz_reinforcement", ctx -> executeSimple(ctx, MagicTopazReinforcement::execute), PROVIDER);
+      registry.register("cyan_wind", ctx -> executeSimple(ctx, MagicCyanWind::execute), PROVIDER);
       registry.register("reinforcement", BuiltinMagicExecutors::executeReinforcement, "typemoonworld_core");
       registry.register("reinforcement_self", ctx -> executeSimple(ctx, MagicReinforcementSelf::execute), "typemoonworld_core");
       registry.register("reinforcement_other", ctx -> executeSimple(ctx, MagicReinforcementOther::execute), "typemoonworld_core");

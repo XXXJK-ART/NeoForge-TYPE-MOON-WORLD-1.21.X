@@ -40,10 +40,12 @@ public class MagicGravity {
             Component resultMessage;
             if (nextMode == MODE_NORMAL) {
                MagicGravityEffectHandler.clearGravityState(target);
+               MagicGravityEffectHandler.playGravityNormalizeFx(player, target);
                resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
             } else {
                int duration = getDurationTicks(vars.proficiency_gravity_magic);
                MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration);
+               MagicGravityEffectHandler.playGravityCastFx(player, target, nextMode);
 
                String modeKey = switch (nextMode) {
                   case -2 -> "gui.typemoonworld.mode.gravity.ultra_light";

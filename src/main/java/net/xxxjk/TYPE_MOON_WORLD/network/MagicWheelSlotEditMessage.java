@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public record MagicWheelSlotEditMessage(
    int action,
@@ -92,7 +93,10 @@ public record MagicWheelSlotEditMessage(
                         }
 
                         vars.rebuildSelectedMagicsFromActiveWheel();
+                        PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
                         vars.syncPlayerVariables(player);
+                        vars.syncRuntimeSelection(player);
+                        vars.syncModeState(player);
                      }
                   }
                }
@@ -156,12 +160,7 @@ public record MagicWheelSlotEditMessage(
    }
 
    private static boolean hasLearnedMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      return !"reinforcement".equals(magicId)
-         ? vars.learned_magics.contains(magicId)
-         : vars.learned_magics.contains("reinforcement")
-            || vars.learned_magics.contains("reinforcement_self")
-            || vars.learned_magics.contains("reinforcement_other")
-            || vars.learned_magics.contains("reinforcement_item");
+      return vars != null && vars.hasLearnedSelfMagic(magicId);
    }
 
    private static boolean isKnowledgeOnlyMagic(String magicId) {

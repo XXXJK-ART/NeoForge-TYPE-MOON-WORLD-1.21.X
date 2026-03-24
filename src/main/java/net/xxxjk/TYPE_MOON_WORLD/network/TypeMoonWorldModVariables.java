@@ -781,11 +781,24 @@ public class TypeMoonWorldModVariables {
          return !stack.isEmpty() && stack.getItem() instanceof MagicCrestItem;
       }
 
+      public boolean hasLearnedSelfMagic(String magicId) {
+         if (magicId == null || magicId.isEmpty()) {
+            return false;
+         } else {
+            return !"reinforcement".equals(magicId)
+               ? this.learned_magics.contains(magicId)
+               : this.learned_magics.contains("reinforcement")
+                  || this.learned_magics.contains("reinforcement_self")
+                  || this.learned_magics.contains("reinforcement_other")
+                  || this.learned_magics.contains("reinforcement_item");
+         }
+      }
+
       public boolean isWheelSlotEntryCastable(TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slotEntry) {
          if (slotEntry == null || slotEntry.isEmpty() || !isKnownMagicId(slotEntry.magicId)) {
             return false;
          } else if (!"crest".equals(slotEntry.sourceType)) {
-            return this.learned_magics.contains(slotEntry.magicId);
+            return this.hasLearnedSelfMagic(slotEntry.magicId);
          } else if (!this.hasValidImplantedCrest()) {
             return false;
          } else {
@@ -793,7 +806,7 @@ public class TypeMoonWorldModVariables {
             if (crestEntry == null || !crestEntry.active || !slotEntry.magicId.equals(crestEntry.magicId)) {
                return false;
             } else {
-               return "plunder".equals(crestEntry.sourceKind) ? true : this.learned_magics.contains(slotEntry.magicId);
+               return "plunder".equals(crestEntry.sourceKind) ? true : this.hasLearnedSelfMagic(slotEntry.magicId);
             }
          }
       }

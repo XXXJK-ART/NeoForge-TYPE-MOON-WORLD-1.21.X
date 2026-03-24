@@ -5,9 +5,11 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.minecraft.network.chat.Component;
 
 public record MagicModeSwitchMessage(int actionType, int value) implements CustomPacketPayload {
@@ -30,6 +32,10 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
             context.enqueueWork(() -> {
                 net.minecraft.world.entity.player.Player player = context.player();
                 TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                vars.ensureMagicSystemInitialized();
+                vars.rebuildSelectedMagicsFromActiveWheel();
+                PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
+                String currentMagic = getCurrentMagic(vars);
                 
                 // actionType:
                 // 0: Set Mode (Default/Legacy) - value is mode index
@@ -41,7 +47,13 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 7: Set Gravity Mode - value is -2..2 (ultra light -> ultra heavy)
                 
                 if (message.actionType == 2) {
-                    vars.reinforcement_target = message.value;
+                    if (!isReinforcementMagic(currentMagic)) {
+                        return;
+                    }
+                    if ("reinforcement".equals(currentMagic) && isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+                    vars.reinforcement_target = Math.max(0, Math.min(3, message.value));
                     
                     Component targetComp = Component.literal("");
                     switch (vars.reinforcement_target) {
@@ -52,10 +64,20 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                     }
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.target_selected", targetComp), true);
                     
-                    vars.syncPlayerVariables(player);
+                    if ("reinforcement".equals(currentMagic)) {
+                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    } else {
+                        vars.syncModeState(player);
+                    }
                     return;
                 } else if (message.actionType == 3) {
-                    vars.reinforcement_mode = message.value;
+                    if (!isReinforcementMagic(currentMagic)) {
+                        return;
+                    }
+                    if ("reinforcement".equals(currentMagic) && isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+                    vars.reinforcement_mode = Math.max(0, Math.min(3, message.value));
                     
                     Component feedbackComp = Component.literal("");
                     if (vars.reinforcement_target == 3) {
@@ -80,22 +102,35 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.part_selected", feedbackComp), true);
                     }
                     
-                    vars.syncPlayerVariables(player);
+                    if ("reinforcement".equals(currentMagic)) {
+                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    } else {
+                        vars.syncModeState(player);
+                    }
                     return;
                 } else if (message.actionType == 4) {
-                    vars.reinforcement_level = message.value;
+                    if (!isReinforcementMagic(currentMagic)) {
+                        return;
+                    }
+                    if ("reinforcement".equals(currentMagic) && isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+                    vars.reinforcement_level = Math.max(1, Math.min(5, message.value));
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.level_selected", vars.reinforcement_level), true);
-                    vars.syncPlayerVariables(player);
+                    if ("reinforcement".equals(currentMagic)) {
+                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    } else {
+                        vars.syncModeState(player);
+                    }
                     return;
                 } else if (message.actionType == 5) {
                     // This is now handled in CastMagic when reinforcement_target == 3
                     return;
                 } else if (message.actionType == 6) {
-                    if (vars.selected_magics.isEmpty() || vars.current_magic_index < 0 || vars.current_magic_index >= vars.selected_magics.size()) {
+                    if (!"gravity_magic".equals(currentMagic)) {
                         return;
                     }
-                    String currentMagic = vars.selected_magics.get(vars.current_magic_index);
-                    if (!"gravity_magic".equals(currentMagic)) {
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
                         return;
                     }
 
@@ -112,14 +147,13 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                                     : "gui.typemoonworld.mode.other"
                     );
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.gravity.target_changed", targetComp), true);
-                    vars.syncPlayerVariables(player);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 } else if (message.actionType == 7) {
-                    if (vars.selected_magics.isEmpty() || vars.current_magic_index < 0 || vars.current_magic_index >= vars.selected_magics.size()) {
+                    if (!"gravity_magic".equals(currentMagic)) {
                         return;
                     }
-                    String currentMagic = vars.selected_magics.get(vars.current_magic_index);
-                    if (!"gravity_magic".equals(currentMagic)) {
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
                         return;
                     }
 
@@ -139,13 +173,11 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             Component.translatable("message.typemoonworld.magic.gravity.mode_changed", Component.translatable(modeKey)),
                             true
                     );
-                    vars.syncPlayerVariables(player);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 }
 
-                if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
-                    String currentMagic = vars.selected_magics.get(vars.current_magic_index);
-                    
+                if (!currentMagic.isEmpty()) {
                     if ("sword_barrel_full_open".equals(currentMagic)) {
                         // Switch between 5 modes (0, 1, 2, 3, 4)
                         int maxModes = 5;
@@ -247,6 +279,35 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         
                         player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_JEWEL_MODE_CHANGE, modeStr), true);
                         vars.syncPlayerVariables(player);
+                    } else if ("gandr_machine_gun".equals(currentMagic)) {
+                        if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                            return;
+                        }
+                        if (message.actionType == 0) {
+                            if (message.value < 0 || message.value > 1) {
+                                return;
+                            }
+                            vars.gandr_machine_gun_mode = message.value;
+                        } else if (message.actionType == 1) {
+                            if (message.value == 0) {
+                                return;
+                            }
+                            vars.gandr_machine_gun_mode = vars.gandr_machine_gun_mode == 0 ? 1 : 0;
+                        } else {
+                            return;
+                        }
+
+                        String modeKey = vars.gandr_machine_gun_mode == 1
+                            ? "gui.typemoonworld.mode.gandr_barrage"
+                            : "gui.typemoonworld.mode.gandr_rapid";
+                        player.displayClientMessage(
+                            Component.translatable(
+                                "message.typemoonworld.magic.gandr_machine_gun.mode_change",
+                                Component.translatable(modeKey)
+                            ),
+                            true
+                        );
+                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     } else if ("reinforcement".equals(currentMagic)) {
                         // Reinforcement logic handled by actionType 2 and 3 at start of method
                     }
@@ -273,5 +334,28 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
             return vars.learned_magics.contains("jewel_magic_release");
         }
         return true;
+    }
+
+    private static String getCurrentMagic(TypeMoonWorldModVariables.PlayerVariables vars) {
+        if (vars != null && !vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
+            return vars.selected_magics.get(vars.current_magic_index);
+        }
+        return "";
+    }
+
+    private static boolean isReinforcementMagic(String magicId) {
+        return "reinforcement".equals(magicId)
+            || "reinforcement_self".equals(magicId)
+            || "reinforcement_other".equals(magicId)
+            || "reinforcement_item".equals(magicId);
+    }
+
+    private static boolean isRuntimePresetLocked(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+        if (player != null && vars != null && magicId != null && !magicId.isEmpty() && vars.isCurrentSelectionFromCrest(magicId)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
+            vars.syncModeState(player);
+            return true;
+        }
+        return false;
     }
 }

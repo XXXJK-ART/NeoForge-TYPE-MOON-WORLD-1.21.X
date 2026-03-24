@@ -268,11 +268,11 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_BOOK_REINFORCEMENT = ITEMS.register("magic_book_reinforcement",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, // learnAll=false (default), no req
-                    "reinforcement"));
+                    (String)null, "reinforcement"));
 
     public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, // no req
-                    "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
+                    (String)null, "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));

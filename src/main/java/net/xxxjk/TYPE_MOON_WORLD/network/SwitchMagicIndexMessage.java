@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public record SwitchMagicIndexMessage(int runtimeIndex) implements CustomPacketPayload {
    public static final Type<SwitchMagicIndexMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "switch_magic_index"));
@@ -33,10 +34,9 @@ public record SwitchMagicIndexMessage(int runtimeIndex) implements CustomPacketP
                   int idx = message.runtimeIndex;
                   if (idx >= 0 && idx < vars.selected_magics.size()) {
                      vars.current_magic_index = idx;
-                     vars.syncRuntimeSelection(player);
-                  } else {
-                     vars.syncRuntimeSelection(player);
                   }
+
+                  PlayerMagicSelectionService.syncCurrentSelection(player, vars);
                }
             )
             .exceptionally(e -> {

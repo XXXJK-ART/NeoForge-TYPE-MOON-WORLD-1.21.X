@@ -479,7 +479,7 @@ public class MysticMagicianEntity extends PathfinderMob {
    }
 
    private boolean canTargetLiving(LivingEntity living) {
-      if (living == null || !living.isAlive() || living == this) {
+      if (!NpcMagicCastBridge.isNpcTargetCandidate(this, living)) {
          return false;
       } else if (living instanceof Player player) {
          if (player.isCreative() || player.isSpectator()) {
@@ -500,11 +500,12 @@ public class MysticMagicianEntity extends PathfinderMob {
    private void acquireAggressorTarget() {
       LivingEntity current = this.getTarget();
       if (current == null || !current.isAlive()) {
-         double range = Math.max(24.0, this.getAttributeValue(Attributes.FOLLOW_RANGE));
+         double range = Math.max(18.0, this.getAttributeValue(Attributes.FOLLOW_RANGE) + 2.0);
          Monster nearestThreat = null;
          double bestDist = Double.MAX_VALUE;
 
-         for (Monster monster : this.level().getEntitiesOfClass(Monster.class, this.getBoundingBox().inflate(range), m -> m.isAlive() && m.getTarget() == this)) {
+         for (Monster monster : this.level()
+            .getEntitiesOfClass(Monster.class, this.getBoundingBox().inflate(range), m -> m.isAlive() && m.getTarget() == this && NpcMagicCastBridge.isNpcTargetCandidate(this, m))) {
             double dist = this.distanceToSqr(monster);
             if (dist < bestDist) {
                bestDist = dist;

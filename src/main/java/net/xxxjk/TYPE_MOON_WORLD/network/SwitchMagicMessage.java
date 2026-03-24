@@ -11,6 +11,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public record SwitchMagicMessage(String magicId) implements CustomPacketPayload {
    public static final Type<SwitchMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "switch_magic"));
@@ -34,7 +35,6 @@ public record SwitchMagicMessage(String magicId) implements CustomPacketPayload 
                   vars.rebuildSelectedMagicsFromActiveWheel();
                   if (vars.selected_magics.isEmpty()) {
                      vars.current_magic_index = 0;
-                     vars.syncRuntimeSelection(player);
                   } else {
                      int size = vars.selected_magics.size();
                      int start = Mth.clamp(vars.current_magic_index, 0, size - 1);
@@ -50,9 +50,10 @@ public record SwitchMagicMessage(String magicId) implements CustomPacketPayload 
 
                      if (chosen >= 0) {
                         vars.current_magic_index = chosen;
-                        vars.syncRuntimeSelection(player);
                      }
                   }
+
+                  PlayerMagicSelectionService.syncCurrentSelection(player, vars);
                }
             )
             .exceptionally(e -> {
