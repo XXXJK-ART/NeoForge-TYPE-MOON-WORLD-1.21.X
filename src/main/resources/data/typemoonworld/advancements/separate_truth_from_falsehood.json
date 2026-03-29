@@ -1,0 +1,28 @@
+{
+  "parent": "typemoonworld:flower_magician",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:merlin_spawn_egg"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.separate_truth_from_falsehood.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.separate_truth_from_falsehood.desc"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

@@ -26,7 +26,17 @@ import net.minecraft.world.item.component.ItemAttributeModifiers.Entry;
 
 public final class NpcMagicFilterService {
    private static final Set<String> CANDIDATE_MAGIC_POOL = Set.of(
-      "gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_random_shoot", "jewel_machine_gun"
+      "gander",
+      "gandr_machine_gun",
+      "gravity_magic",
+      "reinforcement",
+      "jewel_random_shoot",
+      "jewel_machine_gun",
+      "ruby_flame_sword",
+      "sapphire_winter_frost",
+      "emerald_winter_river",
+      "topaz_reinforcement",
+      "cyan_wind"
    );
    private static final Set<String> HARD_EXCLUDED_MAGICS = Set.of(
       "unlimited_blade_works", "sword_barrel_full_open", "structural_analysis", "jewel_magic_shoot", "jewel_magic_release"

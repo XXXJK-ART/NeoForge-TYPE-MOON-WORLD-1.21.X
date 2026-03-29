@@ -37,6 +37,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -111,6 +112,9 @@ public class CommonEvents {
                               if (merlin != null) {
                                  merlin.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, ref.getYRot(), ref.getXRot());
                                  serverLevel.addFreshEntity(merlin);
+                                 TypeMoonAdvancementHelper.grantNearby(
+                                    serverLevel, Vec3.atCenterOf(spawnPos), 24.0, TypeMoonAdvancementHelper.WANDERER_OF_PARADISE
+                                 );
                               }
                            }
                         }
@@ -130,6 +134,12 @@ public class CommonEvents {
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
             MagicGander.tick(serverPlayer);
+            if (serverPlayer.tickCount % 20 == 0) {
+               TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
+                  TypeMoonWorldModVariables.PLAYER_VARIABLES
+               );
+               TypeMoonAdvancementHelper.syncPassive(serverPlayer, vars);
+            }
          }
 
          if (player.isSpectator()) {
@@ -268,7 +278,7 @@ public class CommonEvents {
                   }
                }
 
-               if (event.getEntity() instanceof Player damagedPlayer && damagedPlayer.level() instanceof ServerLevel serverLevelx) {
+               if (event.getEntity() instanceof ServerPlayer damagedPlayer && damagedPlayer.level() instanceof ServerLevel serverLevelx) {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)damagedPlayer.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
@@ -350,6 +360,8 @@ public class CommonEvents {
                                     spx.displayClientMessage(message, false);
                                  }
                               }
+
+                              TypeMoonAdvancementHelper.grant(damagedPlayer, TypeMoonAdvancementHelper.SEPARATE_TRUTH_FROM_FALSEHOOD);
                            }
                         }
                      }

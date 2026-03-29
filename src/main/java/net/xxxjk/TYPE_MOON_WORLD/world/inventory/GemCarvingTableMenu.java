@@ -21,6 +21,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
@@ -357,6 +358,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                   }
 
                   if (successCount > 0) {
+                     TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.PRESET_MAGIC);
                      player.level().playSound(null, player.blockPosition(), SoundEvents.UI_STONECUTTER_TAKE_RESULT, SoundSource.PLAYERS, 0.8F, 1.2F);
                   } else {
                      player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 0.8F, 1.0F);

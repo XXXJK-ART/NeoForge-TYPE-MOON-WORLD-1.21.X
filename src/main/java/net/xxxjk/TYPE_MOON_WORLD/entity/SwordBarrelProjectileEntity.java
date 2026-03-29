@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -45,7 +46,9 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectileVisualEffectHelper;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -62,8 +65,12 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
       SwordBarrelProjectileEntity.class, EntityDataSerializers.BOOLEAN
    );
    private static final EntityDataAccessor<Integer> TARGET_ENTITY_ID = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> VISUAL_COLOR = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> SPAWN_PHASE = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
    private boolean isMode1Tracking = false;
    private boolean isMode2Tracking = false;
+   private Vec3 hoverOffset = null;
+   public final List<Vec3> tracePos = new LinkedList<>();
 
    public SwordBarrelProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -72,6 +79,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
    public SwordBarrelProjectileEntity(Level level, LivingEntity shooter, ItemStack stack) {
       super(ModEntities.SWORD_BARREL_PROJECTILE.get(), shooter, level);
       this.setItem(stack);
+      this.setVisualColorRgb(MagicCircuitColorHelper.ensureColor(shooter));
    }
 
    public SwordBarrelProjectileEntity(Level level, double x, double y, double z) {
@@ -104,6 +112,20 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
       builder.define(HAS_TARGET, false);
       builder.define(IS_BROKEN_PHANTASM, false);
       builder.define(TARGET_ENTITY_ID, -1);
+      builder.define(VISUAL_COLOR, MagicCircuitColorHelper.DEFAULT_COLOR);
+      builder.define(SPAWN_PHASE, 10);
+   }
+
+   public void setVisualColorRgb(int color) {
+      this.entityData.set(VISUAL_COLOR, color);
+   }
+
+   public int getVisualColorRgb() {
+      return (Integer)this.entityData.get(VISUAL_COLOR);
+   }
+
+   public int getSpawnPhase() {
+      return (Integer)this.entityData.get(SPAWN_PHASE);
    }
 
    public void setTargetEntity(int entityId) {
@@ -142,6 +164,14 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
       this.isMode2Tracking = tracking;
    }
 
+   public void setHoverOffset(Vec3 offset) {
+      this.hoverOffset = offset;
+   }
+
+   public boolean isHovering() {
+      return (Boolean)this.entityData.get(IS_HOVERING);
+   }
+
    public void tick() {
       if ((Boolean)this.entityData.get(IS_HOVERING)) {
          int ticks = (Integer)this.entityData.get(HOVER_TICKS);
@@ -164,7 +194,24 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
          if (ticks > 0) {
             this.entityData.set(HOVER_TICKS, ticks - 1);
             this.setDeltaMovement(Vec3.ZERO);
+            if (this.level().isClientSide) {
+               this.tracePos.clear();
+            }
             if (!this.level().isClientSide) {
+               if (this.isMode2Tracking && this.hoverOffset != null && this.getOwner() instanceof LivingEntity livingOwner) {
+                  float yawRad = (float) Math.toRadians(livingOwner.getYRot());
+                  double fwdX = -Math.sin(yawRad);
+                  double fwdZ = Math.cos(yawRad);
+                  double rightX = fwdZ;
+                  double rightZ = -fwdX;
+                  double localRight = this.hoverOffset.x;
+                  double localUp = this.hoverOffset.y;
+                  double localForward = this.hoverOffset.z;
+                  Vec3 newPos = livingOwner.position()
+                     .add(rightX * localRight, localUp, rightZ * localRight)
+                     .add(fwdX * localForward, 0.0, fwdZ * localForward);
+                  this.setPos(newPos.x, newPos.y, newPos.z);
+               }
                int targetId = (Integer)this.entityData.get(TARGET_ENTITY_ID);
                boolean locked = false;
                if (targetId != -1) {
@@ -208,10 +255,6 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
             }
 
             this.setPos(this.getX(), this.getY(), this.getZ());
-            if (this.level().isClientSide) {
-               this.level().addParticle(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
-            }
-
             return;
          }
 
@@ -294,7 +337,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
       }
 
       if (this.level().isClientSide) {
-         this.level().addParticle(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+         ProjectileVisualEffectHelper.captureTrace(this.tracePos, this, 80);
       }
    }
 

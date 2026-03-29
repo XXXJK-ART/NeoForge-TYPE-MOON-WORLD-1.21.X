@@ -6,6 +6,16 @@ import java.util.Set;
 
 public final class MagicClassification {
    private static final Map<String, MagicClassification.ManaCostType> MAGIC_COST_TYPES = Map.ofEntries(
+      Map.entry("ruby_throw", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("sapphire_throw", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("emerald_use", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("topaz_throw", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("cyan_throw", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("ruby_flame_sword", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("sapphire_winter_frost", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("emerald_winter_river", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("topaz_reinforcement", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("cyan_wind", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("jewel_magic_shoot", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("jewel_magic_release", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("jewel_random_shoot", MagicClassification.ManaCostType.ONE_TIME),

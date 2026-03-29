@@ -25,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -554,14 +555,15 @@ public final class GemEngravingService {
                Component targetComp = (Component)(target == player ? Component.translatable("gui.typemoonworld.mode.self") : target.getDisplayName());
                player.displayClientMessage(MagicGravity.getChantComponentForMode(mode), true);
                Component resultMessage;
-               if (mode == MagicGravity.MODE_NORMAL) {
-                  MagicGravityEffectHandler.clearGravityState(target);
-                  resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
-               } else {
-                  long until = player.level().getGameTime() + duration;
-                  MagicGravityEffectHandler.applyGravityState(target, mode, until);
+                 if (mode == MagicGravity.MODE_NORMAL) {
+                    MagicGravityEffectHandler.clearGravityState(target);
+                    resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
+                 } else {
+                    long until = player.level().getGameTime() + duration;
+                    MagicGravityEffectHandler.applyGravityState(target, mode, until, player);
+                    TypeMoonAdvancementHelper.grantOutIfEligible(player, target, mode);
 
-                  String modeKey = switch (mode) {
+                    String modeKey = switch (mode) {
                      case -2 -> "gui.typemoonworld.mode.gravity.ultra_light";
                      case -1 -> "gui.typemoonworld.mode.gravity.light";
                      default -> "gui.typemoonworld.mode.gravity.normal";

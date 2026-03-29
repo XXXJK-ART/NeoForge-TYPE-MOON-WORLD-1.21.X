@@ -1,0 +1,28 @@
+{
+  "parent": "typemoonworld:wanderer_of_paradise",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:merlin_spawn_egg"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.flower_magician.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.flower_magician.desc"
+    },
+    "frame": "goal",
+    "hidden": true,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

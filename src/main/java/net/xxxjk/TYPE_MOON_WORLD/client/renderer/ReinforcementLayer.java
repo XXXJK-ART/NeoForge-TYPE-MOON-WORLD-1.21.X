@@ -43,7 +43,9 @@ public class ReinforcementLayer extends RenderLayer<AbstractClientPlayer, Player
          boolean hasSight = player.hasEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT) || player.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_SIGHT);
          boolean rightArmByItem = isArmHoldingMagicTextureItem(player, HumanoidArm.RIGHT);
          boolean leftArmByItem = isArmHoldingMagicTextureItem(player, HumanoidArm.LEFT);
-         if (hasStrength || hasDefense || hasAgility || hasSight || rightArmByItem || leftArmByItem) {
+         boolean rightArmByCrest = MagicCrestVisualHelper.shouldRenderCrestArm(player, HumanoidArm.RIGHT);
+         boolean leftArmByCrest = MagicCrestVisualHelper.shouldRenderCrestArm(player, HumanoidArm.LEFT);
+         if (hasStrength || hasDefense || hasAgility || hasSight || rightArmByItem || leftArmByItem || rightArmByCrest || leftArmByCrest) {
             poseStack.pushPose();
             poseStack.scale(1.013F, 1.013F, 1.013F);
             PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)this.getParentModel();
@@ -66,6 +68,14 @@ public class ReinforcementLayer extends RenderLayer<AbstractClientPlayer, Player
                if (leftArmByItem) {
                   renderLeftArmPart(model, poseStack, buffer, player);
                }
+            }
+
+            if (rightArmByCrest) {
+               renderRightCrestArm(model, poseStack, buffer);
+            }
+
+            if (leftArmByCrest) {
+               renderLeftCrestArm(model, poseStack, buffer);
             }
 
             if (hasAgility) {
@@ -113,6 +123,20 @@ public class ReinforcementLayer extends RenderLayer<AbstractClientPlayer, Player
       model.leftArm.visible = true;
       model.leftSleeve.visible = true;
       renderCurrentVisible(model, poseStack, buffer, ReinforcementRenderType.ReinforcementPart.ARM, player);
+   }
+
+   private static void renderRightCrestArm(PlayerModel<AbstractClientPlayer> model, PoseStack poseStack, MultiBufferSource buffer) {
+      setAllHidden(model);
+      model.rightArm.visible = true;
+      model.rightSleeve.visible = true;
+      MagicCrestVisualHelper.renderArm(model, buffer, HumanoidArm.RIGHT, poseStack);
+   }
+
+   private static void renderLeftCrestArm(PlayerModel<AbstractClientPlayer> model, PoseStack poseStack, MultiBufferSource buffer) {
+      setAllHidden(model);
+      model.leftArm.visible = true;
+      model.leftSleeve.visible = true;
+      MagicCrestVisualHelper.renderArm(model, buffer, HumanoidArm.LEFT, poseStack);
    }
 
    private static void renderLegPart(PlayerModel<AbstractClientPlayer> model, PoseStack poseStack, MultiBufferSource buffer, AbstractClientPlayer player) {

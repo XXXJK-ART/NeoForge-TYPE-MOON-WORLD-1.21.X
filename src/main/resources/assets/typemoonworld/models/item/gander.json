@@ -1,11 +1,6 @@
 {
-  "loader": "neoforge:obj",
-  "model": "typemoonworld:models/item/gander.obj",
-  "flip_v": true,
-  "automatic_culling": false,
-  "shade_quads": true,
-  "render_type": "minecraft:translucent",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "texture0": "typemoonworld:item/gander_red_ball_texture"
+    "layer0": "typemoonworld:item/gander_red_ball_texture"
   }
 }

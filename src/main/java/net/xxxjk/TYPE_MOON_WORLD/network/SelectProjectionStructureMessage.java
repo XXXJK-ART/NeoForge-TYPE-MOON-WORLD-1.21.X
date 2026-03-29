@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,16 +37,23 @@ public record SelectProjectionStructureMessage(String structureId) implements Cu
                   String id = message.structureId == null ? "" : message.structureId;
                   if (id.isEmpty() || isValidStructureId(id)) {
                      if (!id.isEmpty() && vars.getStructureById(id) != null) {
-                        vars.projection_selected_structure_id = id;
-                        vars.projection_selected_item = ItemStack.EMPTY;
+                        if (id.equals(vars.projection_selected_structure_id)) {
+                           vars.projection_selected_structure_id = "";
+                        } else {
+                           vars.projection_selected_structure_id = id;
+                           vars.projection_selected_item = ItemStack.EMPTY;
+                        }
                      } else {
                         vars.projection_selected_structure_id = "";
                      }
 
                      CompoundTag delta = new CompoundTag();
                      delta.putString("selected_structure_id", vars.projection_selected_structure_id == null ? "" : vars.projection_selected_structure_id);
-                     delta.putBoolean("clear_selected_item", true);
+                     if (!vars.projection_selected_structure_id.isEmpty()) {
+                        delta.putBoolean("clear_selected_item", true);
+                     }
                      vars.syncProjectionDelta(context.player(), 2, delta);
+                     PlayerMagicSelectionService.syncPresetMutation(context.player(), vars);
                   }
                }
             )

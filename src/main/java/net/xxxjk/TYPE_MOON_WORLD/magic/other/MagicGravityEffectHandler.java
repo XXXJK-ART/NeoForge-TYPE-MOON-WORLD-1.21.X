@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.other;
 
+import java.util.UUID;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +10,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -17,6 +19,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent.Post;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
 import org.joml.Vector3f;
 
 @EventBusSubscriber(
@@ -27,6 +30,11 @@ public class MagicGravityEffectHandler {
    private static final String TAG_UNTIL = "TypeMoonGravityUntil";
    private static final String TAG_STACKS = "TypeMoonGravityStacks";
    private static final String TAG_STACK_WINDOW_UNTIL = "TypeMoonGravityStackWindowUntil";
+   private static final String TAG_CASTER_UUID = "TypeMoonGravityCasterUUID";
+   private static final String TAG_LINKED_SLOW_UNTIL = "TypeMoonGravityLinkedSlowUntil";
+   private static final String TAG_LINKED_SLOW_AMPLIFIER = "TypeMoonGravityLinkedSlowAmplifier";
+   private static final String TAG_LINKED_SLOW_CASTER_UUID = "TypeMoonGravityLinkedSlowCasterUUID";
+   private static final String TAG_SHELL_UUID = "TypeMoonGravityShellUUID";
    private static final int STACK_WINDOW_TICKS = 2;
    private static final int MAX_STACKS = 5;
    private static final int AURA_INTERVAL_TICKS = 6;
@@ -36,6 +44,10 @@ public class MagicGravityEffectHandler {
    private static final double ULTRA_HEAVY_EXTRA_FALL_ACCEL = 0.16;
 
    public static void applyGravityState(LivingEntity target, int mode, long untilGameTime) {
+      applyGravityState(target, mode, untilGameTime, null);
+   }
+
+   public static void applyGravityState(LivingEntity target, int mode, long untilGameTime, LivingEntity caster) {
       CompoundTag tag = target.getPersistentData();
       long now = target.level().getGameTime();
       int currentMode = tag.contains(TAG_MODE) ? tag.getInt(TAG_MODE) : 0;
@@ -57,6 +69,18 @@ public class MagicGravityEffectHandler {
       tag.putLong(TAG_UNTIL, untilGameTime);
       tag.putInt(TAG_STACKS, stacks);
       tag.putLong(TAG_STACK_WINDOW_UNTIL, now + STACK_WINDOW_TICKS);
+      writeCasterUuid(tag, TAG_CASTER_UUID, caster, target);
+   }
+
+   public static void applyLinkedSlow(LivingEntity target, int durationTicks, int amplifier, LivingEntity caster) {
+      if (target != null) {
+         CompoundTag tag = target.getPersistentData();
+         long now = target.level().getGameTime();
+         tag.putLong(TAG_LINKED_SLOW_UNTIL, now + Math.max(20, durationTicks));
+         tag.putInt(TAG_LINKED_SLOW_AMPLIFIER, Math.max(0, amplifier));
+         writeCasterUuid(tag, TAG_LINKED_SLOW_CASTER_UUID, caster, target);
+         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 10, Math.max(0, amplifier), false, false, true));
+      }
    }
 
    public static void clearGravityState(LivingEntity target) {
@@ -65,11 +89,21 @@ public class MagicGravityEffectHandler {
       tag.remove(TAG_UNTIL);
       tag.remove(TAG_STACKS);
       tag.remove(TAG_STACK_WINDOW_UNTIL);
+      tag.remove(TAG_CASTER_UUID);
+      clearLinkedSlowState(target, true);
+      target.removeEffect(MobEffects.JUMP);
+      target.removeEffect(MobEffects.SLOW_FALLING);
+      target.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
    }
 
    public static int getCurrentMode(LivingEntity target) {
       CompoundTag tag = target.getPersistentData();
       if (tag.contains(TAG_MODE) && tag.contains(TAG_UNTIL)) {
+         if (hasInvalidCaster(target, tag, TAG_CASTER_UUID)) {
+            clearGravityState(target);
+            return 0;
+         }
+
          long now = target.level().getGameTime();
          long until = tag.getLong(TAG_UNTIL);
          if (now >= until) {
@@ -156,6 +190,7 @@ public class MagicGravityEffectHandler {
    public static void onEntityTick(Post event) {
       if (event.getEntity() instanceof LivingEntity living) {
          if (!living.level().isClientSide()) {
+            tickLinkedSlow(living);
             int mode = getCurrentMode(living);
             if (mode != 0) {
                int stacks = getCurrentStacks(living);
@@ -164,10 +199,11 @@ public class MagicGravityEffectHandler {
                }
 
                if (mode != -1 && mode != -2) {
+                  interruptFallFlying(living);
                   living.removeEffect(MobEffects.SLOW_FALLING);
                   int slowAmplifier = (mode == 2 ? 1 : 0) + (stacks - 1);
                   living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, slowAmplifier, false, false, false));
-                  if (!living.onGround() && !living.isInWaterOrBubble() && !living.isFallFlying()) {
+                  if (!living.onGround() && !living.isInWaterOrBubble()) {
                      Vec3 motion = living.getDeltaMovement();
                      double stackScale = 1.0 + 0.28 * (stacks - 1);
                      double extraFallAccel = (mode == 2 ? ULTRA_HEAVY_EXTRA_FALL_ACCEL : HEAVY_EXTRA_FALL_ACCEL) * stackScale;
@@ -180,6 +216,9 @@ public class MagicGravityEffectHandler {
                   int jumpAmplifier = (mode == -2 ? 4 : 2) + (stacks - 1);
                   living.addEffect(new MobEffectInstance(MobEffects.JUMP, 40, jumpAmplifier, false, false, false));
                   living.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 40, 0, false, false, false));
+                  if (living.isFallFlying()) {
+                     boostFallFlying(living, mode, stacks);
+                  }
                }
             }
          }
@@ -270,5 +309,87 @@ public class MagicGravityEffectHandler {
 
    private static SoundSource resolveSoundSource(LivingEntity caster) {
       return caster instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+   }
+
+   private static void interruptFallFlying(LivingEntity living) {
+      if (living instanceof Player player && player.isFallFlying()) {
+         player.stopFallFlying();
+         player.hurtMarked = true;
+      }
+   }
+
+   private static void boostFallFlying(LivingEntity living, int mode, int stacks) {
+      Vec3 motion = living.getDeltaMovement();
+      Vec3 look = living.getLookAngle();
+      Vec3 horizontalLook = new Vec3(look.x, 0.0, look.z);
+      double stackScale = 1.0 + 0.18 * (stacks - 1);
+      double forwardBoost = (mode == MagicGravity.MODE_ULTRA_LIGHT ? 0.05 : 0.03) * stackScale;
+      double verticalLift = (mode == MagicGravity.MODE_ULTRA_LIGHT ? 0.018 : 0.01) * stackScale;
+      double maxHorizontal = (mode == MagicGravity.MODE_ULTRA_LIGHT ? 2.6 : 2.1) + 0.16 * (stacks - 1);
+      double maxUpward = mode == MagicGravity.MODE_ULTRA_LIGHT ? 0.16 : 0.1;
+      Vec3 boosted = motion;
+      if (horizontalLook.lengthSqr() > 1.0E-6) {
+         boosted = boosted.add(horizontalLook.normalize().scale(forwardBoost));
+      }
+
+      double horizontalSpeed = Math.sqrt(boosted.x * boosted.x + boosted.z * boosted.z);
+      if (horizontalSpeed > maxHorizontal) {
+         double scale = maxHorizontal / horizontalSpeed;
+         boosted = new Vec3(boosted.x * scale, boosted.y, boosted.z * scale);
+      }
+
+      living.setDeltaMovement(boosted.x, Math.min(maxUpward, boosted.y + verticalLift), boosted.z);
+      living.hurtMarked = true;
+   }
+
+   private static void tickLinkedSlow(LivingEntity living) {
+      CompoundTag tag = living.getPersistentData();
+      if (tag.contains(TAG_LINKED_SLOW_UNTIL)) {
+         if (hasInvalidCaster(living, tag, TAG_LINKED_SLOW_CASTER_UUID)) {
+            clearLinkedSlowState(living, true);
+            return;
+         }
+
+         long now = living.level().getGameTime();
+         long until = tag.getLong(TAG_LINKED_SLOW_UNTIL);
+         if (now >= until) {
+            clearLinkedSlowState(living, true);
+         } else {
+            int amplifier = Math.max(0, tag.getInt(TAG_LINKED_SLOW_AMPLIFIER));
+            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 10, amplifier, false, false, true));
+         }
+      }
+   }
+
+   private static void clearLinkedSlowState(LivingEntity living, boolean removeEffect) {
+      if (living != null) {
+         CompoundTag tag = living.getPersistentData();
+         tag.remove(TAG_LINKED_SLOW_UNTIL);
+         tag.remove(TAG_LINKED_SLOW_AMPLIFIER);
+         tag.remove(TAG_LINKED_SLOW_CASTER_UUID);
+         if (removeEffect) {
+            living.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+         }
+      }
+   }
+
+   private static boolean hasInvalidCaster(LivingEntity target, CompoundTag tag, String key) {
+      if (target == null || tag == null || key == null || key.isEmpty() || !tag.hasUUID(key) || !(target.level() instanceof ServerLevel serverLevel)) {
+         return false;
+      } else {
+         UUID casterId = tag.getUUID(key);
+         Entity caster = serverLevel.getEntity(casterId);
+         return !(caster instanceof LivingEntity living) || !living.isAlive() || living.isRemoved();
+      }
+   }
+
+   private static void writeCasterUuid(CompoundTag tag, String key, LivingEntity caster, LivingEntity target) {
+      if (tag != null && key != null && !key.isEmpty()) {
+         if (caster != null && caster != target) {
+            tag.putUUID(key, caster.getUUID());
+         } else {
+            tag.remove(key);
+         }
+      }
    }
 }

@@ -2,12 +2,17 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -32,11 +37,14 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class UBWProjectileEntity extends ThrowableItemProjectile {
+   private static final EntityDataAccessor<Integer> VISUAL_COLOR = SynchedEntityData.defineId(UBWProjectileEntity.class, EntityDataSerializers.INT);
    private List<Entity> hitEntities = new ArrayList<>();
+   public final List<net.minecraft.world.phys.Vec3> tracePos = new LinkedList<>();
 
    public UBWProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -45,10 +53,24 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
    public UBWProjectileEntity(Level level, LivingEntity shooter, ItemStack stack) {
       super(ModEntities.UBW_PROJECTILE.get(), shooter, level);
       this.setItem(stack);
+      this.setVisualColorRgb(MagicCircuitColorHelper.ensureColor(shooter));
    }
 
    public UBWProjectileEntity(Level level, double x, double y, double z) {
       super(ModEntities.UBW_PROJECTILE.get(), x, y, z, level);
+   }
+
+   protected void defineSynchedData(Builder builder) {
+      super.defineSynchedData(builder);
+      builder.define(VISUAL_COLOR, MagicCircuitColorHelper.DEFAULT_COLOR);
+   }
+
+   public void setVisualColorRgb(int color) {
+      this.entityData.set(VISUAL_COLOR, color);
+   }
+
+   public int getVisualColorRgb() {
+      return (Integer)this.entityData.get(VISUAL_COLOR);
    }
 
    public boolean shouldRenderAtSqrDistance(double distance) {
@@ -66,7 +88,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
    public void tick() {
       super.tick();
       if (this.level().isClientSide) {
-         this.level().addParticle(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+         net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectileVisualEffectHelper.captureTrace(this.tracePos, this, 80);
       }
    }
 

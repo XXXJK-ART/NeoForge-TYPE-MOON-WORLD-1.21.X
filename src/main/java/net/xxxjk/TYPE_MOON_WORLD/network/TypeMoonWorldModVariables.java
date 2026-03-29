@@ -48,6 +48,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries.Keys;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import org.jetbrains.annotations.NotNull;
 
@@ -119,6 +120,7 @@ public class TypeMoonWorldModVariables {
          clone.player_magic_attributes_none = original.player_magic_attributes_none;
          clone.player_magic_attributes_imaginary_number = original.player_magic_attributes_imaginary_number;
          clone.player_magic_attributes_sword = original.player_magic_attributes_sword;
+         clone.magic_circuit_color_rgb = original.magic_circuit_color_rgb;
          clone.is_magic_circuit_open = original.is_magic_circuit_open;
          clone.magic_circuit_open_timer = original.magic_circuit_open_timer;
          clone.selected_magics = new ArrayList<>(original.selected_magics);
@@ -384,6 +386,7 @@ public class TypeMoonWorldModVariables {
       public boolean player_magic_attributes_none = false;
       public boolean player_magic_attributes_imaginary_number = false;
       public boolean player_magic_attributes_sword = false;
+      public int magic_circuit_color_rgb = 0;
       public boolean is_magic_circuit_open = false;
       public double magic_circuit_open_timer = 0.0;
       public List<String> selected_magics = new ArrayList<>();
@@ -1307,6 +1310,7 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("player_magic_attributes_none", this.player_magic_attributes_none);
          nbt.putBoolean("player_magic_attributes_imaginary_number", this.player_magic_attributes_imaginary_number);
          nbt.putBoolean("player_magic_attributes_sword", this.player_magic_attributes_sword);
+         nbt.putInt("magic_circuit_color_rgb", MagicCircuitColorHelper.ensureColor(this));
          nbt.putBoolean("is_magic_circuit_open", this.is_magic_circuit_open);
          nbt.putDouble("magic_circuit_open_timer", this.magic_circuit_open_timer);
          nbt.putDouble("magic_cooldown", this.magic_cooldown);
@@ -1435,6 +1439,8 @@ public class TypeMoonWorldModVariables {
          this.player_magic_attributes_none = nbt.getBoolean("player_magic_attributes_none");
          this.player_magic_attributes_imaginary_number = nbt.getBoolean("player_magic_attributes_imaginary_number");
          this.player_magic_attributes_sword = nbt.getBoolean("player_magic_attributes_sword");
+         this.magic_circuit_color_rgb = nbt.contains("magic_circuit_color_rgb") ? nbt.getInt("magic_circuit_color_rgb") : 0;
+         MagicCircuitColorHelper.ensureColor(this);
          this.is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
          this.magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
          this.magic_cooldown = nbt.getDouble("magic_cooldown");
@@ -1672,6 +1678,7 @@ public class TypeMoonWorldModVariables {
       public void syncPlayerVariables(Entity entity) {
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
+         MagicCircuitColorHelper.ensureColor(this);
          if (this.player_magic_attributes_sword) {
             if (!this.learned_magics.contains("unlimited_blade_works")) {
                this.learned_magics.add("unlimited_blade_works");
@@ -1727,6 +1734,12 @@ public class TypeMoonWorldModVariables {
             && !this.learned_magics.contains("jewel_magic_shoot")) {
             this.learned_magics.add("jewel_magic_shoot");
          }
+
+         this.ensureAdvancedJewelMagicPrerequisites("ruby_flame_sword", "ruby_throw");
+         this.ensureAdvancedJewelMagicPrerequisites("sapphire_winter_frost", "sapphire_throw");
+         this.ensureAdvancedJewelMagicPrerequisites("emerald_winter_river", "emerald_use");
+         this.ensureAdvancedJewelMagicPrerequisites("topaz_reinforcement", "topaz_throw");
+         this.ensureAdvancedJewelMagicPrerequisites("cyan_wind", "cyan_throw");
 
          if (this.learned_magics.contains("gandr_machine_gun") && !this.learned_magics.contains("gander")) {
             this.learned_magics.add("gander");
@@ -1815,6 +1828,21 @@ public class TypeMoonWorldModVariables {
                new TypeMoonWorldModVariables.ProjectionDeltaSyncMessage(action, payload == null ? new CompoundTag() : payload),
                new CustomPacketPayload[0]
             );
+         }
+      }
+
+      private void ensureAdvancedJewelMagicPrerequisites(String advancedMagicId, String baseMagicId) {
+         if (advancedMagicId != null && !advancedMagicId.isEmpty() && this.learned_magics.contains(advancedMagicId)) {
+            this.ensureLearnedMagic(baseMagicId);
+            this.ensureLearnedMagic("jewel_magic_shoot");
+            this.ensureLearnedMagic("jewel_magic_release");
+            this.ensureLearnedMagic("jewel_random_shoot");
+         }
+      }
+
+      private void ensureLearnedMagic(String magicId) {
+         if (magicId != null && !magicId.isEmpty() && !this.learned_magics.contains(magicId)) {
+            this.learned_magics.add(magicId);
          }
       }
 

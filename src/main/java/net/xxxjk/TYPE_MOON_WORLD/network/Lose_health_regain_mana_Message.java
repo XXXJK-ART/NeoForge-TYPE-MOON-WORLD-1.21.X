@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.Manually_deduct_health_to_restore_mana;
 import org.jetbrains.annotations.NotNull;
 
@@ -133,6 +134,7 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
                }
             }
 
+            vars.magic_circuit_color_rgb = MagicCircuitColorHelper.resolveColor(vars);
             vars.syncPlayerVariables(player);
             player.displayClientMessage(Component.translatable("message.typemoonworld.awaken.success"), false);
             world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);

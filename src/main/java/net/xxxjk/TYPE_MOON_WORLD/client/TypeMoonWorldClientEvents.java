@@ -1,6 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.client;
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import java.io.IOException;
 import net.minecraft.client.renderer.entity.NoopRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.api.distmarker.Dist;
@@ -9,18 +12,29 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Block;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariWaveProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariLightColumnEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TypeMoonEffectShaders;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwChantRippleRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectionCircuitEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -154,6 +168,39 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 1.0F, 0.0F));
       event.registerEntityRenderer(ModEntities.GANDER_PROJECTILE.get(), GanderProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.GRAVITY_SHELL_EFFECT.get(), GravityShellRenderer::new);
+      event.registerEntityRenderer(ModEntities.GRAVITY_FIELD_SHELL_EFFECT.get(), GravityFieldShellRenderer::new);
+      event.registerEntityRenderer(ModEntities.EXPANDING_RING_EFFECT.get(), ExpandingRingEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.PROJECTION_CIRCUIT_EFFECT.get(), ProjectionCircuitEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.UBW_CHANT_RIPPLE.get(), UbwChantRippleRenderer::new);
+      event.registerEntityRenderer(ModEntities.TSUMUKARI_WAVE_PROJECTILE.get(), TsumukariWaveProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.TSUMUKARI_LIGHT_COLUMN_EFFECT.get(), TsumukariLightColumnEffectRenderer::new);
+   }
+
+   @SubscribeEvent
+   public static void registerShaders(RegisterShadersEvent event) throws IOException {
+      ShaderInstance shader = new ShaderInstance(
+         event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gander_orb"), DefaultVertexFormat.POSITION_TEX_COLOR
+      );
+      event.registerShader(shader, GanderOrbShaderRegistry::setShader);
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gravity_shell"), DefaultVertexFormat.POSITION_TEX_COLOR
+         ),
+         TypeMoonEffectShaders::setGravityShell
+      );
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "expanding_ring"), DefaultVertexFormat.POSITION_TEX_COLOR
+         ),
+         TypeMoonEffectShaders::setExpandingRing
+      );
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ubw_analysis_ripple"), DefaultVertexFormat.POSITION_TEX_COLOR
+         ),
+         TypeMoonEffectShaders::setUbwAnalysisRipple
+      );
    }
 
    @SubscribeEvent

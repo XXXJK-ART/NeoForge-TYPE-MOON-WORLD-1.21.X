@@ -342,7 +342,7 @@ public final class MagicGander {
       double outerRadius = 0.34 - 0.2 * t;
       double innerRadius = 0.22 - 0.14 * t;
 
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 2; i++) {
          double yaw = level.random.nextDouble() * (Math.PI * 2);
          double pitch = (level.random.nextDouble() - 0.5) * 0.9;
          Vec3 dir = new Vec3(Math.cos(yaw) * Math.cos(pitch), Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch));
@@ -351,7 +351,7 @@ public final class MagicGander {
          level.sendParticles(BLACK_DUST, from.x, from.y, from.z, 0, vel.x, vel.y, vel.z, 1.0);
       }
 
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 2; i++) {
          double yaw = level.random.nextDouble() * (Math.PI * 2);
          double pitch = (level.random.nextDouble() - 0.5) * 0.7;
          Vec3 dir = new Vec3(Math.cos(yaw) * Math.cos(pitch), Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch));

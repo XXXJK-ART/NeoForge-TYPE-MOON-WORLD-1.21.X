@@ -41,19 +41,8 @@ public class MagicProjection {
          boolean crestProjectionCast = vars.isCurrentSelectionFromCrest("projection");
          boolean swordAttributeActive = vars.player_magic_attributes_sword && !crestProjectionCast;
          boolean ubwAdaptiveProjection = vars.has_unlimited_blade_works && !crestProjectionCast;
-         ItemStack heldItem = player.getMainHandItem();
-         ItemStack offhandItem = player.getOffhandItem();
-         boolean canProject = false;
-         InteractionHand handToUse = null;
-         if (heldItem.isEmpty()) {
-            canProject = true;
-            handToUse = InteractionHand.MAIN_HAND;
-         } else if (offhandItem.isEmpty()) {
-            canProject = true;
-            handToUse = InteractionHand.OFF_HAND;
-         }
-
-         if (canProject) {
+         InteractionHand handToUse = findAvailableHand(player);
+         if (handToUse != null) {
             ItemStack target = vars.projection_selected_item;
             ItemStack autoAnalyzeCandidate = ItemStack.EMPTY;
             if (target.isEmpty() && ubwAdaptiveProjection) {
@@ -81,48 +70,9 @@ public class MagicProjection {
             if (ManaHelper.consumeOneTimeMagicCost(player, cost)) {
                if (!crestProjectionCast) {
                   vars.proficiency_projection = Math.min(100.0, vars.proficiency_projection + 0.2);
-                  vars.syncPlayerVariables(player);
                }
 
-               if (swordAttributeActive) {
-               }
-
-               ItemStack projected = target.copy();
-               projected.setCount(1);
-               projected.remove(DataComponents.CONTAINER);
-               projected.remove(DataComponents.BUNDLE_CONTENTS);
-               projected.remove(DataComponents.BLOCK_ENTITY_DATA);
-               if (projected.isDamageableItem()) {
-                  if (swordAttributeActive) {
-                     boolean isSword = projected.getItem() instanceof SwordItem;
-                     int maxDmg = projected.getMaxDamage();
-                     if (isSword) {
-                        projected.setDamageValue((int)(maxDmg * 0.333));
-                     } else {
-                        projected.setDamageValue((int)(maxDmg * 0.9));
-                     }
-                  } else {
-                     projected.setDamageValue(projected.getMaxDamage() - 1);
-                  }
-               }
-
-               CompoundTag tag = new CompoundTag();
-               tag.putBoolean("is_projected", true);
-               if (swordAttributeActive) {
-                  tag.putBoolean("is_infinite_projection", true);
-               }
-
-               tag.putLong("projection_time", player.level().getGameTime());
-               CustomData existingData = (CustomData)projected.get(DataComponents.CUSTOM_DATA);
-               if (existingData != null) {
-                  CompoundTag existingTag = existingData.copyTag();
-                  existingTag.merge(tag);
-                  projected.set(DataComponents.CUSTOM_DATA, CustomData.of(existingTag));
-               } else {
-                  projected.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-               }
-
-               projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+               ItemStack projected = createProjectedItem(target, swordAttributeActive, player.level().getGameTime());
                player.setItemInHand(handToUse, projected);
                if (!autoAnalyzeCandidate.isEmpty() && !isAlreadyAnalyzed(vars, autoAnalyzeCandidate)) {
                   vars.analyzed_items.add(autoAnalyzeCandidate.copy());
@@ -134,6 +84,26 @@ public class MagicProjection {
             }
          } else {
             player.displayClientMessage(Component.translatable("message.typemoonworld.projection.hands_full"), true);
+         }
+      }
+   }
+
+   public static boolean tryDirectProjectFromAnalysis(
+      ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack analyzedTarget, boolean swordAttributeActive
+   ) {
+      if (player == null || vars == null || analyzedTarget.isEmpty()) {
+         return false;
+      } else {
+         InteractionHand handToUse = findAvailableHand(player);
+         if (handToUse == null) {
+            return false;
+         } else {
+            ItemStack projected = createProjectedItem(analyzedTarget, swordAttributeActive, player.level().getGameTime());
+            player.setItemInHand(handToUse, projected);
+            vars.syncPlayerVariables(player);
+            grantAdvancement(player, "trace_on");
+            player.displayClientMessage(Component.translatable("message.typemoonworld.trace_on"), true);
+            return true;
          }
       }
    }
@@ -273,6 +243,54 @@ public class MagicProjection {
       }
 
       return sanitized;
+   }
+
+   private static InteractionHand findAvailableHand(ServerPlayer player) {
+      if (player.getMainHandItem().isEmpty()) {
+         return InteractionHand.MAIN_HAND;
+      } else {
+         return player.getOffhandItem().isEmpty() ? InteractionHand.OFF_HAND : null;
+      }
+   }
+
+   private static ItemStack createProjectedItem(ItemStack target, boolean swordAttributeActive, long gameTime) {
+      ItemStack projected = target.copy();
+      projected.setCount(1);
+      projected.remove(DataComponents.CONTAINER);
+      projected.remove(DataComponents.BUNDLE_CONTENTS);
+      projected.remove(DataComponents.BLOCK_ENTITY_DATA);
+      if (projected.isDamageableItem()) {
+         if (swordAttributeActive) {
+            boolean isSword = projected.getItem() instanceof SwordItem;
+            int maxDmg = projected.getMaxDamage();
+            if (isSword) {
+               projected.setDamageValue((int)(maxDmg * 0.333));
+            } else {
+               projected.setDamageValue((int)(maxDmg * 0.9));
+            }
+         } else {
+            projected.setDamageValue(projected.getMaxDamage() - 1);
+         }
+      }
+
+      CompoundTag tag = new CompoundTag();
+      tag.putBoolean("is_projected", true);
+      if (swordAttributeActive) {
+         tag.putBoolean("is_infinite_projection", true);
+      }
+
+      tag.putLong("projection_time", gameTime);
+      CustomData existingData = (CustomData)projected.get(DataComponents.CUSTOM_DATA);
+      if (existingData != null) {
+         CompoundTag existingTag = existingData.copyTag();
+         existingTag.merge(tag);
+         projected.set(DataComponents.CUSTOM_DATA, CustomData.of(existingTag));
+      } else {
+         projected.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+      }
+
+      projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+      return projected;
    }
 
    private static boolean isAlreadyAnalyzed(TypeMoonWorldModVariables.PlayerVariables vars, ItemStack stack) {

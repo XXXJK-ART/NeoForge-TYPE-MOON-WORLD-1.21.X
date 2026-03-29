@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemQuality;
@@ -169,27 +170,34 @@ public final class GemUseService {
       double cy = player.getY() + 1.0;
       double cz = player.getZ();
       int burstLevel = (int)Math.round(1.0 + powerNormalized * 2.0);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, cx, cy, cz, 2 + burstLevel, 0.25, 0.25, 0.25, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, cx, cy, cz, 10 + 8 * burstLevel, 0.5, 0.3, 0.5, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.1, cz, 420 + 260 * burstLevel, radius * 0.42, 0.9, radius * 0.42, 0.25);
-      level.sendParticles(ParticleTypes.CLOUD, cx, cy - 0.2, cz, 560 + 360 * burstLevel, radius * 0.5, 0.35, radius * 0.5, 0.18);
-      level.sendParticles(ParticleTypes.POOF, cx, cy, cz, 520 + 320 * burstLevel, radius * 0.56, 0.4, radius * 0.56, 0.12);
-      level.sendParticles(ParticleTypes.ELECTRIC_SPARK, cx, cy, cz, 240 + 160 * burstLevel, radius * 0.45, 0.55, radius * 0.45, 0.22);
-      level.sendParticles(ParticleTypes.WAX_ON, cx, cy + 0.2, cz, 180 + 120 * burstLevel, radius * 0.52, 0.7, radius * 0.52, 0.09);
-      int rings = 4;
+      level.sendParticles(ParticleTypes.FLASH, cx, cy, cz, 6 + 4 * burstLevel, 0.25, 0.18, 0.25, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.05, cz, 10 + 6 * burstLevel, 0.3, 0.15, 0.3, 0.04);
+      level.sendParticles(ParticleTypes.WAX_ON, cx, cy + 0.1, cz, 8 + 4 * burstLevel, 0.24, 0.12, 0.24, 0.02);
+      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy, cz, 0.4F, (float)radius, 0.18F, 14, 0xFFFFFF, 0.92F, 0.0F));
+      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.06, cz, 0.24F, (float)(radius * 0.82), 0.12F, 18, 0xF7F7FF, 0.7F, 0.01F));
+      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.12, cz, 0.15F, (float)(radius * 0.56), 0.09F, 22, 0xFFFFFF, 0.48F, 0.02F));
+      spawnChaoticWhiteAirwaves(level, cx, cy, cz, radius, powerNormalized, burstLevel);
+   }
 
-      for (int r = 1; r <= rings; r++) {
-         double ringRadius = radius * ((double)r / rings);
-         int points = 72 + r * 24;
-         double yOffset = 0.08 + (r % 2 == 0 ? 0.18 : 0.03);
+   private static void spawnChaoticWhiteAirwaves(ServerLevel level, double cx, double cy, double cz, double radius, double powerNormalized, int burstLevel) {
+      int extraRings = 4 + burstLevel * 2;
 
-         for (int i = 0; i < points; i++) {
-            double angle = (Math.PI * 2) * i / points;
-            double px = cx + Math.cos(angle) * ringRadius;
-            double pz = cz + Math.sin(angle) * ringRadius;
-            level.sendParticles(ParticleTypes.END_ROD, px, cy + yOffset, pz, 2, 0.04, 0.02, 0.04, 0.06);
-            level.sendParticles(ParticleTypes.CLOUD, px, cy + yOffset - 0.08, pz, 1, 0.03, 0.01, 0.03, 0.02);
-         }
+      for (int i = 0; i < extraRings; i++) {
+         float startRadius = 0.08F + level.random.nextFloat() * 0.28F;
+         float endRadius = (float)(radius * (0.38 + level.random.nextDouble() * 0.48));
+         float thickness = 0.07F + level.random.nextFloat() * 0.08F;
+         int duration = 12 + level.random.nextInt(12);
+         int color = level.random.nextFloat() < 0.35F ? 0xF4F6FF : 0xFFFFFF;
+         float alpha = 0.28F + level.random.nextFloat() * 0.38F;
+         float upward = level.random.nextFloat() * 0.035F;
+         float tilt = level.random.nextFloat() * (12.0F + (float)powerNormalized * 40.0F);
+         float yaw = level.random.nextFloat() * 360.0F;
+         double ox = (level.random.nextDouble() - 0.5) * radius * 0.18;
+         double oy = (level.random.nextDouble() - 0.5) * 0.35;
+         double oz = (level.random.nextDouble() - 0.5) * radius * 0.18;
+         level.addFreshEntity(
+            new ExpandingRingEffectEntity(level, cx + ox, cy + oy, cz + oz, startRadius, endRadius, thickness, duration, color, alpha, upward, tilt, yaw)
+         );
       }
    }
 

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity;
 
+import java.util.Arrays;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -9,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +23,7 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
@@ -76,6 +79,26 @@ public final class GemGravityFieldMagic {
 
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          double proficiency = Math.max(vars.proficiency_gravity_magic, vars.proficiency_jewel_magic_release);
+         ItemStack projectileStack = createBlackShardGravityProjectileStack(sourceGem, proficiency, manaAmount, qualityMultiplier);
+         if (projectileStack.isEmpty()) {
+            return false;
+         } else {
+            RubyProjectileEntity projectile = new RubyProjectileEntity(player.level(), player);
+            projectile.setGemType(6);
+            projectile.setItem(projectileStack);
+            Vec3 direction = EntityUtils.getAutoAimDirection(player, 48.0, 55.0);
+            projectile.shoot(direction.x, direction.y, direction.z, 1.5F, 0.6F);
+            player.level().addFreshEntity(projectile);
+            player.level().playSound(null, player.blockPosition(), SoundEvents.ENDER_EYE_LAUNCH, SoundSource.PLAYERS, 0.8F, 0.75F);
+            return true;
+         }
+      } else {
+         return false;
+      }
+   }
+
+   public static ItemStack createBlackShardGravityProjectileStack(ItemStack sourceGem, double proficiency, double manaAmount, float qualityMultiplier) {
+      if (sourceGem != null && !sourceGem.isEmpty()) {
          double manaNormalized = Math.max(0.0, Math.min(1.0, (manaAmount - 50.0) / 150.0));
          float radius = (float)(1.9 + 1.3 * qualityMultiplier + 0.9 * manaNormalized);
          int fieldDuration = 90 + (int)Math.round(proficiency * 1.4 + manaNormalized * 30.0);
@@ -83,11 +106,11 @@ public final class GemGravityFieldMagic {
          int particleCount = Math.max(56, 56 + (int)Math.round(24.0F * qualityMultiplier + manaNormalized * 18.0));
          int slowDuration = Math.max(80, heavyDuration / 2);
          int slowAmplifier = manaNormalized >= 0.66 ? 3 : 2;
-         return throwConfiguredGravityFieldProjectile(
-            player, sourceGem, radius, fieldDuration, heavyDuration, particleCount, true, slowDuration, slowAmplifier, false, 0.0F, 6
+         return createConfiguredGravityFieldProjectileStack(
+            sourceGem, radius, fieldDuration, heavyDuration, particleCount, true, slowDuration, slowAmplifier, false, 0.0F
          );
       } else {
-         return false;
+         return ItemStack.EMPTY;
       }
    }
 
@@ -106,31 +129,9 @@ public final class GemGravityFieldMagic {
       int projectileGemType
    ) {
       if (player != null && !sourceGem.isEmpty()) {
-         ItemStack projectileStack = sourceGem.copy();
-         projectileStack.setCount(1);
-         CompoundTag tag = ((CustomData)projectileStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-         tag.putBoolean(TAG_IS_GRAVITY_FIELD_GEM, true);
-         tag.putFloat(TAG_FIELD_RADIUS, radius);
-         tag.putInt(TAG_FIELD_DURATION, fieldDuration);
-         tag.putInt(TAG_HEAVY_DURATION, heavyDuration);
-         tag.putInt(TAG_PARTICLE_COUNT, particleCount);
-         tag.putBoolean(TAG_APPLY_SLOW, applySlow);
-         if (applySlow) {
-            tag.putInt(TAG_SLOW_DURATION, Math.max(40, slowDuration));
-            tag.putInt(TAG_SLOW_AMPLIFIER, Math.max(0, slowAmplifier));
-         } else {
-            tag.remove(TAG_SLOW_DURATION);
-            tag.remove(TAG_SLOW_AMPLIFIER);
-         }
-
-         tag.putBoolean(TAG_APPLY_DAMAGE, applyDamage);
-         if (applyDamage) {
-            tag.putFloat(TAG_DAMAGE_PER_PULSE, Math.max(0.0F, damagePerPulse));
-         } else {
-            tag.remove(TAG_DAMAGE_PER_PULSE);
-         }
-
-         projectileStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+         ItemStack projectileStack = createConfiguredGravityFieldProjectileStack(
+            sourceGem, radius, fieldDuration, heavyDuration, particleCount, applySlow, slowDuration, slowAmplifier, applyDamage, damagePerPulse
+         );
          RubyProjectileEntity projectile = new RubyProjectileEntity(player.level(), player);
          projectile.setGemType(projectileGemType);
          projectile.setItem(projectileStack);
@@ -142,6 +143,46 @@ public final class GemGravityFieldMagic {
       } else {
          return false;
       }
+   }
+
+   private static ItemStack createConfiguredGravityFieldProjectileStack(
+      ItemStack sourceGem,
+      float radius,
+      int fieldDuration,
+      int heavyDuration,
+      int particleCount,
+      boolean applySlow,
+      int slowDuration,
+      int slowAmplifier,
+      boolean applyDamage,
+      float damagePerPulse
+   ) {
+      ItemStack projectileStack = sourceGem.copy();
+      projectileStack.setCount(1);
+      CompoundTag tag = ((CustomData)projectileStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
+      tag.putBoolean(TAG_IS_GRAVITY_FIELD_GEM, true);
+      tag.putFloat(TAG_FIELD_RADIUS, radius);
+      tag.putInt(TAG_FIELD_DURATION, fieldDuration);
+      tag.putInt(TAG_HEAVY_DURATION, heavyDuration);
+      tag.putInt(TAG_PARTICLE_COUNT, particleCount);
+      tag.putBoolean(TAG_APPLY_SLOW, applySlow);
+      if (applySlow) {
+         tag.putInt(TAG_SLOW_DURATION, Math.max(40, slowDuration));
+         tag.putInt(TAG_SLOW_AMPLIFIER, Math.max(0, slowAmplifier));
+      } else {
+         tag.remove(TAG_SLOW_DURATION);
+         tag.remove(TAG_SLOW_AMPLIFIER);
+      }
+
+      tag.putBoolean(TAG_APPLY_DAMAGE, applyDamage);
+      if (applyDamage) {
+         tag.putFloat(TAG_DAMAGE_PER_PULSE, Math.max(0.0F, damagePerPulse));
+      } else {
+         tag.remove(TAG_DAMAGE_PER_PULSE);
+      }
+
+      projectileStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+      return projectileStack;
    }
 
    public static boolean tryHandleProjectileImpact(RubyProjectileEntity projectile, ItemStack stack) {
@@ -159,14 +200,17 @@ public final class GemGravityFieldMagic {
             int slowAmplifier = tag.contains(TAG_SLOW_AMPLIFIER) ? tag.getInt(TAG_SLOW_AMPLIFIER) : 4;
             boolean applyDamage = tag.contains(TAG_APPLY_DAMAGE) && tag.getBoolean(TAG_APPLY_DAMAGE);
             float damagePerPulse = tag.contains(TAG_DAMAGE_PER_PULSE) ? tag.getFloat(TAG_DAMAGE_PER_PULSE) : 0.0F;
-            Vec3 center = projectile.position();
+            Vec3 gameplayCenter = projectile.position();
             if (applyDamage) {
-               compressGroundOnce(serverLevel, center, radius);
+               compressGroundOnce(serverLevel, gameplayCenter, radius);
             }
+
+            double visualAnchorY = resolveGravityFieldVisualAnchorY(serverLevel, gameplayCenter, radius);
 
             spawnGravityField(
                serverLevel,
-               center,
+               gameplayCenter,
+               visualAnchorY,
                projectile.getOwner() instanceof LivingEntity owner ? owner : null,
                radius,
                fieldDuration,
@@ -178,10 +222,45 @@ public final class GemGravityFieldMagic {
                applyDamage,
                damagePerPulse
             );
-            serverLevel.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, particleCount * 3, radius * 0.55, 0.42, radius * 0.55, 0.004);
-            serverLevel.sendParticles(ParticleTypes.PORTAL, center.x, center.y + 0.25, center.z, particleCount * 2, radius * 0.45, 0.2, radius * 0.45, 0.01);
-            serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.45, center.z, particleCount, radius * 0.35, 0.25, radius * 0.35, 0.0);
-            serverLevel.playSound(null, center.x, center.y, center.z, SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.85F, 0.55F);
+            serverLevel.addFreshEntity(
+               new GravityFieldShellEffectEntity(serverLevel, gameplayCenter.x, visualAnchorY + 0.02, gameplayCenter.z, radius * 0.74F, radius * 0.64F, 0.74F, heavyDuration)
+            );
+            serverLevel.sendParticles(
+               ParticleTypes.SQUID_INK,
+               gameplayCenter.x,
+               visualAnchorY + 0.78,
+               gameplayCenter.z,
+               Math.max(12, particleCount / 3),
+               radius * 0.28,
+               0.22,
+               radius * 0.28,
+               0.002
+            );
+            serverLevel.sendParticles(
+               ParticleTypes.PORTAL,
+               gameplayCenter.x,
+               visualAnchorY + 0.24,
+               gameplayCenter.z,
+               Math.max(8, particleCount / 6),
+               radius * 0.18,
+               0.12,
+               radius * 0.18,
+               0.008
+            );
+            serverLevel.sendParticles(
+               ParticleTypes.REVERSE_PORTAL,
+               gameplayCenter.x,
+               visualAnchorY + 0.42,
+               gameplayCenter.z,
+               Math.max(6, particleCount / 8),
+               radius * 0.16,
+               0.12,
+               radius * 0.16,
+               0.0
+            );
+            serverLevel.playSound(
+               null, gameplayCenter.x, gameplayCenter.y, gameplayCenter.z, SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.85F, 0.55F
+            );
             return true;
          } else {
             return true;
@@ -228,7 +307,8 @@ public final class GemGravityFieldMagic {
 
    private static void spawnGravityField(
       ServerLevel level,
-      Vec3 center,
+      Vec3 gameplayCenter,
+      double visualAnchorY,
       LivingEntity caster,
       float radius,
       int fieldDuration,
@@ -251,31 +331,49 @@ public final class GemGravityFieldMagic {
                if (level.getServer() != null) {
                   double progress = (double)pulseIndex / Math.max(1, pulses);
                   double wave = Math.sin(pulseIndex * 0.72) * 0.12;
-                  double topY = center.y + 1.35 - progress * 0.95 + wave;
-                  double midY = center.y + 0.72 - progress * 0.45 + wave * 0.45;
-                  double lowY = center.y + 0.16 + wave * 0.18;
+                  double topY = visualAnchorY + 1.35 - progress * 0.95 + wave;
+                  double midY = visualAnchorY + 0.72 - progress * 0.45 + wave * 0.45;
+                  double lowY = visualAnchorY + 0.16 + wave * 0.18;
                   double spread = radius * (0.46 - progress * 0.18);
-                  int blackParticles = Math.max(90, (int)(particleCount * 2.6));
-                  int enderParticles = Math.max(60, (int)(particleCount * 1.6));
-                  int pressureParticles = Math.max(42, (int)(particleCount * 1.1));
-                  level.sendParticles(ParticleTypes.SQUID_INK, center.x, topY, center.z, blackParticles, spread, 0.45, spread, 0.004);
-                  level.sendParticles(ParticleTypes.SQUID_INK, center.x, midY, center.z, blackParticles / 2, spread * 0.75, 0.22, spread * 0.75, 0.003);
-                  level.sendParticles(ParticleTypes.PORTAL, center.x, lowY, center.z, enderParticles, spread * 0.62, 0.16, spread * 0.62, 0.012);
-                  level.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, midY, center.z, enderParticles / 2, spread * 0.48, 0.22, spread * 0.48, 0.0);
+                  int blackParticles = Math.max(18, (int)(particleCount * 0.55));
+                  int enderParticles = Math.max(14, (int)(particleCount * 0.3));
+                  int pressureParticles = Math.max(10, (int)(particleCount * 0.22));
+                  level.sendParticles(ParticleTypes.SQUID_INK, gameplayCenter.x, topY, gameplayCenter.z, blackParticles, spread, 0.45, spread, 0.004);
                   level.sendParticles(
-                     ParticleTypes.FALLING_OBSIDIAN_TEAR, center.x, topY + 0.2, center.z, pressureParticles, spread * 0.4, 0.12, spread * 0.4, 0.01
+                     ParticleTypes.SQUID_INK, gameplayCenter.x, midY, gameplayCenter.z, blackParticles / 2, spread * 0.75, 0.22, spread * 0.75, 0.003
                   );
-                  AABB area = new AABB(center.x - radius, center.y - 1.0, center.z - radius, center.x + radius, center.y + 2.0, center.z + radius);
+                  level.sendParticles(
+                     ParticleTypes.PORTAL, gameplayCenter.x, lowY, gameplayCenter.z, enderParticles, spread * 0.62, 0.16, spread * 0.62, 0.012
+                  );
+                  level.sendParticles(
+                     ParticleTypes.REVERSE_PORTAL, gameplayCenter.x, midY, gameplayCenter.z, enderParticles / 2, spread * 0.48, 0.22, spread * 0.48, 0.0
+                  );
+                  level.sendParticles(
+                     ParticleTypes.FALLING_OBSIDIAN_TEAR,
+                     gameplayCenter.x,
+                     topY + 0.2,
+                     gameplayCenter.z,
+                     pressureParticles,
+                     spread * 0.4,
+                     0.12,
+                     spread * 0.4,
+                     0.01
+                  );
+                  if (caster != null && (!caster.isAlive() || caster.isRemoved())) {
+                     return;
+                  }
+
+                  AABB area = new AABB(
+                     gameplayCenter.x - radius, gameplayCenter.y - 1.0, gameplayCenter.z - radius, gameplayCenter.x + radius, gameplayCenter.y + 2.0, gameplayCenter.z + radius
+                  );
                   List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, area, LivingEntity::isAlive);
                   long until = level.getGameTime() + heavyDuration;
 
                   for (LivingEntity target : targets) {
                      if ((caster == null || target != caster) && !(target instanceof Player p && (p.isCreative() || p.isSpectator()))) {
-                        MagicGravityEffectHandler.applyGravityState(target, 2, until);
+                        MagicGravityEffectHandler.applyGravityState(target, 2, until, caster);
                         if (applySlow) {
-                           target.addEffect(
-                              new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, Math.max(40, slowDuration), Math.max(0, slowAmplifier), false, false, true)
-                           );
+                           MagicGravityEffectHandler.applyLinkedSlow(target, Math.max(40, slowDuration), Math.max(0, slowAmplifier), caster);
                         }
 
                         if (applyDamage && damagePerPulse > 0.0F) {
@@ -287,5 +385,23 @@ public final class GemGravityFieldMagic {
             }
          );
       }
+   }
+
+   private static double resolveGravityFieldVisualAnchorY(ServerLevel level, Vec3 center, float radius) {
+      double sampleOffset = radius * 0.35;
+      double[] samples = new double[]{
+         sampleGroundY(level, center.x, center.z, center.y),
+         sampleGroundY(level, center.x + sampleOffset, center.z, center.y),
+         sampleGroundY(level, center.x - sampleOffset, center.z, center.y),
+         sampleGroundY(level, center.x, center.z + sampleOffset, center.y),
+         sampleGroundY(level, center.x, center.z - sampleOffset, center.y)
+      };
+      Arrays.sort(samples);
+      return samples[samples.length / 2];
+   }
+
+   private static double sampleGroundY(ServerLevel level, double x, double z, double fallbackY) {
+      int sampledHeight = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(x), Mth.floor(z));
+      return sampledHeight <= level.getMinBuildHeight() ? fallbackY : (double)sampledHeight;
    }
 }

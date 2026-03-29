@@ -178,6 +178,12 @@ public class MagicStructuralAnalysis {
 
                      vars.syncPlayerVariables(player);
                      player.displayClientMessage(Component.translatable("message.typemoonworld.projection.analysis_complete", (int)cost), true);
+                     boolean ubwDirectProjection = vars.has_unlimited_blade_works
+                        && (vars.projection_selected_item == null || vars.projection_selected_item.isEmpty())
+                        && (vars.projection_selected_structure_id == null || vars.projection_selected_structure_id.isEmpty());
+                     if (ubwDirectProjection) {
+                        MagicProjection.tryDirectProjectFromAnalysis(player, vars, toSave, swordAttributeActive);
+                     }
                   }
                } else {
                   double failCost = cost * 0.3;

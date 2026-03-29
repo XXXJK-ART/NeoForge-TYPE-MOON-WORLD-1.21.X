@@ -1,0 +1,37 @@
+{
+  "parent": "typemoonworld:i_am_the_bone_of_my_sword",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:excalibur"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.ex_calibur.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.ex_calibur.desc"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "obtain_excalibur": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:excalibur"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtain_excalibur"
+    ]
+  ]
+}

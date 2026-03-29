@@ -269,6 +269,11 @@ public class MagicSwordBarrelFullOpen {
             projectile.setHover(20, aimTarget);
             projectile.setOwner(player);
             projectile.setMode2Tracking(true);
+            Vec3 delta = spawnPos.subtract(player.position());
+            double localRight = delta.dot(rightVec);
+            double localForward = delta.dot(horizontalLook);
+            double localUp = delta.y;
+            projectile.setHoverOffset(new Vec3(localRight, localUp, localForward));
             Vec3 dir = aimTarget.subtract(spawnPos).normalize();
             projectile.setXRot((float)Math.toDegrees(Math.asin(-dir.y)));
             projectile.setYRot((float)Math.toDegrees(Math.atan2(-dir.x, dir.z)));

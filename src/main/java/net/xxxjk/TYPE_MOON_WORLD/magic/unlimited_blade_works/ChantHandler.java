@@ -64,8 +64,10 @@ import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
@@ -91,6 +93,7 @@ public class ChantHandler {
    private static final Map<UUID, Vec3> ACTIVE_ENTITY_POSITIONS = new ConcurrentHashMap<>();
    private static final Map<UUID, Boolean> WAS_CHANTING = new ConcurrentHashMap<>();
    private static final Map<UUID, List<ChantHandler.RefillEntry>> REFILL_QUEUES = new ConcurrentHashMap<>();
+   private static final Map<UUID, UUID> ACTIVE_UBW_RIPPLES = new ConcurrentHashMap<>();
 
    @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
@@ -113,6 +116,7 @@ public class ChantHandler {
       ACTIVE_UBW_ENTITIES.remove(uuid);
       ACTIVE_ENTITY_POSITIONS.remove(uuid);
       REFILL_QUEUES.remove(uuid);
+      discardUbwRipple(event.getEntity().getServer() == null ? null : event.getEntity().getServer().overworld(), uuid);
       WAS_CHANTING.remove(uuid);
    }
 
@@ -205,6 +209,7 @@ public class ChantHandler {
             if (wasChanting && !isChanting && !vars.is_in_ubw) {
                clearVisualSwords(player);
                startTerrainRestoration(player);
+               beginCollapseUbwRipple(player);
                if (PENDING_UBW_LOCATIONS.containsKey(player.getUUID())) {
                   Vec3 pending = PENDING_UBW_LOCATIONS.remove(player.getUUID());
                   ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
@@ -246,11 +251,12 @@ public class ChantHandler {
             }
 
             if (vars.is_chanting_ubw) {
-               player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
-               vars.ubw_chant_timer++;
                if (vars.ubw_chant_progress >= 3) {
+                  updateUbwRipple(player, vars);
                   processTerrainEffect(player, vars);
                }
+               player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
+               vars.ubw_chant_timer++;
 
                int currentInterval = Math.max(20, 40 - (int)(vars.proficiency_unlimited_blade_works * 0.2));
                if (vars.ubw_chant_timer >= currentInterval) {
@@ -277,7 +283,44 @@ public class ChantHandler {
                   double maxRadius = 10.0 + (vars.ubw_chant_progress - 3) * 5.0;
                   spawnVisualSwords(player, vars, count, maxRadius);
                }
+            } else {
+               beginCollapseUbwRipple(player);
             }
+         }
+      }
+   }
+
+   private static void updateUbwRipple(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player.level() instanceof ServerLevel serverLevel) {
+         UUID playerId = player.getUUID();
+         UbwChantRippleEntity ripple = null;
+         UUID rippleId = ACTIVE_UBW_RIPPLES.get(playerId);
+         if (rippleId != null && serverLevel.getEntity(rippleId) instanceof UbwChantRippleEntity existing && existing.isAlive()) {
+            ripple = existing;
+         }
+
+         if (ripple == null) {
+            ripple = new UbwChantRippleEntity(serverLevel, player);
+            serverLevel.addFreshEntity(ripple);
+            ACTIVE_UBW_RIPPLES.put(playerId, ripple.getUUID());
+         }
+      }
+   }
+
+   private static void beginCollapseUbwRipple(ServerPlayer player) {
+      if (player != null && player.level() instanceof ServerLevel serverLevel) {
+         UUID rippleId = ACTIVE_UBW_RIPPLES.get(player.getUUID());
+         if (rippleId != null && serverLevel.getEntity(rippleId) instanceof UbwChantRippleEntity ripple) {
+            ripple.beginCollapse();
+         }
+      }
+   }
+
+   private static void discardUbwRipple(@Nullable ServerLevel level, UUID playerId) {
+      if (playerId != null) {
+         UUID rippleId = ACTIVE_UBW_RIPPLES.remove(playerId);
+         if (level != null && rippleId != null && level.getEntity(rippleId) instanceof UbwChantRippleEntity ripple) {
+            ripple.discard();
          }
       }
    }
@@ -349,6 +392,7 @@ public class ChantHandler {
       UBWProjectileEntity sword = new UBWProjectileEntity((EntityType<? extends ThrowableItemProjectile>)ModEntities.UBW_PROJECTILE.get(), level);
       sword.setPos(x, y, z);
       sword.setOwner(player);
+      sword.setVisualColorRgb(MagicCircuitColorHelper.ensureColor(player));
       sword.setDeltaMovement(0.0, -0.5 - random.nextDouble() * 0.5, 0.0);
       sword.setXRot(90.0F);
       level.addFreshEntity(sword);
@@ -390,6 +434,9 @@ public class ChantHandler {
             ItemStack weapon = weapons.get(player.getRandom().nextInt(weapons.size())).copy();
             double x = targetPos.x;
             double z = targetPos.z;
+            if (!player.level().hasChunk((int)x >> 4, (int)z >> 4)) {
+               return;
+            }
             int surfaceY = player.level().getHeight(Types.MOTION_BLOCKING_NO_LEAVES, (int)x, (int)z);
             double baseY = Math.max((double)surfaceY, targetPos.y);
             double y = baseY + 12.0 + player.getRandom().nextDouble() * 5.0;
@@ -399,6 +446,7 @@ public class ChantHandler {
 
             UBWProjectileEntity projectile = new UBWProjectileEntity(player.level(), player, weapon);
             projectile.setPos(x, y, z);
+            projectile.setVisualColorRgb(MagicCircuitColorHelper.ensureColor(vars));
             projectile.setDeltaMovement(0.0, -2.0, 0.0);
             projectile.setXRot(-90.0F);
             player.level().addFreshEntity(projectile);
@@ -440,6 +488,9 @@ public class ChantHandler {
                   double distSqr = x * x + z * z;
                   if (distSqr <= currentRadius * currentRadius) {
                      BlockPos pos = center.offset(x, 0, z);
+                     if (!player.level().hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
+                        continue;
+                     }
                      BlockPos floorPos = new BlockPos(pos.getX(), floorY, pos.getZ());
                      if (!backups.containsKey(floorPos)) {
                         BlockState oldState = player.level().getBlockState(floorPos);
@@ -785,6 +836,7 @@ public class ChantHandler {
    }
 
    private static void activateUBW(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      beginCollapseUbwRipple(player);
       vars.is_chanting_ubw = false;
       vars.ubw_chant_progress = 0;
       vars.ubw_chant_timer = 0;
@@ -801,8 +853,11 @@ public class ChantHandler {
       ACTIVE_ENTITY_POSITIONS.remove(player.getUUID());
       Vec3 entrySwordCenter = null;
       double range = 40.0;
+      double halfSphereMinY = player.getY() - 2.0;
       AABB tpBox = player.getBoundingBox().inflate(range);
-      List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, tpBox, e -> e != player && e.isAlive() && !(e instanceof EnderDragon));
+      List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, tpBox, e -> e != player && e.isAlive() && !(e instanceof EnderDragon)
+         && e.getY() >= halfSphereMinY
+         && e.distanceToSqr(player.getX(), player.getY(), player.getZ()) <= range * range);
       List<ChantHandler.EntityReturnData> teleported = new ArrayList<>();
       TELEPORTED_ENTITIES.put(player.getUUID(), teleported);
       List<Entity> swordRainTargets = new ArrayList<>();
@@ -968,6 +1023,7 @@ public class ChantHandler {
    }
 
    public static void returnFromUBW(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      beginCollapseUbwRipple(player);
       ServerLevel returnLevel = resolveDimensionOrOverworld(player.getServer(), vars.ubw_return_dimension);
       if (returnLevel == null) {
          returnLevel = player.serverLevel();

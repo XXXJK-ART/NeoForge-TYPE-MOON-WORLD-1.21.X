@@ -25,8 +25,8 @@ public class MysticMagicianRenderer extends HumanoidMobRenderer<MysticMagicianEn
    public MysticMagicianRenderer(Context context) {
       super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
       this.steveModel = this.getModel();
-      this.alexModel = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), false);
-      this.addLayer(new MysticMagicianMagicOverlayLayer(this));
+      this.alexModel = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
+      this.addLayer(new MysticMagicianReinforcementLayer(this, context));
    }
 
    public void render(MysticMagicianEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {

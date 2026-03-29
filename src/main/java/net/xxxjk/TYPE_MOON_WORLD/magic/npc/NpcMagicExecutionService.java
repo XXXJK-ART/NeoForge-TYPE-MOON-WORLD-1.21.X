@@ -41,6 +41,11 @@ public final class NpcMagicExecutionService {
          case "reinforcement" -> NpcMagicCastBridge.castReinforcement(caster, vars, payload, effectiveProficiency);
          case "jewel_random_shoot" -> NpcMagicCastBridge.castJewelRandomShoot(caster, target, vars, effectiveProficiency);
          case "jewel_machine_gun" -> NpcMagicCastBridge.castJewelMachineGun(caster, target, vars, payload, effectiveProficiency);
+         case "ruby_flame_sword" -> NpcMagicCastBridge.castRubyFlameSword(caster, target, vars, effectiveProficiency);
+         case "sapphire_winter_frost" -> NpcMagicCastBridge.castSapphireWinterFrost(caster, target, vars, effectiveProficiency);
+         case "emerald_winter_river" -> NpcMagicCastBridge.castEmeraldWinterRiver(caster, target, vars, effectiveProficiency);
+         case "topaz_reinforcement" -> NpcMagicCastBridge.castTopazReinforcement(caster, vars, effectiveProficiency);
+         case "cyan_wind" -> NpcMagicCastBridge.castCyanWind(caster, target, vars, effectiveProficiency);
          default -> false;
       };
    }
@@ -53,6 +58,9 @@ public final class NpcMagicExecutionService {
          case "reinforcement" -> 30;
          case "jewel_random_shoot" -> 10;
          case "jewel_machine_gun" -> 14;
+         case "ruby_flame_sword", "cyan_wind" -> 18;
+         case "topaz_reinforcement" -> 20;
+         case "sapphire_winter_frost", "emerald_winter_river" -> 24;
          default -> 12;
       };
    }
@@ -65,6 +73,11 @@ public final class NpcMagicExecutionService {
          case "reinforcement" -> 120;
          case "jewel_random_shoot" -> 10;
          case "jewel_machine_gun" -> 100;
+         case "ruby_flame_sword" -> 180;
+         case "sapphire_winter_frost" -> 320;
+         case "emerald_winter_river" -> 340;
+         case "topaz_reinforcement" -> 260;
+         case "cyan_wind" -> 220;
          default -> 20;
       };
    }

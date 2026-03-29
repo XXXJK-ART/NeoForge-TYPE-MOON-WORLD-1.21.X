@@ -3,16 +3,20 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -36,9 +40,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -47,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -150,7 +158,17 @@ public final class NpcMagicCastBridge {
       GemType.RUBY, GemType.SAPPHIRE, GemType.TOPAZ, GemType.CYAN, GemType.WHITE_GEMSTONE, GemType.BLACK_SHARD
    };
    private static final Set<String> VALID_MAGIC_IDS = Set.of(
-      "gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_random_shoot", "jewel_machine_gun"
+      "gander",
+      "gandr_machine_gun",
+      "gravity_magic",
+      "reinforcement",
+      "jewel_random_shoot",
+      "jewel_machine_gun",
+      "ruby_flame_sword",
+      "sapphire_winter_frost",
+      "emerald_winter_river",
+      "topaz_reinforcement",
+      "cyan_wind"
    );
    private static final NpcMagicCastBridge.BehaviorProfile[][] BEHAVIOR_PROFILE_MATRIX = new NpcMagicCastBridge.BehaviorProfile[][]{
       {
@@ -325,6 +343,7 @@ public final class NpcMagicCastBridge {
 
    public static void cleanup(MysticMagicianEntity npc) {
       if (npc != null) {
+         clearNpcCombatSelfBuffs(npc);
          CompoundTag data = npc.getPersistentData();
          data.remove(TAG_LAST_DECISION_TICK);
          data.remove(TAG_LAST_COMBAT_TICK);
@@ -746,6 +765,11 @@ public final class NpcMagicCastBridge {
             vars.proficiency_jewel_magic_shoot = Math.max(vars.proficiency_jewel_magic_shoot, p);
             break;
          case "jewel_machine_gun":
+         case "ruby_flame_sword":
+         case "sapphire_winter_frost":
+         case "emerald_winter_river":
+         case "topaz_reinforcement":
+         case "cyan_wind":
             vars.proficiency_jewel_magic_release = Math.max(vars.proficiency_jewel_magic_release, p);
       }
    }
@@ -759,9 +783,33 @@ public final class NpcMagicCastBridge {
             case "jewel_machine_gun":
                ensureLearned(vars, "gander");
                ensureLearned(vars, "jewel_magic_shoot");
+               ensureLearned(vars, "jewel_magic_release");
+               ensureLearned(vars, "jewel_random_shoot");
+               break;
+            case "ruby_flame_sword":
+               ensureAdvancedJewelPrerequisites(vars, "ruby_throw");
+               break;
+            case "sapphire_winter_frost":
+               ensureAdvancedJewelPrerequisites(vars, "sapphire_throw");
+               break;
+            case "emerald_winter_river":
+               ensureAdvancedJewelPrerequisites(vars, "emerald_use");
+               break;
+            case "topaz_reinforcement":
+               ensureAdvancedJewelPrerequisites(vars, "topaz_throw");
+               break;
+            case "cyan_wind":
+               ensureAdvancedJewelPrerequisites(vars, "cyan_throw");
                break;
          }
       }
+   }
+
+   private static void ensureAdvancedJewelPrerequisites(TypeMoonWorldModVariables.PlayerVariables vars, String baseMagicId) {
+      ensureLearned(vars, baseMagicId);
+      ensureLearned(vars, "jewel_magic_shoot");
+      ensureLearned(vars, "jewel_magic_release");
+      ensureLearned(vars, "jewel_random_shoot");
    }
 
    private static void ensureLearned(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
@@ -799,6 +847,33 @@ public final class NpcMagicCastBridge {
       if (vars.is_magic_circuit_open && gameTime - lastCombat >= 120L) {
          vars.is_magic_circuit_open = false;
          vars.magic_circuit_open_timer = 0.0;
+      }
+
+      if (gameTime - lastCombat >= 120L) {
+         clearNpcCombatSelfBuffs(npc);
+      }
+   }
+
+   private static void clearNpcCombatSelfBuffs(MysticMagicianEntity npc) {
+      if (npc != null) {
+         npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE);
+         npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH);
+         npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY);
+         npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT);
+         npc.removeEffect(MobEffects.NIGHT_VISION);
+         npc.removeEffect(MobEffects.DAMAGE_BOOST);
+         npc.removeEffect(MobEffects.MOVEMENT_SPEED);
+         npc.removeEffect(MobEffects.DAMAGE_RESISTANCE);
+         npc.removeEffect(MobEffects.REGENERATION);
+         npc.removeEffect(MobEffects.JUMP);
+         npc.removeEffect(MobEffects.SLOW_FALLING);
+         MagicGravityEffectHandler.clearGravityState(npc);
+         TypeMoonWorldModVariables.ReinforcementData data = (TypeMoonWorldModVariables.ReinforcementData)npc.getData(
+            TypeMoonWorldModVariables.REINFORCEMENT_DATA
+         );
+         if (data != null && npc.getUUID().equals(data.casterUUID)) {
+            data.casterUUID = null;
+         }
       }
    }
 
@@ -943,16 +1018,22 @@ public final class NpcMagicCastBridge {
                String var8 = entry.magicId;
                switch (var8) {
                   case "reinforcement":
+                  case "topaz_reinforcement":
                      hasBuff = true;
                      hasMeleeBurst = true;
                      break;
                   case "gravity_magic":
+                  case "sapphire_winter_frost":
+                  case "emerald_winter_river":
                      hasControl = true;
+                     hasRanged = true;
                      break;
                   case "gander":
                   case "gandr_machine_gun":
                   case "jewel_random_shoot":
                   case "jewel_machine_gun":
+                  case "ruby_flame_sword":
+                  case "cyan_wind":
                      hasRanged = true;
                      break;
                }
@@ -1323,13 +1404,25 @@ public final class NpcMagicCastBridge {
             double distanceSqr = npc.distanceToSqr(target);
             if (!(distanceSqr < 16.0) && !(distanceSqr > 576.0)) {
                boolean highThreat = threat != null && threat.requiresDefensiveTactics();
-               int triggerChance = highThreat ? 34 : 20;
+               boolean closeControlWindow = distanceSqr <= 144.0 && npc.hasLineOfSight(target);
+               int triggerChance = highThreat ? 38 : closeControlWindow ? 30 : 24;
                if (npc.getRandom().nextInt(100) >= triggerChance) {
                   return false;
                } else {
                   String usedSkillId = null;
                   double manaRatio = vars.player_max_mana <= 0.0 ? 0.0 : Mth.clamp(vars.player_mana / vars.player_max_mana, 0.0, 1.0);
-                  int advancedChance = highThreat ? 14 : 8;
+                  int advancedChance = highThreat ? 16 : 10;
+                  if (closeControlWindow) {
+                     advancedChance += 18;
+                  } else if (distanceSqr <= 256.0) {
+                     advancedChance += 8;
+                  }
+
+                  if (manaRatio >= 0.75) {
+                     advancedChance += 6;
+                  }
+
+                  advancedChance = Mth.clamp(advancedChance, 10, 42);
                   int engravedChance = highThreat ? 9 : 4;
                   if ((highThreat || manaRatio >= 0.45)
                      && isResourceMagicAvailable(npc, NPC_JEWEL_ITEM_ENGRAVED, gameTime)
@@ -1361,7 +1454,7 @@ public final class NpcMagicCastBridge {
 
                      int perCd = switch (usedSkillId) {
                         case NPC_JEWEL_ITEM_ENGRAVED -> 3600;
-                        case NPC_JEWEL_ITEM_ADVANCED -> 2600;
+                        case NPC_JEWEL_ITEM_ADVANCED -> 1800;
                         default -> 1200;
                      };
                      vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
@@ -1370,7 +1463,7 @@ public final class NpcMagicCastBridge {
                      recordResourceMagicUse(npc, usedSkillId, gameTime);
                      recordMagicCast(npc, usedSkillId);
                      setCastLockUntil(npc, gameTime + gcd);
-                     npc.getPersistentData().putLong(TAG_JEWEL_ITEM_NEXT_TICK, gameTime + 40L);
+                     npc.getPersistentData().putLong(TAG_JEWEL_ITEM_NEXT_TICK, gameTime + (usedSkillId.equals(NPC_JEWEL_ITEM_ADVANCED) ? 28L : 40L));
                      return true;
                   }
                }
@@ -1396,43 +1489,194 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean castJewelItemBasic(MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!hasProjectilePath(caster, target, 2.8, 0.04)) {
+      GemType type = NPC_BASIC_JEWEL_TYPES[caster.getRandom().nextInt(NPC_BASIC_JEWEL_TYPES.length)];
+      if (type != GemType.WHITE_GEMSTONE && !hasProjectilePath(caster, target, 2.8, 0.04)) {
          repositionForClearShot(caster, target, 8.5, 1.08);
          return false;
       } else if (!consumeMana(vars, 26.0)) {
          return false;
       } else {
-         GemType type = NPC_BASIC_JEWEL_TYPES[caster.getRandom().nextInt(NPC_BASIC_JEWEL_TYPES.length)];
-         return spawnNpcGemProjectile(caster, target, type, 2.8, 0.1F, false, false, false);
+         return type == GemType.WHITE_GEMSTONE ? castNpcWhiteShockwave(caster, target, vars) : spawnNpcGemProjectile(caster, target, type, 2.8, 0.1F, false, false, false);
       }
    }
 
    private static boolean castJewelItemAdvanced(
       MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, boolean highThreat
    ) {
-      int mode;
-      if (highThreat && caster.getHealth() / Math.max(1.0, (double)caster.getMaxHealth()) < 0.6) {
-         mode = 0;
-      } else {
-         mode = caster.getRandom().nextInt(3);
+      int mode = selectJewelItemAdvancedMode(caster, target, highThreat);
+      if (mode == 1 && !hasProjectilePath(caster, target, 2.8, 0.04)) {
+         mode = caster.hasLineOfSight(target) ? 2 : 0;
       }
 
-      if (mode != 0 && !hasProjectilePath(caster, target, mode == 1 ? 2.8 : 2.6, 0.04)) {
+      if (mode == 2 && !caster.hasLineOfSight(target)) {
+         mode = hasProjectilePath(caster, target, 2.8, 0.04) ? 1 : 0;
+      }
+
+      if ((mode == 1 && !hasProjectilePath(caster, target, 2.8, 0.04)) || (mode == 2 && !caster.hasLineOfSight(target))) {
          repositionForClearShot(caster, target, 8.5, 1.08);
          return false;
       } else if (!consumeMana(vars, 70.0)) {
          return false;
       } else {
          if (mode == 0) {
+            markCastingPose(caster, 12);
             caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 360, 1, false, true, true));
             caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 360, 1, false, true, true));
             caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 320, 0, false, true, true));
+            if (caster.level() instanceof ServerLevel serverLevel) {
+               serverLevel.sendParticles(ParticleTypes.ENCHANT, caster.getX(), caster.getY() + 1.0, caster.getZ(), 20, 0.5, 0.7, 0.5, 0.03);
+            }
             return true;
          } else {
-            return mode == 1
-               ? spawnNpcGemProjectile(caster, target, GemType.CYAN, 2.8, 0.08F, false, false, true)
-               : spawnNpcGemProjectile(caster, target, GemType.SAPPHIRE, 2.6, 0.1F, false, false, false);
+            return mode == 1 ? spawnNpcGemProjectile(caster, target, GemType.CYAN, 2.8, 0.08F, false, false, true) : castNpcAdvancedWinterFrost(caster, target, vars);
          }
+      }
+   }
+
+   private static int selectJewelItemAdvancedMode(MysticMagicianEntity caster, LivingEntity target, boolean highThreat) {
+      if (caster == null || target == null || !target.isAlive()) {
+         return 0;
+      } else {
+         double distance = Math.sqrt(caster.distanceToSqr(target));
+         boolean lineOfSight = caster.hasLineOfSight(target);
+         double healthRatio = caster.getHealth() / Math.max(1.0, (double)caster.getMaxHealth());
+         int buffWeight = 16;
+         int cyanWeight = 22;
+         int frostWeight = 26;
+         if (highThreat) {
+            frostWeight += 14;
+            buffWeight += 8;
+         }
+
+         if (healthRatio < 0.45) {
+            buffWeight += 20;
+         }
+
+         if (distance <= 9.0) {
+            frostWeight += 34;
+            cyanWeight = Math.max(8, cyanWeight - 6);
+         } else if (distance <= 13.0) {
+            frostWeight += 14;
+            cyanWeight += 8;
+         } else {
+            cyanWeight += 24;
+         }
+
+         if (!lineOfSight) {
+            frostWeight = Math.max(6, frostWeight - 28);
+            cyanWeight += 10;
+            buffWeight += 6;
+         }
+
+         int total = buffWeight + cyanWeight + frostWeight;
+         int roll = caster.getRandom().nextInt(Math.max(1, total));
+         if (roll < frostWeight) {
+            return 2;
+         } else {
+            roll -= frostWeight;
+            return roll < cyanWeight ? 1 : 0;
+         }
+      }
+   }
+
+   private static boolean castNpcWhiteShockwave(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      } else {
+         markCastingPose(caster, 10);
+         double proficiency = Mth.clamp(getEffectiveProficiency(caster, vars, "jewel_random_shoot", false), 0.0, 100.0);
+         double powerNormalized = Mth.clamp(0.35 + proficiency / 100.0 * 0.65, 0.35, 1.0);
+         double radius = 4.5 + 5.0 * powerNormalized;
+         float baseDamage = (float)(1.2 + 2.8 * powerNormalized);
+         double baseHorizontalKnockback = 0.9 + 2.1 * powerNormalized;
+         double baseVerticalKnockback = 0.2 + 0.45 * powerNormalized;
+         if (caster.level() instanceof ServerLevel serverLevel) {
+            spawnNpcWhiteShockwaveParticles(serverLevel, caster, radius, powerNormalized);
+         }
+
+         for (LivingEntity nearby : caster.level().getEntitiesOfClass(
+            LivingEntity.class,
+            caster.getBoundingBox().inflate(radius, 3.0 + powerNormalized, radius),
+            e -> e != null && e.isAlive() && isValidCombatTarget(caster, e)
+         )) {
+            double dx = nearby.getX() - caster.getX();
+            double dz = nearby.getZ() - caster.getZ();
+            double distance = Math.sqrt(dx * dx + dz * dz);
+            if (distance < 1.0E-4) {
+               double angle = caster.getRandom().nextDouble() * (Math.PI * 2);
+               dx = Math.cos(angle);
+               dz = Math.sin(angle);
+               distance = 1.0;
+            }
+
+            double nx = dx / distance;
+            double nz = dz / distance;
+            double falloff = 1.0 - Math.min(1.0, distance / radius);
+            float damage = (float)Math.max(0.75, baseDamage * (0.5 + 0.5 * falloff));
+            nearby.hurt(caster.damageSources().indirectMagic(caster, caster), damage);
+            double horizontal = baseHorizontalKnockback * (0.35 + 0.65 * falloff);
+            double vertical = baseVerticalKnockback * (0.45 + 0.55 * falloff);
+            nearby.push(nx * horizontal, vertical, nz * horizontal);
+            nearby.fallDistance = 0.0F;
+            EntityUtils.triggerSwarmAnger(caster.level(), caster, nearby);
+            if (nearby instanceof Mob mob) {
+               mob.setTarget(caster);
+            }
+         }
+
+         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.45F, 1.25F);
+         return true;
+      }
+   }
+
+   private static void spawnNpcWhiteShockwaveParticles(ServerLevel level, LivingEntity caster, double radius, double powerNormalized) {
+      double cx = caster.getX();
+      double cy = caster.getY() + 1.0;
+      double cz = caster.getZ();
+      int burstLevel = (int)Math.round(1.0 + powerNormalized * 2.0);
+      level.sendParticles(ParticleTypes.FLASH, cx, cy, cz, 4 + 3 * burstLevel, 0.2, 0.15, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.06, cz, 8 + 6 * burstLevel, 0.25, 0.12, 0.25, 0.03);
+      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy, cz, 0.32F, (float)radius, 0.16F, 12, 0xFFFFFF, 0.76F, 0.0F));
+      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.06, cz, 0.18F, (float)(radius * 0.65), 0.1F, 18, 0xF2F2FF, 0.46F, 0.01F));
+      spawnNpcWhiteAirwaves(level, cx, cy, cz, radius, powerNormalized, burstLevel);
+   }
+
+   private static void spawnNpcWhiteAirwaves(ServerLevel level, double cx, double cy, double cz, double radius, double powerNormalized, int burstLevel) {
+      int extraRings = 3 + burstLevel * 2;
+
+      for (int i = 0; i < extraRings; i++) {
+         float startRadius = 0.08F + level.random.nextFloat() * 0.22F;
+         float endRadius = (float)(radius * (0.34 + level.random.nextDouble() * 0.44));
+         float thickness = 0.06F + level.random.nextFloat() * 0.07F;
+         int duration = 10 + level.random.nextInt(10);
+         int color = level.random.nextFloat() < 0.35F ? 0xF4F6FF : 0xFFFFFF;
+         float alpha = 0.22F + level.random.nextFloat() * 0.28F;
+         float upward = level.random.nextFloat() * 0.03F;
+         float tilt = level.random.nextFloat() * (10.0F + (float)powerNormalized * 34.0F);
+         float yaw = level.random.nextFloat() * 360.0F;
+         double ox = (level.random.nextDouble() - 0.5) * radius * 0.15;
+         double oy = (level.random.nextDouble() - 0.5) * 0.25;
+         double oz = (level.random.nextDouble() - 0.5) * radius * 0.15;
+         level.addFreshEntity(
+            new ExpandingRingEffectEntity(level, cx + ox, cy + oy, cz + oz, startRadius, endRadius, thickness, duration, color, alpha, upward, tilt, yaw)
+         );
+      }
+   }
+
+   private static boolean castNpcAdvancedWinterFrost(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else {
+         markCastingPose(caster, 14);
+         double proficiency = Mth.clamp(getEffectiveProficiency(caster, vars, "sapphire_winter_frost", false), 0.0, 100.0);
+         int radius = Mth.clamp(8 + (int)Math.floor(proficiency / 25.0), 8, 12);
+         int duration = 140 + (int)Math.round(proficiency * 1.8);
+         applyNpcWinterFrostField(caster, target, radius, duration, 4, 3, 1);
+         return true;
       }
    }
 
@@ -1442,13 +1686,18 @@ public final class NpcMagicCastBridge {
       if (vars == null) {
          return false;
       } else {
-         List<Integer> choices = new ArrayList<>();
-         choices.add(0);
-         if (NpcMagicExecutionService.hasCastableMagic(vars, "gravity_magic")) {
-            choices.add(1);
+         if (!hasNpcEngravingAccess(vars)) {
+            return false;
          }
 
-         if (NpcMagicExecutionService.hasCastableMagic(vars, "reinforcement")) {
+         List<Integer> choices = new ArrayList<>();
+         choices.add(0);
+         if (hasNpcEngravedGravityAccess(vars)) {
+            choices.add(1);
+            choices.add(3);
+         }
+
+         if (vars.hasLearnedSelfMagic("reinforcement")) {
             choices.add(2);
          }
 
@@ -1466,10 +1715,57 @@ public final class NpcMagicCastBridge {
                payload.putInt("reinforcement_level", highThreat ? 3 : 2);
                return castReinforcement(caster, vars, payload, Math.max(80.0, vars.proficiency_reinforcement));
             }
+            case 3:
+               return castJewelItemBlackShardGravity(caster, target, vars, highThreat);
             default:
                return castGander(caster, target, vars, new CompoundTag(), Math.max(80.0, vars.proficiency_gander));
          }
       }
+   }
+
+   private static boolean castJewelItemBlackShardGravity(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, boolean highThreat
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!hasNpcEngravedGravityAccess(vars)) {
+         return false;
+      } else if (!hasProjectilePath(caster, target, 1.5, 0.06)) {
+         repositionForClearShot(caster, target, 9.0, 1.08);
+         return false;
+      } else if (!consumeMana(vars, highThreat ? 32.0 : 26.0)) {
+         return false;
+      } else {
+         double proficiency = Math.max(vars.proficiency_gravity_magic, vars.proficiency_jewel_magic_release);
+         double virtualManaAmount = 100.0 + proficiency * 0.8;
+         ItemStack projectileGem = GemGravityFieldMagic.createBlackShardGravityProjectileStack(
+            new ItemStack(ModItems.getNormalizedFullCarvedGem(GemType.BLACK_SHARD)), proficiency, virtualManaAmount, 1.0F
+         );
+         if (projectileGem.isEmpty()) {
+            return false;
+         } else {
+            markCastingPose(caster, 10);
+            Vec3 direction = getAimDirection(caster, target, 1.5, 0.06);
+            faceCasterToDirection(caster, direction);
+            Vec3 spawnPos = EntityUtils.getRightHandCastAnchor(caster).add(direction.scale(0.12));
+            RubyProjectileEntity projectile = new RubyProjectileEntity(caster.level(), caster);
+            projectile.setGemType(toGemTypeId(GemType.BLACK_SHARD));
+            projectile.setItem(projectileGem);
+            projectile.setPos(spawnPos);
+            projectile.shoot(direction.x, direction.y, direction.z, 1.5F, 0.35F);
+            caster.level().addFreshEntity(projectile);
+            caster.level().playSound(null, caster.blockPosition(), SoundEvents.ENDER_EYE_LAUNCH, SoundSource.HOSTILE, 0.8F, 0.75F);
+            return true;
+         }
+      }
+   }
+
+   private static boolean hasNpcEngravingAccess(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return vars != null && vars.learned_magics.contains("jewel_magic_release");
+   }
+
+   private static boolean hasNpcEngravedGravityAccess(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return hasNpcEngravingAccess(vars) && vars.hasLearnedSelfMagic("gravity_magic");
    }
 
    private static void handleOnFireEmergency(MysticMagicianEntity npc, long gameTime) {
@@ -2112,6 +2408,285 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   private static void fireRubyFlameVolley(MysticMagicianEntity caster, LivingEntity target, double proficiency) {
+      if (caster != null && target != null && target.isAlive()) {
+         Vec3 forward = getAimDirection(caster, target, 2.9, 0.04);
+         faceCasterToDirection(caster, forward);
+         Vec3 right = getRightVector(forward);
+         Vec3 up = right.cross(forward).normalize();
+         Vec3 hand = EntityUtils.getRightHandCastAnchor(caster);
+         float inaccuracy = proficiency >= 70.0 ? 0.05F : 0.08F;
+
+         for (int i = 0; i < 3; i++) {
+            ItemStack gem = new ItemStack(ModItems.getNormalizedFullCarvedGem(GemType.RUBY));
+            RubyProjectileEntity projectile = new RubyProjectileEntity(caster.level(), caster);
+            projectile.setGemType(toGemTypeId(GemType.RUBY));
+            projectile.setItem(gem);
+            Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i] * 0.8)).add(up.scale(RAPID_UP[i] * 0.75));
+            projectile.setPos(spawn);
+            Vec3 spreadDir = applyDirectionalSpread(forward, right, up, RAPID_YAW[i] * 1.2F, RAPID_PITCH[i]);
+            projectile.shoot(spreadDir.x, spreadDir.y, spreadDir.z, 2.9F, inaccuracy);
+            caster.level().addFreshEntity(projectile);
+         }
+      }
+   }
+
+   private static void spawnNpcCyanWindProjectile(MysticMagicianEntity caster, LivingEntity target, double proficiency) {
+      if (caster != null && target != null && target.isAlive()) {
+         Vec3 direction = getAimDirection(caster, target, 2.8, 0.04);
+         faceCasterToDirection(caster, direction);
+         Vec3 spawnPos = EntityUtils.getRightHandCastAnchor(caster).add(direction.scale(0.1));
+         float radius = 4.5F + (float)(Mth.clamp(proficiency, 0.0, 100.0) / 100.0) * 2.0F;
+         int duration = 150 + (int)Math.round(Mth.clamp(proficiency, 0.0, 100.0) * 0.9);
+         ItemStack gem = new ItemStack(ModItems.getNormalizedFullCarvedGem(GemType.CYAN));
+         CompoundTag custom = ((CustomData)gem.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
+         custom.putBoolean("IsCyanTornado", true);
+         custom.putFloat("CyanRadius", radius);
+         custom.putInt("CyanDuration", duration);
+         gem.set(DataComponents.CUSTOM_DATA, CustomData.of(custom));
+         RubyProjectileEntity projectile = new RubyProjectileEntity(caster.level(), caster);
+         projectile.setGemType(toGemTypeId(GemType.CYAN));
+         projectile.setItem(gem);
+         projectile.setPos(spawnPos);
+         projectile.shoot(direction.x, direction.y, direction.z, 2.8F, proficiency >= 70.0 ? 0.05F : 0.08F);
+         caster.level().addFreshEntity(projectile);
+      }
+   }
+
+   private static void applyNpcWinterFrostField(
+      MysticMagicianEntity caster, LivingEntity target, int radius, int duration, int primarySlownessAmplifier, int secondarySlownessAmplifier, int weaknessAmplifier
+   ) {
+      if (caster != null && target != null && target.isAlive()) {
+         Level level = caster.level();
+         BlockPos center = target.blockPosition();
+         RandomSource random = level.getRandom();
+         Map<Integer, List<NpcMagicCastBridge.WinterFrostRestoreData>> restoreBuckets = new HashMap<>();
+         boolean airborneCast = !caster.onGround() && !caster.isInWater() && !caster.isInLava() && !caster.isFallFlying();
+         int lowerDepth = airborneCast ? radius : 2;
+         if (level instanceof ServerLevel serverLevel) {
+            double ySpread = airborneCast ? radius * 0.45 : radius * 0.35;
+            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, target.getX(), target.getY() + 1.0, target.getZ(), 140, radius * 0.5, ySpread, radius * 0.5, 0.05);
+            serverLevel.sendParticles(ParticleTypes.ITEM_SNOWBALL, target.getX(), target.getY() + 0.8, target.getZ(), 72, radius * 0.12, airborneCast ? 1.1 : 0.8, radius * 0.12, 0.03);
+            serverLevel.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.4, target.getZ(), 36, radius * 0.4, airborneCast ? 0.7 : 0.45, radius * 0.4, 0.01);
+         }
+
+         int radiusSq = radius * radius;
+         int baseDelay = Math.max(100, duration - 10);
+         for (int x = -radius; x <= radius; x++) {
+            for (int y = -lowerDepth; y <= radius; y++) {
+               for (int z = -radius; z <= radius; z++) {
+                  if (x * x + y * y + z * z <= radiusSq) {
+                     BlockPos pos = center.offset(x, y, z);
+                     if (!level.getWorldBorder().isWithinBounds(pos) || isWinterFrostProtectedPos(caster, pos)) {
+                        continue;
+                     }
+
+                     BlockState state = level.getBlockState(pos);
+                     if (!state.isAir() && !state.hasBlockEntity() && !(state.getDestroySpeed(level, pos) < 0.0F)) {
+                        BlockState iceState = randomWinterFrostIceState(random);
+                        level.setBlock(pos, iceState, 2);
+                        addWinterFrostRestore(restoreBuckets, pos, state, iceState, baseDelay + random.nextInt(31) - 15);
+                     }
+                  }
+               }
+            }
+         }
+
+         AABB area = new AABB(center).inflate(radius);
+         for (LivingEntity nearby : level.getEntitiesOfClass(
+            LivingEntity.class, area, e -> e != null && e.isAlive() && (e == target || isValidCombatTarget(caster, e))
+         )) {
+            int slownessAmplifier = nearby == target ? primarySlownessAmplifier : secondarySlownessAmplifier;
+            nearby.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessAmplifier, false, true, true));
+            nearby.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, Math.max(90, duration / 2), weaknessAmplifier, false, true, true));
+            nearby.setDeltaMovement(nearby.getDeltaMovement().multiply(0.08, 0.9, 0.08));
+            nearby.fallDistance = 0.0F;
+            EntityUtils.triggerSwarmAnger(level, caster, nearby);
+            if (nearby instanceof Mob mob) {
+               mob.setTarget(caster);
+            }
+
+            placeTemporaryWinterFrostTargetCage(level, nearby, Math.max(90, duration - 20), caster, restoreBuckets);
+         }
+
+         scheduleWinterFrostRestore(level, restoreBuckets);
+         level.playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 0.45F, 0.78F);
+      }
+   }
+
+   private static void placeTemporaryWinterFrostTargetCage(
+      Level level,
+      LivingEntity trapped,
+      int baseDelay,
+      LivingEntity protectedCaster,
+      Map<Integer, List<NpcMagicCastBridge.WinterFrostRestoreData>> restoreBuckets
+   ) {
+      if (level != null && trapped != null && trapped.isAlive()) {
+         RandomSource random = level.getRandom();
+         AABB targetBox = trapped.getBoundingBox();
+         AABB cageBox = targetBox.inflate(1.0);
+         int minX = Mth.floor(cageBox.minX);
+         int maxX = Mth.ceil(cageBox.maxX);
+         int minY = Mth.floor(cageBox.minY);
+         int maxY = Mth.ceil(cageBox.maxY);
+         int minZ = Mth.floor(cageBox.minZ);
+         int maxZ = Mth.ceil(cageBox.maxZ);
+
+         for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
+               for (int z = minZ; z < maxZ; z++) {
+                  BlockPos pos = new BlockPos(x, y, z);
+                  AABB blockBox = new AABB(pos);
+                  if (!blockBox.intersects(targetBox)) {
+                     BlockState current = level.getBlockState(pos);
+                     if (level.getWorldBorder().isWithinBounds(pos) && current.isAir() && !isWinterFrostProtectedPos(protectedCaster, pos)) {
+                        BlockState iceState = randomWinterFrostIceState(random);
+                        replaceBlockWithoutDrops(level, pos, iceState);
+                        addWinterFrostRestore(restoreBuckets, pos, Blocks.AIR.defaultBlockState(), iceState, Math.max(80, baseDelay + random.nextInt(21) - 10));
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   private static void addWinterFrostRestore(
+      Map<Integer, List<NpcMagicCastBridge.WinterFrostRestoreData>> restoreBuckets,
+      BlockPos pos,
+      BlockState originalState,
+      BlockState placedState,
+      int delay
+   ) {
+      int clampedDelay = Math.max(60, delay);
+      restoreBuckets.computeIfAbsent(clampedDelay, key -> new ArrayList<>())
+         .add(new NpcMagicCastBridge.WinterFrostRestoreData(pos.immutable(), originalState, placedState));
+   }
+
+   private static void scheduleWinterFrostRestore(Level level, Map<Integer, List<NpcMagicCastBridge.WinterFrostRestoreData>> restoreBuckets) {
+      for (Map.Entry<Integer, List<NpcMagicCastBridge.WinterFrostRestoreData>> entry : restoreBuckets.entrySet()) {
+         int delay = entry.getKey();
+         List<NpcMagicCastBridge.WinterFrostRestoreData> dataList = entry.getValue();
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            for (NpcMagicCastBridge.WinterFrostRestoreData data : dataList) {
+               BlockState currentState = level.getBlockState(data.pos());
+               if (currentState.getBlock() == data.placedState().getBlock()) {
+                  boolean exposed = false;
+
+                  for (Direction dir : Direction.values()) {
+                     if (level.getBlockState(data.pos().relative(dir)).isAir()) {
+                        exposed = true;
+                        break;
+                     }
+                  }
+
+                  if (exposed && shouldPlayWinterFrostBreakFx(data.pos())) {
+                     level.levelEvent(2001, data.pos(), net.minecraft.world.level.block.Block.getId(currentState));
+                  }
+
+                  level.setBlock(data.pos(), data.originalState(), 2);
+               }
+            }
+         });
+      }
+   }
+
+   private static boolean shouldPlayWinterFrostBreakFx(BlockPos pos) {
+      if (pos == null) {
+         return false;
+      } else {
+         int hash = pos.getX() * 73428767 ^ pos.getY() * 912931 ^ pos.getZ() * 42331;
+         return Math.floorMod(hash, 4) == 0;
+      }
+   }
+
+   private static boolean isWinterFrostProtectedPos(LivingEntity caster, BlockPos pos) {
+      if (caster == null || pos == null) {
+         return false;
+      } else {
+         AABB safeBox = caster.getBoundingBox().inflate(0.8, 1.15, 0.8);
+         if (new AABB(pos).intersects(safeBox)) {
+            return true;
+         } else {
+            BlockPos casterPos = caster.blockPosition();
+            int dx = Math.abs(pos.getX() - casterPos.getX());
+            int dy = pos.getY() - casterPos.getY();
+            int dz = Math.abs(pos.getZ() - casterPos.getZ());
+            return dx <= 1 && dz <= 1 && dy >= -1 && dy <= 2;
+         }
+      }
+   }
+
+   private static BlockState randomWinterFrostIceState(RandomSource random) {
+      int roll = random.nextInt(100);
+      if (roll < 60) {
+         return Blocks.ICE.defaultBlockState();
+      } else {
+         return roll < 90 ? Blocks.PACKED_ICE.defaultBlockState() : Blocks.BLUE_ICE.defaultBlockState();
+      }
+   }
+
+   private static void placeEmeraldWinterRiverCage(Level level, BlockPos base, int radius, int height) {
+      if (level != null && base != null) {
+         BlockState barrier = ModBlocks.GREEN_TRANSPARENT_BLOCK.get().defaultBlockState();
+         RandomSource random = level.getRandom();
+
+         for (int x = -radius; x <= radius; x++) {
+            for (int y = 0; y <= height; y++) {
+               for (int z = -radius; z <= radius; z++) {
+                  BlockPos pos = base.offset(x, y, z);
+                  boolean isBorder = Math.abs(x) == radius || Math.abs(z) == radius || y == 0 || y == height;
+                  if (isBorder) {
+                     BlockState current = level.getBlockState(pos);
+                     if (level.getWorldBorder().isWithinBounds(pos)) {
+                        if (current.is(ModBlocks.GREEN_TRANSPARENT_BLOCK.get())) {
+                           level.scheduleTick(pos, ModBlocks.GREEN_TRANSPARENT_BLOCK.get(), 160 + random.nextInt(41));
+                        } else if (current.getDestroySpeed(level, pos) >= 0.0F && !current.is(Blocks.BEDROCK)) {
+                           replaceBlockWithoutDrops(level, pos, barrier);
+                        }
+                     }
+                  } else {
+                     BlockState innerState = level.getBlockState(pos);
+                     if (!innerState.isAir()) {
+                        replaceBlockWithoutDrops(level, pos, Blocks.AIR.defaultBlockState());
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   private static void replaceBlockWithoutDrops(Level level, BlockPos pos, BlockState targetState) {
+      if (level.getBlockEntity(pos) != null) {
+         level.removeBlockEntity(pos);
+      }
+
+      level.setBlock(pos, targetState, 3);
+   }
+
+   private static void pushEntitiesOutOfEmeraldBarrier(Level level, MysticMagicianEntity caster, BlockPos center, int radius, int height) {
+      if (level != null && caster != null && center != null) {
+         BlockPos minPos = center.offset(-radius, 0, -radius);
+         BlockPos maxPos = center.offset(radius, height, radius);
+         AABB box = new AABB(minPos.getX(), minPos.getY(), minPos.getZ(), maxPos.getX() + 1, maxPos.getY() + 1, maxPos.getZ() + 1).inflate(1.0);
+         Vec3 centerPos = center.offset(0, radius, 0).getCenter();
+
+         for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            Vec3 direction = entity.position().subtract(centerPos);
+            if (direction.lengthSqr() < 0.01) {
+               direction = new Vec3(1.0, 0.0, 0.0);
+            }
+
+            direction = direction.normalize();
+            Vec3 targetPos = centerPos.add(direction.scale(radius * 1.5 + 2.0));
+            entity.teleportTo(targetPos.x, targetPos.y, targetPos.z);
+            entity.setDeltaMovement(direction.x * 0.35, Math.max(0.12, entity.getDeltaMovement().y), direction.z * 0.35);
+            entity.fallDistance = 0.0F;
+         }
+      }
+   }
+
    private static boolean handleHighThreatTactics(
       MysticMagicianEntity npc,
       LivingEntity target,
@@ -2315,17 +2890,32 @@ public final class NpcMagicCastBridge {
    private static boolean isResourceMagic(String magicId) {
       return "jewel_random_shoot".equals(magicId)
          || "jewel_machine_gun".equals(magicId)
+         || isAdvancedJewelMagic(magicId)
          || NPC_JEWEL_ITEM_BASIC.equals(magicId)
          || NPC_JEWEL_ITEM_ADVANCED.equals(magicId)
          || NPC_JEWEL_ITEM_ENGRAVED.equals(magicId);
+   }
+
+   private static boolean isAdvancedJewelMagic(String magicId) {
+      if (magicId != null && !magicId.isEmpty()) {
+         return switch (magicId) {
+            case "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind" -> true;
+            default -> false;
+         };
+      } else {
+         return false;
+      }
    }
 
    private static int getResourceWindowTicks(String magicId) {
       return switch (magicId) {
          case "jewel_random_shoot" -> 600;
          case "jewel_machine_gun" -> 1400;
+         case "ruby_flame_sword", "cyan_wind" -> 2200;
+         case "topaz_reinforcement" -> 2400;
+         case "sapphire_winter_frost", "emerald_winter_river" -> 2800;
          case NPC_JEWEL_ITEM_BASIC -> 1800;
-         case NPC_JEWEL_ITEM_ADVANCED -> 3000;
+         case NPC_JEWEL_ITEM_ADVANCED -> 2400;
          case NPC_JEWEL_ITEM_ENGRAVED -> 3600;
          default -> 0;
       };
@@ -2335,8 +2925,13 @@ public final class NpcMagicCastBridge {
       return switch (magicId) {
          case "jewel_random_shoot" -> 6;
          case "jewel_machine_gun" -> 1;
+         case "ruby_flame_sword",
+            "sapphire_winter_frost",
+            "emerald_winter_river",
+            "topaz_reinforcement",
+            "cyan_wind" -> 1;
          case NPC_JEWEL_ITEM_BASIC -> 3;
-         case NPC_JEWEL_ITEM_ADVANCED -> 2;
+         case NPC_JEWEL_ITEM_ADVANCED -> 3;
          case NPC_JEWEL_ITEM_ENGRAVED -> 1;
          default -> Integer.MAX_VALUE;
       };
@@ -2346,8 +2941,11 @@ public final class NpcMagicCastBridge {
       return switch (magicId) {
          case "jewel_random_shoot" -> 1800;
          case "jewel_machine_gun" -> 3200;
+         case "ruby_flame_sword", "cyan_wind" -> 3600;
+         case "topaz_reinforcement" -> 3800;
+         case "sapphire_winter_frost", "emerald_winter_river" -> 4200;
          case NPC_JEWEL_ITEM_BASIC -> 2400;
-         case NPC_JEWEL_ITEM_ADVANCED -> 4400;
+         case NPC_JEWEL_ITEM_ADVANCED -> 3200;
          case NPC_JEWEL_ITEM_ENGRAVED -> 5200;
          default -> 0;
       };
@@ -2550,7 +3148,7 @@ public final class NpcMagicCastBridge {
       double weight = 1.0;
       switch (style) {
          case CLOSE_PRESSURE:
-            if ("reinforcement".equals(magicId)) {
+            if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
                weight += 2.8;
             }
 
@@ -2558,7 +3156,7 @@ public final class NpcMagicCastBridge {
                weight += 1.5;
             }
 
-            if ("gander".equals(magicId)) {
+            if ("gander".equals(magicId) || "emerald_winter_river".equals(magicId)) {
                weight++;
             }
             break;
@@ -2571,7 +3169,7 @@ public final class NpcMagicCastBridge {
                weight++;
             }
 
-            if ("gander".equals(magicId)) {
+            if ("gander".equals(magicId) || "ruby_flame_sword".equals(magicId) || "cyan_wind".equals(magicId)) {
                weight++;
             }
             break;
@@ -2580,44 +3178,84 @@ public final class NpcMagicCastBridge {
                weight += 3.2;
             }
 
+            if ("sapphire_winter_frost".equals(magicId) || "emerald_winter_river".equals(magicId)) {
+               weight += 1.4;
+            }
+
             if ("gander".equals(magicId)) {
                weight++;
             }
 
-            if ("reinforcement".equals(magicId)) {
+            if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
                weight += 0.8;
             }
             break;
          case BALANCED:
-            if ("gravity_magic".equals(magicId) || "gander".equals(magicId)) {
+            if ("gravity_magic".equals(magicId)
+               || "gander".equals(magicId)
+               || "ruby_flame_sword".equals(magicId)
+               || "sapphire_winter_frost".equals(magicId)
+               || "emerald_winter_river".equals(magicId)
+               || "cyan_wind".equals(magicId)) {
                weight++;
             }
       }
 
+      if (isAdvancedJewelMagic(magicId)) {
+         weight *= 0.22;
+      }
+
       if (distance < 5.0) {
-         if ("reinforcement".equals(magicId) || "gravity_magic".equals(magicId)) {
+         if ("reinforcement".equals(magicId) || "gravity_magic".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
             weight++;
          }
 
-         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId)) {
+         if ("gandr_machine_gun".equals(magicId)
+            || "jewel_machine_gun".equals(magicId)
+            || "ruby_flame_sword".equals(magicId)
+            || "cyan_wind".equals(magicId)) {
             weight *= 0.65;
          }
       } else if (distance > 14.0) {
-         if ("reinforcement".equals(magicId)) {
+         if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
             weight *= 0.45;
          }
 
-         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId) || "gander".equals(magicId)) {
+         if ("gandr_machine_gun".equals(magicId)
+            || "jewel_machine_gun".equals(magicId)
+            || "gander".equals(magicId)
+            || "ruby_flame_sword".equals(magicId)
+            || "cyan_wind".equals(magicId)) {
             weight += 0.8;
          }
       }
 
       if (manaRatio < 0.3) {
-         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId)) {
+         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId) || isAdvancedJewelMagic(magicId)) {
             weight *= 0.2;
          } else if ("gander".equals(magicId) || "jewel_random_shoot".equals(magicId) || "gravity_magic".equals(magicId)) {
             weight *= 0.75;
          }
+      }
+
+      if ("ruby_flame_sword".equals(magicId) && distance >= 6.0 && distance <= 14.0 && manaRatio >= 0.55) {
+         weight *= 1.35;
+      }
+
+      if ("sapphire_winter_frost".equals(magicId) && distance <= 9.0 && manaRatio >= 0.55) {
+         weight *= 1.42;
+      }
+
+      if ("emerald_winter_river".equals(magicId) && distance <= 8.0 && manaRatio >= 0.6) {
+         weight *= 1.45;
+      }
+
+      if ("topaz_reinforcement".equals(magicId) && distance <= 6.0 && manaRatio >= 0.45) {
+         weight *= 1.6;
+      }
+
+      if ("cyan_wind".equals(magicId) && distance >= 7.0 && distance <= 16.0 && manaRatio >= 0.55) {
+         weight *= 1.32;
       }
 
       if ("gravity_magic".equals(magicId) && payload.contains("gravity_target") && payload.getInt("gravity_target") == 0 && distance < 6.0) {
@@ -2647,7 +3285,14 @@ public final class NpcMagicCastBridge {
    private static boolean isPureRangedMagic(String magicId) {
       if (magicId != null && !magicId.isEmpty()) {
          return switch (magicId) {
-            case "gander", "gandr_machine_gun", "jewel_random_shoot", "jewel_machine_gun" -> true;
+            case "gander",
+               "gandr_machine_gun",
+               "jewel_random_shoot",
+               "jewel_machine_gun",
+               "ruby_flame_sword",
+               "sapphire_winter_frost",
+               "emerald_winter_river",
+               "cyan_wind" -> true;
             default -> false;
          };
       } else {
@@ -2673,6 +3318,11 @@ public final class NpcMagicCastBridge {
             int waves = getJewelMachineGunWaveCount(proficiency, defensive);
             yield defensive ? 45.0 + waves * 18.0 : 60.0 + waves * 22.0;
          }
+         case "ruby_flame_sword" -> 72.0;
+         case "sapphire_winter_frost" -> 88.0;
+         case "emerald_winter_river" -> 92.0;
+         case "topaz_reinforcement" -> 76.0;
+         case "cyan_wind" -> 80.0;
          default -> 40.0;
       };
    }
@@ -2911,7 +3561,7 @@ public final class NpcMagicCastBridge {
             MagicGravityEffectHandler.playGravityNormalizeFx(caster, actualTarget);
          } else {
             int duration = getGravityDurationTicks(proficiency);
-            MagicGravityEffectHandler.applyGravityState(actualTarget, mode, caster.level().getGameTime() + duration);
+            MagicGravityEffectHandler.applyGravityState(actualTarget, mode, caster.level().getGameTime() + duration, caster);
             MagicGravityEffectHandler.playGravityCastFx(caster, actualTarget, mode);
          }
 
@@ -2930,27 +3580,168 @@ public final class NpcMagicCastBridge {
          return false;
       }
 
+      int duration = (600 + (int)(proficiency * 10.0)) * level;
+      int amplifier = level - 1;
+      MobEffectInstance effect = null;
+      MobEffectInstance extraEffect = null;
+      switch (mode) {
+         case 0:
+            effect = new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_DEFENSE, duration, amplifier, false, false, true);
+            break;
+         case 1:
+            effect = new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_STRENGTH, duration, amplifier, false, false, true);
+            break;
+         case 2:
+            effect = new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_AGILITY, duration, amplifier, false, false, true);
+            break;
+         case 3:
+            effect = new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_SIGHT, duration, amplifier, false, false, true);
+            extraEffect = new MobEffectInstance(MobEffects.NIGHT_VISION, duration, 0, false, false, false);
+      }
+
+      if (effect == null) {
+         return false;
+      }
+
+      MobEffectInstance existing = caster.getEffect(effect.getEffect());
+      if (existing != null && existing.getAmplifier() >= effect.getAmplifier() && existing.getDuration() >= effect.getDuration()) {
+         return false;
+      }
+
       double cost = 20.0 * level;
       if (!consumeMana(vars, cost)) {
          return false;
+      }
+
+      caster.addEffect(effect);
+      if (extraEffect != null) {
+         caster.addEffect(extraEffect);
+      }
+
+      TypeMoonWorldModVariables.ReinforcementData data = (TypeMoonWorldModVariables.ReinforcementData)caster.getData(
+         TypeMoonWorldModVariables.REINFORCEMENT_DATA
+      );
+      data.casterUUID = caster.getUUID();
+      return true;
+   }
+
+   static boolean castRubyFlameSword(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!hasProjectilePath(caster, target, 2.9, 0.04)) {
+         repositionForClearShot(caster, target, 8.5, 1.08);
+         return false;
+      } else if (!consumeMana(vars, 72.0)) {
+         return false;
       } else {
-         int duration = (600 + (int)(proficiency * 10.0)) * level;
-         int amplifier = level - 1;
-         switch (mode) {
-            case 0:
-               caster.addEffect(new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_DEFENSE, duration, amplifier, false, false, true));
-               break;
-            case 1:
-               caster.addEffect(new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_STRENGTH, duration, amplifier, false, false, true));
-               break;
-            case 2:
-               caster.addEffect(new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_AGILITY, duration, amplifier, false, false, true));
-               break;
-            case 3:
-               caster.addEffect(new MobEffectInstance(ModMobEffects.REINFORCEMENT_SELF_SIGHT, duration, amplifier, false, false, true));
-               caster.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, duration, 0, false, false, false));
+         markCastingPose(caster, 14);
+         fireRubyFlameVolley(caster, target, proficiency);
+         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.65F, 0.95F);
+         return true;
+      }
+   }
+
+   static boolean castSapphireWinterFrost(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!caster.hasLineOfSight(target)) {
+         repositionForClearShot(caster, target, 7.5, 1.05);
+         return false;
+      } else if (!consumeMana(vars, 88.0)) {
+         return false;
+      } else {
+         markCastingPose(caster, 14);
+         int radius = Mth.clamp(8 + (int)Math.floor(Mth.clamp(proficiency, 0.0, 100.0) / 25.0), 8, 12);
+         int duration = 100 + (int)Math.round(Mth.clamp(proficiency, 0.0, 100.0) * 2.2);
+         applyNpcWinterFrostField(caster, target, radius, duration, 4, 2, 0);
+         return true;
+      }
+   }
+
+   static boolean castEmeraldWinterRiver(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      } else if (!consumeMana(vars, 92.0)) {
+         return false;
+      } else {
+         markCastingPose(caster, 16);
+         int radius = proficiency >= 75.0 ? 2 : 1;
+         int height = 2 * radius;
+         BlockPos center = caster.blockPosition();
+         boolean airborneCast = !caster.onGround() && !caster.isInWater() && !caster.isInLava() && !caster.isFallFlying();
+         if (airborneCast) {
+            radius = Math.max(2, radius);
+            height = 2 * radius;
+            Vec3 pos = caster.position();
+            center = new BlockPos(Mth.floor(pos.x), Mth.floor(pos.y) - radius + 1, Mth.floor(pos.z));
+         } else if (caster.isInWater() || caster.isInLava()) {
+            center = center.below(radius);
          }
 
+         pushEntitiesOutOfEmeraldBarrier(caster.level(), caster, center, radius, height);
+         placeEmeraldWinterRiverCage(caster.level(), center, radius, height);
+         if (airborneCast) {
+            Vec3 lockPos = center.offset(0, radius, 0).getCenter();
+            double targetY = lockPos.y - caster.getBbHeight() * 0.5;
+            caster.teleportTo(lockPos.x, targetY, lockPos.z);
+            caster.setDeltaMovement(Vec3.ZERO);
+            caster.fallDistance = 0.0F;
+         }
+
+         if (caster.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.getX(), center.getY() + 1.0, center.getZ(), 50, radius + 0.8, 1.2, radius + 0.8, 0.08);
+         }
+
+         return true;
+      }
+   }
+
+   static boolean castTopazReinforcement(MysticMagicianEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {
+      if (caster == null || vars == null) {
+         return false;
+      } else {
+         int duration = 240 + (int)Math.round(Mth.clamp(proficiency, 0.0, 100.0) * 2.4);
+         MobEffectInstance existingStrength = caster.getEffect(MobEffects.DAMAGE_BOOST);
+         if (existingStrength != null && existingStrength.getAmplifier() >= 1 && existingStrength.getDuration() >= duration / 2) {
+            return false;
+         } else if (!consumeMana(vars, 76.0)) {
+            return false;
+         } else {
+            markCastingPose(caster, 12);
+            caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, 1, false, true, true));
+            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, duration, 1, false, true, true));
+            caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, Math.max(180, duration - 40), 0, false, true, true));
+            caster.addEffect(new MobEffectInstance(MobEffects.JUMP, duration, 1, false, true, true));
+            if (caster.level() instanceof ServerLevel serverLevel) {
+               serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, caster.getX(), caster.getY() + 1.0, caster.getZ(), 28, 0.5, 0.9, 0.5, 0.08);
+               serverLevel.sendParticles(ParticleTypes.WAX_ON, caster.getX(), caster.getY() + 1.0, caster.getZ(), 18, 0.5, 0.9, 0.5, 0.06);
+            }
+
+            return true;
+         }
+      }
+   }
+
+   static boolean castCyanWind(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!hasProjectilePath(caster, target, 2.8, 0.04)) {
+         repositionForClearShot(caster, target, 8.5, 1.08);
+         return false;
+      } else if (!consumeMana(vars, 80.0)) {
+         return false;
+      } else {
+         markCastingPose(caster, 12);
+         spawnNpcCyanWindProjectile(caster, target, proficiency);
+         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.BREEZE_SHOOT, SoundSource.HOSTILE, 0.7F, 0.9F);
          return true;
       }
    }
@@ -3233,7 +4024,12 @@ public final class NpcMagicCastBridge {
             case "gravity_magic" -> vars.proficiency_gravity_magic;
             case "reinforcement" -> vars.proficiency_reinforcement;
             case "jewel_random_shoot" -> vars.proficiency_jewel_magic_shoot;
-            case "jewel_machine_gun" -> vars.proficiency_jewel_magic_release;
+            case "jewel_machine_gun",
+               "ruby_flame_sword",
+               "sapphire_winter_frost",
+               "emerald_winter_river",
+               "topaz_reinforcement",
+               "cyan_wind" -> vars.proficiency_jewel_magic_release;
             default -> 0.0;
          };
          int fixedLevel = getFixedLevel(npc);
@@ -3330,5 +4126,8 @@ public final class NpcMagicCastBridge {
       boolean requiresDefensiveTactics() {
          return this.strongTarget || this.outnumberedOrPressured();
       }
+   }
+
+   private record WinterFrostRestoreData(BlockPos pos, BlockState originalState, BlockState placedState) {
    }
 }

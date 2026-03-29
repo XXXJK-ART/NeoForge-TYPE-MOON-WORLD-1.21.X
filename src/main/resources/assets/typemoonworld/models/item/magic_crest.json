@@ -1,6 +1,11 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "typemoonworld:item/magic_crest"
+    "layer0": "typemoonworld:item/magic_crest_64"
+  },
+  "display": {
+    "gui": {
+      "scale": [2, 2, 1.0]
+    }
   }
 }

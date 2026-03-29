@@ -11,17 +11,24 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ProjectionCircuitEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -118,6 +125,64 @@ public class ModEntities {
          .clientTrackingRange(10)
          .updateInterval(2)
          .build("cyan_wind_field")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GravityShellEffectEntity>> GRAVITY_SHELL_EFFECT = ENTITY_TYPES.register(
+      "gravity_shell_effect",
+      () -> Builder.<GravityShellEffectEntity>of((entityType, level) -> new GravityShellEffectEntity(entityType, level), MobCategory.MISC)
+         .sized(4.0F, 4.0F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("gravity_shell_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GravityFieldShellEffectEntity>> GRAVITY_FIELD_SHELL_EFFECT = ENTITY_TYPES.register(
+      "gravity_field_shell_effect",
+      () -> Builder.<GravityFieldShellEffectEntity>of((entityType, level) -> new GravityFieldShellEffectEntity(entityType, level), MobCategory.MISC)
+         .sized(8.0F, 8.0F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("gravity_field_shell_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ExpandingRingEffectEntity>> EXPANDING_RING_EFFECT = ENTITY_TYPES.register(
+      "expanding_ring_effect",
+      () -> Builder.<ExpandingRingEffectEntity>of((entityType, level) -> new ExpandingRingEffectEntity(entityType, level), MobCategory.MISC)
+         .sized(16.0F, 1.0F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("expanding_ring_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ProjectionCircuitEffectEntity>> PROJECTION_CIRCUIT_EFFECT = ENTITY_TYPES.register(
+      "projection_circuit_effect",
+      () -> Builder.<ProjectionCircuitEffectEntity>of((entityType, level) -> new ProjectionCircuitEffectEntity(entityType, level), MobCategory.MISC)
+         .sized(8.0F, 1.0F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("projection_circuit_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<UbwChantRippleEntity>> UBW_CHANT_RIPPLE = ENTITY_TYPES.register(
+      "ubw_chant_ripple",
+      () -> Builder.<UbwChantRippleEntity>of((entityType, level) -> new UbwChantRippleEntity(entityType, level), MobCategory.MISC)
+         .sized(48.0F, 1.0F)
+         .clientTrackingRange(32)
+         .updateInterval(1)
+         .build("ubw_chant_ripple")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<TsumukariWaveProjectileEntity>> TSUMUKARI_WAVE_PROJECTILE = ENTITY_TYPES.register(
+      "tsumukari_wave_projectile",
+      () -> Builder.<TsumukariWaveProjectileEntity>of(
+            (entityType, level) -> new TsumukariWaveProjectileEntity((EntityType<? extends Projectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(2.5F, 2.5F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("tsumukari_wave_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<TsumukariLightColumnEffectEntity>> TSUMUKARI_LIGHT_COLUMN_EFFECT = ENTITY_TYPES.register(
+      "tsumukari_light_column_effect",
+      () -> Builder.<TsumukariLightColumnEffectEntity>of((entityType, level) -> new TsumukariLightColumnEffectEntity(entityType, level), MobCategory.MISC)
+         .sized(2.0F, 8.0F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("tsumukari_light_column_effect")
    );
 
    public static void register(IEventBus eventBus) {

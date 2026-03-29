@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MagicCrestVisualHelper;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
@@ -55,6 +56,11 @@ public abstract class PlayerRendererMixin {
          model.rightArm.render(poseStack, vc, 15728880, OverlayTexture.NO_OVERLAY, -285212673);
          model.rightSleeve.render(poseStack, vc, 15728880, OverlayTexture.NO_OVERLAY, -285212673);
       }
+
+      if (MagicCrestVisualHelper.shouldRenderCrestArm(player, HumanoidArm.RIGHT)) {
+         PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
+         MagicCrestVisualHelper.renderArm(model, buffer, HumanoidArm.RIGHT, poseStack);
+      }
    }
 
    @Inject(
@@ -67,6 +73,11 @@ public abstract class PlayerRendererMixin {
          VertexConsumer vc = buffer.getBuffer(ReinforcementRenderType.getSkinRenderType(ReinforcementRenderType.ReinforcementPart.ARM, player));
          model.leftArm.render(poseStack, vc, 15728880, OverlayTexture.NO_OVERLAY, -285212673);
          model.leftSleeve.render(poseStack, vc, 15728880, OverlayTexture.NO_OVERLAY, -285212673);
+      }
+
+      if (MagicCrestVisualHelper.shouldRenderCrestArm(player, HumanoidArm.LEFT)) {
+         PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
+         MagicCrestVisualHelper.renderArm(model, buffer, HumanoidArm.LEFT, poseStack);
       }
    }
 

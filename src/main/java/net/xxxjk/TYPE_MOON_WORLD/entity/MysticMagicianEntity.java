@@ -28,6 +28,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatPersonality;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatStyle;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
@@ -42,12 +43,19 @@ public class MysticMagicianEntity extends PathfinderMob {
    private static final EntityDataAccessor<Integer> CAST_POSE_TICKS = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> MELEE_SKILL_POSE = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> MELEE_SKILL_POSE_TICKS = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> REINFORCEMENT_VISUAL_MASK = SynchedEntityData.defineId(
+      MysticMagicianEntity.class, EntityDataSerializers.INT
+   );
    public static final int SKIN_VARIANT_COUNT = 6;
    public static final int MELEE_POSE_NONE = 0;
    public static final int MELEE_POSE_PUNCH = 1;
    public static final int MELEE_POSE_WHIP_KICK = 2;
    public static final int MELEE_POSE_UPPER_THROW = 3;
    public static final int MELEE_POSE_SLAM = 4;
+   public static final int REINFORCEMENT_VISUAL_BODY = 1;
+   public static final int REINFORCEMENT_VISUAL_ARM = 2;
+   public static final int REINFORCEMENT_VISUAL_LEG = 4;
+   public static final int REINFORCEMENT_VISUAL_HEAD = 8;
    private static final String INITIAL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
    private static final String NAME_SEPARATOR = "·";
    private static final int THREAT_SCAN_INTERVAL_TICKS = 5;
@@ -302,6 +310,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       builder.define(CAST_POSE_TICKS, 0);
       builder.define(MELEE_SKILL_POSE, MELEE_POSE_NONE);
       builder.define(MELEE_SKILL_POSE_TICKS, 0);
+      builder.define(REINFORCEMENT_VISUAL_MASK, 0);
    }
 
    public int getSkinVariant() {
@@ -361,6 +370,14 @@ public class MysticMagicianEntity extends PathfinderMob {
 
    public int getMeleeSkillPose() {
       return (Integer)this.entityData.get(MELEE_SKILL_POSE);
+   }
+
+   public int getReinforcementVisualMask() {
+      return (Integer)this.entityData.get(REINFORCEMENT_VISUAL_MASK);
+   }
+
+   public boolean hasReinforcementVisual(int partMask) {
+      return (this.getReinforcementVisualMask() & partMask) != 0;
    }
 
    public void triggerMeleeSkillPose(int pose, int ticks) {
@@ -449,6 +466,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       }
 
       NpcMagicCastBridge.tickServer(this);
+      this.refreshReinforcementVisualMask();
    }
 
    public void remove(RemovalReason reason) {
@@ -543,6 +561,31 @@ public class MysticMagicianEntity extends PathfinderMob {
    private static String generateMiddleInitial(RandomSource random) {
       char initial = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(random.nextInt("ABCDEFGHIJKLMNOPQRSTUVWXYZ".length()));
       return String.valueOf(initial);
+   }
+
+   private void refreshReinforcementVisualMask() {
+      if (!this.level().isClientSide()) {
+         int mask = 0;
+         if (this.hasEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE) || this.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_DEFENSE)) {
+            mask |= REINFORCEMENT_VISUAL_BODY;
+         }
+
+         if (this.hasEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH) || this.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_STRENGTH)) {
+            mask |= REINFORCEMENT_VISUAL_ARM;
+         }
+
+         if (this.hasEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY) || this.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_AGILITY)) {
+            mask |= REINFORCEMENT_VISUAL_LEG;
+         }
+
+         if (this.hasEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT) || this.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_SIGHT)) {
+            mask |= REINFORCEMENT_VISUAL_HEAD;
+         }
+
+         if (mask != (Integer)this.entityData.get(REINFORCEMENT_VISUAL_MASK)) {
+            this.entityData.set(REINFORCEMENT_VISUAL_MASK, mask);
+         }
+      }
    }
 
    private record GeneratedName(String english, String chinese) {

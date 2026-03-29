@@ -1,0 +1,102 @@
+{
+  "parent": "typemoonworld:sparkling",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:random_gem"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.all_gems.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.all_gems.desc"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "raw_cyan_gemstone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_cyan_gemstone"
+            ]
+          }
+        ]
+      }
+    },
+    "raw_emerald": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_emerald"
+            ]
+          }
+        ]
+      }
+    },
+    "raw_ruby": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_ruby"
+            ]
+          }
+        ]
+      }
+    },
+    "raw_sapphire": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_sapphire"
+            ]
+          }
+        ]
+      }
+    },
+    "raw_topaz": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_topaz"
+            ]
+          }
+        ]
+      }
+    },
+    "raw_white_gemstone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_white_gemstone"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "raw_cyan_gemstone",
+      "raw_emerald",
+      "raw_ruby",
+      "raw_sapphire",
+      "raw_topaz",
+      "raw_white_gemstone"
+    ]
+  ]
+}

@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -17,6 +18,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 
 public class UBWProjectileRenderer extends EntityRenderer<UBWProjectileEntity> {
+   private static final ResourceLocation TRAIL_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png");
+
    public UBWProjectileRenderer(Context context) {
       super(context);
    }
@@ -24,6 +27,7 @@ public class UBWProjectileRenderer extends EntityRenderer<UBWProjectileEntity> {
    public void render(UBWProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
       poseStack.pushPose();
       float scale = 1.75F;
+      float time = entity.tickCount + partialTicks;
       float ryaw = 90.0F + entity.yRotO + (entity.getYRot() - entity.yRotO) * partialTicks;
       float rpitch = 135.0F - entity.xRotO + (entity.getXRot() - entity.xRotO) * partialTicks;
       ItemStack itemStack = entity.getItem();
@@ -38,16 +42,39 @@ public class UBWProjectileRenderer extends EntityRenderer<UBWProjectileEntity> {
       if (itemStack.isEmpty()) {
          poseStack.popPose();
       } else {
-         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(itemStack, entity.level(), (LivingEntity)null, entity.getId());
+         float morphDuration = 12.0F;
+         float morphProgress = Math.min(1.0F, (time - 2.0F) / morphDuration);
+         float itemAlpha = morphProgress;
+         float circuitAlpha = 1.0F - morphProgress;
 
-         try {
-            Minecraft.getInstance()
-               .getItemRenderer()
-               .render(itemStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
-         } catch (Exception var13) {
+         if (itemAlpha > 0.01F) {
+            ItemStack renderStack = itemStack.copy();
+            renderStack.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
+            renderStack.remove(DataComponents.ENCHANTMENTS);
+            BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(renderStack, entity.level(), (LivingEntity)null, entity.getId());
+
+            try {
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
+            } catch (Exception var13) {
+            }
          }
 
          poseStack.popPose();
+         if (!entity.tracePos.isEmpty()) {
+            ProjectileVisualEffectHelper.renderRibbonTrail(
+               entity.tracePos,
+               entity.getPosition(partialTicks),
+               Minecraft.getInstance().getEntityRenderDispatcher().camera.getPosition(),
+               poseStack,
+               buffer,
+               TRAIL_TEXTURE,
+               0.18F,
+               0x39D8C8,
+               0.58F
+            );
+         }
          super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
       }
    }

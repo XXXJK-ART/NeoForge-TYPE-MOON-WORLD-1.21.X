@@ -24,6 +24,17 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
                         output.accept(ModItems.HOLY_SHROUD);
+                        output.accept(ModItems.CLAW_OF_CHAOS);
+                        output.accept(ModItems.DRAGON_FANG);
+                        output.accept(ModItems.DRAGONS_REVERSE_SCALE);
+                        output.accept(ModItems.EVIL_BONE);
+                        output.accept(ModItems.HOLY_GRAIL);
+                        output.accept(ModItems.PHOENIX_FEATHER);
+                        output.accept(ModItems.PROOF_OF_HERO);
+                        output.accept(ModItems.QP);
+                        output.accept(ModItems.REMNANTS_OF_MADNESS);
+                        output.accept(ModItems.SEED_OF_YGGDRASIL);
+                        output.accept(ModItems.VOIDS_DUST);
                         
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
@@ -57,6 +68,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MANA_SURVEY_BASE);
                         output.accept(ModItems.MANA_SURVEY_POINTER);
                         output.accept(ModItems.MANA_SURVEY_COMPASS);
+                        output.accept(ModItems.COPPER_MANA_SURVEY_BASE);
+                        output.accept(ModItems.COPPER_MANA_SURVEY_POINTER);
+                        output.accept(ModItems.COPPER_MANA_SURVEY_COMPASS);
                         output.accept(ModItems.LEYLINE_SURVEY_MAP);
 
                         output.accept(ModItems.RAW_EMERALD);

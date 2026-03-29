@@ -1,0 +1,41 @@
+{
+  "display": {
+    "icon": {
+      "item": "typemoonworld:raw_ruby"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.sparkling.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.sparkling.desc"
+    },
+    "frame": "task",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "obtain_any_raw_gem": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:raw_cyan_gemstone",
+              "typemoonworld:raw_emerald",
+              "typemoonworld:raw_ruby",
+              "typemoonworld:raw_sapphire",
+              "typemoonworld:raw_topaz",
+              "typemoonworld:raw_white_gemstone"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtain_any_raw_gem"
+    ]
+  ]
+}

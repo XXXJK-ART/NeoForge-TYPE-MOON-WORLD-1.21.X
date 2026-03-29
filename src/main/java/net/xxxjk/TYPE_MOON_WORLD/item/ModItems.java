@@ -29,6 +29,10 @@ public class ModItems {
     public static final DeferredRegister.Items ITEMS =
             DeferredRegister.createItems(TYPE_MOON_WORLD.MOD_ID);
 
+    private static DeferredItem<Item> registerSimpleItem(String name) {
+        return ITEMS.register(name, () -> new Item(new Item.Properties()));
+    }
+
     public static final DeferredItem<Item> TEMPLE_STONE_SWORD_AXE = ITEMS.register("temple_stone_sword_axe",
             () -> new TempleStoneSwordAxeItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -80,6 +84,19 @@ public class ModItems {
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));
 
+    public static final DeferredItem<Item> CLAW_OF_CHAOS = registerSimpleItem("claw_of_chaos");
+    public static final DeferredItem<Item> DRAGON_FANG = registerSimpleItem("dragon_fang");
+    public static final DeferredItem<Item> DRAGONS_REVERSE_SCALE = registerSimpleItem("dragons_reverse_scale");
+    public static final DeferredItem<Item> EVIL_BONE = registerSimpleItem("evil_bone");
+    public static final DeferredItem<Item> HOLY_GRAIL = ITEMS.register("holy_grail",
+            () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
+    public static final DeferredItem<Item> PHOENIX_FEATHER = registerSimpleItem("phoenix_feather");
+    public static final DeferredItem<Item> PROOF_OF_HERO = registerSimpleItem("proof_of_hero");
+    public static final DeferredItem<Item> QP = registerSimpleItem("qp");
+    public static final DeferredItem<Item> REMNANTS_OF_MADNESS = registerSimpleItem("remnants_of_madness");
+    public static final DeferredItem<Item> SEED_OF_YGGDRASIL = registerSimpleItem("seed_of_yggdrasil");
+    public static final DeferredItem<Item> VOIDS_DUST = registerSimpleItem("voids_dust");
+
     public static final DeferredItem<Item> HOLY_SHROUD = ITEMS.register("holy_shroud",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
@@ -87,10 +104,10 @@ public class ModItems {
             () -> new ChiselItem(new Item.Properties().durability(100)));
 
     public static final DeferredItem<Item> MANA_SURVEY_COMPASS = ITEMS.register("mana_survey_compass",
-            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 50, 90));
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 80, 90));
 
     public static final DeferredItem<Item> COPPER_MANA_SURVEY_COMPASS = ITEMS.register("copper_mana_survey_compass",
-            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 35, 80));
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 50, 80));
 
     public static final DeferredItem<Item> LEYLINE_SURVEY_MAP = ITEMS.register("leyline_survey_map",
             () -> new LeylineSurveyMapItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
@@ -99,6 +116,12 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> MANA_SURVEY_POINTER = ITEMS.register("mana_survey_pointer",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> COPPER_MANA_SURVEY_BASE = ITEMS.register("copper_mana_survey_base",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> COPPER_MANA_SURVEY_POINTER = ITEMS.register("copper_mana_survey_pointer",
             () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> MAGIC_CREST = ITEMS.register("magic_crest",

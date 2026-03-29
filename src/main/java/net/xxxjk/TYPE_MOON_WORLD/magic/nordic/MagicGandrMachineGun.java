@@ -371,10 +371,10 @@ public final class MagicGandrMachineGun {
 
          Vec3 up = right.cross(dir).normalize();
          Vec3 mouth = spawnPos.add(dir.scale(0.04));
-         serverLevel.sendParticles(BLACK_DUST, mouth.x, mouth.y, mouth.z, 5, 0.05, 0.05, 0.05, 0.02);
-         serverLevel.sendParticles(RED_DUST, mouth.x, mouth.y, mouth.z, 4, 0.04, 0.04, 0.04, 0.02);
+         serverLevel.sendParticles(BLACK_DUST, mouth.x, mouth.y, mouth.z, 2, 0.03, 0.03, 0.03, 0.01);
+         serverLevel.sendParticles(RED_DUST, mouth.x, mouth.y, mouth.z, 2, 0.03, 0.03, 0.03, 0.01);
 
-         for (int i = 0; i < 2; i++) {
+         for (int i = 0; i < 1; i++) {
             double side = (serverLevel.random.nextDouble() - 0.5) * 0.08;
             double vertical = (serverLevel.random.nextDouble() - 0.5) * 0.08;
             Vec3 start = mouth.add(right.scale(side)).add(up.scale(vertical));

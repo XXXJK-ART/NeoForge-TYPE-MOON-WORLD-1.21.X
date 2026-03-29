@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
+import com.mojang.math.Axis;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -16,7 +17,6 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
@@ -41,7 +41,6 @@ public class GanderProjectileRenderer extends EntityRenderer<GanderProjectileEnt
    public void render(GanderProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
       float visualScale = entity.getVisualScale();
       float finalScale = this.baseScale * visualScale;
-      int light = this.fullBright ? 15728880 : packedLight;
       poseStack.pushPose();
       if (entity.isChargingPreview()) {
          LivingEntity anchorSource = null;
@@ -63,12 +62,44 @@ public class GanderProjectileRenderer extends EntityRenderer<GanderProjectileEnt
          }
       }
 
-      poseStack.scale(finalScale, finalScale, finalScale);
-      this.itemRenderer
-         .renderStatic(entity.getItem(), ItemDisplayContext.FIXED, light, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
+      if (GanderOrbShaderRegistry.isReady()) {
+         this.renderOrb(entity, partialTicks, poseStack, buffer, finalScale);
+      } else {
+         poseStack.scale(finalScale, finalScale, finalScale);
+         poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+         this.itemRenderer.renderStatic(entity.getItem(), net.minecraft.world.item.ItemDisplayContext.GROUND, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
+      }
+
       poseStack.popPose();
       this.renderTrail(entity, partialTicks, poseStack, buffer);
       super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+   }
+
+   private void renderOrb(GanderProjectileEntity entity, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, float finalScale) {
+      float time = entity.level().getGameTime() + partialTicks;
+      if (GanderOrbShaderRegistry.getShader() != null && GanderOrbShaderRegistry.getShader().getUniform("Time") != null) {
+         GanderOrbShaderRegistry.getShader().getUniform("Time").set(time * 0.08F);
+      }
+
+      float previewAlphaScale = entity.isChargingPreview() ? 0.72F : 1.0F;
+      float pulse = 1.0F + 0.08F * (float)Math.sin(time * 0.55F);
+      poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+      poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(time * 3.5F));
+      Pose pose = poseStack.last();
+      VertexConsumer consumer = buffer.getBuffer(GanderOrbRenderType.orb());
+      this.drawOrbQuad(pose, consumer, 0.16F * finalScale, 0.0F, 0.0F, 0.0F, 1.0F * previewAlphaScale);
+      this.drawOrbQuad(pose, consumer, 0.25F * finalScale * (1.01F + 0.02F * (float)Math.cos(time * 0.8F)), 0.0F, 0.0F, 0.0F, 1.0F * previewAlphaScale);
+      this.drawOrbQuad(pose, consumer, 0.34F * finalScale, 0.01F, 0.01F, 0.01F, 1.0F * previewAlphaScale);
+      this.drawOrbQuad(pose, consumer, 0.44F * finalScale * pulse, 0.96F, 0.04F, 0.07F, 0.94F * previewAlphaScale);
+   }
+
+   private void drawOrbQuad(Pose pose, VertexConsumer consumer, float halfSize, float r, float g, float b, float a) {
+      consumer.addVertex(pose, -halfSize, -halfSize, 0.0F).setColor(r, g, b, a).setUv(0.0F, 0.0F);
+      consumer.addVertex(pose, halfSize, -halfSize, 0.0F).setColor(r, g, b, a).setUv(1.0F, 0.0F);
+      consumer.addVertex(pose, halfSize, halfSize, 0.0F).setColor(r, g, b, a).setUv(1.0F, 1.0F);
+      consumer.addVertex(pose, -halfSize, halfSize, 0.0F).setColor(r, g, b, a).setUv(0.0F, 1.0F);
    }
 
    private void renderTrail(GanderProjectileEntity entity, float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {

@@ -29,6 +29,9 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -211,7 +214,13 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
 
          if (charge > 0) {
             if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
-               MuramasaSlashHandler.initiate(serverLevel, serverPlayer, charge, this.getMaxSlashDistance(), this.getMaxSlashWidth(), this.getMaxSlashHeight());
+               int color = MagicCircuitColorHelper.ensureColor(serverPlayer);
+               spawnReleaseAirwaves(serverLevel, serverPlayer, charge, color);
+               MuramasaSlashHandler.initiate(
+                  serverLevel, serverPlayer, charge, this.getMaxSlashDistance(), this.getMaxSlashWidth(), this.getMaxSlashHeight()
+               );
+               TsumukariWaveProjectileEntity projectile = new TsumukariWaveProjectileEntity(serverLevel, serverPlayer, charge, color);
+               serverLevel.addFreshEntity(projectile);
             }
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + charge / 100.0F);
@@ -224,5 +233,16 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             }
          }
       }
+   }
+
+   private static void spawnReleaseAirwaves(ServerLevel level, ServerPlayer player, int charge, int color) {
+      float maxRadius = 2.8F + charge * 0.06F;
+      level.addFreshEntity(new ExpandingRingEffectEntity(level, player.getX(), player.getY() + 0.15, player.getZ(), 0.35F, maxRadius, 0.14F, 12, color, 0.72F, 0.05F));
+      level.addFreshEntity(
+         new ExpandingRingEffectEntity(level, player.getX(), player.getY() + 0.55, player.getZ(), 0.25F, maxRadius * 0.82F, 0.11F, 16, color, 0.54F, 0.045F)
+      );
+      level.addFreshEntity(
+         new ExpandingRingEffectEntity(level, player.getX(), player.getY() + 0.95, player.getZ(), 0.18F, maxRadius * 0.65F, 0.09F, 20, color, 0.38F, 0.04F)
+      );
    }
 }

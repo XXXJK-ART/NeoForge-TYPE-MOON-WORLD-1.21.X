@@ -183,6 +183,9 @@ public class ProjectionTickHandler {
             if (!isInfinite) {
                GlobalPos pos = GlobalPos.of(level.dimension(), event.getPos());
                projectedBlocks.put(pos, level.getGameTime());
+               if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+                  ProjectionEffectHelper.spawnBlockPlace(serverLevel, event.getPos());
+               }
             }
          }
       }
@@ -193,8 +196,10 @@ public class ProjectionTickHandler {
       if (!event.getLevel().isClientSide()) {
          if (event.getLevel() instanceof ServerLevel level) {
             GlobalPos pos = GlobalPos.of(level.dimension(), event.getPos());
-            if (projectedBlocks.containsKey(pos)) {
-               projectedBlocks.remove(pos);
+            if (projectedBlocks.remove(pos) != null) {
+               ProjectionEffectHelper.spawnBlockBreak(level, event.getPos());
+               event.setCanceled(true);
+               level.setBlock(event.getPos(), Blocks.AIR.defaultBlockState(), 2);
             }
          }
       }
@@ -245,6 +250,7 @@ public class ProjectionTickHandler {
                if (level.getGameTime() - placeTime > 200L) {
                   BlockPos pos = entry.getKey().pos();
                   if (!level.getBlockState(pos).isAir()) {
+                     ProjectionEffectHelper.spawnBlockBreak(level, pos);
                      level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                      level.playSound(null, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
                      level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.05);

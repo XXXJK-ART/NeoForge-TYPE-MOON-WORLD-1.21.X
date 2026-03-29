@@ -9,6 +9,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
@@ -44,8 +45,9 @@ public class MagicGravity {
                resultMessage = Component.translatable("message.typemoonworld.magic.gravity.normalized", targetComp);
             } else {
                int duration = getDurationTicks(vars.proficiency_gravity_magic);
-               MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration);
+               MagicGravityEffectHandler.applyGravityState(target, nextMode, player.level().getGameTime() + duration, player);
                MagicGravityEffectHandler.playGravityCastFx(player, target, nextMode);
+               TypeMoonAdvancementHelper.grantOutIfEligible(player, target, nextMode);
 
                String modeKey = switch (nextMode) {
                   case -2 -> "gui.typemoonworld.mode.gravity.ultra_light";

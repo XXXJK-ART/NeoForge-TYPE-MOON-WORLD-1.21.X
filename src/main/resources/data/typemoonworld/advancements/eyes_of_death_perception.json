@@ -1,0 +1,38 @@
+{
+  "parent": "typemoonworld:magic_apprentice",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:mystic_eyes_of_death_perception"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.eyes_of_death_perception.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.eyes_of_death_perception.desc"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "obtain_mystic_eyes": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:mystic_eyes_of_death_perception",
+              "typemoonworld:mystic_eyes_of_death_perception_noble_color"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtain_mystic_eyes"
+    ]
+  ]
+}

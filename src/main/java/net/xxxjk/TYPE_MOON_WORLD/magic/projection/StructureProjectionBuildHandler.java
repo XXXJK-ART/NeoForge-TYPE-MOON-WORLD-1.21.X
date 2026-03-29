@@ -108,6 +108,7 @@ public class StructureProjectionBuildHandler {
                      silentTips
                   );
                   ACTIVE_BUILDS.put(serverPlayer.getUUID(), build);
+                  ProjectionEffectHelper.spawnStructureStart(serverPlayer.serverLevel(), anchorPos);
                   if (!silentTips) {
                      serverPlayer.displayClientMessage(
                         Component.translatable("message.typemoonworld.projection.structure.started", structure.name), true
@@ -158,6 +159,7 @@ public class StructureProjectionBuildHandler {
             GlobalPos var3 = GlobalPos.of(serverLevel.dimension(), event.getPos());
             if (NO_DROP_PROJECTED_BLOCKS.remove(var3)) {
                NO_DROP_EXPIRY_TICKS.remove(var3);
+               ProjectionEffectHelper.spawnBlockBreak(serverLevel, event.getPos());
                event.setCanceled(true);
                serverLevel.setBlock(event.getPos(), Blocks.AIR.defaultBlockState(), 2);
             }
@@ -240,6 +242,7 @@ public class StructureProjectionBuildHandler {
                placementsBudget--;
                level.setBlock(placement.worldPos, placement.state, 2);
                clearContainerContents(level, placement.worldPos);
+               ProjectionEffectHelper.spawnBlockPlace(level, placement.worldPos);
                GlobalPos key = GlobalPos.of(level.dimension(), placement.worldPos);
                if (build.noDropsWhenBroken) {
                   NO_DROP_PROJECTED_BLOCKS.add(key);
@@ -280,6 +283,7 @@ public class StructureProjectionBuildHandler {
             changedMana = true;
             level.setBlock(forced.worldPos, forced.state, 2);
             clearContainerContents(level, forced.worldPos);
+            ProjectionEffectHelper.spawnBlockPlace(level, forced.worldPos);
             GlobalPos key = GlobalPos.of(level.dimension(), forced.worldPos);
             if (build.noDropsWhenBroken) {
                NO_DROP_PROJECTED_BLOCKS.add(key);
