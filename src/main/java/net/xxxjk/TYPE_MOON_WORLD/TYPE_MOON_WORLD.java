@@ -43,6 +43,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
@@ -108,6 +110,7 @@ public class TYPE_MOON_WORLD {
       event.enqueueWork(
          () -> {
             MagicModularRegistry.ensureInitialized();
+            ServantSkillRegistry.ensureInitialized();
             Regions.register(new GemRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_region"), 2));
             ResourceKey<Biome> gemBiome = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_biome"));
             SurfaceRuleManager.addSurfaceRules(

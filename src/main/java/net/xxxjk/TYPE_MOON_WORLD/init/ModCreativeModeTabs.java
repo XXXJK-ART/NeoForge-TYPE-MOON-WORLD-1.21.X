@@ -176,6 +176,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MERLIN_SPAWN_EGG);
                         output.accept(ModItems.STONE_MAN_SPAWN_EGG);
                         output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
+                        output.accept(ModItems.HERACLES_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

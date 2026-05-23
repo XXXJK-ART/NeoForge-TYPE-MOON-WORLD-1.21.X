@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -183,6 +184,9 @@ public class ModEntities {
          .clientTrackingRange(16)
          .updateInterval(1)
          .build("tsumukari_light_column_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ServantEntity>> SERVANT = ENTITY_TYPES.register(
+      "servant", () -> Builder.of(ServantEntity::new, MobCategory.CREATURE).sized(1F, 3F).build("servant")
    );
 
    public static void register(IEventBus eventBus) {

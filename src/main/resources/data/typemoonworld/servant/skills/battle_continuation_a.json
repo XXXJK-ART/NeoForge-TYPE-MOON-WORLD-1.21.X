@@ -1,0 +1,19 @@
+{
+  "id": "battle_continuation_a",
+  "display_name": "Battle Continuation A",
+  "display_name_zh": "战斗续行 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 6000,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "survival_trigger",
+      "params": { "activation_chance": 1.0, "cooldown_ticks": 6000 }
+    },
+    {
+      "effect_type": "damage_immunity",
+      "params": { "duration_ticks": 100, "cooldown_ticks": 6000 }
+    }
+  ]
+}

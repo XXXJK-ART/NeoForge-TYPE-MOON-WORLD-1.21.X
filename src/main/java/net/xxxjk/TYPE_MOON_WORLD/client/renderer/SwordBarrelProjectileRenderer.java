@@ -46,12 +46,39 @@ public class SwordBarrelProjectileRenderer extends EntityRenderer<SwordBarrelPro
          ItemStack renderStack = itemStack.copy();
          renderStack.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
          renderStack.remove(DataComponents.ENCHANTMENTS);
+
+         int phase = entity.getSpawnPhase();
+         int maxPhase = entity.getSpawnPhaseMax();
+         int fadeStart = maxPhase / 2;
+         boolean inSpawnAnim = phase > 0;
+         boolean showItem = phase <= fadeStart;
+
+         if (inSpawnAnim) {
+            renderStack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+            net.minecraft.nbt.CompoundTag spawnTag = new net.minecraft.nbt.CompoundTag();
+            spawnTag.putBoolean("ReinforcementTemporary", true);
+            renderStack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(spawnTag));
+         }
+
          BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(renderStack, entity.level(), (LivingEntity)null, entity.getId());
 
          try {
-            Minecraft.getInstance()
-               .getItemRenderer()
-               .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
+            if (!inSpawnAnim) {
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
+            } else if (showItem) {
+               float t = (float)(fadeStart - phase) / fadeStart;
+               int overlayU = OverlayTexture.u(1.0F - t);
+               int overlay = OverlayTexture.pack(overlayU, false);
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, overlay, bakedModel);
+            } else {
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, 0, OverlayTexture.NO_OVERLAY, bakedModel);
+            }
          } catch (Exception var13) {
          }
 

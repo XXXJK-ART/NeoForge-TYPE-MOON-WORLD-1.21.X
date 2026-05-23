@@ -277,6 +277,7 @@ public class MagicSwordBarrelFullOpen {
             Vec3 dir = aimTarget.subtract(spawnPos).normalize();
             projectile.setXRot((float)Math.toDegrees(Math.asin(-dir.y)));
             projectile.setYRot((float)Math.toDegrees(Math.atan2(-dir.x, dir.z)));
+            projectile.setSpawnPhase(10);
             level.addFreshEntity(projectile);
             if (level instanceof ServerLevel serverLevel) {
                serverLevel.sendParticles(ParticleTypes.ENCHANT, spawnPos.x, spawnPos.y, spawnPos.z, 3, 0.1, 0.1, 0.1, 0.05);

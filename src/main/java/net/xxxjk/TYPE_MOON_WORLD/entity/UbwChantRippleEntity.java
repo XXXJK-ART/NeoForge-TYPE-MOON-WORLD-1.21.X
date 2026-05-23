@@ -93,7 +93,9 @@ public class UbwChantRippleEntity extends net.minecraft.world.entity.Entity {
          float targetRadius = 6.0F + Math.max(0, vars.ubw_chant_progress - 3) * 4.8F;
          this.entityData.set(TARGET_RADIUS, targetRadius);
          this.entityData.set(ALPHA, Math.min(0.9F, 0.52F + Math.max(0, vars.ubw_chant_progress - 3) * 0.05F));
-         this.entityData.set(RADIUS, this.entityData.get(RADIUS) + (targetRadius - this.entityData.get(RADIUS)) * 0.22F);
+         int chantInterval = Math.max(20, 40 - (int)(vars.proficiency_unlimited_blade_works * 0.2));
+         float lerpFactor = 0.22F * (40.0F / chantInterval);
+         this.entityData.set(RADIUS, this.entityData.get(RADIUS) + (targetRadius - this.entityData.get(RADIUS)) * lerpFactor);
          if (vars.ubw_chant_progress >= 9) {
             this.beginCollapse();
          }

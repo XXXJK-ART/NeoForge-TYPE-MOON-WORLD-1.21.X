@@ -1,0 +1,15 @@
+{
+  "id": "divinity_a",
+  "display_name": "Divinity A",
+  "display_name_zh": "神性 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "damage_add",
+      "params": { "flat_damage": 25.0, "damage_type": "magic" }
+    }
+  ]
+}

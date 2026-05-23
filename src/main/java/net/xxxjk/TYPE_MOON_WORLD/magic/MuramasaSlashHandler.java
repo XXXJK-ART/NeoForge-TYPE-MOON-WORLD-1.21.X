@@ -124,6 +124,13 @@ public class MuramasaSlashHandler {
                float damage = 20.0F + slash.charge * 5.0F;
                Player player = level.getPlayerByUUID(slash.playerUUID);
                if (player != null) {
+                  // 满蓄力斩断因果：标记目标，跳过一切复活/不死效果
+                  if (slash.charge >= 100 && living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servantTarget) {
+                     servantTarget.getPersistentData().putBoolean("CausalSevered", true);
+                     // 斩断因果粒子特效
+                     level.sendParticles(ParticleTypes.REVERSE_PORTAL, living.getX(), living.getY() + living.getBbHeight() / 2, living.getZ(), 30, 0.5, 0.5, 0.5, 0.3);
+                     level.sendParticles(ParticleTypes.SOUL, living.getX(), living.getY() + 1.0, living.getZ(), 15, 0.3, 0.3, 0.3, 0.1);
+                  }
                   living.invulnerableTime = 0;
                   living.hurt(level.damageSources().indirectMagic(player, player), damage);
                   living.invulnerableTime = 0;

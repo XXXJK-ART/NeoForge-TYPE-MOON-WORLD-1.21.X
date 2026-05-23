@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer;
@@ -161,6 +162,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MERLIN.get(), MerlinRenderer::new);
       event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);
       event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.SERVANT.get(), ServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), SwordBarrelBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 0.0F, 0.0F));

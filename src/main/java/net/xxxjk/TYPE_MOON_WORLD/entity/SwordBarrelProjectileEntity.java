@@ -67,6 +67,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> TARGET_ENTITY_ID = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> VISUAL_COLOR = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> SPAWN_PHASE = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> SPAWN_PHASE_MAX = SynchedEntityData.defineId(SwordBarrelProjectileEntity.class, EntityDataSerializers.INT);
    private boolean isMode1Tracking = false;
    private boolean isMode2Tracking = false;
    private Vec3 hoverOffset = null;
@@ -113,7 +114,8 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
       builder.define(IS_BROKEN_PHANTASM, false);
       builder.define(TARGET_ENTITY_ID, -1);
       builder.define(VISUAL_COLOR, MagicCircuitColorHelper.DEFAULT_COLOR);
-      builder.define(SPAWN_PHASE, 10);
+      builder.define(SPAWN_PHASE, 4);
+      builder.define(SPAWN_PHASE_MAX, 4);
    }
 
    public void setVisualColorRgb(int color) {
@@ -126,6 +128,15 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
 
    public int getSpawnPhase() {
       return (Integer)this.entityData.get(SPAWN_PHASE);
+   }
+
+   public int getSpawnPhaseMax() {
+      return (Integer)this.entityData.get(SPAWN_PHASE_MAX);
+   }
+
+   public void setSpawnPhase(int phase) {
+      this.entityData.set(SPAWN_PHASE, phase);
+      this.entityData.set(SPAWN_PHASE_MAX, phase);
    }
 
    public void setTargetEntity(int entityId) {
@@ -173,6 +184,12 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void tick() {
+      if (!this.level().isClientSide) {
+         int phase = (Integer)this.entityData.get(SPAWN_PHASE);
+         if (phase > 0) {
+            this.entityData.set(SPAWN_PHASE, phase - 1);
+         }
+      }
       if ((Boolean)this.entityData.get(IS_HOVERING)) {
          int ticks = (Integer)this.entityData.get(HOVER_TICKS);
          if (this.level().isClientSide && (Boolean)this.entityData.get(HAS_TARGET)) {

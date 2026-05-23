@@ -30,6 +30,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -45,10 +46,12 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 
@@ -57,12 +60,39 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 )
 public class CommonEvents {
    @SubscribeEvent
+   public static void onAddReloadListeners(AddReloadListenerEvent event) {
+      event.addListener(new ServantDefinitionLoader());
+   }
+
+   @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
          if (event.getEntity() instanceof Monster monster) {
             try {
                monster.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(monster, RyougiShikiEntity.class, true));
+               monster.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(monster,
+                  net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true));
             } catch (Exception var3) {
+            }
+         }
+         if (event.getEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity mage) {
+            try {
+               mage.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(mage,
+                  net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true,
+                  e -> e instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity s
+                     && s.getDefinition() != null
+                     && s.getDefinition().faction() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction.BEAST));
+            } catch (Exception ignored) {
+            }
+         }
+         if (event.getEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity shiki) {
+            try {
+               shiki.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(shiki,
+                  net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true,
+                  e -> e instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity s
+                     && s.getDefinition() != null
+                     && s.getDefinition().faction() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction.BEAST));
+            } catch (Exception ignored) {
             }
          }
       }
@@ -149,22 +179,27 @@ public class CommonEvents {
          } else {
             ItemStack mainHand = player.getMainHandItem();
             if (mainHand.getItem() instanceof TempleStoneSwordAxeItem) {
-               boolean hasStrength = player.hasEffect(MobEffects.DAMAGE_BOOST);
-               if (hasStrength) {
-                  if (player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
-                     player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
-                  }
+               boolean skipDebuff = player instanceof LivingEntity le
+                  && le.level().getEntity(le.getId()) instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant
+                  && servant.isExemptFromStoneAxeDebuff();
+               if (!skipDebuff) {
+                  boolean hasStrength = player.hasEffect(MobEffects.DAMAGE_BOOST);
+                  if (hasStrength) {
+                     if (player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+                        player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+                     }
 
-                  if (player.hasEffect(MobEffects.DIG_SLOWDOWN)) {
-                     player.removeEffect(MobEffects.DIG_SLOWDOWN);
-                  }
-               } else {
-                  if (!player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
-                     player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2));
-                  }
+                     if (player.hasEffect(MobEffects.DIG_SLOWDOWN)) {
+                        player.removeEffect(MobEffects.DIG_SLOWDOWN);
+                     }
+                  } else {
+                     if (!player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2));
+                     }
 
-                  if (!player.hasEffect(MobEffects.DIG_SLOWDOWN)) {
-                     player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 40, 2));
+                     if (!player.hasEffect(MobEffects.DIG_SLOWDOWN)) {
+                        player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 40, 2));
+                     }
                   }
                }
             }
@@ -375,6 +410,132 @@ public class CommonEvents {
                }
             }
          }
+      }
+
+      // ========== 十二试炼 & 战斗续行 — 从者受伤处理 ==========
+      if (event.getEntity() instanceof ServantEntity servant && !event.isCanceled()) {
+         handleServantDamage(servant, event);
+      }
+   }
+
+   // ======================== 十二试炼 / 战斗续行 ========================
+
+   private static void handleServantDamage(ServantEntity servant, LivingIncomingDamageEvent event) {
+      if (servant.level().isClientSide()) return;
+
+      CompoundTag data = servant.getPersistentData();
+      float damage = event.getAmount();
+
+      // --- 十二试炼：B Rank 以下伤害免疫 ---
+      if (data.getBoolean("GodHandActive")) {
+         float threshold = data.getFloat("GodHandThreshold");
+         if (damage < threshold) {
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.ENCHANT,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  8, 0.4, 0.4, 0.4, 0.1);
+               sl.playSound(null, servant.blockPosition(),
+                  SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.6F, 1.4F);
+            }
+            event.setCanceled(true);
+            return;
+         }
+
+         // 适应性防御：同类型攻击逐步减伤，最高 75%
+         float reduction = data.getFloat("GodHandAdaptiveReduction");
+         float maxReduction = data.getFloat("GodHandAdaptiveMax");
+         float currentResistance = data.getFloat("GodHandCurrentResistance");
+         if (currentResistance < maxReduction) {
+            data.putFloat("GodHandCurrentResistance",
+               Math.min(currentResistance + reduction, maxReduction));
+         }
+         float resistanceNow = data.getFloat("GodHandCurrentResistance");
+         if (resistanceNow > 0) {
+            event.setAmount(damage * (1.0F - resistanceNow));
+         }
+      }
+
+      // --- 十二试炼：致死时满血复活（最多 11 次） ---
+      // 斩断因果时跳过复活
+      boolean causalSevered = data.getBoolean("CausalSevered");
+      if (!causalSevered && data.getBoolean("GodHandActive") && servant.getHealth() - event.getAmount() <= 0) {
+         int livesLeft = data.getInt("GodHandLives");
+         if (livesLeft > 0) {
+            event.setCanceled(true);
+            float excessDamage = Math.abs(servant.getHealth() - event.getAmount());
+            servant.setHealth(servant.getMaxHealth());
+            data.putInt("GodHandLives", livesLeft - 1);
+            // 如果伤害溢出多条命，继续扣除
+            while (excessDamage > servant.getMaxHealth() && data.getInt("GodHandLives") > 0) {
+               excessDamage -= servant.getMaxHealth();
+               data.putInt("GodHandLives", data.getInt("GodHandLives") - 1);
+            }
+            if (excessDamage > 0 && data.getInt("GodHandLives") <= 0) {
+               // 所有命用完，直接击杀
+               servant.kill();
+               return;
+            }
+            if (excessDamage > 0) {
+               servant.hurt(servant.damageSources().generic(), excessDamage);
+            }
+
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
+                  servant.getX(), servant.getY() + 1.0, servant.getZ(),
+                  30, 0.6, 0.6, 0.6, 0.15);
+               sl.sendParticles(ParticleTypes.POOF,
+                  servant.getX(), servant.getY() + 0.5, servant.getZ(),
+                  20, 0.5, 0.5, 0.5, 0.1);
+               sl.playSound(null, servant.blockPosition(),
+                  SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
+            }
+            return;
+         }
+      }
+
+      // --- 战斗续行 A：致死时保留 1HP + 5s 无敌，5min CD ---
+      // 斩断因果时跳过
+      if (!causalSevered && data.getBoolean("BattleContinuationActive") && servant.getHealth() - event.getAmount() <= 0) {
+         int cd = data.getInt("BattleContinuationCooldown");
+         if (cd <= 0) {
+            event.setCanceled(true);
+            servant.setHealth(1.0F);
+            servant.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 3, false, false, true));
+            data.putInt("BattleContinuationCooldown",
+               data.getInt("BattleContinuationMaxCooldown"));
+
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.CRIT,
+                  servant.getX(), servant.getY() + 0.8, servant.getZ(),
+                  15, 0.5, 0.5, 0.5, 0.4);
+               sl.sendParticles(ParticleTypes.CLOUD,
+                  servant.getX(), servant.getY() + 0.2, servant.getZ(),
+                  10, 0.3, 0.3, 0.3, 0.05);
+               sl.playSound(null, servant.blockPosition(),
+                  SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 0.8F, 1.5F);
+            }
+         }
+      }
+   }
+
+   // ======================== 从者冷却计时器 ========================
+
+   @SubscribeEvent
+   public static void onServantLevelTick(net.neoforged.neoforge.event.tick.LevelTickEvent.Post event) {
+      if (event.getLevel().isClientSide()) return;
+      if (event.getLevel() instanceof ServerLevel sl) {
+         sl.getEntities().getAll().forEach(entity -> {
+            if (entity instanceof ServantEntity servant) {
+               CompoundTag data = servant.getPersistentData();
+               // 战斗续行 CD 倒计时
+               if (data.getInt("BattleContinuationCooldown") > 0) {
+                  data.putInt("BattleContinuationCooldown",
+                     data.getInt("BattleContinuationCooldown") - 1);
+               }
+               // 战斗续行无敌倒计时结束后清除无敌
+               // （MobEffect 自动过期，无需额外处理）
+            }
+         });
       }
    }
 

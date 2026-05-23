@@ -1,0 +1,39 @@
+{
+  "id": "heracles",
+  "display_name": "Heracles",
+  "display_name_zh": "赫拉克勒斯",
+  "class_type": "berserker",
+  "faction": "earth",
+  "traits": ["divine", "servant", "humanoid", "living_human", "berserker", "male", "chaotic", "evil"],
+  "parameters": {
+    "endurance": "A",
+    "endurance_plus": false,
+    "strength": "A",
+    "strength_plus": true,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": false,
+    "luck": "B",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/heracles.geo.json",
+    "texture": "typemoonworld:textures/entity/heracles.png",
+    "animation": "typemoonworld:animations/heracles.animation.json"
+  },
+  "skills": ["god_hand_passive", "mad_enhancement_b", "battle_continuation_a", "valor_a_plus", "false_mind_eye_b", "divinity_a"],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "rebellious",
+    "principle": "orderly",
+    "social": "hermit",
+    "combat": "frenzied",
+    "starting_favor": 10.0
+  },
+  "ai_config": "default_berserker",
+  "spawn_egg": {
+    "primary": 13789512,
+    "secondary": 13369344
+  }
+}

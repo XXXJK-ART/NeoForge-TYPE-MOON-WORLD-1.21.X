@@ -1,0 +1,21 @@
+{
+  "id": "nine_lives_np",
+  "display_name": "Nine Lives",
+  "display_name_zh": "射杀百头",
+  "type": "anti_unit",
+  "rank": "A++",
+  "mp_cost": 150,
+  "over_charge_supported": true,
+  "over_charge_levels": 2,
+  "base_damage_multiplier": 20.0,
+  "range": 10.0,
+  "effects": [
+    {
+      "effect_type": "np_damage_aoe",
+      "params": { "radius": 3.0 }
+    }
+  ],
+  "special_attack_conditions": [],
+  "class_restrictions": ["berserker"],
+  "disabled_by_skills": ["mad_enhancement_b"]
+}

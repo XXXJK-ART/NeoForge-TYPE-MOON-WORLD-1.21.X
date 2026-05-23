@@ -1,0 +1,15 @@
+{
+  "id": "mad_enhancement_b",
+  "display_name": "Mad Enhancement B",
+  "display_name_zh": "狂化 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mad_enhancement",
+      "params": { "madness_rank": 2.0, "obedience_penalty": 0.3, "damage_bonus": 0.15 }
+    }
+  ]
+}

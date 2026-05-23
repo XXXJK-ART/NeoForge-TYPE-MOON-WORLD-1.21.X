@@ -347,6 +347,12 @@ public class ModItems {
     public static final DeferredItem<Item> MYSTIC_MAGICIAN_SPAWN_EGG = ITEMS.register("mystic_magician_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN, 0x000000, 0xC00000, new Item.Properties()));
 
+    public static final DeferredItem<Item> SERVANT_SPAWN_EGG = ITEMS.register("servant_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SERVANT, 0x999999, 0x666666, new Item.Properties()));
+
+    public static final DeferredItem<Item> HERACLES_SPAWN_EGG = ITEMS.register("heracles_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SERVANT, 0x6B5B4F, 0x1A1A1A, new Item.Properties()));
+
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {
             case RUBY -> CARVED_RUBY.get();
