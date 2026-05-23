@@ -60,6 +60,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
+                        output.accept(ModItems.BIZEN_NAGAMITSU);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
                         output.accept(ModItems.CHISEL);

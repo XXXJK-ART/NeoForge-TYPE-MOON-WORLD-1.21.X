@@ -63,8 +63,24 @@ public class ServantModel extends GeoModel<ServantEntity> {
          leftLeg.setRotX(Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.7F * limbSwingAmount);
       }
       if (rightArm != null && leftArm != null) {
-         rightArm.setRotX(Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.5F * limbSwingAmount);
-         leftArm.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.5F * limbSwingAmount);
+         // 基础行走摆臂
+         float baseSwing = Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.5F * limbSwingAmount;
+         // 攻击摆臂：triggerAttackSwing 时叠加大幅 X 轴摆动 + Z 轴横扫
+         if (entity.isAttackSwinging()) {
+            float atkPhase = (float) entity.getAttackSwingTicks() / 12.0F; // 1→0
+            float atkX = Mth.sin(atkPhase * (float) Math.PI) * -2.8F;  // 向前挥出最高 -160°
+            float atkZ = Mth.sin(atkPhase * (float) Math.PI) * 0.6F;   // 伴随横向摆动约 35°
+            rightArm.setRotX(baseSwing + atkX);
+            rightArm.setRotZ(atkZ);
+            // 左臂自然反向平衡
+            leftArm.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.5F * limbSwingAmount);
+            leftArm.setRotZ(-atkZ * 0.3F);
+         } else {
+            rightArm.setRotX(baseSwing);
+            leftArm.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.5F * limbSwingAmount);
+            rightArm.setRotZ(0);
+            leftArm.setRotZ(0);
+         }
       }
    }
 }

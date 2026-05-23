@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -9,8 +11,10 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -27,6 +31,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiEngine;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
@@ -82,9 +90,21 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
    private int jumpAttackAnimationTicks = 0;
    private int chargeAnimationTicks = 0;
    private int sweepAnimationTicks = 0;
+   private int slashAnimationTicks = 0;
+   private int teleportAnimationTicks = 0;
+   private int stompAnimationTicks = 0;
+   private int uppercutAnimationTicks = 0;
+   private int horizontalSwingAnimationTicks = 0;
+   // 攻击摆臂：0=空闲，>0=递减中，触发时设为正值
+   private int attackSwingTicks = 0;
+
+   public int getAttackSwingTicks() {
+      return this.attackSwingTicks;
+   }
 
    public ServantEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
       super(entityType, level);
+      this.setPathfindingMalus(PathType.WATER, -1.0F);
    }
 
    @Override
@@ -117,7 +137,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
          .add(Attributes.ARMOR, 4.0)
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
          .add(Attributes.FOLLOW_RANGE, 32.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, 0.2);
+         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
    }
 
    @Override
@@ -142,7 +162,66 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
          if (this.sweepAnimationTicks > 0) {
             this.sweepAnimationTicks--;
          }
+         if (this.slashAnimationTicks > 0) {
+            this.slashAnimationTicks--;
+         }
+         if (this.teleportAnimationTicks > 0) {
+            this.teleportAnimationTicks--;
+         }
+         if (this.stompAnimationTicks > 0) {
+            this.stompAnimationTicks--;
+         }
+         if (this.uppercutAnimationTicks > 0) {
+            this.uppercutAnimationTicks--;
+         }
+         if (this.horizontalSwingAnimationTicks > 0) {
+            this.horizontalSwingAnimationTicks--;
+         }
+         if (this.attackSwingTicks > 0) {
+            this.attackSwingTicks--;
+         }
+
+         // 落落伤害免疫
+         // （通过 causeFallDamage override 实现，见下方）
+
+         // 水/岩浆中紧急闪避（索敌时也生效）
+         if (this.isInWater() || this.isInLava()) {
+            for (int i = 0; i < 3; i++) {
+               double angle = this.random.nextDouble() * Math.PI * 2.0;
+               double tx = this.getX() + 2.0 * Math.cos(angle);
+               double tz = this.getZ() + 2.0 * Math.sin(angle);
+               double ty = this.getY();
+               BlockPos targetPos = BlockPos.containing(tx, ty, tz);
+               BlockState below = this.level().getBlockState(targetPos.below());
+               BlockState at = this.level().getBlockState(targetPos);
+               if (below.isFaceSturdy(this.level(), targetPos.below(), Direction.UP)
+                     && !at.getFluidState().isSource()
+                     && !at.isSuffocating(this.level(), targetPos)) {
+                  this.teleportTo(tx, ty, tz);
+                  break;
+               }
+            }
+         }
+
+         // 着火时寻找水源自救
+         if (this.isOnFire() && this.random.nextFloat() < 0.5F) {
+            BlockPos center = this.blockPosition();
+            for (BlockPos p : BlockPos.betweenClosed(center.offset(-10, -5, -10), center.offset(10, 5, 10))) {
+               if (this.level().getFluidState(p).is(FluidTags.WATER)) {
+                  this.getNavigation().moveTo(p.getX(), p.getY(), p.getZ(), 1.5);
+                  break;
+               }
+            }
+            if (this.random.nextFloat() < 0.5F) {
+               this.clearFire();
+            }
+         }
       }
+   }
+
+   @Override
+   public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+      return false; // 英灵免疫摔落伤害
    }
 
    @Override
@@ -310,6 +389,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerJumpAttackAnimation() {
       this.jumpAttackAnimationTicks = 40; // 2s
+      runActionAnim("animation.heracles.jump_attack");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(),
@@ -324,6 +404,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerChargeAnimation() {
       this.chargeAnimationTicks = 30; // 1.5s
+      runActionAnim("animation.heracles.charge");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + 0.5, this.getZ(),
@@ -336,6 +417,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerSweepAnimation() {
       this.sweepAnimationTicks = 30; // 1.5s
+      runActionAnim("animation.heracles.sweep");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
@@ -343,9 +425,126 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       }
    }
 
+   /**
+    * 触发挥刀斩击动画
+    */
+   public void triggerSlashAnimation() {
+      this.slashAnimationTicks = 20; // 1s
+      runActionAnim("animation.heracles.slash");
+      if (this.level() instanceof ServerLevel sl) {
+         // 斩击弧线粒子
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
+            2, 0.0, 0.0, 0.0, 0.0);
+         sl.sendParticles(ParticleTypes.CRIT,
+            this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
+            8, 0.4, 0.4, 0.4, 0.15);
+         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+            SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.2F, 0.8F);
+      }
+   }
+
+   /**
+    * 触发瞬移动画
+    */
+   public void triggerTeleportAnimation() {
+      this.teleportAnimationTicks = 15; // 0.75s
+      runActionAnim("animation.heracles.teleport_behind");
+      if (this.level() instanceof ServerLevel sl) {
+         // 瞬移烟雾粒子（原位残留）
+         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+            this.getX(), this.getY() + 0.5, this.getZ(),
+            20, 0.3, 0.5, 0.3, 0.05);
+         sl.sendParticles(ParticleTypes.LARGE_SMOKE,
+            this.getX(), this.getY() + 0.8, this.getZ(),
+            10, 0.2, 0.3, 0.2, 0.03);
+         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+            SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1.5F, 0.6F);
+      }
+   }
+
+   /**
+    * 触发跺脚动画
+    */
+   public void triggerStompAnimation() {
+      this.stompAnimationTicks = 20; // 1s
+      runActionAnim("animation.heracles.stomp");
+      if (this.level() instanceof ServerLevel sl) {
+         // 跺脚冲击波
+         sl.sendParticles(ParticleTypes.CLOUD,
+            this.getX(), this.getY() + 0.2, this.getZ(),
+            25, 1.0, 0.2, 1.0, 0.25);
+         sl.sendParticles(ParticleTypes.LARGE_SMOKE,
+            this.getX(), this.getY() + 0.1, this.getZ(),
+            12, 0.8, 0.2, 0.8, 0.1);
+         // 同心圆扩散
+         for (int i = 0; i < 12; i++) {
+            double angle = (Math.PI * 2) * i / 12.0;
+            double px = this.getX() + Math.cos(angle) * 1.5;
+            double pz = this.getZ() + Math.sin(angle) * 1.5;
+            sl.sendParticles(ParticleTypes.CLOUD,
+               px, this.getY() + 0.15, pz,
+               2, 0.0, 0.0, 0.0, 0.02);
+         }
+         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+            SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.HOSTILE, 1.5F, 0.5F);
+         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+            SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.8F, 0.7F);
+      }
+   }
+
+   /**
+    * 触发上勾拳动画：右臂向右上方举起，往左下方挥去
+    */
+   public void triggerUppercutAnimation() {
+      this.uppercutAnimationTicks = 20; // 1s
+      runActionAnim("animation.heracles.uppercut");
+      if (this.level() instanceof ServerLevel sl) {
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            this.getX(), this.getY() + this.getBbHeight() * 0.7, this.getZ(),
+            1, 0.0, 0.0, 0.0, 0.0);
+         sl.sendParticles(ParticleTypes.CRIT,
+            this.getX(), this.getY() + this.getBbHeight() * 0.8, this.getZ(),
+            6, 0.4, 0.4, 0.4, 0.12);
+         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+            SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.3F, 0.9F);
+      }
+   }
+
+   /**
+    * 触发横挥动画：右臂横在胸前，向右边挥动
+    */
+   public void triggerHorizontalSwingAnimation() {
+      this.horizontalSwingAnimationTicks = 20; // 1s
+      runActionAnim("animation.heracles.horizontal_swing");
+      if (this.level() instanceof ServerLevel sl) {
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            this.getX(), this.getY() + this.getBbHeight() * 0.55, this.getZ(),
+            2, 0.0, 0.0, 0.0, 0.0);
+         sl.sendParticles(ParticleTypes.CLOUD,
+            this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+            5, 0.3, 0.3, 0.3, 0.05);
+         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+            SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.2F, 0.85F);
+      }
+   }
+
+   /**
+    * 近战攻击时触发右手大幅摆动（保底视觉反馈）
+    */
+   public void triggerAttackSwing() {
+      this.attackSwingTicks = 12; // 0.6s
+   }
+
+   public boolean isAttackSwinging() {
+      return this.attackSwingTicks > 0;
+   }
+
    public boolean isPerformingAction() {
       return this.jumpAttackAnimationTicks > 0 || this.chargeAnimationTicks > 0
-         || this.sweepAnimationTicks > 0;
+         || this.sweepAnimationTicks > 0 || this.slashAnimationTicks > 0
+         || this.teleportAnimationTicks > 0 || this.stompAnimationTicks > 0
+         || this.uppercutAnimationTicks > 0 || this.horizontalSwingAnimationTicks > 0;
    }
 
    public boolean isRoaring() {
@@ -516,6 +715,8 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
 
    // ======================== GeckoLib ========================
 
+   private AnimationController<ServantEntity> actionCtrl;
+
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       // 主控制器：idle / walk（transition=3 正常过渡）
@@ -525,19 +726,9 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
          }
          return event.setAndContinue(RawAnimation.begin().thenLoop("animation.heracles.idle"));
       }));
-      // 动作控制器：jump_attack / charge / sweep（transition=0 立即切换）
-      controllers.add(new AnimationController<>(this, "action_controller", 0, event -> {
-         if (this.jumpAttackAnimationTicks > 0) {
-            return event.setAndContinue(RawAnimation.begin().thenPlay("animation.heracles.jump_attack"));
-         }
-         if (this.chargeAnimationTicks > 0) {
-            return event.setAndContinue(RawAnimation.begin().thenPlay("animation.heracles.charge"));
-         }
-         if (this.sweepAnimationTicks > 0) {
-            return event.setAndContinue(RawAnimation.begin().thenPlay("animation.heracles.sweep"));
-         }
-         return null;
-      }));
+      // 动作控制器（transition=0，通过 runActionAnim 触发）
+      this.actionCtrl = new AnimationController<>(this, "action_controller", 0, event -> null);
+      controllers.add(this.actionCtrl);
       // 吼叫控制器（transition=0，独立控制）
       controllers.add(new AnimationController<>(this, "roar_controller", 0, event -> {
          if (this.roarAnimationTicks > 0) {
@@ -557,5 +748,12 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.cache;
+   }
+
+   private void runActionAnim(String anim) {
+      if (this.actionCtrl != null) {
+         this.actionCtrl.forceAnimationReset();
+         this.actionCtrl.setAnimation(RawAnimation.begin().thenPlay(anim));
+      }
    }
 }

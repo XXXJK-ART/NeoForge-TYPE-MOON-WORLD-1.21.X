@@ -358,10 +358,10 @@ public class CommonEvents {
                                     damagedPlayer.getXRot()
                                  );
                                  if (helper.getAttribute(Attributes.MAX_HEALTH) != null) {
-                                    helper.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200.0);
+                                    helper.getAttribute(Attributes.MAX_HEALTH).setBaseValue(300.0);
                                  }
 
-                                 helper.setHealth(200.0F);
+                                 helper.setHealth(300.0F);
                                  CompoundTag htag = helper.getPersistentData();
                                  htag.putBoolean("TypeMoonHelperClone", true);
                                  htag.putString("TypeMoonHelperOwner", damagedPlayer.getUUID().toString());
@@ -462,22 +462,8 @@ public class CommonEvents {
          int livesLeft = data.getInt("GodHandLives");
          if (livesLeft > 0) {
             event.setCanceled(true);
-            float excessDamage = Math.abs(servant.getHealth() - event.getAmount());
             servant.setHealth(servant.getMaxHealth());
             data.putInt("GodHandLives", livesLeft - 1);
-            // 如果伤害溢出多条命，继续扣除
-            while (excessDamage > servant.getMaxHealth() && data.getInt("GodHandLives") > 0) {
-               excessDamage -= servant.getMaxHealth();
-               data.putInt("GodHandLives", data.getInt("GodHandLives") - 1);
-            }
-            if (excessDamage > 0 && data.getInt("GodHandLives") <= 0) {
-               // 所有命用完，直接击杀
-               servant.kill();
-               return;
-            }
-            if (excessDamage > 0) {
-               servant.hurt(servant.damageSources().generic(), excessDamage);
-            }
 
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
@@ -531,6 +517,25 @@ public class CommonEvents {
                if (data.getInt("BattleContinuationCooldown") > 0) {
                   data.putInt("BattleContinuationCooldown",
                      data.getInt("BattleContinuationCooldown") - 1);
+               }
+               // 赫拉克勒斯被动回血：每2秒回复1HP（God Hand或BattleContinuation激活时）
+               if (data.getBoolean("GodHandActive") || data.getBoolean("BattleContinuationActive")) {
+                  int regenTick = data.getInt("HeraclesRegenTick");
+                  if (regenTick >= 40) {
+                     data.putInt("HeraclesRegenTick", 0);
+                     if (servant.getHealth() < servant.getMaxHealth()) {
+                        servant.heal(1.0F);
+                        if (sl instanceof ServerLevel sLevel) {
+                           sLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                              servant.getX() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
+                              servant.getY() + servant.getBbHeight(),
+                              servant.getZ() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
+                              3, 0.03, 0.05, 0.03, 0.0);
+                        }
+                     }
+                  } else {
+                     data.putInt("HeraclesRegenTick", regenTick + 1);
+                  }
                }
                // 战斗续行无敌倒计时结束后清除无敌
                // （MobEffect 自动过期，无需额外处理）

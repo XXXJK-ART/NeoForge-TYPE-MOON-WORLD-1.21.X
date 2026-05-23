@@ -180,7 +180,7 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<TsumukariLightColumnEffectEntity>> TSUMUKARI_LIGHT_COLUMN_EFFECT = ENTITY_TYPES.register(
       "tsumukari_light_column_effect",
       () -> Builder.<TsumukariLightColumnEffectEntity>of((entityType, level) -> new TsumukariLightColumnEffectEntity(entityType, level), MobCategory.MISC)
-         .sized(2.0F, 8.0F)
+         .sized(2.5F, 8.0F)
          .clientTrackingRange(16)
          .updateInterval(1)
          .build("tsumukari_light_column_effect")
