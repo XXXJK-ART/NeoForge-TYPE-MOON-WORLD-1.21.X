@@ -7,14 +7,14 @@ import software.bernie.geckolib.model.GeoModel;
 @SuppressWarnings("deprecation")
 public class BizenNagamitsuModel extends GeoModel<BizenNagamitsuItem> {
    public ResourceLocation getModelResource(BizenNagamitsuItem object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/clothesline_pole.geo.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/bizen_nagamitsu.geo.json");
    }
 
    public ResourceLocation getTextureResource(BizenNagamitsuItem object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/item/clothesline_pole.png");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/item/bizen_nagamitsu.png");
    }
 
    public ResourceLocation getAnimationResource(BizenNagamitsuItem object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/clothesline_pole.animation.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/bizen_nagamitsu.animation.json");
    }
 }
