@@ -19,16 +19,24 @@ public final class MovementModule implements ServantAiModule {
       }
 
       // 闲逛逻辑
-      if (entity.getNavigation().isDone() && entity.getRandom().nextInt(WANDER_INTERVAL) == 0) {
+      int wanderInterval = Math.max(50, (int)(WANDER_INTERVAL - context.behaviorProfile().aggressionRange()));
+      int wanderRange = Math.max(WANDER_RANGE, (int)Math.round(context.behaviorProfile().attackCommitDistance() * 2.0));
+      double wanderSpeed = switch (entity.getCombatDisposition()) {
+         case CAUTIOUS -> 0.55;
+         case FRENZIED -> 0.75;
+         default -> 0.65;
+      };
+
+      if (entity.getNavigation().isDone() && entity.getRandom().nextInt(wanderInterval) == 0) {
          BlockPos current = entity.blockPosition();
-         int dx = entity.getRandom().nextIntBetweenInclusive(-WANDER_RANGE, WANDER_RANGE);
-         int dz = entity.getRandom().nextIntBetweenInclusive(-WANDER_RANGE, WANDER_RANGE);
+         int dx = entity.getRandom().nextIntBetweenInclusive(-wanderRange, wanderRange);
+         int dz = entity.getRandom().nextIntBetweenInclusive(-wanderRange, wanderRange);
          BlockPos wanderTarget = current.offset(dx, 0, dz);
          entity.getNavigation().moveTo(
             wanderTarget.getX() + 0.5,
             wanderTarget.getY(),
             wanderTarget.getZ() + 0.5,
-            0.6
+            wanderSpeed
          );
       }
    }

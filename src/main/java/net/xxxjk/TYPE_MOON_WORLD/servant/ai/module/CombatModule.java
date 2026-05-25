@@ -19,6 +19,8 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
 
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.List;
 public final class CombatModule implements ServantAiModule {
    private static final double SLAM_RADIUS = 4.0;
    private static final double SLAM_DAMAGE_MULTIPLIER = 1.5;
+   private static final int BASIC_ATTACK_COOLDOWN = 12;
+   private static final int ASSASSIN_BASIC_ATTACK_COOLDOWN = 8;
    private static final int ROAR_COOLDOWN = 300;
    private static final int SLAM_COOLDOWN = 120;
    private static final int SWEEP_COOLDOWN = 100;
@@ -49,14 +53,44 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
+      SasakiKojiroCombatHelper.markCombat(entity);
+
       CompoundTag data = entity.getPersistentData();
       double healthRatio = entity.getHealth() / entity.getMaxHealth();
       CombatDisposition combatStyle = entity.getCombatDisposition();
+      var behaviorProfile = context.behaviorProfile();
+      ServantSpecialization specialization = context.definition().specialization();
+      boolean canBreakForwardBlocks = specialization.hasCombatAction("break_forward_blocks");
+      boolean canRoar = specialization.hasCombatAction("roar");
+      boolean canLowHealthRoar = specialization.hasCombatAction("low_health_roar");
+      boolean canJumpAttack = specialization.hasCombatAction("jump_attack");
+      boolean canCharge = specialization.hasCombatAction("charge");
+      boolean canSweep = specialization.hasCombatAction("sweep");
+      boolean canSlash = specialization.hasCombatAction("slash");
+      boolean canTeleportBehind = specialization.hasCombatAction("teleport_behind");
+      boolean canStomp = specialization.hasCombatAction("stomp");
+      boolean canUppercut = specialization.hasCombatAction("uppercut");
+      boolean canHorizontalSwing = specialization.hasCombatAction("horizontal_swing");
+      boolean canGroundSlam = specialization.hasCombatAction("slam");
+      boolean canAssassinCombo = specialization.hasCombatAction("combo");
+      boolean canTsurigameshi = specialization.hasCombatAction("tsurigameshi");
+      double retreatThreshold = Math.max(0.08, behaviorProfile.applyCombatDisposition(combatStyle));
+      double aggressionRange = Math.max(16.0, behaviorProfile.aggressionRange());
+      double attackCommitDistance = Math.max(3.0, behaviorProfile.attackCommitDistance());
+      double skillChanceScale = Math.max(0.75, Math.min(1.35, behaviorProfile.skillUsageFrequency() / 0.65));
+      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+
+      entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
+
+      if (entity.distanceToSqr(target) > aggressionRange * aggressionRange * 1.5) {
+         entity.setTarget(null);
+         entity.getNavigation().stop();
+         return;
+      }
 
       // 非狂化型：低血量撤退
-      if (combatStyle != CombatDisposition.FRENZIED && healthRatio < 0.25) {
-         entity.getNavigation().stop();
-         entity.setTarget(null);
+      if (combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
+         performRetreatFootwork(entity, target, combatStyle);
          return;
       }
 
@@ -68,8 +102,8 @@ public final class CombatModule implements ServantAiModule {
       int tick = (int) context.gameTick();
       double distance = entity.distanceTo(target);
 
-      // ——— 0. 被方块挡住：挥砍砸开前方路径 ———
-      if (entity.getNavigation().isInProgress() || distance > 3.5) {
+      // ——— 0. 被方块挡住：挥砍砸开前方路径（仅Berserker） ———
+      if (canBreakForwardBlocks && (entity.getNavigation().isInProgress() || distance > 3.5)) {
          int lastBreak = data.getInt("LastBlockBreakTick");
          if (tick - lastBreak >= BLOCK_BREAK_COOLDOWN) {
             boolean stuck = isBlockedForward(entity, target);
@@ -80,8 +114,8 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      // ——— 1. 首次吼叫（推开 + 视觉） ———
-      if (!data.getBoolean("HasRoared")) {
+      // ——— 1. 首次吼叫（推开 + 视觉）（Berserker专属） ———
+      if (canRoar && !data.getBoolean("HasRoared")) {
          data.putBoolean("HasRoared", true);
          data.putInt("LastRoarTick", tick);
          entity.triggerRoarAnimation();
@@ -89,22 +123,22 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      // ——— 2. 低血量吼叫（<50%）———
-      if (healthRatio < 0.5 && !data.getBoolean("LowHealthRoared")) {
+      // ——— 2. 低血量吼叫（<50%）（Berserker专属）———
+      if (canLowHealthRoar && healthRatio < 0.5 && !data.getBoolean("LowHealthRoared")) {
          if (tick - data.getInt("LastRoarTick") >= ROAR_COOLDOWN) {
             data.putBoolean("LowHealthRoared", true);
             data.putInt("LastRoarTick", tick);
             entity.triggerRoarAnimation();
             performRoar(entity);
-            return;
+            
          }
       }
 
-      // ——— 3. 跳跃攻击：目标在上方 3-8格 ———
+      // ——— 3. 跳跃攻击：目标在上方 3-8格（Berserker专属） ———
       double dy = target.getY() - entity.getY();
       double distSqr = entity.distanceToSqr(target);
-      if (dy > 3.0 && dy < 8.0 && distSqr < 100.0 && entity.onGround()
-            && entity.getRandom().nextInt(100) < 25) {
+      if (canJumpAttack && dy > 3.0 && dy < 8.0 && distSqr < 100.0 && entity.onGround()
+            && passesSkillChance(entity, 25, skillChanceScale)) {
          entity.triggerJumpAttackAnimation();
          // 垂直 + 水平冲向目标
          entity.setDeltaMovement(entity.getDeltaMovement().add(0.0, 1.2, 0.0));
@@ -115,10 +149,10 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      // ——— 4. 冲刺攻击：距离 6-15格 ———
-      if (distance >= 6.0 && distance <= 15.0) {
+      // ——— 4. 冲刺攻击：距离 6-15格（Berserker专属） ———
+      if (canCharge && distance >= 6.0 && distance <= 15.0) {
          int lastCharge = data.getInt("LastChargeTick");
-         if (tick - lastCharge >= CHARGE_COOLDOWN && entity.getRandom().nextInt(100) < 30) {
+         if (tick - lastCharge >= CHARGE_COOLDOWN && passesSkillChance(entity, 30, skillChanceScale)) {
             data.putInt("LastChargeTick", tick);
             entity.triggerChargeAnimation();
             // 面朝目标快速冲刺
@@ -148,19 +182,19 @@ public final class CombatModule implements ServantAiModule {
                applyDivinityDamage(entity, target, data);
                applyMadEnhancementDamage(entity, target, data);
             }
-            return;
+            
          }
       }
 
       // ——— 5. 横扫攻击：近距离 + 周围2+敌人 ———
-      if (distance <= 4.0) {
+      if (canSweep && distance <= 4.0) {
          AABB sweepBox = entity.getBoundingBox().inflate(3.0);
          List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
             LivingEntity.class, sweepBox,
             e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
          int lastSweep = data.getInt("LastSweepTick");
          if (nearby.size() >= 2 && tick - lastSweep >= SWEEP_COOLDOWN
-               && entity.getRandom().nextInt(100) < 35) {
+               && passesSkillChance(entity, 35, skillChanceScale)) {
             data.putInt("LastSweepTick", tick);
             entity.triggerSweepAnimation();
             performSweep(entity);
@@ -169,14 +203,14 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // ——— 6. 斩击：近距离 + 周围1-2敌人 ———
-      if (distance <= 4.0) {
+      if (canSlash && distance <= 4.0) {
          AABB slashBox = entity.getBoundingBox().inflate(3.0);
          List<LivingEntity> nearSlash = entity.level().getEntitiesOfClass(
             LivingEntity.class, slashBox,
             e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
          int lastSlash = data.getInt("LastSlashTick");
          if (nearSlash.size() >= 1 && nearSlash.size() <= 2 && tick - lastSlash >= SLASH_COOLDOWN
-               && entity.getRandom().nextInt(100) < 40) {
+               && passesSkillChance(entity, 40, skillChanceScale)) {
             data.putInt("LastSlashTick", tick);
             entity.triggerSlashAnimation();
             performSlash(entity, target);
@@ -185,9 +219,9 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // ——— 7. 瞬移到敌人身后：距离 4-12格 ———
-      if (distance >= 4.0 && distance <= 12.0) {
+      if (canTeleportBehind && distance >= 4.0 && distance <= 12.0) {
          int lastTeleport = data.getInt("LastTeleportTick");
-         if (tick - lastTeleport >= TELEPORT_COOLDOWN && entity.getRandom().nextInt(100) < 25) {
+         if (tick - lastTeleport >= TELEPORT_COOLDOWN && (!hasLineOfSight || passesSkillChance(entity, 25, skillChanceScale))) {
             data.putInt("LastTeleportTick", tick);
             entity.triggerTeleportAnimation();
             performTeleportBehind(entity, target);
@@ -195,10 +229,10 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      // ——— 8. 跺脚：近距离 ———
-      if (distance <= 3.0) {
+      // ——— 8. 跺脚：近距离（Berserker专属） ———
+      if (canStomp && distance <= 3.0) {
          int lastStomp = data.getInt("LastStompTick");
-         if (tick - lastStomp >= STOMP_COOLDOWN && entity.getRandom().nextInt(100) < 30) {
+         if (tick - lastStomp >= STOMP_COOLDOWN && passesSkillChance(entity, 30, skillChanceScale)) {
             data.putInt("LastStompTick", tick);
             entity.triggerStompAnimation();
             performStomp(entity);
@@ -206,10 +240,10 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      // ——— 9. 砸地：近距离 + CD ———
-      if (distance <= SLAM_RADIUS && !entity.isRoaring() && !entity.isSlamming()) {
+      // ——— 9. 砸地：近距离 + CD（Berserker专属） ———
+      if (canGroundSlam && distance <= SLAM_RADIUS && !entity.isRoaring() && !entity.isSlamming()) {
          int lastSlam = data.getInt("LastSlamTick");
-         if (tick - lastSlam >= SLAM_COOLDOWN && entity.getRandom().nextInt(100) < 30) {
+         if (tick - lastSlam >= SLAM_COOLDOWN && passesSkillChance(entity, 30, skillChanceScale)) {
             data.putInt("LastSlamTick", tick);
             entity.triggerGroundSlam();
             performGroundSlam(entity);
@@ -217,10 +251,31 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
+      // ——— 燕返（Assassin专属）：目标HP<40%，100固定真伤 + 概率斩杀 ———
+      if (canTsurigameshi && distance < 4.0 && !SasakiKojiroCombatHelper.isBladeBroken(entity)) {
+         int lastTsurigameshi = data.getInt("LastTsurigameshiTick");
+         if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= 30) {
+            data.putInt("LastTsurigameshiTick", tick);
+            entity.setCurrentMp(entity.getCurrentMp() - 30);
+            performTsurigameshi(entity, target);
+            return;
+         }
+      }
+
+      // ——— Assassin连击：近距离快速3连击 ———
+      if (canAssassinCombo && distance < 3.0) {
+         int lastCombo = data.getInt("LastComboTick");
+         if (tick - lastCombo >= 30 && passesSkillChance(entity, 40, skillChanceScale * 1.1)) {
+            data.putInt("LastComboTick", tick);
+            performAssassinCombo(entity, target);
+            return;
+         }
+      }
+
       // ——— 10. 上勾拳：近距离随机 ———
-      if (distance <= 3.5) {
+      if (canUppercut && distance <= 3.5) {
          int lastUppercut = data.getInt("LastUppercutTick");
-         if (tick - lastUppercut >= UPPERCUT_COOLDOWN && entity.getRandom().nextInt(100) < 35) {
+         if (tick - lastUppercut >= UPPERCUT_COOLDOWN && passesSkillChance(entity, 35, skillChanceScale)) {
             data.putInt("LastUppercutTick", tick);
             entity.triggerUppercutAnimation();
             performUppercut(entity, target);
@@ -229,9 +284,9 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // ——— 11. 横挥：近距离随机 ———
-      if (distance <= 3.5) {
+      if (canHorizontalSwing && distance <= 3.5) {
          int lastHSwing = data.getInt("LastHSwingTick");
-         if (tick - lastHSwing >= H_SWING_COOLDOWN && entity.getRandom().nextInt(100) < 35) {
+         if (tick - lastHSwing >= H_SWING_COOLDOWN && passesSkillChance(entity, 35, skillChanceScale)) {
             data.putInt("LastHSwingTick", tick);
             entity.triggerHorizontalSwingAnimation();
             performHorizontalSwing(entity, target);
@@ -240,10 +295,23 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // ——— 7. 接近 + 近战 ———
-      double speed = distance > 8 ? 1.4 : (distance > 4 ? 1.2 : 1.0);
-      if (distance > 3.5) {
+      
+      if (!hasLineOfSight) {
+         entity.getNavigation().moveTo(target, distance > 8.0 ? 1.3 : 1.1);
+      } else if (distance > Math.max(3.5, attackCommitDistance)) {
+         double speed = distance > 10.0 ? 1.35 : (distance > 6.0 ? 1.2 : 1.0);
+         if (combatStyle == CombatDisposition.CAUTIOUS && distance < attackCommitDistance + 1.5) {
+            speed = 0.9;
+         }
          entity.getNavigation().moveTo(target, speed);
       } else {
+         int basicAttackCooldown = canAssassinCombo ? ASSASSIN_BASIC_ATTACK_COOLDOWN : BASIC_ATTACK_COOLDOWN;
+         int lastBasicAttack = data.getInt("LastBasicAttackTick");
+         if (distance > 2.4 || tick - lastBasicAttack < basicAttackCooldown) {
+            performCombatFootwork(entity, target, combatStyle, distance);
+            return;
+         }
+         data.putInt("LastBasicAttackTick", tick);
          entity.doHurtTarget(target);
          entity.triggerAttackSwing();
          applyDivinityDamage(entity, target, data);
@@ -277,6 +345,40 @@ public final class CombatModule implements ServantAiModule {
    /**
     * 神性 A：每次近战额外施加 25 点魔法伤害
     */
+   private boolean passesSkillChance(ServantEntity entity, int basePercent, double scale) {
+      int effectivePercent = (int)Math.round(basePercent * scale);
+      effectivePercent = Math.max(5, Math.min(95, effectivePercent));
+      return entity.getRandom().nextInt(100) < effectivePercent;
+   }
+
+   private void performRetreatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle) {
+      Vec3 away = entity.position().subtract(target.position());
+      if (away.lengthSqr() < 1.0E-4) {
+         away = new Vec3(entity.getRandom().nextDouble() - 0.5, 0.0, entity.getRandom().nextDouble() - 0.5);
+      }
+
+      Vec3 retreatPos = entity.position().add(away.normalize().scale(combatStyle == CombatDisposition.CAUTIOUS ? 6.0 : 4.0));
+      entity.getNavigation().moveTo(retreatPos.x, retreatPos.y, retreatPos.z, combatStyle == CombatDisposition.CAUTIOUS ? 1.25 : 1.05);
+      if (entity.getRandom().nextInt(4) == 0) {
+         float side = entity.getRandom().nextBoolean() ? 0.5F : -0.5F;
+         entity.getMoveControl().strafe(-0.6F, side);
+      }
+      entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
+   }
+
+   private void performCombatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle, double distance) {
+      entity.getNavigation().stop();
+      float side = entity.getRandom().nextBoolean() ? 0.45F : -0.45F;
+      float forward = switch (combatStyle) {
+         case CAUTIOUS -> distance < 2.4 ? -0.35F : -0.10F;
+         case FRENZIED -> 0.35F;
+         default -> distance > 2.7 ? 0.10F : 0.0F;
+      };
+      float sideScale = combatStyle == CombatDisposition.FRENZIED ? 0.20F : side;
+      entity.getMoveControl().strafe(forward, sideScale);
+      entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
+   }
+
    private void applyDivinityDamage(ServantEntity entity, LivingEntity target, CompoundTag data) {
       if (data.getBoolean("DivinityActive")) {
          float divDmg = data.getFloat("DivinityFlatDamage");
@@ -488,6 +590,109 @@ public final class CombatModule implements ServantAiModule {
          }
       }
       return false;
+   }
+
+   /**
+    * 燕返（Tsurigameshi）：100固定真伤 + 概率斩杀
+    */
+   private void performTsurigameshi(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      if (SasakiKojiroCombatHelper.isSasakiKojiro(entity)) {
+         float hitChance = SasakiKojiroCombatHelper.getTsurigameshiHitChance(entity);
+         if (hitChance <= 0.0F) {
+            return;
+         }
+
+         if (entity.getRandom().nextFloat() > hitChance) {
+            sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+               target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+               4, 0.25, 0.25, 0.25, 0.02);
+            sl.sendParticles(ParticleTypes.CLOUD,
+               target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+               8, 0.2, 0.2, 0.2, 0.04);
+            sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+               SoundEvents.PLAYER_ATTACK_WEAK, SoundSource.HOSTILE, 1.0F, 1.15F);
+            return;
+         }
+
+         target.invulnerableTime = 0;
+         target.hurt(entity.damageSources().mobAttack(entity), 300.0F);
+         target.invulnerableTime = 0;
+
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+            10, 0.5, 0.5, 0.5, 0.3);
+         sl.sendParticles(ParticleTypes.CRIT,
+            target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
+            20, 0.4, 0.4, 0.4, 0.2);
+         sl.sendParticles(ParticleTypes.CLOUD,
+            entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
+            15, 0.3, 0.3, 0.3, 0.1);
+         sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+            SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.5F, 0.6F);
+         sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+            SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.0F, 0.8F);
+         return;
+      }
+
+      // 100点固定真伤
+      target.hurt(entity.damageSources().generic(), 100.0F);
+
+      double hpRatio = target.getHealth() / target.getMaxHealth();
+      net.minecraft.util.RandomSource random = entity.getRandom();
+
+      // 即死判定（HP<10%，30%概率）
+      if (hpRatio < 0.10 && random.nextInt(100) < 30) {
+         target.setHealth(0);
+         target.die(entity.damageSources().mobAttack(entity));
+      }
+      // 半血斩杀判定（HP<30%，50%概率，额外造成剩余HP一半的伤害）
+      else if (hpRatio < 0.30 && random.nextInt(100) < 50) {
+         float bonusDmg = target.getHealth() / 2.0F;
+         target.hurt(entity.damageSources().generic(), bonusDmg);
+      }
+
+      // 大量粒子效果
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+         target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+         10, 0.5, 0.5, 0.5, 0.3);
+      sl.sendParticles(ParticleTypes.CRIT,
+         target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
+         20, 0.4, 0.4, 0.4, 0.2);
+      sl.sendParticles(ParticleTypes.CLOUD,
+         entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
+         15, 0.3, 0.3, 0.3, 0.1);
+
+      // 音效
+      sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+         SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.5F, 0.6F);
+      sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+         SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.0F, 0.8F);
+   }
+
+   /**
+    * Assassin连击：快速3连击
+    */
+   private void performAssassinCombo(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+
+      for (int i = 0; i < 3; i++) {
+         final int idx = i;
+         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(idx * 4, () -> {
+            if (target.isAlive() && entity.isAlive()) {
+               entity.doHurtTarget(target);
+               entity.triggerAttackSwing();
+            }
+         });
+      }
+
+      // 连击粒子
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+         target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+         3, 0.3, 0.3, 0.3, 0.1);
+      sl.sendParticles(ParticleTypes.CRIT,
+         target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+         8, 0.3, 0.3, 0.3, 0.15);
    }
 
    /**

@@ -1,0 +1,28 @@
+{
+  "id": "default_assassin",
+  "movement": {
+    "follow_distance": 6.0,
+    "wander_radius": 12.0,
+    "likes_high_places": false
+  },
+  "combat": {
+    "preferred_attack_distance": 3.5,
+    "retreat_health_ratio": 0.20,
+    "melee_preference": 0.8,
+    "berserk_health_ratio": 0.0,
+    "berserk_damage_multiplier": 1.0
+  },
+  "social": {
+    "talk_interval": 0,
+    "greeting_probability": 0.0
+  },
+  "command": {
+    "base_obedience_rate": 0.7,
+    "favor_multiplier": 0.005
+  },
+  "environment": {
+    "liked_biomes": [],
+    "disliked_biomes": [],
+    "preferred_weather": "any"
+  }
+}

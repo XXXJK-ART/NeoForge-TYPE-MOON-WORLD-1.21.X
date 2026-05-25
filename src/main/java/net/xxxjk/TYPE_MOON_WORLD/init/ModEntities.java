@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
@@ -24,12 +25,12 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -185,8 +186,11 @@ public class ModEntities {
          .updateInterval(1)
          .build("tsumukari_light_column_effect")
    );
-   public static final DeferredHolder<EntityType<?>, EntityType<ServantEntity>> SERVANT = ENTITY_TYPES.register(
-      "servant", () -> Builder.of(ServantEntity::new, MobCategory.CREATURE).sized(1F, 3F).build("servant")
+   public static final DeferredHolder<EntityType<?>, EntityType<HeraclesEntity>> HERACLES = ENTITY_TYPES.register(
+      "heracles", () -> Builder.of(HeraclesEntity::new, MobCategory.CREATURE).sized(1.0F, 3.0F).build("heracles")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<SasakiKojiroEntity>> SASAKI_KOJIRO = ENTITY_TYPES.register(
+      "sasaki_kojiro", () -> Builder.of(SasakiKojiroEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("sasaki_kojiro")
    );
 
    public static void register(IEventBus eventBus) {

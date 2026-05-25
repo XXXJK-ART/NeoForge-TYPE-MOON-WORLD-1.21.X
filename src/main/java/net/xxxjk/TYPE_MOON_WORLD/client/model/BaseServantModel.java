@@ -9,36 +9,34 @@ import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-public class ServantModel extends GeoModel<ServantEntity> {
-   @Override
-   public ResourceLocation getModelResource(ServantEntity entity) {
-      var def = entity.getDefinition();
-      if (def != null && !def.modelGeometryPath().isEmpty()) {
-         return ResourceLocation.parse(def.modelGeometryPath());
-      }
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/heracles.geo.json");
+public class BaseServantModel<T extends ServantEntity> extends GeoModel<T> {
+   private final ResourceLocation modelResource;
+   private final ResourceLocation textureResource;
+   private final ResourceLocation animationResource;
+
+   public BaseServantModel(ResourceLocation modelResource, ResourceLocation textureResource, ResourceLocation animationResource) {
+      this.modelResource = modelResource;
+      this.textureResource = textureResource;
+      this.animationResource = animationResource;
    }
 
    @Override
-   public ResourceLocation getTextureResource(ServantEntity entity) {
-      var def = entity.getDefinition();
-      if (def != null && !def.texturePath().isEmpty()) {
-         return ResourceLocation.parse(def.texturePath());
-      }
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/heracles.png");
+   public ResourceLocation getModelResource(T entity) {
+      return this.modelResource;
    }
 
    @Override
-   public ResourceLocation getAnimationResource(ServantEntity entity) {
-      var def = entity.getDefinition();
-      if (def != null && !def.animationPath().isEmpty()) {
-         return ResourceLocation.parse(def.animationPath());
-      }
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/heracles.animation.json");
+   public ResourceLocation getTextureResource(T entity) {
+      return this.textureResource;
    }
 
    @Override
-   public void setCustomAnimations(ServantEntity entity, long instanceId, AnimationState<ServantEntity> state) {
+   public ResourceLocation getAnimationResource(T entity) {
+      return this.animationResource;
+   }
+
+   @Override
+   public void setCustomAnimations(T entity, long instanceId, AnimationState<T> state) {
       GeoBone head = this.getAnimationProcessor().getBone("head");
       if (head != null) {
          EntityModelData entityData = state.getData(DataTickets.ENTITY_MODEL_DATA);
@@ -63,16 +61,13 @@ public class ServantModel extends GeoModel<ServantEntity> {
          leftLeg.setRotX(Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.7F * limbSwingAmount);
       }
       if (rightArm != null && leftArm != null) {
-         // 基础行走摆臂
          float baseSwing = Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.5F * limbSwingAmount;
-         // 攻击摆臂：triggerAttackSwing 时叠加大幅 X 轴摆动 + Z 轴横扫
          if (entity.isAttackSwinging()) {
-            float atkPhase = (float) entity.getAttackSwingTicks() / 12.0F; // 1→0
-            float atkX = Mth.sin(atkPhase * (float) Math.PI) * -2.8F;  // 向前挥出最高 -160°
-            float atkZ = Mth.sin(atkPhase * (float) Math.PI) * 0.6F;   // 伴随横向摆动约 35°
+            float atkPhase = (float) entity.getAttackSwingTicks() / 12.0F;
+            float atkX = Mth.sin(atkPhase * (float) Math.PI) * -2.8F;
+            float atkZ = Mth.sin(atkPhase * (float) Math.PI) * 0.6F;
             rightArm.setRotX(baseSwing + atkX);
             rightArm.setRotZ(atkZ);
-            // 左臂自然反向平衡
             leftArm.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.5F * limbSwingAmount);
             leftArm.setRotZ(-atkZ * 0.3F);
          } else {

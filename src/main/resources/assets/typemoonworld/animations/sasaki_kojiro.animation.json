@@ -1,0 +1,78 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.sasaki_kojiro.idle": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"bone": {
+					"position": {
+						"vector": [0, -6, 0]
+					},
+					"scale": {
+						"vector": [0.7, 0.7, 0.7]
+					}
+				},
+				"head": {
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"bone4": {
+					"position": {
+						"vector": [0, 0, 0]
+					},
+					"scale": {
+						"vector": [1, 0.9, 1]
+					}
+				},
+				"bone3": {
+					"position": {
+						"vector": [0, 0, 0]
+					},
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"body": {
+					"scale": {
+						"vector": [1, 1.1, 1.1]
+					}
+				},
+				"right arm": {
+					"scale": {
+						"vector": [1.1, 1, 1]
+					}
+				},
+				"left arm": {
+					"scale": {
+						"vector": [1.1, 1, 1]
+					}
+				},
+				"left_leg": {
+					"position": {
+						"vector": [0, -1, 0]
+					},
+					"scale": {
+						"vector": [1.2, 1.1, 1]
+					}
+				},
+				"right_leg": {
+					"position": {
+						"vector": [0, -1, 0]
+					},
+					"scale": {
+						"vector": [1.2, 1.1, 1]
+					}
+				},
+				"bone5": {
+					"position": {
+						"vector": [0, 0, 0]
+					},
+					"scale": {
+						"vector": [1.1, 1.1, 1]
+					}
+				}
+			}
+		}
+	}
+}

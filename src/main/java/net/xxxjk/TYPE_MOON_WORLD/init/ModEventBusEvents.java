@@ -21,6 +21,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.MERLIN.get(), MerlinEntity.createAttributes().build());
       event.put(ModEntities.STONE_MAN.get(), StoneManEntity.createAttributes().build());
       event.put(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianEntity.createAttributes().build());
-      event.put(ModEntities.SERVANT.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
    }
 }

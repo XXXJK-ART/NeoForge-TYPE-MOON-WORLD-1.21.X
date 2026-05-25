@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -67,6 +68,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
+         // 从者刷怪蛋ID传递：实体创建后设置servantId
          if (event.getEntity() instanceof Monster monster) {
             try {
                monster.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(monster, RyougiShikiEntity.class, true));
@@ -102,6 +104,23 @@ public class CommonEvents {
    public static void onLevelTick(Post event) {
       if (!event.getLevel().isClientSide) {
          if (event.getLevel() instanceof ServerLevel serverLevel) {
+            // 佐佐木小次郎 気息遮断 D — 每40tick检查，未受伤时概率获得隐身
+            if (serverLevel.getGameTime() % 40L == 0L) {
+               for (ServantEntity servant : serverLevel.getEntitiesOfClass(ServantEntity.class,
+                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
+                  e -> e.isAlive() && e.getPersistentData().getBoolean("StealthPassiveActive"))) {
+                  CompoundTag data = servant.getPersistentData();
+                  long currentTick = serverLevel.getGameTime();
+                  long lastHurtTick = data.getLong("LastHurtTick");
+                  boolean wasRecentlyHurt = servant.invulnerableTime > 10
+                     || (currentTick - lastHurtTick) < 100;
+                  if (!wasRecentlyHurt && !servant.hasEffect(MobEffects.INVISIBILITY)) {
+                     if (serverLevel.random.nextInt(100) < 15) {
+                        servant.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 100, 0, false, false, true));
+                     }
+                  }
+               }
+            }
             if (serverLevel.getGameTime() % 200L == 0L) {
                List<ServerPlayer> players = serverLevel.players();
                if (!players.isEmpty()) {
@@ -272,9 +291,6 @@ public class CommonEvents {
                if (event.getSource().getEntity() instanceof Player player) {
                   if (player.hasEffect(ModMobEffects.NINE_LIVES)) {
                      player.removeEffect(ModMobEffects.NINE_LIVES);
-                     if (player.level() instanceof ServerLevel var22) {
-                        ;
-                     }
 
                      LivingEntity target = event.getEntity();
                      double baseDamageAttr = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
@@ -425,6 +441,43 @@ public class CommonEvents {
 
       CompoundTag data = servant.getPersistentData();
       float damage = event.getAmount();
+      long currentTick = servant.level().getGameTime();
+
+      // 记录受伤时间（用于气息遮断被动判断）
+      data.putLong("LastHurtTick", currentTick);
+      if (SasakiKojiroCombatHelper.isSasakiKojiro(servant)
+         && data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)
+         && (event.getSource().getEntity() != null || event.getSource().getDirectEntity() != null)) {
+         SasakiKojiroCombatHelper.markCombat(servant);
+
+         float dodgeChance = data.contains(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
+            ? data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
+            : 0.9F;
+         if (servant.getRandom().nextFloat() < dodgeChance) {
+            data.remove("LastHurtTick");
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  2, 0.1, 0.1, 0.1, 0.0);
+               sl.sendParticles(ParticleTypes.CLOUD,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  8, 0.15, 0.25, 0.15, 0.03);
+               sl.playSound(null, servant.blockPosition(),
+                  SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.9F, 1.25F);
+            }
+            event.setCanceled(true);
+            return;
+         }
+
+         int durabilityLoss = SasakiKojiroCombatHelper.damageBladeFromIncomingAttack(servant, damage);
+         if (durabilityLoss > 0 && servant.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.CRIT,
+               servant.getX(), servant.getY() + servant.getBbHeight() * 0.6, servant.getZ(),
+               6, 0.2, 0.2, 0.2, 0.05);
+            sl.playSound(null, servant.blockPosition(),
+               SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.75F, 1.5F);
+         }
+      }
 
       // --- 十二试炼：B Rank 以下伤害免疫 ---
       if (data.getBoolean("GodHandActive")) {
@@ -513,6 +566,7 @@ public class CommonEvents {
          sl.getEntities().getAll().forEach(entity -> {
             if (entity instanceof ServantEntity servant) {
                CompoundTag data = servant.getPersistentData();
+               SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
                // 战斗续行 CD 倒计时
                if (data.getInt("BattleContinuationCooldown") > 0) {
                   data.putInt("BattleContinuationCooldown",
@@ -560,6 +614,7 @@ public class CommonEvents {
                vars.syncPlayerVariables(player);
             }
          }
+         // 英灵死亡后清理 pendingServantId，防止下一个刷怪蛋继承错误ID
       }
    }
 

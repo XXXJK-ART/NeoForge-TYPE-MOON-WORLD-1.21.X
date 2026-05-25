@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -16,6 +17,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
@@ -35,11 +37,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiEngine;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
@@ -55,9 +58,9 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class ServantEntity extends PathfinderMob implements GeoEntity {
+public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-
+   private final String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.STRING
    );
@@ -102,15 +105,41 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       return this.attackSwingTicks;
    }
 
-   public ServantEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
+   protected ServantEntity(EntityType<? extends ServantEntity> entityType, Level level, String servantId) {
       super(entityType, level);
+      this.servantId = servantId == null ? "" : servantId;
       this.setPathfindingMalus(PathType.WATER, -1.0F);
+   }
+
+   @Deprecated(forRemoval = false)
+   public static void setPendingServantId(String id) {
+   }
+
+   @Nullable
+   @Deprecated(forRemoval = false)
+   public static String consumePendingServantId() {
+      return null;
+   }
+
+   private ServantAnimations getAnimationSet() {
+      ServantDefinition def = this.getDefinition();
+      return def != null ? def.animations() : ServantAnimations.empty();
+   }
+
+   private net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization getSpecialization() {
+      ServantDefinition def = this.getDefinition();
+      return def != null ? def.specialization() : net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization.empty();
+   }
+
+   private void playActionAnimation(String key) {
+      this.getAnimationSet().actionAnimation(key).ifPresent(this::runActionAnim);
    }
 
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
-      builder.define(SERVANT_ID, "heracles");
+      // 如果有待传递的servantId（来自刷怪蛋），优先使用它
+      builder.define(SERVANT_ID, "");
       builder.define(OBEDIENCE_AXIS, ObedienceAxis.COOPERATIVE.id());
       builder.define(PRINCIPLE_AXIS, PrincipleAxis.NEUTRAL.id());
       builder.define(SOCIAL_DISPOSITION, SocialDisposition.NORMAL.id());
@@ -123,10 +152,12 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
    protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, false));
-      this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 0.8));
-      this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-      this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+      this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8));
+      this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+      this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+      this.targetSelector.addGoal(2, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(
+         this, net.minecraft.world.entity.monster.Monster.class, true));
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -136,7 +167,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
          .add(Attributes.ATTACK_DAMAGE, 5.0)
          .add(Attributes.ARMOR, 4.0)
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
-         .add(Attributes.FOLLOW_RANGE, 32.0)
+         .add(Attributes.FOLLOW_RANGE, 48.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
    }
 
@@ -230,13 +261,13 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
                                        MobSpawnType spawnType, @Nullable SpawnGroupData groupData) {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, groupData);
       if (!this.level().isClientSide()) {
-         this.applyDefinitionAttributes();
+         this.applyDefinitionAttributes(true);
          this.equipDefaultWeapon();
       }
       return result;
    }
 
-   private void applyDefinitionAttributes() {
+   private void applyDefinitionAttributes(boolean initializeDefaults) {
       ServantDefinition def = this.getDefinition();
       if (def == null) {
          return;
@@ -244,19 +275,33 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
 
       ServantParams params = def.parameters();
       this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(params.maxHealth());
-      this.setHealth((float) params.maxHealth());
+      if (initializeDefaults) {
+         this.setHealth((float) params.maxHealth());
+      } else if (this.getHealth() > this.getMaxHealth()) {
+         this.setHealth(this.getMaxHealth());
+      }
       this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(params.attackDamage());
       this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(params.movementSpeed());
       this.getAttribute(Attributes.ARMOR).setBaseValue(params.armor());
       this.setCustomName(Component.literal(def.displayNameZh()));
       this.setCustomNameVisible(true);
 
-      this.entityData.set(OBEDIENCE_AXIS, def.defaultObedience().id());
-      this.entityData.set(PRINCIPLE_AXIS, def.defaultPrinciple().id());
-      this.entityData.set(SOCIAL_DISPOSITION, def.defaultSocial().id());
-      this.entityData.set(COMBAT_DISPOSITION, def.defaultCombat().id());
-      this.entityData.set(FAVOR, (float) def.startingFavor());
-      this.entityData.set(CURRENT_MP, (float) params.manaPool());
+      if (initializeDefaults) {
+         this.entityData.set(OBEDIENCE_AXIS, def.defaultObedience().id());
+         this.entityData.set(PRINCIPLE_AXIS, def.defaultPrinciple().id());
+         this.entityData.set(SOCIAL_DISPOSITION, def.defaultSocial().id());
+         this.entityData.set(COMBAT_DISPOSITION, def.defaultCombat().id());
+         this.entityData.set(FAVOR, (float) def.startingFavor());
+         this.entityData.set(CURRENT_MP, (float) params.manaPool());
+      } else {
+         this.entityData.set(FAVOR, (float) Math.min(100.0, Math.max(0.0, this.getFavor())));
+         this.entityData.set(CURRENT_MP, (float) Math.min(this.getCurrentMp(), params.manaPool()));
+      }
+
+      // 确保索敌距离匹配定义的FOLLOW_RANGE
+      if (this.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+         this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(48.0);
+      }
 
       // 狂战士职阶额外移速补偿（狂化加护）
       if (def.classType() == ServantClassType.BERSERKER) {
@@ -270,23 +315,38 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       for (String skillId : def.skillIds()) {
          ServantSkillRegistry.execute(skillId, ctx);
       }
+
+      this.refreshDimensions();
    }
 
    /**
-    * 赫拉克勒斯生成时自动装备石斧剑到右手
+    * 生成时自动装备默认武器到右手
     */
    private void equipDefaultWeapon() {
-      String id = this.getServantId();
-      if ("heracles".equals(id)) {
-         this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.TEMPLE_STONE_SWORD_AXE.get()));
+      if (!this.getMainHandItem().isEmpty()) {
+         return;
       }
+
+      var specialization = this.getSpecialization();
+      specialization.defaultWeaponItemIdOptional().ifPresentOrElse(weaponId -> {
+         ResourceLocation rl = ResourceLocation.parse(weaponId);
+         BuiltInRegistries.ITEM.getOptional(rl).ifPresent(item -> this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item)));
+      }, () -> {});
+   }
+
+   public Vec3 getHandItemOffset() {
+      Vec3 offset = this.getSpecialization().handItemOffset();
+      if (offset.lengthSqr() == 0.0) {
+         return new Vec3(0.15, -0.8, 0.01);
+      }
+      return offset;
    }
 
    /**
     * 赫拉克勒斯不受石斧剑的负重debuff影响
     */
    public boolean isExemptFromStoneAxeDebuff() {
-      return "heracles".equals(this.getServantId());
+      return this.getSpecialization().immuneToStoneAxeDebuff();
    }
 
    // ======================== 动画触发方法 ========================
@@ -389,7 +449,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerJumpAttackAnimation() {
       this.jumpAttackAnimationTicks = 40; // 2s
-      runActionAnim("animation.heracles.jump_attack");
+      playActionAnimation("jump_attack");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(),
@@ -404,7 +464,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerChargeAnimation() {
       this.chargeAnimationTicks = 30; // 1.5s
-      runActionAnim("animation.heracles.charge");
+      playActionAnimation("charge");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + 0.5, this.getZ(),
@@ -417,7 +477,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerSweepAnimation() {
       this.sweepAnimationTicks = 30; // 1.5s
-      runActionAnim("animation.heracles.sweep");
+      playActionAnimation("sweep");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
@@ -430,7 +490,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerSlashAnimation() {
       this.slashAnimationTicks = 20; // 1s
-      runActionAnim("animation.heracles.slash");
+      playActionAnimation("slash");
       if (this.level() instanceof ServerLevel sl) {
          // 斩击弧线粒子
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
@@ -449,7 +509,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerTeleportAnimation() {
       this.teleportAnimationTicks = 15; // 0.75s
-      runActionAnim("animation.heracles.teleport_behind");
+      playActionAnimation("teleport_behind");
       if (this.level() instanceof ServerLevel sl) {
          // 瞬移烟雾粒子（原位残留）
          sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
@@ -468,7 +528,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerStompAnimation() {
       this.stompAnimationTicks = 20; // 1s
-      runActionAnim("animation.heracles.stomp");
+      playActionAnimation("stomp");
       if (this.level() instanceof ServerLevel sl) {
          // 跺脚冲击波
          sl.sendParticles(ParticleTypes.CLOUD,
@@ -498,7 +558,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerUppercutAnimation() {
       this.uppercutAnimationTicks = 20; // 1s
-      runActionAnim("animation.heracles.uppercut");
+      playActionAnimation("uppercut");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.7, this.getZ(),
@@ -516,7 +576,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
     */
    public void triggerHorizontalSwingAnimation() {
       this.horizontalSwingAnimationTicks = 20; // 1s
-      runActionAnim("animation.heracles.horizontal_swing");
+      playActionAnimation("horizontal_swing");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.55, this.getZ(),
@@ -617,7 +677,7 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
       String loadedId = tag.getString("ServantId");
-      this.entityData.set(SERVANT_ID, loadedId);
+      this.entityData.set(SERVANT_ID, this.servantId);
       this.xpReward = tag.getInt("Xp");
       this.entityData.set(OBEDIENCE_AXIS, tag.getInt("ObedienceAxis"));
       this.entityData.set(PRINCIPLE_AXIS, tag.getInt("PrincipleAxis"));
@@ -627,25 +687,37 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(CURRENT_MP, (float) tag.getDouble("CurrentMp"));
       this.cachedDefinition = null;
 
-      // 对于旧存档中没有 ServantId 的实体，自动回退到 heracles
+      // 对于旧存档中没有 ServantId 的实体，保持为空实体
       if (loadedId == null || loadedId.isEmpty()) {
-         this.entityData.set(SERVANT_ID, "heracles");
+         this.entityData.set(SERVANT_ID, this.servantId);
          this.cachedDefinition = null;
       }
 
       this.equipDefaultWeapon();
-      this.applyDefinitionAttributes();
+      this.applyDefinitionAttributes(false);
    }
 
    // ======================== Getters / Setters ========================
 
    public String getServantId() {
-      return this.entityData.get(SERVANT_ID);
+      return this.servantId;
    }
 
+   @Deprecated(forRemoval = false)
    public void setServantId(String id) {
-      this.entityData.set(SERVANT_ID, id);
+      this.entityData.set(SERVANT_ID, this.servantId);
       this.cachedDefinition = null;
+      // 立即从ServantDataRegistry重新查找定义
+      if (!this.servantId.isEmpty()) {
+         ServantDefinition def = ServantDataRegistry.get(this.servantId);
+         if (def != null) {
+            this.cachedDefinition = def;
+         } else {
+            net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.warn(
+               "Servant definition not found for fixed id='{}', entity={}", this.servantId, this);
+         }
+      }
+      this.refreshDimensions();
    }
 
    @Nullable
@@ -653,7 +725,13 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       if (this.cachedDefinition == null) {
          String id = this.getServantId();
          if (id != null && !id.isEmpty()) {
-            this.cachedDefinition = ServantDataRegistry.get(id);
+            ServantDefinition def = ServantDataRegistry.get(id);
+            if (def != null) {
+               this.cachedDefinition = def;
+            } else {
+               net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.warn(
+                  "Servant definition not found for id='{}', entity={}", id, this);
+            }
          }
       }
       return this.cachedDefinition;
@@ -703,6 +781,16 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(CURRENT_MP, (float) mp);
    }
 
+   @Override
+   public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+      super.onSyncedDataUpdated(key);
+      if (SERVANT_ID.equals(key)) {
+         this.cachedDefinition = null;
+         this.getDefinition();
+         this.refreshDimensions();
+      }
+   }
+
    public double getMaxMp() {
       ServantDefinition def = this.getDefinition();
       return def != null ? def.parameters().manaPool() : 100.0;
@@ -713,6 +801,18 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       return def != null ? def.parameters().critRatePercent() : 2.0;
    }
 
+   @Override
+   protected EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
+      var specialization = this.getSpecialization();
+      if (specialization.hasBodyDimensions()) {
+         return specialization.bodyDimensions();
+      }
+      if (this.getServantId() == null || this.getServantId().isEmpty()) {
+         return EntityDimensions.fixed(0.0F, 0.0F);
+      }
+      return super.getDefaultDimensions(pose);
+   }
+
    // ======================== GeckoLib ========================
 
    private AnimationController<ServantEntity> actionCtrl;
@@ -721,10 +821,9 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       // 主控制器：idle / walk（transition=3 正常过渡）
       controllers.add(new AnimationController<>(this, "controller", 3, event -> {
-         if (event.isMoving()) {
-            return event.setAndContinue(RawAnimation.begin().thenLoop("animation.heracles.walk"));
-         }
-         return event.setAndContinue(RawAnimation.begin().thenLoop("animation.heracles.idle"));
+         var animations = this.getAnimationSet();
+         String animation = event.isMoving() ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
+         return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : null;
       }));
       // 动作控制器（transition=0，通过 runActionAnim 触发）
       this.actionCtrl = new AnimationController<>(this, "action_controller", 0, event -> null);
@@ -732,14 +831,16 @@ public class ServantEntity extends PathfinderMob implements GeoEntity {
       // 吼叫控制器（transition=0，独立控制）
       controllers.add(new AnimationController<>(this, "roar_controller", 0, event -> {
          if (this.roarAnimationTicks > 0) {
-            return event.setAndContinue(RawAnimation.begin().thenPlay("animation.heracles.roar"));
+            String animation = this.getAnimationSet().actionAnimation("roar").orElse(null);
+            return animation != null ? event.setAndContinue(RawAnimation.begin().thenPlay(animation)) : null;
          }
          return null;
       }));
       // 砸地控制器（transition=0）
       controllers.add(new AnimationController<>(this, "slam_controller", 0, event -> {
          if (this.slamAnimationTicks > 0) {
-            return event.setAndContinue(RawAnimation.begin().thenPlay("animation.heracles.slam"));
+            String animation = this.getAnimationSet().actionAnimation("slam").orElse(null);
+            return animation != null ? event.setAndContinue(RawAnimation.begin().thenPlay(animation)) : null;
          }
          return null;
       }));

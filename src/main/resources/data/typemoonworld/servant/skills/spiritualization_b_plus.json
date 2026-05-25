@@ -1,0 +1,19 @@
+{
+  "id": "spiritualization_b_plus",
+  "display_name": "Spiritualization B+",
+  "display_name_zh": "灵体化 B+",
+  "type": "active",
+  "mp_cost": 20,
+  "cooldown_ticks": 0,
+  "duration_ticks": 60,
+  "effects": [
+    {
+      "effect_type": "cleanse",
+      "params": {}
+    },
+    {
+      "effect_type": "damage_resistance",
+      "params": { "duration_ticks": 60, "amplifier": 3.0 }
+    }
+  ]
+}

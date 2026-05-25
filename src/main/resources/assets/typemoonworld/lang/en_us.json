@@ -103,6 +103,7 @@
   "item.typemoonworld.stone_man_spawn_egg": "Stone Man Spawn Egg",
   "item.typemoonworld.mystic_magician_spawn_egg": "Magician Spawn Egg",
   "item.typemoonworld.heracles_spawn_egg": "Heracles (Berserker) Spawn Egg",
+  "item.typemoonworld.sasaki_kojiro_spawn_egg": "Sasaki Kojirou (Assassin) Spawn Egg",
   "item.typemoonworld.mystic_eyes_of_death_perception": "Mystic Eyes of Death Perception (Rainbow)",
   "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "Mystic Eyes of Death Perception (Noble Colour)",
   "item.typemoonworld.random_gem": "Random Gem",
@@ -672,6 +673,8 @@
   "message.typemoonworld.unlimited_blade_works.unlocked": "Unlimited Blade Works Unlocked!",
 
   "entity.typemoonworld.stone_man": "Stone Man",
+  "entity.typemoonworld.heracles": "Heracles",
+  "entity.typemoonworld.sasaki_kojiro": "Sasaki Kojirou",
   "entity.typemoonworld.merlin": "Merlin (Proto)",
   "entity.typemoonworld.mystic_magician": "Magician",
   "entity.typemoonworld.mystic_magician.generated_name": "%1$s",

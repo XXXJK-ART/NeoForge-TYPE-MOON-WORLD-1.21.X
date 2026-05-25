@@ -1,0 +1,15 @@
+{
+  "id": "souwa_expertise_b",
+  "display_name": "Souwa Expertise B",
+  "display_name_zh": "总和的心眼 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "sword_mastery",
+      "params": {}
+    }
+  ]
+}
