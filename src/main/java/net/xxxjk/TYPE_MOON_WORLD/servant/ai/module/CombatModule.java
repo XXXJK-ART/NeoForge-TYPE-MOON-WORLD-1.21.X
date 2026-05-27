@@ -16,8 +16,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
@@ -29,7 +32,7 @@ public final class CombatModule implements ServantAiModule {
    private static final double SLAM_RADIUS = 4.0;
    private static final double SLAM_DAMAGE_MULTIPLIER = 1.5;
    private static final int BASIC_ATTACK_COOLDOWN = 12;
-   private static final int ASSASSIN_BASIC_ATTACK_COOLDOWN = 8;
+   private static final int ASSASSIN_BASIC_ATTACK_COOLDOWN = 6;
    private static final int ROAR_COOLDOWN = 300;
    private static final int SLAM_COOLDOWN = 120;
    private static final int SWEEP_COOLDOWN = 100;
@@ -40,6 +43,8 @@ public final class CombatModule implements ServantAiModule {
    private static final int UPPERCUT_COOLDOWN = 50;
    private static final int H_SWING_COOLDOWN = 50;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
+   private static final int CU_RECAST_MP_COST = 25;
+   private static final int CU_RUNE_MP_COST = 20;
    private static final ResourceLocation VALOR_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_atk_boost");
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
@@ -54,11 +59,13 @@ public final class CombatModule implements ServantAiModule {
       }
 
       SasakiKojiroCombatHelper.markCombat(entity);
+      CuChulainnCombatHelper.markCombat(entity);
 
       CompoundTag data = entity.getPersistentData();
       double healthRatio = entity.getHealth() / entity.getMaxHealth();
       CombatDisposition combatStyle = entity.getCombatDisposition();
       var behaviorProfile = context.behaviorProfile();
+      int tick = (int) context.gameTick();
       ServantSpecialization specialization = context.definition().specialization();
       boolean canBreakForwardBlocks = specialization.hasCombatAction("break_forward_blocks");
       boolean canRoar = specialization.hasCombatAction("roar");
@@ -74,11 +81,19 @@ public final class CombatModule implements ServantAiModule {
       boolean canGroundSlam = specialization.hasCombatAction("slam");
       boolean canAssassinCombo = specialization.hasCombatAction("combo");
       boolean canTsurigameshi = specialization.hasCombatAction("tsurigameshi");
+      boolean canRuneCast = specialization.hasCombatAction("rune_cast");
+      boolean canGaeBolg = specialization.hasCombatAction("gae_bolg");
+      boolean canGaeBolgArmy = specialization.hasCombatAction("gae_bolg_army");
+      boolean canRecastStance = specialization.hasCombatAction("recast_stance");
       double retreatThreshold = Math.max(0.08, behaviorProfile.applyCombatDisposition(combatStyle));
       double aggressionRange = Math.max(16.0, behaviorProfile.aggressionRange());
+      if (CuChulainnCombatHelper.isLaguzActive(entity)) {
+         aggressionRange *= 2.0;
+      }
       double attackCommitDistance = Math.max(3.0, behaviorProfile.attackCommitDistance());
       double skillChanceScale = Math.max(0.75, Math.min(1.35, behaviorProfile.skillUsageFrequency() / 0.65));
       boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      boolean gaeBolgWindingUp = CuChulainnCombatHelper.isGaeBolgWindingUp(entity);
 
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
 
@@ -90,16 +105,58 @@ public final class CombatModule implements ServantAiModule {
 
       // 非狂化型：低血量撤退
       if (combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
-         performRetreatFootwork(entity, target, combatStyle);
-         return;
+         // 决死一战检测
+         int retreatStartTick = data.getInt("RetreatStartTick");
+         if (retreatStartTick == 0) {
+            data.putInt("RetreatStartTick", tick);
+            retreatStartTick = tick;
+         }
+
+         // 条件1：逃跑时间超过10秒 (200 ticks)
+         boolean timeout = (tick - retreatStartTick) >= 200;
+
+         // 条件2：周围3格内有3+敌人
+         AABB dangerZone = entity.getBoundingBox().inflate(3.0);
+         int enemyCount = entity.level().getEntitiesOfClass(
+            LivingEntity.class, dangerZone,
+            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
+         ).size();
+         boolean surrounded = enemyCount >= 3;
+
+         // 决死一战：清除逃跑计时器，获得临时buff
+         if (timeout || surrounded) {
+            data.remove("RetreatStartTick");
+            data.putBoolean("LastStandActive", true);
+            // 施加力量I 10秒 (200 ticks)
+            entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+               net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 200, 0, false, true));
+            // 施加抗性I 10秒
+            entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+               net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 200, 0, false, true));
+            // 粒子效果
+            if (entity.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.ENCHANTED_HIT,
+                  entity.getX(), entity.getY() + 1, entity.getZ(),
+                  30, 0.5, 0.5, 0.5, 0.1);
+            }
+            // 不执行逃跑，继续正常战斗
+         } else {
+            performRetreatFootwork(entity, target, combatStyle);
+            return;
+         }
       }
 
       // 动画中冻结
-      if (entity.isRoaring() || entity.isSlamming() || entity.isPerformingAction()) {
+      if (entity.isRoaring() || entity.isSlamming() || entity.isHardCombatActionActive()) {
          return;
       }
 
-      int tick = (int) context.gameTick();
+      if (!gaeBolgWindingUp && canRecastStance && healthRatio < 0.3 && CuChulainnCombatHelper.canUseRecastStance(entity)
+            && entity.getCurrentMp() >= CU_RECAST_MP_COST) {
+         performRecastStance(entity);
+         return;
+      }
+
       double distance = entity.distanceTo(target);
 
       // ——— 0. 被方块挡住：挥砍砸开前方路径（仅Berserker） ———
@@ -141,9 +198,18 @@ public final class CombatModule implements ServantAiModule {
             && passesSkillChance(entity, 25, skillChanceScale)) {
          entity.triggerJumpAttackAnimation();
          // 垂直 + 水平冲向目标
-         entity.setDeltaMovement(entity.getDeltaMovement().add(0.0, 1.2, 0.0));
-         Vec3 dir = target.position().subtract(entity.position()).normalize().scale(0.5);
-         entity.setDeltaMovement(entity.getDeltaMovement().add(dir.x, 0.0, dir.z));
+         entity.getNavigation().stop();
+         entity.jumpFromGround();
+         Vec3 dir = target.position().subtract(entity.position());
+         Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+         if (horizontal.lengthSqr() > 1.0E-4) {
+            horizontal = horizontal.normalize().scale(0.6);
+         } else {
+            horizontal = Vec3.ZERO;
+         }
+         Vec3 motion = entity.getDeltaMovement();
+         entity.setDeltaMovement(motion.x + horizontal.x, Math.max(motion.y + 0.55, 1.25), motion.z + horizontal.z);
+         entity.hasImpulse = true;
          // 着陆时触发AOE（模拟着陆砸地）
          performGroundSlam(entity);
          return;
@@ -257,6 +323,7 @@ public final class CombatModule implements ServantAiModule {
          if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= 30) {
             data.putInt("LastTsurigameshiTick", tick);
             entity.setCurrentMp(entity.getCurrentMp() - 30);
+            entity.triggerTsurigameshiAnimation();
             performTsurigameshi(entity, target);
             return;
          }
@@ -265,7 +332,7 @@ public final class CombatModule implements ServantAiModule {
       // ——— Assassin连击：近距离快速3连击 ———
       if (canAssassinCombo && distance < 3.0) {
          int lastCombo = data.getInt("LastComboTick");
-         if (tick - lastCombo >= 30 && passesSkillChance(entity, 40, skillChanceScale * 1.1)) {
+         if (tick - lastCombo >= 20 && passesSkillChance(entity, 50, skillChanceScale * 1.2)) {
             data.putInt("LastComboTick", tick);
             performAssassinCombo(entity, target);
             return;
@@ -273,6 +340,33 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // ——— 10. 上勾拳：近距离随机 ———
+      if (!gaeBolgWindingUp && canRuneCast && entity.getCurrentMp() >= CU_RUNE_MP_COST && CuChulainnCombatHelper.canCastRune(entity)) {
+         if (tryUseCuRune(entity, target, healthRatio, distance, hasLineOfSight)) {
+            return;
+         }
+      }
+
+      if (!gaeBolgWindingUp && canGaeBolgArmy && entity.getCurrentMp() >= 300 && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
+         AABB armyBox = entity.getBoundingBox().inflate(8.0);
+         int groupSize = entity.level().getEntitiesOfClass(
+            LivingEntity.class, armyBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
+         ).size();
+         boolean desperate = healthRatio <= 0.5;
+         boolean favorableWindow = distance >= 5.0 || groupSize >= 2 || desperate;
+         int armyChance = desperate ? 100 : (groupSize >= 3 ? 55 : 35);
+         if (favorableWindow && passesSkillChance(entity, armyChance, desperate ? skillChanceScale * 1.25 : skillChanceScale)) {
+            performGaeBolgArmy(entity, target);
+            return;
+         }
+      }
+
+      if (!gaeBolgWindingUp && canGaeBolg && entity.getCurrentMp() >= 10 && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
+         if (distance <= 12.0 && (distance <= 3.0 || passesSkillChance(entity, 28, skillChanceScale))) {
+            performGaeBolg(entity, target, distance <= 3.0);
+            return;
+         }
+      }
+
       if (canUppercut && distance <= 3.5) {
          int lastUppercut = data.getInt("LastUppercutTick");
          if (tick - lastUppercut >= UPPERCUT_COOLDOWN && passesSkillChance(entity, 35, skillChanceScale)) {
@@ -593,7 +687,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    /**
-    * 燕返（Tsurigameshi）：100固定真伤 + 概率斩杀
+    * 燕返（Tsurigameshi）：必杀一击特效增强版
     */
    private void performTsurigameshi(ServantEntity entity, LivingEntity target) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
@@ -604,6 +698,7 @@ public final class CombatModule implements ServantAiModule {
          }
 
          if (entity.getRandom().nextFloat() > hitChance) {
+            // 未命中：少量挥空粒子 + 弱攻击音效
             sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
                target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
                4, 0.25, 0.25, 0.25, 0.02);
@@ -619,19 +714,62 @@ public final class CombatModule implements ServantAiModule {
          target.hurt(entity.damageSources().mobAttack(entity), 300.0F);
          target.invulnerableTime = 0;
 
-         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+         // === 燕返命中：多重斩击轨迹 + 灵子散逸 ===
+         Vec3 entityPos = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
+         Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
+         Vec3 slashDir = targetPos.subtract(entityPos).normalize();
+
+         // 1. 弧形斩击轨迹粒子（从下往上三道弧线）
+         for (int arc = 0; arc < 3; arc++) {
+            double arcOffset = (arc - 1) * 0.4;
+            for (double t = 0.0; t <= 1.0; t += 0.1) {
+               Vec3 pos = entityPos.lerp(targetPos, t);
+               double wave = Math.sin(t * Math.PI) * 0.3 * (arc + 1);
+               Vec3 perp = new Vec3(-slashDir.z, 0, slashDir.x);
+               pos = pos.add(perp.scale(wave + arcOffset));
+               sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                  pos.x, pos.y, pos.z,
+                  2, 0.0, 0.0, 0.0, 0.0);
+            }
+         }
+
+         // 2. 目标处爆发：灵魂火焰 + 末影碎裂
+         sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+            target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(),
+            25, 0.5, 0.6, 0.5, 0.08);
+         sl.sendParticles(ParticleTypes.REVERSE_PORTAL,
             target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-            10, 0.5, 0.5, 0.5, 0.3);
-         sl.sendParticles(ParticleTypes.CRIT,
+            15, 0.4, 0.5, 0.4, 0.05);
+         sl.sendParticles(ParticleTypes.SOUL,
             target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
-            20, 0.4, 0.4, 0.4, 0.2);
-         sl.sendParticles(ParticleTypes.CLOUD,
+            12, 0.3, 0.4, 0.3, 0.04);
+
+         // 3. 斩击闪光（中心扩散）
+         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
+            target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+            8, 0.3, 0.3, 0.3, 0.15);
+
+         // 4. 实体侧烟雾残留（瞬移残影感）
+         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
             entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
-            15, 0.3, 0.3, 0.3, 0.1);
+            20, 0.3, 0.5, 0.3, 0.04);
+
+         // 5. 击飞效果
+         double dx = target.getX() - entity.getX();
+         double dz = target.getZ() - entity.getZ();
+         double dist = Math.sqrt(dx * dx + dz * dz);
+         if (dist > 0) {
+            target.push(dx / dist * 0.8, 0.4, dz / dist * 0.8);
+            target.hurtMarked = true;
+         }
+
+         // 6. 音效叠加
          sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-            SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.5F, 0.6F);
+            SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.8F, 0.5F);
          sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-            SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.0F, 0.8F);
+            SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.2F, 0.7F);
+         sl.playSound(null, target.getX(), target.getY(), target.getZ(),
+            SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.5F, 0.6F);
          return;
       }
 
@@ -652,18 +790,32 @@ public final class CombatModule implements ServantAiModule {
          target.hurt(entity.damageSources().generic(), bonusDmg);
       }
 
-      // 大量粒子效果
-      sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-         target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-         10, 0.5, 0.5, 0.5, 0.3);
+      // 通用燕返特效
+      Vec3 entityPos = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
+      Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
+      Vec3 slashDir = targetPos.subtract(entityPos).normalize();
+
+      // 弧形斩击轨迹
+      for (double t = 0.0; t <= 1.0; t += 0.15) {
+         Vec3 pos = entityPos.lerp(targetPos, t);
+         double wave = Math.sin(t * Math.PI) * 0.2;
+         Vec3 perp = new Vec3(-slashDir.z, 0, slashDir.x);
+         pos = pos.add(perp.scale(wave));
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            pos.x, pos.y, pos.z,
+            1, 0.0, 0.0, 0.0, 0.0);
+      }
+
+      sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+         target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(),
+         15, 0.4, 0.5, 0.4, 0.06);
       sl.sendParticles(ParticleTypes.CRIT,
          target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
          20, 0.4, 0.4, 0.4, 0.2);
-      sl.sendParticles(ParticleTypes.CLOUD,
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
-         15, 0.3, 0.3, 0.3, 0.1);
+         15, 0.3, 0.3, 0.3, 0.08);
 
-      // 音效
       sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
          SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.5F, 0.6F);
       sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
@@ -676,12 +828,13 @@ public final class CombatModule implements ServantAiModule {
    private void performAssassinCombo(ServantEntity entity, LivingEntity target) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
 
+      entity.triggerAttackSwing();
+
       for (int i = 0; i < 3; i++) {
          final int idx = i;
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(idx * 4, () -> {
             if (target.isAlive() && entity.isAlive()) {
                entity.doHurtTarget(target);
-               entity.triggerAttackSwing();
             }
          });
       }
@@ -793,6 +946,236 @@ public final class CombatModule implements ServantAiModule {
          entity.getY() + entity.getBbHeight() * 0.5,
          entity.getZ() + look.z * 1.5,
          6, 0.2, 0.2, 0.2, 0.05);
+   }
+
+   private boolean tryUseCuRune(ServantEntity entity, LivingEntity target, double healthRatio, double distance, boolean hasLineOfSight) {
+      CuChulainnCombatHelper.RuneType activeRune = CuChulainnCombatHelper.getActiveRune(entity);
+      if (healthRatio < 0.65 && entity.getPersistentData().getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG) <= 0.0F
+            && activeRune != CuChulainnCombatHelper.RuneType.ALGIZ) {
+         performAlgizRune(entity);
+         return true;
+      }
+
+      if (distance > 7.0 && hasLineOfSight && target != null && activeRune != CuChulainnCombatHelper.RuneType.ANSUZ) {
+         performAnsuzRune(entity, target);
+         return true;
+      }
+
+      if (distance <= 4.5 && activeRune != CuChulainnCombatHelper.RuneType.TIWAZ) {
+         performTiwazRune(entity);
+         return true;
+      }
+
+      if ((!hasLineOfSight || activeRune == CuChulainnCombatHelper.RuneType.NONE)
+            && activeRune != CuChulainnCombatHelper.RuneType.LAGUZ) {
+         performLaguzRune(entity);
+         return true;
+      }
+
+      return false;
+   }
+
+   private void performRecastStance(ServantEntity entity) {
+      entity.setCurrentMp(entity.getCurrentMp() - CU_RECAST_MP_COST);
+      entity.triggerRuneCastAnimation();
+      entity.setHealth(entity.getMaxHealth());
+      java.util.List<net.minecraft.world.effect.MobEffectInstance> active = java.util.List.copyOf(entity.getActiveEffects());
+      for (net.minecraft.world.effect.MobEffectInstance effect : active) {
+         if (effect.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL) {
+            entity.removeEffect(effect.getEffect());
+         }
+      }
+      CuChulainnCombatHelper.markRecastUsed(entity);
+      if (entity.level() instanceof ServerLevel sl) {
+         spawnRuneParticles(sl, entity, ModParticles.TIWAZ_RUNE.get(), 18, 0.45, 0.02);
+         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
+            entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
+            18, 0.4, 0.6, 0.4, 0.05);
+      }
+   }
+
+   private void performLaguzRune(ServantEntity entity) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - CU_RUNE_MP_COST);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      CuChulainnCombatHelper.setRune(entity, CuChulainnCombatHelper.RuneType.LAGUZ, 200);
+      spawnRuneParticles(sl, entity, ModParticles.LAGUZ_RUNE.get(), 16, 0.65, 0.01);
+      sl.sendParticles(ParticleTypes.ENCHANT,
+         entity.getX(), entity.getY() + entity.getBbHeight() * 0.6, entity.getZ(),
+         20, 0.6, 0.8, 0.6, 0.04);
+   }
+
+   private void performTiwazRune(ServantEntity entity) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - CU_RUNE_MP_COST);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      CuChulainnCombatHelper.setRune(entity, CuChulainnCombatHelper.RuneType.TIWAZ, 300);
+      spawnRuneParticles(sl, entity, ModParticles.TIWAZ_RUNE.get(), 18, 0.45, 0.02);
+      sl.sendParticles(ParticleTypes.END_ROD,
+         entity.getX(), entity.getY() + entity.getBbHeight() * 0.6, entity.getZ(),
+         14, 0.45, 0.7, 0.45, 0.03);
+   }
+
+   private void performAlgizRune(ServantEntity entity) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - CU_RUNE_MP_COST);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      CuChulainnCombatHelper.setRune(entity, CuChulainnCombatHelper.RuneType.ALGIZ, 160);
+      spawnRuneParticles(sl, entity, ModParticles.ALGIZ_RUNE.get(), 16, 0.55, 0.01);
+      sl.sendParticles(ParticleTypes.WAX_ON,
+         entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(),
+         18, 0.5, 0.8, 0.5, 0.03);
+   }
+
+   private void performAnsuzRune(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - CU_RUNE_MP_COST);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      CuChulainnCombatHelper.setRune(entity, CuChulainnCombatHelper.RuneType.ANSUZ, 40);
+      spawnRuneParticles(sl, entity, ModParticles.ANSUZ_RUNE.get(), 18, 0.45, 0.02);
+      Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.65, 0.0);
+      Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+      for (double t = 0.0; t <= 1.0; t += 0.1) {
+         Vec3 pos = start.lerp(end, t);
+         sl.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 1, 0.03, 0.03, 0.03, 0.0);
+      }
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(8, () -> {
+         if (!(entity.level() instanceof ServerLevel serverLevel) || !entity.isAlive()) {
+            return;
+         }
+         Vec3 impact = target.isAlive()
+            ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)
+            : end;
+         AABB fireBox = new AABB(impact, impact).inflate(2.5);
+         for (LivingEntity living : serverLevel.getEntitiesOfClass(LivingEntity.class, fireBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
+            living.hurt(entity.damageSources().magic(), 80.0F);
+            living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 100));
+         }
+         serverLevel.sendParticles(ParticleTypes.FLAME, impact.x, impact.y, impact.z, 24, 0.8, 0.5, 0.8, 0.05);
+         serverLevel.sendParticles(ParticleTypes.SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
+         serverLevel.playSound(null, impact.x, impact.y, impact.z, SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.1F, 0.8F);
+      });
+   }
+
+   private void performGaeBolg(ServantEntity entity, LivingEntity target, boolean meleeMode) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - 10.0);
+      CuChulainnCombatHelper.markSingleGaeBolg(entity);
+      CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      entity.triggerGaeBolgThrowAnimation(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      Vec3 fallbackAim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, () -> {
+         releaseSingleGaeBolg(entity, target, meleeMode, fallbackAim);
+      });
+   }
+
+   private void performGaeBolgArmy(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - 300.0);
+      CuChulainnCombatHelper.markArmyGaeBolg(entity);
+      CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      entity.triggerGaeBolgThrowAnimation(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      Vec3 fallbackAim = target.position().add(0.0, target.getBbHeight() * 0.3, 0.0);
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, () -> {
+         releaseArmyGaeBolg(entity, target, fallbackAim);
+      });
+   }
+
+   private void releaseSingleGaeBolg(ServantEntity entity, LivingEntity target, boolean preferMelee, Vec3 fallbackAim) {
+      CuChulainnCombatHelper.clearGaeBolgWindup(entity);
+      if (!(entity.level() instanceof ServerLevel sl) || !entity.isAlive()) {
+         return;
+      }
+
+      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : null;
+      if (resolvedTarget == null) {
+         return;
+      }
+
+      if (preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
+         applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
+         if (resolvedTarget.isAlive() && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget)) {
+            resolvedTarget.invulnerableTime = 0;
+            resolvedTarget.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);
+            if (resolvedTarget.isAlive()) {
+               resolvedTarget.setHealth(0.0F);
+               resolvedTarget.die(entity.damageSources().genericKill());
+            }
+         }
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.5, resolvedTarget.getZ(),
+            4, 0.0, 0.0, 0.0, 0.0);
+         sl.sendParticles(ParticleTypes.CRIT,
+            resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.55, resolvedTarget.getZ(),
+            16, 0.25, 0.25, 0.25, 0.12);
+         return;
+      }
+
+      GaeBulgProjectileEntity projectile = new GaeBulgProjectileEntity(sl, entity);
+      projectile.setMode(GaeBulgProjectileEntity.Mode.SINGLE);
+      projectile.setTrackedTarget(resolvedTarget);
+      projectile.setPos(entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ());
+      Vec3 aim = resolvedTarget.position().add(0.0, resolvedTarget.getBbHeight() * 0.45, 0.0);
+      if (fallbackAim != null && !resolvedTarget.isAlive()) {
+         aim = fallbackAim;
+      }
+      Vec3 toTarget = aim.subtract(projectile.position()).normalize();
+      projectile.shoot(toTarget.x, toTarget.y + 0.06, toTarget.z, 2.4F, 0.0F);
+      sl.addFreshEntity(projectile);
+   }
+
+   private void releaseArmyGaeBolg(ServantEntity entity, LivingEntity target, Vec3 fallbackAim) {
+      CuChulainnCombatHelper.clearGaeBolgWindup(entity);
+      if (!(entity.level() instanceof ServerLevel sl) || !entity.isAlive()) {
+         return;
+      }
+
+      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : null;
+      if (resolvedTarget == null && fallbackAim == null) {
+         return;
+      }
+
+      GaeBulgProjectileEntity projectile = new GaeBulgProjectileEntity(sl, entity);
+      projectile.setMode(GaeBulgProjectileEntity.Mode.ARMY);
+      if (resolvedTarget != null) {
+         projectile.setTrackedTarget(resolvedTarget);
+      }
+      projectile.setPos(entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ());
+      Vec3 aim = resolvedTarget != null
+         ? resolvedTarget.position().add(0.0, resolvedTarget.getBbHeight() * 0.3, 0.0)
+         : fallbackAim;
+      Vec3 toTarget = aim.subtract(projectile.position()).normalize();
+      projectile.shoot(toTarget.x, toTarget.y + 0.14, toTarget.z, 2.0F, 0.0F);
+      sl.addFreshEntity(projectile);
+   }
+
+   private void applyFixedNoArmorDamage(ServantEntity attacker, LivingEntity target, float damage) {
+      float before = target.getHealth();
+      target.invulnerableTime = 0;
+      target.hurt(attacker.damageSources().mobAttack(attacker), damage);
+      target.invulnerableTime = 0;
+      float desired = Math.max(0.0F, before - damage);
+      if (target.getHealth() > desired) {
+         target.setHealth(desired);
+      }
+   }
+
+   private void spawnRuneParticles(ServerLevel level, ServantEntity entity, net.minecraft.core.particles.SimpleParticleType particle, int count, double spread, double speed) {
+      level.sendParticles(
+         particle,
+         entity.getX(),
+         entity.getY() + entity.getBbHeight() * 0.72,
+         entity.getZ(),
+         1,
+         0.0,
+         0.0,
+         0.0,
+         0.0
+      );
    }
 
    private void performRoar(ServantEntity entity) {

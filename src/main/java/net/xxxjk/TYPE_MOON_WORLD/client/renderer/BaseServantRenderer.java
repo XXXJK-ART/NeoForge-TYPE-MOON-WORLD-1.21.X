@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -11,6 +12,7 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
+import software.bernie.geckolib.util.Color;
 
 public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRenderer<T> {
    public BaseServantRenderer(Context renderManager, GeoModel<T> model, float scale) {
@@ -47,5 +49,27 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
             }
          }
       );
+   }
+
+   @Override
+   protected float getDeathMaxRotation(T animatable) {
+      return animatable.isSpiritualDissolving() ? 0.0F : super.getDeathMaxRotation(animatable);
+   }
+
+   @Override
+   public int getPackedOverlay(T animatable, float u, float partialTick) {
+      return animatable.isSpiritualDissolving() ? OverlayTexture.NO_OVERLAY : super.getPackedOverlay(animatable, u, partialTick);
+   }
+
+   @Override
+   public Color getRenderColor(T animatable, float partialTick, int packedLight) {
+      if (!animatable.isSpiritualDissolving()) {
+         return super.getRenderColor(animatable, partialTick, packedLight);
+      }
+
+      float progress = animatable.getSpiritualDissolveProgress(partialTick);
+      float fade = progress < 0.55F ? 1.0F : Math.max(0.0F, 1.0F - (progress - 0.55F) / 0.45F);
+      int alpha = Math.max(0, Math.min(255, Math.round(fade * 255.0F)));
+      return Color.ofARGB(alpha, 255, 255, 255);
    }
 }

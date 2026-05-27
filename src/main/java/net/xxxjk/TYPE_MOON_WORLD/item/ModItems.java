@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
@@ -355,6 +356,26 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
+    public static final DeferredItem<Item> GAE_BULG = ITEMS.register("gae_bulg",
+            () -> new GaeBulgItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_bulg_damage"),
+                                            10.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_bulg_speed"),
+                                            1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_bulg_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+
     public static final DeferredItem<Item> RYOUGI_SHIKI_SPAWN_EGG = ITEMS.register("ryougi_shiki_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.RYOUGI_SHIKI, 0x99CCFF, 0xCC0022, new Item.Properties()));
 
@@ -372,6 +393,9 @@ public class ModItems {
 
     public static final DeferredItem<Item> SASAKI_KOJIRO_SPAWN_EGG = ITEMS.register("sasaki_kojiro_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SASAKI_KOJIRO, 0x3355AA, 0x6633AA));
+
+    public static final DeferredItem<Item> CU_CHULAINN_SPAWN_EGG = ITEMS.register("cu_chulainn_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CU_CHULAINN, 0x2B60C7, 0xC8D1DD));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

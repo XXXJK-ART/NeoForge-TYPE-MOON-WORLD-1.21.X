@@ -55,6 +55,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -445,6 +447,47 @@ public class CommonEvents {
 
       // 记录受伤时间（用于气息遮断被动判断）
       data.putLong("LastHurtTick", currentTick);
+      if (CuChulainnCombatHelper.isCuChulainn(servant)) {
+         CuChulainnCombatHelper.markCombat(servant);
+         if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
+            && !CuChulainnCombatHelper.isMovementRestricted(servant)
+            && event.getSource().getDirectEntity() instanceof Projectile projectile
+            && projectile.getOwner() != servant) {
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.END_ROD,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                  8, 0.2, 0.25, 0.2, 0.02);
+               sl.sendParticles(ParticleTypes.ENCHANT,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  12, 0.3, 0.4, 0.3, 0.03);
+            }
+            event.setCanceled(true);
+            return;
+         }
+
+         float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
+         if (shield > 0.0F) {
+            if (shield >= damage) {
+               data.putFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG, shield - damage);
+               if (servant.level() instanceof ServerLevel sl) {
+                  sl.sendParticles(ParticleTypes.WAX_ON,
+                     servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                     10, 0.3, 0.4, 0.3, 0.02);
+               }
+               event.setCanceled(true);
+               return;
+            }
+
+            event.setAmount(damage - shield);
+            damage = event.getAmount();
+            data.remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.WAX_OFF,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                  12, 0.35, 0.4, 0.35, 0.03);
+            }
+         }
+      }
       if (SasakiKojiroCombatHelper.isSasakiKojiro(servant)
          && data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)
          && (event.getSource().getEntity() != null || event.getSource().getDirectEntity() != null)) {
@@ -567,6 +610,7 @@ public class CommonEvents {
             if (entity instanceof ServantEntity servant) {
                CompoundTag data = servant.getPersistentData();
                SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
+               CuChulainnCombatHelper.tickStatus(servant);
                // 战斗续行 CD 倒计时
                if (data.getInt("BattleContinuationCooldown") > 0) {
                   data.putInt("BattleContinuationCooldown",
@@ -601,6 +645,17 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         ServantEntity servantKiller = null;
+         if (event.getSource().getEntity() instanceof ServantEntity servant) {
+            servantKiller = servant;
+         } else if (event.getSource().getDirectEntity() instanceof Projectile projectile && projectile.getOwner() instanceof ServantEntity servantOwner) {
+            servantKiller = servantOwner;
+         }
+
+         if (servantKiller != null && event.getEntity() instanceof LivingEntity defeatedLiving) {
+            ServantVoiceHelper.tryPlayVictory(servantKiller, defeatedLiving);
+         }
+
          if (event.getSource().getEntity() instanceof Player player
             && event.getEntity() instanceof Monster mob
             && mob.getTarget() instanceof MerlinEntity merlin

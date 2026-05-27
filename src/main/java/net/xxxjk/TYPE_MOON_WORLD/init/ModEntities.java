@@ -12,6 +12,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
@@ -25,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
@@ -191,6 +193,19 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<SasakiKojiroEntity>> SASAKI_KOJIRO = ENTITY_TYPES.register(
       "sasaki_kojiro", () -> Builder.of(SasakiKojiroEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("sasaki_kojiro")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<CuChulainnEntity>> CU_CHULAINN = ENTITY_TYPES.register(
+      "cu_chulainn", () -> Builder.of(CuChulainnEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cu_chulainn")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GaeBulgProjectileEntity>> GAE_BULG_PROJECTILE = ENTITY_TYPES.register(
+      "gae_bulg_projectile",
+      () -> Builder.<GaeBulgProjectileEntity>of(
+            (entityType, level) -> new GaeBulgProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.5F, 0.5F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("gae_bulg_projectile")
    );
 
    public static void register(IEventBus eventBus) {

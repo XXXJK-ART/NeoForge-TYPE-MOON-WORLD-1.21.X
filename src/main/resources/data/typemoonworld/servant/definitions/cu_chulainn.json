@@ -1,0 +1,78 @@
+{
+  "id": "cu_chulainn",
+  "display_name": "Cu Chulainn",
+  "display_name_zh": "库·丘林",
+  "class_type": "lancer",
+  "faction": "human",
+  "traits": ["divine", "servant", "humanoid", "living_human", "lancer", "male"],
+  "parameters": {
+    "endurance": "C",
+    "endurance_plus": false,
+    "strength": "B",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "C",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/cu_chulainn.geo.json",
+    "texture": "typemoonworld:textures/entity/cu_chulainn.png",
+    "animation": "typemoonworld:animations/cu_chulainn.animation.json",
+    "animations": {
+      "idle": "animation.cu_chulainn.idle",
+      "walk": "animation.cu_chulainn.walk",
+      "slash": "animation.cu_chulainn.slash",
+      "sweep": "animation.cu_chulainn.sweep",
+      "uppercut": "animation.cu_chulainn.slash",
+      "horizontal_swing": "animation.cu_chulainn.horizontal_swing",
+      "gae_bolg_throw": "animation.cu_chulainn.gae_bolg_throw",
+      "rune_cast": "animation.cu_chulainn.rune_cast"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.12,
+      "y": -0.85,
+      "z": 0.18
+    },
+    "default_weapon": "typemoonworld:gae_bulg",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "sweep",
+      "slash",
+      "uppercut",
+      "horizontal_swing",
+      "rune_cast",
+      "gae_bolg",
+      "gae_bolg_army",
+      "recast_stance"
+    ]
+  },
+  "skills": [
+    "battle_continuation_a",
+    "protection_from_arrows_b",
+    "recast_stance_c",
+    "divinity_b"
+  ],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "orderly",
+    "social": "enthusiastic",
+    "combat": "frenzied",
+    "starting_favor": 55.0
+  },
+  "ai_config": "default_lancer",
+  "spawn_egg": {
+    "primary": 2842567,
+    "secondary": 13160669
+  }
+}

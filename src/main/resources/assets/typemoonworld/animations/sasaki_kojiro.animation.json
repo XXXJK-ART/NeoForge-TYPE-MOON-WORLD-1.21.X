@@ -1,78 +1,447 @@
 {
-	"format_version": "1.8.0",
-	"animations": {
-		"animation.sasaki_kojiro.idle": {
-			"loop": "hold_on_last_frame",
-			"bones": {
-				"bone": {
-					"position": {
-						"vector": [0, -6, 0]
-					},
-					"scale": {
-						"vector": [0.7, 0.7, 0.7]
-					}
-				},
-				"head": {
-					"position": {
-						"vector": [0, 0, 0]
-					}
-				},
-				"bone4": {
-					"position": {
-						"vector": [0, 0, 0]
-					},
-					"scale": {
-						"vector": [1, 0.9, 1]
-					}
-				},
-				"bone3": {
-					"position": {
-						"vector": [0, 0, 0]
-					},
-					"scale": {
-						"vector": [1, 1, 1]
-					}
-				},
-				"body": {
-					"scale": {
-						"vector": [1, 1.1, 1.1]
-					}
-				},
-				"right arm": {
-					"scale": {
-						"vector": [1.1, 1, 1]
-					}
-				},
-				"left arm": {
-					"scale": {
-						"vector": [1.1, 1, 1]
-					}
-				},
-				"left_leg": {
-					"position": {
-						"vector": [0, -1, 0]
-					},
-					"scale": {
-						"vector": [1.2, 1.1, 1]
-					}
-				},
-				"right_leg": {
-					"position": {
-						"vector": [0, -1, 0]
-					},
-					"scale": {
-						"vector": [1.2, 1.1, 1]
-					}
-				},
-				"bone5": {
-					"position": {
-						"vector": [0, 0, 0]
-					},
-					"scale": {
-						"vector": [1.1, 1.1, 1]
-					}
-				}
-			}
-		}
-	}
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.sasaki_kojiro.idle": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
+          }
+        },
+        "bone4": {
+          "scale": {
+            "vector": [1, 0.9, 1]
+          }
+        },
+        "body": {
+          "scale": {
+            "vector": [1, 1.1, 1.1]
+          }
+        },
+        "right arm": {
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left arm": {
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left_leg": {
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "right_leg": {
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "bone5": {
+          "scale": {
+            "vector": [1.1, 1.1, 1]
+          }
+        }
+      }
+    },
+    "animation.sasaki_kojiro.walk": {
+      "loop": true,
+      "animation_length": 1.2,
+      "bones": {
+        "bone": {
+          "position": {
+            "0.0": { "vector": [0, -6, 0] },
+            "0.3": { "vector": [0, -5.8, 0] },
+            "0.6": { "vector": [0, -6, 0] },
+            "0.9": { "vector": [0, -5.8, 0] },
+            "1.2": { "vector": [0, -6, 0] }
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": { "vector": [1, 0, 0] },
+            "0.3": { "vector": [-2, 0, 0] },
+            "0.6": { "vector": [1, 0, 0] },
+            "0.9": { "vector": [-2, 0, 0] },
+            "1.2": { "vector": [1, 0, 0] }
+          },
+          "scale": {
+            "vector": [1, 1.1, 1.1]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.3": { "vector": [1.5, 0, 0] },
+            "0.6": { "vector": [0, 0, 0] },
+            "0.9": { "vector": [1.5, 0, 0] },
+            "1.2": { "vector": [0, 0, 0] }
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": { "vector": [10, 0, 0] },
+            "0.3": { "vector": [-18, 0, 0] },
+            "0.6": { "vector": [16, 0, 0] },
+            "0.9": { "vector": [-18, 0, 0] },
+            "1.2": { "vector": [10, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": { "vector": [-12, 0, 0] },
+            "0.3": { "vector": [18, 0, 0] },
+            "0.6": { "vector": [-18, 0, 0] },
+            "0.9": { "vector": [18, 0, 0] },
+            "1.2": { "vector": [-12, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": { "vector": [-18, 0, 0] },
+            "0.3": { "vector": [22, 0, 0] },
+            "0.6": { "vector": [-18, 0, 0] },
+            "0.9": { "vector": [22, 0, 0] },
+            "1.2": { "vector": [-18, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": { "vector": [22, 0, 0] },
+            "0.3": { "vector": [-18, 0, 0] },
+            "0.6": { "vector": [22, 0, 0] },
+            "0.9": { "vector": [-18, 0, 0] },
+            "1.2": { "vector": [22, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "bone4": {
+          "scale": {
+            "vector": [1, 0.9, 1]
+          }
+        },
+        "bone5": {
+          "scale": {
+            "vector": [1.1, 1.1, 1]
+          }
+        }
+      }
+    },
+    "animation.sasaki_kojiro.swallow_return": {
+      "loop": false,
+      "animation_length": 1.0,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": { "vector": [0, -10, 0] },
+            "0.2": { "vector": [-12, -28, 0] },
+            "0.45": { "vector": [10, 22, -6] },
+            "0.7": { "vector": [-3, 8, 0] },
+            "1.0": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1, 1.1, 1.1]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.2": { "vector": [-10, -16, 0] },
+            "0.45": { "vector": [8, 20, 0] },
+            "1.0": { "vector": [0, 0, 0] }
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": { "vector": [-25, -15, 10] },
+            "0.2": { "vector": [-110, -20, 35] },
+            "0.45": { "vector": [65, 22, -55] },
+            "0.7": { "vector": [10, 6, -8] },
+            "1.0": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": { "vector": [8, 10, -10] },
+            "0.2": { "vector": [14, 18, -18] },
+            "0.45": { "vector": [-18, -8, 18] },
+            "1.0": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.2": { "vector": [-10, 0, 0] },
+            "0.45": { "vector": [6, 0, 0] },
+            "1.0": { "vector": [0, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.2": { "vector": [12, 0, 0] },
+            "0.45": { "vector": [-6, 0, 0] },
+            "1.0": { "vector": [0, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "bone4": {
+          "scale": {
+            "vector": [1, 0.9, 1]
+          }
+        },
+        "bone5": {
+          "scale": {
+            "vector": [1.1, 1.1, 1]
+          }
+        }
+      }
+    },
+    "animation.sasaki_kojiro.slash_diagonal": {
+      "loop": false,
+      "animation_length": 0.55,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.11": { "vector": [-10, -18, 0] },
+            "0.275": { "vector": [10, 16, -6] },
+            "0.41": { "vector": [-2, 6, 0] },
+            "0.55": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1, 1.1, 1.1]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.11": { "vector": [-6, -10, 0] },
+            "0.275": { "vector": [6, 14, 0] },
+            "0.55": { "vector": [0, 0, 0] }
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": { "vector": [-12, -5, 5] },
+            "0.11": { "vector": [-98, -14, 28] },
+            "0.275": { "vector": [58, 16, -50] },
+            "0.41": { "vector": [8, 4, -10] },
+            "0.55": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": { "vector": [6, 8, -8] },
+            "0.11": { "vector": [12, 15, -14] },
+            "0.275": { "vector": [-10, -6, 12] },
+            "0.55": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.11": { "vector": [-8, 0, 0] },
+            "0.275": { "vector": [4, 0, 0] },
+            "0.55": { "vector": [0, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.11": { "vector": [10, 0, 0] },
+            "0.275": { "vector": [-5, 0, 0] },
+            "0.55": { "vector": [0, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "bone4": {
+          "scale": {
+            "vector": [1, 0.9, 1]
+          }
+        },
+        "bone5": {
+          "scale": {
+            "vector": [1.1, 1.1, 1]
+          }
+        }
+      }
+    },
+    "animation.sasaki_kojiro.horizontal_swing": {
+      "loop": false,
+      "animation_length": 0.575,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": { "vector": [0, -14, 0] },
+            "0.14": { "vector": [0, -24, 0] },
+            "0.29": { "vector": [0, 26, 0] },
+            "0.41": { "vector": [0, 8, 0] },
+            "0.575": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1, 1.1, 1.1]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": { "vector": [0, -10, 0] },
+            "0.14": { "vector": [0, -16, 0] },
+            "0.29": { "vector": [0, 18, 0] },
+            "0.575": { "vector": [0, 0, 0] }
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": { "vector": [-48, -42, 34] },
+            "0.14": { "vector": [-56, -58, 38] },
+            "0.29": { "vector": [8, 44, -34] },
+            "0.41": { "vector": [2, 12, -10] },
+            "0.575": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": { "vector": [10, 10, 0] },
+            "0.14": { "vector": [16, 18, 0] },
+            "0.29": { "vector": [-6, -4, 0] },
+            "0.575": { "vector": [0, 0, 0] }
+          },
+          "scale": {
+            "vector": [1.1, 1, 1]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.14": { "vector": [-6, 0, 0] },
+            "0.29": { "vector": [4, 0, 0] },
+            "0.575": { "vector": [0, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.14": { "vector": [8, 0, 0] },
+            "0.29": { "vector": [-4, 0, 0] },
+            "0.575": { "vector": [0, 0, 0] }
+          },
+          "position": {
+            "vector": [0, -1, 0]
+          },
+          "scale": {
+            "vector": [1.2, 1.1, 1]
+          }
+        },
+        "bone4": {
+          "scale": {
+            "vector": [1, 0.9, 1]
+          }
+        },
+        "bone5": {
+          "scale": {
+            "vector": [1.1, 1.1, 1]
+          }
+        }
+      }
+    }
+  }
 }

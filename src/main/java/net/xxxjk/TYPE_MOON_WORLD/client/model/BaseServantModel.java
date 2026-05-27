@@ -37,6 +37,10 @@ public class BaseServantModel<T extends ServantEntity> extends GeoModel<T> {
 
    @Override
    public void setCustomAnimations(T entity, long instanceId, AnimationState<T> state) {
+      if (entity.tickCount <= 2) {
+         this.applySpawnPoseFallback(entity);
+      }
+
       GeoBone head = this.getAnimationProcessor().getBone("head");
       if (head != null) {
          EntityModelData entityData = state.getData(DataTickets.ENTITY_MODEL_DATA);
@@ -44,38 +48,8 @@ public class BaseServantModel<T extends ServantEntity> extends GeoModel<T> {
          head.setRotY(yawDeg * (float) (Math.PI / 180.0));
          head.setRotX(entityData.headPitch() * (float) (Math.PI / 180.0));
       }
+   }
 
-      float limbSwing = state.getLimbSwing();
-      float limbSwingAmount = state.getLimbSwingAmount();
-      GeoBone rightLeg = this.getAnimationProcessor().getBone("right leg");
-      GeoBone leftLeg = this.getAnimationProcessor().getBone("left leg");
-      GeoBone rightArm = this.getAnimationProcessor().getBone("right arm");
-      GeoBone leftArm = this.getAnimationProcessor().getBone("left arm");
-      if (rightLeg == null) rightLeg = this.getAnimationProcessor().getBone("right_leg");
-      if (leftLeg == null) leftLeg = this.getAnimationProcessor().getBone("left_leg");
-      if (rightArm == null) rightArm = this.getAnimationProcessor().getBone("right_arm");
-      if (leftArm == null) leftArm = this.getAnimationProcessor().getBone("left_arm");
-
-      if (rightLeg != null && leftLeg != null) {
-         rightLeg.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.7F * limbSwingAmount);
-         leftLeg.setRotX(Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.7F * limbSwingAmount);
-      }
-      if (rightArm != null && leftArm != null) {
-         float baseSwing = Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.5F * limbSwingAmount;
-         if (entity.isAttackSwinging()) {
-            float atkPhase = (float) entity.getAttackSwingTicks() / 12.0F;
-            float atkX = Mth.sin(atkPhase * (float) Math.PI) * -2.8F;
-            float atkZ = Mth.sin(atkPhase * (float) Math.PI) * 0.6F;
-            rightArm.setRotX(baseSwing + atkX);
-            rightArm.setRotZ(atkZ);
-            leftArm.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.5F * limbSwingAmount);
-            leftArm.setRotZ(-atkZ * 0.3F);
-         } else {
-            rightArm.setRotX(baseSwing);
-            leftArm.setRotX(Mth.cos(limbSwing * 0.6662F) * 0.5F * limbSwingAmount);
-            rightArm.setRotZ(0);
-            leftArm.setRotZ(0);
-         }
-      }
+   protected void applySpawnPoseFallback(T entity) {
    }
 }

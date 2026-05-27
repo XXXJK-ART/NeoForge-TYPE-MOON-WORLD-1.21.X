@@ -17,8 +17,10 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -55,10 +57,13 @@ import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
+   private static final String ACTION_CONTROLLER = "action_controller";
+   private static final int SPIRITUAL_DISSOLVE_DURATION = 50;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
@@ -82,12 +87,15 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final EntityDataAccessor<Float> CURRENT_MP = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.FLOAT
    );
+   private static final EntityDataAccessor<Boolean> SPIRITUAL_DISSOLVING = SynchedEntityData.defineId(
+      ServantEntity.class, EntityDataSerializers.BOOLEAN
+   );
 
    private final ServantAiEngine aiEngine = new ServantAiEngine();
    @Nullable
    private ServantDefinition cachedDefinition;
 
-   // 动画状态标记
+   // 鍔ㄧ敾鐘舵€佹爣璁?
    private int roarAnimationTicks = 0;
    private int slamAnimationTicks = 0;
    private int jumpAttackAnimationTicks = 0;
@@ -98,8 +106,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int stompAnimationTicks = 0;
    private int uppercutAnimationTicks = 0;
    private int horizontalSwingAnimationTicks = 0;
-   // 攻击摆臂：0=空闲，>0=递减中，触发时设为正值
+   private int runeCastAnimationTicks = 0;
+   private int gaeBolgThrowAnimationTicks = 0;
+   // 鏀诲嚮鎽嗚噦锛? = 绌洪棽锛屽ぇ浜?0 鏃堕€?tick 閫掑噺
+
    private int attackSwingTicks = 0;
+   private int basicAttackVariant = 0;
+   private int spiritualDissolveTicks = 0;
 
    public int getAttackSwingTicks() {
       return this.attackSwingTicks;
@@ -131,14 +144,20 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return def != null ? def.specialization() : net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization.empty();
    }
 
+   public boolean hasActionAnimation(String key) {
+      return this.getAnimationSet().actionAnimation(key).isPresent();
+   }
+
    private void playActionAnimation(String key) {
-      this.getAnimationSet().actionAnimation(key).ifPresent(this::runActionAnim);
+      if (this.hasActionAnimation(key)) {
+         this.triggerAnim(ACTION_CONTROLLER, key);
+      }
    }
 
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
-      // 如果有待传递的servantId（来自刷怪蛋），优先使用它
+      // 濡傛灉鏈夊緟浼犻€掔殑 servantId锛堟潵鑷埛鎬泲锛夛紝浼樺厛浣跨敤瀹?
       builder.define(SERVANT_ID, "");
       builder.define(OBEDIENCE_AXIS, ObedienceAxis.COOPERATIVE.id());
       builder.define(PRINCIPLE_AXIS, PrincipleAxis.NEUTRAL.id());
@@ -146,6 +165,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       builder.define(COMBAT_DISPOSITION, CombatDisposition.BALANCED.id());
       builder.define(FAVOR, 50.0F);
       builder.define(CURRENT_MP, 0.0F);
+      builder.define(SPIRITUAL_DISSOLVING, false);
    }
 
    @Override
@@ -175,10 +195,18 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    protected void customServerAiStep() {
       super.customServerAiStep();
       if (!this.level().isClientSide()) {
+         if (this.isSpiritualDissolving()) {
+            this.getNavigation().stop();
+            this.setTarget(null);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.hurtTime = 0;
+            this.hurtDuration = 0;
+            return;
+         }
+
          this.aiEngine.tick(this);
 
-         // 动画 tick 递减
-         if (this.roarAnimationTicks > 0) {
+         /* 鍔ㄧ敾 tick 閫掑噺 */         if (this.roarAnimationTicks > 0) {
             this.roarAnimationTicks--;
          }
          if (this.slamAnimationTicks > 0) {
@@ -208,13 +236,37 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          if (this.horizontalSwingAnimationTicks > 0) {
             this.horizontalSwingAnimationTicks--;
          }
+         if (this.runeCastAnimationTicks > 0) {
+            this.runeCastAnimationTicks--;
+         }
+         if (this.gaeBolgThrowAnimationTicks > 0) {
+            this.gaeBolgThrowAnimationTicks--;
+         }
          if (this.attackSwingTicks > 0) {
             this.attackSwingTicks--;
          }
 
-         // 落落伤害免疫
-         // （通过 causeFallDamage override 实现，见下方）
+         // 鑴辩鎴樻枟鍚庣紦鎱㈠洖琛€锛堟瘡绉掓仮澶?0.5% 鏈€澶х敓鍛藉€硷級
+         if (this.tickCount % 20 == 0) {
+            LivingEntity combatTarget = this.getTarget();
+            if (combatTarget == null || combatTarget.isDeadOrDying() || this.distanceTo(combatTarget) > 16.0) {
+               int lastCombat = this.getPersistentData().getInt("LastCombatTick");
+               if (lastCombat > 0 && (int)(this.level().getGameTime()) - lastCombat > 100) {
+                  float regenAmount = this.getMaxHealth() * 0.005f;
+                  if (this.getHealth() < this.getMaxHealth()) {
+                     this.heal(regenAmount);
+                     if (this.level() instanceof ServerLevel sl) {
+                        sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+                           this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+                           3, 0.3, 0.3, 0.3, 0.0);
+                     }
+                  }
+               }
+            }
+         }
 
+         // 璺岃惤浼ゅ鍏嶇柅
+         // 锛堥€氳繃 causeFallDamage override 瀹炵幇锛岃涓嬫柟锛?
          // 水/岩浆中紧急闪避（索敌时也生效）
          if (this.isInWater() || this.isInLava()) {
             for (int i = 0; i < 3; i++) {
@@ -234,8 +286,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             }
          }
 
-         // 着火时寻找水源自救
-         if (this.isOnFire() && this.random.nextFloat() < 0.5F) {
+         /* 着火时寻找水源自救 */         if (this.isOnFire() && this.random.nextFloat() < 0.5F) {
             BlockPos center = this.blockPosition();
             for (BlockPos p : BlockPos.betweenClosed(center.offset(-10, -5, -10), center.offset(10, 5, 10))) {
                if (this.level().getFluidState(p).is(FluidTags.WATER)) {
@@ -298,12 +349,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.entityData.set(CURRENT_MP, (float) Math.min(this.getCurrentMp(), params.manaPool()));
       }
 
-      // 确保索敌距离匹配定义的FOLLOW_RANGE
+      // 确保索敌距离匹配定义的 FOLLOW_RANGE
       if (this.getAttribute(Attributes.FOLLOW_RANGE) != null) {
          this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(48.0);
       }
 
-      // 狂战士职阶额外移速补偿（狂化加护）
+      // Berserker 职阶额外移速补正（狂化加护）
       if (def.classType() == ServantClassType.BERSERKER) {
          double currentSpeed = this.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue();
          this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(currentSpeed + 0.1);
@@ -320,8 +371,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 生成时自动装备默认武器到右手
-    */
+    * 生成时自动装备默认武器到主手    */
    private void equipDefaultWeapon() {
       if (!this.getMainHandItem().isEmpty()) {
          return;
@@ -343,8 +393,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 赫拉克勒斯不受石斧剑的负重debuff影响
-    */
+    * 赫拉克勒斯不受石斧剑的负面 Debuff 影响    */
    public boolean isExemptFromStoneAxeDebuff() {
       return this.getSpecialization().immuneToStoneAxeDebuff();
    }
@@ -352,13 +401,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    // ======================== 动画触发方法 ========================
 
    /**
-    * 触发吼叫动画（3 秒）
-    */
+    * 触发咆哮动画（3 秒）    */
    public void triggerRoarAnimation() {
       this.roarAnimationTicks = 60; // 3s
+      playActionAnimation("roar");
+      ServantVoiceHelper.tryPlayRoar(this);
       if (this.level() instanceof ServerLevel sl) {
-         // 吼叫粒子效果
-         sl.sendParticles(ParticleTypes.CLOUD,
+         /* 咆哮粒子效果 */         sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(),
             20, 0.8, 0.6, 0.8, 0.15);
          sl.sendParticles(ParticleTypes.POOF,
@@ -367,24 +416,22 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
             this.getX(), this.getY() + 0.5, this.getZ(),
             15, 1.0, 0.3, 1.0, 0.05);
-         // 地面碎裂效果
-         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         /* 地面碎裂效果 */         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
             this.getX(), this.getY() + 0.1, this.getZ(),
             20, 1.2, 0.1, 1.2, 0.08);
-         // 吼叫音效
+         // 鍜嗗摦闊虫晥
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 1.2F, 0.7F);
       }
    }
 
    /**
-    * 触发砸地动画 + AOE 伤害
-    */
+    * 触发砸地动画 + AOE 伤害    */
    public void triggerGroundSlam() {
       this.slamAnimationTicks = 40; // 2s
+      playActionAnimation("slam");
       if (this.level() instanceof ServerLevel sl) {
-         // 砸地粒子效果
-         sl.sendParticles(ParticleTypes.CLOUD,
+         /* 砸地粒子效果 */         sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + 0.3, this.getZ(),
             30, 1.5, 0.3, 1.5, 0.3);
          sl.sendParticles(ParticleTypes.LARGE_SMOKE,
@@ -393,8 +440,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          sl.sendParticles(ParticleTypes.POOF,
             this.getX(), this.getY() + 0.5, this.getZ(),
             12, 1.0, 0.3, 1.0, 0.15);
-         // 同心圆冲击波
-         for (int ring = 1; ring <= 3; ring++) {
+         /* 同心圆冲击波 */         for (int ring = 1; ring <= 3; ring++) {
             float radius = ring * 1.27F;
             for (int i = 0; i < 16; i++) {
                double angle = (Math.PI * 2) * i / 16.0;
@@ -408,13 +454,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
                   1, 0.0, 0.0, 0.0, 0.05);
             }
          }
-         // FallingBlockEntity 飞溅
-         for (int i = 0; i < 8; i++) {
+         /* FallingBlockEntity 飞溅碎块 */         for (int i = 0; i < 8; i++) {
             double angle = this.random.nextDouble() * Math.PI * 2;
             double dist = 1.0 + this.random.nextDouble() * 2.0;
             int bx = (int) Math.floor(this.getX() + Math.cos(angle) * dist);
             int bz = (int) Math.floor(this.getZ() + Math.sin(angle) * dist);
-            // 向下寻找实体方块
+            // 鍚戜笅瀵绘壘瀹炰綋鏂瑰潡
             for (int by = (int) this.getY(); by >= (int) this.getY() - 3; by--) {
                net.minecraft.world.level.block.state.BlockState ground =
                   this.level().getBlockState(new net.minecraft.core.BlockPos(bx, by, bz));
@@ -436,7 +481,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
                }
             }
          }
-         // 砸地音效
+         // 鐮稿湴闊虫晥
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 0.5F);
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
@@ -445,8 +490,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 触发跳跃攻击动画
-    */
+    * 触发跳跃攻击动画    */
    public void triggerJumpAttackAnimation() {
       this.jumpAttackAnimationTicks = 40; // 2s
       playActionAnimation("jump_attack");
@@ -460,8 +504,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 触发冲刺攻击动画
-    */
+    * 触发冲刺攻击动画    */
    public void triggerChargeAnimation() {
       this.chargeAnimationTicks = 30; // 1.5s
       playActionAnimation("charge");
@@ -473,11 +516,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 触发横扫攻击动画
-    */
+    * 触发横扫攻击动画    */
    public void triggerSweepAnimation() {
-      this.sweepAnimationTicks = 30; // 1.5s
+      this.sweepAnimationTicks = 15; // 0.75s
       playActionAnimation("sweep");
+      ServantVoiceHelper.tryPlayAttack(this);
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
@@ -489,10 +532,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
     * 触发挥刀斩击动画
     */
    public void triggerSlashAnimation() {
-      this.slashAnimationTicks = 20; // 1s
+      this.slashAnimationTicks = 10; // 0.5s
       playActionAnimation("slash");
+      ServantVoiceHelper.tryPlayAttack(this);
       if (this.level() instanceof ServerLevel sl) {
-         // 斩击弧线粒子
+         // 鏂╁嚮寮х嚎绮掑瓙
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
             2, 0.0, 0.0, 0.0, 0.0);
@@ -511,8 +555,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.teleportAnimationTicks = 15; // 0.75s
       playActionAnimation("teleport_behind");
       if (this.level() instanceof ServerLevel sl) {
-         // 瞬移烟雾粒子（原位残留）
-         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         /* 瞬移烟雾粒子（原位残留） */         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
             this.getX(), this.getY() + 0.5, this.getZ(),
             20, 0.3, 0.5, 0.3, 0.05);
          sl.sendParticles(ParticleTypes.LARGE_SMOKE,
@@ -524,20 +567,19 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 触发跺脚动画
-    */
+    * 触发跺脚动画    */
    public void triggerStompAnimation() {
       this.stompAnimationTicks = 20; // 1s
       playActionAnimation("stomp");
       if (this.level() instanceof ServerLevel sl) {
-         // 跺脚冲击波
+         // 璺鸿剼鍐插嚮娉?
          sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + 0.2, this.getZ(),
             25, 1.0, 0.2, 1.0, 0.25);
          sl.sendParticles(ParticleTypes.LARGE_SMOKE,
             this.getX(), this.getY() + 0.1, this.getZ(),
             12, 0.8, 0.2, 0.8, 0.1);
-         // 同心圆扩散
+         // 鍚屽績鍦嗘墿鏁?
          for (int i = 0; i < 12; i++) {
             double angle = (Math.PI * 2) * i / 12.0;
             double px = this.getX() + Math.cos(angle) * 1.5;
@@ -554,11 +596,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 触发上勾拳动画：右臂向右上方举起，往左下方挥去
-    */
+    * 触发上挑动作：右臂抬到右上后挥砍到左下    */
    public void triggerUppercutAnimation() {
-      this.uppercutAnimationTicks = 20; // 1s
+      this.uppercutAnimationTicks = 10; // 0.5s
       playActionAnimation("uppercut");
+      ServantVoiceHelper.tryPlayAttack(this);
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.7, this.getZ(),
@@ -572,11 +614,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    /**
-    * 触发横挥动画：右臂横在胸前，向右边挥动
-    */
+    * 触发横斩动作：右臂横在胸前后向右挥出    */
    public void triggerHorizontalSwingAnimation() {
-      this.horizontalSwingAnimationTicks = 20; // 1s
+      this.horizontalSwingAnimationTicks = 10; // 0.5s
       playActionAnimation("horizontal_swing");
+      ServantVoiceHelper.tryPlayAttack(this);
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             this.getX(), this.getY() + this.getBbHeight() * 0.55, this.getZ(),
@@ -589,11 +631,31 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
    }
 
+   public void triggerRuneCastAnimation() {
+      this.runeCastAnimationTicks = 16;
+      playActionAnimation("rune_cast");
+   }
+
+   public void triggerGaeBolgThrowAnimation() {
+      this.triggerGaeBolgThrowAnimation(18);
+   }
+
+   public void triggerGaeBolgThrowAnimation(int durationTicks) {
+      this.gaeBolgThrowAnimationTicks = Math.max(this.gaeBolgThrowAnimationTicks, durationTicks);
+      playActionAnimation("gae_bolg_throw");
+      ServantVoiceHelper.tryPlayGaeBolg(this);
+   }
+
    /**
-    * 近战攻击时触发右手大幅摆动（保底视觉反馈）
-    */
+    * 近战攻击时触发右手大幅摆臂（无专属动作时的保底反馈）    */
    public void triggerAttackSwing() {
-      this.attackSwingTicks = 12; // 0.6s
+      if (this.hasActionAnimation("uppercut") || this.hasActionAnimation("horizontal_swing")) {
+         this.triggerBasicAttackAnimation();
+         return;
+      }
+
+      ServantVoiceHelper.tryPlayAttack(this);
+      this.attackSwingTicks = 6; // 0.3s
    }
 
    public boolean isAttackSwinging() {
@@ -604,7 +666,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return this.jumpAttackAnimationTicks > 0 || this.chargeAnimationTicks > 0
          || this.sweepAnimationTicks > 0 || this.slashAnimationTicks > 0
          || this.teleportAnimationTicks > 0 || this.stompAnimationTicks > 0
-         || this.uppercutAnimationTicks > 0 || this.horizontalSwingAnimationTicks > 0;
+         || this.uppercutAnimationTicks > 0 || this.horizontalSwingAnimationTicks > 0
+         || this.runeCastAnimationTicks > 0 || this.gaeBolgThrowAnimationTicks > 0;
+   }
+
+   public boolean isSoftCombatActionActive() {
+      return this.runeCastAnimationTicks > 0 || this.gaeBolgThrowAnimationTicks > 0;
+   }
+
+   public boolean isHardCombatActionActive() {
+      return this.isPerformingAction() && !this.isSoftCombatActionActive();
    }
 
    public boolean isRoaring() {
@@ -615,46 +686,151 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return this.slamAnimationTicks > 0;
    }
 
-   // ======================== 死亡特效 ========================
+   public void triggerTsurigameshiAnimation() {
+      playActionAnimation("tsurigameshi");
+      ServantVoiceHelper.tryPlayTsurigameshi(this);
+   }
+
+   public void triggerBasicAttackAnimation() {
+      if (this.isPerformingAction() || this.isRoaring() || this.isSlamming()) {
+         this.attackSwingTicks = 6;
+         return;
+      }
+
+      boolean hasDiagonal = this.hasActionAnimation("uppercut");
+      boolean hasHorizontal = this.hasActionAnimation("horizontal_swing");
+      if (!hasDiagonal && !hasHorizontal) {
+         this.attackSwingTicks = 6;
+         return;
+      }
+
+      this.basicAttackVariant++;
+      if (hasDiagonal && hasHorizontal) {
+         if ((this.basicAttackVariant & 1) == 0) {
+            this.triggerUppercutAnimation();
+         } else {
+            this.triggerHorizontalSwingAnimation();
+         }
+         return;
+      }
+
+      if (hasDiagonal) {
+         this.triggerUppercutAnimation();
+      } else {
+         this.triggerHorizontalSwingAnimation();
+      }
+   }
+
+   public boolean isSpiritualDissolving() {
+      return this.entityData.get(SPIRITUAL_DISSOLVING);
+   }
+
+   public float getSpiritualDissolveProgress(float partialTick) {
+      if (!this.isSpiritualDissolving()) {
+         return 0.0F;
+      }
+
+      return Math.min(1.0F, (this.spiritualDissolveTicks + partialTick) / (float)SPIRITUAL_DISSOLVE_DURATION);
+   }
+
+   // ======================== 姝讳骸鐗规晥 ========================
 
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource cause) {
       super.die(cause);
+      ServantVoiceHelper.tryPlayFail(this);
+      this.entityData.set(SPIRITUAL_DISSOLVING, true);
+      this.spiritualDissolveTicks = 0;
+      this.deathTime = 0;
+      this.hurtTime = 0;
+      this.hurtDuration = 0;
+      this.setPose(Pose.STANDING);
+      this.setDeltaMovement(Vec3.ZERO);
+      this.setNoGravity(true);
+      this.getNavigation().stop();
+      this.setTarget(null);
       if (this.level() instanceof ServerLevel sl) {
-         // 灵体消散粒子（参考Fate英灵消失效果）
-         // 从身体底部向上升起的金色光粒子
+         // 鐏典綋娑堟暎绮掑瓙锛堝弬鑰?Fate 鑻辩伒娑堝け鏁堟灉锛?
+         // 浠庤韩浣撳簳閮ㄥ悜涓婂崌璧风殑閲戣壊鍏夌矑
          sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
             this.getX(), this.getY() + 0.2, this.getZ(),
             40, 0.4, 0.8, 0.4, 0.06);
-         // 闪光粒子环绕上升
+         // 闂厜绮掑瓙鐜粫涓婂崌
          sl.sendParticles(ParticleTypes.END_ROD,
             this.getX(), this.getY() + 0.5, this.getZ(),
             30, 0.5, 1.0, 0.5, 0.04);
-         // 灵魂火焰粒子（灵基消散）
+         // 鐏甸瓊鐏劙绮掑瓙锛堢伒鍩烘秷鏁ｏ級
          sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
             this.getX(), this.getY() + 1.0, this.getZ(),
             25, 0.6, 0.8, 0.6, 0.03);
-         // 灵魂上升粒子
-         sl.sendParticles(ParticleTypes.SOUL,
+         /* 灵魂上升粒子 */         sl.sendParticles(ParticleTypes.SOUL,
             this.getX(), this.getY() + 1.5, this.getZ(),
             20, 0.3, 1.2, 0.3, 0.05);
-         // 从内向外扩散的白色光环
+         // 鐢卞唴鍚戝鎵╂暎鐨勭櫧鑹插厜鐜?
          sl.sendParticles(ParticleTypes.FLASH,
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
             5, 0.0, 0.0, 0.0, 0.0);
-         // 身体逐渐透明的灰烬效果
+         // 韬綋閫愭笎閫忔槑鐨勭伆鐑晥鏋?
          sl.sendParticles(ParticleTypes.ASH,
             this.getX(), this.getY() + 0.5, this.getZ(),
             35, 0.8, 1.0, 0.8, 0.08);
-         // 地面光柱上升效果
+         // 鍦伴潰鍏夋煴涓婂崌鏁堟灉
          sl.sendParticles(ParticleTypes.REVERSE_PORTAL,
             this.getX(), this.getY() + 0.1, this.getZ(),
             20, 0.3, 0.5, 0.3, 0.06);
-         // 最终消散音效
-         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
-            SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.5F, 1.2F);
-         sl.playSound(null, this.getX(), this.getY(), this.getZ(),
-            SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.0F, 0.8F);
+      }
+   }
+
+   @Override
+   protected void tickDeath() {
+      if (!this.isSpiritualDissolving()) {
+         super.tickDeath();
+         return;
+      }
+
+      this.deathTime = 0;
+      this.hurtTime = 0;
+      this.hurtDuration = 0;
+      this.setPose(Pose.STANDING);
+      this.setDeltaMovement(Vec3.ZERO);
+      this.setNoGravity(true);
+      this.getNavigation().stop();
+      this.setTarget(null);
+      this.spiritualDissolveTicks++;
+
+      if (this.level() instanceof ServerLevel sl) {
+         float progress = Math.min(1.0F, this.spiritualDissolveTicks / (float)SPIRITUAL_DISSOLVE_DURATION);
+         double effectY = this.getY() + 0.1 + this.getBbHeight() * progress;
+         if (this.spiritualDissolveTicks % 2 == 0) {
+            sl.sendParticles(ParticleTypes.END_ROD,
+               this.getX(), effectY, this.getZ(),
+               5, 0.18, 0.08, 0.18, 0.01);
+            sl.sendParticles(ParticleTypes.SOUL,
+               this.getX(), effectY - 0.08, this.getZ(),
+               4, 0.22, 0.15, 0.22, 0.02);
+         }
+
+         if (this.spiritualDissolveTicks % 4 == 0) {
+            sl.sendParticles(ParticleTypes.REVERSE_PORTAL,
+               this.getX(), effectY - 0.02, this.getZ(),
+               3, 0.14, 0.12, 0.14, 0.015);
+            sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+               this.getX(), effectY, this.getZ(),
+               2, 0.1, 0.05, 0.1, 0.01);
+         }
+
+         if (this.spiritualDissolveTicks >= SPIRITUAL_DISSOLVE_DURATION) {
+            sl.sendParticles(ParticleTypes.FLASH,
+               this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
+               1, 0.0, 0.0, 0.0, 0.0);
+            sl.sendParticles(ParticleTypes.END_ROD,
+               this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
+               20, 0.25, 0.45, 0.25, 0.04);
+            sl.sendParticles(ParticleTypes.SOUL,
+               this.getX(), this.getY() + this.getBbHeight() * 0.7, this.getZ(),
+               16, 0.3, 0.55, 0.3, 0.03);
+            this.discard();
+         }
       }
    }
 
@@ -687,8 +863,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(CURRENT_MP, (float) tag.getDouble("CurrentMp"));
       this.cachedDefinition = null;
 
-      // 对于旧存档中没有 ServantId 的实体，保持为空实体
-      if (loadedId == null || loadedId.isEmpty()) {
+      /* 兼容旧存档中没有 ServantId 的情况 */      if (loadedId == null || loadedId.isEmpty()) {
          this.entityData.set(SERVANT_ID, this.servantId);
          this.cachedDefinition = null;
       }
@@ -707,8 +882,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void setServantId(String id) {
       this.entityData.set(SERVANT_ID, this.servantId);
       this.cachedDefinition = null;
-      // 立即从ServantDataRegistry重新查找定义
-      if (!this.servantId.isEmpty()) {
+      /* 立即从 ServantDataRegistry 重新查找定义 */      if (!this.servantId.isEmpty()) {
          ServantDefinition def = ServantDataRegistry.get(this.servantId);
          if (def != null) {
             this.cachedDefinition = def;
@@ -789,6 +963,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.getDefinition();
          this.refreshDimensions();
       }
+      if (SPIRITUAL_DISSOLVING.equals(key) && this.isSpiritualDissolving()) {
+         this.spiritualDissolveTicks = 0;
+      }
    }
 
    public double getMaxMp() {
@@ -819,24 +996,30 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      // 主控制器：idle / walk（transition=3 正常过渡）
-      controllers.add(new AnimationController<>(this, "controller", 3, event -> {
+      // 涓绘帶鍒跺櫒锛歩dle / walk
+      controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          var animations = this.getAnimationSet();
          String animation = event.isMoving() ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
-         return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : null;
+         return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));
-      // 动作控制器（transition=0，通过 runActionAnim 触发）
+      // 鍔ㄤ綔鎺у埗鍣紙transition = 0锛屾壙杞芥妧鑳戒笌鏀诲嚮鍔ㄤ綔锛?
       this.actionCtrl = new AnimationController<>(this, "action_controller", 0, event -> null);
       controllers.add(this.actionCtrl);
-      // 吼叫控制器（transition=0，独立控制）
-      controllers.add(new AnimationController<>(this, "roar_controller", 0, event -> {
+      for (var entry : this.getAnimationSet().actions().entrySet()) {
+         String key = entry.getKey();
+         String animation = entry.getValue();
+         if (key != null && !key.isBlank() && animation != null && !animation.isBlank()) {
+            this.actionCtrl.triggerableAnim(key, RawAnimation.begin().thenPlay(animation));
+         }
+      }
+      /* 咆哮控制器（transition = 0，独立控制） */      controllers.add(new AnimationController<>(this, "roar_controller", 0, event -> {
          if (this.roarAnimationTicks > 0) {
             String animation = this.getAnimationSet().actionAnimation("roar").orElse(null);
             return animation != null ? event.setAndContinue(RawAnimation.begin().thenPlay(animation)) : null;
          }
          return null;
       }));
-      // 砸地控制器（transition=0）
+      // 鐮稿湴鎺у埗鍣紙transition = 0锛?
       controllers.add(new AnimationController<>(this, "slam_controller", 0, event -> {
          if (this.slamAnimationTicks > 0) {
             String animation = this.getAnimationSet().actionAnimation("slam").orElse(null);
@@ -858,3 +1041,4 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
    }
 }
+

@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuChulainnRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HeraclesRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
@@ -122,8 +123,6 @@ public class TypeMoonWorldClientEvents {
          (stack, tintIndex) -> -1,
          new ItemLike[]{ModItems.CARVED_WHITE_GEMSTONE_HIGH.get(), ModItems.CARVED_WHITE_GEMSTONE_HIGH_FULL.get()}
       );
-      event.register((stack, tintIndex) -> tintIndex == 0 ? 0x333333 : 0x0D0D0D, ModItems.HERACLES_SPAWN_EGG.get());
-      event.register((stack, tintIndex) -> tintIndex == 0 ? 0x3355AA : 0x6633AA, ModItems.SASAKI_KOJIRO_SPAWN_EGG.get());
    }
 
    @SubscribeEvent
@@ -174,6 +173,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), SasakiKojiroRenderer::new);
+      event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), CuChulainnRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), SwordBarrelBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 0.0F, 0.0F));

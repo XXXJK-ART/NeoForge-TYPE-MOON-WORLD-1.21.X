@@ -6,6 +6,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 
@@ -16,6 +17,9 @@ public final class HostileTargetingModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       double aggressionRange = Math.max(16.0, context.behaviorProfile().aggressionRange());
+      if (CuChulainnCombatHelper.isLaguzActive(entity)) {
+         aggressionRange *= 2.0;
+      }
       LivingEntity currentTarget = entity.getTarget();
       if (isValidCurrentTarget(entity, currentTarget, aggressionRange)) {
          return;

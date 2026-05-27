@@ -23,7 +23,12 @@
     "animation": "typemoonworld:animations/sasaki_kojiro.animation.json",
     "animations": {
       "idle": "animation.sasaki_kojiro.idle",
-      "walk": "animation.sasaki_kojiro.idle"
+      "walk": "animation.sasaki_kojiro.walk",
+      "sweep": "animation.sasaki_kojiro.horizontal_swing",
+      "slash": "animation.sasaki_kojiro.slash_diagonal",
+      "uppercut": "animation.sasaki_kojiro.slash_diagonal",
+      "horizontal_swing": "animation.sasaki_kojiro.horizontal_swing",
+      "tsurigameshi": "animation.sasaki_kojiro.swallow_return"
     }
   },
   "specialization": {
@@ -40,8 +45,13 @@
     "default_weapon": "typemoonworld:bizen_nagamitsu",
     "immune_to_stone_axe_debuff": false,
     "combat_actions": [
+      "teleport_behind",
       "combo",
-      "tsurigameshi"
+      "tsurigameshi",
+      "sweep",
+      "slash",
+      "uppercut",
+      "horizontal_swing"
     ]
   },
   "skills": ["stealth_d", "spiritualization_b_plus", "souwa_expertise_b", "mindseye_a"],

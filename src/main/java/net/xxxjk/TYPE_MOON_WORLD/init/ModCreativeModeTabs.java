@@ -61,6 +61,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
                         output.accept(ModItems.BIZEN_NAGAMITSU);
+                        output.accept(ModItems.GAE_BULG);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
                         output.accept(ModItems.CHISEL);
@@ -179,6 +180,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
                         output.accept(ModItems.HERACLES_SPAWN_EGG);
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
+                        output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {
