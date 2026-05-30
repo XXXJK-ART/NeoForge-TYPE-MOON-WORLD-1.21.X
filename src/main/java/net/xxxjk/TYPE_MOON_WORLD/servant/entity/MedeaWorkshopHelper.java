@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -42,6 +43,7 @@ public final class MedeaWorkshopHelper {
    public static final String TAG_LAST_SUMMON_TICK = "MedeaLastSummonTick";
    public static final String TAG_LAST_TELEPORT_TICK = "MedeaLastTeleportTick";
    public static final String TAG_WORKSHOP_DAMAGE_BUFF = "MedeaWorkshopDamageBuff";
+   public static final String TAG_STARTING_STOCKS_READY = "MedeaStartingStocksReady";
    public static final String TAG_MAGIC_SUMMON = "magic_summon";
    public static final String TAG_MAGIC_SUMMON_OWNER = "magic_summon_owner";
    public static final int WORKSHOP_NONE = 0;
@@ -84,8 +86,11 @@ public final class MedeaWorkshopHelper {
       boolean inside = refreshWorkshopState(entity);
       applyWorkshopSpeedModifier(entity, inside);
       regenerateMana(entity, inside);
+      recallFarDragonfangs(entity, serverLevel);
 
-      if (entity.getTarget() == null || !entity.getTarget().isAlive()) {
+      long now = serverLevel.getGameTime();
+      if (isOutOfCombat(entity, now)) {
+         recallOwnedDragonfangs(entity, serverLevel);
          maintainOutOfCombatWorkshop(entity, serverLevel);
       }
    }
@@ -176,6 +181,16 @@ public final class MedeaWorkshopHelper {
       return entity.getPersistentData().getInt(TAG_DRAGONFANG_STOCK);
    }
 
+   public static void initializeStartingStocks(MedeaEntity entity) {
+      if (entity.getPersistentData().getBoolean(TAG_STARTING_STOCKS_READY)) {
+         return;
+      }
+      setDragonfangStock(entity, MAX_DRAGONFANG_STOCK / 2);
+      setManaCharmStock(entity, MAX_MANA_CHARM_STOCK / 2);
+      setHealCharmStock(entity, MAX_HEAL_CHARM_STOCK / 2);
+      entity.getPersistentData().putBoolean(TAG_STARTING_STOCKS_READY, true);
+   }
+
    public static void setDragonfangStock(MedeaEntity entity, int value) {
       entity.getPersistentData().putInt(TAG_DRAGONFANG_STOCK, Mth.clamp(value, 0, MAX_DRAGONFANG_STOCK));
    }
@@ -227,6 +242,16 @@ public final class MedeaWorkshopHelper {
       return true;
    }
 
+   public static void reclaimDragonfang(MedeaEntity owner, DragonfangSoldierEntity summon) {
+      if (owner == null || summon == null || !summon.isAlive()) {
+         return;
+      }
+      if (owner.level() == summon.level()) {
+         setDragonfangStock(owner, getDragonfangStock(owner) + 1);
+      }
+      summon.discard();
+   }
+
    public static BlockPos findTeleportPosition(MedeaEntity entity) {
       if (!(entity.level() instanceof ServerLevel serverLevel)) {
          return entity.blockPosition();
@@ -239,6 +264,49 @@ public final class MedeaWorkshopHelper {
          }
       }
       return findNearbySafePosition(serverLevel, BlockPos.containing(getWorkshopCenter(entity)), SIMPLE_WORKSHOP_RADIUS);
+   }
+
+   public static BlockPos findSafeWorkshopEscapePosition(MedeaEntity entity, ServerLevel level, LivingEntity threat, double enemyClearRadius) {
+      if (!hasWorkshop(entity)) {
+         return findTeleportPosition(entity);
+      }
+
+      Vec3 current = entity.position();
+      Vec3 threatPos = threat != null ? threat.position() : current;
+      BlockPos best = null;
+      double bestScore = Double.NEGATIVE_INFINITY;
+
+      for (int i = 0; i < 32; i++) {
+         BlockPos candidate = randomWorkshopCandidate(entity, level);
+         if (candidate == null || !isSafeFeetPosition(level, candidate)) {
+            continue;
+         }
+         Vec3 center = new Vec3(candidate.getX() + 0.5, candidate.getY(), candidate.getZ() + 0.5);
+         if (!isInsideWorkshop(entity, center)) {
+            continue;
+         }
+
+         AABB clearBox = new AABB(center, center).inflate(enemyClearRadius, 2.5, enemyClearRadius);
+         boolean hasEnemy = !level.getEntitiesOfClass(
+            LivingEntity.class,
+            clearBox,
+            enemy -> enemy != entity
+               && enemy.isAlive()
+               && !enemy.isAlliedTo(entity)
+               && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(enemy)
+         ).isEmpty();
+         if (hasEnemy) {
+            continue;
+         }
+
+         double score = center.distanceToSqr(threatPos) + center.distanceToSqr(current) * 0.35;
+         if (score > bestScore) {
+            bestScore = score;
+            best = candidate;
+         }
+      }
+
+      return best != null ? best : findTeleportPosition(entity);
    }
 
    private static void establishWorkshop(MedeaEntity entity, ServerLevel level) {
@@ -335,6 +403,33 @@ public final class MedeaWorkshopHelper {
       entity.getPersistentData().putDouble(TAG_RADIUS, SIMPLE_WORKSHOP_RADIUS);
    }
 
+   private static BlockPos randomWorkshopCandidate(MedeaEntity entity, ServerLevel level) {
+      int type = entity.getPersistentData().getInt(TAG_WORKSHOP_TYPE);
+      if (type == WORKSHOP_STRUCTURE) {
+         AABB bounds = getWorkshopBounds(entity);
+         if (bounds == null) {
+            return null;
+         }
+         int minX = Mth.floor(bounds.minX);
+         int maxX = Mth.floor(bounds.maxX - 1.0);
+         int minZ = Mth.floor(bounds.minZ);
+         int maxZ = Mth.floor(bounds.maxZ - 1.0);
+         int x = Mth.nextInt(level.random, minX, maxX);
+         int z = Mth.nextInt(level.random, minZ, maxZ);
+         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+         return new BlockPos(x, y, z);
+      }
+
+      Vec3 center = getWorkshopCenter(entity);
+      double radius = Math.max(5.0, entity.getPersistentData().getDouble(TAG_RADIUS) * 0.85);
+      double angle = level.random.nextDouble() * Math.PI * 2.0;
+      double dist = radius * Math.sqrt(level.random.nextDouble());
+      int x = Mth.floor(center.x + Math.cos(angle) * dist);
+      int z = Mth.floor(center.z + Math.sin(angle) * dist);
+      int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+      return new BlockPos(x, y, z);
+   }
+
    private static void applyWorkshopSpeedModifier(MedeaEntity entity, boolean inside) {
       var speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
       if (speed == null) {
@@ -360,6 +455,9 @@ public final class MedeaWorkshopHelper {
    private static void maintainOutOfCombatWorkshop(MedeaEntity entity, ServerLevel level) {
       long now = level.getGameTime();
       if (now - entity.getPersistentData().getLong(TAG_LAST_CRAFT_TICK) >= 20L) {
+         if (entity.getCurrentMp() < 140.0) {
+            return;
+         }
          entity.getPersistentData().putLong(TAG_LAST_CRAFT_TICK, now);
          if (getDragonfangStock(entity) < TARGET_DRAGONFANG_STOCK && consumeMana(entity, 30.0)) {
             setDragonfangStock(entity, getDragonfangStock(entity) + 1);
@@ -370,10 +468,50 @@ public final class MedeaWorkshopHelper {
          }
       }
 
-      if (getDragonfangStock(entity) > 0 && now - entity.getPersistentData().getLong(TAG_LAST_SUMMON_TICK) >= 15L) {
+      if (entity.getCurrentMp() >= 160.0 && getDragonfangStock(entity) > 0 && now - entity.getPersistentData().getLong(TAG_LAST_SUMMON_TICK) >= 15L) {
          if (summonDragonfang(entity, level)) {
             entity.getPersistentData().putLong(TAG_LAST_SUMMON_TICK, now);
          }
+      }
+   }
+
+   private static boolean isOutOfCombat(MedeaEntity entity, long now) {
+      if (entity.getTarget() != null && entity.getTarget().isAlive()) {
+         return false;
+      }
+      long lastCombat = entity.getPersistentData().getLong(MedeaCombatHelper.TAG_LAST_COMBAT_ACTIVITY_TICK);
+      return lastCombat <= 0L || now - lastCombat > 80L;
+   }
+
+   private static void recallOwnedDragonfangs(MedeaEntity entity, ServerLevel level) {
+      AABB searchBox = new AABB(entity.position(), entity.position()).inflate(192.0);
+      int recalled = 0;
+      for (DragonfangSoldierEntity dragonfang : level.getEntitiesOfClass(
+         DragonfangSoldierEntity.class,
+         searchBox,
+         summon -> summon.isAlive() && entity.getUUID().equals(summon.getSummonerUuid())
+      )) {
+         dragonfang.discard();
+         recalled++;
+      }
+      if (recalled > 0) {
+         setDragonfangStock(entity, getDragonfangStock(entity) + recalled);
+      }
+   }
+
+   private static void recallFarDragonfangs(MedeaEntity entity, ServerLevel level) {
+      AABB searchBox = new AABB(entity.position(), entity.position()).inflate(256.0);
+      int recalled = 0;
+      for (DragonfangSoldierEntity dragonfang : level.getEntitiesOfClass(
+         DragonfangSoldierEntity.class,
+         searchBox,
+         summon -> summon.isAlive() && entity.getUUID().equals(summon.getSummonerUuid()) && summon.distanceToSqr(entity) > 48.0 * 48.0
+      )) {
+         dragonfang.discard();
+         recalled++;
+      }
+      if (recalled > 0) {
+         setDragonfangStock(entity, getDragonfangStock(entity) + recalled);
       }
    }
 

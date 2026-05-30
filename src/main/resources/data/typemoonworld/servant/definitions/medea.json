@@ -33,7 +33,12 @@
     "animations": {
       "idle": "standing",
       "walk": "standing",
-      "fly": "fly"
+      "fly": "fly",
+      "uppercut": "animation.medea.cast_ascend",
+      "horizontal_swing": "animation.medea.cast_sweep",
+      "teleport_behind": "animation.medea.teleport_behind",
+      "charge": "animation.medea.hex_barrage",
+      "rune_cast": "animation.medea.rune_cast"
     }
   },
   "specialization": {
@@ -49,7 +54,13 @@
     },
     "default_weapon": "",
     "immune_to_stone_axe_debuff": false,
-    "combat_actions": []
+    "combat_actions": [
+      "uppercut",
+      "horizontal_swing",
+      "teleport_behind",
+      "charge",
+      "rune_cast"
+    ]
   },
   "skills": [],
   "noble_phantasm": "",

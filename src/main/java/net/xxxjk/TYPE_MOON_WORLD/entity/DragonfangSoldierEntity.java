@@ -6,6 +6,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,7 +22,9 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.RangedAttackMob;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
@@ -32,6 +35,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaWorkshopHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -47,28 +51,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity, RangedAttackMob {
    private static final EntityDataAccessor<Boolean> HAS_OWNER = SynchedEntityData.defineId(DragonfangSoldierEntity.class, EntityDataSerializers.BOOLEAN);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-   private final MeleeAttackGoal meleeGoal = new MeleeAttackGoal(this, 1.1, true) {
-      @Override
-      public boolean canUse() {
-         return !DragonfangSoldierEntity.this.isBowLoadout() && super.canUse();
-      }
-
-      @Override
-      public boolean canContinueToUse() {
-         return !DragonfangSoldierEntity.this.isBowLoadout() && super.canContinueToUse();
-      }
-   };
-   private final RangedBowAttackGoal<DragonfangSoldierEntity> bowGoal = new RangedBowAttackGoal<>(this, 1.0, 20, 15.0F) {
-      @Override
-      public boolean canUse() {
-         return DragonfangSoldierEntity.this.isBowLoadout() && super.canUse();
-      }
-
-      @Override
-      public boolean canContinueToUse() {
-         return DragonfangSoldierEntity.this.isBowLoadout() && super.canContinueToUse();
-      }
-   };
+   private MeleeAttackGoal meleeGoal;
+   private RangedBowAttackGoal<DragonfangSoldierEntity> bowGoal;
    @Nullable
    private UUID summonerUuid;
 
@@ -94,6 +78,28 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
 
    @Override
    protected void registerGoals() {
+      this.meleeGoal = new MeleeAttackGoal(this, 1.1, true) {
+         @Override
+         public boolean canUse() {
+            return !DragonfangSoldierEntity.this.isBowLoadout() && super.canUse();
+         }
+
+         @Override
+         public boolean canContinueToUse() {
+            return !DragonfangSoldierEntity.this.isBowLoadout() && super.canContinueToUse();
+         }
+      };
+      this.bowGoal = new RangedBowAttackGoal<>(this, 1.0, 20, 15.0F) {
+         @Override
+         public boolean canUse() {
+            return DragonfangSoldierEntity.this.isBowLoadout() && super.canUse();
+         }
+
+         @Override
+         public boolean canContinueToUse() {
+            return DragonfangSoldierEntity.this.isBowLoadout() && super.canContinueToUse();
+         }
+      };
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(1, this.meleeGoal);
       this.goalSelector.addGoal(1, this.bowGoal);
@@ -101,6 +107,7 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, true));
    }
 
    @Override
@@ -114,20 +121,26 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
    protected void customServerAiStep() {
       super.customServerAiStep();
       LivingEntity owner = this.getSummoner();
-      if (owner == null || !owner.isAlive()) {
+      boolean ownedSummon = this.summonerUuid != null;
+      if (ownedSummon && (owner == null || !owner.isAlive())) {
          this.discard();
          return;
       }
 
-      this.getPersistentData().putBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON, true);
-      this.getPersistentData().putString(MedeaWorkshopHelper.TAG_MAGIC_SUMMON_OWNER, owner.getUUID().toString());
-
-      LivingEntity preferredTarget = owner.getLastHurtByMob();
-      if (!isValidHostile(preferredTarget)) {
-         preferredTarget = owner instanceof net.minecraft.world.entity.Mob mob ? mob.getTarget() : null;
+      if (ownedSummon && owner != null) {
+         this.getPersistentData().putBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON, true);
+         this.getPersistentData().putString(MedeaWorkshopHelper.TAG_MAGIC_SUMMON_OWNER, owner.getUUID().toString());
       }
-      if (!isValidHostile(preferredTarget) && owner.getHealth() < owner.getMaxHealth() * 0.3F) {
-         preferredTarget = this.findThreatNearOwner(owner);
+
+      LivingEntity preferredTarget = null;
+      if (owner != null) {
+         preferredTarget = owner.getLastHurtByMob();
+         if (!isValidHostile(preferredTarget)) {
+            preferredTarget = owner instanceof net.minecraft.world.entity.Mob mob ? mob.getTarget() : null;
+         }
+         if (!isValidHostile(preferredTarget) && owner.getHealth() < owner.getMaxHealth() * 0.3F) {
+            preferredTarget = this.findThreatNearOwner(owner);
+         }
       }
       if (isValidHostile(preferredTarget)) {
          this.setTarget(preferredTarget);
@@ -135,9 +148,20 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
          this.setTarget(null);
       }
 
-      if (this.getTarget() == null && this.distanceToSqr(owner) > 16.0) {
+      if (owner != null && this.getTarget() == null && this.distanceToSqr(owner) > 16.0) {
          this.getNavigation().moveTo(owner, 1.1);
       }
+      if (ownedSummon && owner instanceof MedeaEntity medea && (this.distanceToSqr(owner) > 48.0 * 48.0 || !this.isCombatOwnerActive(medea))) {
+         MedeaWorkshopHelper.reclaimDragonfang(medea, this);
+      }
+   }
+
+   @Override
+   public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+      if (this.isFriendlyDamage(source)) {
+         return false;
+      }
+      return super.hurt(source, amount);
    }
 
    @Nullable
@@ -204,6 +228,7 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
 
    @Override
    public void performRangedAttack(LivingEntity target, float velocity) {
+      this.triggerAnim("action_controller", "bow_shot");
       ItemStack projectileStack = this.getProjectile(this.getMainHandItem());
       if (projectileStack.isEmpty()) {
          projectileStack = new ItemStack(Items.ARROW);
@@ -220,13 +245,35 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
    }
 
    @Override
+   public boolean doHurtTarget(Entity target) {
+      boolean success = super.doHurtTarget(target);
+      if (success) {
+         this.swing(InteractionHand.MAIN_HAND);
+         this.triggerAnim("action_controller", "melee_attack");
+      }
+      return success;
+   }
+
+   @Override
    public boolean canFireProjectileWeapon(ProjectileWeaponItem projectileWeaponItem) {
       return projectileWeaponItem instanceof BowItem;
    }
 
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add(new AnimationController<>(this, "controller", 0, event -> event.setAndContinue(RawAnimation.begin().thenLoop("animation"))));
+      controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+         if (this.isBowLoadout() && this.isUsingItem()) {
+            return event.setAndContinue(RawAnimation.begin().thenLoop("animation.dragonfang.bow_ready"));
+         }
+         if (event.isMoving()) {
+            return event.setAndContinue(RawAnimation.begin().thenLoop("animation.dragonfang.walk"));
+         }
+         return event.setAndContinue(RawAnimation.begin().thenLoop("animation.dragonfang.idle"));
+      }));
+      AnimationController<DragonfangSoldierEntity> actionController = new AnimationController<>(this, "action_controller", 0, event -> PlayState.STOP);
+      actionController.triggerableAnim("melee_attack", RawAnimation.begin().thenPlay("animation.dragonfang.melee_attack"));
+      actionController.triggerableAnim("bow_shot", RawAnimation.begin().thenPlay("animation.dragonfang.bow_shot"));
+      controllers.add(actionController);
    }
 
    @Override
@@ -268,5 +315,32 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
          this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
          this.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, ItemStack.EMPTY);
       }
+   }
+
+   private boolean isCombatOwnerActive(MedeaEntity owner) {
+      if (owner.getTarget() != null && owner.getTarget().isAlive()) {
+         return true;
+      }
+      long lastCombat = owner.getPersistentData().getLong(MedeaCombatHelper.TAG_LAST_COMBAT_ACTIVITY_TICK);
+      return lastCombat > 0L && owner.level().getGameTime() - lastCombat <= 80L;
+   }
+
+   private boolean isFriendlyDamage(net.minecraft.world.damagesource.DamageSource source) {
+      Entity attacker = source.getEntity();
+      Entity direct = source.getDirectEntity();
+      return isFriendlyEntity(attacker) || isFriendlyEntity(direct);
+   }
+
+   private boolean isFriendlyEntity(Entity entity) {
+      if (entity == null) {
+         return false;
+      }
+      if (entity == this.getSummoner()) {
+         return true;
+      }
+      if (entity instanceof DragonfangSoldierEntity dragonfang) {
+         return this.summonerUuid != null && this.summonerUuid.equals(dragonfang.summonerUuid);
+      }
+      return entity instanceof MedeaEntity medea && this.summonerUuid != null && this.summonerUuid.equals(medea.getUUID());
    }
 }

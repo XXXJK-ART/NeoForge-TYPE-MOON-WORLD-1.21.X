@@ -429,7 +429,7 @@ public class ModItems {
     public static final DeferredItem<Item> MEDEA_SPAWN_EGG = ITEMS.register("medea_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MEDEA, 0x705F96, 0xDDD7E9));
     public static final DeferredItem<Item> DRAGONFANG_SOLDIER_SPAWN_EGG = ITEMS.register("dragonfang_soldier_spawn_egg",
-            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.DRAGONFANG_SOLDIER, 0xE8E0D2, 0x635A52, new Item.Properties()));
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.DRAGONFANG_SOLDIER, 0xE8E0D2, 0x635A52));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

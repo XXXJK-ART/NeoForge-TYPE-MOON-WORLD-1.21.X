@@ -26,9 +26,9 @@ public class MedeaBeamEffectRenderer extends EntityRenderer<MedeaBeamEffectEntit
       Vec3 cameraPos = this.entityRenderDispatcher.camera.getPosition();
       poseStack.pushPose();
       VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(BEAM_TEXTURE));
-      drawLayer(poseStack.last(), consumer, start.subtract(currentPos), end.subtract(currentPos), cameraPos.subtract(currentPos), 0.78F, 0.76F, 0.92F, 1.0F, 0.62F);
-      drawLayer(poseStack.last(), consumer, start.subtract(currentPos), end.subtract(currentPos), cameraPos.subtract(currentPos), 0.48F, 0.95F, 0.88F, 1.0F, 0.8F);
-      drawLayer(poseStack.last(), consumer, start.subtract(currentPos), end.subtract(currentPos), cameraPos.subtract(currentPos), 0.22F, 1.0F, 1.0F, 1.0F, 0.92F);
+      drawLayer(poseStack.last(), consumer, start.subtract(currentPos), end.subtract(currentPos), cameraPos.subtract(currentPos), 0.82F, 0.96F, 0.78F, 1.0F, 0.58F);
+      drawLayer(poseStack.last(), consumer, start.subtract(currentPos), end.subtract(currentPos), cameraPos.subtract(currentPos), 0.54F, 0.9F, 0.66F, 1.0F, 0.8F);
+      drawLayer(poseStack.last(), consumer, start.subtract(currentPos), end.subtract(currentPos), cameraPos.subtract(currentPos), 0.28F, 1.0F, 0.9F, 1.0F, 0.94F);
       poseStack.popPose();
       super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
    }

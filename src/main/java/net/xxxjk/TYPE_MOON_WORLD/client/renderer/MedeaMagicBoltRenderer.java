@@ -32,13 +32,20 @@ public class MedeaMagicBoltRenderer extends EntityRenderer<MedeaMagicBoltEntity>
          poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
          this.itemRenderer.renderStatic(new ItemStack(ModItems.RULE_BREAKER.get()), ItemDisplayContext.GROUND, 15728880, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
       } else {
-         poseStack.scale(0.9F, 0.9F, 0.9F);
+         float scale = switch (entity.getMode()) {
+            case SUPER_BOLT -> 1.45F;
+            case FIRE_BOLT, FROST_BOLT -> 1.05F;
+            default -> 0.9F;
+         };
+         float[] primary = getPrimaryColor(entity);
+         float[] accent = getAccentColor(entity);
+         poseStack.scale(scale, scale, scale);
          poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
          poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
          com.mojang.blaze3d.vertex.VertexConsumer consumer = buffer.getBuffer(GanderOrbRenderType.orb());
          com.mojang.blaze3d.vertex.PoseStack.Pose pose = poseStack.last();
-         drawOrbQuad(pose, consumer, 0.12F, 0.18F, 0.72F, 1.0F, 0.92F);
-         drawOrbQuad(pose, consumer, 0.22F, 0.58F, 0.24F, 1.0F, 0.75F);
+         drawOrbQuad(pose, consumer, entity.getMode() == MedeaMagicBoltEntity.Mode.SUPER_BOLT ? 0.18F : 0.12F, primary[0], primary[1], primary[2], 0.96F);
+         drawOrbQuad(pose, consumer, entity.getMode() == MedeaMagicBoltEntity.Mode.SUPER_BOLT ? 0.3F : 0.22F, accent[0], accent[1], accent[2], 0.78F);
       }
       poseStack.popPose();
 
@@ -53,8 +60,8 @@ public class MedeaMagicBoltRenderer extends EntityRenderer<MedeaMagicBoltEntity>
             poseStack,
             buffer,
             ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png"),
-            entity.getMode() == MedeaMagicBoltEntity.Mode.RULE_BREAKER ? 0.18F : 0.24F,
-            entity.getMode() == MedeaMagicBoltEntity.Mode.RULE_BREAKER ? 0xC3A0FF : 0x6A7DFF,
+            getTrailWidth(entity),
+            getTrailColor(entity),
             0.8F
          );
          poseStack.popPose();
@@ -72,5 +79,42 @@ public class MedeaMagicBoltRenderer extends EntityRenderer<MedeaMagicBoltEntity>
    @Override
    public ResourceLocation getTextureLocation(MedeaMagicBoltEntity entity) {
       return TextureAtlas.LOCATION_BLOCKS;
+   }
+
+   private float getTrailWidth(MedeaMagicBoltEntity entity) {
+      return switch (entity.getMode()) {
+         case RULE_BREAKER -> 0.18F;
+         case SUPER_BOLT -> 0.38F;
+         case FIRE_BOLT, FROST_BOLT -> 0.3F;
+         default -> 0.24F;
+      };
+   }
+
+   private int getTrailColor(MedeaMagicBoltEntity entity) {
+      return switch (entity.getMode()) {
+         case RULE_BREAKER -> 0xC3A0FF;
+         case SUPER_BOLT -> 0xC7EBFF;
+         case FIRE_BOLT -> 0xFF7A33;
+         case FROST_BOLT -> 0x9FEFFF;
+         default -> 0x6A7DFF;
+      };
+   }
+
+   private float[] getPrimaryColor(MedeaMagicBoltEntity entity) {
+      return switch (entity.getMode()) {
+         case SUPER_BOLT -> new float[]{0.72F, 0.9F, 1.0F};
+         case FIRE_BOLT -> new float[]{1.0F, 0.48F, 0.18F};
+         case FROST_BOLT -> new float[]{0.72F, 0.95F, 1.0F};
+         default -> new float[]{0.12F, 0.18F, 0.72F};
+      };
+   }
+
+   private float[] getAccentColor(MedeaMagicBoltEntity entity) {
+      return switch (entity.getMode()) {
+         case SUPER_BOLT -> new float[]{0.55F, 0.78F, 1.0F};
+         case FIRE_BOLT -> new float[]{1.0F, 0.76F, 0.22F};
+         case FROST_BOLT -> new float[]{0.46F, 0.76F, 1.0F};
+         default -> new float[]{0.22F, 0.58F, 0.24F};
+      };
    }
 }

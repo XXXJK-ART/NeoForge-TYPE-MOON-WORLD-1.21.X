@@ -2,10 +2,11 @@ package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import java.util.List;
 import java.util.function.Consumer;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item.TooltipContext;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import org.jetbrains.annotations.NotNull;
@@ -35,18 +37,6 @@ public class RuleBreakerItem extends SwordItem implements GeoItem, NoblePhantasm
    }
 
    @Override
-   public @NotNull ItemStack getDefaultInstance() {
-      ItemStack stack = super.getDefaultInstance();
-      if (!stack.isEnchanted()) {
-         EnchantmentHelper.updateEnchantments(
-            stack,
-            mutable -> mutable.set(BuiltInRegistries.ENCHANTMENT.getHolderOrThrow(Enchantments.SHARPNESS), 3)
-         );
-      }
-      return stack;
-   }
-
-   @Override
    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
       MedeaCombatHelper.applyRuleBreakerHit(target, attacker);
       return super.hurtEnemy(stack, target, attacker);
@@ -65,6 +55,18 @@ public class RuleBreakerItem extends SwordItem implements GeoItem, NoblePhantasm
    @Override
    public int getEnchantmentValue() {
       return 22;
+   }
+
+   @Override
+   public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+      super.inventoryTick(stack, level, entity, slotId, isSelected);
+      if (!level.isClientSide() && !stack.isEnchanted()) {
+         var registry = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+         EnchantmentHelper.updateEnchantments(
+            stack,
+            mutable -> mutable.set(registry.getHolderOrThrow(Enchantments.SHARPNESS), 3)
+         );
+      }
    }
 
    @Override
