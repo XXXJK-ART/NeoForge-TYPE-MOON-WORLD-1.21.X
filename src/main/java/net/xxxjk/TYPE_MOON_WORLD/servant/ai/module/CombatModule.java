@@ -21,10 +21,13 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.List;
 
@@ -42,6 +45,9 @@ public final class CombatModule implements ServantAiModule {
    private static final int STOMP_COOLDOWN = 80;
    private static final int UPPERCUT_COOLDOWN = 50;
    private static final int H_SWING_COOLDOWN = 50;
+   private static final int CU_LUNGING_THRUST_COOLDOWN = 55;
+   private static final int CU_DRIVING_SLASH_COOLDOWN = 65;
+   private static final int CU_SWEEPING_ADVANCE_COOLDOWN = 70;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int CU_RECAST_MP_COST = 25;
    private static final int CU_RUNE_MP_COST = 20;
@@ -52,6 +58,11 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      if (entity instanceof MedeaEntity medea) {
+         MedeaCombatHelper.tick(medea, context);
+         return;
+      }
+
       LivingEntity target = context.target();
       if (target == null || target.isDeadOrDying()) {
          entity.setTarget(null);
@@ -85,6 +96,9 @@ public final class CombatModule implements ServantAiModule {
       boolean canGaeBolg = specialization.hasCombatAction("gae_bolg");
       boolean canGaeBolgArmy = specialization.hasCombatAction("gae_bolg_army");
       boolean canRecastStance = specialization.hasCombatAction("recast_stance");
+      boolean canLungingThrust = specialization.hasCombatAction("lunging_thrust");
+      boolean canDrivingSlash = specialization.hasCombatAction("driving_slash");
+      boolean canSweepingAdvance = specialization.hasCombatAction("sweeping_advance");
       double retreatThreshold = Math.max(0.08, behaviorProfile.applyCombatDisposition(combatStyle));
       double aggressionRange = Math.max(16.0, behaviorProfile.aggressionRange());
       if (CuChulainnCombatHelper.isLaguzActive(entity)) {
@@ -346,15 +360,17 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      if (!gaeBolgWindingUp && canGaeBolgArmy && entity.getCurrentMp() >= 300 && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
+      if (!gaeBolgWindingUp && canGaeBolgArmy && entity.getCurrentMp() > 0.0 && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
          AABB armyBox = entity.getBoundingBox().inflate(8.0);
          int groupSize = entity.level().getEntitiesOfClass(
             LivingEntity.class, armyBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
          ).size();
+         boolean emergencyArmy = healthRatio <= 0.1 && target != null && target.isAlive();
          boolean desperate = healthRatio <= 0.5;
          boolean favorableWindow = distance >= 5.0 || groupSize >= 2 || desperate;
-         int armyChance = desperate ? 100 : (groupSize >= 3 ? 55 : 35);
-         if (favorableWindow && passesSkillChance(entity, armyChance, desperate ? skillChanceScale * 1.25 : skillChanceScale)) {
+         int armyChance = groupSize >= 3 ? 95 : 70;
+         double armyScale = desperate ? skillChanceScale * 1.25 : skillChanceScale;
+         if (emergencyArmy || favorableWindow && passesSkillChance(entity, armyChance, armyScale)) {
             performGaeBolgArmy(entity, target);
             return;
          }
@@ -363,6 +379,33 @@ public final class CombatModule implements ServantAiModule {
       if (!gaeBolgWindingUp && canGaeBolg && entity.getCurrentMp() >= 10 && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
          if (distance <= 12.0 && (distance <= 3.0 || passesSkillChance(entity, 28, skillChanceScale))) {
             performGaeBolg(entity, target, distance <= 3.0);
+            return;
+         }
+      }
+
+      if (CuChulainnCombatHelper.isCuChulainn(entity) && canLungingThrust && hasLineOfSight && distance >= 3.0 && distance <= 7.5) {
+         int lastThrust = data.getInt("CuLastLungingThrustTick");
+         if (tick - lastThrust >= CU_LUNGING_THRUST_COOLDOWN && passesSkillChance(entity, 42, skillChanceScale)) {
+            data.putInt("CuLastLungingThrustTick", tick);
+            performCuLungingThrust(entity, target);
+            return;
+         }
+      }
+
+      if (CuChulainnCombatHelper.isCuChulainn(entity) && canDrivingSlash && hasLineOfSight && distance >= 2.5 && distance <= 6.5) {
+         int lastDrive = data.getInt("CuLastDrivingSlashTick");
+         if (tick - lastDrive >= CU_DRIVING_SLASH_COOLDOWN && passesSkillChance(entity, 38, skillChanceScale)) {
+            data.putInt("CuLastDrivingSlashTick", tick);
+            performCuDrivingSlash(entity, target);
+            return;
+         }
+      }
+
+      if (CuChulainnCombatHelper.isCuChulainn(entity) && canSweepingAdvance && hasLineOfSight && distance >= 2.5 && distance <= 5.5) {
+         int lastAdvance = data.getInt("CuLastSweepingAdvanceTick");
+         if (tick - lastAdvance >= CU_SWEEPING_ADVANCE_COOLDOWN && passesSkillChance(entity, 36, skillChanceScale)) {
+            data.putInt("CuLastSweepingAdvanceTick", tick);
+            performCuSweepingAdvance(entity, target);
             return;
          }
       }
@@ -949,25 +992,35 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private boolean tryUseCuRune(ServantEntity entity, LivingEntity target, double healthRatio, double distance, boolean hasLineOfSight) {
-      CuChulainnCombatHelper.RuneType activeRune = CuChulainnCombatHelper.getActiveRune(entity);
+      boolean algizActive = CuChulainnCombatHelper.hasRune(entity, CuChulainnCombatHelper.RuneType.ALGIZ);
+      boolean ansuzActive = CuChulainnCombatHelper.hasRune(entity, CuChulainnCombatHelper.RuneType.ANSUZ);
+      boolean tiwazActive = CuChulainnCombatHelper.hasRune(entity, CuChulainnCombatHelper.RuneType.TIWAZ);
+      boolean laguzActive = CuChulainnCombatHelper.hasRune(entity, CuChulainnCombatHelper.RuneType.LAGUZ);
+      boolean berkanaActive = CuChulainnCombatHelper.hasRune(entity, CuChulainnCombatHelper.RuneType.BERKANA);
+
+      if (healthRatio < 0.5 && entity.getHealth() < entity.getMaxHealth() * 0.9F && !berkanaActive) {
+         performBerkanaRune(entity);
+         return true;
+      }
+
       if (healthRatio < 0.65 && entity.getPersistentData().getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG) <= 0.0F
-            && activeRune != CuChulainnCombatHelper.RuneType.ALGIZ) {
+            && !algizActive) {
          performAlgizRune(entity);
          return true;
       }
 
-      if (distance > 7.0 && hasLineOfSight && target != null && activeRune != CuChulainnCombatHelper.RuneType.ANSUZ) {
+      if (distance > 7.0 && hasLineOfSight && target != null && !ansuzActive) {
          performAnsuzRune(entity, target);
          return true;
       }
 
-      if (distance <= 4.5 && activeRune != CuChulainnCombatHelper.RuneType.TIWAZ) {
+      if (distance <= 4.5 && !tiwazActive) {
          performTiwazRune(entity);
          return true;
       }
 
-      if ((!hasLineOfSight || activeRune == CuChulainnCombatHelper.RuneType.NONE)
-            && activeRune != CuChulainnCombatHelper.RuneType.LAGUZ) {
+      if ((!hasLineOfSight || (!laguzActive && distance > 5.5))
+            && !laguzActive) {
          performLaguzRune(entity);
          return true;
       }
@@ -1006,6 +1059,27 @@ public final class CombatModule implements ServantAiModule {
          20, 0.6, 0.8, 0.6, 0.04);
    }
 
+   private void performBerkanaRune(ServantEntity entity) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - CU_RUNE_MP_COST);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      CuChulainnCombatHelper.setRune(entity, CuChulainnCombatHelper.RuneType.BERKANA, 180);
+      java.util.List<net.minecraft.world.effect.MobEffectInstance> active = java.util.List.copyOf(entity.getActiveEffects());
+      for (net.minecraft.world.effect.MobEffectInstance effect : active) {
+         if (effect.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL) {
+            entity.removeEffect(effect.getEffect());
+         }
+      }
+      spawnRuneParticles(sl, entity, ModParticles.BERKANA_RUNE.get(), 16, 0.5, 0.01);
+      sl.sendParticles(ParticleTypes.HEART,
+         entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(),
+         10, 0.4, 0.55, 0.4, 0.02);
+      sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+         entity.getX(), entity.getY() + entity.getBbHeight() * 0.6, entity.getZ(),
+         12, 0.45, 0.7, 0.45, 0.03);
+   }
+
    private void performTiwazRune(ServantEntity entity) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
       entity.setCurrentMp(entity.getCurrentMp() - CU_RUNE_MP_COST);
@@ -1039,19 +1113,35 @@ public final class CombatModule implements ServantAiModule {
       spawnRuneParticles(sl, entity, ModParticles.ANSUZ_RUNE.get(), 18, 0.45, 0.02);
       Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.65, 0.0);
       Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
-      for (double t = 0.0; t <= 1.0; t += 0.1) {
-         Vec3 pos = start.lerp(end, t);
-         sl.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 1, 0.03, 0.03, 0.03, 0.0);
+      spawnAnsuzTrace(sl, start, end);
+      AABB groupBox = new AABB(end, end).inflate(4.0);
+      int nearbyEnemies = sl.getEntitiesOfClass(
+         LivingEntity.class,
+         groupBox,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      ).size();
+      int form = nearbyEnemies >= 3 ? 1 + entity.getRandom().nextInt(2) : entity.getRandom().nextInt(3);
+      switch (form) {
+         case 1 -> releaseAnsuzFlamePillars(entity, target, end);
+         case 2 -> releaseAnsuzFireline(entity, target, start, end);
+         default -> releaseAnsuzFireburst(entity, target, end);
       }
+   }
+
+   private void releaseAnsuzFireburst(ServantEntity entity, LivingEntity target, Vec3 fallbackEnd) {
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(8, () -> {
          if (!(entity.level() instanceof ServerLevel serverLevel) || !entity.isAlive()) {
             return;
          }
          Vec3 impact = target.isAlive()
             ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)
-            : end;
+            : fallbackEnd;
          AABB fireBox = new AABB(impact, impact).inflate(2.5);
-         for (LivingEntity living : serverLevel.getEntitiesOfClass(LivingEntity.class, fireBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
+         for (LivingEntity living : serverLevel.getEntitiesOfClass(
+            LivingEntity.class,
+            fireBox,
+            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+         )) {
             living.hurt(entity.damageSources().magic(), 80.0F);
             living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 100));
          }
@@ -1059,6 +1149,78 @@ public final class CombatModule implements ServantAiModule {
          serverLevel.sendParticles(ParticleTypes.SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
          serverLevel.playSound(null, impact.x, impact.y, impact.z, SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.1F, 0.8F);
       });
+   }
+
+   private void releaseAnsuzFlamePillars(ServantEntity entity, LivingEntity target, Vec3 fallbackEnd) {
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(8, () -> {
+         if (!(entity.level() instanceof ServerLevel serverLevel) || !entity.isAlive()) {
+            return;
+         }
+
+         Vec3 impact = target.isAlive()
+            ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)
+            : fallbackEnd;
+         java.util.List<Vec3> pillars = java.util.List.of(
+            impact,
+            impact.add(2.2, 0.0, 0.0),
+            impact.add(-2.2, 0.0, 0.0),
+            impact.add(0.0, 0.0, 2.2)
+         );
+         java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
+         for (Vec3 pillar : pillars) {
+            serverLevel.sendParticles(ParticleTypes.FLAME, pillar.x, pillar.y + 1.2, pillar.z, 20, 0.35, 1.2, 0.35, 0.02);
+            serverLevel.sendParticles(ParticleTypes.SMOKE, pillar.x, pillar.y + 1.1, pillar.z, 10, 0.3, 1.0, 0.3, 0.02);
+            AABB pillarBox = new AABB(pillar, pillar).inflate(1.4, 2.2, 1.4);
+            for (LivingEntity living : serverLevel.getEntitiesOfClass(
+               LivingEntity.class,
+               pillarBox,
+               e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+            )) {
+               if (hit.add(living)) {
+                  living.hurt(entity.damageSources().magic(), 70.0F);
+                  living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 120));
+               }
+            }
+         }
+         serverLevel.playSound(null, impact.x, impact.y, impact.z, SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.15F, 0.85F);
+      });
+   }
+
+   private void releaseAnsuzFireline(ServantEntity entity, LivingEntity target, Vec3 start, Vec3 fallbackEnd) {
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(6, () -> {
+         if (!(entity.level() instanceof ServerLevel serverLevel) || !entity.isAlive()) {
+            return;
+         }
+
+         Vec3 end = target.isAlive()
+            ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)
+            : fallbackEnd;
+         java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
+         for (double t = 0.15; t <= 1.0; t += 0.17) {
+            Vec3 pos = start.lerp(end, t);
+            serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.x, pos.y, pos.z, 6, 0.2, 0.25, 0.2, 0.01);
+            serverLevel.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 8, 0.25, 0.25, 0.25, 0.02);
+            AABB segmentBox = new AABB(pos, pos).inflate(1.35);
+            for (LivingEntity living : serverLevel.getEntitiesOfClass(
+               LivingEntity.class,
+               segmentBox,
+               e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+            )) {
+               if (hit.add(living)) {
+                  living.hurt(entity.damageSources().magic(), 60.0F);
+                  living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 80));
+               }
+            }
+         }
+         serverLevel.playSound(null, end.x, end.y, end.z, SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.0F, 1.0F);
+      });
+   }
+
+   private void spawnAnsuzTrace(ServerLevel level, Vec3 start, Vec3 end) {
+      for (double t = 0.0; t <= 1.0; t += 0.1) {
+         Vec3 pos = start.lerp(end, t);
+         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 1, 0.03, 0.03, 0.03, 0.0);
+      }
    }
 
    private void performGaeBolg(ServantEntity entity, LivingEntity target, boolean meleeMode) {
@@ -1075,13 +1237,21 @@ public final class CombatModule implements ServantAiModule {
 
    private void performGaeBolgArmy(ServantEntity entity, LivingEntity target) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      entity.setCurrentMp(entity.getCurrentMp() - 300.0);
+      double availableMp = Math.max(0.0, entity.getCurrentMp());
+      double maxMp = Math.max(1.0, entity.getMaxMp());
+      float damageScale = (float)Math.min(1.0, availableMp / maxMp);
+      float armyDamage = 200.0F + 200.0F * damageScale;
+      entity.setCurrentMp(0.0);
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       entity.triggerGaeBolgThrowAnimation(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      entity.jumpFromGround();
+      Vec3 launch = entity.getDeltaMovement();
+      entity.setDeltaMovement(launch.x, Math.max(launch.y, 0.78), launch.z);
+      entity.hasImpulse = true;
       Vec3 fallbackAim = target.position().add(0.0, target.getBbHeight() * 0.3, 0.0);
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, () -> {
-         releaseArmyGaeBolg(entity, target, fallbackAim);
+         releaseArmyGaeBolg(entity, target, fallbackAim, armyDamage);
       });
    }
 
@@ -1097,13 +1267,11 @@ public final class CombatModule implements ServantAiModule {
       }
 
       if (preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
-         applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
-         if (resolvedTarget.isAlive() && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget)) {
-            resolvedTarget.invulnerableTime = 0;
-            resolvedTarget.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);
-            if (resolvedTarget.isAlive()) {
-               resolvedTarget.setHealth(0.0F);
-               resolvedTarget.die(entity.damageSources().genericKill());
+         boolean deathThorn = resolvedTarget.isAlive() && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
+         if (!tryConsumeGodHandLife(entity, resolvedTarget, 250.0F, deathThorn)) {
+            applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
+            if (resolvedTarget.isAlive() && deathThorn) {
+               applyDeathThorn(entity, resolvedTarget);
             }
          }
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
@@ -1128,7 +1296,7 @@ public final class CombatModule implements ServantAiModule {
       sl.addFreshEntity(projectile);
    }
 
-   private void releaseArmyGaeBolg(ServantEntity entity, LivingEntity target, Vec3 fallbackAim) {
+   private void releaseArmyGaeBolg(ServantEntity entity, LivingEntity target, Vec3 fallbackAim, float armyDamage) {
       CuChulainnCombatHelper.clearGaeBolgWindup(entity);
       if (!(entity.level() instanceof ServerLevel sl) || !entity.isAlive()) {
          return;
@@ -1141,6 +1309,7 @@ public final class CombatModule implements ServantAiModule {
 
       GaeBulgProjectileEntity projectile = new GaeBulgProjectileEntity(sl, entity);
       projectile.setMode(GaeBulgProjectileEntity.Mode.ARMY);
+      projectile.setArmyDamage(armyDamage);
       if (resolvedTarget != null) {
          projectile.setTrackedTarget(resolvedTarget);
       }
@@ -1153,14 +1322,147 @@ public final class CombatModule implements ServantAiModule {
       sl.addFreshEntity(projectile);
    }
 
+   private void performCuLungingThrust(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = horizontalDashDirection(entity, target);
+      if (dir == null) return;
+
+      entity.triggerUppercutAnimation();
+      launchDash(entity, dir, 1.4);
+      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
+      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
+      float damage = (float)(baseAtk * 1.45);
+      AABB hitBox = entity.getBoundingBox().expandTowards(dir.scale(4.8)).inflate(0.9, 0.8, 0.9);
+      for (LivingEntity living : sl.getEntitiesOfClass(
+         LivingEntity.class,
+         hitBox,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         living.hurt(entity.damageSources().mobAttack(entity), damage);
+         living.push(dir.x * 1.15, 0.35, dir.z * 1.15);
+         living.hurtMarked = true;
+      }
+      spawnDashTrail(sl, entity, dir, 4.8, ParticleTypes.CRIT);
+   }
+
+   private void performCuDrivingSlash(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = horizontalDashDirection(entity, target);
+      if (dir == null) return;
+
+      entity.triggerSlashAnimation();
+      launchDash(entity, dir, 1.25);
+      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
+      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
+      float damage = (float)(baseAtk * 1.55);
+      AABB hitBox = entity.getBoundingBox().expandTowards(dir.scale(4.4)).inflate(1.1, 0.9, 1.1);
+      for (LivingEntity living : sl.getEntitiesOfClass(
+         LivingEntity.class,
+         hitBox,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         living.hurt(entity.damageSources().mobAttack(entity), damage);
+         living.push(dir.x * 0.95, 0.25, dir.z * 0.95);
+         living.hurtMarked = true;
+      }
+      spawnDashTrail(sl, entity, dir, 4.4, ParticleTypes.SWEEP_ATTACK);
+   }
+
+   private void performCuSweepingAdvance(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = horizontalDashDirection(entity, target);
+      if (dir == null) return;
+
+      entity.triggerHorizontalSwingAnimation();
+      launchDash(entity, dir, 1.15);
+      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
+      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
+      float damage = (float)(baseAtk * 1.25);
+      AABB hitBox = entity.getBoundingBox().expandTowards(dir.scale(3.8)).inflate(1.8, 1.0, 1.8);
+      for (LivingEntity living : sl.getEntitiesOfClass(
+         LivingEntity.class,
+         hitBox,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         living.hurt(entity.damageSources().mobAttack(entity), damage);
+         living.push(dir.x * 0.8, 0.22, dir.z * 0.8);
+         living.hurtMarked = true;
+      }
+      spawnDashTrail(sl, entity, dir, 3.8, ParticleTypes.CLOUD);
+   }
+
    private void applyFixedNoArmorDamage(ServantEntity attacker, LivingEntity target, float damage) {
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), damage);
       target.invulnerableTime = 0;
       float desired = Math.max(0.0F, before - damage);
-      if (target.getHealth() > desired) {
+      if (target.getHealth() > desired && target.getHealth() <= before) {
          target.setHealth(desired);
+      }
+   }
+
+   private boolean tryConsumeGodHandLife(ServantEntity attacker, LivingEntity target, float incomingDamage, boolean deathThorn) {
+      CompoundTag targetData = target.getPersistentData();
+      if (targetData.getBoolean("CausalSevered") || !targetData.getBoolean("GodHandActive")) {
+         return false;
+      }
+
+      int livesLeft = targetData.getInt("GodHandLives");
+      if (livesLeft <= 0) {
+         return false;
+      }
+
+      boolean lethalByDamage = target.getHealth() <= incomingDamage;
+      if (!lethalByDamage && !deathThorn) {
+         return false;
+      }
+
+      target.setHealth(target.getMaxHealth());
+      targetData.putInt("GodHandLives", livesLeft - 1);
+      if (attacker.level() instanceof ServerLevel sl) {
+         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
+            target.getX(), target.getY() + 1.0, target.getZ(),
+            30, 0.6, 0.6, 0.6, 0.15);
+         sl.sendParticles(ParticleTypes.POOF,
+            target.getX(), target.getY() + 0.5, target.getZ(),
+            20, 0.5, 0.5, 0.5, 0.1);
+         sl.playSound(null, target.blockPosition(),
+            SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
+      }
+      return true;
+   }
+
+   private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
+      float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
+      target.invulnerableTime = 0;
+      target.hurt(attacker.damageSources().mobAttack(attacker), lethalDamage);
+      target.invulnerableTime = 0;
+      if (target.isAlive()) {
+         target.setHealth(0.0F);
+         target.die(attacker.damageSources().genericKill());
+      }
+   }
+
+   private Vec3 horizontalDashDirection(ServantEntity entity, LivingEntity target) {
+      Vec3 dir = target.position().subtract(entity.position());
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      if (horizontal.lengthSqr() < 1.0E-4) {
+         return null;
+      }
+      return horizontal.normalize();
+   }
+
+   private void launchDash(ServantEntity entity, Vec3 dir, double speed) {
+      entity.setDeltaMovement(dir.x * speed, Math.max(entity.getDeltaMovement().y, 0.12), dir.z * speed);
+      entity.hasImpulse = true;
+      entity.getNavigation().moveTo(entity.getX() + dir.x * 4.5, entity.getY(), entity.getZ() + dir.z * 4.5, 1.45);
+   }
+
+   private void spawnDashTrail(ServerLevel level, ServantEntity entity, Vec3 dir, double length, net.minecraft.core.particles.ParticleOptions particle) {
+      for (double t = 0.5; t <= length; t += 0.8) {
+         Vec3 pos = entity.position().add(dir.scale(t)).add(0.0, entity.getBbHeight() * 0.45, 0.0);
+         level.sendParticles(particle, pos.x, pos.y, pos.z, 1, 0.05, 0.05, 0.05, 0.0);
       }
    }
 

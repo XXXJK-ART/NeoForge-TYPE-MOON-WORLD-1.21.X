@@ -23,10 +23,12 @@ public final class CuChulainnCombatHelper {
    public static final String GAE_BOLG_ARMY_USED_TAG = "CuGaeBolgArmyUsed";
    public static final String GAE_BOLG_WINDUP_UNTIL_TAG = "CuGaeBolgWindupUntil";
    public static final String ALGIZ_SHIELD_TAG = "CuAlgizShield";
+   public static final String BERKANA_NEXT_HEAL_TICK_TAG = "CuBerkanaNextHealTick";
    public static final String EXHAUST_EXPIRES_TAG = "CuExhaustExpires";
    public static final int SINGLE_GAE_BOLG_COOLDOWN = 160;
    public static final int ARMY_GAE_BOLG_COOLDOWN = 2400;
    public static final int GAE_BOLG_WINDUP_TICKS = 50;
+   public static final int OUT_OF_COMBAT_RECOVERY_TICKS = 100;
    public static final int RUNE_CAST_COOLDOWN = 80;
    public static final int RECAST_RESET_TICKS = 200;
    private static final ResourceLocation TIWAZ_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "cu_tiwaz_attack");
@@ -43,7 +45,8 @@ public final class CuChulainnCombatHelper {
       ANSUZ("ansuz"),
       LAGUZ("laguz"),
       TIWAZ("tiwaz"),
-      ALGIZ("algiz");
+      ALGIZ("algiz"),
+      BERKANA("berkana");
 
       private final String id;
 
@@ -83,11 +86,28 @@ public final class CuChulainnCombatHelper {
    }
 
    public static boolean isLaguzActive(ServantEntity entity) {
-      return getActiveRune(entity) == RuneType.LAGUZ;
+      return hasRune(entity, RuneType.LAGUZ);
    }
 
    public static RuneType getActiveRune(ServantEntity entity) {
-      return RuneType.fromId(entity.getPersistentData().getString(ACTIVE_RUNE_TAG));
+      RuneType lastCast = RuneType.fromId(entity.getPersistentData().getString(ACTIVE_RUNE_TAG));
+      if (hasRune(entity, lastCast)) {
+         return lastCast;
+      }
+
+      for (RuneType type : RuneType.values()) {
+         if (hasRune(entity, type)) {
+            return type;
+         }
+      }
+      return RuneType.NONE;
+   }
+
+   public static boolean hasRune(ServantEntity entity, RuneType runeType) {
+      return entity != null
+         && runeType != null
+         && runeType != RuneType.NONE
+         && entity.getPersistentData().getLong(runeExpireTag(runeType)) > entity.level().getGameTime();
    }
 
    public static boolean canUseRecastStance(ServantEntity entity) {
@@ -155,32 +175,31 @@ public final class CuChulainnCombatHelper {
    }
 
    public static void setRune(ServantEntity entity, RuneType runeType, int durationTicks) {
-      clearRune(entity);
       if (runeType == RuneType.NONE) {
          return;
       }
 
+      long now = entity.level().getGameTime();
       entity.getPersistentData().putString(ACTIVE_RUNE_TAG, runeType.id());
-      entity.getPersistentData().putLong(RUNE_EXPIRES_TAG, entity.level().getGameTime() + durationTicks);
+      entity.getPersistentData().putLong(runeExpireTag(runeType), now + durationTicks);
       switch (runeType) {
          case TIWAZ -> applyTiwaz(entity);
          case ALGIZ -> entity.getPersistentData().putFloat(ALGIZ_SHIELD_TAG, 100.0F);
+         case BERKANA -> {
+            entity.heal(Math.max(8.0F, entity.getMaxHealth() * 0.18F));
+            entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 20L);
+         }
          default -> {
          }
       }
    }
 
    public static void clearRune(ServantEntity entity) {
-      RuneType active = getActiveRune(entity);
-      if (active == RuneType.TIWAZ) {
-         removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), TIWAZ_ATTACK_ID);
-         removeModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), TIWAZ_SPEED_ID);
-         removeModifier(entity.getAttribute(Attributes.ARMOR), TIWAZ_ARMOR_ID);
+      for (RuneType runeType : RuneType.values()) {
+         clearRune(entity, runeType);
       }
-
       entity.getPersistentData().remove(ACTIVE_RUNE_TAG);
       entity.getPersistentData().remove(RUNE_EXPIRES_TAG);
-      entity.getPersistentData().remove(ALGIZ_SHIELD_TAG);
    }
 
    public static void applyExhaustion(ServantEntity entity, int durationTicks) {
@@ -204,7 +223,7 @@ public final class CuChulainnCombatHelper {
       long lastCombat = entity.getPersistentData().getLong(LAST_COMBAT_TICK_TAG);
       LivingEntity target = entity.getTarget();
       boolean outOfCombat = target == null || !target.isAlive() || entity.distanceToSqr(target) > 400.0;
-      if (lastCombat > 0 && outOfCombat) {
+      if (lastCombat > 0 && outOfCombat && now - lastCombat >= OUT_OF_COMBAT_RECOVERY_TICKS) {
          restoreOutOfCombat(entity);
          entity.getPersistentData().remove(LAST_COMBAT_TICK_TAG);
          lastCombat = 0;
@@ -215,9 +234,27 @@ public final class CuChulainnCombatHelper {
          entity.getPersistentData().putBoolean(GAE_BOLG_ARMY_USED_TAG, false);
       }
 
-      long runeExpires = entity.getPersistentData().getLong(RUNE_EXPIRES_TAG);
-      if (runeExpires > 0 && now >= runeExpires) {
-         clearRune(entity);
+      for (RuneType runeType : RuneType.values()) {
+         if (runeType == RuneType.NONE) {
+            continue;
+         }
+
+         long runeExpires = entity.getPersistentData().getLong(runeExpireTag(runeType));
+         if (runeExpires <= 0) {
+            continue;
+         }
+
+         if (runeType == RuneType.BERKANA && now < runeExpires) {
+            long nextHealTick = entity.getPersistentData().getLong(BERKANA_NEXT_HEAL_TICK_TAG);
+            if (nextHealTick <= 0 || now >= nextHealTick) {
+               entity.heal(Math.max(4.0F, entity.getMaxHealth() * 0.04F));
+               entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 20L);
+            }
+         }
+
+         if (now >= runeExpires) {
+            clearRune(entity, runeType);
+         }
       }
 
       long exhaustExpires = entity.getPersistentData().getLong(EXHAUST_EXPIRES_TAG);
@@ -268,6 +305,31 @@ public final class CuChulainnCombatHelper {
       if (attribute != null) {
          attribute.removeModifier(id);
       }
+   }
+
+   private static void clearRune(ServantEntity entity, RuneType runeType) {
+      if (entity == null || runeType == null || runeType == RuneType.NONE) {
+         return;
+      }
+
+      if (runeType == RuneType.TIWAZ) {
+         removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), TIWAZ_ATTACK_ID);
+         removeModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), TIWAZ_SPEED_ID);
+         removeModifier(entity.getAttribute(Attributes.ARMOR), TIWAZ_ARMOR_ID);
+      } else if (runeType == RuneType.ALGIZ) {
+         entity.getPersistentData().remove(ALGIZ_SHIELD_TAG);
+      } else if (runeType == RuneType.BERKANA) {
+         entity.getPersistentData().remove(BERKANA_NEXT_HEAL_TICK_TAG);
+      }
+
+      entity.getPersistentData().remove(runeExpireTag(runeType));
+      if (runeType.id().equals(entity.getPersistentData().getString(ACTIVE_RUNE_TAG))) {
+         entity.getPersistentData().remove(ACTIVE_RUNE_TAG);
+      }
+   }
+
+   private static String runeExpireTag(RuneType runeType) {
+      return "CuRuneExpire." + runeType.id();
    }
 
    private static void restoreOutOfCombat(ServantEntity entity) {

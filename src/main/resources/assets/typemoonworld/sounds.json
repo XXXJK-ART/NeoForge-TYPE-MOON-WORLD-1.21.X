@@ -90,5 +90,38 @@
     "sounds": [
       "typemoonworld:voice/cu_chulainn/gae_bolg"
     ]
+  },
+  "medea_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/attack1",
+      "typemoonworld:voice/medea/attack2"
+    ]
+  },
+  "medea_voice_spell": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/spell"
+    ]
+  },
+  "medea_voice_rule_breaker": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/rule_breaker"
+    ]
+  },
+  "medea_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/fail1",
+      "typemoonworld:voice/medea/fail2"
+    ]
+  },
+  "medea_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/victory1",
+      "typemoonworld:voice/medea/victory2"
+    ]
   }
 }

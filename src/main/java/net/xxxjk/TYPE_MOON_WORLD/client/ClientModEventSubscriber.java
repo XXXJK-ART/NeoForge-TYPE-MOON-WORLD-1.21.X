@@ -26,8 +26,10 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.particle.RuneSigilParticle;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HecatesStaffRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariMuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
@@ -109,6 +111,28 @@ public class ClientModEventSubscriber {
             return this.renderer;
          }
       }, new Item[]{ModItems.GAE_BULG.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private RuleBreakerRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new RuleBreakerRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.RULE_BREAKER.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private HecatesStaffRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new HecatesStaffRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.HECATES_STAFF.get()});
       event.registerMobEffect(
          new IClientMobEffectExtensions() {
             private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/mob_effect/nine_lives.jpg");
@@ -145,5 +169,6 @@ public class ClientModEventSubscriber {
       event.registerSpriteSet(ModParticles.LAGUZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.35F, 0.75F, 1.0F, 1.75F, 22));
       event.registerSpriteSet(ModParticles.TIWAZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 1.0F, 0.88F, 0.42F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.ALGIZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.78F, 0.55F, 1.0F, 1.95F, 24));
+      event.registerSpriteSet(ModParticles.BERKANA_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.42F, 1.0F, 0.48F, 1.95F, 24));
    }
 }

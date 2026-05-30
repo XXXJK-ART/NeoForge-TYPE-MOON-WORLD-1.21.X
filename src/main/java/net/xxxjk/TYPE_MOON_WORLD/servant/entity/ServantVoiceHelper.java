@@ -31,6 +31,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.CU_CHULAINN_VOICE_ATTACK.get());
+      } else if (isMedea(servant)) {
+         if (servant.getRandom().nextFloat() > 0.4F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_ATTACK.get());
       }
    }
 
@@ -61,6 +66,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.15F, 0.92F, ModSounds.HERACLES_VOICE_VICTORY.get());
       } else if (isCuChulainn(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.CU_CHULAINN_VOICE_VICTORY.get());
+      } else if (isMedea(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_VICTORY.get());
       }
    }
 
@@ -71,6 +78,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.15F, 0.9F, ModSounds.HERACLES_VOICE_FAIL.get());
       } else if (isCuChulainn(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CU_CHULAINN_VOICE_FAIL.get());
+      } else if (isMedea(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDEA_VOICE_FAIL.get());
       }
    }
 
@@ -80,6 +89,22 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "gae_bolg", SPECIAL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get());
+   }
+
+   public static void tryPlaySpell(ServantEntity servant) {
+      if (!isMedea(servant)) {
+         return;
+      }
+
+      playVoice(servant, "spell", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_SPELL.get());
+   }
+
+   public static void tryPlayRuleBreaker(ServantEntity servant) {
+      if (!isMedea(servant)) {
+         return;
+      }
+
+      playVoice(servant, "rule_breaker", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_RULE_BREAKER.get());
    }
 
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
@@ -114,5 +139,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isCuChulainn(ServantEntity servant) {
       return servant != null && CuChulainnEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isMedea(ServantEntity servant) {
+      return servant != null && MedeaEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

@@ -122,6 +122,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       super(entityType, level);
       this.servantId = servantId == null ? "" : servantId;
       this.setPathfindingMalus(PathType.WATER, -1.0F);
+      this.setPersistenceRequired();
    }
 
    @Deprecated(forRemoval = false)
@@ -134,7 +135,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return null;
    }
 
-   private ServantAnimations getAnimationSet() {
+   protected ServantAnimations getAnimationSet() {
       ServantDefinition def = this.getDefinition();
       return def != null ? def.animations() : ServantAnimations.empty();
    }
@@ -184,6 +185,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return PathfinderMob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 100.0)
          .add(Attributes.MOVEMENT_SPEED, 0.2)
+         .add(Attributes.STEP_HEIGHT, 3.0)
          .add(Attributes.ATTACK_DAMAGE, 5.0)
          .add(Attributes.ARMOR, 4.0)
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
@@ -382,6 +384,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          ResourceLocation rl = ResourceLocation.parse(weaponId);
          BuiltInRegistries.ITEM.getOptional(rl).ifPresent(item -> this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item)));
       }, () -> {});
+   }
+
+   @Override
+   public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+      return false;
    }
 
    public Vec3 getHandItemOffset() {
@@ -978,6 +985,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return def != null ? def.parameters().critRatePercent() : 2.0;
    }
 
+   protected boolean useFloatingAnimation() {
+      return false;
+   }
+
    @Override
    protected EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
       var specialization = this.getSpecialization();
@@ -999,7 +1010,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       // 涓绘帶鍒跺櫒锛歩dle / walk
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          var animations = this.getAnimationSet();
-         String animation = event.isMoving() ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
+         String animation = null;
+         if (this.useFloatingAnimation()) {
+            animation = animations.actionAnimation("fly").orElse(null);
+         }
+         if (animation == null) {
+            animation = event.isMoving() ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
+         }
          return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));
       // 鍔ㄤ綔鎺у埗鍣紙transition = 0锛屾壙杞芥妧鑳戒笌鏀诲嚮鍔ㄤ綔锛?

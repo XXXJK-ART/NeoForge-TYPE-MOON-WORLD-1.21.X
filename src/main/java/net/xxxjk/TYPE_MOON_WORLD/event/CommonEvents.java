@@ -47,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
@@ -62,6 +63,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
    modid = "typemoonworld"
 )
 public class CommonEvents {
+   private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
+
    @SubscribeEvent
    public static void onAddReloadListeners(AddReloadListenerEvent event) {
       event.addListener(new ServantDefinitionLoader());
@@ -451,6 +454,7 @@ public class CommonEvents {
          CuChulainnCombatHelper.markCombat(servant);
          if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
             && !CuChulainnCombatHelper.isMovementRestricted(servant)
+            && !event.getSource().is(DamageTypes.EXPLOSION)
             && event.getSource().getDirectEntity() instanceof Projectile projectile
             && projectile.getOwner() != servant) {
             if (servant.level() instanceof ServerLevel sl) {
@@ -558,19 +562,14 @@ public class CommonEvents {
          int livesLeft = data.getInt("GodHandLives");
          if (livesLeft > 0) {
             event.setCanceled(true);
-            servant.setHealth(servant.getMaxHealth());
-            data.putInt("GodHandLives", livesLeft - 1);
-
-            if (servant.level() instanceof ServerLevel sl) {
-               sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-                  servant.getX(), servant.getY() + 1.0, servant.getZ(),
-                  30, 0.6, 0.6, 0.6, 0.15);
-               sl.sendParticles(ParticleTypes.POOF,
-                  servant.getX(), servant.getY() + 0.5, servant.getZ(),
-                  20, 0.5, 0.5, 0.5, 0.1);
-               sl.playSound(null, servant.blockPosition(),
-                  SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
+            if (respawnHeraclesFromGodHand(servant, livesLeft - 1)) {
+               return;
             }
+
+            servant.setHealth(servant.getMaxHealth());
+            servant.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 4, false, false, true));
+            data.putInt("GodHandLives", livesLeft - 1);
+            data.putLong(GOD_HAND_REVIVE_LOCK_TAG, servant.level().getGameTime() + 20L);
             return;
          }
       }
@@ -645,6 +644,20 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getEntity() instanceof ServantEntity servant) {
+            CompoundTag data = servant.getPersistentData();
+            boolean causalSevered = data.getBoolean("CausalSevered");
+            if (!causalSevered && data.getBoolean("GodHandActive")) {
+               int livesLeft = data.getInt("GodHandLives");
+               if (livesLeft > 0) {
+                  event.setCanceled(true);
+                  if (respawnHeraclesFromGodHand(servant, livesLeft - 1)) {
+                     return;
+                  }
+               }
+            }
+         }
+
          ServantEntity servantKiller = null;
          if (event.getSource().getEntity() instanceof ServantEntity servant) {
             servantKiller = servant;
@@ -695,6 +708,66 @@ public class CommonEvents {
             }
          }
       }
+   }
+
+   private static boolean respawnHeraclesFromGodHand(ServantEntity servant, int remainingLives) {
+      if (!(servant instanceof HeraclesEntity) || !(servant.level() instanceof ServerLevel serverLevel)) {
+         return false;
+      }
+
+      CompoundTag snapshot = servant.saveWithoutId(new CompoundTag());
+      snapshot.remove("UUID");
+      HeraclesEntity replacement = new HeraclesEntity(ModEntities.HERACLES.get(), serverLevel);
+      replacement.load(snapshot);
+      replacement.moveTo(servant.getX(), servant.getY(), servant.getZ(), servant.getYRot(), servant.getXRot());
+      replacement.setYBodyRot(servant.yBodyRot);
+      replacement.setYHeadRot(servant.getYHeadRot());
+      replacement.setDeltaMovement(Vec3.ZERO);
+      replacement.setNoGravity(false);
+      replacement.clearFire();
+      replacement.setTarget(servant.getTarget());
+      replacement.getPersistentData().merge(servant.getPersistentData().copy());
+      replacement.getPersistentData().putInt("GodHandLives", remainingLives);
+      replacement.getPersistentData().remove("CausalSevered");
+      replacement.getPersistentData().putLong(GOD_HAND_REVIVE_LOCK_TAG, serverLevel.getGameTime() + 20L);
+      replacement.setHealth(replacement.getMaxHealth());
+      replacement.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 4, false, false, true));
+      replacement.setPersistenceRequired();
+
+      serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         servant.getX(), servant.getY() + servant.getBbHeight() * 0.8, servant.getZ(),
+         60, 0.8, 1.2, 0.8, 0.03);
+      serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
+         servant.getX(), servant.getY() + servant.getBbHeight() * 0.65, servant.getZ(),
+         36, 0.9, 1.0, 0.9, 0.02);
+      serverLevel.sendParticles(ParticleTypes.CLOUD,
+         servant.getX(), servant.getY() + 0.3, servant.getZ(),
+         45, 0.85, 0.35, 0.85, 0.04);
+      serverLevel.sendParticles(ParticleTypes.POOF,
+         servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+         24, 0.55, 0.75, 0.55, 0.03);
+      serverLevel.playSound(null, servant.blockPosition(), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
+
+      LivingEntity oldTarget = servant.getTarget();
+      servant.remove(RemovalReason.DISCARDED);
+      serverLevel.addFreshEntity(replacement);
+      if (oldTarget != null && oldTarget.isAlive()) {
+         replacement.setTarget(oldTarget);
+      }
+
+      AABB retargetBox = replacement.getBoundingBox().inflate(96.0);
+      for (net.minecraft.world.entity.Mob mob : serverLevel.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, retargetBox)) {
+         if (mob == replacement) {
+            continue;
+         }
+         if (mob.getTarget() == servant) {
+            mob.setTarget(replacement);
+         }
+         if (mob.getLastHurtByMob() == servant) {
+            mob.setLastHurtByMob(replacement);
+         }
+      }
+      return true;
    }
 
    private static void speakNearby(ServerLevel level, Entity center, String key, double radius) {

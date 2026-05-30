@@ -1,8 +1,8 @@
 {
   "id": "default_assassin",
   "movement": {
-    "follow_distance": 6.0,
-    "wander_radius": 12.0,
+    "follow_distance": 12.0,
+    "wander_radius": 24.0,
     "likes_high_places": false
   },
   "combat": {

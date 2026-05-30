@@ -1,0 +1,68 @@
+{
+  "id": "medea",
+  "display_name": "Medea",
+  "display_name_zh": "美狄亚",
+  "class_type": "caster",
+  "faction": "human",
+  "traits": [
+    "servant",
+    "humanoid",
+    "living_human",
+    "caster",
+    "female",
+    "witch",
+    "chaotic",
+    "evil"
+  ],
+  "parameters": {
+    "endurance": "D",
+    "endurance_plus": false,
+    "strength": "E",
+    "strength_plus": false,
+    "agility": "C",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": false,
+    "luck": "B",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/medea.geo.json",
+    "texture": "typemoonworld:textures/entity/medea.png",
+    "animation": "typemoonworld:animations/medea.animation.json",
+    "animations": {
+      "idle": "standing",
+      "walk": "standing",
+      "fly": "fly"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.14,
+      "y": -0.86,
+      "z": 0.12
+    },
+    "default_weapon": "",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": []
+  },
+  "skills": [],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "chaotic",
+    "social": "normal",
+    "combat": "cautious",
+    "starting_favor": 50.0
+  },
+  "ai_config": "default_caster",
+  "spawn_egg": {
+    "primary": 6976918,
+    "secondary": 13022463
+  }
+}

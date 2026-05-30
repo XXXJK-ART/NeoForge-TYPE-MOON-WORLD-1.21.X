@@ -22,6 +22,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> CU_CHULAINN_VOICE_FAIL = register("cu_chulainn_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> CU_CHULAINN_VOICE_VICTORY = register("cu_chulainn_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> CU_CHULAINN_VOICE_GAE_BOLG = register("cu_chulainn_voice_gae_bolg");
+   public static final DeferredHolder<SoundEvent, SoundEvent> MEDEA_VOICE_ATTACK = register("medea_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> MEDEA_VOICE_SPELL = register("medea_voice_spell");
+   public static final DeferredHolder<SoundEvent, SoundEvent> MEDEA_VOICE_RULE_BREAKER = register("medea_voice_rule_breaker");
+   public static final DeferredHolder<SoundEvent, SoundEvent> MEDEA_VOICE_FAIL = register("medea_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> MEDEA_VOICE_VICTORY = register("medea_voice_victory");
 
    private ModSounds() {
    }

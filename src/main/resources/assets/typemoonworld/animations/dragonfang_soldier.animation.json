@@ -1,0 +1,8 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation": {
+			"loop": "hold_on_last_frame"
+		}
+	}
+}

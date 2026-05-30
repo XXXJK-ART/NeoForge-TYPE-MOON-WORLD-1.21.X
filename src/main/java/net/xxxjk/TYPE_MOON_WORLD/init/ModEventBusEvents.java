@@ -8,6 +8,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 @EventBusSubscriber(
@@ -24,5 +25,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CU_CHULAINN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.MEDEA.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }
 }
