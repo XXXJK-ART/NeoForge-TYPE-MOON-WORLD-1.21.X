@@ -9,6 +9,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class HostileTargetingModule implements ServantAiModule {
    private static final String LAST_TARGET_SCAN_TICK = "ServantLastTargetScanTick";
@@ -64,6 +65,9 @@ public final class HostileTargetingModule implements ServantAiModule {
 
    private static boolean isValidCurrentTarget(ServantEntity entity, LivingEntity target, double aggressionRange) {
       if (target == null || target.isDeadOrDying() || !target.isAlive()) {
+         return false;
+      }
+      if (EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
 

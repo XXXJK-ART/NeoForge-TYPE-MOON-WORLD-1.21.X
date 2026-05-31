@@ -468,7 +468,10 @@ public final class MedeaWorkshopHelper {
          }
       }
 
-      if (entity.getCurrentMp() >= 160.0 && getDragonfangStock(entity) > 0 && now - entity.getPersistentData().getLong(TAG_LAST_SUMMON_TICK) >= 15L) {
+      if (entity.getCurrentMp() >= 160.0
+         && getDragonfangStock(entity) > 0
+         && now - entity.getPersistentData().getLong(TAG_LAST_SUMMON_TICK) >= 15L
+         && hasHostileInRange(entity, 18.0)) {
          if (summonDragonfang(entity, level)) {
             entity.getPersistentData().putLong(TAG_LAST_SUMMON_TICK, now);
          }
@@ -539,6 +542,17 @@ public final class MedeaWorkshopHelper {
          return center;
       }
       return candidates.get(level.random.nextInt(candidates.size()));
+   }
+
+   private static boolean hasHostileInRange(MedeaEntity entity, double radius) {
+      return entity.level().getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(radius, 5.0, radius),
+         other -> other != entity
+            && other.isAlive()
+            && !other.isAlliedTo(entity)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
+      ).stream().findAny().isPresent();
    }
 
    private static void spawnDragonfangSummonFx(ServerLevel level, BlockPos pos) {

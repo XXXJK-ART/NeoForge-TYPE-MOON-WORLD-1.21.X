@@ -64,6 +64,10 @@ public class MedeaBeamEffectEntity extends Entity {
       return this.entityData.get(DURATION);
    }
 
+   public float getDamage() {
+      return this.damage;
+   }
+
    public void setBreakBlocks(boolean breakBlocks) {
       this.entityData.set(BREAK_BLOCKS, breakBlocks);
    }

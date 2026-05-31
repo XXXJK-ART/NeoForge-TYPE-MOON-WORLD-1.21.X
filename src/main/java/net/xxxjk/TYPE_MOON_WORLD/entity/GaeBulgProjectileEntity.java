@@ -153,6 +153,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             this.discard();
          }
       }
+
+      if (this.getMode() == Mode.SINGLE) {
+         this.syncRotationToMotion();
+      }
    }
 
    private void steerToward(Vec3 targetPos, double strength, double blend) {
@@ -196,7 +200,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          if (this.getMode() == Mode.ARMY) {
             this.resolveArmyExplosion(result.getLocation());
          } else {
-            if (result instanceof BlockHitResult blockHit && this.tryDestroyBlock(blockHit.getBlockPos())) {
+            if (this.getTrackedTarget() != null && result instanceof BlockHitResult blockHit && this.tryDestroyBlock(blockHit.getBlockPos())) {
                this.setPos(this.getX() + this.getDeltaMovement().x * 0.1, this.getY() + this.getDeltaMovement().y * 0.1, this.getZ() + this.getDeltaMovement().z * 0.1);
                return;
             }

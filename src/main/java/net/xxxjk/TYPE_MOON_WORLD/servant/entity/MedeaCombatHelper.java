@@ -53,6 +53,9 @@ public final class MedeaCombatHelper {
    private static final String TAG_LAST_ORBIT_HEX_TICK = "MedeaLastOrbitHexTick";
    private static final String TAG_LAST_CROSSFIRE_TICK = "MedeaLastCrossfireTick";
    private static final String TAG_LAST_STARFALL_TICK = "MedeaLastStarfallTick";
+   private static final String TAG_LAST_THUNDERSTORM_TICK = "MedeaLastThunderstormTick";
+   private static final String TAG_LAST_MASS_DRAGONFANG_TICK = "MedeaLastMassDragonfangTick";
+   private static final String TAG_UNDERGROUND_TARGET_TICK = "MedeaUndergroundTargetTick";
    private static final String TAG_LAST_SPELL_TYPE = "MedeaLastSpellType";
    private static final String TAG_SPELL_REPEAT_COUNT = "MedeaSpellRepeatCount";
    private static final String TAG_SPELL_WINDOW_TICK = "MedeaSpellWindowTick";
@@ -65,10 +68,11 @@ public final class MedeaCombatHelper {
    private static final double COST_TELEPORT = 8.0;
    private static final double COST_BLINK_VOLLEY = 35.0;
    private static final double COST_STRAFE_BARRAGE = 35.0;
-   private static final double COST_HECATE_BIND = 32.0;
+   private static final double COST_HECATE_BIND = 35.0;
    private static final double COST_SUPER_BOLT = 45.0;
-    private static final double COST_RULE_BREAKER = 10.0;
-   private static final double COST_MINI_BEAM = 0.0;
+   private static final double COST_THUNDERSTORM = 50.0;
+   private static final double COST_RULE_BREAKER = 10.0;
+   private static final double COST_MINI_BEAM = 5.0;
    private static final double COST_FLAME_BURST = 6.0;
    private static final double COST_FROST_SHACKLE = 7.0;
    private static final double COST_REPULSION_NOVA = 5.0;
@@ -107,6 +111,7 @@ public final class MedeaCombatHelper {
       ORBIT_HEX("orbit_hex"),
       CROSSFIRE("crossfire"),
       STARFALL("starfall"),
+      THUNDERSTORM("thunderstorm"),
       BEAM("beam"),
       SUPER_BOLT("super_bolt");
 
@@ -128,7 +133,10 @@ public final class MedeaCombatHelper {
       }
       if (target == null || target.isDeadOrDying()) {
          target = entity.getLastHurtByMob();
-         if (target != null && target.isAlive() && !target.isAlliedTo(entity)) {
+         if (target != null
+            && target.isAlive()
+            && !target.isAlliedTo(entity)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)) {
             entity.setTarget(target);
          }
       }
@@ -162,8 +170,17 @@ public final class MedeaCombatHelper {
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
       faceTargetWhileFlying(entity, target);
       boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      if (handleUndergroundTarget(entity, target, now, hasLineOfSight)) {
+         return;
+      }
       LivingEntity closeThreat = findCloseThreat(entity, target);
       final LivingEntity spellTarget = target;
+      int nearbyEnemyCount = countNearbyHostiles(entity, target, 12.0);
+      boolean preferLargeMagic = nearbyEnemyCount >= 10 || target.getHealth() > 100.0F || target.getMaxHealth() > 100.0F;
+
+      if (preferLargeMagic) {
+         maybeMassDragonfangRelease(entity, now, nearbyEnemyCount, target);
+      }
 
       if (!insideWorkshop
          && healthRatio <= 0.32F
@@ -236,6 +253,9 @@ public final class MedeaCombatHelper {
                return;
             }
          }
+         if (preferLargeMagic && tryLargeMagicPriority(entity, spellTarget, now, distance, hasLineOfSight, nearbyEnemyCount)) {
+            return;
+         }
          if (canCastLightning(entity, now) && tryCastSpell(entity, now, SpellType.LIGHTNING, () -> castLightning(entity, spellTarget, now))) {
             return;
          }
@@ -245,6 +265,9 @@ public final class MedeaCombatHelper {
       }
 
       if (distance <= 16.0) {
+         if (preferLargeMagic && tryLargeMagicPriority(entity, spellTarget, now, distance, hasLineOfSight, nearbyEnemyCount)) {
+            return;
+         }
          if (tryShowyVarietyCast(entity, spellTarget, now, distance, hasLineOfSight)) {
             return;
          }
@@ -290,6 +313,9 @@ public final class MedeaCombatHelper {
          return;
       }
 
+      if (preferLargeMagic && tryLargeMagicPriority(entity, spellTarget, now, distance, hasLineOfSight, nearbyEnemyCount)) {
+         return;
+      }
       if (tryShowyVarietyCast(entity, spellTarget, now, distance, hasLineOfSight)) {
          return;
       }
@@ -353,11 +379,11 @@ public final class MedeaCombatHelper {
    }
 
    private static boolean canCastLightning(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_LIGHTNING_TICK) >= 34L && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_LIGHTNING);
+      return now - entity.getPersistentData().getLong(TAG_LAST_LIGHTNING_TICK) >= 18L && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_LIGHTNING);
    }
 
    private static boolean canCastBeam(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_BEAM_TICK) >= 80L && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_BEAM);
+      return now - entity.getPersistentData().getLong(TAG_LAST_BEAM_TICK) >= 100L && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_BEAM);
    }
 
    private static boolean canCastBlinkVolley(MedeaEntity entity, long now) {
@@ -366,12 +392,12 @@ public final class MedeaCombatHelper {
    }
 
    private static boolean canCastStrafeBarrage(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_STRAFE_BARRAGE_TICK) >= 110L
+      return now - entity.getPersistentData().getLong(TAG_LAST_STRAFE_BARRAGE_TICK) >= 100L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_STRAFE_BARRAGE);
    }
 
    private static boolean canCastHecateBind(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_BIND_TICK) >= 120L
+      return now - entity.getPersistentData().getLong(TAG_LAST_BIND_TICK) >= 100L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_HECATE_BIND);
    }
 
@@ -381,22 +407,22 @@ public final class MedeaCombatHelper {
    }
 
    private static boolean canCastMiniBeam(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_MINI_BEAM_TICK) >= 42L
+      return now - entity.getPersistentData().getLong(TAG_LAST_MINI_BEAM_TICK) >= 12L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_MINI_BEAM);
    }
 
    private static boolean canCastFlameBurst(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_FLAME_BURST_TICK) >= 38L
+      return now - entity.getPersistentData().getLong(TAG_LAST_FLAME_BURST_TICK) >= 12L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_FLAME_BURST);
    }
 
    private static boolean canCastFrostShackle(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_FROST_SHACKLE_TICK) >= 46L
+      return now - entity.getPersistentData().getLong(TAG_LAST_FROST_SHACKLE_TICK) >= 14L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_FROST_SHACKLE);
    }
 
    private static boolean canCastRepulsionNova(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_REPULSION_NOVA_TICK) >= 36L
+      return now - entity.getPersistentData().getLong(TAG_LAST_REPULSION_NOVA_TICK) >= 10L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_REPULSION_NOVA);
    }
 
@@ -410,18 +436,23 @@ public final class MedeaCombatHelper {
    }
 
    private static boolean canCastOrbitHex(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_ORBIT_HEX_TICK) >= 34L
+      return now - entity.getPersistentData().getLong(TAG_LAST_ORBIT_HEX_TICK) >= 14L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_ORBIT_HEX);
    }
 
    private static boolean canCastCrossfire(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_CROSSFIRE_TICK) >= 44L
+      return now - entity.getPersistentData().getLong(TAG_LAST_CROSSFIRE_TICK) >= 16L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_CROSSFIRE);
    }
 
    private static boolean canCastStarfall(MedeaEntity entity, long now) {
-      return now - entity.getPersistentData().getLong(TAG_LAST_STARFALL_TICK) >= 52L
+      return now - entity.getPersistentData().getLong(TAG_LAST_STARFALL_TICK) >= 18L
          && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_STARFALL);
+   }
+
+   private static boolean canCastThunderstorm(MedeaEntity entity, long now) {
+      return now - entity.getPersistentData().getLong(TAG_LAST_THUNDERSTORM_TICK) >= 100L
+         && entity.getCurrentMp() >= MedeaWorkshopHelper.adjustedManaCost(entity, COST_THUNDERSTORM);
    }
 
    private static boolean castBolt(MedeaEntity entity, LivingEntity target, long now) {
@@ -442,8 +473,8 @@ public final class MedeaCombatHelper {
          Vec3 rightRear = entity.getEyePosition().add(side.scale(1.05)).add(back.scale(0.9)).add(0.0, 0.12, 0.0);
          spawnMagicCircle(level, leftRear, direction, 0.52F);
          spawnMagicCircle(level, rightRear, direction, 0.52F);
-         spawnBoltProjectile(level, entity, leftRear, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(leftRear).normalize(), MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 17.0F), 2.8F, 0.0F);
-         spawnBoltProjectile(level, entity, rightRear, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(rightRear).normalize(), MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 17.0F), 2.8F, 0.0F);
+         spawnBoltProjectile(level, entity, leftRear, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(leftRear).normalize(), MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 8.5F), 2.8F, 0.0F);
+         spawnBoltProjectile(level, entity, rightRear, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(rightRear).normalize(), MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 8.5F), 2.8F, 0.0F);
          level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(), 10, 0.55, 0.25, 0.55, 0.03);
          level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.48F, 1.7F);
          return true;
@@ -474,7 +505,7 @@ public final class MedeaCombatHelper {
                   burstSpawn,
                   burstDirection,
                   MedeaMagicBoltEntity.Mode.BOLT,
-                  MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 20.0F),
+                  MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 10.0F),
                   3.0F,
                   0.015F + shot * 0.01F
                );
@@ -502,7 +533,7 @@ public final class MedeaCombatHelper {
          for (int i = -1; i <= 1; i += 2) {
             Vec3 offsetSpawn = spawnPos.add(side.scale(0.22 * i));
             Vec3 shotDirection = direction.add(side.scale(0.08 * i)).normalize();
-            spawnBoltProjectile(level, entity, offsetSpawn, shotDirection, MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 18.0F), 2.85F, 0.01F);
+            spawnBoltProjectile(level, entity, offsetSpawn, shotDirection, MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 9.0F), 2.85F, 0.01F);
          }
          level.sendParticles(ParticleTypes.ENCHANT, spawnPos.x, spawnPos.y, spawnPos.z, 8, 0.18, 0.18, 0.18, 0.02);
          level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.45F, 1.58F);
@@ -516,7 +547,7 @@ public final class MedeaCombatHelper {
       maybeTriggerBasicCast(entity);
       Vec3 spawnPos = entity.getEyePosition().add(direction.scale(0.75));
       spawnMagicCircle(level, spawnPos.subtract(direction.scale(0.65)), direction, 0.65F);
-      spawnBoltProjectile(level, entity, spawnPos, direction, MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 25.0F), 2.9F, 0.04F);
+      spawnBoltProjectile(level, entity, spawnPos, direction, MedeaMagicBoltEntity.Mode.BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 12.5F), 2.9F, 0.04F);
       level.sendParticles(ParticleTypes.END_ROD, spawnPos.x, spawnPos.y, spawnPos.z, 5, 0.08, 0.08, 0.08, 0.02);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.4F, 1.5F);
       return true;
@@ -539,13 +570,50 @@ public final class MedeaCombatHelper {
          level.sendParticles(ParticleTypes.END_ROD, center.x, y, center.z, 6, 0.16, 0.2, 0.16, 0.03);
       }
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.3, center.z, 2, 0.15, 0.15, 0.15, 0.0);
-      level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.25, center.z, 28, 0.55, 0.9, 0.55, 0.02);
-      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 20, 0.4, 0.7, 0.4, 0.04);
-      target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 60.0F));
+      level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.25, center.z, 18, 0.45, 0.7, 0.45, 0.02);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 12, 0.3, 0.55, 0.3, 0.03);
+      target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 30.0F));
       target.invulnerableTime = 0;
-      spawnLightningBolts(level, center, 5);
       level.playSound(null, BlockPos.containing(center), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 0.9F, 1.2F);
       queueStaffClear(entity, 14);
+      return true;
+   }
+
+   private static boolean castThunderstorm(MedeaEntity entity, LivingEntity target, long now) {
+      if (!(entity.level() instanceof ServerLevel level) || !MedeaWorkshopHelper.consumeMana(entity, COST_THUNDERSTORM)) {
+         return false;
+      }
+      entity.getPersistentData().putLong(TAG_LAST_THUNDERSTORM_TICK, now);
+      beginStaffCast(entity);
+      entity.triggerRuneCastAnimation();
+      ServantVoiceHelper.tryPlaySpell(entity);
+      List<LivingEntity> targets = level.getEntitiesOfClass(
+         LivingEntity.class,
+         target.getBoundingBox().inflate(10.0, 4.0, 10.0),
+         other -> other != entity
+            && other.isAlive()
+            && !other.isAlliedTo(entity)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
+      );
+      if (!targets.contains(target)) {
+         targets.add(0, target);
+      }
+      int strikes = 0;
+      for (LivingEntity victim : targets) {
+         if (strikes >= 5) {
+            break;
+         }
+         Vec3 center = victim.position().add(0.0, victim.getBbHeight() * 0.5, 0.0);
+         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y + 0.3, center.z, 18, 0.22, 0.35, 0.22, 0.04);
+         level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.45, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+         victim.invulnerableTime = 0;
+         victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 30.0F));
+         victim.invulnerableTime = 0;
+         spawnLightningBolts(level, center, 1);
+         strikes++;
+      }
+      level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 1.1F, 0.9F);
+      queueStaffClear(entity, 18);
       return true;
    }
 
@@ -568,7 +636,7 @@ public final class MedeaCombatHelper {
       }
       ServantVoiceHelper.tryPlaySpell(entity);
       int shotCount = forceSingleShot ? 1 : entity.isInsideWorkshop() ? 5 : 3;
-      float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 70.0F);
+      float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F);
 
       for (int i = 0; i < shotCount; i++) {
          final int beamIndex = i;
@@ -689,7 +757,7 @@ public final class MedeaCombatHelper {
                spawnPos,
                direction,
                MedeaMagicBoltEntity.Mode.BOLT,
-               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 18.0F),
+               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 9.0F),
                2.75F,
                0.01F + index * 0.01F
             );
@@ -748,7 +816,7 @@ public final class MedeaCombatHelper {
                spawnPos,
                direction,
                MedeaMagicBoltEntity.Mode.BOLT,
-               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 18.0F),
+               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 9.0F),
                2.85F,
                0.03F
             );
@@ -791,7 +859,7 @@ public final class MedeaCombatHelper {
 
          Vec3 current = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
          boolean trapped = current.distanceToSqr(anchor) <= 2.75 * 2.75;
-         float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, trapped ? 38.0F : 20.0F);
+         float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, trapped ? 19.0F : 10.0F);
          target.invulnerableTime = 0;
          target.hurt(entity.damageSources().magic(), damage);
          target.invulnerableTime = 0;
@@ -821,7 +889,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.FLASH, spawnPos.x, spawnPos.y, spawnPos.z, 2, 0.08, 0.08, 0.08, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, spawnPos.x, spawnPos.y, spawnPos.z, 24, 0.35, 0.35, 0.35, 0.03);
       level.sendParticles(CIRCLE_PRIMARY, spawnPos.x, spawnPos.y, spawnPos.z, 12, 0.18, 0.18, 0.18, 0.0);
-      spawnBoltProjectile(level, entity, spawnPos, direction, MedeaMagicBoltEntity.Mode.SUPER_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 100.0F), 1.45F, 0.0F);
+      spawnBoltProjectile(level, entity, spawnPos, direction, MedeaMagicBoltEntity.Mode.SUPER_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 50.0F), 1.45F, 0.0F);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 1.0F, 0.72F);
       queueStaffClear(entity, 18);
       return true;
@@ -836,7 +904,7 @@ public final class MedeaCombatHelper {
       entity.triggerRuneCastAnimation();
       ServantVoiceHelper.tryPlaySpell(entity);
       int shotCount = entity.isFlyingMode() ? 2 : 1;
-      float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, entity.isFlyingMode() ? 34.0F : 28.0F);
+      float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, entity.isFlyingMode() ? 17.0F : 14.0F);
       for (int i = 0; i < shotCount; i++) {
          final int idx = i;
          TYPE_MOON_WORLD.queueServerWork(i * 3 + 1, () -> {
@@ -887,7 +955,7 @@ public final class MedeaCombatHelper {
       for (int i = -1; i <= 1; i++) {
          Vec3 shotDirection = direction.add(side.scale(0.09 * i)).normalize();
          Vec3 shotSpawn = spawnPos.add(side.scale(0.18 * i));
-         spawnBoltProjectile(level, entity, shotSpawn, shotDirection, MedeaMagicBoltEntity.Mode.FIRE_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 22.0F), 2.45F, 0.0F);
+         spawnBoltProjectile(level, entity, shotSpawn, shotDirection, MedeaMagicBoltEntity.Mode.FIRE_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 11.0F), 2.45F, 0.0F);
       }
       Vec3 impact = target.position().add(0.0, 0.1, 0.0);
       level.sendParticles(ParticleTypes.FLAME, impact.x, impact.y + 0.6, impact.z, 24, 0.65, 0.45, 0.65, 0.04);
@@ -923,7 +991,7 @@ public final class MedeaCombatHelper {
          }
          Vec3 current = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
          target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 18.0F));
+         target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 9.0F));
          target.invulnerableTime = 0;
          serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, current.x, current.y, current.z, 18, 0.28, 0.4, 0.28, 0.02);
       });
@@ -954,7 +1022,7 @@ public final class MedeaCombatHelper {
             push = push.normalize();
          }
          living.push(push.x * 1.4, 0.55, push.z * 1.4);
-         living.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 16.0F));
+         living.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 8.0F));
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 50, 0, false, true, true));
          living.hurtMarked = true;
       }
@@ -1007,7 +1075,7 @@ public final class MedeaCombatHelper {
                spawn,
                shotDirection,
                modes[idx],
-               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 16.0F + idx),
+               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 8.0F + idx * 0.5F),
                2.7F,
                0.0F
             );
@@ -1039,7 +1107,7 @@ public final class MedeaCombatHelper {
       for (Vec3 start : starts) {
          Vec3 beamDir = end.subtract(start).normalize();
          spawnMagicCircle(level, start.subtract(beamDir.scale(0.35)), beamDir, 0.66F);
-         MedeaBeamEffectEntity beam = new MedeaBeamEffectEntity(level, entity, start, end, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 30.0F), 8);
+         MedeaBeamEffectEntity beam = new MedeaBeamEffectEntity(level, entity, start, end, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 15.0F), 8);
          level.addFreshEntity(beam);
          level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 10, 0.14, 0.14, 0.14, 0.03);
          level.sendParticles(CIRCLE_PRIMARY, start.x, start.y, start.z, 4, 0.08, 0.08, 0.08, 0.0);
@@ -1081,7 +1149,7 @@ public final class MedeaCombatHelper {
                spawn,
                shotDirection,
                idx == 2 ? MedeaMagicBoltEntity.Mode.FROST_BOLT : idx == 4 ? MedeaMagicBoltEntity.Mode.FIRE_BOLT : MedeaMagicBoltEntity.Mode.BOLT,
-               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 15.0F),
+               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 7.5F),
                2.55F,
                0.0F
             );
@@ -1154,36 +1222,32 @@ public final class MedeaCombatHelper {
    }
 
    private static boolean castRuleBreaker(MedeaEntity entity, LivingEntity target, long now) {
+      if (!shouldCommitRuleBreakerStab(entity, target)) {
+         return false;
+      }
       if (!(entity.level() instanceof ServerLevel level) || !MedeaWorkshopHelper.consumeMana(entity, COST_RULE_BREAKER)) {
          return false;
       }
       entity.getPersistentData().putLong(TAG_LAST_RULE_BREAKER_TICK, now);
       entity.setTemporaryFocusItem(MedeaEntity.FocusItem.RULE_BREAKER);
       ServantVoiceHelper.tryPlayRuleBreaker(entity);
-      Vec3 direction = getAimDirection(entity, target);
-      if (shouldCommitRuleBreakerStab(entity, target)) {
-         if (entity.distanceToSqr(target) > 9.0 && MedeaWorkshopHelper.canTeleportNow(entity, now)) {
-            Vec3 stabPos = findRuleBreakerStabPosition(level, target);
-            if (stabPos != null) {
-               Vec3 from = entity.position();
-               entity.teleportTo(stabPos.x, stabPos.y, stabPos.z);
-               entity.setDeltaMovement(Vec3.ZERO);
-               entity.fallDistance = 0.0F;
-               level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.x, from.y + 0.6, from.z, 14, 0.22, 0.3, 0.22, 0.04);
-               level.sendParticles(ParticleTypes.END_ROD, stabPos.x, stabPos.y + 0.65, stabPos.z, 10, 0.2, 0.28, 0.2, 0.02);
-               MedeaWorkshopHelper.markTeleportUsed(entity, now);
-            }
+      if (entity.distanceToSqr(target) > 9.0 && MedeaWorkshopHelper.canTeleportNow(entity, now)) {
+         Vec3 stabPos = findRuleBreakerStabPosition(level, target);
+         if (stabPos != null) {
+            Vec3 from = entity.position();
+            entity.teleportTo(stabPos.x, stabPos.y, stabPos.z);
+            entity.setDeltaMovement(Vec3.ZERO);
+            entity.fallDistance = 0.0F;
+            level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.x, from.y + 0.6, from.z, 14, 0.22, 0.3, 0.22, 0.04);
+            level.sendParticles(ParticleTypes.END_ROD, stabPos.x, stabPos.y + 0.65, stabPos.z, 10, 0.2, 0.28, 0.2, 0.02);
+            MedeaWorkshopHelper.markTeleportUsed(entity, now);
          }
-         level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 14, 0.22, 0.28, 0.22, 0.08);
-         level.sendParticles(ParticleTypes.ENCHANT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 18, 0.25, 0.35, 0.25, 0.03);
-         applyRuleBreakerHit(target, entity);
-         target.hurt(entity.damageSources().mobAttack(entity), 8.0F);
-         target.invulnerableTime = 0;
-      } else {
-         Vec3 spawnPos = entity.getEyePosition().add(direction.scale(0.65));
-         spawnMagicCircle(level, spawnPos.subtract(direction.scale(0.55)), direction, 0.6F);
-         spawnBoltProjectile(level, entity, spawnPos, direction, MedeaMagicBoltEntity.Mode.RULE_BREAKER, 4.0F, 2.0F, 0.0F);
       }
+      level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 14, 0.22, 0.28, 0.22, 0.08);
+      level.sendParticles(ParticleTypes.ENCHANT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 18, 0.25, 0.35, 0.25, 0.03);
+      applyRuleBreakerHit(target, entity);
+      target.hurt(entity.damageSources().mobAttack(entity), 8.0F);
+      target.invulnerableTime = 0;
       TYPE_MOON_WORLD.queueServerWork(18, () -> {
          if (entity.isAlive() && entity.getTemporaryFocusItem() == MedeaEntity.FocusItem.RULE_BREAKER) {
             entity.clearTemporaryFocusItem();
@@ -1193,7 +1257,7 @@ public final class MedeaCombatHelper {
    }
 
    private static boolean tryPrepareRuleBreakerStab(MedeaEntity entity, LivingEntity target, long now) {
-      if (shouldCommitRuleBreakerStab(entity, target)) {
+      if (!ruleBreakerWouldBeEffective(target) || shouldCommitRuleBreakerStab(entity, target)) {
          return false;
       }
       if (canCastFrostShackle(entity, now) && tryCastSpell(entity, now, SpellType.FROST_SHACKLE, () -> castFrostShackle(entity, target, now))) {
@@ -1209,6 +1273,21 @@ public final class MedeaCombatHelper {
       if (entity.getCurrentMp() < MedeaWorkshopHelper.adjustedManaCost(entity, COST_RULE_BREAKER)) {
          return false;
       }
+      return ruleBreakerWouldBeEffective(target) && entity.distanceToSqr(target) <= 16.0 * 16.0;
+   }
+
+   private static boolean shouldCommitRuleBreakerStab(MedeaEntity entity, LivingEntity target) {
+      return target != null
+         && target.isAlive()
+         && ruleBreakerWouldBeEffective(target)
+         && isTargetPinned(target)
+         && entity.distanceToSqr(target) <= 16.0 * 16.0;
+   }
+
+   private static boolean ruleBreakerWouldBeEffective(LivingEntity target) {
+      if (target == null || !target.isAlive()) {
+         return false;
+      }
       if (target.getPersistentData().getBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON)) {
          return true;
       }
@@ -1217,11 +1296,13 @@ public final class MedeaCombatHelper {
             return true;
          }
       }
-      return target instanceof ServantEntity;
-   }
-
-   private static boolean shouldCommitRuleBreakerStab(MedeaEntity entity, LivingEntity target) {
-      return target != null && target.isAlive() && isTargetPinned(target) && entity.distanceToSqr(target) <= 16.0 * 16.0;
+      if (target instanceof ServantEntity servant) {
+         return servant.getPersistentData().getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
+            || servant.getPersistentData().contains(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG)
+            || servant.getPersistentData().getLong(CuChulainnCombatHelper.GAE_BOLG_WINDUP_UNTIL_TAG) > servant.level().getGameTime()
+            || CuChulainnCombatHelper.getActiveRune(servant) != CuChulainnCombatHelper.RuneType.NONE;
+      }
+      return false;
    }
 
    private static boolean shouldUseBlinkVolley(MedeaEntity entity, LivingEntity target, double distance, boolean hasLineOfSight) {
@@ -1301,6 +1382,9 @@ public final class MedeaCombatHelper {
 
    private static void maybeCombatSummon(MedeaEntity entity, long now) {
       if (!(entity.level() instanceof ServerLevel level)) {
+         return;
+      }
+      if (!hasHostileInRange(entity, 18.0)) {
          return;
       }
       if (now - entity.getPersistentData().getLong(TAG_LAST_COMBAT_SUMMON_TICK) < 80L) {
@@ -1406,6 +1490,84 @@ public final class MedeaCombatHelper {
             }
          }
       }
+   }
+
+   private static boolean tryLargeMagicPriority(MedeaEntity entity, LivingEntity target, long now, double distance, boolean hasLineOfSight, int nearbyEnemyCount) {
+      if (target == null || !target.isAlive()) {
+         return false;
+      }
+      if (nearbyEnemyCount >= 3 && canCastThunderstorm(entity, now) && tryCastSpell(entity, now, SpellType.THUNDERSTORM, () -> castThunderstorm(entity, target, now))) {
+         return true;
+      }
+      if (distance >= 6.0 && canCastBeam(entity, now) && tryCastSpell(entity, now, SpellType.BEAM, () -> castBeamVolley(entity, target, now))) {
+         return true;
+      }
+      if (distance >= 8.0 && canCastSuperBolt(entity, now) && tryCastSpell(entity, now, SpellType.SUPER_BOLT, () -> castSuperBolt(entity, target, now))) {
+         return true;
+      }
+      if (hasLineOfSight && canCastHecateBind(entity, now) && tryCastSpell(entity, now, SpellType.HECATE_BIND, () -> castHecateBind(entity, target, now))) {
+         return true;
+      }
+      return hasLineOfSight && canCastStrafeBarrage(entity, now) && tryCastSpell(entity, now, SpellType.STRAFE_BARRAGE, () -> castStrafeBarrage(entity, target, now));
+   }
+
+   private static void maybeMassDragonfangRelease(MedeaEntity entity, long now, int nearbyEnemyCount, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel level)) {
+         return;
+      }
+      if (now - entity.getPersistentData().getLong(TAG_LAST_MASS_DRAGONFANG_TICK) < 140L) {
+         return;
+      }
+      if (nearbyEnemyCount < 10 && (target == null || (target.getHealth() <= 100.0F && target.getMaxHealth() <= 100.0F))) {
+         return;
+      }
+      int stock = MedeaWorkshopHelper.getDragonfangStock(entity);
+      if (stock <= 0) {
+         return;
+      }
+      int active = MedeaWorkshopHelper.countOwnedDragonfangs(level, entity.getUUID(), entity.position());
+      int slots = Math.max(0, MedeaWorkshopHelper.MAX_ACTIVE_DRAGONFANG - active);
+      if (slots <= 0) {
+         return;
+      }
+      int summonCount = Math.min(stock, slots);
+      int released = 0;
+      for (int i = 0; i < summonCount; i++) {
+         if (!MedeaWorkshopHelper.summonDragonfang(entity, level)) {
+            break;
+         }
+         released++;
+      }
+      if (released > 0) {
+         entity.getPersistentData().putLong(TAG_LAST_MASS_DRAGONFANG_TICK, now);
+         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + 0.25, entity.getZ(), 24 + released * 2, 1.2, 0.2, 1.2, 0.03);
+         level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + 0.45, entity.getZ(), 32 + released * 2, 1.4, 0.5, 1.4, 0.04);
+         level.playSound(null, entity.blockPosition(), SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.0F, 0.85F);
+      }
+   }
+
+   private static int countNearbyHostiles(MedeaEntity entity, LivingEntity target, double radius) {
+      Vec3 center = target != null ? target.position() : entity.position();
+      AABB box = new AABB(center, center).inflate(radius, 5.0, radius);
+      return entity.level().getEntitiesOfClass(
+         LivingEntity.class,
+         box,
+         other -> other != entity
+            && other.isAlive()
+            && !other.isAlliedTo(entity)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
+      ).size();
+   }
+
+   private static boolean hasHostileInRange(MedeaEntity entity, double radius) {
+      return entity.level().getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(radius, 5.0, radius),
+         other -> other != entity
+            && other.isAlive()
+            && !other.isAlliedTo(entity)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
+      ).stream().findAny().isPresent();
    }
 
    private static boolean tryShowyVarietyCast(MedeaEntity entity, LivingEntity target, long now, double distance, boolean hasLineOfSight) {
@@ -1626,6 +1788,35 @@ public final class MedeaCombatHelper {
          entity.getNavigation().moveTo(target, 1.15);
       }
       return blockedTicks >= 2L || repositioning;
+   }
+
+   private static boolean handleUndergroundTarget(MedeaEntity entity, LivingEntity target, long now, boolean hasLineOfSight) {
+      double verticalDrop = entity.getY() - target.getY();
+      boolean undergroundTarget = !hasLineOfSight && verticalDrop >= 3.5;
+      if (!undergroundTarget) {
+         entity.getPersistentData().remove(TAG_UNDERGROUND_TARGET_TICK);
+         return false;
+      }
+
+      long startTick = entity.getPersistentData().getLong(TAG_UNDERGROUND_TARGET_TICK);
+      if (startTick <= 0L) {
+         entity.getPersistentData().putLong(TAG_UNDERGROUND_TARGET_TICK, now);
+         startTick = now;
+      }
+
+      if (canCastBeam(entity, now) && tryCastSpell(entity, now, SpellType.BEAM, () -> castBeamVolley(entity, target, now, true, true))) {
+         return true;
+      }
+      if (MedeaWorkshopHelper.canTeleportNow(entity, now) && tryCastSpell(entity, now, SpellType.TELEPORT, () -> castTeleport(entity, target, now))) {
+         return true;
+      }
+      if (now - startTick >= 80L) {
+         entity.setTarget(null);
+         entity.getNavigation().stop();
+         entity.getPersistentData().remove(TAG_UNDERGROUND_TARGET_TICK);
+         return true;
+      }
+      return false;
    }
 
    private static void clearBlockedLineState(MedeaEntity entity) {

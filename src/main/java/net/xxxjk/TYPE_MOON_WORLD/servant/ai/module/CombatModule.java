@@ -49,6 +49,7 @@ public final class CombatModule implements ServantAiModule {
    private static final int CU_DRIVING_SLASH_COOLDOWN = 65;
    private static final int CU_SWEEPING_ADVANCE_COOLDOWN = 70;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
+   private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
    private static final int CU_RECAST_MP_COST = 25;
    private static final int CU_RUNE_MP_COST = 20;
    private static final ResourceLocation VALOR_RES = ResourceLocation.fromNamespaceAndPath(
@@ -65,6 +66,10 @@ public final class CombatModule implements ServantAiModule {
 
       LivingEntity target = context.target();
       if (target == null || target.isDeadOrDying()) {
+         entity.setTarget(null);
+         return;
+      }
+      if (EntityUtils.isImmunePlayerTarget(target)) {
          entity.setTarget(null);
          return;
       }
@@ -118,6 +123,10 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // 非狂化型：低血量撤退
+      if (handleUndergroundTarget(entity, target, data, tick, canBreakForwardBlocks, canTeleportBehind, hasLineOfSight)) {
+         return;
+      }
+
       if (combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
          // 决死一战检测
          int retreatStartTick = data.getInt("RetreatStartTick");
@@ -486,6 +495,115 @@ public final class CombatModule implements ServantAiModule {
       int effectivePercent = (int)Math.round(basePercent * scale);
       effectivePercent = Math.max(5, Math.min(95, effectivePercent));
       return entity.getRandom().nextInt(100) < effectivePercent;
+   }
+
+   private boolean handleUndergroundTarget(
+      ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean canBreakForwardBlocks, boolean canTeleportBehind, boolean hasLineOfSight
+   ) {
+      double verticalDrop = entity.getY() - target.getY();
+      boolean undergroundTarget = !hasLineOfSight && verticalDrop >= 3.5;
+      if (!undergroundTarget) {
+         data.remove("UndergroundTargetStartTick");
+         return false;
+      }
+
+      int startTick = data.getInt("UndergroundTargetStartTick");
+      if (startTick == 0) {
+         data.putInt("UndergroundTargetStartTick", tick);
+         startTick = tick;
+      }
+
+      if (canBreakForwardBlocks) {
+         int lastBreak = data.getInt("LastBlockBreakTick");
+         if (tick - lastBreak >= BLOCK_BREAK_COOLDOWN) {
+            data.putInt("LastBlockBreakTick", tick);
+            breakTowardUndergroundTarget(entity, target);
+         }
+         entity.getNavigation().moveTo(target, 1.15);
+         return true;
+      }
+
+      if (canTeleportBehind) {
+         int lastTeleport = data.getInt("LastTeleportTick");
+         if (tick - lastTeleport >= TELEPORT_COOLDOWN && teleportNearUndergroundTarget(entity, target)) {
+            data.putInt("LastTeleportTick", tick);
+            entity.triggerTeleportAnimation();
+            return true;
+         }
+      }
+
+      if (tick - startTick >= UNDERGROUND_TARGET_TIMEOUT) {
+         entity.setTarget(null);
+         entity.getNavigation().stop();
+         data.remove("UndergroundTargetStartTick");
+         return true;
+      }
+
+      entity.getNavigation().moveTo(target, 1.0);
+      return true;
+   }
+
+   private void breakTowardUndergroundTarget(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel serverLevel)) {
+         return;
+      }
+      Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
+      Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+      for (double step = 0.0; step <= 1.0; step += 0.08) {
+         Vec3 sample = start.lerp(end, step);
+         BlockPos center = BlockPos.containing(sample);
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-1, -1, -1), center.offset(1, 1, 1))) {
+            BlockState state = serverLevel.getBlockState(pos);
+            float hardness = state.getDestroySpeed(serverLevel, pos);
+            if (!state.isAir() && hardness >= 0.0F && hardness < 50.0F && !state.is(Blocks.BEDROCK)) {
+               serverLevel.removeBlock(pos, false);
+            }
+         }
+      }
+      serverLevel.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.4, entity.getZ(), 12, 0.5, 0.2, 0.5, 0.05);
+   }
+
+   private boolean teleportNearUndergroundTarget(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel serverLevel)) {
+         return false;
+      }
+      Vec3 look = target.getLookAngle();
+      Vec3 horizontal = new Vec3(look.x, 0.0, look.z);
+      if (horizontal.lengthSqr() < 1.0E-4) {
+         horizontal = new Vec3(0.0, 0.0, 1.0);
+      } else {
+         horizontal = horizontal.normalize();
+      }
+      Vec3 side = new Vec3(-horizontal.z, 0.0, horizontal.x).normalize();
+      Vec3[] candidates = new Vec3[]{
+         target.position().subtract(horizontal.scale(1.5)),
+         target.position().add(side.scale(1.2)),
+         target.position().subtract(side.scale(1.2))
+      };
+
+      for (Vec3 candidate : candidates) {
+         BlockPos feet = findSafeTeleportFeet(serverLevel, BlockPos.containing(candidate.x, target.getY(), candidate.z));
+         if (feet != null) {
+            entity.teleportTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+            entity.setDeltaMovement(Vec3.ZERO);
+            entity.fallDistance = 0.0F;
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private BlockPos findSafeTeleportFeet(ServerLevel level, BlockPos anchor) {
+      for (int dy = -2; dy <= 3; dy++) {
+         BlockPos feet = anchor.offset(0, dy, 0);
+         BlockPos below = feet.below();
+         if (level.getBlockState(below).isSolidRender(level, below)
+            && level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+            && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()) {
+            return feet;
+         }
+      }
+      return null;
    }
 
    private void performRetreatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle) {

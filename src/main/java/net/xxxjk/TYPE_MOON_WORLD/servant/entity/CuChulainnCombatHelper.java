@@ -1,14 +1,21 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 
 public final class CuChulainnCombatHelper {
    public static final String PROTECTION_FROM_ARROWS_TAG = "CuProtectionFromArrows";
@@ -83,6 +90,51 @@ public final class CuChulainnCombatHelper {
 
    public static boolean isMovementRestricted(LivingEntity entity) {
       return entity.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) || entity.getTicksFrozen() > 0;
+   }
+
+   public static boolean tryNegateMedeaSmallMagic(CuChulainnEntity entity, DamageSource source, float amount) {
+      if (entity == null || source == null || amount <= 0.0F || !isMedeaSmallMagic(source, amount)) {
+         return false;
+      }
+      if (entity.getPersistentData().getBoolean(PROTECTION_FROM_ARROWS_TAG)
+         && !isMovementRestricted(entity)
+         && entity.getRandom().nextFloat() < 0.35F) {
+         spawnDefenseFx(entity, true);
+         return true;
+      }
+      return false;
+   }
+
+   public static float applyMagicResistance(CuChulainnEntity entity, DamageSource source, float amount) {
+      if (entity == null || source == null || amount <= 0.0F) {
+         return amount;
+      }
+      return isMedeaSmallMagic(source, amount) ? amount * 0.5F : amount;
+   }
+
+   public static boolean tryBlock(CuChulainnEntity entity, DamageSource source) {
+      if (entity == null || source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return false;
+      }
+      if (source.getEntity() == null && source.getDirectEntity() == null) {
+         return false;
+      }
+      if (source.is(DamageTypes.FELL_OUT_OF_WORLD)
+         || source.is(DamageTypes.GENERIC_KILL)
+         || source.is(DamageTypes.FALL)
+         || source.is(DamageTypes.DROWN)
+         || source.is(DamageTypes.FREEZE)
+         || source.is(DamageTypes.IN_FIRE)
+         || source.is(DamageTypes.ON_FIRE)
+         || source.is(DamageTypes.LAVA)
+         || source.is(DamageTypes.IN_WALL)) {
+         return false;
+      }
+      if (entity.getRandom().nextFloat() < 0.5F) {
+         spawnDefenseFx(entity, false);
+         return true;
+      }
+      return false;
    }
 
    public static boolean isLaguzActive(ServantEntity entity) {
@@ -267,6 +319,56 @@ public final class CuChulainnCombatHelper {
       long windupUntil = entity.getPersistentData().getLong(GAE_BOLG_WINDUP_UNTIL_TAG);
       if (windupUntil > 0 && now >= windupUntil) {
          entity.getPersistentData().remove(GAE_BOLG_WINDUP_UNTIL_TAG);
+      }
+   }
+
+   private static boolean isMedeaSmallMagic(DamageSource source, float amount) {
+      Entity attacker = source.getEntity();
+      Entity direct = source.getDirectEntity();
+      if (direct instanceof MedeaMagicBoltEntity bolt) {
+         return switch (bolt.getMode()) {
+            case BOLT, FIRE_BOLT, FROST_BOLT -> true;
+            default -> false;
+         };
+      }
+      if (direct instanceof MedeaBeamEffectEntity beam) {
+         return beam.getDamage() <= 18.0F;
+      }
+      if (attacker instanceof MedeaEntity && (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC))) {
+         return amount <= 18.0F;
+      }
+      return false;
+   }
+
+   private static void spawnDefenseFx(CuChulainnEntity entity, boolean dodge) {
+      entity.playSound(
+         dodge ? net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_SWEEP : net.minecraft.sounds.SoundEvents.SHIELD_BLOCK,
+         1.0F,
+         dodge ? 1.55F : 0.9F
+      );
+      if (entity.level() instanceof ServerLevel level) {
+         level.sendParticles(
+            dodge ? net.minecraft.core.particles.ParticleTypes.CRIT : net.minecraft.core.particles.ParticleTypes.ENCHANT,
+            entity.getX(),
+            entity.getY() + entity.getBbHeight() * 0.6,
+            entity.getZ(),
+            dodge ? 12 : 16,
+            0.35,
+            0.45,
+            0.35,
+            0.04
+         );
+         level.sendParticles(
+            net.minecraft.core.particles.ParticleTypes.END_ROD,
+            entity.getX(),
+            entity.getY() + entity.getBbHeight() * 0.7,
+            entity.getZ(),
+            8,
+            0.22,
+            0.32,
+            0.22,
+            0.02
+         );
       }
    }
 
