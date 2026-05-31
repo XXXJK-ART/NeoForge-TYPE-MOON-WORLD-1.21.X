@@ -106,6 +106,7 @@
   "item.typemoonworld.sasaki_kojiro_spawn_egg": "Sasaki Kojirou (Assassin) Spawn Egg",
   "item.typemoonworld.cu_chulainn_spawn_egg": "Cu Chulainn (Lancer) Spawn Egg",
   "item.typemoonworld.medea_spawn_egg": "Medea (Caster) Spawn Egg",
+  "item.typemoonworld.medusa_spawn_egg": "Medusa (Rider) Spawn Egg",
   "item.typemoonworld.dragonfang_soldier_spawn_egg": "Dragonfang Soldier Spawn Egg",
   "item.typemoonworld.mystic_eyes_of_death_perception": "Mystic Eyes of Death Perception (Rainbow)",
   "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "Mystic Eyes of Death Perception (Noble Colour)",
@@ -126,6 +127,8 @@
   "item.typemoonworld.rule_breaker.desc": "A ritual dagger that tears apart enchantments, contracts, and summoned bindings.",
   "item.typemoonworld.hecates_staff": "Hecate's Staff",
   "item.typemoonworld.hecates_staff.desc": "The staff Medea manifests when releasing high thaumaturgy.",
+  "item.typemoonworld.nameless_chain_dagger": "Nameless Chain Dagger",
+  "item.typemoonworld.nameless_chain_dagger.desc": "A chained ritual dagger used for suppression and control.",
   "item.typemoonworld.tsumukari_muramasa": "TsumukariMuramasa",
   "item.typemoonworld.tsumukari_muramasa.desc": "God-forged Weapon... Charge to release.",
   "item.typemoonworld.tsumukari_muramasa.warning": "A mortal body cannot bear a God-forged weapon...",
@@ -162,6 +165,7 @@
   "block.typemoonworld.white_gemstone_mine": "White Gemstone Mine",
 
   "effect.typemoonworld.nine_lives": "Nine Lives",
+  "effect.typemoonworld.petrified": "Petrified",
   "effect.typemoonworld.reinforcement_other_agility": "Reinforcement: Agility (Other)",
   "effect.typemoonworld.reinforcement_other_defense": "Reinforcement: Steel Body (Other)",
   "effect.typemoonworld.reinforcement_other_sight": "Reinforcement: Eagle Eye (Other)",
@@ -1031,5 +1035,7 @@
   "adv.typemoonworld.trace_on.desc": "Successfully project an analyzed item.",
   "adv.typemoonworld.trace_on.title": "Trace On",
 
-  "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
+  "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD",
+  "entity.typemoonworld.medusa": "Medusa",
+  "entity.typemoonworld.medusa_pegasus": "Pegasus"
 }

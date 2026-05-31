@@ -17,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
@@ -31,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
@@ -221,6 +223,12 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedeaEntity>> MEDEA = ENTITY_TYPES.register(
       "medea", () -> Builder.of(MedeaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("medea")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MedusaEntity>> MEDUSA = ENTITY_TYPES.register(
+      "medusa", () -> Builder.of(MedusaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("medusa")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MedusaPegasusEntity>> MEDUSA_PEGASUS = ENTITY_TYPES.register(
+      "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(1.8F, 2.0F).build("medusa_pegasus")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
       "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")

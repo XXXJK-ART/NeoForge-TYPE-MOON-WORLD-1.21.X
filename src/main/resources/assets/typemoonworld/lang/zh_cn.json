@@ -110,6 +110,7 @@
   "item.typemoonworld.sasaki_kojiro_spawn_egg": "佐佐木小次郎(Assassin) 刷怪蛋",
   "item.typemoonworld.cu_chulainn_spawn_egg": "库·丘林(Lancer) 刷怪蛋",
   "item.typemoonworld.medea_spawn_egg": "美狄亚(Caster) 刷怪蛋",
+  "item.typemoonworld.medusa_spawn_egg": "美杜莎(Rider) 刷怪蛋",
   "item.typemoonworld.dragonfang_soldier_spawn_egg": "龙牙兵 刷怪蛋",
   "item.typemoonworld.mystic_eyes_of_death_perception": "直死之魔眼(虹级)",
   "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "直死之魔眼(noble colour)",
@@ -130,6 +131,8 @@
   "item.typemoonworld.rule_breaker.desc": "用于切断魔术与契约的仪式短剑.",
   "item.typemoonworld.hecates_staff": "赫卡忒的锡杖",
   "item.typemoonworld.hecates_staff.desc": "美狄亚在释放大魔术时显现的锡杖.",
+  "item.typemoonworld.nameless_chain_dagger": "无铭·短剑",
+  "item.typemoonworld.nameless_chain_dagger.desc": "带有锁链的桩刺,用于近身压制与牵制.",
   "item.typemoonworld.tsumukari_muramasa": "都牟刈村正",
   "item.typemoonworld.tsumukari_muramasa.desc": "神造的兵器...蓄力以释放.",
   "item.typemoonworld.tsumukari_muramasa.warning": "凡人之躯无法承受神造兵器...",
@@ -166,6 +169,7 @@
   "block.typemoonworld.white_gemstone_mine": "白之宝石矿",
 
   "effect.typemoonworld.nine_lives": "射杀百头",
+  "effect.typemoonworld.petrified": "石化",
   "effect.typemoonworld.reinforcement_other_agility": "强化: 骏足 (他人)",
   "effect.typemoonworld.reinforcement_other_defense": "强化: 钢躯 (他人)",
   "effect.typemoonworld.reinforcement_other_sight": "强化: 鹰眼 (他人)",
@@ -1034,5 +1038,7 @@
   "adv.typemoonworld.trace_on.desc": "成功投影一件已解析的物品.",
   "adv.typemoonworld.trace_on.title": "Trace On",
 
-  "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD"
+  "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD",
+  "entity.typemoonworld.medusa": "美杜莎",
+  "entity.typemoonworld.medusa_pegasus": "天马珀伽索斯"
 }

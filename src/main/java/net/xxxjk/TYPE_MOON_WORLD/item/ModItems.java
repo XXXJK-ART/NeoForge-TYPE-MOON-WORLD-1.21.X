@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessChainDaggerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RuleBreakerItem;
 
 public class ModItems {
@@ -405,6 +406,20 @@ public class ModItems {
                                             0.6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> NAMELESS_CHAIN_DAGGER = ITEMS.register("nameless_chain_dagger",
+            () -> new NamelessChainDaggerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "nameless_chain_dagger_damage"),
+                                            6.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "nameless_chain_dagger_speed"),
+                                            1.8, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
 
     public static final DeferredItem<Item> RYOUGI_SHIKI_SPAWN_EGG = ITEMS.register("ryougi_shiki_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.RYOUGI_SHIKI, 0x99CCFF, 0xCC0022, new Item.Properties()));
@@ -428,6 +443,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CU_CHULAINN, 0x2B60C7, 0xC8D1DD));
     public static final DeferredItem<Item> MEDEA_SPAWN_EGG = ITEMS.register("medea_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MEDEA, 0x705F96, 0xDDD7E9));
+    public static final DeferredItem<Item> MEDUSA_SPAWN_EGG = ITEMS.register("medusa_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MEDUSA, 0x2B2445, 0xC7BDE2));
     public static final DeferredItem<Item> DRAGONFANG_SOLDIER_SPAWN_EGG = ITEMS.register("dragonfang_soldier_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.DRAGONFANG_SOLDIER, 0xE8E0D2, 0x635A52));
 

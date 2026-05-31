@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessChainDaggerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariMuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWWeaponBlockEntityRenderer;
@@ -133,6 +134,17 @@ public class ClientModEventSubscriber {
             return this.renderer;
          }
       }, new Item[]{ModItems.HECATES_STAFF.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private NamelessChainDaggerRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new NamelessChainDaggerRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.NAMELESS_CHAIN_DAGGER.get()});
       event.registerMobEffect(
          new IClientMobEffectExtensions() {
             private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/mob_effect/nine_lives.jpg");

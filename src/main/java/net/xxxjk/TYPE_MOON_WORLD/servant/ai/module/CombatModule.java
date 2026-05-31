@@ -23,6 +23,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
@@ -61,6 +63,10 @@ public final class CombatModule implements ServantAiModule {
    public void tick(ServantEntity entity, ServantAiContext context) {
       if (entity instanceof MedeaEntity medea) {
          MedeaCombatHelper.tick(medea, context);
+         return;
+      }
+      if (entity instanceof MedusaEntity medusa) {
+         MedusaCombatHelper.tick(medusa, context);
          return;
       }
 

@@ -123,5 +123,32 @@
       "typemoonworld:voice/medea/victory1",
       "typemoonworld:voice/medea/victory2"
     ]
+  },
+  "medusa_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medusa/attack1",
+      "typemoonworld:voice/medusa/attack2"
+    ]
+  },
+  "medusa_voice_bellerophon": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medusa/bellerophon"
+    ]
+  },
+  "medusa_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medusa/fail1",
+      "typemoonworld:voice/medusa/fail2"
+    ]
+  },
+  "medusa_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medusa/victory1",
+      "typemoonworld:voice/medusa/victory2"
+    ]
   }
 }

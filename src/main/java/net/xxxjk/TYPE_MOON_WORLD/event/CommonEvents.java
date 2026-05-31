@@ -46,6 +46,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -64,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 )
 public class CommonEvents {
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
+   private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
 
    @SubscribeEvent
    public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -279,12 +281,25 @@ public class CommonEvents {
          if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
             event.setCanceled(true);
          } else {
+            if (event.getSource().getEntity() instanceof LivingEntity attackerWithPetrify
+               && attackerWithPetrify.hasEffect(ModMobEffects.PETRIFIED)) {
+               event.setCanceled(true);
+               return;
+            }
+            if (event.getSource().getDirectEntity() instanceof LivingEntity directWithPetrify
+               && directWithPetrify.hasEffect(ModMobEffects.PETRIFIED)) {
+               event.setCanceled(true);
+               return;
+            }
             Entity directEntity = event.getSource().getDirectEntity();
             if (directEntity instanceof Projectile projectile && projectile.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
+               if (event.getEntity() instanceof LivingEntity living) {
+                  event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
+               }
                if (event.getSource().is(DamageTypes.FALL)) {
                   LivingEntity mob = event.getEntity();
                   if (mob instanceof LivingEntity
@@ -781,6 +796,32 @@ public class CommonEvents {
       if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
          event.getEntity().removeAllEffects();
       } else {
+         LivingEntity living = event.getEntity();
+         MobEffectInstance effectInstance = event.getEffectInstance();
+         if (living != null
+            && effectInstance != null
+            && effectInstance.getDuration() > 1
+            && effectInstance.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL
+            && !living.getPersistentData().getBoolean(EFFECT_RESISTANCE_REENTRY_TAG)) {
+            int adjustedDuration = MagicResistanceHelper.applyDebuffResistance(living, effectInstance.getDuration());
+            if (adjustedDuration < effectInstance.getDuration()) {
+               living.getPersistentData().putBoolean(EFFECT_RESISTANCE_REENTRY_TAG, true);
+               try {
+                  living.removeEffect(effectInstance.getEffect());
+                  living.addEffect(new MobEffectInstance(
+                     effectInstance.getEffect(),
+                     adjustedDuration,
+                     effectInstance.getAmplifier(),
+                     effectInstance.isAmbient(),
+                     effectInstance.isVisible(),
+                     effectInstance.showIcon()
+                  ));
+               } finally {
+                  living.getPersistentData().remove(EFFECT_RESISTANCE_REENTRY_TAG);
+               }
+               return;
+            }
+         }
          if (event.getEffectInstance().getEffect() == ModMobEffects.NINE_LIVES
             && !event.getEntity().level().isClientSide
             && event.getEntity().level() instanceof ServerLevel serverLevel) {

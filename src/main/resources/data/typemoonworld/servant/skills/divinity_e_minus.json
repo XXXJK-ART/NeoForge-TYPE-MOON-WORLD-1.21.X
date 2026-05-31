@@ -1,0 +1,17 @@
+{
+  "id": "divinity_e_minus",
+  "display_name": "Divinity E-",
+  "display_name_zh": "神性 E-",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "divinity",
+      "params": {
+        "flat_damage": 1.0
+      }
+    }
+  ]
+}

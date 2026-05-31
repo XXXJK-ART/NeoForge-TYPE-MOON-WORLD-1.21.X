@@ -149,10 +149,14 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return this.getAnimationSet().actionAnimation(key).isPresent();
    }
 
-   private void playActionAnimation(String key) {
+   protected void playActionAnimation(String key) {
       if (this.hasActionAnimation(key)) {
          this.triggerAnim(ACTION_CONTROLLER, key);
       }
+   }
+
+   public void triggerNamedActionAnimation(String key) {
+      this.playActionAnimation(key);
    }
 
    @Override
@@ -989,6 +993,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return false;
    }
 
+   @Nullable
+   protected String getLoopAnimationOverride(ServantAnimations animations, boolean moving) {
+      return null;
+   }
+
    @Override
    protected EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
       var specialization = this.getSpecialization();
@@ -1011,6 +1020,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          var animations = this.getAnimationSet();
          String animation = null;
+         String override = this.getLoopAnimationOverride(animations, event.isMoving());
+         if (override != null && !override.isBlank()) {
+            animation = override;
+         }
          if (this.useFloatingAnimation()) {
             animation = animations.actionAnimation("fly").orElse(null);
          }

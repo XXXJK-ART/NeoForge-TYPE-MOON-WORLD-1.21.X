@@ -36,6 +36,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_ATTACK.get());
+      } else if (isMedusa(servant)) {
+         if (servant.getRandom().nextFloat() > 0.4F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_ATTACK.get());
       }
    }
 
@@ -68,6 +73,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.CU_CHULAINN_VOICE_VICTORY.get());
       } else if (isMedea(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_VICTORY.get());
+      } else if (isMedusa(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_VICTORY.get());
       }
    }
 
@@ -80,6 +87,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CU_CHULAINN_VOICE_FAIL.get());
       } else if (isMedea(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDEA_VOICE_FAIL.get());
+      } else if (isMedusa(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDUSA_VOICE_FAIL.get());
       }
    }
 
@@ -105,6 +114,14 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "rule_breaker", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_RULE_BREAKER.get());
+   }
+
+   public static void tryPlayBellerophon(ServantEntity servant) {
+      if (!isMedusa(servant)) {
+         return;
+      }
+
+      playVoice(servant, "bellerophon", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_BELLEROPHON.get());
    }
 
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
@@ -143,5 +160,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isMedea(ServantEntity servant) {
       return servant != null && MedeaEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isMedusa(ServantEntity servant) {
+      return servant != null && MedusaEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaBeamEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaMagicBoltRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SasakiKojiroRenderer;
@@ -179,6 +181,8 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), SasakiKojiroRenderer::new);
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), CuChulainnRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA.get(), MedeaRenderer::new);
+      event.registerEntityRenderer(ModEntities.MEDUSA.get(), MedusaRenderer::new);
+      event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), SwordBarrelBlockEntityRenderer::new);

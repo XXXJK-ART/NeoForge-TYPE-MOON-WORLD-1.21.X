@@ -5,6 +5,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
@@ -26,6 +27,8 @@ public class ModEventBusEvents {
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CU_CHULAINN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDEA.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.MEDUSA.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }
 }
