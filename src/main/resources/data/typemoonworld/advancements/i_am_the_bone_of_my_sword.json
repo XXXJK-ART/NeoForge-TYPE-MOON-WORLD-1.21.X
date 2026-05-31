@@ -1,7 +1,8 @@
 {
+  "parent": "typemoonworld:magic_apprentice",
   "display": {
     "icon": {
-      "item": "typemoonworld:redsword"
+      "item": "typemoonworld:avalon"
     },
     "title": {
       "translate": "adv.typemoonworld.i_am_the_bone_of_my_sword.title"
@@ -15,16 +16,13 @@
     "announce_to_chat": false
   },
   "criteria": {
-    "enter_ubw": {
-      "trigger": "minecraft:changed_dimension",
-      "conditions": {
-        "to": "typemoonworld:unlimited_blade_works"
-      }
+    "impossible": {
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
     [
-      "enter_ubw"
+      "impossible"
     ]
   ]
 }

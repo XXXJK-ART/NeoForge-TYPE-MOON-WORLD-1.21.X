@@ -10,11 +10,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(RenderBuffers.class)
+@Mixin({RenderBuffers.class})
 public class RenderBuffersMixin {
-
-    @Inject(method = "lambda$new$0", at = @At("TAIL"), require = 0)
-    private static void addReinforcementGlintTypes(Object2ObjectLinkedOpenHashMap<RenderType, ByteBufferBuilder> map, RenderType type, CallbackInfo ci) {
-        ReinforcementRenderType.addGlintTypes(map);
-    }
+   @Inject(
+      method = {"lambda$new$0"},
+      at = {@At("TAIL")},
+      require = 0
+   )
+   private static void addReinforcementGlintTypes(Object2ObjectLinkedOpenHashMap<RenderType, ByteBufferBuilder> map, RenderType type, CallbackInfo ci) {
+      ReinforcementRenderType.addGlintTypes(map);
+   }
 }

@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "typemoonworld:magic_scroll_basic_jewel"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.magic_apprentice.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.magic_apprentice.desc"
+    },
+    "frame": "task",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

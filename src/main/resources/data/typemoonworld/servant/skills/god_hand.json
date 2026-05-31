@@ -1,0 +1,27 @@
+{
+  "id": "god_hand_passive",
+  "display_name": "God Hand",
+  "display_name_zh": "十二试炼",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "damage_immunity_threshold",
+      "params": { "threshold": 15.0 }
+    },
+    {
+      "effect_type": "revive",
+      "params": { "count_min": 11, "count_max": 11, "heal_ratio": 1.0 }
+    },
+    {
+      "effect_type": "adaptive_defense",
+      "params": { "reduction_per_trigger": 0.25, "max_reduction": 0.75 }
+    },
+    {
+      "effect_type": "multi_kill",
+      "params": { "strong_attack_lives_cost": 2, "extra_strong_lives_cost": 3 }
+    }
+  ]
+}

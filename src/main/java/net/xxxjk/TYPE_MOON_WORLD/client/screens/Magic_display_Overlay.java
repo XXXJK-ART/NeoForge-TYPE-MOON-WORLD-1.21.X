@@ -126,22 +126,10 @@ public class Magic_display_Overlay {
                                 Component.translatable(targetKey),
                                 Component.translatable(modeKey)
                         );
-                    } else if ("gander".equals(magicId)) {
-                        magicColor = 0xFFB03030;
                     } else if ("jewel_random_shoot".equals(magicId)) {
                         magicColor = 0xFFEAEAEA;
                     } else if ("jewel_machine_gun".equals(magicId)) {
                         magicColor = 0xFFFF00FF;
-                    } else if ("gandr_machine_gun".equals(magicId)) {
-                        magicColor = 0xFFC05050;
-                        String modeKey = vars.gandr_machine_gun_mode == 1
-                                ? "gui.typemoonworld.overlay.gandr.mode.barrage.short"
-                                : "gui.typemoonworld.overlay.gandr.mode.rapid.short";
-                        magicName = Component.translatable(
-                                "gui.typemoonworld.overlay.gandr.format",
-                                Component.translatable(translationKey),
-                                Component.translatable(modeKey)
-                        );
                     } else if ("reinforcement".equals(magicId)
                             || "reinforcement_self".equals(magicId)
                             || "reinforcement_other".equals(magicId)

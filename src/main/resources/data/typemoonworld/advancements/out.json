@@ -1,0 +1,28 @@
+{
+  "parent": "typemoonworld:magic_apprentice",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:magic_scroll_gravity"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.out.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.out.desc"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

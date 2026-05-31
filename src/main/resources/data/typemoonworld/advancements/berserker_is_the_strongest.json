@@ -1,0 +1,37 @@
+{
+  "parent": "typemoonworld:magic_apprentice",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:temple_stone_sword_axe"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.berserker_is_the_strongest.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.berserker_is_the_strongest.desc"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "obtain_temple_stone_sword_axe": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "typemoonworld:temple_stone_sword_axe"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtain_temple_stone_sword_axe"
+    ]
+  ]
+}

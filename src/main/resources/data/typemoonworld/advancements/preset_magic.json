@@ -1,0 +1,28 @@
+{
+  "parent": "typemoonworld:magic_apprentice",
+  "display": {
+    "icon": {
+      "item": "typemoonworld:chisel"
+    },
+    "title": {
+      "translate": "adv.typemoonworld.preset_magic.title"
+    },
+    "description": {
+      "translate": "adv.typemoonworld.preset_magic.desc"
+    },
+    "frame": "task",
+    "hidden": false,
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

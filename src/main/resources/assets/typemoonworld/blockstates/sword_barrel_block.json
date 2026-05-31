@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "typemoonworld:block/sword_barrel_block"
+      }
+    }
+  ]
+}

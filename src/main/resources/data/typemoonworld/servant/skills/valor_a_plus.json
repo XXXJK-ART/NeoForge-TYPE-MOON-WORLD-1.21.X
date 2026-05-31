@@ -1,0 +1,19 @@
+{
+  "id": "valor_a_plus",
+  "display_name": "Valor A+",
+  "display_name_zh": "勇猛 A+",
+  "type": "active",
+  "mp_cost": 100,
+  "cooldown_ticks": 1200,
+  "duration_ticks": 600,
+  "effects": [
+    {
+      "effect_type": "stat_boost",
+      "params": { "stat": "attack_damage", "multiplier": 2.0, "duration_ticks": 600 }
+    },
+    {
+      "effect_type": "status_immune",
+      "params": {}
+    }
+  ]
+}

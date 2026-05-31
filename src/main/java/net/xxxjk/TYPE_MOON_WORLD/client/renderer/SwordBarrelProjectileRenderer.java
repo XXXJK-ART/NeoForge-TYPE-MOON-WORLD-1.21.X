@@ -2,72 +2,105 @@ package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 
-@SuppressWarnings({"null", "deprecation", "unchecked"})
 public class SwordBarrelProjectileRenderer extends EntityRenderer<SwordBarrelProjectileEntity> {
+   private static final ResourceLocation TRAIL_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png");
 
-    public SwordBarrelProjectileRenderer(EntityRendererProvider.Context context) {
-        super(context);
-    }
+   public SwordBarrelProjectileRenderer(Context context) {
+      super(context);
+   }
 
-    @Override
-    public void render(SwordBarrelProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        poseStack.pushPose();
-        float scale = 1.75F;
-        
-        // Calculate rotation
-        float ryaw = 90.0F + entity.yRotO + (entity.getYRot() - entity.yRotO) * partialTicks;
-        float rpitch = 135.0F - entity.xRotO + (entity.getXRot() - entity.xRotO) * partialTicks;
+   public void render(SwordBarrelProjectileEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+      poseStack.pushPose();
+      float scale = 1.75F;
+      float time = entity.tickCount + partialTicks;
+      float ryaw = 90.0F + entity.yRotO + (entity.getYRot() - entity.yRotO) * partialTicks;
+      float rpitch = 135.0F - entity.xRotO + (entity.getXRot() - entity.xRotO) * partialTicks;
+      ItemStack itemStack = entity.getItem();
+      if (!itemStack.isEmpty() && itemStack.getItem() instanceof NoblePhantasmItem) {
+         rpitch -= 45.0F;
+      }
 
-        // Apply Noble Phantasm specific rotation (tip forward)
-        ItemStack itemStack = entity.getItem();
-        if (!itemStack.isEmpty() && itemStack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem) {
-            // For 3D Geo models, they are often horizontal by default.
-            // We need to rotate them to point forward.
-            // Based on current ryaw/rpitch, the default 135/90 usually points standard items.
-            // We add a 45 degree tilt to make them straight.
-            rpitch -= 45.0F;
-        }
+      poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(rpitch));
+      poseStack.translate(-0.59, -0.59, 0.0);
+      poseStack.scale(scale, scale, scale);
+      if (itemStack.isEmpty()) {
+         poseStack.popPose();
+      } else {
+         ItemStack renderStack = itemStack.copy();
+         renderStack.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
+         renderStack.remove(DataComponents.ENCHANTMENTS);
 
-        // Apply rotation
-        poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(rpitch));
+         int phase = entity.getSpawnPhase();
+         int maxPhase = entity.getSpawnPhaseMax();
+         int fadeStart = maxPhase / 2;
+         boolean inSpawnAnim = phase > 0;
+         boolean showItem = phase <= fadeStart;
 
-        // Translation and Scale
-        // Consistent with BrokenPhantasmRenderer: -0.59, -0.59, 0.0
-        poseStack.translate(-0.59, -0.59, 0.0F);
-        poseStack.scale(scale, scale, scale);
+         if (inSpawnAnim) {
+            renderStack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+            net.minecraft.nbt.CompoundTag spawnTag = new net.minecraft.nbt.CompoundTag();
+            spawnTag.putBoolean("ReinforcementTemporary", true);
+            renderStack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(spawnTag));
+         }
 
-        if (itemStack.isEmpty()) {
-            poseStack.popPose();
-            return;
-        }
+         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(renderStack, entity.level(), (LivingEntity)null, entity.getId());
 
-        BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(itemStack, entity.level(), (LivingEntity)null, entity.getId());
-        
-        try {
-            Minecraft.getInstance().getItemRenderer().render(itemStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
-        } catch (Exception e) {
-        }
-        
-        poseStack.popPose();
-        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
-    }
+         try {
+            if (!inSpawnAnim) {
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
+            } else if (showItem) {
+               float t = (float)(fadeStart - phase) / fadeStart;
+               int overlayU = OverlayTexture.u(1.0F - t);
+               int overlay = OverlayTexture.pack(overlayU, false);
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, packedLight, overlay, bakedModel);
+            } else {
+               Minecraft.getInstance()
+                  .getItemRenderer()
+                  .render(renderStack, ItemDisplayContext.GROUND, false, poseStack, buffer, 0, OverlayTexture.NO_OVERLAY, bakedModel);
+            }
+         } catch (Exception var13) {
+         }
 
-    @Override
-    public ResourceLocation getTextureLocation(SwordBarrelProjectileEntity entity) {
-        return InventoryMenu.BLOCK_ATLAS;
-    }
+         poseStack.popPose();
+         if (!entity.isHovering() && !entity.tracePos.isEmpty()) {
+            ProjectileVisualEffectHelper.renderRibbonTrail(
+               entity.tracePos,
+               entity.getPosition(partialTicks),
+               Minecraft.getInstance().getEntityRenderDispatcher().camera.getPosition(),
+               poseStack,
+               buffer,
+               TRAIL_TEXTURE,
+               0.18F,
+               MagicCircuitColorHelper.COLOR_SWORD,
+               0.6F
+            );
+         }
+         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+      }
+   }
+
+   public ResourceLocation getTextureLocation(SwordBarrelProjectileEntity entity) {
+      return InventoryMenu.BLOCK_ATLAS;
+   }
 }

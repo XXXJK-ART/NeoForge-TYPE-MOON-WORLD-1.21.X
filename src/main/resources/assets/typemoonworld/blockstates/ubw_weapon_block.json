@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "typemoonworld:block/ubw_weapon_block"
+      }
+    }
+  ]
+}

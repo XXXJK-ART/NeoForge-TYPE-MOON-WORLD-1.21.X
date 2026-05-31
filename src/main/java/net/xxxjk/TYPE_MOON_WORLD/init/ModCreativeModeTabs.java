@@ -24,6 +24,17 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
                         output.accept(ModItems.HOLY_SHROUD);
+                        output.accept(ModItems.CLAW_OF_CHAOS);
+                        output.accept(ModItems.DRAGON_FANG);
+                        output.accept(ModItems.DRAGONS_REVERSE_SCALE);
+                        output.accept(ModItems.EVIL_BONE);
+                        output.accept(ModItems.HOLY_GRAIL);
+                        output.accept(ModItems.PHOENIX_FEATHER);
+                        output.accept(ModItems.PROOF_OF_HERO);
+                        output.accept(ModItems.QP);
+                        output.accept(ModItems.REMNANTS_OF_MADNESS);
+                        output.accept(ModItems.SEED_OF_YGGDRASIL);
+                        output.accept(ModItems.VOIDS_DUST);
                         
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
@@ -35,10 +46,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY_BROKEN);
-                        output.accept(ModItems.MAGIC_SCROLL_GANDER);
-                        output.accept(ModItems.MAGIC_SCROLL_GANDER_BROKEN);
-                        output.accept(ModItems.MAGIC_SCROLL_GANDR_MACHINE_GUN);
-                        output.accept(ModItems.MAGIC_SCROLL_GANDR_MACHINE_GUN_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
@@ -56,6 +63,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
                         output.accept(ModItems.CHISEL);
+                        output.accept(ModItems.MAGIC_CREST);
                         output.accept(ModBlocks.GEM_CARVING_TABLE);
                         output.accept(ModItems.MANA_SURVEY_BASE);
                         output.accept(ModItems.MANA_SURVEY_POINTER);
@@ -167,6 +175,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
                         output.accept(ModItems.MERLIN_SPAWN_EGG);
                         output.accept(ModItems.STONE_MAN_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
+                        output.accept(ModItems.HERACLES_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

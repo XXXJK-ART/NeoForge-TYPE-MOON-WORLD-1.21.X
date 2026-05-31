@@ -2,7 +2,6 @@ package net.xxxjk.TYPE_MOON_WORLD.item;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.flag.FeatureFlags;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -24,11 +23,15 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.StoneManSpawnEggItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
             DeferredRegister.createItems(TYPE_MOON_WORLD.MOD_ID);
+
+    private static DeferredItem<Item> registerSimpleItem(String name) {
+        return ITEMS.register(name, () -> new Item(new Item.Properties()));
+    }
 
     public static final DeferredItem<Item> TEMPLE_STONE_SWORD_AXE = ITEMS.register("temple_stone_sword_axe",
             () -> new TempleStoneSwordAxeItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()
@@ -77,13 +80,22 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_FRAGMENTS = ITEMS.register("magic_fragments",
             () -> new Magic_fragmentsItem(new Item.Properties()));
-    // Internal visual item used by Gander projectile (OBJ model: models/item/gander.obj).
-    // Keep it off normal creative/mod item pages by gating behind an experimental feature flag.
-    public static final DeferredItem<Item> GANDER = ITEMS.register("gander",
-            () -> new Item(new Item.Properties().requiredFeatures(FeatureFlags.TRADE_REBALANCE)));
 
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));
+
+    public static final DeferredItem<Item> CLAW_OF_CHAOS = registerSimpleItem("claw_of_chaos");
+    public static final DeferredItem<Item> DRAGON_FANG = registerSimpleItem("dragon_fang");
+    public static final DeferredItem<Item> DRAGONS_REVERSE_SCALE = registerSimpleItem("dragons_reverse_scale");
+    public static final DeferredItem<Item> EVIL_BONE = registerSimpleItem("evil_bone");
+    public static final DeferredItem<Item> HOLY_GRAIL = ITEMS.register("holy_grail",
+            () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
+    public static final DeferredItem<Item> PHOENIX_FEATHER = registerSimpleItem("phoenix_feather");
+    public static final DeferredItem<Item> PROOF_OF_HERO = registerSimpleItem("proof_of_hero");
+    public static final DeferredItem<Item> QP = registerSimpleItem("qp");
+    public static final DeferredItem<Item> REMNANTS_OF_MADNESS = registerSimpleItem("remnants_of_madness");
+    public static final DeferredItem<Item> SEED_OF_YGGDRASIL = registerSimpleItem("seed_of_yggdrasil");
+    public static final DeferredItem<Item> VOIDS_DUST = registerSimpleItem("voids_dust");
 
     public static final DeferredItem<Item> HOLY_SHROUD = ITEMS.register("holy_shroud",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
@@ -92,7 +104,10 @@ public class ModItems {
             () -> new ChiselItem(new Item.Properties().durability(100)));
 
     public static final DeferredItem<Item> MANA_SURVEY_COMPASS = ITEMS.register("mana_survey_compass",
-            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 80, 80));
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 80, 90));
+
+    public static final DeferredItem<Item> COPPER_MANA_SURVEY_COMPASS = ITEMS.register("copper_mana_survey_compass",
+            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), 50, 80));
 
     public static final DeferredItem<Item> LEYLINE_SURVEY_MAP = ITEMS.register("leyline_survey_map",
             () -> new LeylineSurveyMapItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
@@ -103,14 +118,17 @@ public class ModItems {
     public static final DeferredItem<Item> MANA_SURVEY_POINTER = ITEMS.register("mana_survey_pointer",
             () -> new Item(new Item.Properties()));
 
-    public static final DeferredItem<Item> COPPER_MANA_SURVEY_COMPASS = ITEMS.register("copper_mana_survey_compass",
-            () -> new ManaSurveyCompassItem(new Item.Properties().stacksTo(1), 50, 80));
-
     public static final DeferredItem<Item> COPPER_MANA_SURVEY_BASE = ITEMS.register("copper_mana_survey_base",
             () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> COPPER_MANA_SURVEY_POINTER = ITEMS.register("copper_mana_survey_pointer",
             () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> MAGIC_CREST = ITEMS.register("magic_crest",
+            () -> new MagicCrestItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
+
+    public static final DeferredItem<Item> GANDER = ITEMS.register("gander",
+            () -> new Item(new Item.Properties().stacksTo(1)));
 
     // EMERALD (Green)
     public static final DeferredItem<Item> CARVED_EMERALD = ITEMS.register("carved_emerald",
@@ -240,11 +258,11 @@ public class ModItems {
                     "jewel_magic_release"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_MACHINE_GUN = ITEMS.register("magic_scroll_machine_gun",
-            () -> new MagicScrollItem(new Item.Properties().durability(1), 1.0, false, new String[] {"jewel_magic_shoot", "gander"}, // Require Basic Jewel Magic + Gander
+            () -> new MagicScrollItem(new Item.Properties().durability(1), 1.0, "jewel_magic_shoot", // Require Basic Jewel Magic
                     "jewel_machine_gun"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_MACHINE_GUN_BROKEN = ITEMS.register("magic_scroll_machine_gun_broken",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(1), 0.3, new String[] {"jewel_magic_shoot", "gander"}, // Require Basic Jewel Magic + Gander, Low Chance
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(1), 0.3, "jewel_magic_shoot", // Require Basic Jewel Magic, Low Chance
                     "jewel_machine_gun"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION = ITEMS.register("magic_scroll_projection",
@@ -271,29 +289,13 @@ public class ModItems {
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, (String)null, 
                     "gravity_magic"));
 
-    public static final DeferredItem<Item> MAGIC_SCROLL_GANDER = ITEMS.register("magic_scroll_gander",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, false, (String)null,
-                    "gander"));
-
-    public static final DeferredItem<Item> MAGIC_SCROLL_GANDER_BROKEN = ITEMS.register("magic_scroll_gander_broken",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, (String)null,
-                    "gander"));
-
-    public static final DeferredItem<Item> MAGIC_SCROLL_GANDR_MACHINE_GUN = ITEMS.register("magic_scroll_gandr_machine_gun",
-            () -> new MagicScrollItem(new Item.Properties().durability(1), 1.0, false, new String[] {"gander"},
-                    "gandr_machine_gun"));
-
-    public static final DeferredItem<Item> MAGIC_SCROLL_GANDR_MACHINE_GUN_BROKEN = ITEMS.register("magic_scroll_gandr_machine_gun_broken",
-            () -> new RandomMagicScrollItem(new Item.Properties().durability(1), 0.3, new String[] {"gander"},
-                    "gandr_machine_gun"));
-
     public static final DeferredItem<Item> MAGIC_BOOK_REINFORCEMENT = ITEMS.register("magic_book_reinforcement",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, // learnAll=false (default), no req
-                    "reinforcement"));
+                    (String)null, "reinforcement"));
 
     public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, // no req
-                    "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
+                    (String)null, "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
@@ -340,7 +342,16 @@ public class ModItems {
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MERLIN, 0xFFFFFF, 0xD8B0FF, new Item.Properties()));
 
     public static final DeferredItem<Item> STONE_MAN_SPAWN_EGG = ITEMS.register("stone_man_spawn_egg",
-            () -> new StoneManSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.STONE_MAN, 0x6E6E6E, 0xBFBFBF, new Item.Properties()));
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.STONE_MAN, 0x8A8A8A, 0x4C4C4C, new Item.Properties()));
+
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_SPAWN_EGG = ITEMS.register("mystic_magician_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN, 0x000000, 0xC00000, new Item.Properties()));
+
+    public static final DeferredItem<Item> SERVANT_SPAWN_EGG = ITEMS.register("servant_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SERVANT, 0x999999, 0x666666, new Item.Properties()));
+
+    public static final DeferredItem<Item> HERACLES_SPAWN_EGG = ITEMS.register("heracles_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SERVANT, 0x6B5B4F, 0x1A1A1A, new Item.Properties()));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

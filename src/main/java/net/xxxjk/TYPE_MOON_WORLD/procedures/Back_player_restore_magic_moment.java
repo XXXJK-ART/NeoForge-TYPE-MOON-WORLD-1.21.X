@@ -4,10 +4,12 @@ import net.minecraft.world.entity.Entity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public class Back_player_restore_magic_moment {
-    public static String execute(Entity entity) {
-        if (entity == null) {
-            return "";
-        }
-        return "%.1f".formatted(entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_restore_magic_moment / 20.0);
-    }
+   public static String execute(Entity entity) {
+      return entity == null
+         ? ""
+         : "%.1f"
+            .formatted(
+               ((TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).player_restore_magic_moment / 20.0
+            );
+   }
 }
