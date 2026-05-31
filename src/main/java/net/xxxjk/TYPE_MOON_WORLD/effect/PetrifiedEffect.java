@@ -8,8 +8,20 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
 public class PetrifiedEffect extends UncurableEffect {
+   public static final String TAG_PREV_NO_AI = "TypeMoonPrevNoAi";
+
    public PetrifiedEffect(MobEffectCategory category, int color) {
       super(category, color);
+   }
+
+   @Override
+   public void onEffectStarted(LivingEntity entity, int amplifier) {
+      if (entity instanceof Mob mob) {
+         if (!mob.getPersistentData().contains(TAG_PREV_NO_AI)) {
+            mob.getPersistentData().putBoolean(TAG_PREV_NO_AI, mob.isNoAi());
+         }
+         mob.setNoAi(true);
+      }
    }
 
    @Override
@@ -22,6 +34,7 @@ public class PetrifiedEffect extends UncurableEffect {
       entity.setDeltaMovement(Vec3.ZERO);
       entity.hurtMarked = true;
       entity.setSprinting(false);
+      entity.stopUsingItem();
       if (entity instanceof Mob mob) {
          mob.getNavigation().stop();
          mob.setTarget(null);
@@ -42,4 +55,5 @@ public class PetrifiedEffect extends UncurableEffect {
       }
       return true;
    }
+
 }

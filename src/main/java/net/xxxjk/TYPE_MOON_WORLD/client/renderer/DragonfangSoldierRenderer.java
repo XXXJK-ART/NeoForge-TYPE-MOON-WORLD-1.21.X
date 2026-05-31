@@ -15,6 +15,7 @@ import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 public class DragonfangSoldierRenderer extends GeoEntityRenderer<DragonfangSoldierEntity> {
    public DragonfangSoldierRenderer(Context context) {
       super(context, new DragonfangSoldierModel());
+      this.addRenderLayer(new PetrifiedGeoLayer<>(this));
       this.addRenderLayer(new BlockAndItemGeoLayer<DragonfangSoldierEntity>(this) {
          @Override
          protected ItemStack getStackForBone(GeoBone bone, DragonfangSoldierEntity animatable) {

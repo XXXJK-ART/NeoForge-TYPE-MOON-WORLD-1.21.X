@@ -23,6 +23,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 
 public class EntityUtils {
    private static final double RIGHT_HAND_CAST_FORWARD = 0.78;
@@ -35,6 +36,10 @@ public class EntityUtils {
 
    public static boolean isImmunePlayerTarget(Entity entity) {
       return entity instanceof Player player && (player.isCreative() || player.isSpectator());
+   }
+
+   public static boolean isPetrified(Entity entity) {
+      return entity instanceof LivingEntity living && living.hasEffect(ModMobEffects.PETRIFIED);
    }
 
    public static HitResult getRayTraceTarget(ServerPlayer player, double range) {

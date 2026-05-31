@@ -36,9 +36,12 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
+import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -454,6 +457,18 @@ public class CommonEvents {
       }
    }
 
+   @SubscribeEvent
+   public static void onMobEffectRemoved(Remove event) {
+      restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
+   }
+
+   @SubscribeEvent
+   public static void onMobEffectExpired(Expired event) {
+      if (event.getEffectInstance() != null) {
+         restorePetrifiedMobState(event.getEntity(), event.getEffectInstance().getEffect().value());
+      }
+   }
+
    // ======================== 十二试炼 / 战斗续行 ========================
 
    private static void handleServantDamage(ServantEntity servant, LivingIncomingDamageEvent event) {
@@ -745,6 +760,9 @@ public class CommonEvents {
       replacement.getPersistentData().putInt("GodHandLives", remainingLives);
       replacement.getPersistentData().remove("CausalSevered");
       replacement.getPersistentData().putLong(GOD_HAND_REVIVE_LOCK_TAG, serverLevel.getGameTime() + 20L);
+      replacement.removeEffect(ModMobEffects.PETRIFIED);
+      replacement.getPersistentData().remove(PetrifiedEffect.TAG_PREV_NO_AI);
+      replacement.setNoAi(false);
       replacement.setHealth(replacement.getMaxHealth());
       replacement.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 4, false, false, true));
       replacement.setPersistenceRequired();
@@ -783,6 +801,19 @@ public class CommonEvents {
          }
       }
       return true;
+   }
+
+   private static void restorePetrifiedMobState(LivingEntity entity, net.minecraft.world.effect.MobEffect effect) {
+      if (effect != ModMobEffects.PETRIFIED.get()) {
+         return;
+      }
+      if (entity instanceof net.minecraft.world.entity.Mob mob) {
+         boolean previousNoAi = mob.getPersistentData().getBoolean(PetrifiedEffect.TAG_PREV_NO_AI);
+         mob.setNoAi(previousNoAi);
+         mob.getPersistentData().remove(PetrifiedEffect.TAG_PREV_NO_AI);
+         mob.getNavigation().stop();
+         mob.setTarget(null);
+      }
    }
 
    private static void speakNearby(ServerLevel level, Entity center, String key, double radius) {

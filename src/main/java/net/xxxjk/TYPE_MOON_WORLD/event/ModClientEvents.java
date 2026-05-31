@@ -1,12 +1,16 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.resources.PlayerSkin.Model;
+import net.minecraft.world.entity.EntityType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent.AddLayers;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PetrifiedLivingLayer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementLayer;
 
 @EventBusSubscriber(
@@ -20,7 +24,19 @@ public class ModClientEvents {
       for (Model skinType : event.getSkins()) {
          if (event.getSkin(skinType) instanceof PlayerRenderer playerRenderer) {
             playerRenderer.addLayer(new ReinforcementLayer(playerRenderer));
+            playerRenderer.addLayer(new PetrifiedLivingLayer<>(playerRenderer));
          }
       }
+      for (EntityType<?> entityType : event.getEntityTypes()) {
+         EntityRenderer<?> renderer = event.getRenderer(entityType);
+         if (renderer instanceof LivingEntityRenderer<?, ?> livingRenderer) {
+            addPetrifiedLayer(livingRenderer);
+         }
+      }
+   }
+
+   @SuppressWarnings({"rawtypes", "unchecked"})
+   private static void addPetrifiedLayer(LivingEntityRenderer livingRenderer) {
+      livingRenderer.addLayer(new PetrifiedLivingLayer<>(livingRenderer));
    }
 }

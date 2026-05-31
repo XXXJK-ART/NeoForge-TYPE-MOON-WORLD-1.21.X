@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
@@ -47,6 +48,7 @@ public final class MedusaCombatHelper {
    public static final String TAG_LAST_COMBAT_ACTIVITY_TICK = "MedusaLastCombatActivityTick";
    private static final String TAG_EYES_RELEASE_UNTIL = "MedusaEyesReleaseUntil";
    private static final String TAG_LAST_CYBELE_TICK = "MedusaLastCybeleTick";
+   private static final String TAG_CYBELE_PRESSURE_UNTIL = "MedusaCybelePressureUntil";
    private static final String TAG_LAST_MONSTER_STRENGTH_TICK = "MedusaLastMonsterStrengthTick";
    private static final String TAG_MONSTER_STRENGTH_UNTIL = "MedusaMonsterStrengthUntil";
    private static final String TAG_LAST_CHARM_TICK = "MedusaLastCharmTick";
@@ -86,14 +88,15 @@ public final class MedusaCombatHelper {
    private static final int BLOODFORT_NP_COOLDOWN = 1200;
    private static final int BELLEROPHON_COOLDOWN = 900;
    private static final int CHAIN_SNARE_COOLDOWN = 80;
-   private static final int CHARGE_WINDUP_TICKS = 40;
+   private static final int CHARGE_WINDUP_TICKS = 20;
    private static final int CHARGE_TICKS = 18;
-   private static final int RIDE_EXTENSION_TICKS = 600;
+   private static final int RIDE_EXTENSION_TICKS = 400;
    private static final int VIPER_RUSH_COOLDOWN = 24;
    private static final int SERPENT_STEP_COOLDOWN = 18;
    private static final int PREDATOR_LOOP_COOLDOWN = 12;
    private static final int FRENZY_TEAR_COOLDOWN = 4;
    private static final int BASIC_MAUL_COOLDOWN = 2;
+   private static final double BLOODFORT_RADIUS_VALUE = 25.0;
    private static final double BELLEROPHON_CHARGE_DISTANCE = 10.0;
    private static final float CYBELE_USE_CHANCE = 0.05F;
    private static final float CHAIN_SNARE_CATCH_CHANCE = 0.72F;
@@ -102,6 +105,10 @@ public final class MedusaCombatHelper {
    private static final ResourceLocation COMBAT_RUSH_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_combat_rush_speed");
    private static final ResourceLocation RIDING_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_riding_speed");
    private static final ResourceLocation RIDING_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_riding_armor");
+   private static final ResourceLocation CYBELE_PRESSURE_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_cybele_pressure_attack");
+   private static final ResourceLocation CYBELE_PRESSURE_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_cybele_pressure_speed");
+   private static final ResourceLocation CYBELE_PRESSURE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_cybele_pressure_armor");
+   private static final ResourceLocation CYBELE_PRESSURE_TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_cybele_pressure_toughness");
    private static final DustParticleOptions BLOODFORT_PARTICLE = new DustParticleOptions(new Vector3f(0.95F, 0.22F, 0.35F), 1.1F);
    private static final DustParticleOptions SUMMON_LIGHT_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.96F, 0.82F), 1.25F);
    private static final DustParticleOptions SUMMON_GOLD_PARTICLE = new DustParticleOptions(new Vector3f(0.98F, 0.84F, 0.32F), 1.2F);
@@ -109,22 +116,19 @@ public final class MedusaCombatHelper {
    private MedusaCombatHelper() {
    }
 
+   public static boolean tryDodge(MedusaEntity entity, DamageSource source) {
+      if (!canNegateIncomingHit(entity, source)) {
+         return false;
+      }
+      if (entity.getRandom().nextFloat() < 0.6F) {
+         spawnDodgeFx(entity);
+         return true;
+      }
+      return false;
+   }
+
    public static boolean tryBlock(MedusaEntity entity, DamageSource source) {
-      if (entity == null || source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-         return false;
-      }
-      if (source.getEntity() == null && source.getDirectEntity() == null) {
-         return false;
-      }
-      if (source.is(DamageTypes.FELL_OUT_OF_WORLD)
-         || source.is(DamageTypes.GENERIC_KILL)
-         || source.is(DamageTypes.FALL)
-         || source.is(DamageTypes.DROWN)
-         || source.is(DamageTypes.FREEZE)
-         || source.is(DamageTypes.IN_FIRE)
-         || source.is(DamageTypes.ON_FIRE)
-         || source.is(DamageTypes.LAVA)
-         || source.is(DamageTypes.IN_WALL)) {
+      if (!canNegateIncomingHit(entity, source)) {
          return false;
       }
       if (entity.getRandom().nextFloat() < 0.3F) {
@@ -186,12 +190,12 @@ public final class MedusaCombatHelper {
          return;
       }
 
-      if (shouldUseBloodfortNp(entity, target, nearbyEnemyCount, now)) {
+      if (shouldUseBloodfortNp(entity, target, nearbyEnemyCount, highThreat, now)) {
          castBloodfort(entity, now, true);
          return;
       }
 
-      if (shouldUseBloodfort(entity, target, now)) {
+      if (shouldUseBloodfort(entity, target, nearbyEnemyCount, highThreat, now)) {
          castBloodfort(entity, now, false);
          return;
       }
@@ -314,29 +318,35 @@ public final class MedusaCombatHelper {
          level.playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 0.8F, 0.85F);
       }
 
-      MagicResistanceRank rank = MagicResistanceHelper.getMagicResistanceRank(target);
-      boolean released = entity.isEyesReleased();
-      if (released && !rank.isAtLeast(MagicResistanceRank.B)) {
-         applyPetrified(target, 100);
+      if (isHeraclesCybeleImmune(target)) {
+         return;
+      }
+      if (isHeraclesCybeleVulnerable(target)) {
+         applyPetrified(target, entity.isEyesReleased() ? 140 : 120);
          return;
       }
 
+      MagicResistanceRank rank = MagicResistanceHelper.getMagicResistanceRank(target);
+      boolean released = entity.isEyesReleased();
       if (!rank.isAtLeast(MagicResistanceRank.B)) {
-         applyPetrified(target, 100);
+         applyPetrified(target, released ? 140 : 120);
          return;
       }
 
       if (rank == MagicResistanceRank.B) {
-         float chance = released ? 0.8F : 0.5F;
-         if (entity.getRandom().nextFloat() <= chance) {
-            applyPetrified(target, 100);
+         if (failsCybeleSave(entity, target, rank, released)) {
+            applyPetrified(target, released ? 140 : 120);
          } else {
-            applyHeavyPressure(target, 160);
+            applyVisualSuppression(target, released ? 120 : 100);
          }
          return;
       }
 
-      applyVisualSuppression(target, 60);
+      if (failsCybeleSave(entity, target, rank, released)) {
+         applyHeavyPressure(target, released ? 220 : 200);
+      } else {
+         applyVisualSuppression(target, released ? 100 : 80);
+      }
    }
 
    private static void castMonsterStrength(MedusaEntity entity, long now) {
@@ -386,7 +396,7 @@ public final class MedusaCombatHelper {
       if (entity.getCurrentMp() < cost) {
          return;
       }
-      double radius = noblePhantasm ? 25.0 : 10.0;
+      double radius = BLOODFORT_RADIUS_VALUE;
       if (!hasAbsorbableTargets(entity, radius)) {
          return;
       }
@@ -441,7 +451,13 @@ public final class MedusaCombatHelper {
       }
 
       float damage = noblePhantasm ? 24.0F + entity.getRandom().nextInt(7) : 15.0F;
-      for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius, 4.0, radius), target -> isAbsorbableTarget(entity, target))) {
+      for (LivingEntity victim : level.getEntitiesOfClass(
+         LivingEntity.class,
+         new AABB(center, center).inflate(radius, radius, radius),
+         target -> isBloodfortTarget(entity, center, radius, target)
+      )) {
+         applyBloodfortDebuffs(victim, noblePhantasm);
+         drainBloodfortMana(victim, noblePhantasm);
          float before = victim.getHealth();
          victim.hurt(entity.damageSources().magic(), damage);
          float dealt = Math.max(0.0F, before - victim.getHealth());
@@ -727,8 +743,7 @@ public final class MedusaCombatHelper {
    }
 
    private static boolean shouldUseCybele(MedusaEntity entity, LivingEntity target, double distance, boolean highThreat, long now) {
-      return entity.getHealth() <= entity.getMaxHealth() * 0.5F
-         && distance <= 5.5
+      return distance <= 5.5
          && entity.getSensing().hasLineOfSight(target)
          && highThreat
          && entity.getRandom().nextFloat() < CYBELE_USE_CHANCE
@@ -776,18 +791,29 @@ public final class MedusaCombatHelper {
          && isCharmTarget(target);
    }
 
-   private static boolean shouldUseBloodfort(MedusaEntity entity, LivingEntity target, long now) {
-      return entity.distanceTo(target) <= 12.0
+   private static boolean shouldUseBloodfort(MedusaEntity entity, LivingEntity target, int nearbyEnemyCount, boolean highThreat, long now) {
+      return entity.distanceTo(target) <= BLOODFORT_RADIUS_VALUE
          && entity.getCurrentMp() >= 20.0
          && now - entity.getPersistentData().getLong(TAG_LAST_BLOODFORT_TICK) >= BLOODFORT_COOLDOWN
-         && hasAbsorbableTargets(entity, 10.0);
+         && hasAbsorbableTargets(entity, BLOODFORT_RADIUS_VALUE)
+         && (
+            highThreat
+               || nearbyEnemyCount >= 2
+               || target instanceof ServantEntity
+               || target.getMaxHealth() >= 140.0F
+               || entity.getHealth() <= entity.getMaxHealth() * 0.45F
+         );
    }
 
-   private static boolean shouldUseBloodfortNp(MedusaEntity entity, LivingEntity target, int nearbyEnemyCount, long now) {
-      return nearbyEnemyCount >= 3
+   private static boolean shouldUseBloodfortNp(MedusaEntity entity, LivingEntity target, int nearbyEnemyCount, boolean highThreat, long now) {
+      return (
+            nearbyEnemyCount >= 3
+               || target instanceof ServantEntity && (highThreat || target.getMaxHealth() >= 180.0F)
+               || entity.getHealth() <= entity.getMaxHealth() * 0.3F
+         )
          && entity.getCurrentMp() >= 40.0
          && now - entity.getPersistentData().getLong(TAG_LAST_BLOODFORT_NP_TICK) >= BLOODFORT_NP_COOLDOWN
-         && hasAbsorbableTargets(entity, 25.0);
+         && hasAbsorbableTargets(entity, BLOODFORT_RADIUS_VALUE);
    }
 
    private static boolean shouldUseBellerophon(MedusaEntity entity, LivingEntity target, double distance, int nearbyEnemyCount, boolean highThreat, long now) {
@@ -854,14 +880,57 @@ public final class MedusaCombatHelper {
    }
 
    private static boolean hasAbsorbableTargets(MedusaEntity entity, double radius) {
-      return !entity.level().getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(radius, 4.0, radius), target -> isAbsorbableTarget(entity, target)).isEmpty();
+      Vec3 center = entity.position().add(0.0, 0.1, 0.0);
+      return !entity.level()
+         .getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(radius, radius, radius), target -> isBloodfortTarget(entity, center, radius, target))
+         .isEmpty();
    }
 
    private static boolean isAbsorbableTarget(MedusaEntity entity, LivingEntity target) {
-      if (target == null || !target.isAlive() || target == entity || target.isAlliedTo(entity) || EntityUtils.isImmunePlayerTarget(target)) {
+      if (target == null || !target.isAlive() || target == entity || target.isAlliedTo(entity) || entity.isAlliedTo(target) || EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
-      return target instanceof Player || target instanceof AbstractVillager || target instanceof WanderingTrader || target instanceof Animal;
+      return true;
+   }
+
+   private static boolean isBloodfortTarget(MedusaEntity entity, Vec3 center, double radius, LivingEntity target) {
+      return isAbsorbableTarget(entity, target) && isInsideBloodfortHemisphere(center, radius, target);
+   }
+
+   private static boolean isInsideBloodfortHemisphere(Vec3 center, double radius, LivingEntity target) {
+      double sampleY = Mth.clamp(target.getY() + target.getBbHeight() * 0.35, center.y, center.y + radius);
+      if (target.getY() + target.getBbHeight() < center.y - 0.25) {
+         return false;
+      }
+      double dx = target.getX() - center.x;
+      double dy = sampleY - center.y;
+      double dz = target.getZ() - center.z;
+      return dx * dx + dy * dy + dz * dz <= radius * radius;
+   }
+
+   private static void applyBloodfortDebuffs(LivingEntity victim, boolean noblePhantasm) {
+      int duration = noblePhantasm ? 60 : 40;
+      int slowness = noblePhantasm ? 2 : 1;
+      int weakness = noblePhantasm ? 1 : 0;
+      int fatigue = noblePhantasm ? 1 : 0;
+      victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slowness, false, true, true));
+      victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weakness, false, true, true));
+      victim.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigue, false, true, true));
+   }
+
+   private static void drainBloodfortMana(LivingEntity victim, boolean noblePhantasm) {
+      double manaDrain = noblePhantasm ? 18.0 : 10.0;
+      if (victim instanceof ServantEntity servant) {
+         servant.setCurrentMp(Math.max(0.0, servant.getCurrentMp() - manaDrain));
+         return;
+      }
+      if (victim instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.is_magus || vars.player_max_mana > 0.0) {
+            vars.player_mana = Math.max(0.0, vars.player_mana - manaDrain);
+            vars.syncMana(player);
+         }
+      }
    }
 
    private static boolean isCharmTarget(LivingEntity target) {
@@ -900,13 +969,84 @@ public final class MedusaCombatHelper {
 
    private static void applyHeavyPressure(LivingEntity target, int durationTicks) {
       int duration = MagicResistanceHelper.applyDebuffResistance(target, durationTicks);
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 1, false, true, true));
+      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 2, false, true, true));
+      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 2, false, true, true));
+      target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 1, false, true, true));
+      applyCybelePressureModifier(target.getAttribute(Attributes.ATTACK_DAMAGE), CYBELE_PRESSURE_ATTACK_ID, -0.2);
+      applyCybelePressureModifier(target.getAttribute(Attributes.MOVEMENT_SPEED), CYBELE_PRESSURE_SPEED_ID, -0.1);
+      applyCybelePressureModifier(target.getAttribute(Attributes.ARMOR), CYBELE_PRESSURE_ARMOR_ID, -0.2);
+      applyCybelePressureModifier(target.getAttribute(Attributes.ARMOR_TOUGHNESS), CYBELE_PRESSURE_TOUGHNESS_ID, -0.2);
+      target.getPersistentData().putLong(TAG_CYBELE_PRESSURE_UNTIL, target.level().getGameTime() + duration);
+      TYPE_MOON_WORLD.queueServerWork(duration, () -> clearCybelePressureIfExpired(target));
    }
 
    private static void applyVisualSuppression(LivingEntity target, int durationTicks) {
       int duration = MagicResistanceHelper.applyDebuffResistance(target, durationTicks);
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 0, false, true, true));
+      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1, false, true, true));
+   }
+
+   private static boolean failsCybeleSave(MedusaEntity entity, LivingEntity target, MagicResistanceRank rank, boolean released) {
+      float failChance = switch (rank) {
+         case A -> released ? 0.52F : 0.38F;
+         case B -> released ? 0.86F : 0.72F;
+         default -> 1.0F;
+      };
+      failChance -= MagicResistanceHelper.getDebuffResistance(target) * (rank == MagicResistanceRank.A ? 0.45F : 0.35F);
+      return entity.getRandom().nextFloat() <= Mth.clamp(failChance, 0.15F, 0.95F);
+   }
+
+   private static boolean isHeraclesCybeleVulnerable(LivingEntity target) {
+      return target instanceof HeraclesEntity && target.getPersistentData().getBoolean("GodHandActive") && target.getPersistentData().getInt("GodHandLives") >= 11;
+   }
+
+   private static boolean isHeraclesCybeleImmune(LivingEntity target) {
+      return target instanceof HeraclesEntity && target.getPersistentData().getBoolean("GodHandActive") && target.getPersistentData().getInt("GodHandLives") < 11;
+   }
+
+   private static void applyCybelePressureModifier(AttributeInstance attribute, ResourceLocation id, double amount) {
+      if (attribute == null) {
+         return;
+      }
+      attribute.removeModifier(id);
+      attribute.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+   }
+
+   private static void clearCybelePressureIfExpired(LivingEntity target) {
+      if (target == null || !target.isAlive()) {
+         return;
+      }
+      if (target.getPersistentData().getLong(TAG_CYBELE_PRESSURE_UNTIL) > target.level().getGameTime()) {
+         return;
+      }
+      removeModifier(target.getAttribute(Attributes.ATTACK_DAMAGE), CYBELE_PRESSURE_ATTACK_ID);
+      removeModifier(target.getAttribute(Attributes.MOVEMENT_SPEED), CYBELE_PRESSURE_SPEED_ID);
+      removeModifier(target.getAttribute(Attributes.ARMOR), CYBELE_PRESSURE_ARMOR_ID);
+      removeModifier(target.getAttribute(Attributes.ARMOR_TOUGHNESS), CYBELE_PRESSURE_TOUGHNESS_ID);
+      target.getPersistentData().remove(TAG_CYBELE_PRESSURE_UNTIL);
+   }
+
+   private static void removeModifier(AttributeInstance attribute, ResourceLocation id) {
+      if (attribute != null) {
+         attribute.removeModifier(id);
+      }
+   }
+
+   private static boolean canNegateIncomingHit(MedusaEntity entity, DamageSource source) {
+      if (entity == null || source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return false;
+      }
+      if (source.getEntity() == null && source.getDirectEntity() == null) {
+         return false;
+      }
+      return !source.is(DamageTypes.FELL_OUT_OF_WORLD)
+         && !source.is(DamageTypes.GENERIC_KILL)
+         && !source.is(DamageTypes.FALL)
+         && !source.is(DamageTypes.DROWN)
+         && !source.is(DamageTypes.FREEZE)
+         && !source.is(DamageTypes.IN_FIRE)
+         && !source.is(DamageTypes.ON_FIRE)
+         && !source.is(DamageTypes.LAVA)
+         && !source.is(DamageTypes.IN_WALL);
    }
 
    private static void applyDivinityDamage(MedusaEntity entity, LivingEntity target) {
@@ -1190,7 +1330,7 @@ public final class MedusaCombatHelper {
          double normalized = ring / 4.0;
          double phi = normalized * (Math.PI / 2.0);
          double ringRadius = Math.sin(phi) * radius;
-         double y = center.y + Math.cos(phi) * (radius * 0.75) + 1.0;
+         double y = center.y + Math.cos(phi) * radius;
          for (int i = 0; i < ringSamples; i++) {
             double theta = (Math.PI * 2.0 * i) / ringSamples;
             double x = center.x + Math.cos(theta) * ringRadius;
@@ -1208,7 +1348,7 @@ public final class MedusaCombatHelper {
 
    private static void spawnBloodfortInteriorHaze(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
       int hazeCount = noblePhantasm ? 90 : 48;
-      double verticalSpread = noblePhantasm ? 6.0 : 3.2;
+      double verticalSpread = noblePhantasm ? radius * 0.95 : radius * 0.8;
       for (int i = 0; i < hazeCount; i++) {
          double angle = level.random.nextDouble() * Math.PI * 2.0;
          double dist = Math.sqrt(level.random.nextDouble()) * radius * 0.92;
@@ -1432,5 +1572,34 @@ public final class MedusaCombatHelper {
          0.02
       );
       level.playSound(null, entity.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.7F, 1.3F);
+   }
+
+   private static void spawnDodgeFx(MedusaEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level)) {
+         return;
+      }
+      level.sendParticles(
+         ParticleTypes.SWEEP_ATTACK,
+         entity.getX(),
+         entity.getY() + entity.getBbHeight() * 0.5,
+         entity.getZ(),
+         2,
+         0.1,
+         0.1,
+         0.1,
+         0.0
+      );
+      level.sendParticles(
+         ParticleTypes.CLOUD,
+         entity.getX(),
+         entity.getY() + entity.getBbHeight() * 0.5,
+         entity.getZ(),
+         8,
+         0.15,
+         0.25,
+         0.15,
+         0.03
+      );
+      level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.9F, 1.25F);
    }
 }

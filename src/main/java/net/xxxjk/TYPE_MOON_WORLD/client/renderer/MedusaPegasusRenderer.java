@@ -8,5 +8,6 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 public class MedusaPegasusRenderer extends GeoEntityRenderer<MedusaPegasusEntity> {
    public MedusaPegasusRenderer(Context context) {
       super(context, new MedusaPegasusModel());
+      this.addRenderLayer(new PetrifiedGeoLayer<>(this));
    }
 }

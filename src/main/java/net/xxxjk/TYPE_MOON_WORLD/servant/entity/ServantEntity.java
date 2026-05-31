@@ -52,6 +52,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.ObedienceAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -201,6 +202,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    protected void customServerAiStep() {
       super.customServerAiStep();
       if (!this.level().isClientSide()) {
+         if (this.hasEffect(ModMobEffects.PETRIFIED)) {
+            this.getNavigation().stop();
+            this.setTarget(null);
+            this.setDeltaMovement(Vec3.ZERO);
+            return;
+         }
          if (this.isSpiritualDissolving()) {
             this.getNavigation().stop();
             this.setTarget(null);

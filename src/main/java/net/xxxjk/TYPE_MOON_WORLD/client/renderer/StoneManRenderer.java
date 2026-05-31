@@ -68,6 +68,7 @@ public class StoneManRenderer extends GeoEntityRenderer<StoneManEntity> {
    public StoneManRenderer(Context renderManager) {
       super(renderManager, new StoneManModel());
       this.withScale(1.2F);
+      this.addRenderLayer(new PetrifiedGeoLayer<>(this));
       this.addRenderLayer(new StoneManRenderer.StoneBodyTextureLayer(this));
       this.addRenderLayer(new StoneManRenderer.TntFuseFlashLayer(this));
    }

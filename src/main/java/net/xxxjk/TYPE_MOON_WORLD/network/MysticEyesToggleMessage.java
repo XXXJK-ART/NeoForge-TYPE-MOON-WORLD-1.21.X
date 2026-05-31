@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public record MysticEyesToggleMessage(int eventType) implements CustomPacketPayload {
    public static final Type<MysticEyesToggleMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "mystic_eyes_toggle"));
@@ -33,6 +34,9 @@ public record MysticEyesToggleMessage(int eventType) implements CustomPacketPayl
    }
 
    public static void pressAction(Player player, int type) {
+      if (EntityUtils.isPetrified(player)) {
+         return;
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.mysticEyesInventory.getSlots() > 0) {
          if (vars.mysticEyesInventory.getStackInSlot(0).getItem() instanceof MysticEyesItem) {

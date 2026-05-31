@@ -8,6 +8,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -18,6 +19,9 @@ public final class PlayerMagicCastService {
 
    public static void execute(Entity entity) {
       if (entity == null || entity.level().isClientSide()) {
+         return;
+      }
+      if (EntityUtils.isPetrified(entity)) {
          return;
       }
 

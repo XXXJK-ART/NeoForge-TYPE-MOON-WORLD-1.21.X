@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -41,7 +42,7 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
 
    public static AttributeSupplier.Builder createAttributes() {
       return PathfinderMob.createMobAttributes()
-         .add(Attributes.MAX_HEALTH, 120.0)
+         .add(Attributes.MAX_HEALTH, 3000.0)
          .add(Attributes.MOVEMENT_SPEED, 0.45)
          .add(Attributes.ARMOR, 8.0)
          .add(Attributes.FLYING_SPEED, 0.55)
@@ -71,6 +72,14 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       }
       if (!this.isVehicle() && this.tickCount > 40 && !this.level().isClientSide()) {
          this.discard();
+      }
+   }
+
+   @Override
+   public void tick() {
+      super.tick();
+      if (!this.level().isClientSide()) {
+         this.snapToNearbyGround();
       }
    }
 
@@ -151,5 +160,23 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
          this.getPersistentData().putUUID(TAG_SUMMONER_UUID, this.summonerUuid);
       }
       this.entityData.set(FLYING_MODE, tag.getBoolean("PegasusFlyingMode"));
+      this.setNoGravity(this.isFlyingMode());
+   }
+
+   private void snapToNearbyGround() {
+      if (this.isFlyingMode() || this.onGround() || this.getDeltaMovement().y > 0.0) {
+         return;
+      }
+
+      double maxSnapDistance = 1.25;
+      Vec3 snap = Entity.collideBoundingBox(this, new Vec3(0.0, -maxSnapDistance, 0.0), this.getBoundingBox(), this.level(), List.of());
+      if (snap.y >= -1.0E-3 || snap.y <= -maxSnapDistance + 1.0E-3) {
+         return;
+      }
+
+      this.setPos(this.getX(), this.getY() + snap.y, this.getZ());
+      Vec3 motion = this.getDeltaMovement();
+      this.setDeltaMovement(motion.x, 0.0, motion.z);
+      this.setOnGround(true);
    }
 }

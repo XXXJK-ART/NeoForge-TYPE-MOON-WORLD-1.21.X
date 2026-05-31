@@ -18,6 +18,7 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
    public BaseServantRenderer(Context renderManager, GeoModel<T> model, float scale) {
       super(renderManager, model);
       this.withScale(scale);
+      this.addRenderLayer(new PetrifiedGeoLayer<>(this));
       this.addRenderLayer(
          new BlockAndItemGeoLayer<T>(this) {
             @Override

@@ -25,6 +25,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.Manually_deduct_health_to_restore_mana;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 
 public record Lose_health_regain_mana_Message(int eventType, int pressed) implements CustomPacketPayload {
@@ -49,6 +50,9 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
    }
 
    public static void pressAction(Player entity, int type, int pressed) {
+      if (EntityUtils.isPetrified(entity)) {
+         return;
+      }
       Level world = entity.level();
       if (world.isLoaded(entity.blockPosition()) && entity instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
