@@ -407,6 +407,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
+         if (this.tryConsumeGodHandLife(living, armyDamage, false)) {
+            continue;
+         }
+
          this.applyGuaranteedDamage(living, source, armyDamage);
          Vec3 push = living.position().subtract(center);
          double horizontal = Math.sqrt(push.x * push.x + push.z * push.z);
