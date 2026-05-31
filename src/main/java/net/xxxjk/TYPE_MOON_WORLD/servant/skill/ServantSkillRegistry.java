@@ -22,7 +22,10 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
 
    public static void ensureInitialized() {
       if (INITIALIZED.compareAndSet(false, true)) {
-         BuiltinServantSkills.registerBuiltin(INSTANCE);
+         CommonServantSkills.registerBuiltin(INSTANCE);
+         CuChulainnServantSkills.registerBuiltin(INSTANCE);
+         HeraclesServantSkills.registerBuiltin(INSTANCE);
+         SasakiKojiroServantSkills.registerBuiltin(INSTANCE);
          loadAddonEntrypoints();
       }
    }

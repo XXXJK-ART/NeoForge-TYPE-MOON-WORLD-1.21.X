@@ -20,7 +20,49 @@
   "model": {
     "geometry": "typemoonworld:geo/heracles.geo.json",
     "texture": "typemoonworld:textures/entity/heracles.png",
-    "animation": "typemoonworld:animations/heracles.animation.json"
+    "animation": "typemoonworld:animations/heracles.animation.json",
+    "animations": {
+      "idle": "animation.heracles.idle",
+      "walk": "animation.heracles.walk",
+      "roar": "animation.heracles.roar",
+      "slam": "animation.heracles.slam",
+      "jump_attack": "animation.heracles.jump_attack",
+      "charge": "animation.heracles.charge",
+      "sweep": "animation.heracles.sweep",
+      "slash": "animation.heracles.slash",
+      "teleport_behind": "animation.heracles.teleport_behind",
+      "stomp": "animation.heracles.stomp",
+      "uppercut": "animation.heracles.uppercut",
+      "horizontal_swing": "animation.heracles.horizontal_swing"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 1.0,
+      "height": 3.0,
+      "eye_height": 2.7
+    },
+    "hand_item_offset": {
+      "x": 0.15,
+      "y": -0.8,
+      "z": 0.01
+    },
+    "default_weapon": "typemoonworld:temple_stone_sword_axe",
+    "immune_to_stone_axe_debuff": true,
+    "combat_actions": [
+      "break_forward_blocks",
+      "roar",
+      "low_health_roar",
+      "jump_attack",
+      "charge",
+      "sweep",
+      "slash",
+      "teleport_behind",
+      "stomp",
+      "slam",
+      "uppercut",
+      "horizontal_swing"
+    ]
   },
   "skills": ["god_hand_passive", "mad_enhancement_b", "battle_continuation_a", "valor_a_plus", "false_mind_eye_b", "divinity_a"],
   "noble_phantasm": "",

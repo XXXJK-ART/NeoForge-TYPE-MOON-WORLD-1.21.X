@@ -14,6 +14,8 @@ public record ServantDefinition(
    ServantFaction faction,
    List<ServantTraitTag> traits,
    ServantParams parameters,
+   ServantAnimations animations,
+   ServantSpecialization specialization,
    String modelGeometryPath,
    String texturePath,
    String animationPath,

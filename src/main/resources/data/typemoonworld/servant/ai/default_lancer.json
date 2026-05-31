@@ -1,0 +1,28 @@
+{
+  "id": "default_lancer",
+  "movement": {
+    "follow_distance": 10.0,
+    "wander_radius": 30.0,
+    "likes_high_places": false
+  },
+  "combat": {
+    "preferred_attack_distance": 4.0,
+    "retreat_health_ratio": 0.30,
+    "melee_preference": 0.75,
+    "berserk_health_ratio": 0.0,
+    "berserk_damage_multiplier": 1.0
+  },
+  "social": {
+    "talk_interval": 0,
+    "greeting_probability": 0.0
+  },
+  "command": {
+    "base_obedience_rate": 0.8,
+    "favor_multiplier": 0.005
+  },
+  "environment": {
+    "liked_biomes": [],
+    "disliked_biomes": [],
+    "preferred_weather": "any"
+  }
+}

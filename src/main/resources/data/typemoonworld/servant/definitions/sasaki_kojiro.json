@@ -1,0 +1,71 @@
+{
+  "id": "sasaki_kojiro",
+  "display_name": "Sasaki Kojirou",
+  "display_name_zh": "佐佐木小次郎",
+  "class_type": "assassin",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "assassin", "male", "chaotic", "evil"],
+  "parameters": {
+    "endurance": "E",
+    "endurance_plus": false,
+    "strength": "C",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": true,
+    "magic": "E",
+    "magic_plus": false,
+    "luck": "A",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/sasaki_kojiro.geo.json",
+    "texture": "typemoonworld:textures/entity/sasaki_kojiro.png",
+    "animation": "typemoonworld:animations/sasaki_kojiro.animation.json",
+    "animations": {
+      "idle": "animation.sasaki_kojiro.idle",
+      "walk": "animation.sasaki_kojiro.walk",
+      "sweep": "animation.sasaki_kojiro.horizontal_swing",
+      "slash": "animation.sasaki_kojiro.slash_diagonal",
+      "uppercut": "animation.sasaki_kojiro.slash_diagonal",
+      "horizontal_swing": "animation.sasaki_kojiro.horizontal_swing",
+      "tsurigameshi": "animation.sasaki_kojiro.swallow_return"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.1,
+      "y": -0.8,
+      "z": -0.2
+    },
+    "default_weapon": "typemoonworld:bizen_nagamitsu",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "teleport_behind",
+      "combo",
+      "tsurigameshi",
+      "sweep",
+      "slash",
+      "uppercut",
+      "horizontal_swing"
+    ]
+  },
+  "skills": ["stealth_d", "spiritualization_b_plus", "souwa_expertise_b", "mindseye_a"],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "neutral",
+    "social": "normal",
+    "combat": "cautious",
+    "starting_favor": 50.0
+  },
+  "ai_config": "default_assassin",
+  "spawn_egg": {
+    "primary": 2762330,
+    "secondary": 1342177
+  }
+}

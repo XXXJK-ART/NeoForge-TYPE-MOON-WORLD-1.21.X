@@ -146,6 +146,12 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
    public void onAddedToLevel() {
       super.onAddedToLevel();
       if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel && !this.isClone) {
+         // 确保 MAX_HEALTH 属性为最新值（防止存档缓存旧数值）
+         var healthAttr = this.getAttribute(Attributes.MAX_HEALTH);
+         if (healthAttr != null) {
+            healthAttr.setBaseValue(2000.0);
+            this.setHealth(Math.min(this.getHealth(), (float) this.getAttributeValue(Attributes.MAX_HEALTH)));
+         }
          double baseY = this.getY() + 0.8 + this.random.nextDouble() * 0.8;
          serverLevel.sendParticles(ParticleTypes.CHERRY_LEAVES, this.getX(), baseY, this.getZ(), 260, 2.4, 1.5, 2.4, 0.035);
       }
@@ -226,11 +232,11 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.0, true) {
          public boolean canUse() {
-            return MerlinEntity.this.getHealth() <= 900.0F && super.canUse();
+            return MerlinEntity.this.getHealth() <= 1900.0F && super.canUse();
          }
 
          public boolean canContinueToUse() {
-            return MerlinEntity.this.getHealth() <= 900.0F && super.canContinueToUse();
+            return MerlinEntity.this.getHealth() <= 1900.0F && super.canContinueToUse();
          }
       });
       this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 0.9));
@@ -241,11 +247,11 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
    public static Builder createAttributes() {
       return createMobAttributes()
-         .add(Attributes.MAX_HEALTH, 1000.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.18)
-         .add(Attributes.ATTACK_DAMAGE, 8.0)
-         .add(Attributes.ARMOR, 1.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, 0.2)
+         .add(Attributes.MAX_HEALTH, 2000.0)    // 耐久 E → HP偏低，但高魔力补正
+         .add(Attributes.MOVEMENT_SPEED, 0.22)  // 敏捷 D
+         .add(Attributes.ATTACK_DAMAGE, 40.0)   // 筋力 B → 40 × 1.0 = 40
+         .add(Attributes.ARMOR, 3.0)            // 耐久 E → 10 × 0.3 = 3
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.5)  // 作为高位魔术师的气场
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 
@@ -254,6 +260,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
       this.clearFire();
       if (!this.level().isClientSide) {
          float health = this.getHealth();
+         float maxHealth = (float) this.getAttributeValue(Attributes.MAX_HEALTH);
          ItemStack mainHand = this.getMainHandItem();
          LivingEntity currentTarget = this.getTarget();
          boolean hasEnemy = currentTarget != null && currentTarget.isAlive();
@@ -472,7 +479,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
          if (hasEnemy) {
             this.outOfCombatTicks = 0;
-            if (this.getHealth() > 900.0F) {
+            if (this.getHealth() > 1900.0F) {
                this.hpHighCombatTicks++;
                if (this.hpHighCombatTicks >= 400) {
                   if (this.getTarget() instanceof Player px) {
@@ -540,7 +547,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
             && !this.isIllusionInvisible
             && this.illusionCooldown <= 0
             && this.level() instanceof ServerLevel serverLevelx) {
-            boolean swordState = health <= 900.0F && mainHand.getItem() == ModItems.EXCALIBUR.get();
+            boolean swordState = health <= maxHealth * 0.95F && mainHand.getItem() == ModItems.EXCALIBUR.get();
             int cloneCount = swordState ? 2 + this.random.nextInt(2) : 1;
             float chance = swordState ? 0.04F : 0.02F;
             if (this.random.nextFloat() < chance) {
@@ -691,7 +698,6 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
          }
 
          if (hasEnemy) {
-            float maxHealth = (float)this.getAttributeValue(Attributes.MAX_HEALTH);
             if (!this.midHpLineSpoken && health <= maxHealth * 0.5F && health > maxHealth * 0.25F) {
                this.broadcastToNearbyPlayers("entity.typemoonworld.merlin.speech.hurt_high", 20.0);
                this.midHpLineSpoken = true;
@@ -709,7 +715,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
             }
          }
 
-         if (!(health <= 900.0F)) {
+         if (!(health <= 1900.0F)) {
             if (!mainHand.isEmpty() && mainHand.getItem() == ModItems.EXCALIBUR.get()) {
                this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             }
@@ -741,7 +747,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
          }
 
          if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            if (health <= 900.0F && this.getMainHandItem().getItem() == ModItems.EXCALIBUR.get()) {
+            if (health <= 1900.0F && this.getMainHandItem().getItem() == ModItems.EXCALIBUR.get()) {
                this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32);
             } else {
                this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.18);
@@ -809,7 +815,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
-                  if (this.getHealth() <= 900.0F && vars.merlin_favor > -5) {
+                  if (this.getHealth() <= 1900.0F && vars.merlin_favor > -5) {
                      vars.merlin_favor = Math.max(-5, vars.merlin_favor - 1);
                      vars.syncPlayerVariables(player);
                   }
@@ -818,7 +824,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
             if (this.tickCount - this.lastDebuffTick >= 20) {
                this.lastDebuffTick = this.tickCount;
-               if (this.getHealth() > 900.0F) {
+               if (this.getHealth() > 1900.0F) {
                   attacker.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1));
                   attacker.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1));
                   if (this.level() instanceof ServerLevel serverLevelx) {
@@ -1171,12 +1177,12 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
       this.originalMerlinId = original.getUUID();
       this.hostilePlayers.addAll(original.hostilePlayers);
       if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0);
+         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(500.0);
       }
 
-      this.setHealth(20.0F);
+      this.setHealth(500.0F);
       if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34);
+         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32);
       }
 
       this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EXCALIBUR.get()));

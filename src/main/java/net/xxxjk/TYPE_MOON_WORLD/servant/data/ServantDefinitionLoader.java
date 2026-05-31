@@ -15,7 +15,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.ObedienceAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
@@ -40,7 +42,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
 
          try {
             if (element.isJsonObject()) {
-               ServantDefinition definition = parseDefinition(id.toString(), element.getAsJsonObject());
+               ServantDefinition definition = parseDefinitionSafe(id.toString(), element.getAsJsonObject());
                if (definition != null) {
                   definitions.put(definition.id(), definition);
                }
@@ -51,7 +53,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       }
 
       ServantDataRegistry.reload(definitions);
-      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.info("Loaded {} servant definitions", definitions.size());
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.info("Loaded {} servant definitions: {}", definitions.size(), definitions.keySet());
    }
 
    @Nullable
@@ -72,15 +74,18 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       }
 
       ServantParams parameters = parseParams(json.getAsJsonObject("parameters"));
+      ServantSpecialization specialization = parseSpecialization(json);
 
       String modelGeometry = "";
       String texture = "";
       String animation = "";
+      ServantAnimations animations = ServantAnimations.empty();
       if (json.has("model")) {
          JsonObject modelJson = json.getAsJsonObject("model");
          modelGeometry = getStringOrDefault(modelJson, "geometry", "");
          texture = getStringOrDefault(modelJson, "texture", "");
          animation = getStringOrDefault(modelJson, "animation", "");
+         animations = parseAnimations(modelJson, animation);
       }
 
       java.util.List<String> skillIds = new java.util.ArrayList<>();
@@ -120,12 +125,24 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       return new ServantDefinition(
          id, displayName, displayNameZh,
          classType, faction, traits, parameters,
+         animations,
+         specialization,
          modelGeometry, texture, animation,
          skillIds, noblePhantasmId,
          obedience, principle, social, combat,
          startingFavor, aiConfigId,
          primaryColor, secondaryColor
       );
+   }
+
+   @Nullable
+   private ServantDefinition parseDefinitionSafe(String fallbackId, JsonObject json) {
+      try {
+         return parseDefinition(fallbackId, json);
+      } catch (Exception e) {
+         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error("Failed to parse definition for {}: {}", fallbackId, e.getMessage(), e);
+         return null;
+      }
    }
 
    private ServantParams parseParams(JsonObject json) {
@@ -152,6 +169,80 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
 
       return ServantParams.of(endurance, endurancePlus, strength, strengthPlus,
          agility, agilityPlus, magic, magicPlus, luck, luckPlus);
+   }
+
+   private ServantAnimations parseAnimations(JsonObject modelJson, String legacyAnimationPath) {
+      if (modelJson == null || !modelJson.has("animations") || !modelJson.get("animations").isJsonObject()) {
+         return ServantAnimations.legacy(legacyAnimationPath);
+      }
+
+      JsonObject animationsJson = modelJson.getAsJsonObject("animations");
+      String idle = getStringOrDefault(animationsJson, "idle", "");
+      String walk = getStringOrDefault(animationsJson, "walk", "");
+      java.util.Map<String, String> actions = new java.util.LinkedHashMap<>();
+      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly"}) {
+         if (animationsJson.has(key)) {
+            String value = animationsJson.get(key).getAsString();
+            if (value != null && !value.isBlank()) {
+               actions.put(key, value);
+            }
+         }
+      }
+
+      if ((idle == null || idle.isBlank()) && (walk == null || walk.isBlank()) && actions.isEmpty()) {
+         return ServantAnimations.legacy(legacyAnimationPath);
+      }
+
+      if (idle == null || idle.isBlank()) {
+         idle = ServantAnimations.basePrefix(legacyAnimationPath) + ".idle";
+      }
+      if (walk == null || walk.isBlank()) {
+         walk = idle;
+      }
+      return new ServantAnimations(idle, walk, actions);
+   }
+
+   private ServantSpecialization parseSpecialization(JsonObject json) {
+      if (json == null || !json.has("specialization") || !json.get("specialization").isJsonObject()) {
+         return ServantSpecialization.empty();
+      }
+
+      JsonObject spec = json.getAsJsonObject("specialization");
+      float bodyWidth = 0.0F;
+      float bodyHeight = 0.0F;
+      float eyeHeight = 0.0F;
+      double handOffsetX = 0.0;
+      double handOffsetY = 0.0;
+      double handOffsetZ = 0.0;
+      if (spec.has("dimensions") && spec.get("dimensions").isJsonObject()) {
+         JsonObject dimensions = spec.getAsJsonObject("dimensions");
+         bodyWidth = (float)getDoubleOrDefault(dimensions, "width", 0.0);
+         bodyHeight = (float)getDoubleOrDefault(dimensions, "height", 0.0);
+         eyeHeight = (float)getDoubleOrDefault(dimensions, "eye_height", 0.0);
+      }
+      if (spec.has("hand_item_offset") && spec.get("hand_item_offset").isJsonObject()) {
+         JsonObject offset = spec.getAsJsonObject("hand_item_offset");
+         handOffsetX = getDoubleOrDefault(offset, "x", 0.0);
+         handOffsetY = getDoubleOrDefault(offset, "y", 0.0);
+         handOffsetZ = getDoubleOrDefault(offset, "z", 0.0);
+      }
+      String defaultWeapon = getStringOrDefault(spec, "default_weapon", "");
+      boolean immuneToStoneAxeDebuff = getBooleanOrDefault(spec, "immune_to_stone_axe_debuff", false);
+      java.util.Set<String> combatActions = new java.util.LinkedHashSet<>();
+      if (spec.has("combat_actions") && spec.get("combat_actions").isJsonArray()) {
+         JsonArray actionsArray = spec.getAsJsonArray("combat_actions");
+         for (JsonElement actionElement : actionsArray) {
+            String action = actionElement.getAsString();
+            if (action != null && !action.isBlank()) {
+               combatActions.add(action);
+            }
+         }
+      }
+      return ServantSpecialization.of(
+         bodyWidth, bodyHeight, eyeHeight,
+         handOffsetX, handOffsetY, handOffsetZ,
+         defaultWeapon, immuneToStoneAxeDebuff, combatActions
+      );
    }
 
    private String getStringOrDefault(JsonObject json, String key, String defaultValue) {

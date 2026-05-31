@@ -1,8 +1,8 @@
 {
   "id": "default_berserker",
   "movement": {
-    "follow_distance": 4.0,
-    "wander_radius": 16.0,
+    "follow_distance": 8.0,
+    "wander_radius": 32.0,
     "likes_high_places": false
   },
   "combat": {

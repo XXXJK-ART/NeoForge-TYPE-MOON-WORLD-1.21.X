@@ -1,0 +1,15 @@
+{
+  "id": "mindseye_a",
+  "display_name": "Mind's Eye A",
+  "display_name_zh": "心眼 A",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 60,
+  "duration_ticks": 60,
+  "effects": [
+    {
+      "effect_type": "damage_resistance",
+      "params": { "duration_ticks": 60, "amplifier": 3.0 }
+    }
+  ]
+}

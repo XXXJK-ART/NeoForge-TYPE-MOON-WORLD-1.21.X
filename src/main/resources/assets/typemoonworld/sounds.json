@@ -12,5 +12,116 @@
     "sounds": [
       "typemoonworld:cyq_gem_shoot_star"
     ]
+  },
+  "sasaki_kojiro_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/sasaki_kojiro/attack1",
+      "typemoonworld:voice/sasaki_kojiro/attack2",
+      "typemoonworld:voice/sasaki_kojiro/attack3"
+    ]
+  },
+  "sasaki_kojiro_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/sasaki_kojiro/fail1",
+      "typemoonworld:voice/sasaki_kojiro/fail2"
+    ]
+  },
+  "sasaki_kojiro_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/sasaki_kojiro/victory1",
+      "typemoonworld:voice/sasaki_kojiro/victory2"
+    ]
+  },
+  "sasaki_kojiro_voice_tsurigameshi": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/sasaki_kojiro/tsurigameshi"
+    ]
+  },
+  "heracles_voice_roar": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/heracles/roar1",
+      "typemoonworld:voice/heracles/roar2",
+      "typemoonworld:voice/heracles/roar3",
+      "typemoonworld:voice/heracles/roar4"
+    ]
+  },
+  "heracles_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/heracles/fail1",
+      "typemoonworld:voice/heracles/fail2"
+    ]
+  },
+  "heracles_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/heracles/victory1"
+    ]
+  },
+  "cu_chulainn_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cu_chulainn/attack1",
+      "typemoonworld:voice/cu_chulainn/attack2",
+      "typemoonworld:voice/cu_chulainn/attack3"
+    ]
+  },
+  "cu_chulainn_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cu_chulainn/fail1",
+      "typemoonworld:voice/cu_chulainn/fail2"
+    ]
+  },
+  "cu_chulainn_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cu_chulainn/victory1",
+      "typemoonworld:voice/cu_chulainn/victory2"
+    ]
+  },
+  "cu_chulainn_voice_gae_bolg": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cu_chulainn/gae_bolg"
+    ]
+  },
+  "medea_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/attack1",
+      "typemoonworld:voice/medea/attack2"
+    ]
+  },
+  "medea_voice_spell": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/spell"
+    ]
+  },
+  "medea_voice_rule_breaker": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/rule_breaker"
+    ]
+  },
+  "medea_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/fail1",
+      "typemoonworld:voice/medea/fail2"
+    ]
+  },
+  "medea_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/medea/victory1",
+      "typemoonworld:voice/medea/victory2"
+    ]
   }
 }

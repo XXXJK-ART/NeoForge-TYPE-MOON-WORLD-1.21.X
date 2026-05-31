@@ -16,20 +16,27 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.particle.RuneSigilParticle;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HecatesStaffRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariMuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWWeaponBlockEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 
@@ -93,6 +100,39 @@ public class ClientModEventSubscriber {
             return this.renderer;
          }
       }, new Item[]{ModItems.TSUMUKARI_MURAMASA.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private GaeBulgRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new GaeBulgRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.GAE_BULG.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private RuleBreakerRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new RuleBreakerRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.RULE_BREAKER.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private HecatesStaffRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new HecatesStaffRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.HECATES_STAFF.get()});
       event.registerMobEffect(
          new IClientMobEffectExtensions() {
             private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/mob_effect/nine_lives.jpg");
@@ -120,5 +160,15 @@ public class ClientModEventSubscriber {
       event.registerBlockEntityRenderer(ModBlockEntities.MURAMASA_BLOCK_ENTITY.get(), context -> new MuramasaBlockRenderer());
       event.registerBlockEntityRenderer(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), UBWWeaponBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.MURAMASA_SLASH.get(), MuramasaSlashProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAE_BULG_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
+   }
+
+   @SubscribeEvent
+   public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+      event.registerSpriteSet(ModParticles.ANSUZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 1.0F, 0.35F, 0.18F, 1.8F, 20));
+      event.registerSpriteSet(ModParticles.LAGUZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.35F, 0.75F, 1.0F, 1.75F, 22));
+      event.registerSpriteSet(ModParticles.TIWAZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 1.0F, 0.88F, 0.42F, 1.95F, 24));
+      event.registerSpriteSet(ModParticles.ALGIZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.78F, 0.55F, 1.0F, 1.95F, 24));
+      event.registerSpriteSet(ModParticles.BERKANA_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.42F, 1.0F, 0.48F, 1.95F, 24));
    }
 }

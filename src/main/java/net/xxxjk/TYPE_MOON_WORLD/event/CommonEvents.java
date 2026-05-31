@@ -47,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
@@ -54,11 +55,16 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
 )
 public class CommonEvents {
+   private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
+
    @SubscribeEvent
    public static void onAddReloadListeners(AddReloadListenerEvent event) {
       event.addListener(new ServantDefinitionLoader());
@@ -67,6 +73,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
+         // 从者刷怪蛋ID传递：实体创建后设置servantId
          if (event.getEntity() instanceof Monster monster) {
             try {
                monster.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(monster, RyougiShikiEntity.class, true));
@@ -102,6 +109,23 @@ public class CommonEvents {
    public static void onLevelTick(Post event) {
       if (!event.getLevel().isClientSide) {
          if (event.getLevel() instanceof ServerLevel serverLevel) {
+            // 佐佐木小次郎 気息遮断 D — 每40tick检查，未受伤时概率获得隐身
+            if (serverLevel.getGameTime() % 40L == 0L) {
+               for (ServantEntity servant : serverLevel.getEntitiesOfClass(ServantEntity.class,
+                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
+                  e -> e.isAlive() && e.getPersistentData().getBoolean("StealthPassiveActive"))) {
+                  CompoundTag data = servant.getPersistentData();
+                  long currentTick = serverLevel.getGameTime();
+                  long lastHurtTick = data.getLong("LastHurtTick");
+                  boolean wasRecentlyHurt = servant.invulnerableTime > 10
+                     || (currentTick - lastHurtTick) < 100;
+                  if (!wasRecentlyHurt && !servant.hasEffect(MobEffects.INVISIBILITY)) {
+                     if (serverLevel.random.nextInt(100) < 15) {
+                        servant.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 100, 0, false, false, true));
+                     }
+                  }
+               }
+            }
             if (serverLevel.getGameTime() % 200L == 0L) {
                List<ServerPlayer> players = serverLevel.players();
                if (!players.isEmpty()) {
@@ -272,9 +296,6 @@ public class CommonEvents {
                if (event.getSource().getEntity() instanceof Player player) {
                   if (player.hasEffect(ModMobEffects.NINE_LIVES)) {
                      player.removeEffect(ModMobEffects.NINE_LIVES);
-                     if (player.level() instanceof ServerLevel var22) {
-                        ;
-                     }
 
                      LivingEntity target = event.getEntity();
                      double baseDamageAttr = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
@@ -358,10 +379,10 @@ public class CommonEvents {
                                     damagedPlayer.getXRot()
                                  );
                                  if (helper.getAttribute(Attributes.MAX_HEALTH) != null) {
-                                    helper.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200.0);
+                                    helper.getAttribute(Attributes.MAX_HEALTH).setBaseValue(300.0);
                                  }
 
-                                 helper.setHealth(200.0F);
+                                 helper.setHealth(300.0F);
                                  CompoundTag htag = helper.getPersistentData();
                                  htag.putBoolean("TypeMoonHelperClone", true);
                                  htag.putString("TypeMoonHelperOwner", damagedPlayer.getUUID().toString());
@@ -425,6 +446,85 @@ public class CommonEvents {
 
       CompoundTag data = servant.getPersistentData();
       float damage = event.getAmount();
+      long currentTick = servant.level().getGameTime();
+
+      // 记录受伤时间（用于气息遮断被动判断）
+      data.putLong("LastHurtTick", currentTick);
+      if (CuChulainnCombatHelper.isCuChulainn(servant)) {
+         CuChulainnCombatHelper.markCombat(servant);
+         if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
+            && !CuChulainnCombatHelper.isMovementRestricted(servant)
+            && !event.getSource().is(DamageTypes.EXPLOSION)
+            && event.getSource().getDirectEntity() instanceof Projectile projectile
+            && projectile.getOwner() != servant) {
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.END_ROD,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                  8, 0.2, 0.25, 0.2, 0.02);
+               sl.sendParticles(ParticleTypes.ENCHANT,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  12, 0.3, 0.4, 0.3, 0.03);
+            }
+            event.setCanceled(true);
+            return;
+         }
+
+         float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
+         if (shield > 0.0F) {
+            if (shield >= damage) {
+               data.putFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG, shield - damage);
+               if (servant.level() instanceof ServerLevel sl) {
+                  sl.sendParticles(ParticleTypes.WAX_ON,
+                     servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                     10, 0.3, 0.4, 0.3, 0.02);
+               }
+               event.setCanceled(true);
+               return;
+            }
+
+            event.setAmount(damage - shield);
+            damage = event.getAmount();
+            data.remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.WAX_OFF,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                  12, 0.35, 0.4, 0.35, 0.03);
+            }
+         }
+      }
+      if (SasakiKojiroCombatHelper.isSasakiKojiro(servant)
+         && data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)
+         && (event.getSource().getEntity() != null || event.getSource().getDirectEntity() != null)) {
+         SasakiKojiroCombatHelper.markCombat(servant);
+
+         float dodgeChance = data.contains(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
+            ? data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
+            : 0.9F;
+         if (servant.getRandom().nextFloat() < dodgeChance) {
+            data.remove("LastHurtTick");
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  2, 0.1, 0.1, 0.1, 0.0);
+               sl.sendParticles(ParticleTypes.CLOUD,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                  8, 0.15, 0.25, 0.15, 0.03);
+               sl.playSound(null, servant.blockPosition(),
+                  SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.9F, 1.25F);
+            }
+            event.setCanceled(true);
+            return;
+         }
+
+         int durabilityLoss = SasakiKojiroCombatHelper.damageBladeFromIncomingAttack(servant, damage);
+         if (durabilityLoss > 0 && servant.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.CRIT,
+               servant.getX(), servant.getY() + servant.getBbHeight() * 0.6, servant.getZ(),
+               6, 0.2, 0.2, 0.2, 0.05);
+            sl.playSound(null, servant.blockPosition(),
+               SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.75F, 1.5F);
+         }
+      }
 
       // --- 十二试炼：B Rank 以下伤害免疫 ---
       if (data.getBoolean("GodHandActive")) {
@@ -462,33 +562,14 @@ public class CommonEvents {
          int livesLeft = data.getInt("GodHandLives");
          if (livesLeft > 0) {
             event.setCanceled(true);
-            float excessDamage = Math.abs(servant.getHealth() - event.getAmount());
-            servant.setHealth(servant.getMaxHealth());
-            data.putInt("GodHandLives", livesLeft - 1);
-            // 如果伤害溢出多条命，继续扣除
-            while (excessDamage > servant.getMaxHealth() && data.getInt("GodHandLives") > 0) {
-               excessDamage -= servant.getMaxHealth();
-               data.putInt("GodHandLives", data.getInt("GodHandLives") - 1);
-            }
-            if (excessDamage > 0 && data.getInt("GodHandLives") <= 0) {
-               // 所有命用完，直接击杀
-               servant.kill();
+            if (respawnHeraclesFromGodHand(servant, livesLeft - 1)) {
                return;
             }
-            if (excessDamage > 0) {
-               servant.hurt(servant.damageSources().generic(), excessDamage);
-            }
 
-            if (servant.level() instanceof ServerLevel sl) {
-               sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-                  servant.getX(), servant.getY() + 1.0, servant.getZ(),
-                  30, 0.6, 0.6, 0.6, 0.15);
-               sl.sendParticles(ParticleTypes.POOF,
-                  servant.getX(), servant.getY() + 0.5, servant.getZ(),
-                  20, 0.5, 0.5, 0.5, 0.1);
-               sl.playSound(null, servant.blockPosition(),
-                  SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
-            }
+            servant.setHealth(servant.getMaxHealth());
+            servant.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 4, false, false, true));
+            data.putInt("GodHandLives", livesLeft - 1);
+            data.putLong(GOD_HAND_REVIVE_LOCK_TAG, servant.level().getGameTime() + 20L);
             return;
          }
       }
@@ -527,10 +608,31 @@ public class CommonEvents {
          sl.getEntities().getAll().forEach(entity -> {
             if (entity instanceof ServantEntity servant) {
                CompoundTag data = servant.getPersistentData();
+               SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
+               CuChulainnCombatHelper.tickStatus(servant);
                // 战斗续行 CD 倒计时
                if (data.getInt("BattleContinuationCooldown") > 0) {
                   data.putInt("BattleContinuationCooldown",
                      data.getInt("BattleContinuationCooldown") - 1);
+               }
+               // 赫拉克勒斯被动回血：每2秒回复1HP（God Hand或BattleContinuation激活时）
+               if (data.getBoolean("GodHandActive") || data.getBoolean("BattleContinuationActive")) {
+                  int regenTick = data.getInt("HeraclesRegenTick");
+                  if (regenTick >= 40) {
+                     data.putInt("HeraclesRegenTick", 0);
+                     if (servant.getHealth() < servant.getMaxHealth()) {
+                        servant.heal(1.0F);
+                        if (sl instanceof ServerLevel sLevel) {
+                           sLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                              servant.getX() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
+                              servant.getY() + servant.getBbHeight(),
+                              servant.getZ() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
+                              3, 0.03, 0.05, 0.03, 0.0);
+                        }
+                     }
+                  } else {
+                     data.putInt("HeraclesRegenTick", regenTick + 1);
+                  }
                }
                // 战斗续行无敌倒计时结束后清除无敌
                // （MobEffect 自动过期，无需额外处理）
@@ -542,6 +644,31 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getEntity() instanceof ServantEntity servant) {
+            CompoundTag data = servant.getPersistentData();
+            boolean causalSevered = data.getBoolean("CausalSevered");
+            if (!causalSevered && data.getBoolean("GodHandActive")) {
+               int livesLeft = data.getInt("GodHandLives");
+               if (livesLeft > 0) {
+                  event.setCanceled(true);
+                  if (respawnHeraclesFromGodHand(servant, livesLeft - 1)) {
+                     return;
+                  }
+               }
+            }
+         }
+
+         ServantEntity servantKiller = null;
+         if (event.getSource().getEntity() instanceof ServantEntity servant) {
+            servantKiller = servant;
+         } else if (event.getSource().getDirectEntity() instanceof Projectile projectile && projectile.getOwner() instanceof ServantEntity servantOwner) {
+            servantKiller = servantOwner;
+         }
+
+         if (servantKiller != null && event.getEntity() instanceof LivingEntity defeatedLiving) {
+            ServantVoiceHelper.tryPlayVictory(servantKiller, defeatedLiving);
+         }
+
          if (event.getSource().getEntity() instanceof Player player
             && event.getEntity() instanceof Monster mob
             && mob.getTarget() instanceof MerlinEntity merlin
@@ -555,6 +682,7 @@ public class CommonEvents {
                vars.syncPlayerVariables(player);
             }
          }
+         // 英灵死亡后清理 pendingServantId，防止下一个刷怪蛋继承错误ID
       }
    }
 
@@ -580,6 +708,66 @@ public class CommonEvents {
             }
          }
       }
+   }
+
+   private static boolean respawnHeraclesFromGodHand(ServantEntity servant, int remainingLives) {
+      if (!(servant instanceof HeraclesEntity) || !(servant.level() instanceof ServerLevel serverLevel)) {
+         return false;
+      }
+
+      CompoundTag snapshot = servant.saveWithoutId(new CompoundTag());
+      snapshot.remove("UUID");
+      HeraclesEntity replacement = new HeraclesEntity(ModEntities.HERACLES.get(), serverLevel);
+      replacement.load(snapshot);
+      replacement.moveTo(servant.getX(), servant.getY(), servant.getZ(), servant.getYRot(), servant.getXRot());
+      replacement.setYBodyRot(servant.yBodyRot);
+      replacement.setYHeadRot(servant.getYHeadRot());
+      replacement.setDeltaMovement(Vec3.ZERO);
+      replacement.setNoGravity(false);
+      replacement.clearFire();
+      replacement.setTarget(servant.getTarget());
+      replacement.getPersistentData().merge(servant.getPersistentData().copy());
+      replacement.getPersistentData().putInt("GodHandLives", remainingLives);
+      replacement.getPersistentData().remove("CausalSevered");
+      replacement.getPersistentData().putLong(GOD_HAND_REVIVE_LOCK_TAG, serverLevel.getGameTime() + 20L);
+      replacement.setHealth(replacement.getMaxHealth());
+      replacement.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 4, false, false, true));
+      replacement.setPersistenceRequired();
+
+      serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         servant.getX(), servant.getY() + servant.getBbHeight() * 0.8, servant.getZ(),
+         60, 0.8, 1.2, 0.8, 0.03);
+      serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
+         servant.getX(), servant.getY() + servant.getBbHeight() * 0.65, servant.getZ(),
+         36, 0.9, 1.0, 0.9, 0.02);
+      serverLevel.sendParticles(ParticleTypes.CLOUD,
+         servant.getX(), servant.getY() + 0.3, servant.getZ(),
+         45, 0.85, 0.35, 0.85, 0.04);
+      serverLevel.sendParticles(ParticleTypes.POOF,
+         servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+         24, 0.55, 0.75, 0.55, 0.03);
+      serverLevel.playSound(null, servant.blockPosition(), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
+
+      LivingEntity oldTarget = servant.getTarget();
+      servant.remove(RemovalReason.DISCARDED);
+      serverLevel.addFreshEntity(replacement);
+      if (oldTarget != null && oldTarget.isAlive()) {
+         replacement.setTarget(oldTarget);
+      }
+
+      AABB retargetBox = replacement.getBoundingBox().inflate(96.0);
+      for (net.minecraft.world.entity.Mob mob : serverLevel.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, retargetBox)) {
+         if (mob == replacement) {
+            continue;
+         }
+         if (mob.getTarget() == servant) {
+            mob.setTarget(replacement);
+         }
+         if (mob.getLastHurtByMob() == servant) {
+            mob.setLastHurtByMob(replacement);
+         }
+      }
+      return true;
    }
 
    private static void speakNearby(ServerLevel level, Entity center, String key, double radius) {
