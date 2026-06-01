@@ -375,7 +375,11 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      if (!gaeBolgWindingUp && canGaeBolgArmy && entity.getCurrentMp() > 0.0 && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
+      if (!gaeBolgWindingUp
+         && canGaeBolgArmy
+         && entity.getCurrentMp() > 0.0
+         && healthRatio <= 0.5
+         && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
          AABB armyBox = entity.getBoundingBox().inflate(8.0);
          int groupSize = entity.level().getEntitiesOfClass(
             LivingEntity.class, armyBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
@@ -391,7 +395,11 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      if (!gaeBolgWindingUp && canGaeBolg && entity.getCurrentMp() >= 10 && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
+      if (!gaeBolgWindingUp
+         && canGaeBolg
+         && entity.getCurrentMp() >= 10
+         && healthRatio <= 0.9
+         && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
          if (distance <= 12.0 && (distance <= 3.0 || passesSkillChance(entity, 28, skillChanceScale))) {
             performGaeBolg(entity, target, distance <= 3.0);
             return;

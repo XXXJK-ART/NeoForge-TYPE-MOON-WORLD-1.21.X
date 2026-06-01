@@ -152,6 +152,14 @@ public class MedeaEntity extends ServantEntity {
    }
 
    @Override
+   public boolean isAlliedTo(net.minecraft.world.entity.Entity other) {
+      if (super.isAlliedTo(other)) {
+         return true;
+      }
+      return isOwnedDragonfang(other);
+   }
+
+   @Override
    public double getMaxMp() {
       return this.isInsideWorkshop() ? 1000.0 : 500.0;
    }

@@ -33,6 +33,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
@@ -110,6 +111,9 @@ public final class MedusaCombatHelper {
    private static final ResourceLocation CYBELE_PRESSURE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_cybele_pressure_armor");
    private static final ResourceLocation CYBELE_PRESSURE_TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "medusa_cybele_pressure_toughness");
    private static final DustParticleOptions BLOODFORT_PARTICLE = new DustParticleOptions(new Vector3f(0.95F, 0.22F, 0.35F), 1.1F);
+   private static final DustParticleOptions BLOODFORT_SIGIL_PARTICLE = new DustParticleOptions(new Vector3f(0.86F, 0.08F, 0.12F), 1.25F);
+   private static final DustParticleOptions BLOODFORT_NODE_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.2F, 0.24F), 1.45F);
+   private static final DustParticleOptions BLOODFORT_LINK_PARTICLE = new DustParticleOptions(new Vector3f(0.72F, 0.02F, 0.08F), 1.05F);
    private static final DustParticleOptions SUMMON_LIGHT_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.96F, 0.82F), 1.25F);
    private static final DustParticleOptions SUMMON_GOLD_PARTICLE = new DustParticleOptions(new Vector3f(0.98F, 0.84F, 0.32F), 1.2F);
 
@@ -414,8 +418,7 @@ public final class MedusaCombatHelper {
       entity.getPersistentData().putDouble(TAG_BLOODFORT_Z, entity.getZ());
       entity.getPersistentData().putBoolean(TAG_BLOODFORT_NP_ACTIVE, noblePhantasm);
       if (entity.level() instanceof ServerLevel level) {
-         spawnBloodfortCastBurst(level, entity.position(), radius, noblePhantasm);
-         spawnBloodfortShell(level, entity.position(), radius);
+         startBloodfortSummonSequence(level, entity.position(), radius, noblePhantasm);
          level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8F, 0.65F);
       }
    }
@@ -440,11 +443,17 @@ public final class MedusaCombatHelper {
       double radius = entity.getPersistentData().getDouble(TAG_BLOODFORT_RADIUS);
       boolean noblePhantasm = entity.getPersistentData().getBoolean(TAG_BLOODFORT_NP_ACTIVE);
 
+      if (now % 10L == 0L) {
+         spawnBloodfortGroundSigil(level, center, radius, noblePhantasm);
+      }
       if (now % 5L == 0L) {
          spawnBloodfortShell(level, center, radius);
       }
       if (now % 4L == 0L) {
          spawnBloodfortInteriorHaze(level, center, radius, noblePhantasm);
+      }
+      if (now % 20L == 0L) {
+         spawnBloodfortRisingShell(level, center, radius, noblePhantasm);
       }
       if (now % 20L != 0L) {
          return;
@@ -1325,7 +1334,7 @@ public final class MedusaCombatHelper {
    }
 
    private static void spawnBloodfortShell(ServerLevel level, Vec3 center, double radius) {
-      int ringSamples = 48;
+      int ringSamples = 72;
       for (int ring = 0; ring <= 4; ring++) {
          double normalized = ring / 4.0;
          double phi = normalized * (Math.PI / 2.0);
@@ -1341,6 +1350,9 @@ public final class MedusaCombatHelper {
             }
             if ((i & 1) == 0) {
                level.sendParticles(ParticleTypes.SMOKE, x, y, z, 1, 0.03, 0.02, 0.03, 0.0);
+            }
+            if ((i % 6) == 0) {
+               level.sendParticles(BLOODFORT_LINK_PARTICLE, x, y, z, 1, 0.01, 0.01, 0.01, 0.0);
             }
          }
       }
@@ -1371,6 +1383,216 @@ public final class MedusaCombatHelper {
       level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 1.0, center.z, burstCount / 2, radius * 0.22, 1.2, radius * 0.22, 0.04);
       level.sendParticles(BLOODFORT_PARTICLE, center.x, center.y + 1.4, center.z, burstCount, radius * 0.25, 1.4, radius * 0.25, 0.0);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y + 0.8, center.z, burstCount / 4, radius * 0.18, 0.8, radius * 0.18, 0.01);
+   }
+
+   private static void startBloodfortSummonSequence(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      spawnBloodfortCastBurst(level, center, radius, noblePhantasm);
+      spawnBloodfortGroundSigil(level, center, radius, noblePhantasm);
+      spawnBloodfortNodeClusters(level, center, radius, noblePhantasm);
+      TYPE_MOON_WORLD.queueServerWork(5, () -> {
+         if (level.isLoaded(BlockPos.containing(center.x, center.y, center.z))) {
+            spawnBloodfortNodeLinks(level, center, radius, noblePhantasm);
+         }
+      });
+      TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (level.isLoaded(BlockPos.containing(center.x, center.y, center.z))) {
+            spawnBloodfortRisingShell(level, center, radius, noblePhantasm);
+            spawnBloodfortVerticalPulse(level, center, radius, noblePhantasm);
+         }
+      });
+      TYPE_MOON_WORLD.queueServerWork(16, () -> {
+         if (level.isLoaded(BlockPos.containing(center.x, center.y, center.z))) {
+            spawnBloodfortGroundSigil(level, center, radius, noblePhantasm);
+            spawnBloodfortNodeLinks(level, center, radius, noblePhantasm);
+         }
+      });
+   }
+
+   private static void spawnBloodfortGroundSigil(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      double y = center.y + 0.04;
+      spawnBloodfortRing(level, center, y, radius * 0.82, 90, BLOODFORT_SIGIL_PARTICLE);
+      spawnBloodfortRing(level, center, y, radius * 0.58, 70, BLOODFORT_LINK_PARTICLE);
+      spawnBloodfortRing(level, center, y, radius * 0.26, 42, BLOODFORT_NODE_PARTICLE);
+      Vec3[] outerPentagram = createRegularPolygon(center, y, radius * 0.64, 5, -Math.PI / 2.0);
+      for (int i = 0; i < outerPentagram.length; i++) {
+         Vec3 from = outerPentagram[i];
+         Vec3 to = outerPentagram[(i + 2) % outerPentagram.length];
+         spawnBloodfortLine(level, from, to, BLOODFORT_LINK_PARTICLE, 0.42);
+         spawnBloodfortLine(level, from, center.add(0.0, 0.04, 0.0), BLOODFORT_SIGIL_PARTICLE, 0.5);
+      }
+      if (noblePhantasm) {
+         Vec3[] innerPentagon = createRegularPolygon(center, y, radius * 0.38, 5, Math.PI / 10.0);
+         for (int i = 0; i < innerPentagon.length; i++) {
+            spawnBloodfortLine(level, innerPentagon[i], innerPentagon[(i + 1) % innerPentagon.length], BLOODFORT_SIGIL_PARTICLE, 0.35);
+         }
+      }
+      spawnBloodfortPeripheralSigils(level, center, radius, noblePhantasm);
+   }
+
+   private static void spawnBloodfortNodeClusters(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      Vec3[] majorNodes = createRegularPolygon(center, center.y + 0.06, radius * 0.74, 5, -Math.PI / 2.0);
+      Vec3[] minorNodes = createRegularPolygon(center, center.y + 0.06, radius * 0.44, 5, Math.PI / 10.0);
+      for (Vec3 node : majorNodes) {
+         spawnBloodfortNodeCluster(level, node, 7, BLOODFORT_NODE_PARTICLE);
+         level.sendParticles(ParticleTypes.FLAME, node.x, node.y + 0.1, node.z, 2, 0.06, 0.02, 0.06, 0.0);
+      }
+      for (Vec3 node : minorNodes) {
+         spawnBloodfortNodeCluster(level, node, noblePhantasm ? 5 : 3, BLOODFORT_SIGIL_PARTICLE);
+      }
+   }
+
+   private static void spawnBloodfortNodeLinks(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      Vec3[] majorNodes = createRegularPolygon(center, center.y + 0.06, radius * 0.74, 5, -Math.PI / 2.0);
+      Vec3[] minorNodes = createRegularPolygon(center, center.y + 0.06, radius * 0.44, 5, Math.PI / 10.0);
+      for (int i = 0; i < majorNodes.length; i++) {
+         spawnBloodfortLine(level, majorNodes[i], majorNodes[(i + 1) % majorNodes.length], BLOODFORT_LINK_PARTICLE, 0.38);
+         spawnBloodfortLine(level, majorNodes[i], minorNodes[i], BLOODFORT_NODE_PARTICLE, 0.34);
+         spawnBloodfortLine(level, minorNodes[i], center.add(0.0, 0.06, 0.0), BLOODFORT_SIGIL_PARTICLE, 0.3);
+      }
+      if (noblePhantasm) {
+         for (int i = 0; i < majorNodes.length; i++) {
+            spawnBloodfortLine(level, majorNodes[i], minorNodes[(i + 2) % minorNodes.length], BLOODFORT_SIGIL_PARTICLE, 0.3);
+         }
+      }
+      spawnBloodfortPeripheralLinks(level, center, radius, noblePhantasm, majorNodes);
+      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.1, center.z, 1, 0.05, 0.02, 0.05, 0.0);
+   }
+
+   private static void spawnBloodfortRisingShell(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      level.addFreshEntity(
+         new GravityFieldShellEffectEntity(
+            level,
+            center.x,
+            center.y + 0.02,
+            center.z,
+            (float)(radius * 1.02),
+            (float)(radius * 0.82),
+            noblePhantasm ? 0.72F : 0.58F,
+            noblePhantasm ? 32 : 26,
+            0.86F,
+            0.06F,
+            0.11F,
+            noblePhantasm ? 14 : 10
+         )
+      );
+   }
+
+   private static void spawnBloodfortVerticalPulse(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      int shafts = noblePhantasm ? 12 : 8;
+      for (int i = 0; i < shafts; i++) {
+         double angle = (Math.PI * 2.0 * i) / shafts;
+         double ringRadius = radius * 0.78;
+         double baseX = center.x + Math.cos(angle) * ringRadius;
+         double baseZ = center.z + Math.sin(angle) * ringRadius;
+         for (double t = 0.0; t <= 1.0; t += 0.12) {
+            double y = center.y + t * radius * 0.9;
+            level.sendParticles(BLOODFORT_SIGIL_PARTICLE, baseX, y, baseZ, 1, 0.0, 0.0, 0.0, 0.0);
+            if ((i & 1) == 0) {
+               level.sendParticles(ParticleTypes.FLAME, baseX, y, baseZ, 1, 0.015, 0.02, 0.015, 0.0);
+            }
+         }
+      }
+      level.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + radius * 0.45, center.z, noblePhantasm ? 36 : 20, radius * 0.22, radius * 0.3, radius * 0.22, 0.01);
+      level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + radius * 0.18, center.z, noblePhantasm ? 28 : 18, radius * 0.28, 0.16, radius * 0.28, 0.01);
+   }
+
+   private static void spawnBloodfortRing(ServerLevel level, Vec3 center, double y, double radius, int samples, DustParticleOptions particle) {
+      for (int i = 0; i < samples; i++) {
+         double theta = (Math.PI * 2.0 * i) / samples;
+         double x = center.x + Math.cos(theta) * radius;
+         double z = center.z + Math.sin(theta) * radius;
+         level.sendParticles(particle, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
+      }
+   }
+
+   private static Vec3[] createRegularPolygon(Vec3 center, double y, double radius, int sides, double angleOffset) {
+      Vec3[] points = new Vec3[sides];
+      for (int i = 0; i < sides; i++) {
+         double angle = angleOffset + (Math.PI * 2.0 * i) / sides;
+         points[i] = new Vec3(center.x + Math.cos(angle) * radius, y, center.z + Math.sin(angle) * radius);
+      }
+      return points;
+   }
+
+   private static void spawnBloodfortLine(ServerLevel level, Vec3 from, Vec3 to, DustParticleOptions particle, double spacing) {
+      Vec3 delta = to.subtract(from);
+      double distance = delta.length();
+      if (distance < 1.0E-4) {
+         return;
+      }
+      Vec3 step = delta.normalize().scale(spacing);
+      for (double traveled = 0.0; traveled <= distance; traveled += spacing) {
+         Vec3 pos = from.add(step.scale(traveled / spacing));
+         level.sendParticles(particle, pos.x, pos.y, pos.z, 1, 0.01, 0.01, 0.01, 0.0);
+      }
+   }
+
+   private static void spawnBloodfortNodeCluster(ServerLevel level, Vec3 center, int count, DustParticleOptions particle) {
+      level.sendParticles(particle, center.x, center.y, center.z, count, 0.08, 0.02, 0.08, 0.0);
+      level.sendParticles(ParticleTypes.LAVA, center.x, center.y + 0.02, center.z, Math.max(1, count / 3), 0.04, 0.02, 0.04, 0.0);
+   }
+
+   private static void spawnBloodfortPeripheralSigils(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm) {
+      double y = center.y + 0.035;
+      int sigilCount = noblePhantasm ? 10 : 7;
+      double rotation = level.getGameTime() * (noblePhantasm ? 0.022 : 0.016);
+      for (int i = 0; i < sigilCount; i++) {
+         double angle = -Math.PI / 2.0 + (Math.PI * 2.0 * i) / sigilCount + (i % 2 == 0 ? 0.11 : -0.09) + rotation;
+         double sigilRadius = radius * (0.84 + (i % 3) * 0.035);
+         Vec3 sigilCenter = new Vec3(center.x + Math.cos(angle) * sigilRadius, y, center.z + Math.sin(angle) * sigilRadius);
+         double miniRadius = radius * (noblePhantasm ? 0.12 : 0.095) * (i % 2 == 0 ? 1.0 : 0.82);
+         spawnBloodfortRing(level, sigilCenter, y, miniRadius, 18, BLOODFORT_SIGIL_PARTICLE);
+         spawnBloodfortRing(level, sigilCenter, y, miniRadius * 0.52, 10, BLOODFORT_LINK_PARTICLE);
+         Vec3[] miniPentagram = createRegularPolygon(sigilCenter, y, miniRadius * 0.72, 5, angle);
+         for (int v = 0; v < miniPentagram.length; v++) {
+            spawnBloodfortLine(level, miniPentagram[v], miniPentagram[(v + 2) % miniPentagram.length], BLOODFORT_LINK_PARTICLE, 0.18);
+         }
+         spawnBloodfortRotatingSubArray(level, sigilCenter, miniRadius, angle, noblePhantasm);
+         level.sendParticles(BLOODFORT_NODE_PARTICLE, sigilCenter.x, sigilCenter.y, sigilCenter.z, noblePhantasm ? 4 : 2, 0.05, 0.01, 0.05, 0.0);
+      }
+   }
+
+   private static void spawnBloodfortPeripheralLinks(ServerLevel level, Vec3 center, double radius, boolean noblePhantasm, Vec3[] majorNodes) {
+      double y = center.y + 0.06;
+      int sigilCount = noblePhantasm ? 10 : 7;
+      double rotation = level.getGameTime() * (noblePhantasm ? 0.022 : 0.016);
+      Vec3[] peripheral = new Vec3[sigilCount];
+      for (int i = 0; i < sigilCount; i++) {
+         double angle = -Math.PI / 2.0 + (Math.PI * 2.0 * i) / sigilCount + (i % 2 == 0 ? 0.11 : -0.09) + rotation;
+         double sigilRadius = radius * (0.84 + (i % 3) * 0.035);
+         peripheral[i] = new Vec3(center.x + Math.cos(angle) * sigilRadius, y, center.z + Math.sin(angle) * sigilRadius);
+      }
+      for (int i = 0; i < peripheral.length; i++) {
+         spawnBloodfortLine(level, peripheral[i], peripheral[(i + 1) % peripheral.length], BLOODFORT_LINK_PARTICLE, 0.24);
+         Vec3 nearestMajor = majorNodes[i % majorNodes.length];
+         spawnBloodfortLine(level, peripheral[i], nearestMajor, BLOODFORT_SIGIL_PARTICLE, 0.28);
+         if (noblePhantasm && (i % 2 == 0)) {
+            spawnBloodfortLine(level, peripheral[i], center.add(0.0, 0.06, 0.0), BLOODFORT_LINK_PARTICLE, 0.3);
+         }
+      }
+      for (int i = 0; i < peripheral.length; i++) {
+         spawnBloodfortLine(level, peripheral[i], peripheral[(i + 2) % peripheral.length], BLOODFORT_SIGIL_PARTICLE, 0.42);
+         if (noblePhantasm || (i % 2 == 0)) {
+            spawnBloodfortLine(level, peripheral[i], peripheral[(i + 3) % peripheral.length], BLOODFORT_LINK_PARTICLE, 0.5);
+         }
+      }
+   }
+
+   private static void spawnBloodfortRotatingSubArray(ServerLevel level, Vec3 sigilCenter, double miniRadius, double baseAngle, boolean noblePhantasm) {
+      double subRadius = miniRadius * (noblePhantasm ? 1.38 : 1.24);
+      double ringAngle = baseAngle + level.getGameTime() * (noblePhantasm ? -0.031 : -0.024);
+      Vec3[] triad = createRegularPolygon(sigilCenter, sigilCenter.y, subRadius, 3, ringAngle);
+      Vec3[] square = createRegularPolygon(sigilCenter, sigilCenter.y, subRadius * 0.64, 4, -ringAngle * 0.8);
+      for (int i = 0; i < triad.length; i++) {
+         spawnBloodfortLine(level, triad[i], triad[(i + 1) % triad.length], BLOODFORT_SIGIL_PARTICLE, 0.12);
+         spawnBloodfortLine(level, triad[i], sigilCenter, BLOODFORT_LINK_PARTICLE, 0.11);
+      }
+      for (int i = 0; i < square.length; i++) {
+         spawnBloodfortLine(level, square[i], square[(i + 1) % square.length], BLOODFORT_LINK_PARTICLE, 0.1);
+      }
+      for (Vec3 point : triad) {
+         level.sendParticles(BLOODFORT_NODE_PARTICLE, point.x, point.y, point.z, 1, 0.015, 0.0, 0.015, 0.0);
+      }
    }
 
    private static void spawnBloodfortVictimAura(ServerLevel level, LivingEntity victim, float dealt) {

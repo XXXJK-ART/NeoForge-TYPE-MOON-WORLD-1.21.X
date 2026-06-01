@@ -19,8 +19,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.ObedienceAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
+import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,15 +102,27 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
 
       ObedienceAxis obedience = ObedienceAxis.COOPERATIVE;
       PrincipleAxis principle = PrincipleAxis.NEUTRAL;
+      MoralAxis morality = MoralAxis.fromTraits(traits);
       SocialDisposition social = SocialDisposition.NORMAL;
       CombatDisposition combat = CombatDisposition.BALANCED;
+      java.util.List<SpecialTargetPrinciple> specialPrinciples = new java.util.ArrayList<>();
       double startingFavor = 50.0;
       if (json.has("personality")) {
          JsonObject personalityJson = json.getAsJsonObject("personality");
          obedience = ObedienceAxis.fromKey(getStringOrDefault(personalityJson, "obedience", "neutral"));
          principle = PrincipleAxis.fromKey(getStringOrDefault(personalityJson, "principle", "neutral"));
+         morality = MoralAxis.fromKey(getStringOrDefault(personalityJson, "morality", morality.key()));
          social = SocialDisposition.fromKey(getStringOrDefault(personalityJson, "social", "normal"));
          combat = CombatDisposition.fromKey(getStringOrDefault(personalityJson, "combat", "balanced"));
+         if (personalityJson.has("special_principles") && personalityJson.get("special_principles").isJsonArray()) {
+            JsonArray principlesArray = personalityJson.getAsJsonArray("special_principles");
+            for (JsonElement principleElement : principlesArray) {
+               SpecialTargetPrinciple principleValue = SpecialTargetPrinciple.fromKey(principleElement.getAsString());
+               if (principleValue != null && !specialPrinciples.contains(principleValue)) {
+                  specialPrinciples.add(principleValue);
+               }
+            }
+         }
          startingFavor = getDoubleOrDefault(personalityJson, "starting_favor", 50.0);
       }
 
@@ -129,7 +143,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
          specialization,
          modelGeometry, texture, animation,
          skillIds, noblePhantasmId,
-         obedience, principle, social, combat,
+         obedience, principle, morality, social, combat, specialPrinciples,
          startingFavor, aiConfigId,
          primaryColor, secondaryColor
       );

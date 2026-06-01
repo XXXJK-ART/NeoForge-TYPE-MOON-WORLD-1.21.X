@@ -7,6 +7,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
 public final class SasakiKojiroCombatHelper {
    public static final String MINDSEYE_ACTIVE_TAG = "MindseyeActive";
    public static final String MINDSEYE_DODGE_CHANCE_TAG = "MindseyeDodgeChance";
+   public static final String MINDSEYE_BLOCK_CHANCE_TAG = "MindseyeBlockChance";
    public static final String LAST_COMBAT_TICK_TAG = "SasakiKojiroLastCombatTick";
    private static final String LAST_REPAIR_TICK_TAG = "SasakiKojiroLastRepairTick";
    private static final float FULL_ACCURACY_DURABILITY_RATIO = 0.70F;

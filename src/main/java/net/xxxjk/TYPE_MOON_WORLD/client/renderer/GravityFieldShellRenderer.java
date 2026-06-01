@@ -17,7 +17,8 @@ public class GravityFieldShellRenderer extends EntityRenderer<GravityFieldShellE
    @Override
    public void render(GravityFieldShellEffectEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
       float alpha = entity.getCurrentAlpha(partialTicks);
-      if (alpha <= 0.01F) {
+      float reveal = entity.getRevealFraction(partialTicks);
+      if (alpha <= 0.01F || reveal <= 0.01F) {
          return;
       }
 
@@ -28,10 +29,23 @@ public class GravityFieldShellRenderer extends EntityRenderer<GravityFieldShellE
 
       float radiusXZ = entity.getRadiusXZ();
       float radiusY = entity.getRadiusY();
+      float red = entity.getColorR();
+      float green = entity.getColorG();
+      float blue = entity.getColorB();
       VertexConsumer consumer = buffer.getBuffer(GravityShellRenderType.shell());
-      poseStack.translate(0.0F, -0.02F, 0.0F);
-      GravityShellMeshHelper.drawUpperHemisphere(poseStack.last(), consumer, radiusXZ, radiusY, 0.15F, 0.05F, 0.21F, alpha);
-      GravityShellMeshHelper.drawUpperHemisphere(poseStack.last(), consumer, radiusXZ * 0.92F, radiusY * 0.94F, 0.07F, 0.02F, 0.11F, alpha * 0.36F);
+      poseStack.translate(0.0F, -radiusY * (1.0F - reveal) * 0.22F - 0.02F, 0.0F);
+      GravityShellMeshHelper.drawUpperHemisphere(poseStack.last(), consumer, radiusXZ, radiusY, red, green, blue, alpha, reveal);
+      GravityShellMeshHelper.drawUpperHemisphere(
+         poseStack.last(),
+         consumer,
+         radiusXZ * 0.92F,
+         radiusY * 0.94F,
+         red * 0.48F,
+         green * 0.48F,
+         blue * 0.48F,
+         alpha * 0.36F,
+         reveal
+      );
       poseStack.popPose();
       super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
    }

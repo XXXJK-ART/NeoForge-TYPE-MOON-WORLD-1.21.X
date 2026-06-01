@@ -529,7 +529,7 @@ public class CommonEvents {
 
          float dodgeChance = data.contains(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
             ? data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
-            : 0.9F;
+            : 0.8F;
          if (servant.getRandom().nextFloat() < dodgeChance) {
             data.remove("LastHurtTick");
             if (servant.level() instanceof ServerLevel sl) {
@@ -541,6 +541,23 @@ public class CommonEvents {
                   8, 0.15, 0.25, 0.15, 0.03);
                sl.playSound(null, servant.blockPosition(),
                   SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.9F, 1.25F);
+            }
+            event.setCanceled(true);
+            return;
+         }
+
+         float blockChance = data.contains(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG)
+            ? data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG)
+            : 0.4F;
+         if (servant.getRandom().nextFloat() < blockChance) {
+            int durabilityLoss = SasakiKojiroCombatHelper.damageBladeFromIncomingAttack(servant, damage);
+            data.remove("LastHurtTick");
+            if (servant.level() instanceof ServerLevel sl) {
+               sl.sendParticles(ParticleTypes.CRIT,
+                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.6, servant.getZ(),
+                  Math.max(6, durabilityLoss), 0.2, 0.2, 0.2, 0.05);
+               sl.playSound(null, servant.blockPosition(),
+                  SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.75F, 1.5F);
             }
             event.setCanceled(true);
             return;

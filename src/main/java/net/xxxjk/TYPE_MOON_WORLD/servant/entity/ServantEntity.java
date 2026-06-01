@@ -48,8 +48,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.ObedienceAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
+import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
@@ -943,6 +945,19 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public void setPrincipleAxis(PrincipleAxis axis) {
       this.entityData.set(PRINCIPLE_AXIS, axis.id());
+   }
+
+   public MoralAxis getMoralAxis() {
+      ServantDefinition definition = this.getDefinition();
+      return definition != null ? definition.defaultMorality() : MoralAxis.NEUTRAL;
+   }
+
+   public boolean hasSpecialTargetPrinciple(SpecialTargetPrinciple principle) {
+      if (principle == null) {
+         return false;
+      }
+      ServantDefinition definition = this.getDefinition();
+      return definition != null && definition.specialTargetPrinciples().contains(principle);
    }
 
    public SocialDisposition getSocialDisposition() {

@@ -70,8 +70,10 @@
   "personality": {
     "obedience": "cooperative",
     "principle": "orderly",
+    "morality": "neutral",
     "social": "enthusiastic",
     "combat": "frenzied",
+    "special_principles": ["spare_canines"],
     "starting_favor": 55.0
   },
   "ai_config": "default_lancer",

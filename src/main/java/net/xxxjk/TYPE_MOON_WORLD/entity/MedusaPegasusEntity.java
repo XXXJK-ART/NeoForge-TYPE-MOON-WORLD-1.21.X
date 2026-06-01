@@ -86,7 +86,7 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
-         if (this.isFlyingMode()) {
+         if (this.isFlyingMode() || !this.onGround()) {
             return event.setAndContinue(RawAnimation.begin().thenLoop("animation.medusa_pegasus.flying"));
          }
          if (event.isMoving()) {
