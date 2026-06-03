@@ -150,5 +150,32 @@
       "typemoonworld:voice/medusa/victory1",
       "typemoonworld:voice/medusa/victory2"
     ]
+  },
+  "cursed_arm_hassan_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cursed_arm_hassan/attack1",
+      "typemoonworld:voice/cursed_arm_hassan/attack2"
+    ]
+  },
+  "cursed_arm_hassan_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cursed_arm_hassan/fail1",
+      "typemoonworld:voice/cursed_arm_hassan/fail2"
+    ]
+  },
+  "cursed_arm_hassan_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cursed_arm_hassan/victory1",
+      "typemoonworld:voice/cursed_arm_hassan/victory2"
+    ]
+  },
+  "cursed_arm_hassan_voice_zabaniya": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/cursed_arm_hassan/zabaniya"
+    ]
   }
 }

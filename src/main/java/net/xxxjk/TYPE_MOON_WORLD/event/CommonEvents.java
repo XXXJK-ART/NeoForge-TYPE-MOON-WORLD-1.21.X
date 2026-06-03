@@ -62,6 +62,8 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -129,6 +131,13 @@ public class CommonEvents {
                         servant.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 100, 0, false, false, true));
                      }
                   }
+               }
+            }
+            if (serverLevel.getGameTime() % 20L == 0L) {
+               for (CursedArmHassanEntity hassan : serverLevel.getEntitiesOfClass(CursedArmHassanEntity.class,
+                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
+                  e -> e.isAlive() && e.hasEffect(MobEffects.INVISIBILITY))) {
+                  CursedArmHassanCombatHelper.clearNonServantTargeting(hassan);
                }
             }
             if (serverLevel.getGameTime() % 200L == 0L) {

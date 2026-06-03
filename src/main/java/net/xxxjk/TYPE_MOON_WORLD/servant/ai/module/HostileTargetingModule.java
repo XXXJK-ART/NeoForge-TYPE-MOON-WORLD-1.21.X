@@ -16,6 +16,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
@@ -149,6 +150,8 @@ public final class HostileTargetingModule implements ServantAiModule {
          || EntityUtils.isImmunePlayerTarget(other)
          || other.isAlliedTo(self)
          || self.isAlliedTo(other)
+         || CursedArmHassanCombatHelper.shouldAvoidPassiveFellowHassanTarget(self, other)
+         || CursedArmHassanCombatHelper.refusesToHarm(self, other)
          || isForbiddenByPrinciple(self, other)) {
          return false;
       }

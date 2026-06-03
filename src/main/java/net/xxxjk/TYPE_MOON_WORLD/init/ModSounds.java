@@ -31,6 +31,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> MEDUSA_VOICE_BELLEROPHON = register("medusa_voice_bellerophon");
    public static final DeferredHolder<SoundEvent, SoundEvent> MEDUSA_VOICE_FAIL = register("medusa_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> MEDUSA_VOICE_VICTORY = register("medusa_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_ATTACK = register("cursed_arm_hassan_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_FAIL = register("cursed_arm_hassan_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_VICTORY = register("cursed_arm_hassan_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_ZABANIYA = register("cursed_arm_hassan_voice_zabaniya");
 
    private ModSounds() {
    }

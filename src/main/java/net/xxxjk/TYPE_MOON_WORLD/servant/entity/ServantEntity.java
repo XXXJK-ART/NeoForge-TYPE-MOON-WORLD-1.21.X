@@ -67,6 +67,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final String ACTION_CONTROLLER = "action_controller";
    private static final int SPIRITUAL_DISSOLVE_DURATION = 50;
+   private static final int WALK_ANIMATION_GRACE_TICKS = 6;
+   private static final double WALK_ANIMATION_DELTA_THRESHOLD = 1.0E-5;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
@@ -116,6 +118,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int attackSwingTicks = 0;
    private int basicAttackVariant = 0;
    private int spiritualDissolveTicks = 0;
+   private int walkAnimationGraceTicks = 0;
 
    public int getAttackSwingTicks() {
       return this.attackSwingTicks;
@@ -198,6 +201,33 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
          .add(Attributes.FOLLOW_RANGE, 48.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
+   }
+
+   @Override
+   public void tick() {
+      super.tick();
+      this.updateWalkAnimationState();
+   }
+
+   private void updateWalkAnimationState() {
+      if (this.isSpiritualDissolving() || !this.isAlive()) {
+         this.walkAnimationGraceTicks = 0;
+         return;
+      }
+
+      double dx = this.getX() - this.xo;
+      double dz = this.getZ() - this.zo;
+      double positionDelta = dx * dx + dz * dz;
+      double velocityDelta = this.getDeltaMovement().horizontalDistanceSqr();
+      if (positionDelta > WALK_ANIMATION_DELTA_THRESHOLD || velocityDelta > WALK_ANIMATION_DELTA_THRESHOLD) {
+         this.walkAnimationGraceTicks = WALK_ANIMATION_GRACE_TICKS;
+      } else if (this.walkAnimationGraceTicks > 0) {
+         this.walkAnimationGraceTicks--;
+      }
+   }
+
+   protected boolean isWalkAnimationActive(boolean geckoMoving) {
+      return geckoMoving || this.walkAnimationGraceTicks > 0;
    }
 
    @Override
@@ -1042,7 +1072,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          var animations = this.getAnimationSet();
          String animation = null;
-         String override = this.getLoopAnimationOverride(animations, event.isMoving());
+         boolean moving = this.isWalkAnimationActive(event.isMoving());
+         String override = this.getLoopAnimationOverride(animations, moving);
          if (override != null && !override.isBlank()) {
             animation = override;
          }
@@ -1050,7 +1081,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             animation = animations.actionAnimation("fly").orElse(null);
          }
          if (animation == null) {
-            animation = event.isMoving() ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
+            animation = moving ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
          }
          return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));

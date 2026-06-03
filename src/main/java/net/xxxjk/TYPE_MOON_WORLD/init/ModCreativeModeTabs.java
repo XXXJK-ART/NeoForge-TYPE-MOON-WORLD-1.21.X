@@ -65,6 +65,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
                         output.accept(ModItems.NAMELESS_CHAIN_DAGGER);
+                        output.accept(ModItems.DIRK_SMALL_KNIFE);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
                         output.accept(ModItems.CHISEL);
@@ -186,6 +187,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
                         output.accept(ModItems.MEDEA_SPAWN_EGG);
                         output.accept(ModItems.MEDUSA_SPAWN_EGG);
+                        output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.DRAGONFANG_SOLDIER_SPAWN_EGG);
                     }).build());
 

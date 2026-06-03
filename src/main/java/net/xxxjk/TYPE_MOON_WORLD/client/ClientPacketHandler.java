@@ -7,6 +7,10 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 
 public class ClientPacketHandler {
    public static void openProjectionGui() {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
       Player player = Minecraft.getInstance().player;
       if (player != null) {
          Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
@@ -14,6 +18,10 @@ public class ClientPacketHandler {
    }
 
    public static void openLeylineSurveyMap(int gridSize, int centerChunkX, int centerChunkZ, String dimensionId, byte[] concentrations) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
          mc.setScreen(new LeylineSurveyMapScreen(gridSize, centerChunkX, centerChunkZ, dimensionId, concentrations));

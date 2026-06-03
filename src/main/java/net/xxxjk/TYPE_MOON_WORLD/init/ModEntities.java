@@ -11,6 +11,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
@@ -31,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
@@ -227,6 +229,9 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<MedusaEntity>> MEDUSA = ENTITY_TYPES.register(
       "medusa", () -> Builder.of(MedusaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("medusa")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<CursedArmHassanEntity>> CURSED_ARM_HASSAN = ENTITY_TYPES.register(
+      "cursed_arm_hassan", () -> Builder.of(CursedArmHassanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cursed_arm_hassan")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<MedusaPegasusEntity>> MEDUSA_PEGASUS = ENTITY_TYPES.register(
       "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(1.8F, 2.0F).build("medusa_pegasus")
    );
@@ -242,6 +247,16 @@ public class ModEntities {
          .clientTrackingRange(12)
          .updateInterval(1)
          .build("gae_bulg_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<DirkProjectileEntity>> DIRK_PROJECTILE = ENTITY_TYPES.register(
+      "dirk_projectile",
+      () -> Builder.<DirkProjectileEntity>of(
+            (entityType, level) -> new DirkProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.25F, 0.25F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("dirk_projectile")
    );
 
    public static void register(IEventBus eventBus) {

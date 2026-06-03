@@ -28,6 +28,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.CU_CHULAINN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDEA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.CURSED_ARM_HASSAN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }

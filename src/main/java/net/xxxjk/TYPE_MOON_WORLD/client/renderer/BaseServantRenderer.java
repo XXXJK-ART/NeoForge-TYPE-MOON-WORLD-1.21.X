@@ -23,12 +23,16 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
          new BlockAndItemGeoLayer<T>(this) {
             @Override
             protected ItemStack getStackForBone(GeoBone bone, T animatable) {
-               return "right arm".equals(bone.getName()) ? animatable.getMainHandItem() : ItemStack.EMPTY;
+               return switch (bone.getName()) {
+                  case "right arm" -> animatable.getMainHandItem();
+                  case "left arm" -> animatable.getOffhandItem();
+                  default -> ItemStack.EMPTY;
+               };
             }
 
             @Override
             protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, T animatable) {
-               return ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+               return "left arm".equals(bone.getName()) ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
             }
 
             @Override

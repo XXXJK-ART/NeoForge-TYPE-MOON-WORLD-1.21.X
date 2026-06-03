@@ -21,6 +21,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
@@ -67,6 +69,10 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof MedusaEntity medusa) {
          MedusaCombatHelper.tick(medusa, context);
+         return;
+      }
+      if (entity instanceof CursedArmHassanEntity cursedArm) {
+         CursedArmHassanCombatHelper.tick(cursedArm, context);
          return;
       }
 

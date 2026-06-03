@@ -107,6 +107,7 @@
   "item.typemoonworld.cu_chulainn_spawn_egg": "Cu Chulainn (Lancer) Spawn Egg",
   "item.typemoonworld.medea_spawn_egg": "Medea (Caster) Spawn Egg",
   "item.typemoonworld.medusa_spawn_egg": "Medusa (Rider) Spawn Egg",
+  "item.typemoonworld.cursed_arm_hassan_spawn_egg": "Hassan of the Cursed Arm (Assassin) Spawn Egg",
   "item.typemoonworld.dragonfang_soldier_spawn_egg": "Dragonfang Soldier Spawn Egg",
   "item.typemoonworld.mystic_eyes_of_death_perception": "Mystic Eyes of Death Perception (Rainbow)",
   "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "Mystic Eyes of Death Perception (Noble Colour)",
@@ -123,6 +124,8 @@
   "item.typemoonworld.temple_stone_sword_axe.desc": "Weapon of the ancient temple... Stone and blade as one, ritual tool and weapon alike.",
   "item.typemoonworld.gae_bulg": "Gae Bulg",
   "item.typemoonworld.gae_bulg.desc": "The cursed spear that reverses cause and effect, striking the heart before it is thrust.",
+  "item.typemoonworld.dirk_small_knife": "Dirk Small Knife",
+  "item.typemoonworld.dirk_small_knife.desc": "A compact throwing blade carried by Hassan of the Cursed Arm.",
   "item.typemoonworld.rule_breaker": "Rule Breaker",
   "item.typemoonworld.rule_breaker.desc": "A ritual dagger that tears apart enchantments, contracts, and summoned bindings.",
   "item.typemoonworld.hecates_staff": "Hecate's Staff",
@@ -1036,6 +1039,7 @@
   "adv.typemoonworld.trace_on.title": "Trace On",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD",
+  "entity.typemoonworld.cursed_arm_hassan": "Hassan of the Cursed Arm",
   "entity.typemoonworld.medusa": "Medusa",
   "entity.typemoonworld.medusa_pegasus": "Pegasus"
 }

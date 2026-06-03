@@ -194,7 +194,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       String idle = getStringOrDefault(animationsJson, "idle", "");
       String walk = getStringOrDefault(animationsJson, "walk", "");
       java.util.Map<String, String> actions = new java.util.LinkedHashMap<>();
-      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "bend_over", "remove_blindfold"}) {
+      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step"}) {
          if (animationsJson.has(key)) {
             String value = animationsJson.get(key).getAsString();
             if (value != null && !value.isBlank()) {

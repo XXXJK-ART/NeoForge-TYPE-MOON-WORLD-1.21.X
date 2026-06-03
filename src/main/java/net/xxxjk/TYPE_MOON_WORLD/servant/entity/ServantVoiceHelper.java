@@ -41,6 +41,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_ATTACK.get());
+      } else if (isCursedArmHassan(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_ATTACK.get());
       }
    }
 
@@ -75,6 +80,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_VICTORY.get());
       } else if (isMedusa(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_VICTORY.get());
+      } else if (isCursedArmHassan(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_VICTORY.get());
       }
    }
 
@@ -89,6 +96,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDEA_VOICE_FAIL.get());
       } else if (isMedusa(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDUSA_VOICE_FAIL.get());
+      } else if (isCursedArmHassan(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.92F, ModSounds.CURSED_ARM_HASSAN_VOICE_FAIL.get());
       }
    }
 
@@ -122,6 +131,14 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "bellerophon", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_BELLEROPHON.get());
+   }
+
+   public static void tryPlayZabaniya(ServantEntity servant) {
+      if (!isCursedArmHassan(servant)) {
+         return;
+      }
+
+      playVoice(servant, "zabaniya", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA.get());
    }
 
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
@@ -164,5 +181,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isMedusa(ServantEntity servant) {
       return servant != null && MedusaEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isCursedArmHassan(ServantEntity servant) {
+      return servant != null && CursedArmHassanEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }
