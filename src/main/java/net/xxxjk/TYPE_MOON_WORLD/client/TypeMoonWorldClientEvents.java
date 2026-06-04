@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuChulainnRenderer;
@@ -203,6 +204,8 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.UBW_CHANT_RIPPLE.get(), UbwChantRippleRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_WAVE_PROJECTILE.get(), TsumukariWaveProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_LIGHT_COLUMN_EFFECT.get(), TsumukariLightColumnEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAE_BULG_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAE_BULG_ARMY_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.DIRK_PROJECTILE.get(), DirkProjectileRenderer::new);
    }
 

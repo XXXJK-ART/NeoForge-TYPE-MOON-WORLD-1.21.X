@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -19,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -30,6 +33,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
    private static final EntityDataAccessor<Boolean> FLYING_MODE = SynchedEntityData.defineId(MedusaPegasusEntity.class, EntityDataSerializers.BOOLEAN);
    private static final String TAG_SUMMONER_UUID = "MedusaPegasusSummoner";
+   private static final DustParticleOptions TRAIL_LIGHT_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.98F, 0.9F), 1.35F);
+   private static final DustParticleOptions TRAIL_GOLD_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.82F, 0.24F), 1.1F);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    @Nullable
    private UUID summonerUuid;
@@ -80,6 +85,29 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       super.tick();
       if (!this.level().isClientSide()) {
          this.snapToNearbyGround();
+         this.spawnPegasusTrail();
+      }
+   }
+
+   private void spawnPegasusTrail() {
+      if (!(this.level() instanceof ServerLevel level) || this.tickCount < 3) {
+         return;
+      }
+
+      Vec3 motion = this.getDeltaMovement();
+      Vec3 back = motion.horizontalDistanceSqr() > 1.0E-4
+         ? new Vec3(motion.x, 0.0, motion.z).normalize().scale(-0.85)
+         : this.getLookAngle().multiply(-0.65, 0.0, -0.65);
+      double speedFactor = Math.min(1.0, Math.max(0.35, motion.length() * 0.85));
+      double baseX = this.getX() + back.x;
+      double baseY = this.getY() + 0.65;
+      double baseZ = this.getZ() + back.z;
+
+      level.sendParticles(TRAIL_LIGHT_PARTICLE, baseX, baseY, baseZ, 18, 0.42, 0.26, 0.42, 0.015 * speedFactor);
+      level.sendParticles(ParticleTypes.END_ROD, baseX, baseY + 0.08, baseZ, 8, 0.32, 0.2, 0.32, 0.012 * speedFactor);
+      level.sendParticles(TRAIL_GOLD_PARTICLE, baseX, baseY + 0.04, baseZ, 5, 0.3, 0.18, 0.3, 0.01 * speedFactor);
+      if (this.tickCount % 2 == 0) {
+         level.sendParticles(ParticleTypes.GLOW, baseX, baseY + 0.12, baseZ, 4, 0.24, 0.16, 0.24, 0.01 * speedFactor);
       }
    }
 

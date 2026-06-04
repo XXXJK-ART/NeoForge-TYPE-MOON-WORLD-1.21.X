@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -42,6 +43,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiEngine;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
@@ -249,7 +251,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         this.aiEngine.tick(this);
+         if (!ServantCombatSystem.tickBeforeAi(this)) {
+            this.aiEngine.tick(this);
+         }
 
          /* 鍔ㄧ敾 tick 閫掑噺 */         if (this.roarAnimationTicks > 0) {
             this.roarAnimationTicks--;
@@ -694,6 +698,24 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.gaeBolgThrowAnimationTicks = Math.max(this.gaeBolgThrowAnimationTicks, durationTicks);
       playActionAnimation("gae_bolg_throw");
       ServantVoiceHelper.tryPlayGaeBolg(this);
+   }
+
+   public void faceToward(Vec3 target) {
+      this.faceVector(target.subtract(this.position()));
+   }
+
+   public void faceVector(Vec3 direction) {
+      Vec3 horizontal = new Vec3(direction.x, 0.0, direction.z);
+      if (horizontal.lengthSqr() < 1.0E-4) {
+         return;
+      }
+      float yaw = (float)(Mth.atan2(horizontal.z, horizontal.x) * 180.0F / Math.PI) - 90.0F;
+      this.setYRot(yaw);
+      this.yRotO = yaw;
+      this.setYHeadRot(yaw);
+      this.yHeadRotO = yaw;
+      this.yBodyRot = yaw;
+      this.yBodyRotO = yaw;
    }
 
    /**

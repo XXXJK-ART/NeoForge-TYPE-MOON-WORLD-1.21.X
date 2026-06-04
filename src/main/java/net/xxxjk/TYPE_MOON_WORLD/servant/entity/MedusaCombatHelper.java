@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -261,6 +262,7 @@ public final class MedusaCombatHelper {
          return;
       }
       horizontal = horizontal.normalize();
+      entity.faceVector(horizontal);
       entity.getPersistentData().putLong(TAG_LAST_ROOFTOP_REPOSITION_TICK, now);
       entity.jumpFromGround();
       Vec3 motion = entity.getDeltaMovement();
@@ -322,11 +324,12 @@ public final class MedusaCombatHelper {
          level.playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 0.8F, 0.85F);
       }
 
-      if (isHeraclesCybeleImmune(target)) {
+      if (HeraclesGodHandHelper.isAdaptedToCybele(target)) {
+         HeraclesGodHandHelper.applyAdaptedSlow(target, 100);
          return;
       }
-      if (isHeraclesCybeleVulnerable(target)) {
-         applyPetrified(target, entity.isEyesReleased() ? 140 : 120);
+      if (HeraclesGodHandHelper.hasGodHand(target)) {
+         HeraclesGodHandHelper.consumeLifeForCybele(target);
          return;
       }
 
@@ -406,6 +409,9 @@ public final class MedusaCombatHelper {
       }
 
       entity.setCurrentMp(entity.getCurrentMp() - cost);
+      if (noblePhantasm) {
+         ServantCombatSystem.broadcastNoblePhantasmWindup(entity, null, 16, false);
+      }
       if (noblePhantasm) {
          entity.getPersistentData().putLong(TAG_LAST_BLOODFORT_NP_TICK, now);
       } else {
@@ -515,6 +521,7 @@ public final class MedusaCombatHelper {
             Vec3 horizontalRush = new Vec3(rush.x, 0.0, rush.z);
             if (horizontalRush.lengthSqr() > 1.0E-4) {
                horizontalRush = horizontalRush.normalize();
+               entity.faceVector(horizontalRush);
                entity.setDeltaMovement(horizontalRush.x * 1.0, Math.max(entity.getDeltaMovement().y, 0.12), horizontalRush.z * 1.0);
                entity.hasImpulse = true;
                entity.getNavigation().moveTo(target, 1.3);
@@ -537,12 +544,13 @@ public final class MedusaCombatHelper {
       if (entity.getCurrentMp() < 60.0 || entity.getPersistentData().getLong(TAG_LAST_BELLEROPHON_TICK) + BELLEROPHON_COOLDOWN > now) {
          return;
       }
-      if (entity.getHealth() > entity.getMaxHealth() * 0.5F) {
+      if (!ServantCombatSystem.canUseNoblePhantasm(entity)) {
          return;
       }
       entity.setCurrentMp(entity.getCurrentMp() - 60.0);
       entity.getPersistentData().putLong(TAG_LAST_BELLEROPHON_TICK, now);
       entity.getPersistentData().putLong(TAG_BELLEROPHON_LAUNCH_TICK, now + CHARGE_WINDUP_TICKS);
+      ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CHARGE_WINDUP_TICKS, false);
       entity.setCrouchPose(true);
       releaseEyes(entity, now, CHARGE_WINDUP_TICKS + CHARGE_TICKS + 80);
       ServantVoiceHelper.tryPlayBellerophon(entity);
@@ -820,6 +828,7 @@ public final class MedusaCombatHelper {
                || target instanceof ServantEntity && (highThreat || target.getMaxHealth() >= 180.0F)
                || entity.getHealth() <= entity.getMaxHealth() * 0.3F
          )
+         && ServantCombatSystem.canUseNoblePhantasm(entity)
          && entity.getCurrentMp() >= 40.0
          && now - entity.getPersistentData().getLong(TAG_LAST_BLOODFORT_NP_TICK) >= BLOODFORT_NP_COOLDOWN
          && hasAbsorbableTargets(entity, BLOODFORT_RADIUS_VALUE);
@@ -828,7 +837,7 @@ public final class MedusaCombatHelper {
    private static boolean shouldUseBellerophon(MedusaEntity entity, LivingEntity target, double distance, int nearbyEnemyCount, boolean highThreat, long now) {
       return distance <= BELLEROPHON_CHARGE_DISTANCE + 0.5
          && entity.getCurrentMp() >= 60.0
-         && entity.getHealth() <= entity.getMaxHealth() * 0.5F
+         && ServantCombatSystem.canUseNoblePhantasm(entity)
          && now - entity.getPersistentData().getLong(TAG_LAST_BELLEROPHON_TICK) >= BELLEROPHON_COOLDOWN
          && (nearbyEnemyCount >= 3 || highThreat || target.hasEffect(ModMobEffects.PETRIFIED));
    }
@@ -1004,14 +1013,6 @@ public final class MedusaCombatHelper {
       return entity.getRandom().nextFloat() <= Mth.clamp(failChance, 0.15F, 0.95F);
    }
 
-   private static boolean isHeraclesCybeleVulnerable(LivingEntity target) {
-      return target instanceof HeraclesEntity && target.getPersistentData().getBoolean("GodHandActive") && target.getPersistentData().getInt("GodHandLives") >= 11;
-   }
-
-   private static boolean isHeraclesCybeleImmune(LivingEntity target) {
-      return target instanceof HeraclesEntity && target.getPersistentData().getBoolean("GodHandActive") && target.getPersistentData().getInt("GodHandLives") < 11;
-   }
-
    private static void applyCybelePressureModifier(AttributeInstance attribute, ResourceLocation id, double amount) {
       if (attribute == null) {
          return;
@@ -1113,6 +1114,7 @@ public final class MedusaCombatHelper {
          return;
       }
       horizontal = horizontal.normalize();
+      entity.faceVector(horizontal);
       entity.setDeltaMovement(horizontal.x * 1.1, Math.max(entity.getDeltaMovement().y, 0.12), horizontal.z * 1.1);
       entity.hasImpulse = true;
       entity.getNavigation().moveTo(entity.getX() + horizontal.x * 5.5, entity.getY(), entity.getZ() + horizontal.z * 5.5, 1.35);
@@ -1144,6 +1146,7 @@ public final class MedusaCombatHelper {
       horizontal = horizontal.normalize();
       Vec3 side = new Vec3(-horizontal.z, 0.0, horizontal.x).normalize().scale(entity.getRandom().nextBoolean() ? 1.0 : -1.0);
       Vec3 move = horizontal.scale(0.75).add(side.scale(0.9)).normalize();
+      entity.faceVector(move);
       entity.setDeltaMovement(move.x * 0.95, Math.max(entity.getDeltaMovement().y, 0.1), move.z * 0.95);
       entity.hasImpulse = true;
       entity.getNavigation().moveTo(entity.getX() + move.x * 4.0, entity.getY(), entity.getZ() + move.z * 4.0, 1.28);
@@ -1176,6 +1179,7 @@ public final class MedusaCombatHelper {
       }
       Vec3 tangent = new Vec3(-horizontal.z, 0.0, horizontal.x).normalize().scale(entity.getRandom().nextBoolean() ? 1.0 : -1.0);
       Vec3 move = tangent.add(horizontal.scale(0.2)).normalize();
+      entity.faceVector(move);
       entity.setDeltaMovement(move.x * 0.88, Math.max(entity.getDeltaMovement().y, 0.08), move.z * 0.88);
       entity.hasImpulse = true;
       entity.getNavigation().stop();
@@ -1695,11 +1699,11 @@ public final class MedusaCombatHelper {
 
    private static void spawnPegasusArrivalFx(ServerLevel level, MedusaPegasusEntity pegasus) {
       level.sendParticles(ParticleTypes.FLASH, pegasus.getX(), pegasus.getY() + 1.0, pegasus.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, pegasus.getX(), pegasus.getY() + 0.9, pegasus.getZ(), 30, 0.35, 0.65, 0.35, 0.03);
-      level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, pegasus.getX(), pegasus.getY() + 0.9, pegasus.getZ(), 24, 0.45, 0.65, 0.45, 0.03);
-      level.sendParticles(SUMMON_LIGHT_PARTICLE, pegasus.getX(), pegasus.getY() + 0.8, pegasus.getZ(), 45, 0.55, 0.8, 0.55, 0.0);
-      level.sendParticles(SUMMON_GOLD_PARTICLE, pegasus.getX(), pegasus.getY() + 0.8, pegasus.getZ(), 38, 0.55, 0.8, 0.55, 0.0);
-      level.sendParticles(ParticleTypes.CLOUD, pegasus.getX(), pegasus.getY() + 0.2, pegasus.getZ(), 24, 0.7, 0.18, 0.7, 0.05);
+      level.sendParticles(ParticleTypes.END_ROD, pegasus.getX(), pegasus.getY() + 0.9, pegasus.getZ(), 10, 0.22, 0.35, 0.22, 0.015);
+      level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, pegasus.getX(), pegasus.getY() + 0.9, pegasus.getZ(), 8, 0.25, 0.35, 0.25, 0.015);
+      level.sendParticles(SUMMON_LIGHT_PARTICLE, pegasus.getX(), pegasus.getY() + 0.8, pegasus.getZ(), 14, 0.28, 0.42, 0.28, 0.0);
+      level.sendParticles(SUMMON_GOLD_PARTICLE, pegasus.getX(), pegasus.getY() + 0.8, pegasus.getZ(), 10, 0.28, 0.42, 0.28, 0.0);
+      level.sendParticles(ParticleTypes.CLOUD, pegasus.getX(), pegasus.getY() + 0.2, pegasus.getZ(), 12, 0.45, 0.12, 0.45, 0.03);
       level.playSound(null, pegasus.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.9F, 1.35F);
       level.playSound(null, pegasus.blockPosition(), SoundEvents.ALLAY_AMBIENT_WITHOUT_ITEM, SoundSource.HOSTILE, 0.85F, 0.8F);
    }
@@ -1741,17 +1745,26 @@ public final class MedusaCombatHelper {
       }
       forward = forward.normalize();
       BlockPos base = pegasus.blockPosition();
-      for (int i = 0; i < 3; i++) {
+      boolean charging = desired.horizontalDistanceSqr() > 1.0;
+      int length = charging ? 7 : 4;
+      int radius = charging ? 2 : 1;
+      int height = charging ? 4 : 2;
+      for (int i = 0; i < length; i++) {
          BlockPos check = base.offset((int)Math.round(forward.x * (i + 1)), 0, (int)Math.round(forward.z * (i + 1)));
-         destroyRideBlock(level, check);
-         destroyRideBlock(level, check.above());
+         for (BlockPos pos : BlockPos.betweenClosed(check.offset(-radius, -1, -radius), check.offset(radius, height, radius))) {
+            destroyRideBlock(level, pos, charging);
+         }
+      }
+      if (charging && pegasus.tickCount % 3 == 0) {
+         level.sendParticles(ParticleTypes.EXPLOSION, pegasus.getX(), pegasus.getY() + 0.4, pegasus.getZ(), 2, 0.35, 0.2, 0.35, 0.0);
+         level.sendParticles(ParticleTypes.CLOUD, pegasus.getX(), pegasus.getY() + 0.2, pegasus.getZ(), 12, 0.9, 0.2, 0.9, 0.08);
       }
    }
 
-   private static void destroyRideBlock(ServerLevel level, BlockPos pos) {
+   private static void destroyRideBlock(ServerLevel level, BlockPos pos, boolean charging) {
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
-      if (!state.isAir() && hardness >= 0.0F && hardness < 20.0F && !state.is(Blocks.BEDROCK)) {
+      if (!state.isAir() && hardness >= 0.0F && hardness < (charging ? 75.0F : 30.0F) && !state.is(Blocks.BEDROCK)) {
          level.removeBlock(pos, false);
       }
    }

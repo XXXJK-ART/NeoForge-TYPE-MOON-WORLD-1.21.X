@@ -59,7 +59,11 @@
       "horizontal_swing",
       "teleport_behind",
       "charge",
-      "rune_cast"
+      "rune_cast",
+      "blink_volley",
+      "strafe_barrage",
+      "aerial_escape",
+      "rule_breaker"
     ]
   },
   "skills": [],

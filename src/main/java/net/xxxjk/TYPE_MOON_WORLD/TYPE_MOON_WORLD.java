@@ -85,6 +85,7 @@ public class TYPE_MOON_WORLD {
    private static boolean networkingRegistered = false;
    private static final Map<Type<?>, TYPE_MOON_WORLD.NetworkMessage<?>> MESSAGES = new HashMap<>();
    private static final Map<Long, Queue<Runnable>> scheduledWork = new ConcurrentHashMap<>();
+   private static final int MAX_SCHEDULED_WORK_PER_TICK = 128;
    private static volatile long serverTickCounter = 0L;
 
    public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
@@ -225,12 +226,17 @@ public class TYPE_MOON_WORLD {
       Queue<Runnable> due = scheduledWork.remove(serverTickCounter);
       if (due != null) {
          Runnable action;
-         while ((action = due.poll()) != null) {
+         int processed = 0;
+         while (processed < MAX_SCHEDULED_WORK_PER_TICK && (action = due.poll()) != null) {
+            processed++;
             try {
                action.run();
             } catch (Exception var5) {
                LOGGER.error("Error while running scheduled server work", var5);
             }
+         }
+         if (!due.isEmpty()) {
+            scheduledWork.computeIfAbsent(serverTickCounter + 1L, k -> new ConcurrentLinkedQueue<>()).addAll(due);
          }
       }
    }

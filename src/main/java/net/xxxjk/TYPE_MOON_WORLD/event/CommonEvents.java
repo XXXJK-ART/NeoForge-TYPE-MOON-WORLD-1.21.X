@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -489,6 +490,11 @@ public class CommonEvents {
 
       // 记录受伤时间（用于气息遮断被动判断）
       data.putLong("LastHurtTick", currentTick);
+      ServantCombatSystem.handleIncomingDamage(servant, event);
+      if (event.isCanceled()) {
+         return;
+      }
+      damage = event.getAmount();
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
          if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
@@ -535,42 +541,6 @@ public class CommonEvents {
          && data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)
          && (event.getSource().getEntity() != null || event.getSource().getDirectEntity() != null)) {
          SasakiKojiroCombatHelper.markCombat(servant);
-
-         float dodgeChance = data.contains(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
-            ? data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)
-            : 0.8F;
-         if (servant.getRandom().nextFloat() < dodgeChance) {
-            data.remove("LastHurtTick");
-            if (servant.level() instanceof ServerLevel sl) {
-               sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
-                  2, 0.1, 0.1, 0.1, 0.0);
-               sl.sendParticles(ParticleTypes.CLOUD,
-                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
-                  8, 0.15, 0.25, 0.15, 0.03);
-               sl.playSound(null, servant.blockPosition(),
-                  SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.9F, 1.25F);
-            }
-            event.setCanceled(true);
-            return;
-         }
-
-         float blockChance = data.contains(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG)
-            ? data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG)
-            : 0.4F;
-         if (servant.getRandom().nextFloat() < blockChance) {
-            int durabilityLoss = SasakiKojiroCombatHelper.damageBladeFromIncomingAttack(servant, damage);
-            data.remove("LastHurtTick");
-            if (servant.level() instanceof ServerLevel sl) {
-               sl.sendParticles(ParticleTypes.CRIT,
-                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.6, servant.getZ(),
-                  Math.max(6, durabilityLoss), 0.2, 0.2, 0.2, 0.05);
-               sl.playSound(null, servant.blockPosition(),
-                  SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.75F, 1.5F);
-            }
-            event.setCanceled(true);
-            return;
-         }
 
          int durabilityLoss = SasakiKojiroCombatHelper.damageBladeFromIncomingAttack(servant, damage);
          if (durabilityLoss > 0 && servant.level() instanceof ServerLevel sl) {

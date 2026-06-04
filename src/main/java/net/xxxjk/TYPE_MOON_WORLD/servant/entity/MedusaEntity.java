@@ -87,12 +87,6 @@ public class MedusaEntity extends ServantEntity {
       if (amount <= 0.0F) {
          return false;
       }
-      if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && MedusaCombatHelper.tryDodge(this, source)) {
-         return false;
-      }
-      if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && MedusaCombatHelper.tryBlock(this, source)) {
-         return false;
-      }
       if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && this.isBellerophonMountedActive()) {
          amount *= 0.6F;
       }

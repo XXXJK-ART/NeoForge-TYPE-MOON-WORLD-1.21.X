@@ -44,6 +44,8 @@ public final class CursedArmHassanCombatHelper {
    private static final String LAST_REPOSITION_TICK = "CursedArmLastRepositionTick";
    private static final String LAST_SHADOW_STEP_TICK = "CursedArmLastShadowStepTick";
    private static final String LAST_STAB_COMBO_TICK = "CursedArmLastStabComboTick";
+   private static final String LAST_KNIFE_FEINT_TICK = "CursedArmLastKnifeFeintTick";
+   private static final String LAST_SHADOW_LUNGE_TICK = "CursedArmLastShadowLungeTick";
    private static final String LAST_ZABANIYA_TICK = "CursedArmLastZabaniyaTick";
    private static final String ZABANIYA_WINDUP_UNTIL = "CursedArmZabaniyaWindupUntil";
    private static final String ZABANIYA_TARGET_ID = "CursedArmZabaniyaTargetId";
@@ -54,9 +56,12 @@ public final class CursedArmHassanCombatHelper {
    private static final int REPOSITION_COOLDOWN = 100;
    private static final int SHADOW_STEP_COOLDOWN = 120;
    private static final int STAB_COMBO_COOLDOWN = 45;
-   private static final int ZABANIYA_COOLDOWN = 400;
+   private static final int KNIFE_FEINT_COOLDOWN = 70;
+   private static final int SHADOW_LUNGE_COOLDOWN = 85;
+   private static final int ZABANIYA_COOLDOWN = 700;
    private static final int ZABANIYA_WINDUP = 16;
    private static final int SELF_MOD_COOLDOWN = 240;
+   private static final float ZABANIYA_USE_CHANCE = 0.45F;
    private static final int FELLOW_HASSAN_RETALIATION_TICKS = 200;
    private static final net.minecraft.resources.ResourceLocation CURSE_ATTACK_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "cursed_arm_zabaniya_curse_attack");
@@ -97,6 +102,12 @@ public final class CursedArmHassanCombatHelper {
          return;
       }
       if (tryShadowStepBackstab(entity, target, distance, now)) {
+         return;
+      }
+      if (tryShadowLunge(entity, target, distance, now)) {
+         return;
+      }
+      if (tryKnifeFeint(entity, target, distance, now)) {
          return;
       }
       if (tryThrowDirk(entity, target, distance, now)) {
@@ -255,6 +266,10 @@ public final class CursedArmHassanCombatHelper {
       if (entity.getCurrentMp() < 30.0 || distance > entity.getZabaniyaRange() || now - data.getLong(LAST_ZABANIYA_TICK) < ZABANIYA_COOLDOWN) {
          return false;
       }
+      if (entity.getRandom().nextFloat() > ZABANIYA_USE_CHANCE) {
+         data.putLong(LAST_ZABANIYA_TICK, now - ZABANIYA_COOLDOWN + 40L);
+         return false;
+      }
       entity.setCurrentMp(entity.getCurrentMp() - 30.0);
       data.putLong(LAST_ZABANIYA_TICK, now);
       data.putLong(ZABANIYA_WINDUP_UNTIL, now + ZABANIYA_WINDUP);
@@ -343,6 +358,7 @@ public final class CursedArmHassanCombatHelper {
          entity.fallDistance = 0.0F;
          entity.getNavigation().stop();
          entity.setTarget(target);
+         entity.faceToward(target.position());
          entity.getLookControl().setLookAt(target, 60.0F, 60.0F);
          entity.triggerShadowStepAnimation();
          return true;
@@ -387,11 +403,76 @@ public final class CursedArmHassanCombatHelper {
       entity.teleportTo(behind.x, target.getY(), behind.z);
       entity.getNavigation().stop();
       entity.setTarget(target);
+      entity.faceToward(target.position());
       entity.getLookControl().setLookAt(target, 60.0F, 60.0F);
       entity.triggerShadowStepAnimation();
       dealScaledKnifeDamage(entity, target, 1.65F);
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, true, true));
       spawnBackstabFx(entity, target);
+      return true;
+   }
+
+   private static boolean tryShadowLunge(CursedArmHassanEntity entity, LivingEntity target, double distance, long now) {
+      if (isProtectedPigKind(target)) {
+         entity.setTarget(null);
+         return false;
+      }
+      CompoundTag data = entity.getPersistentData();
+      if (distance < 2.0 || distance > 6.5 || entity.getCurrentMp() < 7.0 || now - data.getLong(LAST_SHADOW_LUNGE_TICK) < SHADOW_LUNGE_COOLDOWN) {
+         return false;
+      }
+      if (!entity.getSensing().hasLineOfSight(target) || entity.isPerformingAction()) {
+         return false;
+      }
+
+      Vec3 dir = target.position().subtract(entity.position());
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      if (horizontal.lengthSqr() < 1.0E-4) {
+         return false;
+      }
+      horizontal = horizontal.normalize();
+      data.putLong(LAST_SHADOW_LUNGE_TICK, now);
+      entity.setCurrentMp(entity.getCurrentMp() - 7.0);
+      entity.faceVector(horizontal);
+      entity.triggerShadowStepAnimation();
+      entity.setDeltaMovement(horizontal.x * 1.65, Math.max(entity.getDeltaMovement().y, 0.18), horizontal.z * 1.65);
+      entity.hasImpulse = true;
+      dealScaledKnifeDamage(entity, target, 1.05F);
+      target.push(horizontal.x * 0.85, 0.24, horizontal.z * 0.85);
+      target.hurtMarked = true;
+      spawnShadowStepFx(entity);
+      if (entity.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+         level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.8F, 1.6F);
+      }
+      return true;
+   }
+
+   private static boolean tryKnifeFeint(CursedArmHassanEntity entity, LivingEntity target, double distance, long now) {
+      if (isProtectedPigKind(target)) {
+         entity.setTarget(null);
+         return false;
+      }
+      CompoundTag data = entity.getPersistentData();
+      if (distance < 2.5 || distance > 9.0 || entity.getCurrentMp() < 5.0 || now - data.getLong(LAST_KNIFE_FEINT_TICK) < KNIFE_FEINT_COOLDOWN) {
+         return false;
+      }
+      if (!entity.getSensing().hasLineOfSight(target) || entity.isPerformingAction()) {
+         return false;
+      }
+
+      data.putLong(LAST_KNIFE_FEINT_TICK, now);
+      entity.setCurrentMp(entity.getCurrentMp() - 5.0);
+      entity.faceToward(target.position());
+      entity.triggerDirkThrowAnimation();
+      target.invulnerableTime = 0;
+      dealScaledKnifeDamage(entity, target, 0.72F);
+      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 35, 1, false, true, true));
+      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 35, 0, false, true, true));
+      if (entity.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.62, target.getZ(), 10, 0.28, 0.22, 0.28, 0.08);
+         level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 0.65F, 1.75F);
+      }
       return true;
    }
 
@@ -440,9 +521,19 @@ public final class CursedArmHassanCombatHelper {
          return;
       }
       boolean validInstantDeath = isHumanoidInstantDeathTarget(target);
-      boolean killed = validInstantDeath && entity.getRandom().nextFloat() < 0.8F;
+      if (HeraclesGodHandHelper.isAdaptedToZabaniya(target)) {
+         HeraclesGodHandHelper.applyAdaptedSlow(target, 120);
+         applyZabaniyaCurse(target);
+         spawnZabaniyaImpactFx(entity, target, false);
+         return;
+      }
+      boolean killed = validInstantDeath && entity.getRandom().nextFloat() < 0.6F;
       DamageSource source = entity.damageSources().magic();
       if (killed) {
+         if (HeraclesGodHandHelper.consumeLifeForZabaniya(target)) {
+            spawnZabaniyaImpactFx(entity, target, true);
+            return;
+         }
          target.invulnerableTime = 0;
          target.hurt(source, Math.max(target.getMaxHealth() * 2.0F, 500.0F));
          target.invulnerableTime = 0;
@@ -452,7 +543,7 @@ public final class CursedArmHassanCombatHelper {
          }
       } else {
          target.invulnerableTime = 0;
-         target.hurt(source, 80.0F);
+         target.hurt(source, 50.0F);
          target.invulnerableTime = 0;
          applyZabaniyaCurse(target);
       }

@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
@@ -247,6 +248,16 @@ public class ModEntities {
          .clientTrackingRange(12)
          .updateInterval(1)
          .build("gae_bulg_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GaeBulgArmyProjectileEntity>> GAE_BULG_ARMY_PROJECTILE = ENTITY_TYPES.register(
+      "gae_bulg_army_projectile",
+      () -> Builder.<GaeBulgArmyProjectileEntity>of(
+            (entityType, level) -> new GaeBulgArmyProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.5F, 0.5F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("gae_bulg_army_projectile")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DirkProjectileEntity>> DIRK_PROJECTILE = ENTITY_TYPES.register(
       "dirk_projectile",

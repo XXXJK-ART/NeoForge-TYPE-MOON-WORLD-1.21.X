@@ -24,6 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.ObedienceAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import org.jetbrains.annotations.Nullable;
 
 public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
@@ -54,6 +55,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
          }
       }
 
+      ServantAddonRegistry.addAddonDefinitions(definitions);
       ServantDataRegistry.reload(definitions);
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.info("Loaded {} servant definitions: {}", definitions.size(), definitions.keySet());
    }

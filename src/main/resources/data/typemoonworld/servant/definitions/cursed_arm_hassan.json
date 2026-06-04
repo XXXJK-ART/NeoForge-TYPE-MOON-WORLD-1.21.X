@@ -54,6 +54,10 @@
       "dirk_throw",
       "assassin_stab",
       "shadow_step",
+      "knife_feint",
+      "shadow_lunge",
+      "launcher",
+      "pursuit",
       "uppercut",
       "horizontal_swing"
     ]

@@ -4,7 +4,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
@@ -113,9 +112,6 @@ public class CursedArmHassanEntity extends ServantEntity {
    @Override
    public boolean hurt(DamageSource source, float amount) {
       if (amount <= 0.0F) {
-         return false;
-      }
-      if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && CursedArmHassanCombatHelper.tryDodge(this, source)) {
          return false;
       }
       return super.hurt(source, amount);

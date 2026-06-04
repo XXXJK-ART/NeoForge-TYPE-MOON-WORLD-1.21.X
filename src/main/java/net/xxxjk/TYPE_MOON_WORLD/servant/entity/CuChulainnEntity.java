@@ -25,9 +25,6 @@ public class CuChulainnEntity extends ServantEntity {
          if (amount <= 0.0F) {
             return false;
          }
-         if (CuChulainnCombatHelper.tryBlock(this, source)) {
-            return false;
-         }
       }
       return super.hurt(source, amount);
    }

@@ -1,10 +1,11 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.skill;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
+import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantNoblePhantasmContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 
 public final class ServantNoblePhantasmExecutor {
    private ServantNoblePhantasmExecutor() {
@@ -25,9 +26,15 @@ public final class ServantNoblePhantasmExecutor {
          return ServantExecutionResult.FAILED;
       }
 
-      ServantExecutionContext context = new ServantExecutionContext(
-         caster, target, currentMp, overChargeLevel
+      ServantExecutionResult addonResult = ServantAddonRegistry.executeNoblePhantasm(
+         new ServantNoblePhantasmContext(caster, target, caster.getDefinition(), npDef, overChargeLevel, currentMp)
       );
+      if (addonResult.handled()) {
+         if (addonResult.success() && addonResult.mpCost() > 0.0) {
+            caster.setCurrentMp(Math.max(0.0, currentMp - addonResult.mpCost()));
+         }
+         return addonResult;
+      }
 
       caster.setCurrentMp(currentMp - npDef.mpCost());
 

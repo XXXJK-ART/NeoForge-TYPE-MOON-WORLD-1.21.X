@@ -1,8 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -35,15 +37,23 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import org.joml.Vector3f;
 
 public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
+   private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
    private int lifeTime = 0;
+   public final List<Vec3> tracePos = new ArrayList<>();
 
    public GaeBulgProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
+   }
+
+   public GaeBulgProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, LivingEntity shooter, Level level) {
+      super(type, shooter, level);
+      this.setItem(new ItemStack(ModItems.GAE_BULG.get()));
    }
 
    public GaeBulgProjectileEntity(Level level, LivingEntity shooter) {
@@ -116,14 +126,24 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    @Override
    public void tick() {
       super.tick();
+      this.recordTrailPoint();
       if (this.level().isClientSide()) {
-         if (this.tickCount % 2 == 0) {
+         if (this.getMode() == Mode.SINGLE && this.tickCount % 2 == 0) {
+            this.level().addParticle(DEATH_THORN_TRAIL, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
             this.level().addParticle(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          }
          return;
       }
 
       this.lifeTime++;
+      if (this.getMode() == Mode.SINGLE && this.level() instanceof ServerLevel level) {
+         Vec3 motion = this.getDeltaMovement();
+         Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.42) : Vec3.ZERO;
+         for (int i = 0; i < 3; i++) {
+            Vec3 pos = this.position().add(back.scale(i));
+            level.sendParticles(DEATH_THORN_TRAIL, pos.x, pos.y, pos.z, 1, 0.025, 0.025, 0.025, 0.0);
+         }
+      }
       LivingEntity target = this.getTrackedTarget();
       if (target != null && target.isAlive()) {
          if (this.getMode() == Mode.SINGLE) {
@@ -156,6 +176,19 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       if (this.getMode() == Mode.SINGLE) {
          this.syncRotationToMotion();
+      }
+   }
+
+   private void recordTrailPoint() {
+      if (this.getMode() != Mode.SINGLE) {
+         return;
+      }
+      Vec3 current = this.position();
+      if (this.tracePos.isEmpty() || this.tracePos.get(this.tracePos.size() - 1).distanceToSqr(current) > 0.04) {
+         this.tracePos.add(current);
+      }
+      while (this.tracePos.size() > 18) {
+         this.tracePos.remove(0);
       }
    }
 

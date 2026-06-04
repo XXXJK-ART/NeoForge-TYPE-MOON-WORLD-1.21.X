@@ -727,6 +727,7 @@ public final class MedeaCombatHelper {
       Vec3 from = entity.position();
       entity.teleportTo(destination.x, destination.y, destination.z);
       entity.setDeltaMovement(Vec3.ZERO);
+      entity.faceToward(target.position());
       entity.fallDistance = 0.0F;
       entity.setFlyingMode(false);
       level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.x, from.y + 0.6, from.z, 18, 0.3, 0.4, 0.3, 0.05);
@@ -788,6 +789,7 @@ public final class MedeaCombatHelper {
       Vec3 side = new Vec3(-forward.z, 0.0, forward.x).normalize().scale(entity.getRandom().nextBoolean() ? 1.0 : -1.0);
       Vec3 dash = side.add(forward.scale(-0.35)).normalize();
       entity.setFlyingMode(true);
+      entity.faceVector(dash);
       entity.setDeltaMovement(dash.x * 0.95, Math.max(entity.getDeltaMovement().y, 0.22), dash.z * 0.95);
       entity.hasImpulse = true;
 
@@ -1204,6 +1206,7 @@ public final class MedeaCombatHelper {
          horizontal = horizontal.normalize();
       }
       Vec3 velocity = horizontal.scale(0.95).add(0.0, 0.58, 0.0);
+      entity.faceVector(horizontal);
       entity.setDeltaMovement(velocity.x, Math.max(entity.getDeltaMovement().y, velocity.y), velocity.z);
       entity.hasImpulse = true;
       entity.getMoveControl().setWantedPosition(
@@ -1237,6 +1240,7 @@ public final class MedeaCombatHelper {
             Vec3 from = entity.position();
             entity.teleportTo(stabPos.x, stabPos.y, stabPos.z);
             entity.setDeltaMovement(Vec3.ZERO);
+            entity.faceToward(target.position());
             entity.fallDistance = 0.0F;
             level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.x, from.y + 0.6, from.z, 14, 0.22, 0.3, 0.22, 0.04);
             level.sendParticles(ParticleTypes.END_ROD, stabPos.x, stabPos.y + 0.65, stabPos.z, 10, 0.2, 0.28, 0.2, 0.02);
@@ -1908,6 +1912,7 @@ public final class MedeaCombatHelper {
       Vec3 horizontalMove = horizontal.lengthSqr() < 1.0E-4 ? Vec3.ZERO : horizontal.normalize().scale(0.35);
       double vertical = Math.max(-0.32, Math.min(0.32, delta.y * 0.45));
       Vec3 velocity = entity.getDeltaMovement().scale(0.4).add(horizontalMove.x, vertical, horizontalMove.z);
+      entity.faceVector(velocity);
       entity.setDeltaMovement(velocity.x, velocity.y, velocity.z);
       entity.hasImpulse = true;
       entity.getMoveControl().setWantedPosition(destination.x, destination.y, destination.z, 1.05);
