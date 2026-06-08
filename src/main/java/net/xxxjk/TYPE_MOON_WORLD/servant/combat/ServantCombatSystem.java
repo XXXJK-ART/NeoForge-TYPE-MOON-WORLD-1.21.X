@@ -17,6 +17,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -53,6 +54,9 @@ public final class ServantCombatSystem {
    private static final String TAG_UNTARGETABLE_UNTIL = TAG_PREFIX + "UntargetableUntil";
    private static final String TAG_RECOVERY_UNTIL = TAG_PREFIX + "RecoveryUntil";
    private static final String TAG_DAMAGE_BOOST_UNTIL = TAG_PREFIX + "DamageBoostUntil";
+   private static final String TAG_COMBAT_CONTROL_START = TAG_PREFIX + "ControlStartTick";
+   private static final String TAG_LAST_LAUNCH_TICK = TAG_PREFIX + "LastLaunchTick";
+   private static final String TAG_LAST_KNOCKBACK_TICK = TAG_PREFIX + "LastKnockbackTick";
    private static final ResourceLocation SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_combat_speed");
    private static final ResourceLocation HARD_TANK_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_np_hardtank_attack");
    private static final int OUT_OF_COMBAT_RESET_TICKS = 100;
@@ -94,6 +98,9 @@ public final class ServantCombatSystem {
          || !target.isAlive()
          || cannotAct(attacker)
          || skillsSuppressed(attacker)
+         || attacker.isPerformingAction()
+         || attacker.isRoaring()
+         || attacker.isSlamming()
          || isUntargetable(target)) {
          return false;
       }
@@ -123,7 +130,7 @@ public final class ServantCombatSystem {
          return false;
       }
 
-      data.putLong(TAG_NEXT_COMBO_TICK, now + (decisive ? 45L : 80L));
+      data.putLong(TAG_NEXT_COMBO_TICK, now + (decisive ? 70L : 105L));
       performLauncher(attacker, target, decisive ? 1.0F : 0.8F);
       return true;
    }
@@ -261,6 +268,10 @@ public final class ServantCombatSystem {
       LivingEntity target = entity.getTarget();
       boolean inCombat = target != null && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target) && entity.distanceToSqr(target) <= 24.0 * 24.0;
       if (inCombat) {
+         long previousCombatTick = data.getLong(TAG_LAST_COMBAT_TICK);
+         if (previousCombatTick <= 0L || now - previousCombatTick > 120L) {
+            data.putLong(TAG_COMBAT_CONTROL_START, now);
+         }
          data.putLong(TAG_LAST_COMBAT_TICK, now);
          if (isBerserker(definition)) {
             data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
@@ -278,7 +289,13 @@ public final class ServantCombatSystem {
       }
 
       long lastCombat = data.getLong(TAG_LAST_COMBAT_TICK);
-      if (lastCombat <= 0 || now - lastCombat >= OUT_OF_COMBAT_RESET_TICKS) {
+      if (lastCombat <= 0) {
+         if (ServantCombatPhase.fromId(data.getInt(TAG_PHASE)) != ServantCombatPhase.PROBING) {
+            resetCombatState(entity, data);
+         }
+         return;
+      }
+      if (now - lastCombat >= OUT_OF_COMBAT_RESET_TICKS) {
          resetCombatState(entity, data);
       }
    }
@@ -288,12 +305,11 @@ public final class ServantCombatSystem {
       if (speed == null) {
          return;
       }
-      speed.removeModifier(SPEED_ID);
       double targetSpeed = data.getLong(TAG_LAST_COMBAT_TICK) > 0 && now - data.getLong(TAG_LAST_COMBAT_TICK) < OUT_OF_COMBAT_RESET_TICKS
          ? ServantCombatFormulas.combatMovementSpeed(definition != null ? definition.parameters() : null)
          : ServantCombatFormulas.OUT_OF_COMBAT_SPEED;
       double base = speed.getBaseValue();
-      speed.addTransientModifier(new AttributeModifier(SPEED_ID, targetSpeed - base, AttributeModifier.Operation.ADD_VALUE));
+      updateAttributeModifier(speed, SPEED_ID, targetSpeed - base, AttributeModifier.Operation.ADD_VALUE);
    }
 
    private static void resetCombatState(ServantEntity entity, CompoundTag data) {
@@ -309,11 +325,13 @@ public final class ServantCombatSystem {
       data.remove(TAG_COMBO_DAMAGE);
       data.remove(TAG_UNTARGETABLE_UNTIL);
       data.remove(TAG_RECOVERY_UNTIL);
+      data.remove(TAG_COMBAT_CONTROL_START);
+      data.remove(TAG_LAST_LAUNCH_TICK);
+      data.remove(TAG_LAST_KNOCKBACK_TICK);
       AttributeInstance speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
       if (speed != null) {
-         speed.removeModifier(SPEED_ID);
          double base = speed.getBaseValue();
-         speed.addTransientModifier(new AttributeModifier(SPEED_ID, ServantCombatFormulas.OUT_OF_COMBAT_SPEED - base, AttributeModifier.Operation.ADD_VALUE));
+         updateAttributeModifier(speed, SPEED_ID, ServantCombatFormulas.OUT_OF_COMBAT_SPEED - base, AttributeModifier.Operation.ADD_VALUE);
       }
    }
 
@@ -334,16 +352,49 @@ public final class ServantCombatSystem {
       horizontal = horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
       double distance = ServantCombatFormulas.launcherDistance(params);
       attacker.faceVector(horizontal);
-      double horizontalPower = 0.78 + distance * 0.13;
-      double verticalPower = 0.72 + distance * 0.045;
+      boolean heavy = isBerserker(attacker.getDefinition()) || attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) >= 20.0;
+      long now = attacker.level().getGameTime();
+      CompoundTag data = attacker.getPersistentData();
+      long combatAge = now - data.getLong(TAG_COMBAT_CONTROL_START);
+      if (data.getLong(TAG_COMBAT_CONTROL_START) <= 0L) {
+         data.putLong(TAG_COMBAT_CONTROL_START, now);
+         combatAge = 0L;
+      }
+      boolean canKnockback = combatAge >= 100L
+         && now - data.getLong(TAG_LAST_KNOCKBACK_TICK) >= 90L
+         && attacker.getRandom().nextInt(100) < (heavy ? 45 : 28);
+      int launchChance = heavy ? 10 : 5;
+      boolean realLaunch = canKnockback
+         && combatAge >= 160L
+         && now - data.getLong(TAG_LAST_LAUNCH_TICK) >= 200L
+         && attacker.getRandom().nextInt(100) < launchChance;
+      if (!canKnockback) {
+         target.hasImpulse = true;
+         target.hurtMarked = true;
+         if (attacker.level() instanceof ServerLevel level) {
+            level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 8, 0.25, 0.25, 0.25, 0.06);
+         }
+         return;
+      }
+      data.putLong(TAG_LAST_KNOCKBACK_TICK, now);
+      if (realLaunch) {
+         data.putLong(TAG_LAST_LAUNCH_TICK, now);
+      }
+      double horizontalPower = 1.55 + distance * 0.16;
+      double verticalPower = realLaunch ? 0.92 + distance * 0.05 : 0.14;
       target.setDeltaMovement(horizontal.x * horizontalPower, verticalPower, horizontal.z * horizontalPower);
+      target.hasImpulse = true;
       target.hurtMarked = true;
       if (target instanceof ServantEntity servantTarget) {
          servantTarget.faceVector(horizontal.scale(-1.0));
          applyStun(servantTarget, ServantCombatFormulas.launcherHitstunTicks(params));
          consumePoiseFromControl(servantTarget, ServantCombatFormulas.launcherPoiseCost(params));
       }
-      breakSoftBlocksAlongPath(attacker, target.position(), horizontal, distance);
+      double terrainScale = terrainBreakScale(attacker);
+      breakSoftBlocksAlongPath(attacker, target.position(), horizontal, distance * terrainScale, terrainScale);
+      if (realLaunch) {
+         scheduleLaunchImpactCrater(target, horizontalPower >= 2.0 || verticalPower >= 1.15, terrainScale);
+      }
       schedulePursuit(attacker, target);
    }
 
@@ -357,7 +408,7 @@ public final class ServantCombatSystem {
       }
 
       TYPE_MOON_WORLD.queueServerWork(8, () -> {
-         if (!attacker.isAlive() || !target.isAlive() || cannotAct(attacker)) {
+         if (!attacker.isAlive() || !target.isAlive() || cannotAct(attacker) || attacker.isPerformingAction() || attacker.isRoaring() || attacker.isSlamming()) {
             return;
          }
          if (tryInterruptPursuit(attacker, target)) {
@@ -398,7 +449,7 @@ public final class ServantCombatSystem {
    }
 
    private static boolean tryAutoDodge(ServantEntity servant, DamageSource source, ServantParams params, long now) {
-      if (!canReactTo(source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + ServantCombatFormulas.dodgeCooldownTicks(params)) {
+      if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + ServantCombatFormulas.dodgeCooldownTicks(params)) {
          return false;
       }
       if (servant.getCurrentMp() < ServantCombatFormulas.dodgeMpCost(params)) {
@@ -421,7 +472,7 @@ public final class ServantCombatSystem {
    }
 
    private static Float tryAutoBlock(ServantEntity servant, DamageSource source, float amount, ServantParams params, long now) {
-      if (!canReactTo(source) || now < servant.getPersistentData().getLong(TAG_GUARD_EXHAUST_UNTIL)) {
+      if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_GUARD_EXHAUST_UNTIL)) {
          return null;
       }
       CompoundTag data = servant.getPersistentData();
@@ -570,8 +621,11 @@ public final class ServantCombatSystem {
       entity.getPersistentData().putLong(TAG_STUN_UNTIL, entity.level().getGameTime() + Math.max(1, ticks));
    }
 
-   private static boolean canReactTo(DamageSource source) {
+   private static boolean canReactTo(ServantEntity servant, DamageSource source) {
       if (source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return false;
+      }
+      if (source.getEntity() == servant || source.getDirectEntity() == servant) {
          return false;
       }
       if (source.is(DamageTypes.FELL_OUT_OF_WORLD)
@@ -647,21 +701,36 @@ public final class ServantCombatSystem {
          || specialization.hasCombatAction("magic_bolt");
    }
 
-   private static void breakSoftBlocksAlongPath(ServantEntity attacker, Vec3 start, Vec3 horizontal, double distance) {
+   private static void breakSoftBlocksAlongPath(ServantEntity attacker, Vec3 start, Vec3 horizontal, double distance, double terrainScale) {
       if (!(attacker.level() instanceof ServerLevel level)) {
          return;
       }
       boolean heavy = isBerserker(attacker.getDefinition()) || attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) >= 20.0;
-      int radius = heavy ? 2 : 1;
-      int height = heavy ? 3 : 2;
-      float hardnessLimit = heavy ? 80.0F : 35.0F;
-      for (double step = 1.0; step <= distance + (heavy ? 3.0 : 1.0); step += 0.75) {
+      int radius = Math.max(1, (int)Math.ceil((heavy ? 3 : 2) * terrainScale));
+      int height = Math.max(1, (int)Math.ceil((heavy ? 4 : 3) * terrainScale));
+      float hardnessLimit = heavy ? 90.0F : 45.0F;
+      int maxBroken = scaledBreakLimit(heavy ? 112 : 56, terrainScale);
+      int broken = 0;
+      for (double step = 1.0; step <= distance + (heavy ? 3.0 : 1.0) && broken < maxBroken; step += 0.75) {
          BlockPos center = BlockPos.containing(start.add(horizontal.scale(step)));
          for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -1, -radius), center.offset(radius, height, radius))) {
+            if (!isInIrregularBreakShape(level, pos, center, radius + 0.65, heavy ? 1.25 : 0.95, 0.85, heavy ? 0.78 : 0.66)) {
+               continue;
+            }
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
             if (!state.isAir() && hardness >= 0.0F && hardness < hardnessLimit && !state.is(Blocks.BEDROCK)) {
-               level.removeBlock(pos, false);
+               level.levelEvent(2001, pos, Block.getId(state));
+               if (level.removeBlock(pos, false)) {
+                  broken++;
+                  level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.6, pos.getZ() + 0.5, heavy ? 8 : 4, 0.32, 0.2, 0.32, 0.06);
+                  if (heavy) {
+                     level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.getX() + 0.5, pos.getY() + 0.75, pos.getZ() + 0.5, 5, 0.24, 0.18, 0.24, 0.035);
+                  }
+               }
+               if (broken >= maxBroken) {
+                  break;
+               }
             }
          }
       }
@@ -670,13 +739,93 @@ public final class ServantCombatSystem {
          start.x + horizontal.x * distance * 0.5,
          start.y + 0.45,
          start.z + horizontal.z * distance * 0.5,
-         heavy ? 10 : 6,
-         distance * 0.18,
-         0.35,
-         distance * 0.18,
+         heavy ? 22 : 14,
+         distance * 0.28,
+         0.45,
+         distance * 0.28,
          0.02
       );
-      level.playSound(null, BlockPos.containing(start), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, heavy ? 1.8F : 1.0F, heavy ? 0.45F : 0.7F);
+      level.sendParticles(
+         ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         start.x + horizontal.x * distance * 0.5,
+         start.y + 0.35,
+         start.z + horizontal.z * distance * 0.5,
+         heavy ? 52 : 30,
+         distance * 0.32,
+         0.35,
+         distance * 0.32,
+         0.05
+      );
+      level.playSound(null, BlockPos.containing(start), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, heavy ? 1.8F : 1.0F, heavy ? 0.45F : 0.7F);
+   }
+
+   private static void scheduleLaunchImpactCrater(LivingEntity target, boolean heavy, double terrainScale) {
+      TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (!target.isAlive() || !(target.level() instanceof ServerLevel level)) {
+            return;
+         }
+         BlockPos center = target.blockPosition().below();
+         double radius = (heavy ? 2.6 : 2.0) * terrainScale;
+         double radiusSqr = radius * radius;
+         int r = (int)Math.ceil(radius);
+         int maxBroken = scaledBreakLimit(heavy ? 28 : 18, terrainScale);
+         int broken = 0;
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-r, -1, -r), center.offset(r, 1, r))) {
+            if (broken >= maxBroken) {
+               break;
+            }
+            if (!isInIrregularBreakShape(level, pos, center, radius, 0.75, 0.65, heavy ? 0.74 : 0.64)) {
+               continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            float hardness = state.getDestroySpeed(level, pos);
+            if (!state.isAir() && hardness >= 0.0F && hardness < (heavy ? 75.0F : 45.0F) && !state.is(Blocks.BEDROCK)) {
+               level.levelEvent(2001, pos, Block.getId(state));
+               if (level.removeBlock(pos, false)) {
+                  broken++;
+               }
+            }
+         }
+         if (broken > 0) {
+            Vec3 impact = Vec3.atCenterOf(center).add(0.0, 0.35, 0.0);
+            level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, heavy ? 5 : 3, radius * 0.4, 0.16, radius * 0.4, 0.0);
+            level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impact.x, impact.y, impact.z, heavy ? 48 : 30, radius * 0.6, 0.3, radius * 0.6, 0.05);
+            level.playSound(null, center, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, heavy ? 1.35F : 0.95F, heavy ? 0.55F : 0.75F);
+         }
+      });
+   }
+
+   private static boolean isInIrregularBreakShape(ServerLevel level, BlockPos pos, BlockPos center, double radius, double yScale, double edgeNoise, double keepChance) {
+      double dx = pos.getX() - center.getX();
+      double dy = (pos.getY() - center.getY()) / Math.max(0.25, yScale);
+      double dz = pos.getZ() - center.getZ();
+      double normalized = (dx * dx + dy * dy + dz * dz) / Math.max(0.25, radius * radius);
+      double noise = blockNoise(level, pos);
+      double edge = 1.0 + (noise - 0.5) * edgeNoise;
+      return normalized <= edge && (normalized <= 0.45 || noise <= keepChance);
+   }
+
+   private static double terrainBreakScale(ServantEntity entity) {
+      ServantParams params = entity.getDefinition() != null ? entity.getDefinition().parameters() : null;
+      if (params == null) {
+         return 1.0;
+      }
+      int strength = params.strengthPlus() ? params.strength().plusCoefficient() : params.strength().coefficient();
+      return Math.max(0.65, Math.min(1.8, Math.sqrt(strength / 30.0)));
+   }
+
+   private static int scaledBreakLimit(int base, double scale) {
+      return Math.max(1, (int)Math.round(base * scale * scale));
+   }
+
+   private static double blockNoise(ServerLevel level, BlockPos pos) {
+      long seed = pos.asLong() ^ (level.getGameTime() * 341873128712L);
+      seed ^= seed >>> 33;
+      seed *= 0xff51afd7ed558ccdL;
+      seed ^= seed >>> 33;
+      seed *= 0xc4ceb9fe1a85ec53L;
+      seed ^= seed >>> 33;
+      return (double)(seed & 0xFFFFFFL) / (double)0x1000000;
    }
 
    private static void spawnGuardFx(LivingEntity entity, net.minecraft.core.particles.ParticleOptions particle, net.minecraft.sounds.SoundEvent sound, float pitch) {
@@ -689,18 +838,33 @@ public final class ServantCombatSystem {
    private static void applyAttackBoost(ServantEntity entity, double amount) {
       AttributeInstance attack = entity.getAttribute(Attributes.ATTACK_DAMAGE);
       if (attack != null) {
-         attack.removeModifier(HARD_TANK_ATTACK_ID);
-         attack.addTransientModifier(new AttributeModifier(HARD_TANK_ATTACK_ID, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+         updateAttributeModifier(attack, HARD_TANK_ATTACK_ID, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       }
    }
 
    private static void cleanupAttackBoost(ServantEntity entity, CompoundTag data, long now) {
       if (data.getLong(TAG_DAMAGE_BOOST_UNTIL) <= now) {
          AttributeInstance attack = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-         if (attack != null) {
+         if (attack != null && attack.getModifier(HARD_TANK_ATTACK_ID) != null) {
             attack.removeModifier(HARD_TANK_ATTACK_ID);
          }
       }
+   }
+
+   private static void updateAttributeModifier(
+      AttributeInstance attribute,
+      ResourceLocation id,
+      double amount,
+      AttributeModifier.Operation operation
+   ) {
+      AttributeModifier existing = attribute.getModifier(id);
+      if (existing != null && existing.operation() == operation && Math.abs(existing.amount() - amount) < 1.0E-6) {
+         return;
+      }
+      if (existing != null) {
+         attribute.removeModifier(id);
+      }
+      attribute.addTransientModifier(new AttributeModifier(id, amount, operation));
    }
 
    private static boolean isBerserker(ServantDefinition definition) {

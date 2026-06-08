@@ -456,9 +456,14 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
       int rInt = (int)Math.ceil(currentRadius);
+      int broken = 0;
+      int maxBroken = 96;
       for (int x = -rInt; x <= rInt; x++) {
          for (int y = -rInt; y <= rInt; y++) {
             for (int z = -rInt; z <= rInt; z++) {
+               if (broken >= maxBroken) {
+                  return;
+               }
                double distSqr = x * x + y * y + z * z;
                if (distSqr > currentRadius * currentRadius || distSqr <= previousRadius * previousRadius) {
                   continue;
@@ -473,6 +478,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
                }
 
                level.removeBlock(pos, false);
+               broken++;
                if (this.random.nextInt(2) == 0) {
                   level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.35, 0.35, 0.35, 0.0);
                   level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.28, 0.28, 0.28, 0.03);

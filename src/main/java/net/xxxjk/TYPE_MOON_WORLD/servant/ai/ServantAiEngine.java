@@ -38,13 +38,11 @@ public final class ServantAiEngine {
          entity.getObedienceAxis(), entity.getPrincipleAxis()
       );
 
-      LivingEntity target = entity.getTarget();
-      ServantAiContext ctx = new ServantAiContext(
-         entity, target, definition, profile, entity.level().getGameTime()
-      );
-
       for (ServantAiModule module : this.modules) {
          try {
+            ServantAiContext ctx = new ServantAiContext(
+               entity, entity.getTarget(), definition, profile, entity.level().getGameTime()
+            );
             module.tick(entity, ctx);
          } catch (Exception e) {
             TYPE_MOON_WORLD.LOGGER.error("Servant AI module {} failed", module.getClass().getSimpleName(), e);

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -35,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
@@ -73,6 +75,155 @@ public final class CombatModule implements ServantAiModule {
       "typemoonworld", "frenzy_atk_boost");
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
+
+   private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
+      float hardness = state.getDestroySpeed(level, pos);
+      if (state.isAir() || hardness < 0.0F || state.is(Blocks.BEDROCK)) {
+         return false;
+      }
+      level.levelEvent(2001, pos, Block.getId(state));
+      if (!level.removeBlock(pos, false)) {
+         return false;
+      }
+      double x = pos.getX() + 0.5;
+      double y = pos.getY() + 0.65;
+      double z = pos.getZ() + 0.5;
+      level.sendParticles(ParticleTypes.CLOUD, x, y, z, heavyFx ? 8 : 4, 0.32, 0.22, 0.32, 0.06);
+      if (heavyFx) {
+         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 6, 0.34, 0.3, 0.34, 0.025);
+      }
+      return true;
+   }
+
+   private boolean isInIrregularBreakShape(ServerLevel level, BlockPos pos, BlockPos center, double radius, double yScale, double edgeNoise, double keepChance) {
+      double dx = pos.getX() - center.getX();
+      double dy = (pos.getY() - center.getY()) / Math.max(0.25, yScale);
+      double dz = pos.getZ() - center.getZ();
+      double normalized = (dx * dx + dy * dy + dz * dz) / Math.max(0.25, radius * radius);
+      double noise = blockNoise(level, pos);
+      double edge = 1.0 + (noise - 0.5) * edgeNoise;
+      return normalized <= edge && (normalized <= 0.45 || noise <= keepChance);
+   }
+
+   private double blockNoise(ServerLevel level, BlockPos pos) {
+      long seed = pos.asLong() ^ (level.getGameTime() * 341873128712L);
+      seed ^= seed >>> 33;
+      seed *= 0xff51afd7ed558ccdL;
+      seed ^= seed >>> 33;
+      seed *= 0xc4ceb9fe1a85ec53L;
+      seed ^= seed >>> 33;
+      return (double)(seed & 0xFFFFFFL) / (double)0x1000000;
+   }
+
+   private double terrainBreakScale(ServantEntity entity) {
+      ServantParams params = entity.getDefinition() != null ? entity.getDefinition().parameters() : null;
+      if (params == null) {
+         return 1.0;
+      }
+      int strength = params.strengthPlus() ? params.strength().plusCoefficient() : params.strength().coefficient();
+      return Math.max(0.65, Math.min(1.8, Math.sqrt(strength / 30.0)));
+   }
+
+   private int scaledBreakLimit(int base, double scale) {
+      return Math.max(1, (int)Math.round(base * scale * scale));
+   }
+
+   private void pushWithImpactCrater(ServerLevel level, ServantEntity attacker, LivingEntity target, Vec3 horizontal, double horizontalPower, double verticalPower, double craterRadius, int maxBroken) {
+      Vec3 dir = new Vec3(horizontal.x, 0.0, horizontal.z);
+      if (dir.lengthSqr() < 1.0E-4) {
+         dir = target.position().subtract(attacker.position()).multiply(1.0, 0.0, 1.0);
+      }
+      dir = dir.lengthSqr() < 1.0E-4 ? attacker.getLookAngle().multiply(1.0, 0.0, 1.0) : dir.normalize();
+      long now = level.getGameTime();
+      CompoundTag data = attacker.getPersistentData();
+      long lastControl = data.getLong("CombatControlLastTick");
+      if (lastControl <= 0L || now - lastControl > 120L) {
+         data.putLong("CombatControlStartTick", now);
+      }
+      data.putLong("CombatControlLastTick", now);
+      long combatAge = now - data.getLong("CombatControlStartTick");
+      boolean strongMove = horizontalPower >= 1.6 || verticalPower >= 0.65;
+      double terrainScale = terrainBreakScale(attacker);
+      boolean canKnockback = combatAge >= 80L
+         && now - data.getLong("CombatLastKnockbackTick") >= 70L
+         && attacker.getRandom().nextInt(100) < (strongMove ? 35 : 18);
+      int launchChance = strongMove ? 8 : 2;
+      boolean canLaunch = canKnockback
+         && combatAge >= 140L
+         && now - data.getLong("CombatLastLaunchTick") >= 160L
+         && attacker.getRandom().nextInt(100) < launchChance;
+      if (!canKnockback) {
+         level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 6, 0.22, 0.12, 0.22, 0.035);
+         return;
+      }
+      data.putLong("CombatLastKnockbackTick", now);
+      if (canLaunch) {
+         data.putLong("CombatLastLaunchTick", now);
+      }
+      Vec3 motion = target.getDeltaMovement();
+      double yPower = canLaunch ? Math.max(0.35, verticalPower) : Math.min(0.08, verticalPower * 0.12);
+      target.setDeltaMovement(motion.x + dir.x * horizontalPower, Math.max(motion.y + yPower, yPower), motion.z + dir.z * horizontalPower);
+      target.hasImpulse = true;
+      target.hurtMarked = true;
+      level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 16, 0.35, 0.18, 0.35, 0.08);
+      breakKnockbackPath(level, target.position(), dir, Math.max(2.0, horizontalPower * 2.2) * terrainScale, strongMove, terrainScale);
+      if (canLaunch) {
+         scheduleImpactCrater(target, craterRadius * terrainScale, scaledBreakLimit(maxBroken, terrainScale), strongMove);
+      }
+   }
+
+   private void breakKnockbackPath(ServerLevel level, Vec3 start, Vec3 dir, double distance, boolean heavyFx, double terrainScale) {
+      int radius = Math.max(1, (int)Math.ceil((heavyFx ? 2 : 1) * terrainScale));
+      int maxBroken = scaledBreakLimit(heavyFx ? 22 : 12, terrainScale);
+      int broken = 0;
+      for (double step = 0.75; step <= distance && broken < maxBroken; step += 0.75) {
+         BlockPos center = BlockPos.containing(start.add(dir.scale(step)));
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, 0, -radius), center.offset(radius, 2, radius))) {
+            if (!isInIrregularBreakShape(level, pos, center, radius + 0.45, 1.1, 0.8, heavyFx ? 0.68 : 0.55)) {
+               continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            float hardness = state.getDestroySpeed(level, pos);
+            if (!state.isAir() && hardness >= 0.0F && hardness < (heavyFx ? 45.0F : 25.0F) && destroyBlockWithCombatFx(level, pos, state, heavyFx)) {
+               broken++;
+               if (broken >= maxBroken) {
+                  break;
+               }
+            }
+         }
+      }
+   }
+
+   private void scheduleImpactCrater(LivingEntity target, double radius, int maxBroken, boolean heavyFx) {
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (!target.isAlive() || !(target.level() instanceof ServerLevel level)) {
+            return;
+         }
+         BlockPos center = target.blockPosition().below();
+         int r = Math.max(1, (int)Math.ceil(radius));
+         int broken = 0;
+         double radiusSqr = radius * radius;
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-r, -1, -r), center.offset(r, 1, r))) {
+            if (broken >= maxBroken) {
+               break;
+            }
+            if (!isInIrregularBreakShape(level, pos, center, radius, 0.75, 0.55, heavyFx ? 0.74 : 0.64)) {
+               continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            float hardness = state.getDestroySpeed(level, pos);
+            if (hardness >= 0.0F && hardness < (heavyFx ? 70.0F : 45.0F) && destroyBlockWithCombatFx(level, pos, state, heavyFx)) {
+               broken++;
+            }
+         }
+         if (broken > 0) {
+            Vec3 impact = Vec3.atCenterOf(center).add(0.0, 0.4, 0.0);
+            level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, heavyFx ? 5 : 2, radius * 0.35, 0.15, radius * 0.35, 0.0);
+            level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impact.x, impact.y, impact.z, heavyFx ? 42 : 24, radius * 0.55, 0.28, radius * 0.55, 0.045);
+            level.playSound(null, center, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, heavyFx ? 1.4F : 0.9F, heavyFx ? 0.55F : 0.75F);
+         }
+      });
+   }
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
@@ -335,8 +486,9 @@ public final class CombatModule implements ServantAiModule {
                   float hardness = state.getDestroySpeed(entity.level(), breakPos);
                   if (!state.isAir() && hardness >= 0 && hardness < 80
                         && !state.is(Blocks.BEDROCK)) {
-                     entity.level().removeBlock(breakPos, false);
-                     chargeBroken++;
+                     if (entity.level() instanceof ServerLevel sl && destroyBlockWithCombatFx(sl, breakPos, state, true)) {
+                        chargeBroken++;
+                     }
                      if (chargeBroken >= 48) {
                         break;
                      }
@@ -821,7 +973,7 @@ public final class CombatModule implements ServantAiModule {
       // 朝目标方向进行180度扇形检测
       Vec3 look = entity.getLookAngle();
       Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
-      AABB slashBox = entity.getBoundingBox().inflate(3.0).move(look.scale(1.5));
+      AABB slashBox = entity.getBoundingBox().inflate(4.5).move(look.scale(2.0));
       List<LivingEntity> near = sl.getEntitiesOfClass(
          LivingEntity.class, slashBox,
          e -> e != entity && e.isAlive());
@@ -831,23 +983,33 @@ public final class CombatModule implements ServantAiModule {
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
          if (dist > 0) {
-            double kb = 1.0 * (1.0 - dist / 3.0);
-            le.push(dx / dist * kb, 0.2, dz / dist * kb);
-            le.hurtMarked = true;
+            double kb = Math.max(0.35, 1.8 * (1.0 - dist / 4.5));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.38, 1.8, 10);
          }
       }
 
       // 斩击轨迹粒子
-      for (double r = 0.5; r <= 3.0; r += 0.5) {
+      int slashBroken = 0;
+      double terrainScale = terrainBreakScale(entity);
+      int slashLimit = scaledBreakLimit(36, terrainScale);
+      for (double r = 0.5; r <= 5.0 * terrainScale && slashBroken < slashLimit; r += 0.5) {
          for (double theta = -Math.PI / 2; theta <= Math.PI / 2; theta += Math.PI / 6) {
             double x = look.x * Math.cos(theta) - look.z * Math.sin(theta);
             double z = look.x * Math.sin(theta) + look.z * Math.cos(theta);
             Vec3 offset = new Vec3(x, 0, z).normalize().scale(r);
             BlockPos pos = BlockPos.containing(center.add(offset));
+            if (blockNoise(sl, pos) > 0.82 && r > 1.5) {
+               continue;
+            }
             BlockState state = sl.getBlockState(pos);
             if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0
                   || state.getFluidState().isSource())) {
-               sl.removeBlock(pos, false);
+               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
+                  slashBroken++;
+               }
+               if (slashBroken >= slashLimit) {
+                  break;
+               }
             }
          }
       }
@@ -856,10 +1018,13 @@ public final class CombatModule implements ServantAiModule {
          entity.getX() + look.x * 2.0,
          entity.getY() + entity.getBbHeight() * 0.6,
          entity.getZ() + look.z * 2.0,
-         2, 0.0, 0.0, 0.0, 0.0);
+         5, 0.0, 0.0, 0.0, 0.0);
       sl.sendParticles(ParticleTypes.CRIT,
          target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-         10, 0.3, 0.3, 0.3, 0.2);
+         20, 0.45, 0.4, 0.45, 0.22);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         entity.getX() + look.x * 2.2, entity.getY() + 0.25, entity.getZ() + look.z * 2.2,
+         32, 1.2, 0.25, 1.2, 0.05);
    }
 
    /**
@@ -888,7 +1053,7 @@ public final class CombatModule implements ServantAiModule {
       sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + 0.5, entity.getZ(),
          15, 0.3, 0.5, 0.3, 0.05);
-      sl.sendParticles(ParticleTypes.LARGE_SMOKE,
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + 1.0, entity.getZ(),
          8, 0.2, 0.3, 0.2, 0.03);
 
@@ -898,8 +1063,8 @@ public final class CombatModule implements ServantAiModule {
       double tpDamage = baseAtk * 1.5;
       DamageSource src = entity.damageSources().mobAttack(entity);
       target.hurt(src, (float) tpDamage);
-      target.knockback(0.6, entity.getX() - target.getX(), entity.getZ() - target.getZ());
-      target.hurtMarked = true;
+      Vec3 away = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      pushWithImpactCrater(sl, entity, target, away, 1.45, 0.36, 1.8, 10);
 
       // 攻击粒子
       sl.sendParticles(ParticleTypes.CRIT,
@@ -914,66 +1079,54 @@ public final class CombatModule implements ServantAiModule {
     */
    private void performStomp(ServantEntity entity) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
-      double stompDamage = baseAtk * 1.2;
+      double stompDamage = entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2;
       DamageSource src = entity.damageSources().mobAttack(entity);
-
-      // 2.5格半径AOE伤害 + 击飞
-      double stompRadius = 2.5;
+      double stompRadius = 4.0;
       AABB box = entity.getBoundingBox().inflate(stompRadius);
-      List<LivingEntity> nearby = sl.getEntitiesOfClass(
-         LivingEntity.class, box, e -> e != entity && e.isAlive());
+      List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, box, e -> e != entity && e.isAlive());
       for (LivingEntity le : nearby) {
-         le.hurt(src, (float) stompDamage);
+         le.hurt(src, (float)stompDamage);
          double dx = le.getX() - entity.getX();
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
-         if (dist > 0) {
-            double kb = 1.0 * (1.0 - dist / stompRadius);
-            le.push(dx / dist * kb, 0.5, dz / dist * kb); // 较高击飞
-            le.hurtMarked = true;
+         if (dist > 0.0) {
+            double kb = Math.max(0.45, 1.8 * (1.0 - dist / stompRadius));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.72, 2.2, 16);
          }
       }
 
-      // 地面碎裂：脚下方块部分被破坏
       BlockPos center = entity.blockPosition();
-      for (BlockPos pos : BlockPos.betweenClosed(
-            center.offset(-2, 0, -2),
-            center.offset(2, 0, 2))) {
+      double terrainScale = terrainBreakScale(entity);
+      int stompRadiusBlocks = Math.max(1, (int)Math.ceil(3.0 * terrainScale));
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-stompRadiusBlocks, -1, -stompRadiusBlocks), center.offset(stompRadiusBlocks, 1, stompRadiusBlocks))) {
+         if (!isInIrregularBreakShape(sl, pos, center, 3.45 * terrainScale, 0.8, 0.75, 0.68)) {
+            continue;
+         }
          BlockState state = sl.getBlockState(pos);
          float hardness = state.getDestroySpeed(sl, pos);
-         if (!state.isAir() && hardness >= 0 && hardness < 30
-               && !state.is(Blocks.BEDROCK)) {
-            sl.removeBlock(pos, false);
+         if (!state.isAir() && hardness >= 0.0F && hardness < 30.0F && !state.is(Blocks.BEDROCK)) {
+            destroyBlockWithCombatFx(sl, pos, state, true);
          }
       }
-
-      // 同心圆碎裂扩散
-      for (int i = 0; i < 8; i++) {
-         double angle = (Math.PI * 2) * i / 8.0;
-         BlockPos ringPos = center.offset(
-            (int) Math.round(Math.cos(angle) * 2.5), 0,
-            (int) Math.round(Math.sin(angle) * 2.5));
+      for (int i = 0; i < 16; i++) {
+         double angle = (Math.PI * 2.0) * i / 16.0;
+         BlockPos ringPos = center.offset((int)Math.round(Math.cos(angle) * 4.0 * terrainScale), 0, (int)Math.round(Math.sin(angle) * 4.0 * terrainScale));
+         if (blockNoise(sl, ringPos) > 0.72) {
+            ringPos = ringPos.offset((int)Math.round(Math.cos(angle) * blockNoise(sl, ringPos.above())), 0, (int)Math.round(Math.sin(angle) * blockNoise(sl, ringPos.below())));
+         }
          BlockState state = sl.getBlockState(ringPos);
          float hardness = state.getDestroySpeed(sl, ringPos);
-         if (!state.isAir() && hardness >= 0 && hardness < 30
-               && !state.is(Blocks.BEDROCK)) {
-            sl.removeBlock(ringPos, false);
+         if (!state.isAir() && hardness >= 0.0F && hardness < 30.0F && !state.is(Blocks.BEDROCK)) {
+            destroyBlockWithCombatFx(sl, ringPos, state, true);
          }
       }
 
-      // 跺脚冲击波粒子
-      sl.sendParticles(ParticleTypes.CLOUD,
-         entity.getX(), entity.getY() + 0.1, entity.getZ(),
-         20, 1.0, 0.2, 1.0, 0.2);
-      sl.sendParticles(ParticleTypes.EXPLOSION,
-         entity.getX(), entity.getY() + 0.3, entity.getZ(),
-         3, 1.0, 0.3, 1.0, 0.0);
+      sl.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.1, entity.getZ(), 48, 1.8, 0.35, 1.8, 0.22);
+      sl.sendParticles(ParticleTypes.EXPLOSION, entity.getX(), entity.getY() + 0.3, entity.getZ(), 7, 1.4, 0.4, 1.4, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX(), entity.getY() + 0.25, entity.getZ(), 56, 2.0, 0.35, 2.0, 0.055);
    }
-
    /**
-    * 赫拉克勒斯沿目标方向撕裂地面，制造远距离击退和破坏带。
+    * Earth rend.
     */
    private void performEarthRend(ServantEntity entity, LivingEntity target) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
@@ -988,29 +1141,36 @@ public final class CombatModule implements ServantAiModule {
       DamageSource src = entity.damageSources().mobAttack(entity);
       Vec3 origin = entity.position();
       int broken = 0;
-      for (double step = 1.0; step <= 8.0 && broken < 64; step += 1.0) {
+      double terrainScale = terrainBreakScale(entity);
+      int maxBroken = scaledBreakLimit(96, terrainScale);
+      for (double step = 1.0; step <= 11.0 * terrainScale && broken < maxBroken; step += 1.0) {
          Vec3 centerVec = origin.add(horizontal.scale(step));
          BlockPos center = BlockPos.containing(centerVec);
-         AABB hitBox = new AABB(center).inflate(1.0 + step * 0.15, 1.2, 1.0 + step * 0.15);
+         AABB hitBox = new AABB(center).inflate(1.45 + step * 0.16, 1.4, 1.45 + step * 0.16);
          for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
             victim.hurt(src, (float)(baseAtk * 0.75));
-            victim.push(horizontal.x * 1.2, 0.65, horizontal.z * 1.2);
-            victim.hurtMarked = true;
+            pushWithImpactCrater(sl, entity, victim, horizontal, 1.95, 0.82, 2.4, 18);
          }
-         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-1, -1, -1), center.offset(1, 1, 1))) {
+         int pathRadius = Math.max(1, (int)Math.ceil(2.0 * terrainScale));
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-pathRadius, -1, -pathRadius), center.offset(pathRadius, 1, pathRadius))) {
+            if (!isInIrregularBreakShape(sl, pos, center, 2.35 * terrainScale, 0.75, 0.8, 0.72)) {
+               continue;
+            }
             BlockState state = sl.getBlockState(pos);
             float hardness = state.getDestroySpeed(sl, pos);
             if (!state.isAir() && hardness >= 0.0F && hardness < 75.0F && !state.is(Blocks.BEDROCK)) {
-               sl.removeBlock(pos, false);
-               broken++;
-               if (broken >= 64) {
+               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
+                  broken++;
+               }
+               if (broken >= maxBroken) {
                   break;
                }
             }
          }
-         sl.sendParticles(ParticleTypes.CLOUD, centerVec.x, entity.getY() + 0.2, centerVec.z, 5, 0.45, 0.12, 0.45, 0.04);
+         sl.sendParticles(ParticleTypes.CLOUD, centerVec.x, entity.getY() + 0.2, centerVec.z, 16, 0.8, 0.2, 0.8, 0.06);
+         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, centerVec.x, entity.getY() + 0.35, centerVec.z, 12, 0.75, 0.25, 0.75, 0.035);
       }
-      sl.playSound(null, entity.blockPosition(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.4F, 0.55F);
+      sl.playSound(null, entity.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.4F, 0.55F);
    }
 
    private void performShoulderCheck(ServantEntity entity, LivingEntity target) {
@@ -1026,10 +1186,10 @@ public final class CombatModule implements ServantAiModule {
       AABB hitBox = entity.getBoundingBox().expandTowards(horizontal.scale(5.5)).inflate(1.2, 0.8, 1.2);
       for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
          victim.hurt(entity.damageSources().mobAttack(entity), (float)(baseAtk * 0.95));
-         victim.push(horizontal.x * 1.7, 0.35, horizontal.z * 1.7);
-         victim.hurtMarked = true;
+         pushWithImpactCrater(sl, entity, victim, horizontal, 2.45, 0.48, 2.0, 14);
       }
-      sl.sendParticles(ParticleTypes.EXPLOSION, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.7, entity.getZ() + horizontal.z * 2.0, 3, 0.3, 0.2, 0.3, 0.0);
+      sl.sendParticles(ParticleTypes.EXPLOSION, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.7, entity.getZ() + horizontal.z * 2.0, 6, 0.55, 0.25, 0.55, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.35, entity.getZ() + horizontal.z * 2.0, 34, 0.9, 0.25, 0.9, 0.06);
    }
 
    private void performRuneBurst(ServantEntity entity, LivingEntity target) {
@@ -1044,12 +1204,12 @@ public final class CombatModule implements ServantAiModule {
          Vec3 horizontal = new Vec3(push.x, 0.0, push.z);
          if (horizontal.lengthSqr() > 1.0E-4) {
             horizontal = horizontal.normalize();
-            victim.push(horizontal.x * 0.75, 0.22, horizontal.z * 0.75);
-            victim.hurtMarked = true;
+            pushWithImpactCrater(sl, entity, victim, horizontal, 1.15, 0.32, 1.6, 8);
          }
       }
-      sl.sendParticles(ParticleTypes.ENCHANT, center.x, center.y, center.z, 28, 1.2, 0.6, 1.2, 0.05);
-      sl.sendParticles(ParticleTypes.WITCH, center.x, center.y, center.z, 14, 0.8, 0.4, 0.8, 0.02);
+      sl.sendParticles(ParticleTypes.ENCHANT, center.x, center.y, center.z, 56, 1.8, 0.8, 1.8, 0.05);
+      sl.sendParticles(ParticleTypes.WITCH, center.x, center.y, center.z, 28, 1.2, 0.55, 1.2, 0.02);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y - 0.25, center.z, 22, 1.4, 0.18, 1.4, 0.035);
       sl.playSound(null, target.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
    }
 
@@ -1064,9 +1224,9 @@ public final class CombatModule implements ServantAiModule {
       entity.setDeltaMovement(horizontal.x * 1.35, Math.max(entity.getDeltaMovement().y, 0.78), horizontal.z * 1.35);
       entity.hasImpulse = true;
       target.hurt(entity.damageSources().mobAttack(entity), (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.85));
-      target.push(horizontal.x * 0.9, 0.45, horizontal.z * 0.9);
-      target.hurtMarked = true;
-      sl.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+      pushWithImpactCrater(sl, entity, target, horizontal, 1.85, 0.72, 2.1, 14);
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 4, 0.0, 0.0, 0.0, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, target.getX(), target.getY() + 0.2, target.getZ(), 24, 0.7, 0.2, 0.7, 0.05);
       sl.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.0F, 1.35F);
    }
 
@@ -1347,8 +1507,8 @@ public final class CombatModule implements ServantAiModule {
       double dmg = baseAtk * 1.4;
       DamageSource src = entity.damageSources().mobAttack(entity);
       target.hurt(src, (float) dmg);
-      target.knockback(0.8, entity.getX() - target.getX(), entity.getZ() - target.getZ());
-      target.hurtMarked = true;
+      Vec3 uppercutDir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      pushWithImpactCrater(sl, entity, target, uppercutDir, 1.35, 1.05, 2.0, 14);
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
          target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
          2, 0.0, 0.0, 0.0, 0.0);
@@ -1377,21 +1537,25 @@ public final class CombatModule implements ServantAiModule {
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
          if (dist > 0) {
-            double kb = 0.7 * (1.0 - dist / 2.5);
-            le.push(dx / dist * kb, 0.2, dz / dist * kb);
-            le.hurtMarked = true;
+            double kb = Math.max(0.3, 1.25 * (1.0 - dist / 3.6));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.32, 1.5, 8);
          }
       }
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
          entity.getX() + look.x * 2.0,
          entity.getY() + entity.getBbHeight() * 0.55,
          entity.getZ() + look.z * 2.0,
-         2, 0.0, 0.0, 0.0, 0.0);
+         4, 0.0, 0.0, 0.0, 0.0);
       sl.sendParticles(ParticleTypes.CLOUD,
          entity.getX() + look.x * 1.5,
          entity.getY() + entity.getBbHeight() * 0.5,
          entity.getZ() + look.z * 1.5,
-         6, 0.2, 0.2, 0.2, 0.05);
+         18, 0.6, 0.25, 0.6, 0.06);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         entity.getX() + look.x * 1.8,
+         entity.getY() + 0.25,
+         entity.getZ() + look.z * 1.8,
+         12, 0.55, 0.2, 0.55, 0.035);
    }
 
    private boolean tryUseCuRune(ServantEntity entity, LivingEntity target, double healthRatio, double distance, boolean hasLineOfSight) {
@@ -1549,7 +1713,7 @@ public final class CombatModule implements ServantAiModule {
             living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 100));
          }
          serverLevel.sendParticles(ParticleTypes.FLAME, impact.x, impact.y, impact.z, 24, 0.8, 0.5, 0.8, 0.05);
-         serverLevel.sendParticles(ParticleTypes.SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
+         serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
          serverLevel.playSound(null, impact.x, impact.y, impact.z, SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.1F, 0.8F);
       });
    }
@@ -1572,7 +1736,7 @@ public final class CombatModule implements ServantAiModule {
          java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
          for (Vec3 pillar : pillars) {
             serverLevel.sendParticles(ParticleTypes.FLAME, pillar.x, pillar.y + 1.2, pillar.z, 20, 0.35, 1.2, 0.35, 0.02);
-            serverLevel.sendParticles(ParticleTypes.SMOKE, pillar.x, pillar.y + 1.1, pillar.z, 10, 0.3, 1.0, 0.3, 0.02);
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pillar.x, pillar.y + 1.1, pillar.z, 10, 0.3, 1.0, 0.3, 0.02);
             AABB pillarBox = new AABB(pillar, pillar).inflate(1.4, 2.2, 1.4);
             for (LivingEntity living : serverLevel.getEntitiesOfClass(
                LivingEntity.class,
@@ -1905,7 +2069,8 @@ public final class CombatModule implements ServantAiModule {
       double slamDamage = baseAtk * SLAM_DAMAGE_MULTIPLIER;
       DamageSource src = entity.damageSources().mobAttack(entity);
       boolean heavySlam = entity.getDefinition() != null && entity.getDefinition().classType() == ServantClassType.BERSERKER;
-      double slamRadius = heavySlam ? SLAM_RADIUS + 3.0 : SLAM_RADIUS + 1.25;
+      double terrainScale = terrainBreakScale(entity);
+      double slamRadius = (heavySlam ? SLAM_RADIUS + 3.0 : SLAM_RADIUS + 1.25) * terrainScale;
       AABB box = entity.getBoundingBox().inflate(slamRadius);
       List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
          LivingEntity.class, box, e -> e != entity && e.isAlive());
@@ -1915,18 +2080,20 @@ public final class CombatModule implements ServantAiModule {
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
          if (dist > 0) {
-            double kb = (heavySlam ? 2.4 : 1.55) * (1.0 - dist / slamRadius);
-            le.push(dx / dist * kb, heavySlam ? 0.75 : 0.52, dz / dist * kb);
-            le.hurtMarked = true;
+            double kb = Math.max(0.55, (heavySlam ? 3.2 : 2.1) * (1.0 - dist / slamRadius));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, heavySlam ? 0.95 : 0.68, heavySlam ? 2.8 : 2.2, heavySlam ? 24 : 16);
          }
       }
       sl.sendParticles(ParticleTypes.EXPLOSION,
          entity.getX(), entity.getY() + 0.5, entity.getZ(),
-         5, 2.0, 0.5, 2.0, 0.0);
+         heavySlam ? 10 : 7, 2.6, 0.65, 2.6, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         entity.getX(), entity.getY() + 0.25, entity.getZ(),
+         heavySlam ? 90 : 58, slamRadius * 0.35, 0.45, slamRadius * 0.35, 0.06);
       // 砸地地形破坏：3格半径内破坏软方块
       BlockPos center = entity.blockPosition();
-      int radius = heavySlam ? 6 : 4;
-      int maxBroken = heavySlam ? 96 : 48;
+      int radius = Math.max(1, (int)Math.ceil((heavySlam ? 6 : 4) * terrainScale));
+      int maxBroken = scaledBreakLimit(heavySlam ? 96 : 48, terrainScale);
       int broken = 0;
       for (BlockPos pos : BlockPos.betweenClosed(
             center.offset(-radius, -1, -radius),
@@ -1934,12 +2101,16 @@ public final class CombatModule implements ServantAiModule {
          if (broken >= maxBroken) {
             break;
          }
+         if (!isInIrregularBreakShape(sl, pos, center, radius + (heavySlam ? 0.65 : 0.35), heavySlam ? 1.05 : 0.85, 0.85, heavySlam ? 0.76 : 0.68)) {
+            continue;
+         }
          BlockState state = sl.getBlockState(pos);
          float hardness = state.getDestroySpeed(sl, pos);
          if (!state.isAir() && hardness >= 0 && hardness < (heavySlam ? 90 : 55)
                && !state.is(Blocks.BEDROCK)) {
-            sl.removeBlock(pos, false);
-            broken++;
+            if (destroyBlockWithCombatFx(sl, pos, state, heavySlam)) {
+               broken++;
+            }
          }
       }
    }
@@ -1954,48 +2125,47 @@ public final class CombatModule implements ServantAiModule {
       if (!(entity.level() instanceof ServerLevel sl)) return;
       Vec3 look = entity.getLookAngle();
       Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
-      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
-      double sweepDamage = baseAtk * 1.2;
+      double sweepDamage = entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2;
       DamageSource src = entity.damageSources().mobAttack(entity);
 
-      // 扇形3格范围，前方180度
-      for (double r = 0.5; r <= 3.0; r += 0.5) {
+      int sweepBroken = 0;
+      double terrainScale = terrainBreakScale(entity);
+      int sweepLimit = scaledBreakLimit(40, terrainScale);
+      for (double r = 0.5; r <= 5.0 * terrainScale && sweepBroken < sweepLimit; r += 0.5) {
          for (double theta = -Math.PI / 2; theta <= Math.PI / 2; theta += Math.PI / 8) {
             double x = look.x * Math.cos(theta) - look.z * Math.sin(theta);
             double z = look.x * Math.sin(theta) + look.z * Math.cos(theta);
             Vec3 offset = new Vec3(x, 0, z).normalize().scale(r);
             BlockPos pos = BlockPos.containing(center.add(offset));
+            if (blockNoise(sl, pos) > 0.80 && r > 1.5) {
+               continue;
+            }
             BlockState state = sl.getBlockState(pos);
-            if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0
-                  || state.getFluidState().isSource())) {
-               sl.removeBlock(pos, false);
+            if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0.0F || state.getFluidState().isSource())) {
+               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
+                  sweepBroken++;
+               }
+               if (sweepBroken >= sweepLimit) {
+                  break;
+               }
             }
          }
       }
 
-      // 扇形范围伤害
-      AABB sweepBox = entity.getBoundingBox().inflate(3.0).move(look.scale(1.5));
-      List<LivingEntity> nearby = sl.getEntitiesOfClass(
-         LivingEntity.class, sweepBox,
-         e -> e != entity && e.isAlive());
+      AABB sweepBox = entity.getBoundingBox().inflate(4.5).move(look.scale(2.0));
+      List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, sweepBox, e -> e != entity && e.isAlive());
       for (LivingEntity le : nearby) {
-         le.hurt(src, (float) sweepDamage);
+         le.hurt(src, (float)sweepDamage);
          double dx = le.getX() - entity.getX();
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
-         if (dist > 0) {
-            double kb = 0.8 * (1.0 - dist / 3.0);
-            le.push(dx / dist * kb, 0.3, dz / dist * kb);
-            le.hurtMarked = true;
+         if (dist > 0.0) {
+            double kb = Math.max(0.35, 1.55 * (1.0 - dist / 4.5));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.45, 1.8, 12);
          }
       }
 
-      // 横扫粒子特效
-      sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-         entity.getX() + look.x * 1.5,
-         entity.getY() + entity.getBbHeight() * 0.5,
-         entity.getZ() + look.z * 1.5,
-         3, 0.0, 0.0, 0.0, 0.0);
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK, entity.getX() + look.x * 1.5, entity.getY() + entity.getBbHeight() * 0.5, entity.getZ() + look.z * 1.5, 6, 0.0, 0.0, 0.0, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX() + look.x * 2.2, entity.getY() + 0.25, entity.getZ() + look.z * 2.2, 38, 1.35, 0.28, 1.35, 0.055);
    }
 }

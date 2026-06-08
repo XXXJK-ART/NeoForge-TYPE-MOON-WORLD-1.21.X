@@ -144,7 +144,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                this.getX(),
                this.getY(),
                this.getZ(),
-               SoundEvents.GENERIC_EXPLODE,
+               SoundEvents.GENERIC_EXPLODE.value(),
                SoundSource.HOSTILE,
                4.0F,
                (1.0F + (this.level().random.nextFloat() - this.level().random.nextFloat()) * 0.2F) * 0.7F
@@ -230,7 +230,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                   this.getX(),
                   this.getY(),
                   this.getZ(),
-                  SoundEvents.GENERIC_EXPLODE,
+                  SoundEvents.GENERIC_EXPLODE.value(),
                   SoundSource.HOSTILE,
                   4.0F,
                   (1.0F + (this.level().random.nextFloat() - this.level().random.nextFloat()) * 0.2F) * 0.7F

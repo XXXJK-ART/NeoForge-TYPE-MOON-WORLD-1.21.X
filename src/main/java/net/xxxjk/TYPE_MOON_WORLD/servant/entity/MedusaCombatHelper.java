@@ -190,6 +190,11 @@ public final class MedusaCombatHelper {
          return;
       }
 
+      if (entity.isPerformingAction() || entity.isRoaring() || entity.isSlamming()) {
+         performCloseRangePressure(entity, target, distance, now);
+         return;
+      }
+
       if (shouldUseCybele(entity, target, distance, highThreat, now)) {
          castCybele(entity, target, now);
          return;
@@ -729,7 +734,7 @@ public final class MedusaCombatHelper {
       entity.getNavigation().stop();
       entity.getMoveControl().strafe(0.25F, entity.getRandom().nextBoolean() ? 0.9F : -0.9F);
 
-      if (now - entity.getPersistentData().getLong(TAG_LAST_BASIC_MAUL_TICK) >= BASIC_MAUL_COOLDOWN) {
+      if (!entity.isPerformingAction() && now - entity.getPersistentData().getLong(TAG_LAST_BASIC_MAUL_TICK) >= BASIC_MAUL_COOLDOWN) {
          entity.getPersistentData().putLong(TAG_LAST_BASIC_MAUL_TICK, now);
          entity.triggerBasicAttackAnimation();
          target.invulnerableTime = 0;
@@ -1749,10 +1754,17 @@ public final class MedusaCombatHelper {
       int length = charging ? 7 : 4;
       int radius = charging ? 2 : 1;
       int height = charging ? 4 : 2;
+      int broken = 0;
+      int maxBroken = charging ? 80 : 24;
       for (int i = 0; i < length; i++) {
          BlockPos check = base.offset((int)Math.round(forward.x * (i + 1)), 0, (int)Math.round(forward.z * (i + 1)));
          for (BlockPos pos : BlockPos.betweenClosed(check.offset(-radius, -1, -radius), check.offset(radius, height, radius))) {
-            destroyRideBlock(level, pos, charging);
+            if (destroyRideBlock(level, pos, charging) && ++broken >= maxBroken) {
+               break;
+            }
+         }
+         if (broken >= maxBroken) {
+            break;
          }
       }
       if (charging && pegasus.tickCount % 3 == 0) {
@@ -1761,12 +1773,14 @@ public final class MedusaCombatHelper {
       }
    }
 
-   private static void destroyRideBlock(ServerLevel level, BlockPos pos, boolean charging) {
+   private static boolean destroyRideBlock(ServerLevel level, BlockPos pos, boolean charging) {
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
       if (!state.isAir() && hardness >= 0.0F && hardness < (charging ? 75.0F : 30.0F) && !state.is(Blocks.BEDROCK)) {
          level.removeBlock(pos, false);
+         return true;
       }
+      return false;
    }
 
    private static void spawnDefenseFx(MedusaEntity entity) {

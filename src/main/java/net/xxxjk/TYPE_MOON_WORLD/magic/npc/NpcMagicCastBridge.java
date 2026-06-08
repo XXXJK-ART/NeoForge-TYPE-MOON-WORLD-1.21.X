@@ -1626,7 +1626,7 @@ public final class NpcMagicCastBridge {
             }
          }
 
-         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.45F, 1.25F);
+         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.45F, 1.25F);
          return true;
       }
    }

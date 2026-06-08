@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai.module;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Mob;
@@ -29,17 +31,22 @@ public final class HostileTargetingModule implements ServantAiModule {
    private static final String LAST_TARGET_SCAN_TICK = "ServantLastTargetScanTick";
    private static final int TARGET_SCAN_INTERVAL_TICKS = 5;
    private static final int AGGRESSION_MEMORY_TICKS = 200;
+   private static final double MAX_TARGET_SCAN_RANGE = 32.0;
+   private static final double MAX_LAGUZ_TARGET_SCAN_RANGE = 48.0;
+   private static final int MAX_TARGET_CANDIDATES_PER_SCAN = 96;
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
-      double aggressionRange = Math.max(16.0, context.behaviorProfile().aggressionRange());
-      if (CuChulainnCombatHelper.isLaguzActive(entity)) {
-         aggressionRange *= 2.0;
-      }
+      boolean laguzActive = CuChulainnCombatHelper.isLaguzActive(entity);
+      double profileRange = Math.max(16.0, context.behaviorProfile().aggressionRange());
+      double aggressionRange = Math.min(laguzActive ? MAX_LAGUZ_TARGET_SCAN_RANGE : MAX_TARGET_SCAN_RANGE, laguzActive ? profileRange * 1.5 : profileRange);
       MoralAxis morality = entity.getMoralAxis();
       PrincipleAxis principle = entity.getPrincipleAxis();
       LivingEntity currentTarget = entity.getTarget();
-      if (isValidCurrentTarget(entity, currentTarget, aggressionRange, morality, principle)) {
+      ServantFaction faction = entity.getDefinition() != null
+         ? entity.getDefinition().faction()
+         : ServantFaction.HUMAN;
+      if (isValidCurrentTarget(entity, currentTarget, faction, aggressionRange, morality, principle)) {
          return;
       }
 
@@ -50,23 +57,20 @@ public final class HostileTargetingModule implements ServantAiModule {
       }
       entity.getPersistentData().putLong(LAST_TARGET_SCAN_TICK, gameTick);
 
-      ServantFaction faction = entity.getDefinition() != null
-         ? entity.getDefinition().faction()
-         : ServantFaction.HUMAN;
-
       LivingEntity bestTarget = null;
       double bestScore = Double.NEGATIVE_INFINITY;
+      TargetScan scan = createTargetScan(entity, aggressionRange);
+      int checked = 0;
 
-      for (LivingEntity le : entity.level().getEntitiesOfClass(
-         LivingEntity.class,
-         entity.getBoundingBox().inflate(aggressionRange),
-         e -> e != entity && e.isAlive()
-      )) {
-         if (!isHostileTo(le, faction, entity, morality, principle, aggressionRange)) {
+      for (LivingEntity le : scan.nearbyLiving()) {
+         if (++checked > MAX_TARGET_CANDIDATES_PER_SCAN) {
+            break;
+         }
+         if (!isHostileTo(le, faction, entity, morality, principle, scan)) {
             continue;
          }
 
-         double score = scoreTarget(entity, le, aggressionRange, morality, principle);
+         double score = scoreTarget(entity, le, aggressionRange, morality, principle, scan);
          if (score > bestScore) {
             bestScore = score;
             bestTarget = le;
@@ -80,39 +84,46 @@ public final class HostileTargetingModule implements ServantAiModule {
       }
    }
 
-   private static boolean isValidCurrentTarget(ServantEntity entity, LivingEntity target, double aggressionRange, MoralAxis morality, PrincipleAxis principle) {
+   private static boolean isValidCurrentTarget(
+      ServantEntity entity,
+      LivingEntity target,
+      ServantFaction faction,
+      double aggressionRange,
+      MoralAxis morality,
+      PrincipleAxis principle
+   ) {
       if (target == null || target.isDeadOrDying() || !target.isAlive()) {
          return false;
       }
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
-      if (!isHostileTo(
-         target,
-         entity.getDefinition() != null ? entity.getDefinition().faction() : ServantFaction.HUMAN,
-         entity,
-         morality,
-         principle,
-         aggressionRange
-      )) {
-         return false;
-      }
-
       double maxDistanceSqr = aggressionRange * aggressionRange * 1.35;
       double targetDistanceSqr = entity.distanceToSqr(target);
       if (targetDistanceSqr > maxDistanceSqr) {
          return false;
       }
 
-      return entity.getSensing().hasLineOfSight(target) || targetDistanceSqr < 16.0;
+      if (!entity.getSensing().hasLineOfSight(target) && targetDistanceSqr >= 16.0) {
+         return false;
+      }
+
+      return isHostileTo(target, faction, entity, morality, principle, createTargetScan(entity, aggressionRange));
    }
 
-   private static double scoreTarget(ServantEntity entity, LivingEntity target, double aggressionRange, MoralAxis morality, PrincipleAxis principle) {
+   private static double scoreTarget(
+      ServantEntity entity,
+      LivingEntity target,
+      double aggressionRange,
+      MoralAxis morality,
+      PrincipleAxis principle,
+      TargetScan scan
+   ) {
       double distanceSqr = entity.distanceToSqr(target);
       double score = aggressionRange * aggressionRange - distanceSqr;
 
       if (isImmediateThreat(entity, target)) score += 220.0;
-      if (hasAttackedProtectedEntity(entity, target, morality, aggressionRange)) score += 180.0;
+      if (hasAttackedProtectedEntity(entity, target, morality, scan)) score += 180.0;
       if (entity.getSensing().hasLineOfSight(target)) {
          score += 40.0;
       }
@@ -142,7 +153,7 @@ public final class HostileTargetingModule implements ServantAiModule {
       ServantEntity self,
       MoralAxis morality,
       PrincipleAxis principle,
-      double aggressionRange
+      TargetScan scan
    ) {
       if (other == null
          || !other.isAlive()
@@ -167,14 +178,14 @@ public final class HostileTargetingModule implements ServantAiModule {
          return true;
       }
 
-      if (hasAttackedProtectedEntity(self, other, morality, aggressionRange)) {
+      if (hasAttackedProtectedEntity(self, other, morality, scan)) {
          return true;
       }
 
       return switch (morality) {
          case GOOD -> isGoodHostile(self, other, principle);
-         case NEUTRAL -> isNeutralHostile(self, other, principle, aggressionRange);
-         case EVIL -> isEvilHostile(self, other, principle, myFaction, aggressionRange);
+         case NEUTRAL -> isNeutralHostile(self, other, principle, scan);
+         case EVIL -> isEvilHostile(self, other, principle, myFaction, scan);
       };
    }
 
@@ -188,14 +199,14 @@ public final class HostileTargetingModule implements ServantAiModule {
       return false;
    }
 
-   private static boolean isNeutralHostile(ServantEntity self, LivingEntity other, PrincipleAxis principle, double aggressionRange) {
+   private static boolean isNeutralHostile(ServantEntity self, LivingEntity other, PrincipleAxis principle, TargetScan scan) {
       if (principle == PrincipleAxis.NEUTRAL && isLowHealth(self)) {
          return isVanillaHostile(other) || other instanceof ServantEntity || other instanceof Player;
       }
       if (principle == PrincipleAxis.CHAOTIC) {
          return true;
       }
-      return hasAttackedNearbyServant(self, other, aggressionRange);
+      return hasAttackedNearbyServant(other, scan);
    }
 
    private static boolean isEvilHostile(
@@ -203,7 +214,7 @@ public final class HostileTargetingModule implements ServantAiModule {
       LivingEntity other,
       PrincipleAxis principle,
       ServantFaction myFaction,
-      double aggressionRange
+      TargetScan scan
    ) {
       if (isFriendlyCreature(other)) {
          return true;
@@ -212,7 +223,7 @@ public final class HostileTargetingModule implements ServantAiModule {
          return principle != PrincipleAxis.ORDERLY || isImmediateThreat(self, other);
       }
       if (other instanceof Player) {
-         return principle == PrincipleAxis.CHAOTIC || principle == PrincipleAxis.NEUTRAL && hasAttackedEnemyMob(other, self, aggressionRange);
+         return principle == PrincipleAxis.CHAOTIC || principle == PrincipleAxis.NEUTRAL && hasAttackedEnemyMob(other, self, scan);
       }
       if (other instanceof ServantEntity otherServant) {
          if (principle == PrincipleAxis.ORDERLY) {
@@ -231,14 +242,14 @@ public final class HostileTargetingModule implements ServantAiModule {
       return candidate instanceof Mob mob && mob.getTarget() == self;
    }
 
-   private static boolean hasAttackedProtectedEntity(ServantEntity self, LivingEntity candidate, MoralAxis morality, double aggressionRange) {
-      if (hasAttackedNearbyServant(self, candidate, aggressionRange)) {
+   private static boolean hasAttackedProtectedEntity(ServantEntity self, LivingEntity candidate, MoralAxis morality, TargetScan scan) {
+      if (hasAttackedNearbyServant(candidate, scan)) {
          return true;
       }
       if (morality != MoralAxis.GOOD) {
          return false;
       }
-      for (LivingEntity nearby : self.level().getEntitiesOfClass(LivingEntity.class, self.getBoundingBox().inflate(aggressionRange), LivingEntity::isAlive)) {
+      for (LivingEntity nearby : scan.nearbyLiving()) {
          if (nearby == self || nearby == candidate || !isFriendlyCreature(nearby)) {
             continue;
          }
@@ -249,12 +260,8 @@ public final class HostileTargetingModule implements ServantAiModule {
       return false;
    }
 
-   private static boolean hasAttackedNearbyServant(ServantEntity self, LivingEntity candidate, double aggressionRange) {
-      for (ServantEntity nearbyServant : self.level().getEntitiesOfClass(
-         ServantEntity.class,
-         self.getBoundingBox().inflate(aggressionRange),
-         target -> target != self && target.isAlive()
-      )) {
+   private static boolean hasAttackedNearbyServant(LivingEntity candidate, TargetScan scan) {
+      for (ServantEntity nearbyServant : scan.nearbyServants()) {
          if (wasRecentlyAttackedBy(nearbyServant, candidate)) {
             return true;
          }
@@ -262,8 +269,8 @@ public final class HostileTargetingModule implements ServantAiModule {
       return false;
    }
 
-   private static boolean hasAttackedEnemyMob(LivingEntity candidate, ServantEntity self, double aggressionRange) {
-      for (LivingEntity nearby : self.level().getEntitiesOfClass(LivingEntity.class, self.getBoundingBox().inflate(aggressionRange), LivingEntity::isAlive)) {
+   private static boolean hasAttackedEnemyMob(LivingEntity candidate, ServantEntity self, TargetScan scan) {
+      for (LivingEntity nearby : scan.nearbyLiving()) {
          if (nearby == self || nearby == candidate || !isVanillaHostile(nearby)) {
             continue;
          }
@@ -276,6 +283,24 @@ public final class HostileTargetingModule implements ServantAiModule {
 
    private static boolean wasRecentlyAttackedBy(LivingEntity victim, LivingEntity attacker) {
       return victim.getLastHurtByMob() == attacker && victim.tickCount - victim.getLastHurtByMobTimestamp() <= AGGRESSION_MEMORY_TICKS;
+   }
+
+   private static TargetScan createTargetScan(ServantEntity self, double aggressionRange) {
+      List<LivingEntity> nearbyLiving = self.level().getEntitiesOfClass(
+         LivingEntity.class,
+         self.getBoundingBox().inflate(aggressionRange),
+         target -> target != self && target.isAlive()
+      );
+      List<ServantEntity> nearbyServants = new ArrayList<>();
+      for (LivingEntity living : nearbyLiving) {
+         if (living instanceof ServantEntity servant) {
+            nearbyServants.add(servant);
+         }
+      }
+      return new TargetScan(nearbyLiving, nearbyServants);
+   }
+
+   private record TargetScan(List<LivingEntity> nearbyLiving, List<ServantEntity> nearbyServants) {
    }
 
    private static boolean isFriendlyCreature(LivingEntity other) {

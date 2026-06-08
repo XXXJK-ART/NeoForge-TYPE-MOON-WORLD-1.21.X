@@ -537,7 +537,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
          // 鐮稿湴闊虫晥
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
-            SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 0.5F);
+            SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.5F, 0.5F);
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 1.0F, 0.6F);
       }
@@ -645,7 +645,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.HOSTILE, 1.5F, 0.5F);
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
-            SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.8F, 0.7F);
+            SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.8F, 0.7F);
       }
    }
 

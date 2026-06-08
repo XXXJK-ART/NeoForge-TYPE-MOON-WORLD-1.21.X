@@ -188,6 +188,10 @@ public final class MedeaCombatHelper {
          && tryCastSpell(entity, now, SpellType.RETURN_TO_WORKSHOP, () -> castReturnToWorkshop(entity, now))) {
          return;
       }
+      if (entity.isPerformingAction() || entity.isRoaring() || entity.isSlamming()) {
+         maintainCasterSpacing(entity, closeThreat != null ? closeThreat : target, now, distance);
+         return;
+      }
       if (closeThreat != null) {
          if (insideWorkshop
             && canWorkshopEmergencyTeleport(entity, now)
@@ -260,6 +264,7 @@ public final class MedeaCombatHelper {
             return;
          }
          if (canCastBolt(entity, now) && tryCastSpell(entity, now, SpellType.BOLT, () -> castBolt(entity, spellTarget, now))) {
+            return;
          }
          return;
       }
@@ -332,6 +337,7 @@ public final class MedeaCombatHelper {
         return;
       }
       if (canCastBolt(entity, now) && tryCastSpell(entity, now, SpellType.BOLT, () -> castBolt(entity, spellTarget, now))) {
+         return;
       }
    }
 
@@ -572,7 +578,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.3, center.z, 2, 0.15, 0.15, 0.15, 0.0);
       level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.25, center.z, 18, 0.45, 0.7, 0.45, 0.02);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 12, 0.3, 0.55, 0.3, 0.03);
-      target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 30.0F));
+      target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
       target.invulnerableTime = 0;
       level.playSound(null, BlockPos.containing(center), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 0.9F, 1.2F);
       queueStaffClear(entity, 14);
@@ -607,7 +613,7 @@ public final class MedeaCombatHelper {
          level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y + 0.3, center.z, 18, 0.22, 0.35, 0.22, 0.04);
          level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.45, center.z, 1, 0.0, 0.0, 0.0, 0.0);
          victim.invulnerableTime = 0;
-         victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 30.0F));
+         victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
          victim.invulnerableTime = 0;
          spawnLightningBolts(level, center, 1);
          strikes++;
@@ -861,7 +867,7 @@ public final class MedeaCombatHelper {
 
          Vec3 current = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
          boolean trapped = current.distanceToSqr(anchor) <= 2.75 * 2.75;
-         float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, trapped ? 19.0F : 10.0F);
+         float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, trapped ? 24.0F : 15.0F);
          target.invulnerableTime = 0;
          target.hurt(entity.damageSources().magic(), damage);
          target.invulnerableTime = 0;
@@ -906,7 +912,7 @@ public final class MedeaCombatHelper {
       entity.triggerRuneCastAnimation();
       ServantVoiceHelper.tryPlaySpell(entity);
       int shotCount = entity.isFlyingMode() ? 2 : 1;
-      float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, entity.isFlyingMode() ? 17.0F : 14.0F);
+      float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, entity.isFlyingMode() ? 22.0F : 19.0F);
       for (int i = 0; i < shotCount; i++) {
          final int idx = i;
          TYPE_MOON_WORLD.queueServerWork(i * 3 + 1, () -> {
@@ -957,7 +963,7 @@ public final class MedeaCombatHelper {
       for (int i = -1; i <= 1; i++) {
          Vec3 shotDirection = direction.add(side.scale(0.09 * i)).normalize();
          Vec3 shotSpawn = spawnPos.add(side.scale(0.18 * i));
-         spawnBoltProjectile(level, entity, shotSpawn, shotDirection, MedeaMagicBoltEntity.Mode.FIRE_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 11.0F), 2.45F, 0.0F);
+         spawnBoltProjectile(level, entity, shotSpawn, shotDirection, MedeaMagicBoltEntity.Mode.FIRE_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 16.0F), 2.45F, 0.0F);
       }
       Vec3 impact = target.position().add(0.0, 0.1, 0.0);
       level.sendParticles(ParticleTypes.FLAME, impact.x, impact.y + 0.6, impact.z, 24, 0.65, 0.45, 0.65, 0.04);
@@ -993,7 +999,7 @@ public final class MedeaCombatHelper {
          }
          Vec3 current = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
          target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 9.0F));
+         target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 14.0F));
          target.invulnerableTime = 0;
          serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, current.x, current.y, current.z, 18, 0.28, 0.4, 0.28, 0.02);
       });
@@ -1024,7 +1030,7 @@ public final class MedeaCombatHelper {
             push = push.normalize();
          }
          living.push(push.x * 1.4, 0.55, push.z * 1.4);
-         living.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 8.0F));
+         living.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 13.0F));
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 50, 0, false, true, true));
          living.hurtMarked = true;
       }
@@ -1077,7 +1083,7 @@ public final class MedeaCombatHelper {
                spawn,
                shotDirection,
                modes[idx],
-               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 8.0F + idx * 0.5F),
+               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 13.0F + idx * 0.5F),
                2.7F,
                0.0F
             );
@@ -1109,7 +1115,7 @@ public final class MedeaCombatHelper {
       for (Vec3 start : starts) {
          Vec3 beamDir = end.subtract(start).normalize();
          spawnMagicCircle(level, start.subtract(beamDir.scale(0.35)), beamDir, 0.66F);
-         MedeaBeamEffectEntity beam = new MedeaBeamEffectEntity(level, entity, start, end, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 15.0F), 8);
+         MedeaBeamEffectEntity beam = new MedeaBeamEffectEntity(level, entity, start, end, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 20.0F), 8);
          level.addFreshEntity(beam);
          level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 10, 0.14, 0.14, 0.14, 0.03);
          level.sendParticles(CIRCLE_PRIMARY, start.x, start.y, start.z, 4, 0.08, 0.08, 0.08, 0.0);
@@ -1151,7 +1157,7 @@ public final class MedeaCombatHelper {
                spawn,
                shotDirection,
                idx == 2 ? MedeaMagicBoltEntity.Mode.FROST_BOLT : idx == 4 ? MedeaMagicBoltEntity.Mode.FIRE_BOLT : MedeaMagicBoltEntity.Mode.BOLT,
-               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 7.5F),
+               MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 12.5F),
                2.55F,
                0.0F
             );
@@ -1250,7 +1256,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 14, 0.22, 0.28, 0.22, 0.08);
       level.sendParticles(ParticleTypes.ENCHANT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 18, 0.25, 0.35, 0.25, 0.03);
       applyRuleBreakerHit(target, entity);
-      target.hurt(entity.damageSources().mobAttack(entity), 8.0F);
+      target.hurt(entity.damageSources().mobAttack(entity), 13.0F);
       target.invulnerableTime = 0;
       TYPE_MOON_WORLD.queueServerWork(18, () -> {
          if (entity.isAlive() && entity.getTemporaryFocusItem() == MedeaEntity.FocusItem.RULE_BREAKER) {
