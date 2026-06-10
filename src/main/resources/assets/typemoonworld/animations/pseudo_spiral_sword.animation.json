@@ -1,0 +1,20 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"1": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"bone4": {
+					"scale": {
+						"vector": [0.9, 1, 1]
+					}
+				},
+				"bone5": {
+					"scale": {
+						"vector": [0.8, 1, 0.9]
+					}
+				}
+			}
+		}
+	}
+}

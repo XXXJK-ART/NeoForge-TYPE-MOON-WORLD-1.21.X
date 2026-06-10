@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -44,6 +45,7 @@ import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -71,6 +73,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 )
 public class CommonEvents {
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
+   private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
+   private static final String BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG = "BattleContinuationLastHealTick";
+   private static final double BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO = 0.20;
+   private static final float BATTLE_CONTINUATION_HEAL_AMOUNT = 10.0F;
+   private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
 
    @SubscribeEvent
@@ -311,6 +318,9 @@ public class CommonEvents {
                event.setCanceled(true);
             } else {
                if (event.getEntity() instanceof LivingEntity living) {
+                  if (tryRedirectRhoAiasDamage(living, event)) {
+                     return;
+                  }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
                }
                if (event.getSource().is(DamageTypes.FALL)) {
@@ -499,7 +509,7 @@ public class CommonEvents {
          CuChulainnCombatHelper.markCombat(servant);
          if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
             && !CuChulainnCombatHelper.isMovementRestricted(servant)
-            && !event.getSource().is(DamageTypes.EXPLOSION)
+            && !event.getSource().is(DamageTypeTags.IS_EXPLOSION)
             && event.getSource().getDirectEntity() instanceof Projectile projectile
             && projectile.getOwner() != servant) {
             if (servant.level() instanceof ServerLevel sl) {
@@ -602,12 +612,17 @@ public class CommonEvents {
 
       // --- 战斗续行 A：致死时保留 1HP + 5s 无敌，5min CD ---
       // 斩断因果时跳过
-      if (!causalSevered && data.getBoolean("BattleContinuationActive") && servant.getHealth() - event.getAmount() <= 0) {
+      if (!causalSevered && data.getBoolean("BattleContinuationActive")
+         && canTriggerBattleContinuation(data)
+         && servant.getHealth() - event.getAmount() <= servant.getMaxHealth() * BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO) {
          int cd = data.getInt("BattleContinuationCooldown");
          if (cd <= 0) {
             event.setCanceled(true);
-            servant.setHealth(1.0F);
+            event.setAmount(0.0F);
+            servant.setHealth(Math.max(1.0F, servant.getMaxHealth() * (float)BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO));
             servant.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 3, false, false, true));
+            data.putBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG, true);
+            data.remove(BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG);
             data.putInt("BattleContinuationCooldown",
                data.getInt("BattleContinuationMaxCooldown"));
 
@@ -627,6 +642,10 @@ public class CommonEvents {
 
    // ======================== 从者冷却计时器 ========================
 
+   private static boolean canTriggerBattleContinuation(CompoundTag data) {
+      return !data.getBoolean("GodHandActive") || data.getInt("GodHandLives") <= 0;
+   }
+
    @SubscribeEvent
    public static void onServantLevelTick(net.neoforged.neoforge.event.tick.LevelTickEvent.Post event) {
       if (event.getLevel().isClientSide()) return;
@@ -641,29 +660,42 @@ public class CommonEvents {
                   data.putInt("BattleContinuationCooldown",
                      data.getInt("BattleContinuationCooldown") - 1);
                }
-               // 赫拉克勒斯被动回血：每2秒回复1HP（God Hand或BattleContinuation激活时）
-               if (data.getBoolean("GodHandActive") || data.getBoolean("BattleContinuationActive")) {
-                  int regenTick = data.getInt("HeraclesRegenTick");
-                  if (regenTick >= 40) {
-                     data.putInt("HeraclesRegenTick", 0);
-                     if (servant.getHealth() < servant.getMaxHealth()) {
-                        servant.heal(1.0F);
-                        if (sl instanceof ServerLevel sLevel) {
-                           sLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                              servant.getX() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
-                              servant.getY() + servant.getBbHeight(),
-                              servant.getZ() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
-                              3, 0.03, 0.05, 0.03, 0.0);
-                        }
-                     }
-                  } else {
-                     data.putInt("HeraclesRegenTick", regenTick + 1);
-                  }
-               }
+               tickBattleContinuationRecovery(servant, data, sl);
                // 战斗续行无敌倒计时结束后清除无敌
                // （MobEffect 自动过期，无需额外处理）
             }
          });
+      }
+   }
+
+   private static void tickBattleContinuationRecovery(ServantEntity servant, CompoundTag data, ServerLevel level) {
+      if (!data.getBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG)) {
+         return;
+      }
+
+      if (!servant.isAlive() || servant.getHealth() >= servant.getMaxHealth()) {
+         data.remove(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG);
+         data.remove(BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG);
+         return;
+      }
+
+      long now = level.getGameTime();
+      long lastHealTick = data.getLong(BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG);
+      if (lastHealTick > 0L && now - lastHealTick < BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS) {
+         return;
+      }
+
+      servant.heal(BATTLE_CONTINUATION_HEAL_AMOUNT);
+      data.putLong(BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG, now);
+      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         servant.getX() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
+         servant.getY() + servant.getBbHeight(),
+         servant.getZ() + (servant.getRandom().nextDouble() - 0.5) * 0.6,
+         3, 0.03, 0.05, 0.03, 0.0);
+
+      if (servant.getHealth() >= servant.getMaxHealth()) {
+         data.remove(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG);
+         data.remove(BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG);
       }
    }
 
@@ -818,6 +850,51 @@ public class CommonEvents {
       }
    }
 
+   private static boolean tryRedirectRhoAiasDamage(LivingEntity living, LivingIncomingDamageEvent event) {
+      if (!(living.level() instanceof ServerLevel level) || event.getAmount() <= 0.0F) {
+         return false;
+      }
+
+      for (RhoAiasEntity shield : level.getEntitiesOfClass(
+         RhoAiasEntity.class,
+         living.getBoundingBox().inflate(8.0),
+         entity -> entity.isAlive() && entity.protects(living)
+      )) {
+         float incoming = event.getAmount();
+         float absorbed = shield.absorb(incoming);
+         float remaining = Math.max(0.0F, incoming - absorbed);
+         level.sendParticles(
+            ParticleTypes.END_ROD,
+            living.getX(),
+            living.getY() + living.getBbHeight() * 0.55,
+            living.getZ(),
+            8,
+            0.25,
+            0.25,
+            0.25,
+            0.01
+         );
+         level.sendParticles(
+            ParticleTypes.ENCHANT,
+            shield.getX(),
+            shield.getY(),
+            shield.getZ(),
+            12,
+            0.5,
+            0.5,
+            0.5,
+            0.02
+         );
+         if (remaining <= 0.0F) {
+            event.setCanceled(true);
+            return true;
+         }
+         event.setAmount(remaining);
+         return false;
+      }
+      return false;
+   }
+
    @SubscribeEvent
    public static void onEffectAdded(Added event) {
       if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
@@ -825,6 +902,9 @@ public class CommonEvents {
       } else {
          LivingEntity living = event.getEntity();
          MobEffectInstance effectInstance = event.getEffectInstance();
+         if (living != null && effectInstance != null && tryRedirectRhoAiasEffect(living, effectInstance)) {
+            return;
+         }
          if (living != null
             && effectInstance != null
             && effectInstance.getDuration() > 1
@@ -914,6 +994,35 @@ public class CommonEvents {
             );
          }
       }
+   }
+
+   private static boolean tryRedirectRhoAiasEffect(LivingEntity living, MobEffectInstance effectInstance) {
+      if (!(living.level() instanceof ServerLevel level)
+         || effectInstance.getEffect().value().getCategory() != net.minecraft.world.effect.MobEffectCategory.HARMFUL) {
+         return false;
+      }
+
+      for (RhoAiasEntity shield : level.getEntitiesOfClass(
+         RhoAiasEntity.class,
+         living.getBoundingBox().inflate(8.0),
+         entity -> entity.isAlive() && entity.protects(living)
+      )) {
+         living.removeEffect(effectInstance.getEffect());
+         shield.absorb(10.0F + effectInstance.getAmplifier() * 5.0F);
+         level.sendParticles(
+            ParticleTypes.WAX_ON,
+            shield.getX(),
+            shield.getY(),
+            shield.getZ(),
+            10,
+            0.5,
+            0.5,
+            0.5,
+            0.02
+         );
+         return true;
+      }
+      return false;
    }
 
    private static void triggerNineLives(Player player, LivingEntity target, float damageBase) {

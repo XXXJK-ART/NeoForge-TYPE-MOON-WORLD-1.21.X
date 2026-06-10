@@ -20,6 +20,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
@@ -39,7 +40,16 @@ public final class HostileTargetingModule implements ServantAiModule {
    public void tick(ServantEntity entity, ServantAiContext context) {
       boolean laguzActive = CuChulainnCombatHelper.isLaguzActive(entity);
       double profileRange = Math.max(16.0, context.behaviorProfile().aggressionRange());
-      double aggressionRange = Math.min(laguzActive ? MAX_LAGUZ_TARGET_SCAN_RANGE : MAX_TARGET_SCAN_RANGE, laguzActive ? profileRange * 1.5 : profileRange);
+      boolean emiyaArcher = EmiyaArcherEntity.SERVANT_KEY.equals(entity.getServantId());
+      boolean clairvoyanceActive = emiyaArcher && entity.getPersistentData().getBoolean("ClairvoyanceActive");
+      double cap = laguzActive ? MAX_LAGUZ_TARGET_SCAN_RANGE : MAX_TARGET_SCAN_RANGE;
+      double scaledRange = laguzActive ? profileRange * 1.5 : profileRange;
+      if (emiyaArcher) {
+         double multiplier = clairvoyanceActive ? 4.0 : 2.0;
+         cap = MAX_TARGET_SCAN_RANGE * multiplier;
+         scaledRange = profileRange * multiplier;
+      }
+      double aggressionRange = Math.min(cap, scaledRange);
       MoralAxis morality = entity.getMoralAxis();
       PrincipleAxis principle = entity.getPrincipleAxis();
       LivingEntity currentTarget = entity.getTarget();

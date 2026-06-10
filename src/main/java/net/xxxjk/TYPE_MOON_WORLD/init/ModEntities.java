@@ -11,8 +11,10 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
@@ -26,20 +28,25 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ProjectionCircuitEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
 
@@ -98,6 +105,16 @@ public class ModEntities {
          .clientTrackingRange(4)
          .updateInterval(10)
          .build("ubw_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<UBWInterceptorSwordEntity>> UBW_INTERCEPTOR_SWORD = ENTITY_TYPES.register(
+      "ubw_interceptor_sword",
+      () -> Builder.<UBWInterceptorSwordEntity>of(
+            (entityType, level) -> new UBWInterceptorSwordEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.3F, 0.3F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("ubw_interceptor_sword")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GanderProjectileEntity>> GANDER_PROJECTILE = ENTITY_TYPES.register(
       "gander_projectile",
@@ -268,6 +285,55 @@ public class ModEntities {
          .clientTrackingRange(12)
          .updateInterval(1)
          .build("dirk_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArcherEntity>> EMIYA_ARCHER = ENTITY_TYPES.register(
+      "emiya_archer", () -> Builder.of(EmiyaArcherEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("emiya_archer")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<EmiyaThrownWeaponEntity>> EMIYA_THROWN_WEAPON = ENTITY_TYPES.register(
+      "emiya_thrown_weapon",
+      () -> Builder.<EmiyaThrownWeaponEntity>of(
+            (entityType, level) -> new EmiyaThrownWeaponEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.25F, 0.25F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("emiya_thrown_weapon")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<CrimsonHoundProjectileEntity>> CRIMSON_HOUND_PROJECTILE = ENTITY_TYPES.register(
+      "crimson_hound_projectile",
+      () -> Builder.<CrimsonHoundProjectileEntity>of(
+            (entityType, level) -> new CrimsonHoundProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.45F, 0.45F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("crimson_hound_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<PseudoSpiralSwordProjectileEntity>> PSEUDO_SPIRAL_SWORD_PROJECTILE = ENTITY_TYPES.register(
+      "pseudo_spiral_sword_projectile",
+      () -> Builder.<PseudoSpiralSwordProjectileEntity>of(
+            (entityType, level) -> new PseudoSpiralSwordProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.45F, 0.45F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("pseudo_spiral_sword_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<RhoAiasEntity>> RHO_AIAS_SHIELD = ENTITY_TYPES.register(
+      "rho_aias_shield",
+      () -> Builder.<RhoAiasEntity>of((entityType, level) -> new RhoAiasEntity(entityType, level), MobCategory.MISC)
+         .sized(3.5F, 3.5F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("rho_aias_shield")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<UbwSkyGearEntity>> UBW_SKY_GEAR = ENTITY_TYPES.register(
+      "ubw_sky_gear",
+      () -> Builder.<UbwSkyGearEntity>of((entityType, level) -> new UbwSkyGearEntity(entityType, level), MobCategory.MISC)
+         .sized(16.0F, 16.0F)
+         .clientTrackingRange(32)
+         .updateInterval(2)
+         .build("ubw_sky_gear")
    );
 
    public static void register(IEventBus eventBus) {

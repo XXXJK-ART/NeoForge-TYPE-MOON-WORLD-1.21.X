@@ -39,11 +39,13 @@ import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class UBWProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> VISUAL_COLOR = SynchedEntityData.defineId(UBWProjectileEntity.class, EntityDataSerializers.INT);
    private List<Entity> hitEntities = new ArrayList<>();
+   private boolean stainUbwTerrainOnImpact;
    public final List<net.minecraft.world.phys.Vec3> tracePos = new LinkedList<>();
 
    public UBWProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
@@ -71,6 +73,10 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
 
    public int getVisualColorRgb() {
       return (Integer)this.entityData.get(VISUAL_COLOR);
+   }
+
+   public void setStainUbwTerrainOnImpact(boolean stainUbwTerrainOnImpact) {
+      this.stainUbwTerrainOnImpact = stainUbwTerrainOnImpact;
    }
 
    public boolean shouldRenderAtSqrDistance(double distance) {
@@ -188,6 +194,10 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                if (this.level().setBlock(placePos, newState, 3)) {
                   if (this.level().getBlockEntity(placePos) instanceof UBWWeaponBlockEntity tile) {
                      tile.setStoredItem(this.getItem());
+                  }
+
+                  if (this.stainUbwTerrainOnImpact && this.level() instanceof ServerLevel serverLevel) {
+                     EmiyaArcherCombatHelper.markIronSwordImpactTerrain(serverLevel, this.getOwner(), hitPos);
                   }
 
                   if (this.getOwner() instanceof ServerPlayer player) {

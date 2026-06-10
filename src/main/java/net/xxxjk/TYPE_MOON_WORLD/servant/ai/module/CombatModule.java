@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
@@ -313,6 +314,9 @@ public final class CombatModule implements ServantAiModule {
       if (CuChulainnCombatHelper.isLaguzActive(entity)) {
          aggressionRange *= 2.0;
       }
+      if (EmiyaArcherEntity.SERVANT_KEY.equals(entity.getServantId())) {
+         aggressionRange *= entity.getPersistentData().getBoolean("ClairvoyanceActive") ? 4.0 : 2.0;
+      }
       double attackCommitDistance = Math.max(3.0, behaviorProfile.attackCommitDistance());
       double skillChanceScale = Math.max(0.75, Math.min(1.35, behaviorProfile.skillUsageFrequency() / 0.65));
       boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
@@ -395,7 +399,7 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      if (!gaeBolgWindingUp && canRecastStance && healthRatio < 0.3 && CuChulainnCombatHelper.canUseRecastStance(entity)
+      if (!gaeBolgWindingUp && canRecastStance && healthRatio < 0.2 && CuChulainnCombatHelper.canUseRecastStance(entity)
             && entity.getCurrentMp() >= CU_RECAST_MP_COST) {
          performRecastStance(entity);
          return;
@@ -1598,7 +1602,8 @@ public final class CombatModule implements ServantAiModule {
    private void performRecastStance(ServantEntity entity) {
       entity.setCurrentMp(entity.getCurrentMp() - CU_RECAST_MP_COST);
       entity.triggerRuneCastAnimation();
-      entity.setHealth(entity.getMaxHealth());
+      entity.getPersistentData().putBoolean("BattleContinuationRecoveryActive", true);
+      entity.getPersistentData().remove("BattleContinuationLastHealTick");
       java.util.List<net.minecraft.world.effect.MobEffectInstance> active = java.util.List.copyOf(entity.getActiveEffects());
       for (net.minecraft.world.effect.MobEffectInstance effect : active) {
          if (effect.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL) {

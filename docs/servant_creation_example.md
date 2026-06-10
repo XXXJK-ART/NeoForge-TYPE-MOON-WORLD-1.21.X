@@ -468,45 +468,109 @@ AI JSON 主要调：
 | `berserk_health_ratio` | 低血量狂暴阈值 |
 | `berserk_damage_multiplier` | 狂暴伤害倍率 |
 
-## 14. 小技能：先用通用动作标签
+## 14. 新战斗系统：先用通用动作标签
 
-当前通用战斗系统能识别一些常用标签。定义 JSON 的 `combat_actions` 可以先写：
+定义 JSON 里的 `combat_actions` 不是简单的动画列表，而是告诉 `CombatModule` 和 `ServantCombatSystem` 这个从者会哪些战斗行为。做新从者时，先用通用标签接入普攻、连招、击飞、击退、破方块、防御反应，再按角色特色补 Helper。
+
+推荐起步配置：
 
 ```json
 "combat_actions": [
-  "sweep",
   "slash",
+  "sweep",
   "uppercut",
   "horizontal_swing",
+  "break_forward_blocks",
   "launcher",
-  "pursuit"
+  "pursuit",
+  "charge",
+  "interrupt"
 ]
 ```
 
-常见标签含义：
+基础通用动作：
 
-| 标签 | 大概用途 |
+| 标签 | 用途 |
 | --- | --- |
-| `slash` | 普通斩击 |
-| `sweep` | 横扫 |
-| `uppercut` | 上挑，可作为击飞候选 |
-| `horizontal_swing` | 横斩 |
-| `launcher` | 明确告诉连招系统：这是击飞动作 |
-| `pursuit` | 明确告诉连招系统：这是追击动作 |
-| `teleport_behind` | 瞬移背刺类追击 |
-| `charge` | 冲刺类追击 |
+| `slash` | 普通斩击，带前方扇形伤害、轻击退和斩击路径破坏。 |
+| `sweep` | 横扫，适合被围攻时推开周围目标。 |
+| `uppercut` | 上撩，可作为轻击飞动作，也会被 `launcher` 连招兜底使用。 |
+| `horizontal_swing` | 横斩击退，适合近身压制和拉开距离。 |
+| `break_forward_blocks` | 向目标方向破开阻挡方块，也能处理目标被卡在地下或墙后的情况。 |
+| `teleport_behind` | 瞬移到目标背后，适合高敏捷或暗杀型从者。 |
+| `charge` | 冲刺接近，既能当普通追击，也能当 `pursuit` 的兜底动画。 |
+| `jump_attack` | 跳劈/跃击，适合力量型近战。 |
+| `stomp` | 踏地冲击，适合范围击退和轻微地形破坏。 |
+| `slam` | 重砸，适合力量型终结动作，也会被 `launcher` 兜底使用。 |
 
-如果只是想让英灵能打，不需要立刻写专属 Java 技能。先用这些标签让它接入普攻、击飞、追击和通用 AI。
+新战斗系统和连招标签：
+
+| 标签 | 用途 |
+| --- | --- |
+| `launcher` | 允许通用连招系统尝试击飞。动画会按 `launcher` -> `uppercut` -> `slam` -> 普攻挥手兜底。 |
+| `pursuit` | 允许击飞后短延迟追击。动画会按 `pursuit` -> `shadow_step` -> `charge` -> 普攻挥手兜底。 |
+| `shadow_step` | 影步/瞬步类追击动画标签，常和 `pursuit` 一起用。 |
+| `interrupt` | 允许使用打断类小技能倾向，用来压制吟唱、远程或大动作。 |
+| `ranged_np` | 表示这个从者有远程宝具反应倾向，适合弓兵、魔术师、投射型从者。 |
+
+进阶动作和角色倾向：
+
+| 标签 | 用途 |
+| --- | --- |
+| `earth_rend` | 砸地裂地，偏力量型范围破坏。 |
+| `shoulder_check` | 肩撞，偏突进击退。 |
+| `afterimage_slash` | 残影斩，偏高敏捷连续攻击。 |
+| `iaijutsu_step` | 居合步，适合小次郎这类高速斩击。 |
+| `combo` | 通用连段倾向，适合多段近战。 |
+| `tsurigameshi` | 小次郎风格的特殊近战动作，给类似体系的角色参考。 |
+| `rune_burst` | 符文爆发，适合有魔术小技能的角色。 |
+| `spear_vault` | 长枪撑跃/突进，适合枪兵动作体系。 |
+
+库丘林专属的 `lunging_thrust`、`driving_slash`、`sweeping_advance`、`rune_cast`、`gae_bolg`、`gae_bolg_army` 等标签有专门 Helper 判断。新角色不要直接照抄这些名字，除非你也在 Java 里接了对应行为。
+
+`ServantCombatSystem` 会在 AI 前后自动处理这些通用战斗资源：
+
+| 系统 | 说明 |
+| --- | --- |
+| 战斗阶段 | 默认是试探阶段；血量低于约 80% 进入正常战斗；低于约 60% 进入决胜阶段。狂战士默认更激进。 |
+| 闪避 | 敏捷越高越容易自动闪避，闪避消耗 MP，并给予短暂无敌。低血量、弹射物、决胜阶段会更积极闪避。 |
+| 格挡和弹反 | 耐久越高格挡越稳。及时格挡可能弹反，完全抵消伤害并短暂眩晕攻击者。体力耗尽会进入破防疲劳。 |
+| 体力 | 格挡消耗体力，体力会按耐久恢复。不要让角色所有技能都只看 MP，近战角色也要考虑体力压力。 |
+| 韧度 | 韧度由耐久和力量决定。大伤害、控制和击飞会消耗韧度，韧度归零会破防眩晕。 |
+| 击飞和追击 | `launcher` 不是每次必定击飞，会受战斗时间、冷却、韧度和距离影响；击飞后可排队 `pursuit`。 |
+| 连招保护 | 短时间内受到过高连段伤害时，目标会获得短暂无敌、脱锁和恢复，防止被无限连。 |
+| 伤害压制 | 魔力越高，越能压制异常爆发伤害或技能压力。 |
+| 软方块破坏 | 通用斩击、横扫、砸地、击飞会尝试破坏软方块，但要控制范围，避免普通小技能变成大范围拆图。 |
+
+属性会直接影响手感：
+
+| 属性 | 主要影响 |
+| --- | --- |
+| 敏捷 | 战斗移动速度、闪避冷却、闪避无敌时间、闪避 MP 消耗。 |
+| 耐久 | 体力上限、体力恢复、格挡减伤、弹反窗口、韧度上限、破防眩晕时长。 |
+| 力量 | 韧度上限、击飞距离、击飞命中硬直、击飞消耗。 |
+| 魔力 | 技能压制和部分特殊反应。 |
+
+动画不是每个标签都必须单独做。至少保证 `idle`、`walk`、`slash` 或普攻动画存在；如果要做连招，再补 `uppercut`、`launcher`、`pursuit`、`charge`、`shadow_step` 这类动作。缺动画时系统会走兜底动作，但观感会弱很多。
 
 ## 15. 专属小技能：需要 Helper 时怎么做
 
-如果角色有特殊技能，比如“冲刺三连斩”“火焰剑气”“格挡反击”，建议新建 Helper：
+如果角色有特殊技能，比如“冲刺三连斩”“火焰剑气”“格挡反击”“投影砸地”，建议新建 Helper。通用系统负责底盘，Helper 负责角色味道。
 
 ```text
 src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/ExampleSaberCombatHelper.java
 ```
 
-最小结构：
+一个现代 Helper 至少要做这几件事：
+
+1. 检查目标、距离、冷却、MP、视线。
+2. 检查 `ServantCombatSystem.cannotAct(entity)` 和 `ServantCombatSystem.skillsSuppressed(entity)`，避免眩晕、破防、禁技时硬放技能。
+3. 面向目标，触发动画。
+4. 造成伤害，并按技能类型附加击退、轻击飞、短追击或软方块破坏。
+5. 服务端播放粒子和音效。
+6. 用 persistent data 记录冷却，不要每 tick 重复触发。
+
+示例结构：
 
 ```java
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
@@ -518,6 +582,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 
 public final class ExampleSaberCombatHelper {
    private static final String LAST_QUICK_SLASH_TICK = "ExampleSaberLastQuickSlashTick";
@@ -540,7 +605,10 @@ public final class ExampleSaberCombatHelper {
    }
 
    private static boolean tryQuickSlash(ExampleSaberEntity entity, LivingEntity target, double distance, long now) {
-      if (distance > 4.0 || entity.isPerformingAction()) {
+      if (distance > 4.0 || entity.isPerformingAction() || ServantCombatSystem.cannotAct(entity)) {
+         return false;
+      }
+      if (ServantCombatSystem.skillsSuppressed(entity)) {
          return false;
       }
       if (now - entity.getPersistentData().getLong(LAST_QUICK_SLASH_TICK) < QUICK_SLASH_COOLDOWN) {
@@ -558,7 +626,7 @@ public final class ExampleSaberCombatHelper {
       Vec3 push = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       if (push.lengthSqr() > 1.0E-4) {
          push = push.normalize();
-         target.push(push.x * 0.6, 0.25, push.z * 0.6);
+         target.push(push.x * 0.6, 0.18, push.z * 0.6);
          target.hurtMarked = true;
       }
 
@@ -570,26 +638,48 @@ public final class ExampleSaberCombatHelper {
 }
 ```
 
-然后在 `ExampleSaberEntity` 里接入：
+主 mod 内部新增从者时，优先参考 `CombatModule` 里现有专属 Helper 的接法：
 
 ```java
-@Override
-public void servantAiTick(ServantAiContext context) {
-   super.servantAiTick(context);
-   ExampleSaberCombatHelper.tick(this, context);
+if (entity instanceof ExampleSaberEntity exampleSaber) {
+   ExampleSaberCombatHelper.tick(exampleSaber, context);
+   return;
 }
 ```
 
-如果实际父类没有这个精确方法名，就参考现有 `CuChulainnEntity`、`MedeaEntity`、`MedusaEntity` 的专属 Helper 接入方式。不同英灵可能挂在不同 tick 钩子里，以现有代码为准。
+如果是附属 mod 或不想改主 AI 模块，可以注册 `registerLifecycleHandler`，再从 `ServantLifecycleContext` 里取 `context.aiContext()` 传给 Helper：
 
-专属技能的基本原则：
+```java
+private static ServantExecutionResult tickExampleServants(ServantLifecycleContext context) {
+   if (context.entity() instanceof ExampleSaberEntity exampleSaber) {
+      ExampleSaberCombatHelper.tick(exampleSaber, context.aiContext());
+   }
+   return ServantExecutionResult.NOT_HANDLED;
+}
+```
 
-1. 先判断目标、距离、MP、冷却、视线。
-2. 扣 MP 和写入冷却。
-3. 调 `faceToward` 或 `faceVector`，避免技能方向错。
-4. 触发动画。
-5. 造成伤害、击退、粒子、音效。
-6. 服务端逻辑放在 `ServerLevel` 判断里，客户端只负责渲染。
+不同从者可能挂在不同 tick 钩子里，以现有代码为准。重点是不要绕过通用战斗系统的眩晕、禁技、破防和冷却判断。
+
+常见专属小技能可以这样设计：
+
+| 类型 | 做法 |
+| --- | --- |
+| 近身挑飞 | 双刀或武器上撩，给目标较小水平推力和 0.35-0.6 左右 Y 速度。不要每次都真击飞，冷却要长一点。 |
+| 横斩击退 | 扇形判定，把敌人推开，适合防止贴脸。 |
+| 追击突刺 | 短距离瞬步到目标侧前方或身后，再斩击。注意不要穿进方块。 |
+| 投影冲击/砸地 | 以目标或自身前方为中心，小范围伤害、击退和少量软方块破坏。 |
+| 格挡反击 | 在最近受到攻击或格挡成功后短窗口触发，别做成无条件自动反击。 |
+| 打断技 | 低伤害、高硬直或小击退，用来打断吟唱和远程动作。 |
+
+可参考的现有实现：
+
+| 从者 | 参考点 |
+| --- | --- |
+| 红 A | `EmiyaArcherCombatHelper` 里的 `performTwinUppercut`、`performTwinRepel`、`performChasingThrust`、`performProjectionImpact`。 |
+| 库丘林 | 长枪突刺、横扫、符文、小范围破坏和爆发特效。 |
+| 小次郎 | 高速步法、居合、连续近战和走路/追击手感。 |
+
+专属 Helper 不要替代 `combat_actions`。更稳的做法是：JSON 里保留通用标签，让从者拥有基础战斗能力；Helper 只在合适时机插入角色独有动作。
 
 ## 16. 宝具：先建数据，再接 Java 入口
 
@@ -851,6 +941,7 @@ src/main/resources/data/typemoonworld/servant/skills/example_battle_instinct_b.j
 
 ```powershell
 ./gradlew compileJava
+./gradlew classes --warning-mode all
 ```
 
 如果只想先检查 JSON，可以用 PowerShell：
@@ -867,8 +958,14 @@ Get-Content -Raw -Encoding UTF8 src/main/resources/data/typemoonworld/servant/sk
 3. 实体模型、贴图、大小正常。
 4. 静止和走路动画正常。
 5. 攻击目标时能靠近、转向、普攻。
-6. `uppercut`、`launcher`、`pursuit` 这类动作不会报错。
-7. 如果加了专属 Helper，确认冷却、MP、伤害、粒子、音效都符合预期。
+6. 定义 JSON 里的 `combat_actions` 能正常解析，不会因为多写、拼错标签导致加载失败。
+7. `slash`、`sweep`、`uppercut`、`horizontal_swing` 这类通用小技能能触发，并且击退方向正常。
+8. `launcher`、`pursuit` 能触发；缺少专属动画时，能正确兜底到 `uppercut`、`slam`、`shadow_step` 或 `charge`。
+9. 闪避、格挡、弹反有粒子/音效反馈，且不会在眩晕、破防、禁技时继续乱放技能。
+10. 体力耗尽、韧度破防、眩晕恢复都能正常发生，角色不会永久卡住。
+11. 连招保护能阻止无限连，目标不会被单个从者永远浮空或脱不了锁。
+12. 破方块范围符合角色强度：小技能只破少量软方块，宝具或大技能才允许大范围破坏。
+13. 如果加了专属 Helper，确认冷却、MP、伤害、粒子、音效、击退、轻击飞和短追击都符合预期。
 
 ## 22. 推荐制作顺序
 
@@ -879,8 +976,11 @@ Get-Content -Raw -Encoding UTF8 src/main/resources/data/typemoonworld/servant/sk
 3. 复制资源文件，确认模型能显示。
 4. 写定义 JSON，先只放通用 `combat_actions`。
 5. 加刷怪蛋和语言文件。
-6. 进游戏确认能生成和普通战斗。
-7. 再加 1-2 个专属小技能。
-8. 最后加宝具、投射物、特殊被动、语音和更细动画。
+6. 进游戏确认能生成、索敌、靠近、转向、普攻。
+7. 测通用战斗：斩击、横扫、上挑、横斩、破前方方块。
+8. 测新战斗资源：闪避、格挡、弹反、体力、韧度、破防、连招保护。
+9. 再加 1-2 个专属 Helper 小技能，比如挑飞、击退、追击、砸地。
+10. 确认专属小技能不会压过通用战斗，也不会绕过眩晕、破防、禁技。
+11. 最后加宝具、投射物、特殊被动、语音和更细动画。
 
 这样每一步坏了都很好定位，不会变成“二十个文件一起坏，不知道哪里错”。

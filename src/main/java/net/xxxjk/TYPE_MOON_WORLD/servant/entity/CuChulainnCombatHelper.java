@@ -238,8 +238,8 @@ public final class CuChulainnCombatHelper {
          case TIWAZ -> applyTiwaz(entity);
          case ALGIZ -> entity.getPersistentData().putFloat(ALGIZ_SHIELD_TAG, 100.0F);
          case BERKANA -> {
-            entity.heal(Math.max(8.0F, entity.getMaxHealth() * 0.18F));
-            entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 20L);
+            entity.heal(1.0F);
+            entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 1L);
          }
          default -> {
          }
@@ -299,8 +299,8 @@ public final class CuChulainnCombatHelper {
          if (runeType == RuneType.BERKANA && now < runeExpires) {
             long nextHealTick = entity.getPersistentData().getLong(BERKANA_NEXT_HEAL_TICK_TAG);
             if (nextHealTick <= 0 || now >= nextHealTick) {
-               entity.heal(Math.max(4.0F, entity.getMaxHealth() * 0.04F));
-               entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 20L);
+               entity.heal(1.0F);
+               entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 1L);
             }
          }
 

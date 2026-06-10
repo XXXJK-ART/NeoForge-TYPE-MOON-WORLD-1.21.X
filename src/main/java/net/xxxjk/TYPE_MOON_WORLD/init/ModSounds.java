@@ -35,6 +35,14 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_FAIL = register("cursed_arm_hassan_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_VICTORY = register("cursed_arm_hassan_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_ZABANIYA = register("cursed_arm_hassan_voice_zabaniya");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_ATTACK = register("emiya_archer_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_FAIL = register("emiya_archer_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_VICTORY = register("emiya_archer_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_PROJECTION = register("emiya_archer_voice_projection");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_TWIN_THROW = register("emiya_archer_voice_twin_throw");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_SPIRAL = register("emiya_archer_voice_spiral");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_RHO_AIAS = register("emiya_archer_voice_rho_aias");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_UBW = register("emiya_archer_voice_ubw");
 
    private ModSounds() {
    }

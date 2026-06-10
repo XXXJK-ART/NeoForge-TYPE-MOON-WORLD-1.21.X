@@ -1,0 +1,10 @@
+{
+  "id": "clairvoyance_c",
+  "display_name": "Clairvoyance C",
+  "display_name_zh": "千里眼 C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

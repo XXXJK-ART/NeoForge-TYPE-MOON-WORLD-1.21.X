@@ -32,7 +32,6 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 
 public class MagicSwordBarrelFullOpen {
    private static final int COOLDOWN = 10;
@@ -113,7 +112,7 @@ public class MagicSwordBarrelFullOpen {
                boolean noCooldown = player.getPersistentData().getBoolean("TypeMoonNoCooldown");
                if (noCooldown || player.tickCount % 5 == 0) {
                   double cost = 30.0;
-                  if (player.level().dimension() == ModDimensions.UBW_KEY) {
+                  if (UBWInstanceManager.isUbwDimension(player.level())) {
                      cost = 15.0;
                   }
 
@@ -226,7 +225,7 @@ public class MagicSwordBarrelFullOpen {
 
          RandomSource random = player.getRandom();
          int baseCount = getSwordCount(vars.proficiency_unlimited_blade_works, 75);
-         boolean isInsideUBW = player.level().dimension().location().equals(ModDimensions.UBW_KEY.location());
+         boolean isInsideUBW = UBWInstanceManager.isUbwDimension(player.level());
          if (!isInsideUBW) {
             baseCount = (int)(baseCount * 0.66);
             if (baseCount < 5) {

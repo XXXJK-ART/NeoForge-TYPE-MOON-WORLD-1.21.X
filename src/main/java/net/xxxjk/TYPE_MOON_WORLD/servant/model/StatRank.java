@@ -30,7 +30,7 @@ public enum StatRank {
    }
 
    public double toMovementSpeed() {
-      return 0.1 + this.coefficient * 0.002;
+      return 0.16 + this.coefficient * 0.004;
    }
 
    public double toArmor() {
@@ -38,7 +38,7 @@ public enum StatRank {
    }
 
    public double toManaPool() {
-      return this.coefficient * 10.0;
+      return this.coefficient * 20.0;
    }
 
    public double toCritRatePercent() {

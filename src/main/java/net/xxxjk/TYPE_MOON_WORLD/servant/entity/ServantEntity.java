@@ -71,6 +71,18 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final int SPIRITUAL_DISSOLVE_DURATION = 50;
    private static final int WALK_ANIMATION_GRACE_TICKS = 6;
    private static final double WALK_ANIMATION_DELTA_THRESHOLD = 1.0E-5;
+   private static final String LAST_MANA_HEAL_TICK_TAG = "ServantLastManaHealTick";
+   private static final String NATURAL_REGEN_LAST_COMBAT_TICK_TAG = "ServantNaturalRegenLastCombatTick";
+   private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
+   private static final int MANA_HEAL_INTERVAL_TICKS = 20;
+   private static final double MANA_HEAL_MP_COST = 1.0;
+   private static final float MANA_HEAL_IN_COMBAT_AMOUNT = 5.0F;
+   private static final float MANA_HEAL_OUT_OF_COMBAT_AMOUNT = 10.0F;
+   private static final double MANA_HEAL_HEALTH_THRESHOLD = 0.60;
+   private static final double MANA_HEAL_MP_THRESHOLD = 0.50;
+   private static final int OUT_OF_COMBAT_HEAL_GRACE_TICKS = 100;
+   private static final double COMBAT_HEAL_TARGET_RANGE_SQR = 24.0 * 24.0;
+   private static final float NATURAL_REGEN_HEALTH_RATIO_PER_SECOND = 0.005F;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
@@ -254,8 +266,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          if (!ServantCombatSystem.tickBeforeAi(this)) {
             this.aiEngine.tick(this);
          }
+         this.tickManaHealthConversion();
 
-         /* 鍔ㄧ敾 tick 閫掑噺 */         if (this.roarAnimationTicks > 0) {
+         /* 鍔ㄧ敾 tick 閫掑噺 */         
+         if (this.roarAnimationTicks > 0) {
             this.roarAnimationTicks--;
          }
          if (this.slamAnimationTicks > 0) {
@@ -296,23 +310,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          // 鑴辩鎴樻枟鍚庣紦鎱㈠洖琛€锛堟瘡绉掓仮澶?0.5% 鏈€澶х敓鍛藉€硷級
-         if (this.tickCount % 20 == 0) {
-            LivingEntity combatTarget = this.getTarget();
-            if (combatTarget == null || combatTarget.isDeadOrDying() || this.distanceTo(combatTarget) > 16.0) {
-               int lastCombat = this.getPersistentData().getInt("LastCombatTick");
-               if (lastCombat > 0 && (int)(this.level().getGameTime()) - lastCombat > 100) {
-                  float regenAmount = this.getMaxHealth() * 0.005f;
-                  if (this.getHealth() < this.getMaxHealth()) {
-                     this.heal(regenAmount);
-                     if (this.level() instanceof ServerLevel sl) {
-                        sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                           this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
-                           3, 0.3, 0.3, 0.3, 0.0);
-                     }
-                  }
-               }
-            }
-         }
+         this.tickNaturalHealthRegen();
 
          // 璺岃惤浼ゅ鍏嶇柅
          // 锛堥€氳繃 causeFallDamage override 瀹炵幇锛岃涓嬫柟锛?
@@ -353,6 +351,93 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
       return false; // 英灵免疫摔落伤害
+   }
+
+   private void tickManaHealthConversion() {
+      if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
+         return;
+      }
+
+      long now = this.level().getGameTime();
+      CompoundTag data = this.getPersistentData();
+      if (data.getBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG)) {
+         return;
+      }
+      long lastHealTick = data.getLong(LAST_MANA_HEAL_TICK_TAG);
+      if (lastHealTick > 0L && now - lastHealTick < MANA_HEAL_INTERVAL_TICKS) {
+         return;
+      }
+      double maxMp = Math.max(1.0, this.getMaxMp());
+      if (this.getHealth() >= this.getMaxHealth() * MANA_HEAL_HEALTH_THRESHOLD
+         || this.getCurrentMp() < maxMp * MANA_HEAL_MP_THRESHOLD
+         || this.getCurrentMp() < MANA_HEAL_MP_COST) {
+         return;
+      }
+
+      boolean inCombat = this.isManaHealingInCombat(data, now);
+      float healAmount = inCombat ? MANA_HEAL_IN_COMBAT_AMOUNT : MANA_HEAL_OUT_OF_COMBAT_AMOUNT;
+      this.setCurrentMp(Math.max(0.0, this.getCurrentMp() - MANA_HEAL_MP_COST));
+      this.heal(healAmount);
+      data.putLong(LAST_MANA_HEAL_TICK_TAG, now);
+
+      if (this.level() instanceof ServerLevel sl) {
+         sl.sendParticles(inCombat ? ParticleTypes.ENCHANT : ParticleTypes.HAPPY_VILLAGER,
+            this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+            inCombat ? 2 : 3, 0.22, 0.25, 0.22, 0.0);
+      }
+   }
+
+   private void tickNaturalHealthRegen() {
+      if (this.tickCount % 20 != 0 || this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
+         return;
+      }
+
+      long now = this.level().getGameTime();
+      CompoundTag data = this.getPersistentData();
+      LivingEntity combatTarget = this.getTarget();
+      if (combatTarget != null && combatTarget.isAlive() && this.distanceToSqr(combatTarget) <= COMBAT_HEAL_TARGET_RANGE_SQR) {
+         data.putLong(NATURAL_REGEN_LAST_COMBAT_TICK_TAG, now);
+         return;
+      }
+
+      if (data.getBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG)) {
+         return;
+      }
+
+      long lastCombat = this.getLastNaturalRegenCombatTick(data);
+      if (lastCombat <= 0L || now - lastCombat <= OUT_OF_COMBAT_HEAL_GRACE_TICKS || this.getHealth() >= this.getMaxHealth()) {
+         return;
+      }
+
+      this.heal(this.getMaxHealth() * NATURAL_REGEN_HEALTH_RATIO_PER_SECOND);
+      if (this.level() instanceof ServerLevel sl) {
+         sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+            this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+            3, 0.3, 0.3, 0.3, 0.0);
+      }
+   }
+
+   private boolean isManaHealingInCombat(CompoundTag data, long now) {
+      LivingEntity combatTarget = this.getTarget();
+      if (combatTarget != null && combatTarget.isAlive() && this.distanceToSqr(combatTarget) <= COMBAT_HEAL_TARGET_RANGE_SQR) {
+         return true;
+      }
+
+      long lastCombat = Math.max(
+         Math.max(data.getLong("TypeMoonCombatLastCombatTick"), data.getLong("CuLastCombatTick")),
+         data.getLong("SasakiKojiroLastCombatTick")
+      );
+      return lastCombat > 0L && now - lastCombat < OUT_OF_COMBAT_HEAL_GRACE_TICKS;
+   }
+
+   private long getLastNaturalRegenCombatTick(CompoundTag data) {
+      return Math.max(
+         Math.max(data.getLong(NATURAL_REGEN_LAST_COMBAT_TICK_TAG), data.getLong("LastCombatTick")),
+         Math.max(
+            Math.max(data.getLong("TypeMoonCombatLastCombatTick"), data.getLong("CuLastCombatTick")),
+            Math.max(data.getLong("SasakiKojiroLastCombatTick"), data.getLong("LastHurtTick"))
+         )
+      );
    }
 
    @Override

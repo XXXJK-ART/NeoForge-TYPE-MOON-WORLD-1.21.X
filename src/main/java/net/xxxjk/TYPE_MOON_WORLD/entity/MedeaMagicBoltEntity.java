@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -33,6 +35,8 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
    private static final DustParticleOptions BOLT_CORE = new DustParticleOptions(new Vector3f(0.52F, 0.72F, 1.0F), 1.1F);
    private static final DustParticleOptions BOLT_ACCENT = new DustParticleOptions(new Vector3f(0.72F, 0.28F, 1.0F), 1.25F);
    public final List<Vec3> tracePos = new LinkedList<>();
+   private final Set<Integer> piercedEntityIds = new HashSet<>();
+   private int piercedBlocks;
 
    public MedeaMagicBoltEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -109,6 +113,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       LivingEntity owner = this.getOwner() instanceof LivingEntity livingOwner ? livingOwner : null;
       return entity != this.getOwner()
          && entity != null
+         && !this.piercedEntityIds.contains(entity.getId())
          && !EntityUtils.isImmunePlayerTarget(entity)
          && (owner == null || !entity.isAlliedTo(owner))
          && super.canHitEntity(entity);
@@ -139,6 +144,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       }
       LivingEntity owner = this.getOwner() instanceof LivingEntity livingOwner ? livingOwner : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      this.piercedEntityIds.add(living.getId());
       living.invulnerableTime = 0;
       if (this.getMode() == Mode.RULE_BREAKER) {
          MedeaCombatHelper.applyRuleBreakerHit(living, owner);
@@ -149,21 +155,22 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       if (owner != null) {
          EntityUtils.triggerSwarmAnger(this.level(), owner, living);
       }
-      if (this.getMode() == Mode.SUPER_BOLT) {
-         destroyBreakableBlocks(BlockPos.containing(result.getLocation()), 1);
-      }
-      this.spawnImpactFx(this.position());
-      this.discard();
    }
 
    @Override
    protected void onHit(HitResult result) {
       super.onHit(result);
       if (!this.level().isClientSide()) {
-         if (this.getMode() == Mode.SUPER_BOLT) {
-            destroyBreakableBlocks(BlockPos.containing(result.getLocation()), 1);
-         }
+         boolean hitEntity = result.getType() == HitResult.Type.ENTITY;
+         int radius = this.blockBreakRadius();
+         boolean brokeBlocks = radius > 0 && destroyBreakableBlocks(BlockPos.containing(result.getLocation()), radius);
          this.spawnImpactFx(result.getLocation());
+         if (hitEntity && this.piercedEntityIds.size() < this.entityPierceLimit()) {
+            return;
+         }
+         if (!hitEntity && brokeBlocks && this.piercedBlocks++ < this.blockPierceLimit()) {
+            return;
+         }
          this.discard();
       }
    }
@@ -173,6 +180,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       super.addAdditionalSaveData(tag);
       tag.putInt("MedeaBoltMode", this.getMode().id());
       tag.putFloat("MedeaBoltDamage", this.getMagicDamage());
+      tag.putInt("MedeaBoltPiercedBlocks", this.piercedBlocks);
    }
 
    @Override
@@ -180,6 +188,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       super.readAdditionalSaveData(tag);
       this.entityData.set(MODE, tag.getInt("MedeaBoltMode"));
       this.entityData.set(DAMAGE, tag.getFloat("MedeaBoltDamage"));
+      this.piercedBlocks = tag.getInt("MedeaBoltPiercedBlocks");
    }
 
    private void spawnImpactFx(Vec3 position) {
@@ -252,17 +261,56 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       }
    }
 
-   private void destroyBreakableBlocks(BlockPos center, int radius) {
+   private int entityPierceLimit() {
+      return switch (this.getMode()) {
+         case RULE_BREAKER -> 1;
+         case SUPER_BOLT -> 5;
+         case FIRE_BOLT, FROST_BOLT -> 3;
+         default -> 2;
+      };
+   }
+
+   private int blockPierceLimit() {
+      return switch (this.getMode()) {
+         case RULE_BREAKER -> 0;
+         case SUPER_BOLT -> 10;
+         case FIRE_BOLT, FROST_BOLT -> 5;
+         default -> 4;
+      };
+   }
+
+   private int blockBreakRadius() {
+      return switch (this.getMode()) {
+         case RULE_BREAKER -> 0;
+         case SUPER_BOLT -> 2;
+         case FIRE_BOLT, FROST_BOLT -> 1;
+         default -> 1;
+      };
+   }
+
+   private float maxBreakHardness() {
+      return switch (this.getMode()) {
+         case SUPER_BOLT -> 80.0F;
+         case FIRE_BOLT, FROST_BOLT -> 55.0F;
+         default -> 35.0F;
+      };
+   }
+
+   private boolean destroyBreakableBlocks(BlockPos center, int radius) {
       if (!(this.level() instanceof ServerLevel serverLevel)) {
-         return;
+         return false;
       }
+      boolean brokeAny = false;
       for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius))) {
          BlockState state = serverLevel.getBlockState(pos);
          float hardness = state.getDestroySpeed(serverLevel, pos);
-         if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= 45.0F) {
+         if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= this.maxBreakHardness()) {
             continue;
          }
-         serverLevel.destroyBlock(pos, false, this.getOwner() instanceof LivingEntity living ? living : null);
+         if (serverLevel.destroyBlock(pos, false, this.getOwner() instanceof LivingEntity living ? living : null)) {
+            brokeAny = true;
+         }
       }
+      return brokeAny;
    }
 }

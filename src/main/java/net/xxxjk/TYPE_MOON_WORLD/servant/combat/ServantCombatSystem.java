@@ -161,7 +161,11 @@ public final class ServantCombatSystem {
 
       if (!skillsSuppressed(servant)) {
          if (tryAutoDodge(servant, source, params, now)) {
-            event.setCanceled(true);
+            if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+               event.setAmount((float)Math.min(event.getAmount(), event.getAmount() * 0.5F));
+            } else {
+               event.setCanceled(true);
+            }
             return;
          }
 
@@ -497,9 +501,10 @@ public final class ServantCombatSystem {
       spawnGuardFx(servant, parry ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, parry ? 1.65F : 1.1F);
       if (parry && source.getEntity() instanceof ServantEntity attacker) {
          applyStun(attacker, 10);
-         return 0.0F;
+         return source.is(DamageTypeTags.IS_EXPLOSION) ? amount * 0.5F : 0.0F;
       }
-      return (float)(amount * (1.0 - ServantCombatFormulas.blockReduction(params)));
+      float reduced = (float)(amount * (1.0 - ServantCombatFormulas.blockReduction(params)));
+      return source.is(DamageTypeTags.IS_EXPLOSION) ? Math.max(reduced, amount * 0.5F) : reduced;
    }
 
    private static void respondToNoblePhantasm(ServantEntity responder, ServantEntity caster, LivingEntity target, boolean ranged) {

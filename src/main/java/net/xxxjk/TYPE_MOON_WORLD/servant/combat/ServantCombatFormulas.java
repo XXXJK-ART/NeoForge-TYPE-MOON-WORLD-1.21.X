@@ -4,7 +4,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 
 public final class ServantCombatFormulas {
-   public static final double OUT_OF_COMBAT_SPEED = 0.14;
+   public static final double OUT_OF_COMBAT_SPEED = 0.20;
 
    private ServantCombatFormulas() {
    }
@@ -38,12 +38,12 @@ public final class ServantCombatFormulas {
 
    public static double combatMovementSpeed(ServantParams params) {
       return switch (agilityStep(params)) {
-         case 0 -> 0.140;
-         case 1 -> 0.158;
-         case 2 -> 0.176;
-         case 3 -> 0.194;
-         case 4 -> 0.212;
-         default -> 0.230;
+         case 0 -> 0.200;
+         case 1 -> 0.260;
+         case 2 -> 0.320;
+         case 3 -> 0.380;
+         case 4 -> 0.440;
+         default -> 0.500;
       };
    }
 

@@ -23,6 +23,7 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaProjectionItemRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.particle.RuneSigilParticle;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
@@ -145,6 +146,29 @@ public class ClientModEventSubscriber {
             return this.renderer;
          }
       }, new Item[]{ModItems.NAMELESS_CHAIN_DAGGER.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private EmiyaProjectionItemRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new EmiyaProjectionItemRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{
+         ModItems.GAN_JIANG.get(),
+         ModItems.MO_YE.get(),
+         ModItems.GAN_JIANG_OVEREDGE.get(),
+         ModItems.MO_YE_OVEREDGE.get(),
+         ModItems.NAMELESS_BOW.get(),
+         ModItems.PSEUDO_SPIRAL_SWORD.get(),
+         ModItems.CRIMSON_HOUND.get(),
+         ModItems.RHO_AIAS.get(),
+         ModItems.UBW_METAL_1.get(),
+         ModItems.UBW_METAL_2.get(),
+         ModItems.UBW_METAL_3.get()
+      });
       event.registerMobEffect(
          new IClientMobEffectExtensions() {
             private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/mob_effect/nine_lives.jpg");

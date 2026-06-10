@@ -168,7 +168,7 @@ public class MedeaBeamEffectEntity extends Entity {
             if (!visited.add(pos.immutable())) {
                continue;
             }
-            if (pos.distToCenterSqr(sample.x, sample.y, sample.z) > 0.75 * 0.75) {
+            if (pos.distToCenterSqr(sample.x, sample.y, sample.z) > 1.35 * 1.35) {
                continue;
             }
             if (owner != null && pos.closerToCenterThan(owner.position(), 1.0)) {
@@ -176,7 +176,7 @@ public class MedeaBeamEffectEntity extends Entity {
             }
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
-            if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= 50.0F) {
+            if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= 85.0F) {
                continue;
             }
             level.destroyBlock(pos, false, owner);

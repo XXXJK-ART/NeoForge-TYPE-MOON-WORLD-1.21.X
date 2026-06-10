@@ -46,6 +46,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_ATTACK.get());
+      } else if (isEmiya(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_ATTACK.get());
       }
    }
 
@@ -82,6 +87,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_VICTORY.get());
       } else if (isCursedArmHassan(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_VICTORY.get());
+      } else if (isEmiya(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
       }
    }
 
@@ -98,6 +105,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDUSA_VOICE_FAIL.get());
       } else if (isCursedArmHassan(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.92F, ModSounds.CURSED_ARM_HASSAN_VOICE_FAIL.get());
+      } else if (isEmiya(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
       }
    }
 
@@ -141,6 +150,46 @@ public final class ServantVoiceHelper {
       playVoice(servant, "zabaniya", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA.get());
    }
 
+   public static void tryPlayProjection(ServantEntity servant) {
+      if (!isEmiya(servant)) {
+         return;
+      }
+
+      playVoice(servant, "projection", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_PROJECTION.get());
+   }
+
+   public static void tryPlayEmiyaTwinThrow(ServantEntity servant) {
+      if (!isEmiya(servant)) {
+         return;
+      }
+
+      playVoice(servant, "twin_throw", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_TWIN_THROW.get());
+   }
+
+   public static void tryPlayEmiyaSpiral(ServantEntity servant) {
+      if (!isEmiya(servant)) {
+         return;
+      }
+
+      playVoice(servant, "spiral", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_SPIRAL.get());
+   }
+
+   public static void tryPlayEmiyaRhoAias(ServantEntity servant) {
+      if (!isEmiya(servant)) {
+         return;
+      }
+
+      playVoice(servant, "rho_aias", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_RHO_AIAS.get());
+   }
+
+   public static void tryPlayEmiyaUbw(ServantEntity servant) {
+      if (!isEmiya(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "ubw", 1.1F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_UBW.get());
+   }
+
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
       if (!(servant.level() instanceof ServerLevel serverLevel) || sound == null) {
          return;
@@ -159,6 +208,19 @@ public final class ServantVoiceHelper {
 
       data.putLong(GLOBAL_VOICE_TICK_TAG, now);
       data.putLong(categoryTag, now);
+      float finalPitch = pitch + (servant.getRandom().nextFloat() - 0.5F) * 0.08F;
+      serverLevel.playSound(null, servant.getX(), servant.getY(), servant.getZ(), sound, SoundSource.HOSTILE, volume, finalPitch);
+   }
+
+   private static void playVoiceForced(ServantEntity servant, String category, float volume, float pitch, SoundEvent sound) {
+      if (!(servant.level() instanceof ServerLevel serverLevel) || sound == null) {
+         return;
+      }
+
+      CompoundTag data = servant.getPersistentData();
+      long now = serverLevel.getGameTime();
+      data.putLong(GLOBAL_VOICE_TICK_TAG, now);
+      data.putLong(CATEGORY_VOICE_TICK_PREFIX + category, now);
       float finalPitch = pitch + (servant.getRandom().nextFloat() - 0.5F) * 0.08F;
       serverLevel.playSound(null, servant.getX(), servant.getY(), servant.getZ(), sound, SoundSource.HOSTILE, volume, finalPitch);
    }
@@ -185,5 +247,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isCursedArmHassan(ServantEntity servant) {
       return servant != null && CursedArmHassanEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isEmiya(ServantEntity servant) {
+      return servant != null && EmiyaArcherEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

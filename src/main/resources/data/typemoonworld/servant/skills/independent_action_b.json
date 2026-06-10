@@ -1,0 +1,10 @@
+{
+  "id": "independent_action_b",
+  "display_name": "Independent Action B",
+  "display_name_zh": "单独行动 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

@@ -17,6 +17,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
@@ -578,6 +580,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.3, center.z, 2, 0.15, 0.15, 0.15, 0.0);
       level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.25, center.z, 18, 0.45, 0.7, 0.45, 0.02);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 12, 0.3, 0.55, 0.3, 0.03);
+      fractureTerrain(level, entity, center, 2.2, 4.8, 55.0F, 34);
       target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
       target.invulnerableTime = 0;
       level.playSound(null, BlockPos.containing(center), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 0.9F, 1.2F);
@@ -615,6 +618,7 @@ public final class MedeaCombatHelper {
          victim.invulnerableTime = 0;
          victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
          victim.invulnerableTime = 0;
+         fractureTerrain(level, entity, center, 1.9, 5.0, 60.0F, 24);
          spawnLightningBolts(level, center, 1);
          strikes++;
       }
@@ -969,6 +973,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.FLAME, impact.x, impact.y + 0.6, impact.z, 24, 0.65, 0.45, 0.65, 0.04);
       level.sendParticles(ParticleTypes.LAVA, impact.x, impact.y + 0.4, impact.z, 10, 0.25, 0.18, 0.25, 0.0);
       level.sendParticles(ParticleTypes.SMOKE, impact.x, impact.y + 0.5, impact.z, 16, 0.55, 0.4, 0.55, 0.02);
+      fractureTerrain(level, entity, impact, 2.35, 1.6, 45.0F, 36);
       level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.95F, 1.05F);
       queueStaffClear(entity, 12);
       return true;
@@ -988,6 +993,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.SNOWFLAKE, anchor.x, anchor.y, anchor.z, 36, 0.55, 0.8, 0.55, 0.03);
       level.sendParticles(ParticleTypes.ITEM_SNOWBALL, anchor.x, anchor.y + 0.25, anchor.z, 20, 0.38, 0.55, 0.38, 0.01);
       level.sendParticles(CIRCLE_PRIMARY, anchor.x, anchor.y + 0.15, anchor.z, 10, 0.18, 0.18, 0.18, 0.0);
+      fractureTerrain(level, entity, anchor, 1.75, 1.9, 38.0F, 22);
       target.setTicksFrozen(Math.max(target.getTicksFrozen(), 160));
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4, false, true, true));
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, true, true));
@@ -1018,6 +1024,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(), 30, 0.8, 0.55, 0.8, 0.03);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + entity.getBbHeight() * 0.45, entity.getZ(), 18, 0.65, 0.35, 0.65, 0.02);
       level.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.25, entity.getZ(), 20, 1.1, 0.15, 1.1, 0.06);
+      fractureTerrain(level, entity, entity.position().add(0.0, 0.25, 0.0), 3.1, 0.9, 42.0F, 48);
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          entity.getBoundingBox().inflate(4.0),
@@ -1116,11 +1123,13 @@ public final class MedeaCombatHelper {
          Vec3 beamDir = end.subtract(start).normalize();
          spawnMagicCircle(level, start.subtract(beamDir.scale(0.35)), beamDir, 0.66F);
          MedeaBeamEffectEntity beam = new MedeaBeamEffectEntity(level, entity, start, end, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 20.0F), 8);
+         beam.setBreakBlocks(true);
          level.addFreshEntity(beam);
          level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 10, 0.14, 0.14, 0.14, 0.03);
          level.sendParticles(CIRCLE_PRIMARY, start.x, start.y, start.z, 4, 0.08, 0.08, 0.08, 0.0);
       }
       level.sendParticles(ParticleTypes.FLASH, end.x, end.y, end.z, 1, 0.1, 0.1, 0.1, 0.0);
+      fractureTerrain(level, entity, end, 1.75, 2.0, 50.0F, 24);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.85F, 1.55F);
       queueStaffClear(entity, 16);
       return true;
@@ -1725,6 +1734,39 @@ public final class MedeaCombatHelper {
       projectile.setPos(spawnPos);
       projectile.shoot(direction.x, direction.y, direction.z, speed, inaccuracy);
       level.addFreshEntity(projectile);
+   }
+
+   private static void fractureTerrain(ServerLevel level, MedeaEntity entity, Vec3 center, double radius, double yScale, float maxHardness, int maxBroken) {
+      BlockPos origin = BlockPos.containing(center);
+      int blockRadius = Math.max(1, (int)Math.ceil(radius));
+      int broken = 0;
+      double radiusSqr = radius * radius;
+      for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-blockRadius, -blockRadius, -blockRadius), origin.offset(blockRadius, blockRadius, blockRadius))) {
+         if (broken >= maxBroken) {
+            break;
+         }
+         double dx = pos.getX() + 0.5 - center.x;
+         double dy = (pos.getY() + 0.5 - center.y) / Math.max(0.25, yScale);
+         double dz = pos.getZ() + 0.5 - center.z;
+         if (dx * dx + dy * dy + dz * dz > radiusSqr) {
+            continue;
+         }
+         if (entity != null && pos.closerToCenterThan(entity.position(), 1.0)) {
+            continue;
+         }
+         BlockState state = level.getBlockState(pos);
+         float hardness = state.getDestroySpeed(level, pos);
+         if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= maxHardness) {
+            continue;
+         }
+         level.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(state));
+         if (level.destroyBlock(pos, false, entity)) {
+            broken++;
+         }
+      }
+      if (broken > 0) {
+         level.sendParticles(ParticleTypes.CLOUD, center.x, center.y, center.z, Math.min(28, 6 + broken / 2), radius * 0.28, 0.2, radius * 0.28, 0.045);
+      }
    }
 
    private static void beginStaffCast(MedeaEntity entity) {

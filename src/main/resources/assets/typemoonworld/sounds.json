@@ -177,5 +177,57 @@
     "sounds": [
       "typemoonworld:voice/cursed_arm_hassan/zabaniya"
     ]
+  },
+  "emiya_archer_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/attack1",
+      "typemoonworld:voice/emiya_archer/attack2",
+      "typemoonworld:voice/emiya_archer/attack3"
+    ]
+  },
+  "emiya_archer_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/fail1",
+      "typemoonworld:voice/emiya_archer/fail2"
+    ]
+  },
+  "emiya_archer_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/victory1",
+      "typemoonworld:voice/emiya_archer/victory2"
+    ]
+  },
+  "emiya_archer_voice_projection": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/projection"
+    ]
+  },
+  "emiya_archer_voice_twin_throw": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/twin_throw"
+    ]
+  },
+  "emiya_archer_voice_spiral": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/spiral"
+    ]
+  },
+  "emiya_archer_voice_rho_aias": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/rho_aias"
+    ]
+  },
+  "emiya_archer_voice_ubw": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/emiya_archer/ubw"
+    ]
   }
 }

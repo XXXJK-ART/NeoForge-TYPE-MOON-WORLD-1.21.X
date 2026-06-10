@@ -1,0 +1,1025 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.emiya_archer.idle": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "vector": [1.5, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "vector": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "vector": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.walk": {
+      "loop": true,
+      "animation_length": 1.2,
+      "bones": {
+        "bone": {
+          "position": {
+            "0.0": { "vector": [0, -6, 0] },
+            "0.3": { "vector": [0, -5.8, 0] },
+            "0.6": { "vector": [0, -6, 0] },
+            "0.9": { "vector": [0, -5.8, 0] },
+            "1.2": { "vector": [0, -6, 0] }
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": { "vector": [1, 0, 0] },
+            "0.3": { "vector": [-2, 0, 0] },
+            "0.6": { "vector": [1, 0, 0] },
+            "0.9": { "vector": [-2, 0, 0] },
+            "1.2": { "vector": [1, 0, 0] }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": { "vector": [0, 0, 0] },
+            "0.3": { "vector": [1.5, 0, 0] },
+            "0.6": { "vector": [0, 0, 0] },
+            "0.9": { "vector": [1.5, 0, 0] },
+            "1.2": { "vector": [0, 0, 0] }
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": { "vector": [10, 0, -4] },
+            "0.3": { "vector": [-18, 0, -3] },
+            "0.6": { "vector": [16, 0, -6] },
+            "0.9": { "vector": [-18, 0, -3] },
+            "1.2": { "vector": [10, 0, -4] }
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": { "vector": [-12, 0, 4] },
+            "0.3": { "vector": [18, 0, 3] },
+            "0.6": { "vector": [-18, 0, 6] },
+            "0.9": { "vector": [18, 0, 3] },
+            "1.2": { "vector": [-12, 0, 4] }
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": { "vector": [-18, 0, 0] },
+            "0.3": { "vector": [22, 0, 0] },
+            "0.6": { "vector": [-18, 0, 0] },
+            "0.9": { "vector": [22, 0, 0] },
+            "1.2": { "vector": [-18, 0, 0] }
+          },
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": { "vector": [22, 0, 0] },
+            "0.3": { "vector": [-18, 0, 0] },
+            "0.6": { "vector": [22, 0, 0] },
+            "0.9": { "vector": [-18, 0, 0] },
+            "1.2": { "vector": [22, 0, 0] }
+          },
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.slash": {
+      "animation_length": 0.45,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, 18, 0],
+            "0.18": [0, -24, 0],
+            "0.45": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-70, 0, -34],
+            "0.18": [-18, 0, 42],
+            "0.45": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.sweep": {
+      "animation_length": 0.55,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, -22, 0],
+            "0.25": [0, 30, 0],
+            "0.55": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-20, 0, -58],
+            "0.25": [-18, 0, 48],
+            "0.55": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-20, 0, 58],
+            "0.25": [-18, 0, -48],
+            "0.55": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.uppercut": {
+      "animation_length": 0.45,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [8, 0, 0],
+            "0.2": [-10, 0, 0],
+            "0.45": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [28, 0, -22],
+            "0.2": [-82, 0, 12],
+            "0.45": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.horizontal_swing": {
+      "animation_length": 0.42,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, 24, 0],
+            "0.16": [0, -28, 0],
+            "0.42": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-22, 0, 58],
+            "0.16": [-22, 0, -48],
+            "0.42": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.charge": {
+      "animation_length": 0.7,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [12, 0, 0],
+            "0.35": [-8, 0, 0],
+            "0.7": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-34, 0, -12],
+            "0.35": [-74, 0, -8],
+            "0.7": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-34, 0, 12],
+            "0.35": [-74, 0, 8],
+            "0.7": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.projection": {
+      "animation_length": 0.65,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-16, 0, -18],
+            "0.25": [-58, 0, -8],
+            "0.65": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-16, 0, 18],
+            "0.25": [-58, 0, 8],
+            "0.65": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.twin_flurry": {
+      "animation_length": 0.75,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, -20, 0],
+            "0.18": [0, 28, 0],
+            "0.36": [0, -26, 0],
+            "0.55": [0, 24, 0],
+            "0.75": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-26, 0, -52],
+            "0.18": [-18, 0, 44],
+            "0.36": [-46, 0, -34],
+            "0.55": [-22, 0, 36],
+            "0.75": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-26, 0, 52],
+            "0.18": [-18, 0, -44],
+            "0.36": [-46, 0, 34],
+            "0.55": [-22, 0, -36],
+            "0.75": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.mind_eye_step": {
+      "animation_length": 0.35,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, 0, 12],
+            "0.16": [0, 0, -18],
+            "0.35": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "rotation": {
+            "0.0": [20, 0, 0],
+            "0.16": [-18, 0, 0],
+            "0.35": [0, 0, 0]
+          },
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "rotation": {
+            "0.0": [-18, 0, 0],
+            "0.16": [20, 0, 0],
+            "0.35": [0, 0, 0]
+          },
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.rho_aias": {
+      "animation_length": 0.75,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "0.25": [-8, 0, 0],
+            "0.75": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-16, 0, -18],
+            "0.25": [-82, 0, -18],
+            "0.75": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-16, 0, 18],
+            "0.25": [-82, 0, 18],
+            "0.75": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
+    "animation.emiya_archer.ubw_chant": {
+      "animation_length": 3.0,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "1.5": [-4, 0, 0],
+            "3.0": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-12, 0, -10],
+            "1.5": [-64, 0, -16],
+            "3.0": [-86, 0, -8]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-12, 0, 10],
+            "1.5": [-64, 0, 16],
+            "3.0": [-86, 0, 8]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    }
+  }
+}

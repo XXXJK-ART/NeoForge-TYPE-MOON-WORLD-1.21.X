@@ -1,0 +1,19 @@
+{
+  "id": "magic_resistance_d",
+  "display_name": "Magic Resistance D",
+  "display_name_zh": "对魔力 D",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "magic_resistance",
+      "params": {
+        "rank": "D",
+        "damage_reduction": 0.15,
+        "debuff_resistance": 0.0
+      }
+    }
+  ]
+}
