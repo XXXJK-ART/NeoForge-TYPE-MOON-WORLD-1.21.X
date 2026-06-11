@@ -106,6 +106,11 @@ base {
 tasks.named('jar').configure {
     archiveFileName = "Type_Moon_World-neoforge-${mod_version}-mc${minecraft_version}.jar"
 }
+
+tasks.named('jarJar').configure {
+    archiveFileName = "Type_Moon_World-neoforge-${mod_version}-mc${minecraft_version}-all.jar"
+}
+
 // Mojang ships Java 21 to end users starting in 1.20.5, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
@@ -179,6 +184,8 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     implementation "dev.galacticraft:dynamicdimensions-neoforge:${dynamicdimensions_version}"
+    jarJar "dev.galacticraft:dynamicdimensions-neoforge:${dynamicdimensions_version}"
+    jarJar "lol.bai:badpackets:neo-0.8.2"
     // implementation "com.github.glitchfiend:TerraBlender-neoforge:${minecraft_version}-4.0.0.1" // Disabled due to resolving issues
     implementation "curse.maven:terrablender-neoforge-940057:5429865" // 1.21-4.0.0.1
 
