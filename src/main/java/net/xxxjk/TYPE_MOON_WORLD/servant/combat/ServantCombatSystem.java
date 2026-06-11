@@ -26,6 +26,8 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -193,7 +195,10 @@ public final class ServantCombatSystem {
       List<ServantEntity> responders = level.getEntitiesOfClass(
          ServantEntity.class,
          box,
-         servant -> servant != caster && servant.isAlive() && !servant.isAlliedTo(caster) && !isUntargetable(servant)
+         servant -> servant != caster
+            && servant.isAlive()
+            && !servant.isAlliedTo(caster)
+            && (!isUntargetable(servant) || servant instanceof EmiyaArcherEntity && CuChulainnCombatHelper.isGaeBolgWindingUp(caster))
       );
       for (ServantEntity responder : responders) {
          respondToNoblePhantasm(responder, caster, target, ranged);
@@ -453,23 +458,31 @@ public final class ServantCombatSystem {
    }
 
    private static boolean tryAutoDodge(ServantEntity servant, DamageSource source, ServantParams params, long now) {
-      if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + ServantCombatFormulas.dodgeCooldownTicks(params)) {
+      boolean emiya = servant instanceof EmiyaArcherEntity;
+      int dodgeCooldown = emiya ? Math.max(6, ServantCombatFormulas.dodgeCooldownTicks(params) / 2) : ServantCombatFormulas.dodgeCooldownTicks(params);
+      if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {
          return false;
       }
-      if (servant.getCurrentMp() < ServantCombatFormulas.dodgeMpCost(params)) {
+      double dodgeCost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45) : ServantCombatFormulas.dodgeMpCost(params);
+      if (servant.getCurrentMp() < dodgeCost) {
          return false;
       }
       int agility = ServantCombatFormulas.agilityStep(params);
-      boolean urgent = servant.getHealth() <= servant.getMaxHealth() * 0.55F || source.getDirectEntity() instanceof Projectile || getPhase(servant) == ServantCombatPhase.DECISIVE;
+      boolean urgent = servant.getHealth() <= servant.getMaxHealth() * (emiya ? 0.85F : 0.55F)
+         || source.getDirectEntity() instanceof Projectile
+         || getPhase(servant) == ServantCombatPhase.DECISIVE
+         || emiya;
       if (agility < 3 && !urgent) {
          return false;
       }
-      servant.setCurrentMp(servant.getCurrentMp() - ServantCombatFormulas.dodgeMpCost(params));
+      servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
       servant.getPersistentData().putLong(TAG_LAST_DODGE_TICK, now);
-      servant.getPersistentData().putLong(TAG_INVULN_UNTIL, now + ServantCombatFormulas.dodgeInvulnerabilityTicks(params));
+      int invulnTicks = ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0);
+      servant.getPersistentData().putLong(TAG_INVULN_UNTIL, now + invulnTicks);
       Vec3 away = dodgeDirection(servant, source);
       servant.faceVector(away);
-      servant.setDeltaMovement(away.x * 0.9, Math.max(servant.getDeltaMovement().y, 0.08), away.z * 0.9);
+      double dodgeDistance = emiya ? 1.35 : 0.9;
+      servant.setDeltaMovement(away.x * dodgeDistance, Math.max(servant.getDeltaMovement().y, emiya ? 0.14 : 0.08), away.z * dodgeDistance);
       servant.hurtMarked = true;
       spawnGuardFx(servant, ParticleTypes.CLOUD, SoundEvents.PLAYER_ATTACK_SWEEP, 1.35F);
       return true;
@@ -479,35 +492,47 @@ public final class ServantCombatSystem {
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_GUARD_EXHAUST_UNTIL)) {
          return null;
       }
+      boolean emiya = servant instanceof EmiyaArcherEntity;
       CompoundTag data = servant.getPersistentData();
-      double cost = ServantCombatFormulas.blockStaminaCost(params);
+      double cost = emiya ? Math.max(2.0, ServantCombatFormulas.blockStaminaCost(params) * 0.45) : ServantCombatFormulas.blockStaminaCost(params);
       double stamina = data.getDouble(TAG_STAMINA);
       if (stamina < cost) {
-         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
+         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + (emiya ? 20L : 60L));
          return null;
       }
 
-      boolean shouldBlock = amount >= servant.getMaxHealth() * 0.04F || getPhase(servant) != ServantCombatPhase.PROBING;
+      boolean shouldBlock = amount >= servant.getMaxHealth() * (emiya ? 0.015F : 0.04F)
+         || getPhase(servant) != ServantCombatPhase.PROBING
+         || (emiya && servant.getHealth() <= servant.getMaxHealth() * 0.8F);
       if (!shouldBlock) {
          return null;
       }
 
-      boolean parry = now - data.getLong(TAG_LAST_GUARD_TICK) <= ServantCombatFormulas.parryWindowTicks(params);
+      boolean parry = now - data.getLong(TAG_LAST_GUARD_TICK) <= ServantCombatFormulas.parryWindowTicks(params) + (emiya ? 3 : 0);
       data.putLong(TAG_LAST_GUARD_TICK, now);
-      data.putDouble(TAG_STAMINA, Math.max(0.0, stamina - (parry ? ServantCombatFormulas.parryStaminaCost(params) : cost)));
+      double parryCost = emiya ? Math.max(1.0, ServantCombatFormulas.parryStaminaCost(params) * 0.5) : ServantCombatFormulas.parryStaminaCost(params);
+      data.putDouble(TAG_STAMINA, Math.max(0.0, stamina - (parry ? parryCost : cost)));
       if (data.getDouble(TAG_STAMINA) <= 0.0) {
-         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
+         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + (emiya ? 20L : 60L));
       }
       spawnGuardFx(servant, parry ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, parry ? 1.65F : 1.1F);
       if (parry && source.getEntity() instanceof ServantEntity attacker) {
          applyStun(attacker, 10);
          return source.is(DamageTypeTags.IS_EXPLOSION) ? amount * 0.5F : 0.0F;
       }
-      float reduced = (float)(amount * (1.0 - ServantCombatFormulas.blockReduction(params)));
+      float reduction = emiya ? Math.min(0.92F, (float)ServantCombatFormulas.blockReduction(params) + 0.18F) : (float)ServantCombatFormulas.blockReduction(params);
+      float reduced = amount * (1.0F - reduction);
       return source.is(DamageTypeTags.IS_EXPLOSION) ? Math.max(reduced, amount * 0.5F) : reduced;
    }
 
    private static void respondToNoblePhantasm(ServantEntity responder, ServantEntity caster, LivingEntity target, boolean ranged) {
+      long now = responder.level().getGameTime();
+      if (ranged
+         && responder instanceof EmiyaArcherEntity emiya
+         && CuChulainnCombatHelper.isGaeBolgWindingUp(caster)
+         && EmiyaArcherCombatHelper.forceCastRhoAiasAgainstNoblePhantasm(emiya, caster, now)) {
+         return;
+      }
       ServantDefinition definition = responder.getDefinition();
       ServantSpecialization specialization = definition != null ? definition.specialization() : ServantSpecialization.empty();
       ServantParams params = definition != null ? definition.parameters() : null;
@@ -515,7 +540,7 @@ public final class ServantCombatSystem {
          return;
       }
       if (ranged && specialization.hasCombatAction("ranged_np") && canUseNoblePhantasm(responder) && responder.getCurrentMp() >= responder.getMaxMp() * 0.35) {
-         responder.getPersistentData().putLong(TAG_DAMAGE_BOOST_UNTIL, responder.level().getGameTime() + 60L);
+         responder.getPersistentData().putLong(TAG_DAMAGE_BOOST_UNTIL, now + 60L);
          responder.setCurrentMp(Math.max(0.0, responder.getCurrentMp() - responder.getMaxMp() * 0.25));
          spawnGuardFx(responder, ParticleTypes.FLASH, SoundEvents.BEACON_ACTIVATE, 1.2F);
          return;
@@ -526,14 +551,14 @@ public final class ServantCombatSystem {
          spawnGuardFx(responder, ParticleTypes.CRIT, SoundEvents.TRIDENT_THROW.value(), 1.4F);
          return;
       }
-      if (ServantCombatFormulas.agilityStep(params) >= 3 && tryAutoDodge(responder, caster.damageSources().mobAttack(caster), params, responder.level().getGameTime())) {
+      if (ServantCombatFormulas.agilityStep(params) >= 3 && tryAutoDodge(responder, caster.damageSources().mobAttack(caster), params, now)) {
          return;
       }
-      if (tryAutoBlock(responder, caster.damageSources().mobAttack(caster), 20.0F, params, responder.level().getGameTime()) != null) {
+      if (tryAutoBlock(responder, caster.damageSources().mobAttack(caster), 20.0F, params, now) != null) {
          return;
       }
       if (isBerserker(definition) || responder.getPersistentData().getBoolean("BattleContinuationActive")) {
-         responder.getPersistentData().putLong(TAG_DAMAGE_BOOST_UNTIL, responder.level().getGameTime() + 100L);
+         responder.getPersistentData().putLong(TAG_DAMAGE_BOOST_UNTIL, now + 100L);
          applyAttackBoost(responder, 0.20);
       }
    }

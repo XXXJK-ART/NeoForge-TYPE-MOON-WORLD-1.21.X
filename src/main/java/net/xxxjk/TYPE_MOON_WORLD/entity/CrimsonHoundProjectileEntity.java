@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(CrimsonHoundProjectileEntity.class, EntityDataSerializers.INT);
+   private static final float DIRECT_HIT_DAMAGE = 58.0F;
 
    public CrimsonHoundProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -100,6 +101,14 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void hitTarget(LivingEntity target) {
+      target.invulnerableTime = 0;
+      target.hurt(this.damageSources().thrown(this, this.getOwner()), DIRECT_HIT_DAMAGE);
+      target.invulnerableTime = 0;
+      if (this.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 32, 0.55, 0.45, 0.55, 0.12);
+         level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 24, 0.45, 0.45, 0.45, 0.12);
+      }
       triggerBrokenPhantasm(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
       this.discard();
    }
@@ -107,7 +116,7 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
    private void triggerBrokenPhantasm(Vec3 pos) {
       if (this.level() instanceof ServerLevel level) {
          Entity owner = this.getOwner();
-         UBWBrokenPhantasmExplosion.explode(level, this, owner, this.getItem(), pos, 1.1F);
+         UBWBrokenPhantasmExplosion.explode(level, this, owner, this.getItem(), pos, 1.65F);
       }
    }
 }

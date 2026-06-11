@@ -24,10 +24,10 @@ public class UbwSkyGearEntityRenderer extends EntityRenderer<UbwSkyGearEntity> {
    public void render(UbwSkyGearEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
       poseStack.pushPose();
       poseStack.mulPose(Axis.YP.rotationDegrees(entityYaw));
-      poseStack.mulPose(Axis.ZP.rotationDegrees(entity.getYRot() + partialTicks * entity.getRotationSpeed()));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(entity.getYRot()));
       float scale = entity.getGearScale();
       poseStack.scale(scale, scale, scale);
-      this.itemRenderer.renderByItem(stackFor(entity.getVariant()), ItemDisplayContext.NONE, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
+      this.itemRenderer.renderByItem(stackFor(entity.getVariant()), ItemDisplayContext.NONE, poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY);
       poseStack.popPose();
       super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
    }

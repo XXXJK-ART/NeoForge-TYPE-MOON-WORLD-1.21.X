@@ -28,7 +28,8 @@ public class UbwSkyGearEntity extends Entity {
       this.entityData.set(VARIANT, variant);
       this.entityData.set(SCALE, scale);
       this.entityData.set(DURATION, duration);
-      this.entityData.set(ROTATION_SPEED, (level.random.nextFloat() - 0.5F) * 2.5F);
+      this.entityData.set(ROTATION_SPEED, 0.0F);
+      this.setYRot(level.random.nextFloat() * 360.0F);
    }
 
    @Override
@@ -52,9 +53,13 @@ public class UbwSkyGearEntity extends Entity {
    }
 
    @Override
+   public boolean shouldRenderAtSqrDistance(double distance) {
+      return true;
+   }
+
+   @Override
    public void tick() {
       super.tick();
-      this.setYRot(this.getYRot() + this.entityData.get(ROTATION_SPEED));
       if (this.tickCount >= this.entityData.get(DURATION)) {
          this.discard();
       }

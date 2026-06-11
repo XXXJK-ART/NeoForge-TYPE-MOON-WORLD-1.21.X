@@ -520,7 +520,7 @@ public final class CursedArmHassanCombatHelper {
          entity.setTarget(null);
          return;
       }
-      boolean validInstantDeath = isHumanoidInstantDeathTarget(target);
+      boolean validInstantDeath = isHumanoidInstantDeathTarget(target) && !(target instanceof EmiyaArcherEntity);
       if (HeraclesGodHandHelper.isAdaptedToZabaniya(target)) {
          HeraclesGodHandHelper.applyAdaptedSlow(target, 120);
          applyZabaniyaCurse(target);

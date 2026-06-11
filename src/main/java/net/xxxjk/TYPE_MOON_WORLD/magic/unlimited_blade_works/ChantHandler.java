@@ -194,7 +194,7 @@ public class ChantHandler {
                Vec3 pos = entity.position();
                if (event.getLevel() instanceof ServerLevel serverLevel) {
                   UUID instanceOwner = UBWInstanceManager.getOwnerId(serverLevel.dimension());
-                  if (instanceOwner != null) {
+                  if (instanceOwner != null && serverLevel.getServer().getPlayerList().getPlayer(instanceOwner) != null) {
                      attachGeneratedEntityToOwner(entity, instanceOwner, serverLevel);
                      return;
                   }

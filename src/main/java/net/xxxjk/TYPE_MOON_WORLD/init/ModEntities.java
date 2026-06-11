@@ -331,7 +331,7 @@ public class ModEntities {
       "ubw_sky_gear",
       () -> Builder.<UbwSkyGearEntity>of((entityType, level) -> new UbwSkyGearEntity(entityType, level), MobCategory.MISC)
          .sized(16.0F, 16.0F)
-         .clientTrackingRange(32)
+         .clientTrackingRange(128)
          .updateInterval(2)
          .build("ubw_sky_gear")
    );

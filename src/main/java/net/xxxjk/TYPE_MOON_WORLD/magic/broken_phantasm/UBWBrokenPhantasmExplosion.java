@@ -43,15 +43,18 @@ public class UBWBrokenPhantasmExplosion {
          if (level instanceof ServerLevel serverLevel) {
             float clampedScale = Mth.clamp(scale, 0.35F, 2.0F);
             double damageRadius = Mth.clamp(radiusPower * 2.45 * clampedScale, 5.5, 16.0);
-            float totalDamage = Mth.clamp((10.0F + damagePower * 5.0F) * clampedScale, 24.0F, 80.0F);
+            float totalDamage = Mth.clamp(400.0F + damagePower * 18.0F * clampedScale, 400.0F, 600.0F);
             DamageSource explosionSource = level.damageSources().explosion(source, owner);
             Set<Integer> damagedEntities = new HashSet<>();
             spawnShellEffects(serverLevel, pos, damageRadius);
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 3, 0.2, 0.2, 0.2, 0.0);
-            serverLevel.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 4, 0.1, 0.1, 0.1, 0.0);
-            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y + 0.25, pos.z, 28, 0.9, 0.35, 0.9, 0.04);
-            serverLevel.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.4F, 0.64F);
-            int waveCount = Mth.clamp((int)Math.ceil(damageRadius * 1.25), 8, 18);
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 5, 0.35, 0.35, 0.35, 0.0);
+            serverLevel.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 7, 0.14, 0.14, 0.14, 0.0);
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y + 0.25, pos.z, 72, 1.45, 0.55, 1.45, 0.07);
+            serverLevel.sendParticles(ParticleTypes.FLAME, pos.x, pos.y + 0.2, pos.z, 96, 1.35, 0.55, 1.35, 0.1);
+            serverLevel.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y + 0.5, pos.z, 56, 1.1, 0.75, 1.1, 0.16);
+            serverLevel.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 3.4F, 0.52F);
+            serverLevel.playSound(null, pos.x, pos.y, pos.z, SoundEvents.RESPAWN_ANCHOR_DEPLETE.value(), SoundSource.HOSTILE, 1.45F, 0.72F);
+            int waveCount = Mth.clamp((int)Math.ceil(damageRadius * 1.65), 12, 26);
             double waveStep = damageRadius / waveCount;
             for (int wave = 1; wave <= waveCount; wave++) {
                final int waveIndex = wave;

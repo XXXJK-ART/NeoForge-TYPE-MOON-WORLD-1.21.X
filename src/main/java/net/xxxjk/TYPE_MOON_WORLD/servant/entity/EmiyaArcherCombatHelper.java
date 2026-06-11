@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
@@ -25,11 +26,16 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -38,6 +44,9 @@ import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
@@ -48,7 +57,10 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class EmiyaArcherCombatHelper {
@@ -64,6 +76,10 @@ public final class EmiyaArcherCombatHelper {
    public static final String LAST_TWIN_REPEL_TICK = "EmiyaLastTwinRepelTick";
    public static final String LAST_CHASING_THRUST_TICK = "EmiyaLastChasingThrustTick";
    public static final String LAST_PROJECTION_IMPACT_TICK = "EmiyaLastProjectionImpactTick";
+   public static final String LAST_OVEREDGE_CLEAVE_TICK = "EmiyaLastOveredgeCleaveTick";
+   public static final String LAST_BLADE_RUPTURE_TICK = "EmiyaLastBladeRuptureTick";
+   public static final String LAST_AERIAL_PURSUIT_TICK = "EmiyaLastAerialPursuitTick";
+   public static final String LAST_REINFORCED_SLAM_TICK = "EmiyaLastReinforcedSlamTick";
    public static final String LAST_UBW_TICK = "EmiyaLastUbwTick";
    public static final String PROJECTED_EXPIRES_TICK = "EmiyaProjectedExpiresTick";
    public static final String PROJECTED_PAIR = "EmiyaProjectedPair";
@@ -73,6 +89,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_NEXT_RAIN = "EmiyaUbwNextRain";
    public static final String UBW_NEXT_INTERCEPT = "EmiyaUbwNextIntercept";
    public static final String UBW_NEXT_TERRAIN = "EmiyaUbwNextTerrain";
+   public static final String UBW_NEXT_BLADE_LIFT = "EmiyaUbwNextBladeLift";
    public static final String UBW_CENTER_X = "EmiyaUbwCenterX";
    public static final String UBW_CENTER_Y = "EmiyaUbwCenterY";
    public static final String UBW_CENTER_Z = "EmiyaUbwCenterZ";
@@ -80,17 +97,21 @@ public final class EmiyaArcherCombatHelper {
    public static final String COMBAT_MODE = "EmiyaCombatMode";
    public static final String ANALYZED_WEAPON_EXPIRES_TICK = "EmiyaAnalyzedWeaponExpiresTick";
    public static final String LAST_IRON_SWORD_SHOT_TICK = "EmiyaLastIronSwordShotTick";
+   public static final String LAST_CLAIRVOYANCE_SPIRAL_TICK = "EmiyaLastClairvoyanceSpiralTick";
    public static final String LAST_ANALYSIS_TICK = "EmiyaLastAnalysisTick";
    public static final String ANALYZED_WEAPON_STACK = "EmiyaAnalyzedWeaponStack";
+   public static final String ANALYZED_WEAPON_BUFF_UNTIL = "EmiyaAnalyzedWeaponBuffUntil";
    public static final String UBW_RETURN_DIMENSION = "EmiyaUbwReturnDimension";
    public static final String UBW_RETURN_X = "EmiyaUbwReturnX";
    public static final String UBW_RETURN_Y = "EmiyaUbwReturnY";
    public static final String UBW_RETURN_Z = "EmiyaUbwReturnZ";
+   public static final String UBW_LOCKED_TARGET = "EmiyaUbwLockedTarget";
    public static final String UBW_TARGET_OWNER = "EmiyaUbwTargetOwner";
    public static final String UBW_TARGET_RETURN_DIMENSION = "EmiyaUbwTargetReturnDimension";
    public static final String UBW_TARGET_RETURN_X = "EmiyaUbwTargetReturnX";
    public static final String UBW_TARGET_RETURN_Y = "EmiyaUbwTargetReturnY";
    public static final String UBW_TARGET_RETURN_Z = "EmiyaUbwTargetReturnZ";
+   public static final String UBW_TARGET_PRIMARY = "EmiyaUbwTargetPrimary";
    public static final String UBW_OFFSCREEN_DUEL = "EmiyaUbwOffscreenDuel";
    public static final String UBW_OFFSCREEN_PREVIOUS_INVISIBLE = "EmiyaUbwOffscreenPrevInvisible";
    public static final String UBW_OFFSCREEN_PREVIOUS_INVULNERABLE = "EmiyaUbwOffscreenPrevInvulnerable";
@@ -104,6 +125,7 @@ public final class EmiyaArcherCombatHelper {
    public static final int PROJECTION_VOLLEY_COOLDOWN = 3 * 20;
    public static final int IRON_SWORD_SHOT_COOLDOWN = 30;
    public static final int IRON_SWORD_ASSIST_COOLDOWN = 90;
+   public static final int CLAIRVOYANCE_SPIRAL_COOLDOWN = 12 * 20;
    public static final int ANALYSIS_COOLDOWN = 8 * 20;
    public static final int MIND_EYE_STEP_COOLDOWN = 4 * 20;
    public static final int TWIN_FLURRY_COOLDOWN = 3 * 20;
@@ -111,6 +133,10 @@ public final class EmiyaArcherCombatHelper {
    public static final int TWIN_REPEL_COOLDOWN = 3 * 20;
    public static final int CHASING_THRUST_COOLDOWN = 4 * 20;
    public static final int PROJECTION_IMPACT_COOLDOWN = 6 * 20;
+   public static final int OVEREDGE_CLEAVE_COOLDOWN = 5 * 20;
+   public static final int BLADE_RUPTURE_COOLDOWN = 7 * 20;
+   public static final int AERIAL_PURSUIT_COOLDOWN = 5 * 20;
+   public static final int REINFORCED_SLAM_COOLDOWN = 4 * 20;
    private static final String MODE_MELEE = "melee";
    private static final String MODE_RANGED = "ranged";
    private static final double TWIN_SWORD_COST = 8.0;
@@ -144,11 +170,20 @@ public final class EmiyaArcherCombatHelper {
       expireProjection(entity, now);
 
       LivingEntity target = entity.getTarget();
+      if ((target == null || !target.isAlive()) && entity.getPersistentData().hasUUID(UBW_LOCKED_TARGET)) {
+         target = findLivingByUuid(level, entity.getPersistentData().getUUID(UBW_LOCKED_TARGET));
+         if (target != null && target.isAlive()) {
+            forceCombatTarget(entity, target, level);
+         }
+      }
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          if (entity.getPersistentData().getLong(UBW_CHANT_END_TICK) > 0L) {
             restoreUbwChantTerrain(entity, level, Integer.MAX_VALUE);
             entity.getPersistentData().remove(UBW_CHANT_END_TICK);
             entity.getPersistentData().remove(UBW_CHANT_TARGET_ID);
+         }
+         if (tryClairvoyanceSpiralShot(entity, level, now)) {
+            return;
          }
          clearProjection(entity, true);
          return;
@@ -156,15 +191,19 @@ public final class EmiyaArcherCombatHelper {
 
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
       double distance = entity.distanceTo(target);
+      ServantCombatPhase phase = ServantCombatSystem.getPhase(entity);
+      boolean normalOrDecisive = phase.id() >= ServantCombatPhase.NORMAL.id();
+      boolean decisive = phase == ServantCombatPhase.DECISIVE;
       RhoAiasEntity ownedShield = findOwnedRhoAias(entity, level);
-      boolean rangedMode = ownedShield != null || shouldUseRangedMode(entity, target, distance, now);
+      boolean forceMeleeRange = distance <= 5.2 && entity.getPersistentData().getLong(UBW_CHANT_END_TICK) <= 0L;
+      boolean rangedMode = !forceMeleeRange && (ownedShield != null || shouldUseRangedMode(entity, target, distance, now));
       setCombatMode(entity, rangedMode ? MODE_RANGED : MODE_MELEE);
 
       if (tickUbwChant(entity, level, target, now)) {
          return;
       }
 
-      if (shouldCastUbw(entity, target, now)) {
+      if (shouldCastUbw(entity, target, now, phase)) {
          beginUbwChant(entity, level, target, now);
          return;
       }
@@ -174,20 +213,23 @@ public final class EmiyaArcherCombatHelper {
          RhoAiasEntity activeShield = ownedShield != null && ownedShield.isAlive() ? ownedShield : findOwnedRhoAias(entity, level);
          if (activeShield != null) {
             stayBehindRhoAias(entity, activeShield, target);
+            if (tryDetonateRhoAias(entity, level, activeShield, target, now, phase)) {
+               return;
+            }
          }
          if (canUse(now, entity.getPersistentData().getLong(LAST_IRON_SWORD_SHOT_TICK), IRON_SWORD_SHOT_COOLDOWN)) {
             shootIronSword(entity, level, target, now);
             return;
          }
-         if (canUse(now, entity.getPersistentData().getLong(LAST_PROJECTION_VOLLEY_TICK), PROJECTION_VOLLEY_COOLDOWN) && entity.getCurrentMp() >= 12.0) {
+         if (normalOrDecisive && canUse(now, entity.getPersistentData().getLong(LAST_PROJECTION_VOLLEY_TICK), phasedCooldown(PROJECTION_VOLLEY_COOLDOWN, phase)) && entity.getCurrentMp() >= 12.0) {
             castProjectionVolley(entity, level, target, now);
             return;
          }
-         if (shouldUseCrimsonHound(entity, target, now) && canUse(now, entity.getPersistentData().getLong(LAST_CRIMSON_TICK), CRIMSON_COOLDOWN) && entity.getCurrentMp() >= 20.0) {
+         if (normalOrDecisive && shouldUseCrimsonHound(entity, target, now, phase) && canUse(now, entity.getPersistentData().getLong(LAST_CRIMSON_TICK), phasedCooldown(CRIMSON_COOLDOWN, phase)) && entity.getCurrentMp() >= 20.0) {
             castCrimsonHound(entity, level, target, now);
             return;
          }
-         if (shouldUsePseudoSpiralSword(entity, target, now) && canUse(now, entity.getPersistentData().getLong(LAST_SPIRAL_TICK), SPIRAL_COOLDOWN) && entity.getCurrentMp() >= 25.0) {
+         if (decisive && shouldUsePseudoSpiralSword(entity, target, now, phase) && canUse(now, entity.getPersistentData().getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, phase)) && entity.getCurrentMp() >= 25.0) {
             castPseudoSpiralSword(entity, level, target, now);
             return;
          }
@@ -198,59 +240,93 @@ public final class EmiyaArcherCombatHelper {
          } else if (distance > 18.0) {
             entity.getNavigation().moveTo(target, 1.15);
          }
-         maybeShield(entity, level, target, now);
+         maybeShield(entity, level, target, now, phase);
          return;
       }
 
       equipMeleeWeapon(entity, target, now);
-      if (distance > 4.2 && canUse(now, entity.getPersistentData().getLong(LAST_IRON_SWORD_SHOT_TICK), IRON_SWORD_ASSIST_COOLDOWN)) {
+      if (distance > 7.0 && canUse(now, entity.getPersistentData().getLong(LAST_IRON_SWORD_SHOT_TICK), IRON_SWORD_ASSIST_COOLDOWN)) {
          shootIronSword(entity, level, target, now);
          return;
       }
       if (distance >= 3.2 && distance <= 7.0
-         && canUse(now, entity.getPersistentData().getLong(LAST_CHASING_THRUST_TICK), CHASING_THRUST_COOLDOWN)
+         && canUse(now, entity.getPersistentData().getLong(LAST_CHASING_THRUST_TICK), phasedCooldown(CHASING_THRUST_COOLDOWN, phase))
          && entity.getCurrentMp() >= 7.0) {
          performChasingThrust(entity, level, target, now);
          return;
       }
-      if (distance <= 3.2 && canUse(now, entity.getPersistentData().getLong(LAST_MIND_EYE_STEP_TICK), MIND_EYE_STEP_COOLDOWN) && entity.getCurrentMp() >= 8.0) {
+      if (distance <= 3.2 && canUse(now, entity.getPersistentData().getLong(LAST_MIND_EYE_STEP_TICK), phasedCooldown(MIND_EYE_STEP_COOLDOWN, phase)) && entity.getCurrentMp() >= 8.0 && (phase == ServantCombatPhase.PROBING || entity.getRandom().nextInt(100) < 35)) {
          performMindEyeStep(entity, level, target, now);
          return;
       }
-      if (distance <= 3.5 && canUse(now, entity.getPersistentData().getLong(LAST_BROKEN_PHANTASM_TICK), BROKEN_PHANTASM_COOLDOWN) && entity.getHealth() < entity.getMaxHealth() * 0.45F) {
+      if (hasAnalyzedWeaponProjectionBuff(entity, now)
+         && distance <= 5.8
+         && canUse(now, entity.getPersistentData().getLong(LAST_REINFORCED_SLAM_TICK), phasedCooldown(REINFORCED_SLAM_COOLDOWN, phase))
+         && entity.getCurrentMp() >= 12.0
+         && entity.getRandom().nextInt(100) < phaseChance(42, phase)) {
+         performReinforcedProjectionSlam(entity, level, target, now);
+         return;
+      }
+      if (decisive && distance <= 3.5 && canUse(now, entity.getPersistentData().getLong(LAST_BROKEN_PHANTASM_TICK), phasedCooldown(BROKEN_PHANTASM_COOLDOWN, phase)) && entity.getHealth() < entity.getMaxHealth() * 0.45F) {
          triggerBrokenPhantasm(entity, level, now, 0.2F);
          return;
       }
       if (distance <= 3.8
-         && canUse(now, entity.getPersistentData().getLong(LAST_TWIN_UPPERCUT_TICK), TWIN_UPPERCUT_COOLDOWN)
+         && normalOrDecisive
+         && canUse(now, entity.getPersistentData().getLong(LAST_TWIN_UPPERCUT_TICK), phasedCooldown(TWIN_UPPERCUT_COOLDOWN, phase))
          && entity.getCurrentMp() >= 6.0
-         && entity.getRandom().nextInt(100) < 36) {
+         && entity.getRandom().nextInt(100) < phaseChance(36, phase)) {
          performTwinUppercut(entity, level, target, now);
          return;
       }
-      if (distance <= 4.2
-         && canUse(now, entity.getPersistentData().getLong(LAST_PROJECTION_IMPACT_TICK), PROJECTION_IMPACT_COOLDOWN)
+      if (distance <= 4.4
+         && normalOrDecisive
+         && canUse(now, entity.getPersistentData().getLong(LAST_AERIAL_PURSUIT_TICK), phasedCooldown(AERIAL_PURSUIT_COOLDOWN, phase))
          && entity.getCurrentMp() >= 10.0
-         && nearbyEnemyCount(entity, level, 4.5) >= 2) {
+         && entity.getRandom().nextInt(100) < phaseChance(28, phase)) {
+         performAerialPursuit(entity, level, target, now);
+         return;
+      }
+      if (distance <= 4.2
+         && normalOrDecisive
+         && canUse(now, entity.getPersistentData().getLong(LAST_PROJECTION_IMPACT_TICK), phasedCooldown(PROJECTION_IMPACT_COOLDOWN, phase))
+         && entity.getCurrentMp() >= 10.0
+         && (nearbyEnemyCount(entity, level, 4.5) >= 2 || entity.getRandom().nextInt(100) < phaseChance(22, phase))) {
          performProjectionImpact(entity, level, target, now);
          return;
       }
+      if (distance <= 4.8
+         && normalOrDecisive
+         && canUse(now, entity.getPersistentData().getLong(LAST_OVEREDGE_CLEAVE_TICK), phasedCooldown(OVEREDGE_CLEAVE_COOLDOWN, phase))
+         && entity.getCurrentMp() >= 14.0
+         && (nearbyEnemyCount(entity, level, 4.8) >= 2 || entity.getRandom().nextInt(100) < phaseChance(34, phase))) {
+         performOveredgeCleave(entity, level, target, now);
+         return;
+      }
+      if (distance <= 3.6
+         && decisive
+         && canUse(now, entity.getPersistentData().getLong(LAST_BLADE_RUPTURE_TICK), phasedCooldown(BLADE_RUPTURE_COOLDOWN, phase))
+         && entity.getCurrentMp() >= 16.0
+         && (nearbyEnemyCount(entity, level, 4.0) >= 2 || entity.getRandom().nextInt(100) < phaseChance(24, phase))) {
+         performBladeRupture(entity, level, target, now);
+         return;
+      }
       if (distance <= 4.0
-         && canUse(now, entity.getPersistentData().getLong(LAST_TWIN_REPEL_TICK), TWIN_REPEL_COOLDOWN)
+         && canUse(now, entity.getPersistentData().getLong(LAST_TWIN_REPEL_TICK), phasedCooldown(TWIN_REPEL_COOLDOWN, phase))
          && entity.getCurrentMp() >= 6.0
-         && (nearbyEnemyCount(entity, level, 3.2) >= 2 || entity.getRandom().nextInt(100) < 32)) {
+         && (nearbyEnemyCount(entity, level, 3.2) >= 2 || entity.getRandom().nextInt(100) < phaseChance(32, phase))) {
          performTwinRepel(entity, level, target, now);
          return;
       }
-      if (distance <= 5.0 && canUse(now, entity.getPersistentData().getLong(LAST_TWIN_FLURRY_TICK), TWIN_FLURRY_COOLDOWN) && entity.getCurrentMp() >= 12.0) {
+      if (distance <= 5.0 && canUse(now, entity.getPersistentData().getLong(LAST_TWIN_FLURRY_TICK), phasedCooldown(TWIN_FLURRY_COOLDOWN, phase)) && entity.getCurrentMp() >= 12.0) {
          performTwinSwordFlurry(entity, level, target, now);
          return;
       }
-      if (distance <= 6.5 && canUse(now, entity.getPersistentData().getLong(LAST_HRUNTING_STYLE_TICK), 240) && entity.getCurrentMp() >= 30.0) {
+      if (normalOrDecisive && distance <= 6.5 && canUse(now, entity.getPersistentData().getLong(LAST_HRUNTING_STYLE_TICK), phasedCooldown(240, phase)) && entity.getCurrentMp() >= 30.0) {
          executeKanshouBakuyaTriple(entity, level, target, now);
          return;
       }
-      if (distance <= 8.0 && canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), RHO_AIAS_COOLDOWN) && entity.getCurrentMp() >= 35.0 && target.getLastHurtByMob() != null) {
+      if (normalOrDecisive && distance <= 8.0 && canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), phasedCooldown(RHO_AIAS_COOLDOWN, phase)) && entity.getCurrentMp() >= 35.0 && target.getLastHurtByMob() != null) {
          castRhoAias(entity, level, target, now);
       }
    }
@@ -268,6 +344,25 @@ public final class EmiyaArcherCombatHelper {
       if (entity.level() instanceof ServerLevel level) {
          cleanupUbw(entity, level);
       }
+   }
+
+   public static boolean forceCastRhoAiasAgainstNoblePhantasm(EmiyaArcherEntity entity, LivingEntity threat, long now) {
+      if (entity == null || threat == null || !entity.isAlive() || !threat.isAlive() || !(entity.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      RhoAiasEntity shield = findOwnedRhoAias(entity, level);
+      if (shield == null || !shield.isAlive()) {
+         castRhoAias(entity, level, threat, now, false);
+         shield = findOwnedRhoAias(entity, level);
+      } else {
+         entity.getPersistentData().putLong(LAST_RHO_AIAS_TICK, now);
+         entity.faceToward(threat.position().add(0.0, threat.getBbHeight() * 0.5, 0.0));
+      }
+      if (shield != null && shield.isAlive()) {
+         setCombatMode(entity, MODE_RANGED);
+         stayBehindRhoAias(entity, shield, threat);
+      }
+      return true;
    }
 
    private static void cleanupUbw(EmiyaArcherEntity entity, ServerLevel level) {
@@ -307,7 +402,7 @@ public final class EmiyaArcherCombatHelper {
       }
    }
 
-   private static boolean shouldCastUbw(EmiyaArcherEntity entity, LivingEntity target, long now) {
+   private static boolean shouldCastUbw(EmiyaArcherEntity entity, LivingEntity target, long now, ServantCombatPhase phase) {
       if (entity.getPersistentData().getLong(UBW_CHANT_END_TICK) > now) {
          return false;
       }
@@ -320,12 +415,17 @@ public final class EmiyaArcherCombatHelper {
       if (entity.getCurrentMp() < 120.0) {
          return false;
       }
+      if (phase == ServantCombatPhase.PROBING) {
+         return false;
+      }
       if (entity.getHealth() > entity.getMaxHealth() * 0.85F && entity.distanceTo(target) < 12.0) {
          return false;
       }
       List<LivingEntity> threats = entity.level().getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(12.0),
          living -> living != entity && living.isAlive() && !living.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(living));
-      return threats.size() >= 3 || target.getHealth() > 120.0F;
+      return phase == ServantCombatPhase.DECISIVE && (threats.size() >= 2 || target.getHealth() > 90.0F)
+         || threats.size() >= 3
+         || target.getHealth() > 140.0F;
    }
 
    private static void beginUbwChant(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -414,6 +514,7 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void activateUbw(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      recordUbwLockedTarget(entity, target);
       List<LivingEntity> pulledTargets = collectUbwTargets(entity, level, target);
       if (!pulledTargets.isEmpty() && pulledTargets.stream().noneMatch(ServerPlayer.class::isInstance)) {
          startOffscreenUbwDuel(entity, level, pulledTargets.get(0), now);
@@ -424,6 +525,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().putDouble(UBW_RETURN_X, entity.getX());
       entity.getPersistentData().putDouble(UBW_RETURN_Y, entity.getY());
       entity.getPersistentData().putDouble(UBW_RETURN_Z, entity.getZ());
+      UUID lockedTargetId = entity.getPersistentData().hasUUID(UBW_LOCKED_TARGET) ? entity.getPersistentData().getUUID(UBW_LOCKED_TARGET) : null;
       entity.triggerChargeAnimation();
       BlockPos sourceCenter = entity.blockPosition();
       level.playSound(null, sourceCenter, SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.65F);
@@ -466,8 +568,13 @@ public final class EmiyaArcherCombatHelper {
          archer.getPersistentData().putDouble(UBW_RETURN_X, entity.getPersistentData().getDouble(UBW_RETURN_X));
          archer.getPersistentData().putDouble(UBW_RETURN_Y, entity.getPersistentData().getDouble(UBW_RETURN_Y));
          archer.getPersistentData().putDouble(UBW_RETURN_Z, entity.getPersistentData().getDouble(UBW_RETURN_Z));
-         if (ubwTarget != null && ubwTarget.isAlive()) {
-            archer.setTarget(ubwTarget);
+         if (lockedTargetId != null) {
+            archer.getPersistentData().putUUID(UBW_LOCKED_TARGET, lockedTargetId);
+         }
+         LivingEntity lockedInUbw = lockedTargetId != null ? findLivingByUuid(ubwLevel, lockedTargetId) : null;
+         LivingEntity targetInUbw = lockedInUbw != null && lockedInUbw.isAlive() ? lockedInUbw : ubwTarget;
+         if (targetInUbw != null && targetInUbw.isAlive()) {
+            forceCombatTarget(archer, targetInUbw, ubwLevel);
          }
          ubwLevel.playSound(null, entryBlock, SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.65F);
          ubwLevel.sendParticles(ParticleTypes.FLAME, entryPos.x, entryPos.y + 0.2, entryPos.z, 48, 4.0, 0.12, 4.0, 0.03);
@@ -505,6 +612,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().putLong(UBW_NEXT_RAIN, now + 20L);
       entity.getPersistentData().putLong(UBW_NEXT_INTERCEPT, now + 8L);
       entity.getPersistentData().putLong(UBW_NEXT_TERRAIN, now + 1L);
+      entity.getPersistentData().putLong(UBW_NEXT_BLADE_LIFT, now + 18L);
       entity.getPersistentData().putInt(UBW_CENTER_X, center.getX());
       entity.getPersistentData().putInt(UBW_CENTER_Y, center.getY());
       entity.getPersistentData().putInt(UBW_CENTER_Z, center.getZ());
@@ -518,6 +626,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().remove(UBW_NEXT_RAIN);
       entity.getPersistentData().remove(UBW_NEXT_INTERCEPT);
       entity.getPersistentData().remove(UBW_NEXT_TERRAIN);
+      entity.getPersistentData().remove(UBW_NEXT_BLADE_LIFT);
       entity.getPersistentData().remove(UBW_CENTER_X);
       entity.getPersistentData().remove(UBW_CENTER_Y);
       entity.getPersistentData().remove(UBW_CENTER_Z);
@@ -526,8 +635,15 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().remove(UBW_RETURN_X);
       entity.getPersistentData().remove(UBW_RETURN_Y);
       entity.getPersistentData().remove(UBW_RETURN_Z);
+      entity.getPersistentData().remove(UBW_LOCKED_TARGET);
       EMIYA_UBW_CHANT_BLOCKS.remove(entity.getUUID());
       clearOffscreenDuelState(entity);
+   }
+
+   private static void recordUbwLockedTarget(EmiyaArcherEntity entity, LivingEntity target) {
+      if (target != null && target.isAlive()) {
+         entity.getPersistentData().putUUID(UBW_LOCKED_TARGET, target.getUUID());
+      }
    }
 
    private static void startOffscreenUbwDuel(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -649,17 +765,17 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static LivingEntity moveTargetsIntoUbw(EmiyaArcherEntity owner, ServerLevel source, ServerLevel ubwLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 entryPos) {
-      LivingEntity movedPrimary = moveLivingIntoUbw(owner, source, ubwLevel, primary, entryPos);
+      LivingEntity movedPrimary = moveLivingIntoUbw(owner, source, ubwLevel, primary, entryPos, true);
       for (LivingEntity living : targets) {
          if (living == primary) {
             continue;
          }
-         moveLivingIntoUbw(owner, source, ubwLevel, living, entryPos);
+         moveLivingIntoUbw(owner, source, ubwLevel, living, entryPos, false);
       }
       return movedPrimary;
    }
 
-   private static LivingEntity moveLivingIntoUbw(EmiyaArcherEntity owner, ServerLevel source, ServerLevel ubwLevel, LivingEntity living, Vec3 entryPos) {
+   private static LivingEntity moveLivingIntoUbw(EmiyaArcherEntity owner, ServerLevel source, ServerLevel ubwLevel, LivingEntity living, Vec3 entryPos, boolean primaryTarget) {
       if (living == null || !living.isAlive() || living == owner || living.level() != source) {
          return null;
       }
@@ -671,7 +787,7 @@ public final class EmiyaArcherCombatHelper {
       double returnX = living.getX();
       double returnY = living.getY();
       double returnZ = living.getZ();
-      markPulledTarget(owner, living, source, returnX, returnY, returnZ);
+      markPulledTarget(owner, living, source, returnX, returnY, returnZ, primaryTarget);
       Entity moved = living.changeDimension(new DimensionTransition(
          ubwLevel,
          new Vec3(targetX, targetY, targetZ),
@@ -681,18 +797,23 @@ public final class EmiyaArcherCombatHelper {
          DimensionTransition.DO_NOTHING
       ));
       if (moved instanceof LivingEntity movedLiving) {
-         markPulledTarget(owner, movedLiving, source, returnX, returnY, returnZ);
+         markPulledTarget(owner, movedLiving, source, returnX, returnY, returnZ, primaryTarget);
          return movedLiving;
       }
       return null;
    }
 
-   private static void markPulledTarget(EmiyaArcherEntity owner, LivingEntity target, ServerLevel source, double returnX, double returnY, double returnZ) {
+   private static void markPulledTarget(EmiyaArcherEntity owner, LivingEntity target, ServerLevel source, double returnX, double returnY, double returnZ, boolean primaryTarget) {
       target.getPersistentData().putUUID(UBW_TARGET_OWNER, owner.getUUID());
       target.getPersistentData().putString(UBW_TARGET_RETURN_DIMENSION, source.dimension().location().toString());
       target.getPersistentData().putDouble(UBW_TARGET_RETURN_X, returnX);
       target.getPersistentData().putDouble(UBW_TARGET_RETURN_Y, returnY);
       target.getPersistentData().putDouble(UBW_TARGET_RETURN_Z, returnZ);
+      if (primaryTarget) {
+         target.getPersistentData().putBoolean(UBW_TARGET_PRIMARY, true);
+      } else {
+         target.getPersistentData().remove(UBW_TARGET_PRIMARY);
+      }
    }
 
    private static int findSafeSpawnY(ServerLevel level, int x, int z) {
@@ -745,11 +866,22 @@ public final class EmiyaArcherCombatHelper {
          LivingEntity target = entity.getTarget();
          if (target != null && target.isAlive()) {
             rainSwords(entity, level, target);
+            if ((now / 16L) % 3L == 0L) {
+               rainGreatSwords(entity, level, target);
+            }
             if (target.getHealth() <= target.getMaxHealth() * 0.35F || target.getHealth() <= 40.0F) {
                gatherSwordsOnLowHealth(entity, level, target);
             }
          }
-         entity.getPersistentData().putLong(UBW_NEXT_RAIN, now + 16L);
+         entity.getPersistentData().putLong(UBW_NEXT_RAIN, now + 10L);
+      }
+
+      if (now >= entity.getPersistentData().getLong(UBW_NEXT_BLADE_LIFT)) {
+         LivingEntity target = entity.getTarget();
+         if (target != null && target.isAlive()) {
+            liftUbwBlockSwords(entity, level, target, 12);
+         }
+         entity.getPersistentData().putLong(UBW_NEXT_BLADE_LIFT, now + 18L);
       }
 
       if (now >= entity.getPersistentData().getLong(UBW_NEXT_INTERCEPT)) {
@@ -766,13 +898,14 @@ public final class EmiyaArcherCombatHelper {
    private static void returnFromUbw(EmiyaArcherEntity entity, ServerLevel level) {
       UUID ownerId = entity.getUUID();
       CompoundTag data = entity.getPersistentData();
+      UUID lockedTargetId = data.hasUUID(UBW_LOCKED_TARGET) ? data.getUUID(UBW_LOCKED_TARGET) : null;
       ServerLevel returnLevel = resolveDimensionOrOverworld(level, data.getString(UBW_RETURN_DIMENSION));
       Vec3 returnPos = new Vec3(
          data.getDouble(UBW_RETURN_X),
          data.getDouble(UBW_RETURN_Y),
          data.getDouble(UBW_RETURN_Z)
       );
-      returnPulledTargets(ownerId, level, returnLevel);
+      UUID primaryReturnedId = returnPulledTargets(ownerId, level, returnLevel);
       clearUbwState(entity);
       if (entity.isAlive()) {
          Entity moved = entity.changeDimension(new DimensionTransition(
@@ -786,20 +919,23 @@ public final class EmiyaArcherCombatHelper {
          if (moved instanceof EmiyaArcherEntity returned) {
             clearUbwState(returned);
             returned.getNavigation().stop();
+            restoreReturnedCombatTargets(returned, returnLevel, ownerId, lockedTargetId != null ? lockedTargetId : primaryReturnedId);
          }
       }
       UBWInstanceManager.scheduleDeleteInstance(level.getServer(), ownerId);
    }
 
-   private static void returnPulledTargets(UUID ownerId, ServerLevel sourceLevel, ServerLevel fallbackReturnLevel) {
+   private static UUID returnPulledTargets(UUID ownerId, ServerLevel sourceLevel, ServerLevel fallbackReturnLevel) {
       List<LivingEntity> toReturn = new java.util.ArrayList<>();
       for (Entity candidate : sourceLevel.getEntities().getAll()) {
          if (candidate instanceof LivingEntity living && living.isAlive() && isPulledBy(ownerId, living)) {
             toReturn.add(living);
          }
       }
+      UUID primaryReturnedId = null;
       for (LivingEntity living : toReturn) {
          CompoundTag data = living.getPersistentData();
+         boolean primaryTarget = data.getBoolean(UBW_TARGET_PRIMARY);
          ServerLevel returnLevel = resolveDimensionOrFallback(sourceLevel, data.getString(UBW_TARGET_RETURN_DIMENSION), fallbackReturnLevel);
          Vec3 returnPos = new Vec3(
             data.getDouble(UBW_TARGET_RETURN_X),
@@ -816,9 +952,70 @@ public final class EmiyaArcherCombatHelper {
             DimensionTransition.DO_NOTHING
          ));
          if (moved instanceof LivingEntity movedLiving) {
+            if (primaryTarget) {
+               primaryReturnedId = movedLiving.getUUID();
+            }
             clearPulledTarget(movedLiving);
+         } else if (primaryTarget) {
+            primaryReturnedId = living.getUUID();
          }
       }
+      return primaryReturnedId;
+   }
+
+   private static void restoreReturnedCombatTargets(EmiyaArcherEntity archer, ServerLevel level, UUID ownerId, UUID lockedTargetId) {
+      LivingEntity closest = findReturnedPrimaryTarget(archer, level, lockedTargetId);
+      double closestDistance = Double.MAX_VALUE;
+      if (closest == null) {
+         AABB area = archer.getBoundingBox().inflate(32.0);
+         for (LivingEntity living : level.getEntitiesOfClass(
+            LivingEntity.class,
+            area,
+            e -> e != archer && e.isAlive() && !e.isAlliedTo(archer) && !EntityUtils.isImmunePlayerTarget(e)
+         )) {
+            double distance = living.distanceToSqr(archer);
+            if (distance < closestDistance) {
+               closest = living;
+               closestDistance = distance;
+            }
+         }
+      }
+      if (closest != null) {
+         forceCombatTarget(archer, closest, level);
+         level.sendParticles(ParticleTypes.ANGRY_VILLAGER, archer.getX(), archer.getY() + archer.getBbHeight(), archer.getZ(), 3, 0.25, 0.25, 0.25, 0.0);
+      }
+   }
+
+   private static LivingEntity findReturnedPrimaryTarget(EmiyaArcherEntity archer, ServerLevel level, UUID primaryReturnedId) {
+      if (primaryReturnedId == null) {
+         return null;
+      }
+      Entity entity = level.getEntity(primaryReturnedId);
+      if (entity instanceof LivingEntity living && living.isAlive() && living != archer) {
+         return living;
+      }
+      return null;
+   }
+
+   private static LivingEntity findLivingByUuid(ServerLevel level, UUID id) {
+      if (id == null) {
+         return null;
+      }
+      Entity entity = level.getEntity(id);
+      return entity instanceof LivingEntity living ? living : null;
+   }
+
+   private static void forceCombatTarget(EmiyaArcherEntity archer, LivingEntity target, ServerLevel level) {
+      if (target == null || !target.isAlive() || target == archer) {
+         return;
+      }
+      archer.setTarget(target);
+      if (target instanceof Mob mob) {
+         mob.setTarget(archer);
+      }
+      archer.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+      archer.getPersistentData().putLong("TypeMoonCombatLastCombatTick", level.getGameTime());
+      recordUbwLockedTarget(archer, target);
    }
 
    private static boolean isPulledBy(UUID ownerId, LivingEntity living) {
@@ -832,6 +1029,7 @@ public final class EmiyaArcherCombatHelper {
       living.getPersistentData().remove(UBW_TARGET_RETURN_X);
       living.getPersistentData().remove(UBW_TARGET_RETURN_Y);
       living.getPersistentData().remove(UBW_TARGET_RETURN_Z);
+      living.getPersistentData().remove(UBW_TARGET_PRIMARY);
    }
 
    private static ServerLevel resolveDimensionOrOverworld(ServerLevel currentLevel, String dimensionId) {
@@ -853,25 +1051,46 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void rainSwords(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target) {
-      for (int i = 0; i < 4; i++) {
-         double sx = target.getX() + (entity.getRandom().nextDouble() - 0.5) * 8.0;
-         double sz = target.getZ() + (entity.getRandom().nextDouble() - 0.5) * 8.0;
+      for (int i = 0; i < 12; i++) {
+         double sx = target.getX() + (entity.getRandom().nextDouble() - 0.5) * 11.0;
+         double sz = target.getZ() + (entity.getRandom().nextDouble() - 0.5) * 11.0;
          double sy = target.getY() + 10.0 + entity.getRandom().nextDouble() * 8.0;
          ItemStack stack = new ItemStack(Items.IRON_SWORD);
          UBWProjectileEntity sword = new UBWProjectileEntity(level, entity, stack);
          sword.setPos(sx, sy, sz);
          Vec3 dir = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0).subtract(sx, sy, sz).normalize();
-         sword.setDeltaMovement(dir.scale(2.4));
+         sword.setDeltaMovement(dir.scale(2.65 + entity.getRandom().nextDouble() * 0.25));
          level.addFreshEntity(sword);
       }
+      level.sendParticles(ParticleTypes.ENCHANT, target.getX(), target.getY() + target.getBbHeight() * 0.7, target.getZ(), 28, 3.2, 1.0, 3.2, 0.08);
+   }
+
+   private static void rainGreatSwords(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target) {
+      for (int i = 0; i < 10; i++) {
+         double angle = Math.PI * 2.0 * i / 10.0 + entity.getRandom().nextDouble() * 0.35;
+         double radius = 4.0 + entity.getRandom().nextDouble() * 9.0;
+         double sx = target.getX() + Math.cos(angle) * radius;
+         double sz = target.getZ() + Math.sin(angle) * radius;
+         double sy = target.getY() + 18.0 + entity.getRandom().nextDouble() * 10.0;
+         ItemStack stack = new ItemStack(i % 3 == 0 ? Items.NETHERITE_SWORD : Items.DIAMOND_SWORD);
+         UBWProjectileEntity sword = new UBWProjectileEntity(level, entity, stack);
+         sword.setPos(sx, sy, sz);
+         Vec3 aim = target.position().add((entity.getRandom().nextDouble() - 0.5) * 2.0, target.getBbHeight() * 0.5, (entity.getRandom().nextDouble() - 0.5) * 2.0);
+         Vec3 dir = aim.subtract(sword.position()).normalize();
+         sword.setDeltaMovement(dir.scale(3.15));
+         level.addFreshEntity(sword);
+      }
+      level.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight(), target.getZ(), 2, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.7, target.getZ(), 36, 2.8, 1.0, 2.8, 0.14);
+      level.playSound(null, target.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.75F, 0.62F);
    }
 
    private static void spawnUbwChantFallingSwords(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target) {
       Vec3 center = target != null && target.isAlive() ? target.position() : entity.position().add(entity.getLookAngle().scale(7.0));
-      int count = target != null && target.isAlive() ? 2 : 1;
+      int count = target != null && target.isAlive() ? 6 : 3;
       for (int i = 0; i < count; i++) {
          double angle = level.random.nextDouble() * Math.PI * 2.0;
-         double radius = 2.5 + level.random.nextDouble() * 7.0;
+         double radius = 2.5 + level.random.nextDouble() * 10.0;
          double sx = center.x + Math.cos(angle) * radius;
          double sz = center.z + Math.sin(angle) * radius;
          double sy = center.y + 11.0 + level.random.nextDouble() * 7.0;
@@ -884,18 +1103,57 @@ public final class EmiyaArcherCombatHelper {
          sword.setDeltaMovement(dir.scale(2.35));
          level.addFreshEntity(sword);
       }
+      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.35, center.z, 12, 2.0, 0.25, 2.0, 0.04);
+   }
+
+   private static void liftUbwBlockSwords(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, int maxLifted) {
+      BlockPos center = target.blockPosition();
+      int lifted = 0;
+      int radius = 15;
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -4, -radius), center.offset(radius, 6, radius))) {
+         if (lifted >= maxLifted) {
+            break;
+         }
+         BlockState state = level.getBlockState(pos);
+         if (!state.is(ModBlocks.UBW_WEAPON_BLOCK.get())) {
+            continue;
+         }
+         if (pos.distSqr(center) > radius * radius) {
+            continue;
+         }
+         ItemStack stack = new ItemStack(Items.IRON_SWORD);
+         if (level.getBlockEntity(pos) instanceof UBWWeaponBlockEntity tile && !tile.getStoredItem().isEmpty()) {
+            stack = tile.getStoredItem().copy();
+         }
+         level.removeBlock(pos, false);
+         Vec3 spawn = Vec3.atCenterOf(pos).add(0.0, 0.75 + entity.getRandom().nextDouble() * 1.2, 0.0);
+         UBWProjectileEntity sword = new UBWProjectileEntity(level, entity, stack);
+         sword.setPos(spawn.x, spawn.y, spawn.z);
+         Vec3 aim = target.position().add(0.0, target.getBbHeight() * (0.35 + entity.getRandom().nextDouble() * 0.35), 0.0);
+         Vec3 dir = aim.subtract(spawn).normalize();
+         sword.setDeltaMovement(dir.scale(2.7 + entity.getRandom().nextDouble() * 0.55));
+         level.addFreshEntity(sword);
+         lifted++;
+         level.sendParticles(ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, 5, 0.18, 0.22, 0.18, 0.06);
+      }
+      if (lifted > 0) {
+         level.sendParticles(ParticleTypes.ENCHANT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), lifted * 4, 2.8, 0.8, 2.8, 0.12);
+         level.playSound(null, target.blockPosition(), SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.HOSTILE, 0.9F, 1.45F);
+      }
    }
 
    private static void spawnUbwGears(EmiyaArcherEntity entity, ServerLevel level) {
       entity.getPersistentData().putBoolean(UBW_GEARS_SPAWNED, true);
-      for (int i = 0; i < 12; i++) {
+      int gearCount = 9;
+      for (int i = 0; i < gearCount; i++) {
          int variant = entity.getRandom().nextInt(3);
-         float scale = 5.5F + entity.getRandom().nextFloat() * 6.5F;
-         double angle = Math.PI * 2.0 * i / 12.0;
-         double distance = 36.0 + entity.getRandom().nextDouble() * 28.0;
+         float scale = 8.0F + entity.getRandom().nextFloat() * 8.0F;
+         double angle = Math.PI * 2.0 * i / gearCount + (entity.getRandom().nextDouble() - 0.5) * 0.18;
+         double distance = 50.0 + entity.getRandom().nextDouble() * 45.0;
          double x = entity.getX() + Math.cos(angle) * distance;
          double z = entity.getZ() + Math.sin(angle) * distance;
-         double y = entity.getY() + 24.0 + entity.getRandom().nextDouble() * 18.0;
+         double cloudY = Mth.clamp(158.0, level.getMinBuildHeight() + 42.0, level.getMaxBuildHeight() - 32.0);
+         double y = cloudY + (entity.getRandom().nextDouble() - 0.5) * 10.0;
          UbwSkyGearEntity gear = new UbwSkyGearEntity(level, x, y, z, variant, scale, 20 * 22);
          level.addFreshEntity(gear);
       }
@@ -919,7 +1177,7 @@ public final class EmiyaArcherCombatHelper {
       return false;
    }
 
-   private static boolean shouldUseCrimsonHound(EmiyaArcherEntity entity, LivingEntity target, long now) {
+   private static boolean shouldUseCrimsonHound(EmiyaArcherEntity entity, LivingEntity target, long now, ServantCombatPhase phase) {
       if (target == null || !target.isAlive()) {
          return false;
       }
@@ -927,12 +1185,12 @@ public final class EmiyaArcherCombatHelper {
          return false;
       }
       if (target.getHealth() <= target.getMaxHealth() * 0.35F || target.getHealth() <= 35.0F) {
-         return entity.getRandom().nextInt(100) < 32;
+         return entity.getRandom().nextInt(100) < (phase == ServantCombatPhase.DECISIVE ? 40 : 26);
       }
-      return entity.distanceTo(target) >= 14.0 && entity.getRandom().nextInt(100) < 12;
+      return entity.distanceTo(target) >= 14.0 && entity.getRandom().nextInt(100) < (phase == ServantCombatPhase.DECISIVE ? 16 : 9);
    }
 
-   private static boolean shouldUsePseudoSpiralSword(EmiyaArcherEntity entity, LivingEntity target, long now) {
+   private static boolean shouldUsePseudoSpiralSword(EmiyaArcherEntity entity, LivingEntity target, long now, ServantCombatPhase phase) {
       if (target == null || !target.isAlive()) {
          return false;
       }
@@ -944,7 +1202,74 @@ public final class EmiyaArcherCombatHelper {
       if (!sturdyTarget && !lowHealthFinisher) {
          return false;
       }
-      return entity.getRandom().nextInt(100) < 18;
+      return entity.getRandom().nextInt(100) < (phase == ServantCombatPhase.DECISIVE ? 24 : 12);
+   }
+
+   private static boolean tryClairvoyanceSpiralShot(EmiyaArcherEntity entity, ServerLevel level, long now) {
+      if (!canUse(now, entity.getPersistentData().getLong(LAST_CLAIRVOYANCE_SPIRAL_TICK), CLAIRVOYANCE_SPIRAL_COOLDOWN)) {
+         return false;
+      }
+      if (!canUse(now, entity.getPersistentData().getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, ServantCombatPhase.DECISIVE))) {
+         return false;
+      }
+      if (entity.getCurrentMp() < 30.0) {
+         return false;
+      }
+      LivingEntity target = findClairvoyanceTarget(entity, level);
+      if (target == null) {
+         return false;
+      }
+      entity.getPersistentData().putLong(LAST_CLAIRVOYANCE_SPIRAL_TICK, now);
+      entity.setTarget(target);
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+      castPseudoSpiralSword(entity, level, target, now);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight(), entity.getZ(), 36, 0.5, 0.5, 0.5, 0.08);
+      level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + entity.getBbHeight() * 0.85, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.85F, 1.65F);
+      return true;
+   }
+
+   private static LivingEntity findClairvoyanceTarget(EmiyaArcherEntity entity, ServerLevel level) {
+      double baseRange = Math.max(48.0, entity.getAttributeValue(Attributes.FOLLOW_RANGE));
+      double range = baseRange * 2.0;
+      LivingEntity best = null;
+      double bestScore = Double.MAX_VALUE;
+      AABB area = entity.getBoundingBox().inflate(range);
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         area,
+         e -> e != entity && e.isAlive() && isClairvoyanceSniperTarget(entity, e)
+      )) {
+         double dist = entity.distanceToSqr(living);
+         if (dist > range * range || dist <= baseRange * baseRange) {
+            continue;
+         }
+         double score = dist;
+         if (living instanceof ServantEntity) {
+            score *= 0.45;
+         }
+         if (living.getLastHurtByMob() == entity) {
+            score *= 0.6;
+         }
+         if (score < bestScore) {
+            best = living;
+            bestScore = score;
+         }
+      }
+      return best;
+   }
+
+   private static boolean isClairvoyanceSniperTarget(EmiyaArcherEntity entity, LivingEntity target) {
+      if (target.isAlliedTo(entity) || EntityUtils.isImmunePlayerTarget(target)) {
+         return false;
+      }
+      if (target instanceof ServantEntity || target instanceof Monster || target instanceof ServerPlayer) {
+         return true;
+      }
+      if (entity.getTarget() == target || target.getLastHurtByMob() == entity || entity.getLastHurtByMob() == target) {
+         return true;
+      }
+      return target instanceof Mob mob && mob.getTarget() == entity;
    }
 
    private static void setCombatMode(EmiyaArcherEntity entity, String mode) {
@@ -983,14 +1308,19 @@ public final class EmiyaArcherCombatHelper {
       if (canUse(now, data.getLong(LAST_ANALYSIS_TICK), ANALYSIS_COOLDOWN)) {
          ItemStack enemyWeapon = findEnemyMeleeWeapon(target);
          if (!enemyWeapon.isEmpty()) {
+            data.putLong(LAST_ANALYSIS_TICK, now);
+            if (!shouldProjectEnemyWeapon(entity, now)) {
+               return;
+            }
             ItemStack copy = enemyWeapon.copy();
             copy.setCount(1);
-            data.putLong(LAST_ANALYSIS_TICK, now);
+            addProjectedEnemyAttackPower(copy, target);
             data.putLong(ANALYZED_WEAPON_EXPIRES_TICK, now + 100L);
             data.put(ANALYZED_WEAPON_STACK, copy.save(entity.registryAccess()));
             entity.setItemInHand(InteractionHand.MAIN_HAND, copy);
             entity.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
             markProjectionExpiry(entity, now + 100L, false);
+            applyAnalyzedWeaponProjectionBuffs(entity, target);
             ServantVoiceHelper.tryPlayProjection(entity);
             entity.triggerNamedActionAnimation("projection");
             if (entity.level() instanceof ServerLevel level) {
@@ -1016,6 +1346,18 @@ public final class EmiyaArcherCombatHelper {
       return ItemStack.parse(entity.registryAccess(), data.getCompound(ANALYZED_WEAPON_STACK)).orElse(ItemStack.EMPTY);
    }
 
+   private static boolean shouldProjectEnemyWeapon(EmiyaArcherEntity entity, long now) {
+      ServantCombatPhase phase = ServantCombatSystem.getPhase(entity);
+      int chance = phase == ServantCombatPhase.DECISIVE ? 50 : 35;
+      if (entity.getHealth() <= entity.getMaxHealth() * 0.35F) {
+         chance += 10;
+      }
+      if (entity.getPersistentData().getLong(UBW_ACTIVE_UNTIL) > now) {
+         chance += 10;
+      }
+      return entity.getRandom().nextInt(100) < Math.min(65, chance);
+   }
+
    private static ItemStack findEnemyMeleeWeapon(LivingEntity target) {
       if (target == null) {
          return ItemStack.EMPTY;
@@ -1026,6 +1368,71 @@ public final class EmiyaArcherCombatHelper {
       }
       ItemStack off = target.getOffhandItem();
       return isMeleeWeapon(off) ? off : ItemStack.EMPTY;
+   }
+
+   private static void addProjectedEnemyAttackPower(ItemStack projectedWeapon, LivingEntity target) {
+      if (projectedWeapon.isEmpty() || target == null) {
+         return;
+      }
+      double enemyAttack = Math.max(0.0, target.getAttributeValue(Attributes.ATTACK_DAMAGE));
+      if (enemyAttack <= 0.0) {
+         return;
+      }
+
+      ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
+      ItemAttributeModifiers existing = projectedWeapon.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+      for (ItemAttributeModifiers.Entry entry : existing.modifiers()) {
+         builder.add(entry.attribute(), entry.modifier(), entry.slot());
+      }
+      builder.add(
+         Attributes.ATTACK_DAMAGE,
+         new AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "emiya_projection_enemy_attack"),
+            enemyAttack,
+            Operation.ADD_VALUE
+         ),
+         EquipmentSlotGroup.MAINHAND
+      );
+      projectedWeapon.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
+   }
+
+   private static void applyAnalyzedWeaponProjectionBuffs(EmiyaArcherEntity entity, LivingEntity target) {
+      int speedLevel = 1;
+      int resistanceLevel = 1;
+      int strengthLevel = 1;
+      if (target instanceof ServantEntity servant && servant.getDefinition() != null) {
+         ServantParams params = servant.getDefinition().parameters();
+         if (params != null) {
+            speedLevel = rankEffectLevel(params.agility(), params.agilityPlus());
+            resistanceLevel = rankEffectLevel(params.endurance(), params.endurancePlus());
+            strengthLevel = rankEffectLevel(params.strength(), params.strengthPlus());
+         }
+      }
+
+      int duration = 5 * 20;
+      entity.getPersistentData().putLong(ANALYZED_WEAPON_BUFF_UNTIL, entity.level().getGameTime() + duration);
+      entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, duration, speedLevel - 1, false, false, true));
+      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, duration, resistanceLevel - 1, false, false, true));
+      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, strengthLevel - 1, false, false, true));
+      if (entity.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ(), 18, 0.35, 0.45, 0.35, 0.08);
+         level.sendParticles(ParticleTypes.CRIT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(), 12, 0.25, 0.3, 0.25, 0.05);
+      }
+   }
+
+   private static boolean hasAnalyzedWeaponProjectionBuff(EmiyaArcherEntity entity, long now) {
+      return entity.getPersistentData().getLong(ANALYZED_WEAPON_BUFF_UNTIL) > now;
+   }
+
+   private static int rankEffectLevel(StatRank rank, boolean plus) {
+      int level = switch (rank == null ? StatRank.E : rank) {
+         case E -> 1;
+         case D -> 2;
+         case C -> 3;
+         case B -> 4;
+         case A -> 5;
+      };
+      return plus ? Math.min(5, level + 1) : level;
    }
 
    private static boolean isMeleeWeapon(ItemStack stack) {
@@ -1077,6 +1484,8 @@ public final class EmiyaArcherCombatHelper {
       Vec3 dir = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0).subtract(projectile.position()).normalize();
       projectile.shoot(dir.x, dir.y, dir.z, 2.0F, 0.0F);
       level.addFreshEntity(projectile);
+      spawnProjectionCastFx(level, entity, target, ParticleTypes.FLAME, 40);
+      level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.0F, 0.7F);
    }
 
    private static void castPseudoSpiralSword(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -1090,6 +1499,8 @@ public final class EmiyaArcherCombatHelper {
       Vec3 dir = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0).subtract(projectile.position()).normalize();
       projectile.shoot(dir.x, dir.y, dir.z, 2.6F, 0.0F);
       level.addFreshEntity(projectile);
+      spawnProjectionCastFx(level, entity, target, ParticleTypes.END_ROD, 56);
+      level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 1.0F, 1.35F);
    }
 
    private static void castProjectionVolley(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -1105,6 +1516,7 @@ public final class EmiyaArcherCombatHelper {
             }
             ItemStack stack = new ItemStack(Items.IRON_SWORD);
             UBWProjectileEntity sword = new UBWProjectileEntity(sl, entity, stack);
+            sword.setMiniBrokenPhantasmDamage(20.0F);
             Vec3 side = sideVector(entity, target).scale((step - 1) * 1.4);
             Vec3 spawn = entity.position().add(0.0, entity.getBbHeight() * 0.78, 0.0).add(side);
             sword.setPos(spawn.x, spawn.y, spawn.z);
@@ -1121,6 +1533,7 @@ public final class EmiyaArcherCombatHelper {
       entity.triggerNamedActionAnimation("projection");
       ItemStack stack = new ItemStack(Items.IRON_SWORD);
       UBWProjectileEntity sword = new UBWProjectileEntity(level, entity, stack);
+      sword.setMiniBrokenPhantasmDamage(20.0F + entity.getRandom().nextFloat() * 4.0F);
       Vec3 side = sideVector(entity, target).scale(entity.getRandom().nextBoolean() ? 0.45 : -0.45);
       Vec3 spawn = entity.position().add(0.0, entity.getBbHeight() * 0.72, 0.0).add(side);
       sword.setPos(spawn.x, spawn.y, spawn.z);
@@ -1128,7 +1541,22 @@ public final class EmiyaArcherCombatHelper {
       sword.setDeltaMovement(arcingSwordVelocity(sword.position(), aim, 1.5, 0.14));
       level.addFreshEntity(sword);
       level.sendParticles(ParticleTypes.ENCHANT, spawn.x, spawn.y, spawn.z, 8, 0.1, 0.1, 0.1, 0.02);
+      level.sendParticles(ParticleTypes.END_ROD, spawn.x, spawn.y, spawn.z, 5, 0.08, 0.08, 0.08, 0.04);
       level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 0.55F, 1.45F);
+   }
+
+   private static void spawnProjectionCastFx(ServerLevel level, EmiyaArcherEntity entity, LivingEntity target, net.minecraft.core.particles.ParticleOptions particle, int count) {
+      Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.72, 0.0);
+      Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+      Vec3 delta = end.subtract(start);
+      level.sendParticles(ParticleTypes.ENCHANT, start.x, start.y, start.z, count / 2, 0.32, 0.28, 0.32, 0.08);
+      level.sendParticles(particle, start.x, start.y, start.z, count, 0.38, 0.28, 0.38, 0.1);
+      int steps = 8;
+      for (int i = 1; i <= steps; i++) {
+         double t = i / (double)steps;
+         Vec3 p = start.add(delta.scale(t));
+         level.sendParticles(particle, p.x, p.y, p.z, 2, 0.08, 0.08, 0.08, 0.02);
+      }
    }
 
    private static Vec3 arcingSwordVelocity(Vec3 spawn, Vec3 aim, double horizontalSpeed, double arcBonus) {
@@ -1177,10 +1605,10 @@ public final class EmiyaArcherCombatHelper {
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
       )) {
          living.invulnerableTime = 0;
-         living.hurt(entity.damageSources().mobAttack(entity), 18.0F);
+         living.hurt(entity.damageSources().mobAttack(entity), 23.0F);
          living.invulnerableTime = 0;
          Vec3 push = horizontalDirection(entity, living).scale(0.28);
-         living.setDeltaMovement(living.getDeltaMovement().x + push.x, 0.72, living.getDeltaMovement().z + push.z);
+         living.setDeltaMovement(living.getDeltaMovement().x + push.x, 0.92, living.getDeltaMovement().z + push.z);
          living.hurtMarked = true;
       }
       Vec3 fx = entity.position().add(entity.getLookAngle().scale(1.1)).add(0.0, entity.getBbHeight() * 0.55, 0.0);
@@ -1202,16 +1630,74 @@ public final class EmiyaArcherCombatHelper {
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
       )) {
          living.invulnerableTime = 0;
-         living.hurt(entity.damageSources().mobAttack(entity), 15.0F);
+         living.hurt(entity.damageSources().mobAttack(entity), 19.0F);
          living.invulnerableTime = 0;
          Vec3 push = horizontalDirection(entity, living);
-         living.push(push.x * 1.15, 0.18, push.z * 1.15);
+         living.push(push.x * 1.45, 0.24, push.z * 1.45);
          living.hurtMarked = true;
       }
       Vec3 fx = entity.position().add(entity.getLookAngle().scale(1.35)).add(0.0, entity.getBbHeight() * 0.5, 0.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 3, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y - 0.25, fx.z, 14, 0.45, 0.14, 0.45, 0.05);
       level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.95F, 0.92F);
+   }
+
+   private static void performAerialPursuit(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.getPersistentData().putLong(LAST_AERIAL_PURSUIT_TICK, now);
+      entity.setCurrentMp(entity.getCurrentMp() - 10.0);
+      applyProjectedTwinSwords(entity, false, now);
+      entity.triggerUppercutAnimation();
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().mobAttack(entity), 18.0F);
+      target.invulnerableTime = 0;
+      Vec3 launch = horizontalDirection(entity, target);
+      target.setDeltaMovement(target.getDeltaMovement().x + launch.x * 0.22, 1.05, target.getDeltaMovement().z + launch.z * 0.22);
+      target.hurtMarked = true;
+      level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 18, 0.28, 0.45, 0.28, 0.1);
+      level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.0F, 1.05F);
+
+      TYPE_MOON_WORLD.queueServerWork(7, () -> {
+         if (!entity.isAlive() || !target.isAlive() || !(entity.level() instanceof ServerLevel sl) || entity.level() != target.level()) {
+            return;
+         }
+         Vec3 dir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+         Vec3 horizontal = dir.lengthSqr() < 1.0E-4 ? entity.getLookAngle().multiply(1.0, 0.0, 1.0) : dir.normalize();
+         if (horizontal.lengthSqr() > 1.0E-4) {
+            Vec3 destination = target.position().subtract(horizontal.normalize().scale(1.25));
+            Vec3 move = destination.subtract(entity.position());
+            if (sl.noCollision(entity, entity.getBoundingBox().move(move))) {
+               sl.sendParticles(ParticleTypes.POOF, entity.getX(), entity.getY() + entity.getBbHeight() * 0.45, entity.getZ(), 12, 0.22, 0.28, 0.22, 0.05);
+               entity.teleportTo(destination.x, target.getY(), destination.z);
+               entity.fallDistance = 0.0F;
+            }
+         }
+         entity.triggerSlashAnimation();
+         entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+         target.invulnerableTime = 0;
+         target.hurt(entity.damageSources().mobAttack(entity), 28.0F);
+         target.invulnerableTime = 0;
+         Vec3 push = horizontalDirection(entity, target);
+         target.push(push.x * 0.95, -0.12, push.z * 0.95);
+         target.hurtMarked = true;
+         AABB shock = entity.getBoundingBox().inflate(2.8, 1.4, 2.8);
+         for (LivingEntity living : sl.getEntitiesOfClass(
+            LivingEntity.class,
+            shock,
+            e -> e != entity && e != target && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+         )) {
+            Vec3 sidePush = horizontalDirection(entity, living);
+            living.invulnerableTime = 0;
+            living.hurt(entity.damageSources().mobAttack(entity), 12.0F);
+            living.invulnerableTime = 0;
+            living.push(sidePush.x * 0.8, 0.25, sidePush.z * 0.8);
+            living.hurtMarked = true;
+         }
+         Vec3 fx = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 3, 0.0, 0.0, 0.0, 0.0);
+         sl.sendParticles(ParticleTypes.CRIT, fx.x, fx.y, fx.z, 24, 0.55, 0.35, 0.55, 0.12);
+         sl.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.0F, 1.22F);
+      });
    }
 
    private static void performChasingThrust(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -1237,9 +1723,9 @@ public final class EmiyaArcherCombatHelper {
       }
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
       target.invulnerableTime = 0;
-      target.hurt(entity.damageSources().mobAttack(entity), 20.0F);
+      target.hurt(entity.damageSources().mobAttack(entity), 25.0F);
       target.invulnerableTime = 0;
-      target.push(horizontal.x * 0.65, 0.22, horizontal.z * 0.65);
+      target.push(horizontal.x * 0.85, 0.3, horizontal.z * 0.85);
       target.hurtMarked = true;
       level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 12, 0.25, 0.25, 0.25, 0.12);
       level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 0.9F, 1.35F);
@@ -1267,6 +1753,114 @@ public final class EmiyaArcherCombatHelper {
          Vec3 impact = target.isAlive() ? target.position() : center;
          resolveProjectionImpact(entity, sl, impact);
       });
+   }
+
+   private static void performReinforcedProjectionSlam(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.getPersistentData().putLong(LAST_REINFORCED_SLAM_TICK, now);
+      entity.setCurrentMp(entity.getCurrentMp() - 12.0);
+      entity.triggerGroundSlam();
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+      Vec3 forward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      forward = forward.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : forward.normalize();
+      Vec3 center = entity.position().add(forward.scale(1.75));
+      double radius = 5.2;
+      AABB box = new AABB(center, center).inflate(radius, 2.0, radius);
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         box,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         double dist = Math.sqrt(living.distanceToSqr(center.x, center.y, center.z));
+         if (dist > radius) {
+            continue;
+         }
+         float damage = (float)Math.max(16.0, 34.0 * (1.0 - dist / (radius * 1.35)));
+         living.invulnerableTime = 0;
+         living.hurt(entity.damageSources().mobAttack(entity), damage);
+         living.invulnerableTime = 0;
+         Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() < 1.0E-4) {
+            push = forward;
+         }
+         push = push.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : push.normalize();
+         double power = Math.max(0.7, 1.7 * (1.0 - dist / (radius * 1.15)));
+         living.push(push.x * power, 0.55, push.z * power);
+         living.hurtMarked = true;
+      }
+      breakReinforcedSlamBlocks(level, center);
+      level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.12, center.z, 5, 1.0, 0.18, 1.0, 0.0);
+      level.sendParticles(ParticleTypes.CLOUD, center.x, center.y + 0.12, center.z, 44, 1.75, 0.35, 1.75, 0.08);
+      level.sendParticles(ParticleTypes.CRIT, center.x, center.y + 0.55, center.z, 34, 1.2, 0.45, 1.2, 0.16);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.75, entity.getZ(), 16, 0.3, 0.35, 0.3, 0.08);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.95F, 0.72F);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 0.75F, 1.1F);
+   }
+
+   private static void performOveredgeCleave(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.getPersistentData().putLong(LAST_OVEREDGE_CLEAVE_TICK, now);
+      entity.setCurrentMp(entity.getCurrentMp() - 14.0);
+      applyProjectedTwinSwords(entity, true, now);
+      entity.triggerSweepAnimation();
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.48, 0.0));
+      AABB hitBox = entity.getBoundingBox().inflate(3.1, 1.4, 3.1).expandTowards(entity.getLookAngle().scale(2.0));
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         hitBox,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         living.invulnerableTime = 0;
+         living.hurt(entity.damageSources().mobAttack(entity), 24.0F);
+         living.invulnerableTime = 0;
+         Vec3 push = horizontalDirection(entity, living);
+         living.push(push.x * 1.25, 0.28, push.z * 1.25);
+         living.hurtMarked = true;
+      }
+      breakOveredgeCleaveBlocks(entity, level);
+      Vec3 fx = entity.position().add(entity.getLookAngle().scale(1.8)).add(0.0, entity.getBbHeight() * 0.55, 0.0);
+      level.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 4, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, fx.x, fx.y, fx.z, 22, 0.7, 0.35, 0.7, 0.1);
+      level.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y - 0.45, fx.z, 18, 0.9, 0.18, 0.9, 0.06);
+      level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.05F, 0.75F);
+      level.playSound(null, entity.blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 0.45F, 1.45F);
+   }
+
+   private static void performBladeRupture(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.getPersistentData().putLong(LAST_BLADE_RUPTURE_TICK, now);
+      entity.setCurrentMp(entity.getCurrentMp() - 16.0);
+      applyProjectedTwinSwords(entity, false, now);
+      entity.triggerGroundSlam();
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+      Vec3 center = entity.position().add(entity.getLookAngle().multiply(1.7, 0.0, 1.7));
+      AABB box = new AABB(center, center).inflate(3.6, 1.5, 3.6);
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         box,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         double dist = Math.sqrt(living.distanceToSqr(center.x, center.y, center.z));
+         if (dist > 3.8) {
+            continue;
+         }
+         living.invulnerableTime = 0;
+         living.hurt(entity.damageSources().magic(), 20.0F);
+         living.invulnerableTime = 0;
+         Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() < 1.0E-4) {
+            push = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+         }
+         push = push.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : push.normalize();
+         living.push(push.x * 1.05, 0.42, push.z * 1.05);
+         living.hurtMarked = true;
+      }
+      breakBladeRuptureBlocks(level, center);
+      level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.1, center.z, 3, 0.65, 0.12, 0.65, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, center.x, center.y + 0.45, center.z, 28, 1.3, 0.5, 1.3, 0.12);
+      level.sendParticles(ParticleTypes.CLOUD, center.x, center.y + 0.1, center.z, 34, 1.25, 0.28, 1.25, 0.08);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.7F, 1.2F);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.NETHERITE_BLOCK_BREAK, SoundSource.HOSTILE, 0.65F, 1.35F);
    }
 
    private static void resolveProjectionImpact(EmiyaArcherEntity entity, ServerLevel level, Vec3 center) {
@@ -1320,6 +1914,90 @@ public final class EmiyaArcherCombatHelper {
             level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.18, 0.18, 0.18, 0.02);
          }
       }
+   }
+
+   private static void breakReinforcedSlamBlocks(ServerLevel level, Vec3 center) {
+      BlockPos origin = BlockPos.containing(center);
+      int broken = 0;
+      int radius = 4;
+      for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-radius, -1, -radius), origin.offset(radius, 2, radius))) {
+         if (broken >= 44) {
+            return;
+         }
+         double distSqr = pos.distToCenterSqr(center.x, center.y, center.z);
+         if (distSqr > 16.5) {
+            continue;
+         }
+         if (destroyMeleeBreakableBlock(level, pos, null, 12.0F)) {
+            broken++;
+            if ((broken & 1) == 0) {
+               level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.22, 0.18, 0.22, 0.04);
+            }
+         }
+      }
+   }
+
+   private static void breakOveredgeCleaveBlocks(EmiyaArcherEntity entity, ServerLevel level) {
+      Vec3 forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         return;
+      }
+      forward = forward.normalize();
+      Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+      int broken = 0;
+      BlockPos origin = entity.blockPosition();
+      for (double depth = 0.8; depth <= 4.0; depth += 0.75) {
+         int halfWidth = depth > 2.2 ? 2 : 1;
+         for (int width = -halfWidth; width <= halfWidth; width++) {
+            for (int dy = 0; dy <= 2; dy++) {
+               if (broken >= 26) {
+                  return;
+               }
+               Vec3 sample = entity.position().add(forward.scale(depth)).add(side.scale(width * 0.75)).add(0.0, dy - 0.2, 0.0);
+               BlockPos pos = BlockPos.containing(sample);
+               if (destroyMeleeBreakableBlock(level, pos, entity, 11.0F)) {
+                  broken++;
+               }
+            }
+         }
+      }
+      for (int i = 0; i < Math.min(8, broken); i++) {
+         Vec3 sample = entity.position().add(forward.scale(1.0 + i * 0.35)).add(0.0, 0.25, 0.0);
+         level.sendParticles(ParticleTypes.CLOUD, sample.x, sample.y, sample.z, 2, 0.18, 0.12, 0.18, 0.04);
+      }
+   }
+
+   private static void breakBladeRuptureBlocks(ServerLevel level, Vec3 center) {
+      BlockPos origin = BlockPos.containing(center);
+      int broken = 0;
+      for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-3, -1, -3), origin.offset(3, 1, 3))) {
+         if (broken >= 32) {
+            return;
+         }
+         double distSqr = pos.distToCenterSqr(center.x, center.y, center.z);
+         if (distSqr > 10.5) {
+            continue;
+         }
+         if (destroyMeleeBreakableBlock(level, pos, null, 9.0F)) {
+            broken++;
+            if ((broken & 1) == 0) {
+               level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.18, 0.16, 0.18, 0.04);
+            }
+         }
+      }
+   }
+
+   private static boolean destroyMeleeBreakableBlock(ServerLevel level, BlockPos pos, Entity breaker, float maxHardness) {
+      BlockState state = level.getBlockState(pos);
+      float hardness = state.getDestroySpeed(level, pos);
+      if (state.isAir()
+         || state.hasBlockEntity()
+         || state.is(Blocks.BEDROCK)
+         || hardness < 0.0F
+         || hardness > maxHardness) {
+         return false;
+      }
+      return level.destroyBlock(pos, false, breaker);
    }
 
    private static int nearbyEnemyCount(EmiyaArcherEntity entity, ServerLevel level, double radius) {
@@ -1415,8 +2093,13 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void castRhoAias(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      castRhoAias(entity, level, target, now, true);
+   }
+
+   private static void castRhoAias(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now, boolean requireFullCost) {
       entity.getPersistentData().putLong(LAST_RHO_AIAS_TICK, now);
-      entity.setCurrentMp(entity.getCurrentMp() - 35.0);
+      double cost = requireFullCost ? 35.0 : Math.min(35.0, Math.max(0.0, entity.getCurrentMp()));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - cost));
       clearProjection(entity);
       entity.triggerNamedActionAnimation("rho_aias");
       ServantVoiceHelper.tryPlayEmiyaRhoAias(entity);
@@ -1460,9 +2143,29 @@ public final class EmiyaArcherCombatHelper {
       }
    }
 
-   private static void maybeShield(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
-      if (entity.getHealth() < entity.getMaxHealth() * 0.55F
-         && canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), RHO_AIAS_COOLDOWN)
+   private static boolean tryDetonateRhoAias(EmiyaArcherEntity entity, ServerLevel level, RhoAiasEntity shield, LivingEntity target, long now, ServantCombatPhase phase) {
+      if (shield == null || !shield.isAlive() || target == null || !target.isAlive()) {
+         return false;
+      }
+      if (phase != ServantCombatPhase.DECISIVE && entity.getHealth() > entity.getMaxHealth() * 0.3F) {
+         return false;
+      }
+      if (target.distanceToSqr(shield) > 5.2 * 5.2 || entity.distanceToSqr(shield) < 4.2 * 4.2) {
+         return false;
+      }
+      if (entity.getRandom().nextInt(100) > 8) {
+         return false;
+      }
+      shield.detonate();
+      entity.getPersistentData().putLong(LAST_RHO_AIAS_TICK, now);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(), 24, 0.45, 0.45, 0.45, 0.1);
+      level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.HOSTILE, 1.0F, 0.85F);
+      return true;
+   }
+
+   private static void maybeShield(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
+      if ((phase == ServantCombatPhase.DECISIVE || entity.getHealth() < entity.getMaxHealth() * 0.55F)
+         && canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), phasedCooldown(RHO_AIAS_COOLDOWN, phase))
          && entity.getCurrentMp() >= 35.0) {
          castRhoAias(entity, level, target, now);
       }
@@ -1474,7 +2177,6 @@ public final class EmiyaArcherCombatHelper {
       ItemStack stack = entity.getMainHandItem().copy();
       if (!stack.isEmpty()) {
          UBWBrokenPhantasmExplosion.explode(level, entity, entity, stack, entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0));
-         entity.hurt(entity.damageSources().magic(), Math.max(1.0F, entity.getMaxHealth() * selfRatio));
       }
       clearProjection(entity);
    }
@@ -1490,6 +2192,26 @@ public final class EmiyaArcherCombatHelper {
 
    private static boolean canUse(long now, long lastUse, int cooldown) {
       return lastUse <= 0L || now - lastUse >= cooldown;
+   }
+
+   private static int phasedCooldown(int baseCooldown, ServantCombatPhase phase) {
+      if (phase == ServantCombatPhase.DECISIVE) {
+         return Math.max(18, baseCooldown * 2 / 3);
+      }
+      if (phase == ServantCombatPhase.NORMAL) {
+         return Math.max(20, baseCooldown * 5 / 6);
+      }
+      return baseCooldown;
+   }
+
+   private static int phaseChance(int baseChance, ServantCombatPhase phase) {
+      if (phase == ServantCombatPhase.DECISIVE) {
+         return Math.min(92, baseChance + 22);
+      }
+      if (phase == ServantCombatPhase.NORMAL) {
+         return Math.min(88, baseChance + 10);
+      }
+      return baseChance;
    }
 
    private static void gatherSwordsOnLowHealth(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target) {

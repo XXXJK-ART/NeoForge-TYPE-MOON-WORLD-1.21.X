@@ -15,6 +15,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -46,6 +48,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> VISUAL_COLOR = SynchedEntityData.defineId(UBWProjectileEntity.class, EntityDataSerializers.INT);
    private List<Entity> hitEntities = new ArrayList<>();
    private boolean stainUbwTerrainOnImpact;
+   private float miniBrokenPhantasmDamage;
    public final List<net.minecraft.world.phys.Vec3> tracePos = new LinkedList<>();
 
    public UBWProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
@@ -79,6 +82,10 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
       this.stainUbwTerrainOnImpact = stainUbwTerrainOnImpact;
    }
 
+   public void setMiniBrokenPhantasmDamage(float damage) {
+      this.miniBrokenPhantasmDamage = Math.max(0.0F, damage);
+   }
+
    public boolean shouldRenderAtSqrDistance(double distance) {
       return true;
    }
@@ -95,6 +102,11 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
       super.tick();
       if (this.level().isClientSide) {
          net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectileVisualEffectHelper.captureTrace(this.tracePos, this, 80);
+      } else if (this.level() instanceof ServerLevel serverLevel) {
+         if (this.tickCount % 2 == 0) {
+            serverLevel.sendParticles(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 2, 0.04, 0.04, 0.04, 0.01);
+            serverLevel.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 1, 0.03, 0.03, 0.03, 0.02);
+         }
       }
    }
 
@@ -153,6 +165,10 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
 
                target.invulnerableTime = 0;
                this.hitEntities.add(target);
+               if (this.miniBrokenPhantasmDamage > 0.0F) {
+                  triggerMiniBrokenPhantasm(entityHit.getLocation());
+                  this.discard();
+               }
             }
 
             return;
@@ -205,6 +221,10 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
                   }
                }
 
+               if (this.miniBrokenPhantasmDamage > 0.0F) {
+                  triggerMiniBrokenPhantasm(result.getLocation());
+               }
+
                this.discard();
                return;
             }
@@ -214,5 +234,37 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
 
          this.discard();
       }
+   }
+
+   private void triggerMiniBrokenPhantasm(net.minecraft.world.phys.Vec3 center) {
+      if (!(this.level() instanceof ServerLevel level)) {
+         return;
+      }
+      double radius = 3.25;
+      Entity owner = this.getOwner();
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         new net.minecraft.world.phys.AABB(center, center).inflate(radius),
+         e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         double distance = Math.sqrt(living.distanceToSqr(center.x, center.y, center.z));
+         if (distance > radius) {
+            continue;
+         }
+         float damage = (float)Math.max(8.0, this.miniBrokenPhantasmDamage * (1.0 - distance / (radius * 1.45)));
+         living.invulnerableTime = 0;
+         living.hurt(this.damageSources().explosion(this, owner), damage);
+         living.invulnerableTime = 0;
+         net.minecraft.world.phys.Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize();
+            living.push(push.x * 0.45, 0.18, push.z * 0.45);
+            living.hurtMarked = true;
+         }
+      }
+      level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y, center.z, 2, 0.35, 0.18, 0.35, 0.0);
+      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.1, center.z, 18, 0.55, 0.25, 0.55, 0.06);
+      level.sendParticles(ParticleTypes.CRIT, center.x, center.y + 0.25, center.z, 12, 0.45, 0.25, 0.45, 0.08);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.85F, 1.45F);
    }
 }

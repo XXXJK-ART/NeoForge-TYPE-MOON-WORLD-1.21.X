@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -44,16 +45,21 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
@@ -76,6 +82,7 @@ public class CommonEvents {
    private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
    private static final String BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG = "BattleContinuationLastHealTick";
    private static final double BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO = 0.20;
+   private static final double EMIYA_BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO = 0.50;
    private static final float BATTLE_CONTINUATION_HEAL_AMOUNT = 10.0F;
    private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
@@ -491,11 +498,29 @@ public class CommonEvents {
 
    // ======================== 十二试炼 / 战斗续行 ========================
 
+   private static boolean isMajorBrokenPhantasmExplosion(DamageSource source, float originalDamage) {
+      if (!source.is(DamageTypeTags.IS_EXPLOSION) || originalDamage < 300.0F) {
+         return false;
+      }
+      Entity direct = source.getDirectEntity();
+      if (direct instanceof PseudoSpiralSwordProjectileEntity
+         || direct instanceof CrimsonHoundProjectileEntity
+         || direct instanceof BrokenPhantasmProjectileEntity) {
+         return true;
+      }
+      if (direct instanceof SwordBarrelProjectileEntity swordBarrel) {
+         return swordBarrel.isBrokenPhantasm();
+      }
+      return direct instanceof EmiyaArcherEntity;
+   }
+
    private static void handleServantDamage(ServantEntity servant, LivingIncomingDamageEvent event) {
       if (servant.level().isClientSide()) return;
 
       CompoundTag data = servant.getPersistentData();
       float damage = event.getAmount();
+      float originalDamage = damage;
+      boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), originalDamage);
       long currentTick = servant.level().getGameTime();
 
       // 记录受伤时间（用于气息遮断被动判断）
@@ -526,6 +551,32 @@ public class CommonEvents {
 
          float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
          if (shield > 0.0F) {
+            if (majorBrokenPhantasmExplosion) {
+               float minimumDamage = originalDamage * 0.5F;
+               float absorbable = Math.max(0.0F, damage - minimumDamage);
+               float absorbed = Math.min(shield, absorbable);
+               if (absorbed > 0.0F) {
+                  event.setAmount(damage - absorbed);
+                  damage = event.getAmount();
+                  if (shield > absorbed) {
+                     data.putFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG, shield - absorbed);
+                  } else {
+                     data.remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
+                  }
+                  if (servant.level() instanceof ServerLevel sl) {
+                     sl.sendParticles(ParticleTypes.WAX_OFF,
+                        servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+                        16, 0.45, 0.45, 0.45, 0.05);
+                     sl.sendParticles(ParticleTypes.FLAME,
+                        servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+                        12, 0.35, 0.3, 0.35, 0.04);
+                  }
+               }
+               if (damage <= 0.0F) {
+                  event.setAmount(minimumDamage);
+                  damage = event.getAmount();
+               }
+            } else {
             if (shield >= damage) {
                data.putFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG, shield - damage);
                if (servant.level() instanceof ServerLevel sl) {
@@ -544,6 +595,7 @@ public class CommonEvents {
                sl.sendParticles(ParticleTypes.WAX_OFF,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
                   12, 0.35, 0.4, 0.35, 0.03);
+            }
             }
          }
       }
@@ -565,7 +617,7 @@ public class CommonEvents {
       // --- 十二试炼：B Rank 以下伤害免疫 ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (damage < threshold) {
+         if (!majorBrokenPhantasmExplosion && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -578,16 +630,25 @@ public class CommonEvents {
          }
 
          // 适应性防御：同类型攻击逐步减伤，最高 75%
-         float reduction = data.getFloat("GodHandAdaptiveReduction");
-         float maxReduction = data.getFloat("GodHandAdaptiveMax");
-         float currentResistance = data.getFloat("GodHandCurrentResistance");
-         if (currentResistance < maxReduction) {
-            data.putFloat("GodHandCurrentResistance",
-               Math.min(currentResistance + reduction, maxReduction));
-         }
-         float resistanceNow = data.getFloat("GodHandCurrentResistance");
-         if (resistanceNow > 0) {
-            event.setAmount(damage * (1.0F - resistanceNow));
+         if (!majorBrokenPhantasmExplosion) {
+            float reduction = data.getFloat("GodHandAdaptiveReduction");
+            float maxReduction = data.getFloat("GodHandAdaptiveMax");
+            float currentResistance = data.getFloat("GodHandCurrentResistance");
+            if (currentResistance < maxReduction) {
+               data.putFloat("GodHandCurrentResistance",
+                  Math.min(currentResistance + reduction, maxReduction));
+            }
+            float resistanceNow = data.getFloat("GodHandCurrentResistance");
+            if (resistanceNow > 0) {
+               event.setAmount(damage * (1.0F - resistanceNow));
+            }
+         } else if (servant.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.FLASH,
+               servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
+               1, 0.0, 0.0, 0.0, 0.0);
+            sl.sendParticles(ParticleTypes.FLAME,
+               servant.getX(), servant.getY() + servant.getBbHeight() * 0.45, servant.getZ(),
+               24, 0.55, 0.5, 0.55, 0.06);
          }
       }
 
@@ -612,14 +673,17 @@ public class CommonEvents {
 
       // --- 战斗续行 A：致死时保留 1HP + 5s 无敌，5min CD ---
       // 斩断因果时跳过
+      double battleContinuationRatio = servant instanceof EmiyaArcherEntity
+         ? EMIYA_BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO
+         : BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO;
       if (!causalSevered && data.getBoolean("BattleContinuationActive")
          && canTriggerBattleContinuation(data)
-         && servant.getHealth() - event.getAmount() <= servant.getMaxHealth() * BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO) {
+         && servant.getHealth() - event.getAmount() <= servant.getMaxHealth() * battleContinuationRatio) {
          int cd = data.getInt("BattleContinuationCooldown");
          if (cd <= 0) {
             event.setCanceled(true);
             event.setAmount(0.0F);
-            servant.setHealth(Math.max(1.0F, servant.getMaxHealth() * (float)BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO));
+            servant.setHealth(Math.max(1.0F, servant.getMaxHealth() * (float)battleContinuationRatio));
             servant.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 3, false, false, true));
             data.putBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG, true);
             data.remove(BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG);

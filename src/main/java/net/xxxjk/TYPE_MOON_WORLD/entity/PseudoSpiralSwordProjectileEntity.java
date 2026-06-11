@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(PseudoSpiralSwordProjectileEntity.class, EntityDataSerializers.INT);
+   private static final float DIRECT_HIT_DAMAGE = 96.0F;
    private final Set<Integer> hitIds = new HashSet<>();
 
    public PseudoSpiralSwordProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
@@ -73,6 +74,7 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
                this.setDeltaMovement(this.getDeltaMovement().scale(0.8).add(desired.scale(0.2)));
             }
             if (this.distanceToSqr(target) <= 1.35 * 1.35) {
+               applyDirectHit(target);
                triggerBrokenPhantasm(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
                this.discard();
                return;
@@ -90,6 +92,9 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
    protected void onHitEntity(EntityHitResult result) {
       super.onHitEntity(result);
       if (!this.level().isClientSide()) {
+         if (result.getEntity() instanceof LivingEntity living) {
+            applyDirectHit(living);
+         }
          triggerBrokenPhantasm(result.getLocation());
          this.discard();
       }
@@ -112,6 +117,7 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
          entity -> entity.isAlive() && entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity))) {
          if (this.hitIds.add(living.getId())) {
+            applyDirectHit(living);
             triggerBrokenPhantasm(living.position().add(0.0, living.getBbHeight() * 0.45, 0.0));
             this.discard();
             return;
@@ -119,10 +125,28 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
       }
    }
 
+   private void applyDirectHit(LivingEntity target) {
+      Entity owner = this.getOwner();
+      target.invulnerableTime = 0;
+      target.hurt(this.damageSources().thrown(this, owner), DIRECT_HIT_DAMAGE);
+      target.invulnerableTime = 0;
+      Vec3 push = target.position().subtract(this.position()).multiply(1.0, 0.0, 1.0);
+      if (push.lengthSqr() > 1.0E-4) {
+         push = push.normalize();
+         target.push(push.x * 1.2, 0.42, push.z * 1.2);
+         target.hurtMarked = true;
+      }
+      if (this.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 42, 0.45, 0.55, 0.45, 0.18);
+         level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 28, 0.35, 0.45, 0.35, 0.1);
+      }
+   }
+
    private void triggerBrokenPhantasm(Vec3 pos) {
       if (this.level() instanceof ServerLevel level) {
          Entity owner = this.getOwner();
-         UBWBrokenPhantasmExplosion.explode(level, this, owner, this.getItem(), pos, 1.35F);
+         UBWBrokenPhantasmExplosion.explode(level, this, owner, this.getItem(), pos, 2.0F);
       }
    }
 }

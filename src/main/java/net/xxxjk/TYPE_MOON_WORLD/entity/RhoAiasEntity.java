@@ -1,12 +1,15 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.UUID;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -29,8 +32,10 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    private static final double PROTECT_RADIUS = 6.0;
    private static final double OWNER_EXIT_DISTANCE = 5.4;
    private static final double OWNER_BEHIND_DOT = -0.25;
+   private static final int OWNER_EXIT_GRACE_TICKS = 20;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
+   private int ownerAwayTicks;
 
    public RhoAiasEntity(EntityType<?> type, Level level) {
       super(type, level);
@@ -79,17 +84,19 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
          this.discard();
          return;
       }
-      if (owner.distanceToSqr(this) > OWNER_EXIT_DISTANCE * OWNER_EXIT_DISTANCE) {
+      boolean ownerBehind = this.ownerIsBehindShield(owner);
+      if (owner.distanceToSqr(this) > OWNER_EXIT_DISTANCE * OWNER_EXIT_DISTANCE || !ownerBehind) {
+         this.ownerAwayTicks++;
+      } else {
+         this.ownerAwayTicks = 0;
+      }
+      if (this.ownerAwayTicks >= OWNER_EXIT_GRACE_TICKS) {
          this.discard();
          return;
       }
       this.updateFacingFromOwner(owner);
-      if (!this.ownerIsBehindShield(owner)) {
-         this.discard();
-         return;
-      }
       if (this.tickCount % 2 == 0) {
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 4, 1.1, 1.1, 1.1, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 4, 1.1, 1.1, 1.1, 0.0);
       }
    }
 
@@ -114,6 +121,47 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
 
    public float getShieldHp() {
       return this.entityData.get(SHIELD_HP);
+   }
+
+   public float estimatedDetonationDamage() {
+      return Math.max(100.0F, (float)Math.floor(this.getShieldHp() / 100.0F) * 100.0F);
+   }
+
+   public void detonate() {
+      if (!(this.level() instanceof ServerLevel level) || !this.isAlive()) {
+         return;
+      }
+      LivingEntity owner = this.getOwnerEntity();
+      float damage = this.estimatedDetonationDamage();
+      double radius = Mth.clamp(3.5 + damage / 450.0, 4.0, 11.5);
+      Vec3 center = this.position();
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         this.getBoundingBox().inflate(radius),
+         e -> e.isAlive() && e != owner && (owner == null || !owner.isAlliedTo(e))
+      )) {
+         double distance = Math.sqrt(living.distanceToSqr(center.x, center.y, center.z));
+         if (distance > radius) {
+            continue;
+         }
+         float scaledDamage = (float)Math.max(damage * 0.35F, damage * (1.0 - distance / (radius * 1.25)));
+         living.invulnerableTime = 0;
+         living.hurt(this.damageSources().explosion(this, owner), scaledDamage);
+         living.invulnerableTime = 0;
+         Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize();
+            living.push(push.x * 1.3, 0.45, push.z * 1.3);
+            living.hurtMarked = true;
+         }
+      }
+      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 3, 0.35, 0.35, 0.35, 0.0);
+      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 4, 0.08, 0.08, 0.08, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 120, 2.3, 1.8, 2.3, 0.2);
+      level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y, center.z, 80, 2.1, 1.4, 2.1, 0.16);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.2F, 0.58F);
+      level.playSound(null, center.x, center.y, center.z, SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 1.4F, 0.7F);
+      this.discard();
    }
 
    public int getLayers() {
@@ -191,6 +239,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       this.entityData.set(SHIELD_HP, hp);
       this.entityData.set(DURATION, tag.contains("Duration") ? tag.getInt("Duration") : 20 * 15);
       this.entityData.set(LAYERS, tag.contains("Layers") ? Mth.clamp(tag.getInt("Layers"), 1, 7) : 7);
+      this.ownerAwayTicks = tag.getInt("OwnerAwayTicks");
       if (tag.contains("FixedYaw")) {
          float yaw = tag.getFloat("FixedYaw");
          this.setYRot(yaw);
@@ -206,6 +255,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       tag.putFloat("ShieldHp", this.entityData.get(SHIELD_HP));
       tag.putInt("Duration", this.entityData.get(DURATION));
       tag.putInt("Layers", this.entityData.get(LAYERS));
+      tag.putInt("OwnerAwayTicks", this.ownerAwayTicks);
       tag.putFloat("FixedYaw", this.getYRot());
    }
 

@@ -1841,7 +1841,9 @@ public final class CombatModule implements ServantAiModule {
       }
 
       if (preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
-         boolean deathThorn = resolvedTarget.isAlive() && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
+         boolean deathThorn = resolvedTarget.isAlive()
+            && !(resolvedTarget instanceof EmiyaArcherEntity)
+            && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
          if (!tryConsumeGodHandLife(entity, resolvedTarget, 250.0F, deathThorn)) {
             applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
             if (resolvedTarget.isAlive() && deathThorn) {
