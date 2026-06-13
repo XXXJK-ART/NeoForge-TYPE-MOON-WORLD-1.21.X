@@ -56,6 +56,7 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
 
    @Override
    public void tick() {
+      this.setNoGravity(true);
       super.tick();
       if (this.level().isClientSide()) {
          this.level().addParticle(ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
@@ -81,6 +82,11 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
          triggerBrokenPhantasm(this.position());
          this.discard();
       }
+   }
+
+   @Override
+   public boolean isNoGravity() {
+      return true;
    }
 
    @Override

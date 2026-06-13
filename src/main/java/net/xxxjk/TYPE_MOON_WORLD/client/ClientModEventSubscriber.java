@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessChainDaggerRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessBowRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariMuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWWeaponBlockEntityRenderer;
@@ -161,7 +162,6 @@ public class ClientModEventSubscriber {
          ModItems.MO_YE.get(),
          ModItems.GAN_JIANG_OVEREDGE.get(),
          ModItems.MO_YE_OVEREDGE.get(),
-         ModItems.NAMELESS_BOW.get(),
          ModItems.PSEUDO_SPIRAL_SWORD.get(),
          ModItems.CRIMSON_HOUND.get(),
          ModItems.RHO_AIAS.get(),
@@ -169,6 +169,17 @@ public class ClientModEventSubscriber {
          ModItems.UBW_METAL_2.get(),
          ModItems.UBW_METAL_3.get()
       });
+      event.registerItem(new IClientItemExtensions() {
+         private NamelessBowRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new NamelessBowRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.NAMELESS_BOW.get()});
       event.registerMobEffect(
          new IClientMobEffectExtensions() {
             private final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/mob_effect/nine_lives.jpg");

@@ -1,0 +1,11 @@
+{
+  "type": "typemoonworld:unlimited_blade_works",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "typemoonworld:ubw_noise_settings",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "typemoonworld:ubw_biome"
+    }
+  }
+}

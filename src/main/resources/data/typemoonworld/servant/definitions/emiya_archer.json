@@ -33,6 +33,7 @@
       "twin_flurry": "animation.emiya_archer.twin_flurry",
       "mind_eye_step": "animation.emiya_archer.mind_eye_step",
       "rho_aias": "animation.emiya_archer.rho_aias",
+      "bow_shot": "animation.emiya_archer.bow_shot",
       "ubw_chant": "animation.emiya_archer.ubw_chant"
     }
   },
@@ -60,6 +61,7 @@
       "twin_flurry",
       "mind_eye_step",
       "rho_aias",
+      "bow_shot",
       "ubw_chant"
     ]
   },

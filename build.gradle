@@ -33,13 +33,6 @@ repositories {
         url = "https://repo.terradevelopment.net/repository/maven-releases"
     }
     maven {
-        name = "BadPackets"
-        url = "https://maven2.bai.lol"
-        content {
-            includeGroup "lol.bai"
-        }
-    }
-    maven {
         url = "https://cursemaven.com"
         content {
             includeGroup "curse.maven"
@@ -183,9 +176,6 @@ dependencies {
     // For all intends and purposes: You can treat this dependency as if it is a normal library you would use.
     implementation "net.neoforged:neoforge:${neo_version}"
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
-    implementation "dev.galacticraft:dynamicdimensions-neoforge:${dynamicdimensions_version}"
-    jarJar "dev.galacticraft:dynamicdimensions-neoforge:${dynamicdimensions_version}"
-    jarJar "lol.bai:badpackets:neo-0.8.2"
     // implementation "com.github.glitchfiend:TerraBlender-neoforge:${minecraft_version}-4.0.0.1" // Disabled due to resolving issues
     implementation "curse.maven:terrablender-neoforge-940057:5429865" // 1.21-4.0.0.1
 

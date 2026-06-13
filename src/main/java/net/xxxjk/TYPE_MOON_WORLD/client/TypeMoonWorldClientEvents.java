@@ -215,6 +215,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GAE_BULG_ARMY_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.DIRK_PROJECTILE.get(), DirkProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_THROWN_WEAPON.get(), ProjectedItemProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.EMIYA_ARROW_ORB.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.CRIMSON_HOUND_PROJECTILE.get(), ProjectedItemProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.PSEUDO_SPIRAL_SWORD_PROJECTILE.get(), ProjectedItemProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.RHO_AIAS_SHIELD.get(), RhoAiasEntityRenderer::new);
@@ -250,5 +251,6 @@ public class TypeMoonWorldClientEvents {
    @SubscribeEvent
    public static void registerDimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event) {
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works"), new UBWDimensionEffects());
+      event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works_emiya"), new UBWDimensionEffects());
    }
 }

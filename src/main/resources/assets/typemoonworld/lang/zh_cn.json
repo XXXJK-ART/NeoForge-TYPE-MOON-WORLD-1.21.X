@@ -706,6 +706,7 @@
   "message.typemoonworld.unlimited_blade_works.exit": "§c固有结界解除.",
   "message.typemoonworld.unlimited_blade_works.interrupted": "§c集中被打断!咏唱中断.",
   "message.typemoonworld.unlimited_blade_works.mana_depleted": "§c魔力耗尽.咏唱中断.",
+  "message.typemoonworld.unlimited_blade_works.occupied": "§c已有使用者展开固有结界.",
   "message.typemoonworld.unlimited_blade_works.unlocked": "无限剑制 已解锁!",
 
   "entity.typemoonworld.stone_man": "魔偶",

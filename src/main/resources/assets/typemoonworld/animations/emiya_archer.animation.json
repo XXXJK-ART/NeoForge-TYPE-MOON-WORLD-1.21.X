@@ -937,6 +937,93 @@
         }
       }
     },
+    "animation.emiya_archer.bow_shot": {
+      "animation_length": 0.55,
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "0.18": [-3, 8, 0],
+            "0.38": [-2, 10, 0],
+            "0.55": [0, 0, 0]
+          }
+        },
+        "right arm": {
+          "rotation": {
+            "0.0": [-12, 0, -10],
+            "0.18": [-76, -18, -22],
+            "0.38": [-92, -28, -26],
+            "0.55": [-6, 0, -4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left arm": {
+          "rotation": {
+            "0.0": [-10, 0, 10],
+            "0.18": [-74, 16, 18],
+            "0.38": [-88, 24, 20],
+            "0.55": [-6, 0, 4]
+          },
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "left_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "right_leg": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        },
+        "bone5": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone7": {
+          "position": {
+            "vector": [0.5, 0, 0.5]
+          },
+          "scale": {
+            "vector": [0.5, 0.5, 0.5]
+          }
+        },
+        "bone8": {
+          "scale": {
+            "vector": [1, 1, 1.1]
+          }
+        },
+        "bone9": {
+          "position": {
+            "vector": [0.5, -0.65, 0.6]
+          },
+          "scale": {
+            "vector": [1, 0.5, 0.5]
+          }
+        },
+        "bone10": {
+          "scale": {
+            "vector": [1, 1, 1]
+          }
+        }
+      }
+    },
     "animation.emiya_archer.ubw_chant": {
       "animation_length": 3.0,
       "bones": {

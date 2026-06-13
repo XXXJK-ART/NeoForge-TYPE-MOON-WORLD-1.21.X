@@ -60,6 +60,7 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
 
    @Override
    public void tick() {
+      this.setNoGravity(true);
       Vec3 previous = this.position();
       super.tick();
       if (this.level().isClientSide()) {
@@ -86,6 +87,11 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
             this.discard();
          }
       }
+   }
+
+   @Override
+   public boolean isNoGravity() {
+      return true;
    }
 
    @Override

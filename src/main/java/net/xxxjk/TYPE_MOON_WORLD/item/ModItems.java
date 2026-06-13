@@ -493,7 +493,7 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build()), "mo_ye_overedge"));
     public static final DeferredItem<Item> NAMELESS_BOW = ITEMS.register("nameless_bow",
-            () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant(), "nameless_bow"));
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> PSEUDO_SPIRAL_SWORD = ITEMS.register("pseudo_spiral_sword",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> CRIMSON_HOUND = ITEMS.register("crimson_hound",

@@ -811,13 +811,17 @@ public class ChantHandler {
       String chantText = "";
       if (progress == 1) {
          ServerLevel ubwLevel = UBWInstanceManager.getOrCreateFreshPlayerInstance(player);
-         if (ubwLevel != null) {
-            double offsetX = 0.5;
-            double offsetZ = 0.5;
-            BlockPos targetPos = new BlockPos((int)offsetX, 100, (int)offsetZ);
-            UBWInstanceManager.keepInstanceTicking(player.getUUID(), ubwLevel, targetPos);
-            PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0.0, offsetZ));
+         if (ubwLevel == null) {
+            interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.occupied");
+            return;
          }
+
+         Vec3 entryPos = UBWInstanceManager.randomEntryPosition(player.getRandom());
+         double offsetX = entryPos.x;
+         double offsetZ = entryPos.z;
+         BlockPos targetPos = new BlockPos((int)offsetX, 100, (int)offsetZ);
+         UBWInstanceManager.keepInstanceTicking(player.getUUID(), ubwLevel, targetPos);
+         PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0.0, offsetZ));
       } else if (progress == 2) {
          chantText = "§bSteel is my body, and fire is my blood.";
       } else if (progress == 3) {
@@ -968,8 +972,9 @@ public class ChantHandler {
             offsetX = pending.x;
             offsetZ = pending.z;
          } else {
-            offsetX = 0.5;
-            offsetZ = 0.5;
+            Vec3 entryPos = UBWInstanceManager.randomEntryPosition(player.getRandom());
+            offsetX = entryPos.x;
+            offsetZ = entryPos.z;
          }
 
          int safeY = findSafeSpawnY(ubwLevel, (int)offsetX, (int)offsetZ);

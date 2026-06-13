@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
@@ -298,6 +299,16 @@ public class ModEntities {
          .clientTrackingRange(12)
          .updateInterval(1)
          .build("emiya_thrown_weapon")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArrowOrbProjectileEntity>> EMIYA_ARROW_ORB = ENTITY_TYPES.register(
+      "emiya_arrow_orb",
+      () -> Builder.<EmiyaArrowOrbProjectileEntity>of(
+            (entityType, level) -> new EmiyaArrowOrbProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.32F, 0.32F)
+         .clientTrackingRange(12)
+         .updateInterval(1)
+         .build("emiya_arrow_orb")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<CrimsonHoundProjectileEntity>> CRIMSON_HOUND_PROJECTILE = ENTITY_TYPES.register(
       "crimson_hound_projectile",
