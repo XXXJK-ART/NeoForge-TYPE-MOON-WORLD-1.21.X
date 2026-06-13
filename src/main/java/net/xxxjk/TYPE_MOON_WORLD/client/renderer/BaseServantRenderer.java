@@ -23,16 +23,12 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
          new BlockAndItemGeoLayer<T>(this) {
             @Override
             protected ItemStack getStackForBone(GeoBone bone, T animatable) {
-               return switch (bone.getName()) {
-                  case "right arm" -> animatable.getMainHandItem();
-                  case "left arm" -> animatable.getOffhandItem();
-                  default -> ItemStack.EMPTY;
-               };
+               return BaseServantRenderer.this.getStackForBone(bone, animatable);
             }
 
             @Override
             protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, T animatable) {
-               return "left arm".equals(bone.getName()) ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+               return BaseServantRenderer.this.getTransformTypeForStack(bone, stack, animatable);
             }
 
             @Override
@@ -46,14 +42,30 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
                int packedLight,
                int packedOverlay
             ) {
-               var offset = animatable.getHandItemOffset();
-               poseStack.translate(offset.x, offset.y, offset.z);
-               poseStack.mulPose(Axis.XP.rotationDegrees(-100.0F));
-               poseStack.mulPose(Axis.ZP.rotationDegrees(-13.0F));
+               BaseServantRenderer.this.preRenderStackForBone(poseStack, bone, stack, animatable);
                super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
             }
          }
       );
+   }
+
+   protected ItemStack getStackForBone(GeoBone bone, T animatable) {
+      return switch (bone.getName()) {
+         case "right arm" -> animatable.getMainHandItem();
+         case "left arm" -> animatable.getOffhandItem();
+         default -> ItemStack.EMPTY;
+      };
+   }
+
+   protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, T animatable) {
+      return "left arm".equals(bone.getName()) ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+   }
+
+   protected void preRenderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack, T animatable) {
+      var offset = animatable.getHandItemOffset();
+      poseStack.translate(offset.x, offset.y, offset.z);
+      poseStack.mulPose(Axis.XP.rotationDegrees(-100.0F));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(-13.0F));
    }
 
    @Override

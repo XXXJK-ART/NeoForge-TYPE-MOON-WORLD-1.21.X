@@ -51,6 +51,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_ATTACK.get());
+      } else if (isArtoria(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_ATTACK.get());
       }
    }
 
@@ -89,6 +94,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_VICTORY.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
+      } else if (isArtoria(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_VICTORY.get());
       }
    }
 
@@ -107,6 +114,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.92F, ModSounds.CURSED_ARM_HASSAN_VOICE_FAIL.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
+      } else if (isArtoria(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_FAIL.get());
       }
    }
 
@@ -190,6 +199,30 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "ubw", 1.1F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_UBW.get());
    }
 
+   public static void tryPlayArtoriaInvisibleAir(ServantEntity servant) {
+      if (!isArtoria(servant)) {
+         return;
+      }
+
+      playVoice(servant, "invisible_air", SPECIAL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get());
+   }
+
+   public static void tryPlayArtoriaExcaliburRelease(ServantEntity servant) {
+      if (!isArtoria(servant)) {
+         return;
+      }
+
+      playVoice(servant, "excalibur_release", SPECIAL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARTORIA_VOICE_EXCALIBUR_RELEASE.get());
+   }
+
+   public static void tryPlayArtoriaExcalibur(ServantEntity servant) {
+      if (!isArtoria(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "excalibur", 1.2F, 1.0F, ModSounds.ARTORIA_VOICE_EXCALIBUR.get());
+   }
+
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
       if (!(servant.level() instanceof ServerLevel serverLevel) || sound == null) {
          return;
@@ -251,5 +284,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isEmiya(ServantEntity servant) {
       return servant != null && EmiyaArcherEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isArtoria(ServantEntity servant) {
+      return servant != null && ArtoriaPendragonEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

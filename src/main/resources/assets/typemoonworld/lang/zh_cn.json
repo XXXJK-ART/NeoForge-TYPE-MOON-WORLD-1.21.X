@@ -114,6 +114,7 @@
   "item.typemoonworld.cursed_arm_hassan_spawn_egg": "咒腕哈桑(Assassin) 刷怪蛋",
   "item.typemoonworld.dragonfang_soldier_spawn_egg": "龙牙兵 刷怪蛋",
   "item.typemoonworld.emiya_archer_spawn_egg": "卫宫(Archer) 刷怪蛋",
+  "item.typemoonworld.artoria_pendragon_spawn_egg": "阿尔托莉雅·潘德拉贡(Saber) 刷怪蛋",
   "item.typemoonworld.mystic_eyes_of_death_perception": "直死之魔眼(虹级)",
   "item.typemoonworld.mystic_eyes_of_death_perception_noble_color": "直死之魔眼(noble colour)",
   "item.typemoonworld.random_gem": "随机宝石",
@@ -1060,6 +1061,9 @@
   "adv.typemoonworld.trace_on.title": "Trace On",
 
   "creativetab.typemoonworld.type_moon_world": "TYPE MOON WORLD",
+  "entity.typemoonworld.artoria_pendragon": "阿尔托莉雅·潘德拉贡",
+  "entity.typemoonworld.artoria_pendragon.avalon_given": "已将 Avalon 交给阿尔托莉雅",
+  "entity.typemoonworld.artoria_pendragon.avalon_taken": "已取回 Avalon",
   "entity.typemoonworld.cursed_arm_hassan": "咒腕哈桑",
   "entity.typemoonworld.emiya_archer": "卫宫(Archer)",
   "entity.typemoonworld.medusa": "美杜莎",

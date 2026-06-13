@@ -45,6 +45,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
@@ -69,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
@@ -79,6 +81,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 )
 public class CommonEvents {
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
+   private static final String GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG = "GodHandHighDamageReviveUntil";
    private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
    private static final String BATTLE_CONTINUATION_LAST_HEAL_TICK_TAG = "BattleContinuationLastHealTick";
    private static final double BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO = 0.20;
@@ -95,7 +98,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
-         // 从者刷怪蛋ID传递：实体创建后设置servantId
+         // Pass servantId from spawn eggs after entity creation.
          if (event.getEntity() instanceof Monster monster) {
             try {
                monster.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(monster, RyougiShikiEntity.class, true));
@@ -131,7 +134,7 @@ public class CommonEvents {
    public static void onLevelTick(Post event) {
       if (!event.getLevel().isClientSide) {
          if (event.getLevel() instanceof ServerLevel serverLevel) {
-            // 佐佐木小次郎 気息遮断 D — 每40tick检查，未受伤时概率获得隐身
+            // Sasaki Kojiro Presence Concealment D check.
             if (serverLevel.getGameTime() % 40L == 0L) {
                for (ServantEntity servant : serverLevel.getEntitiesOfClass(ServantEntity.class,
                   new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
@@ -324,11 +327,20 @@ public class CommonEvents {
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
+               if (event.getSource().getEntity() instanceof LivingEntity attacker) {
+                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+               }
                if (event.getEntity() instanceof LivingEntity living) {
                   if (tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }
+                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity artoria
+                     && ArtoriaPendragonCombatHelper.tryNegateMedeaSmallMagic(artoria, event.getSource(), event.getAmount())) {
+                     event.setCanceled(true);
+                     return;
+                  }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
+                  event.setAmount(ArtoriaPendragonCombatHelper.applyAvalonDamageReduction(living, event.getSource(), event.getAmount()));
                }
                if (event.getSource().is(DamageTypes.FALL)) {
                   LivingEntity mob = event.getEntity();
@@ -478,7 +490,7 @@ public class CommonEvents {
          }
       }
 
-      // ========== 十二试炼 & 战斗续行 — 从者受伤处理 ==========
+      // ========== God Hand and battle continuation servant damage handling ==========
       if (event.getEntity() instanceof ServantEntity servant && !event.isCanceled()) {
          handleServantDamage(servant, event);
       }
@@ -521,13 +533,20 @@ public class CommonEvents {
       float damage = event.getAmount();
       float originalDamage = damage;
       boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), originalDamage);
+      boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
+      boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
       long currentTick = servant.level().getGameTime();
+      if (inPlaceGodHandRevive) {
+         data.putLong(GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG, currentTick + 2L);
+      }
 
-      // 记录受伤时间（用于气息遮断被动判断）
+      // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
-      ServantCombatSystem.handleIncomingDamage(servant, event);
-      if (event.isCanceled()) {
-         return;
+      if (!artoriaExcalibur) {
+         ServantCombatSystem.handleIncomingDamage(servant, event);
+         if (event.isCanceled()) {
+            return;
+         }
       }
       damage = event.getAmount();
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
@@ -614,10 +633,10 @@ public class CommonEvents {
          }
       }
 
-      // --- 十二试炼：B Rank 以下伤害免疫 ---
+      // --- God Hand: immunity against low-rank damage ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (!majorBrokenPhantasmExplosion && damage < threshold) {
+         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -629,8 +648,8 @@ public class CommonEvents {
             return;
          }
 
-         // 适应性防御：同类型攻击逐步减伤，最高 75%
-         if (!majorBrokenPhantasmExplosion) {
+         // Adaptive resistance: repeated damage types are reduced over time.
+         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion) {
             float reduction = data.getFloat("GodHandAdaptiveReduction");
             float maxReduction = data.getFloat("GodHandAdaptiveMax");
             float currentResistance = data.getFloat("GodHandCurrentResistance");
@@ -659,6 +678,10 @@ public class CommonEvents {
          int livesLeft = data.getInt("GodHandLives");
          if (livesLeft > 0) {
             event.setCanceled(true);
+            if (inPlaceGodHandRevive) {
+               reviveGodHandInPlace(servant, data, livesLeft - 1);
+               return;
+            }
             if (respawnHeraclesFromGodHand(servant, livesLeft - 1)) {
                return;
             }
@@ -719,15 +742,12 @@ public class CommonEvents {
                CompoundTag data = servant.getPersistentData();
                SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
                CuChulainnCombatHelper.tickStatus(servant);
-               // 战斗续行 CD 倒计时
                if (data.getInt("BattleContinuationCooldown") > 0) {
                   data.putInt("BattleContinuationCooldown",
                      data.getInt("BattleContinuationCooldown") - 1);
                }
                tickBattleContinuationRecovery(servant, data, sl);
-               // 战斗续行无敌倒计时结束后清除无敌
-               // （MobEffect 自动过期，无需额外处理）
-            }
+             }
          });
       }
    }
@@ -773,6 +793,11 @@ public class CommonEvents {
                int livesLeft = data.getInt("GodHandLives");
                if (livesLeft > 0) {
                   event.setCanceled(true);
+                  if (shouldUseInPlaceGodHandRevive(event.getSource(), 0.0F)
+                     || servant.level().getGameTime() <= data.getLong(GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG)) {
+                     reviveGodHandInPlace(servant, data, livesLeft - 1);
+                     return;
+                  }
                   if (respawnHeraclesFromGodHand(servant, livesLeft - 1)) {
                      return;
                   }
@@ -893,6 +918,38 @@ public class CommonEvents {
          }
       }
       return true;
+   }
+
+   private static boolean shouldUseInPlaceGodHandRevive(DamageSource source, float originalDamage) {
+      return isArtoriaExcaliburDamage(source) || originalDamage >= 100.0F;
+   }
+
+   private static void reviveGodHandInPlace(ServantEntity servant, CompoundTag data, int remainingLives) {
+      data.putInt("GodHandLives", remainingLives);
+      data.remove("CausalSevered");
+      data.remove(GOD_HAND_REVIVE_LOCK_TAG);
+      data.remove(GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG);
+      servant.clearFire();
+      servant.invulnerableTime = 0;
+      servant.hurtTime = 0;
+      servant.hurtDuration = 0;
+      servant.setHealth(servant.getMaxHealth());
+      servant.setDeltaMovement(servant.getDeltaMovement().multiply(0.55, 1.0, 0.55));
+      servant.hurtMarked = true;
+
+      if (servant.level() instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+            servant.getX(), servant.getY() + servant.getBbHeight() * 0.75, servant.getZ(),
+            24, 0.6, 0.8, 0.6, 0.025);
+         serverLevel.sendParticles(ParticleTypes.POOF,
+            servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
+            14, 0.45, 0.55, 0.45, 0.025);
+         serverLevel.playSound(null, servant.blockPosition(), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 0.75F, 0.78F);
+      }
+   }
+
+   private static boolean isArtoriaExcaliburDamage(DamageSource source) {
+      return source != null && source.getDirectEntity() instanceof ArtoriaExcaliburBeamEntity;
    }
 
    private static void restorePetrifiedMobState(LivingEntity entity, net.minecraft.world.effect.MobEffect effect) {

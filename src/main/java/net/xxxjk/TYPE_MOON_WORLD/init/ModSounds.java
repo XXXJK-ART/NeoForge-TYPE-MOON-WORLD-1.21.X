@@ -43,6 +43,12 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_SPIRAL = register("emiya_archer_voice_spiral");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_RHO_AIAS = register("emiya_archer_voice_rho_aias");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_UBW = register("emiya_archer_voice_ubw");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_ATTACK = register("artoria_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_FAIL = register("artoria_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_VICTORY = register("artoria_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_INVISIBLE_AIR = register("artoria_voice_invisible_air");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR_RELEASE = register("artoria_voice_excalibur_release");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR = register("artoria_voice_excalibur");
 
    private ModSounds() {
    }

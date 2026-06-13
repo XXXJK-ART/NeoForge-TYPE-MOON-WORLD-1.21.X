@@ -11,6 +11,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
@@ -39,6 +40,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
@@ -144,6 +146,14 @@ public class ModEntities {
          .clientTrackingRange(16)
          .updateInterval(1)
          .build("medea_beam_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArtoriaExcaliburBeamEntity>> ARTORIA_EXCALIBUR_BEAM = ENTITY_TYPES.register(
+      "artoria_excalibur_beam",
+      () -> Builder.<ArtoriaExcaliburBeamEntity>of((entityType, level) -> new ArtoriaExcaliburBeamEntity(entityType, level), MobCategory.MISC)
+         .sized(15.0F, 5.0F)
+         .clientTrackingRange(64)
+         .updateInterval(1)
+         .build("artoria_excalibur_beam")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RyougiShikiEntity>> RYOUGI_SHIKI = ENTITY_TYPES.register(
       "ryougi_shiki", () -> Builder.of(RyougiShikiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ryougi_shiki")
@@ -289,6 +299,9 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArcherEntity>> EMIYA_ARCHER = ENTITY_TYPES.register(
       "emiya_archer", () -> Builder.of(EmiyaArcherEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("emiya_archer")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArtoriaPendragonEntity>> ARTORIA_PENDRAGON = ENTITY_TYPES.register(
+      "artoria_pendragon", () -> Builder.of(ArtoriaPendragonEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("artoria_pendragon")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaThrownWeaponEntity>> EMIYA_THROWN_WEAPON = ENTITY_TYPES.register(
       "emiya_thrown_weapon",

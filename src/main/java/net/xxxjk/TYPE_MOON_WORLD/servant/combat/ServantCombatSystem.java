@@ -228,6 +228,13 @@ public final class ServantCombatSystem {
       return ServantCombatPhase.fromId(entity.getPersistentData().getInt(TAG_PHASE));
    }
 
+   public static void forcePhaseAtLeast(ServantEntity entity, ServantCombatPhase phase) {
+      ServantCombatPhase current = ServantCombatPhase.fromId(entity.getPersistentData().getInt(TAG_PHASE));
+      if (current.id() < phase.id()) {
+         entity.getPersistentData().putInt(TAG_PHASE, phase.id());
+      }
+   }
+
    public static boolean canUseNoblePhantasm(ServantEntity entity) {
       ServantDefinition definition = entity.getDefinition();
       return definition != null && (isBerserker(definition) || getPhase(entity) == ServantCombatPhase.DECISIVE);

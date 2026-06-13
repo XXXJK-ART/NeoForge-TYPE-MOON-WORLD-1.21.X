@@ -229,5 +229,48 @@
     "sounds": [
       "typemoonworld:voice/emiya_archer/ubw"
     ]
+  },
+  "artoria_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/artoria_pendragon/attack1",
+      "typemoonworld:voice/artoria_pendragon/attack2",
+      "typemoonworld:voice/artoria_pendragon/attack3"
+    ]
+  },
+  "artoria_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/artoria_pendragon/fail1",
+      "typemoonworld:voice/artoria_pendragon/fail2"
+    ]
+  },
+  "artoria_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/artoria_pendragon/victory1",
+      "typemoonworld:voice/artoria_pendragon/victory2",
+      "typemoonworld:voice/artoria_pendragon/victory3",
+      "typemoonworld:voice/artoria_pendragon/victory4"
+    ]
+  },
+  "artoria_voice_invisible_air": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/artoria_pendragon/invisible_air1",
+      "typemoonworld:voice/artoria_pendragon/invisible_air2"
+    ]
+  },
+  "artoria_voice_excalibur_release": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/artoria_pendragon/excalibur_release"
+    ]
+  },
+  "artoria_voice_excalibur": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/artoria_pendragon/excalibur"
+    ]
   }
 }

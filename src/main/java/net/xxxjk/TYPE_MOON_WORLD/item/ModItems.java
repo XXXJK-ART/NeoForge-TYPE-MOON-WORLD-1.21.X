@@ -537,6 +537,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.DRAGONFANG_SOLDIER, 0xE8E0D2, 0x635A52));
     public static final DeferredItem<Item> EMIYA_ARCHER_SPAWN_EGG = ITEMS.register("emiya_archer_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.EMIYA_ARCHER, 0x8E2424, 0xD8D2C2));
+    public static final DeferredItem<Item> ARTORIA_PENDRAGON_SPAWN_EGG = ITEMS.register("artoria_pendragon_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARTORIA_PENDRAGON, 0x1E4FAF, 0xF4D35E));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

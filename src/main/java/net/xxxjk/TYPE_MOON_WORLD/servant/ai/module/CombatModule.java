@@ -23,6 +23,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -260,6 +262,9 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof CursedArmHassanEntity cursedArm) {
          CursedArmHassanCombatHelper.tick(cursedArm, context);
+         return;
+      }
+      if (entity instanceof ArtoriaPendragonEntity artoria && ArtoriaPendragonCombatHelper.tick(artoria, context)) {
          return;
       }
 
@@ -1841,6 +1846,12 @@ public final class CombatModule implements ServantAiModule {
       }
 
       if (preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg")) {
+            sl.sendParticles(ParticleTypes.END_ROD,
+               resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.6, resolvedTarget.getZ(),
+               18, 0.3, 0.3, 0.3, 0.03);
+            return;
+         }
          boolean deathThorn = resolvedTarget.isAlive()
             && !(resolvedTarget instanceof EmiyaArcherEntity)
             && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);

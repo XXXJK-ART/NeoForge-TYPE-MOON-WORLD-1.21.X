@@ -12,8 +12,13 @@ public final class CommonServantSkills {
 
    public static void registerBuiltin(ServantSkillRegistry registry) {
       registry.register("magic_resistance_d", CommonServantSkills::executeMagicResistanceD, "typemoonworld_core");
+      registry.register("magic_resistance_a", CommonServantSkills::executeMagicResistanceA, "typemoonworld_core");
       registry.register("magic_resistance_b", CommonServantSkills::executeMagicResistanceB, "typemoonworld_core");
       registry.register("magic_resistance_c", CommonServantSkills::executeMagicResistanceC, "typemoonworld_core");
+      registry.register("riding_b", CommonServantSkills::executeRidingB, "typemoonworld_core");
+      registry.register("artoria_instinct_a", CommonServantSkills::executeArtoriaInstinctA, "typemoonworld_core");
+      registry.register("mana_burst_a", CommonServantSkills::executeManaBurstA, "typemoonworld_core");
+      registry.register("charisma_b", CommonServantSkills::executeCharismaB, "typemoonworld_core");
       registry.register("independent_action_b", CommonServantSkills::executeIndependentActionB, "typemoonworld_core");
       registry.register("riding_a_plus", CommonServantSkills::executeRidingAPlus, "typemoonworld_core");
       registry.register("independent_action_c", CommonServantSkills::executeIndependentActionC, "typemoonworld_core");
@@ -27,6 +32,10 @@ public final class CommonServantSkills {
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
       return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.15F, 0.0F);
+   }
+
+   private static ServantExecutionResult executeMagicResistanceA(ServantExecutionContext context) {
+      return applyMagicResistance(context.caster(), MagicResistanceRank.A, 0.35F, 0.25F);
    }
 
    private static ServantExecutionResult executeMagicResistanceB(ServantExecutionContext context) {
@@ -46,6 +55,49 @@ public final class CommonServantSkills {
       entity.getPersistentData().putBoolean("RidingAPlusActive", true);
       entity.getPersistentData().putFloat("RidingAPlusSpeedBonus", 0.5F);
       entity.getPersistentData().putFloat("RidingAPlusArmorBonus", 0.2F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeRidingB(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+
+      entity.getPersistentData().putBoolean("RidingBActive", true);
+      entity.getPersistentData().putFloat("RidingBSpeedBonus", 0.2F);
+      entity.getPersistentData().putFloat("RidingBArmorBonus", 0.1F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeArtoriaInstinctA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+
+      entity.getPersistentData().putBoolean("ArtoriaInstinctAActive", true);
+      entity.getPersistentData().putFloat("ArtoriaInstinctCertainHitNegationChance", 0.95F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeManaBurstA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+
+      entity.getPersistentData().putBoolean("ArtoriaManaBurstAAvailable", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeCharismaB(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+
+      entity.getPersistentData().putBoolean("ArtoriaCharismaBAvailable", true);
       return ServantExecutionResult.SUCCESS;
    }
 

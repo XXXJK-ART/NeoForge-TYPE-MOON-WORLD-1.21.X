@@ -20,6 +20,8 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaExcaliburBeamRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaPendragonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
@@ -192,6 +194,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA.get(), MedusaRenderer::new);
       event.registerEntityRenderer(ModEntities.CURSED_ARM_HASSAN.get(), CursedArmHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
@@ -203,6 +206,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GANDER_PROJECTILE.get(), GanderProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);
       event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_SHELL_EFFECT.get(), GravityShellRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_FIELD_SHELL_EFFECT.get(), GravityFieldShellRenderer::new);

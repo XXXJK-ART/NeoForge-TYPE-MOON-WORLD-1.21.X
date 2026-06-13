@@ -1,0 +1,12 @@
+{
+  "id": "excalibur_beam",
+  "display_name": "Excalibur",
+  "display_name_zh": "誓约胜利之剑",
+  "rank": "A++",
+  "type": "anti_fortress",
+  "mp_cost": 150,
+  "cooldown_ticks": 1200,
+  "windup_ticks": 120,
+  "duration_ticks": 150,
+  "description": "A sustained golden beam in Artoria's facing direction, dealing 500 damage per second across 50 x 15 blocks."
+}

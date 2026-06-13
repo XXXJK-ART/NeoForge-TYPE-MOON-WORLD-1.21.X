@@ -530,6 +530,10 @@ public final class CursedArmHassanCombatHelper {
       boolean killed = validInstantDeath && entity.getRandom().nextFloat() < 0.6F;
       DamageSource source = entity.damageSources().magic();
       if (killed) {
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya")) {
+            spawnZabaniyaImpactFx(entity, target, false);
+            return;
+         }
          if (HeraclesGodHandHelper.consumeLifeForZabaniya(target)) {
             spawnZabaniyaImpactFx(entity, target, true);
             return;

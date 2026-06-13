@@ -34,6 +34,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -316,6 +317,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().generic();
+      if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_projectile")) {
+         this.spawnSingleTargetImpact(target);
+         this.discard();
+         return;
+      }
       boolean deathThorn = target.isAlive()
          && !(target instanceof EmiyaArcherEntity)
          && this.random.nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);

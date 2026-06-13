@@ -197,6 +197,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.DRAGONFANG_SOLDIER_SPAWN_EGG);
                         output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
+                        output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

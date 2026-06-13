@@ -221,6 +221,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void tick() {
       super.tick();
       this.updateWalkAnimationState();
+      ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
    }
 
    private void updateWalkAnimationState() {

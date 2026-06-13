@@ -1,0 +1,17 @@
+{
+  "id": "artoria_instinct_a",
+  "display_name": "Instinct A",
+  "display_name_zh": "直感 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "special_judgement_negation",
+      "params": {
+        "certain_hit_or_death_chance": 0.95
+      }
+    }
+  ]
+}
