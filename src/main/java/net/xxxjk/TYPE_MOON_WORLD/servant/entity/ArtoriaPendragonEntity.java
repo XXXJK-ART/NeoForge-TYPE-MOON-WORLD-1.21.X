@@ -33,6 +33,10 @@ public class ArtoriaPendragonEntity extends ServantEntity {
    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       CompoundTag data = this.getPersistentData();
+      if (stack.is(ModItems.AVALON.get()) && player.isShiftKeyDown()) {
+         return InteractionResult.PASS;
+      }
+
       if (stack.is(ModItems.AVALON.get()) && !ArtoriaPendragonCombatHelper.hasAvalon(this)) {
          if (!this.level().isClientSide()) {
             data.putBoolean(ArtoriaPendragonCombatHelper.TAG_HAS_AVALON, true);

@@ -1,0 +1,11 @@
+{
+  "type": "typemoonworld:dairokuten_maou_hajun",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "typemoonworld:hajun_noise_settings",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "typemoonworld:hajun_biome"
+    }
+  }
+}

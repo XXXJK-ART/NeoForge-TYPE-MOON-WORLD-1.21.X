@@ -1,4 +1,4 @@
-{
+﻿{
   "cym_gem_biubiubiu": {
     "category": "player",
     "subtitle": "subtitles.typemoonworld.cym_gem_biubiubiu",
@@ -271,6 +271,39 @@
     "category": "hostile",
     "sounds": [
       "typemoonworld:voice/artoria_pendragon/excalibur"
+    ]
+  },
+  "oda_nobunaga_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/oda_nobunaga/attack1",
+      "typemoonworld:voice/oda_nobunaga/attack2"
+    ]
+  },
+  "oda_nobunaga_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/oda_nobunaga/fail1",
+      "typemoonworld:voice/oda_nobunaga/fail2"
+    ]
+  },
+  "oda_nobunaga_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/oda_nobunaga/victory1",
+      "typemoonworld:voice/oda_nobunaga/victory2"
+    ]
+  },
+  "oda_nobunaga_voice_np": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/oda_nobunaga/np"
+    ]
+  },
+  "oda_nobunaga_voice_hajun": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/oda_nobunaga/hajun"
     ]
   }
 }

@@ -5,11 +5,18 @@ import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -54,6 +61,50 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
       tooltip.add(Component.translatable("item.typemoonworld.gae_bulg.desc").withStyle(ChatFormatting.RED));
+   }
+
+   @Override
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (level.isClientSide()) {
+         return InteractionResultHolder.consume(stack);
+      }
+      if (!(player instanceof ServerPlayer serverPlayer)) {
+         return InteractionResultHolder.pass(stack);
+      }
+      if (player.getCooldowns().isOnCooldown(this)) {
+         return InteractionResultHolder.fail(stack);
+      }
+      if (player.isCrouching()) {
+         PlayerNoblePhantasmHelper.startGaeBulgDeathFlight(serverPlayer);
+         player.startUsingItem(hand);
+         return InteractionResultHolder.consume(stack);
+      }
+      PlayerNoblePhantasmHelper.useGaeBulgMelee(serverPlayer);
+      return InteractionResultHolder.consume(stack);
+   }
+
+   @Override
+   public int getUseDuration(ItemStack stack, LivingEntity entity) {
+      return 72000;
+   }
+
+   @Override
+   public UseAnim getUseAnimation(ItemStack stack) {
+      return UseAnim.SPEAR;
+   }
+
+   @Override
+   public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
+      int useTicks = this.getUseDuration(stack, living) - remainingUseDuration;
+      PlayerNoblePhantasmHelper.tickGaeBulgUse(level, living, useTicks);
+   }
+
+   @Override
+   public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
+      if (!level.isClientSide() && living instanceof ServerPlayer player) {
+         PlayerNoblePhantasmHelper.releaseGaeBulg(player, player.isCrouching());
+      }
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {

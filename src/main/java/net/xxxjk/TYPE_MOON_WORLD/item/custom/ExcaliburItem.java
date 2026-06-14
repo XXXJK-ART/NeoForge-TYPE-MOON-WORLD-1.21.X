@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -70,7 +71,11 @@ public class ExcaliburItem extends SwordItem implements GeoItem, NoblePhantasmIt
 
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
-      return InteractionResultHolder.pass(stack);
+      if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+         PlayerNoblePhantasmHelper.startExcaliburCharge(serverPlayer);
+      }
+      player.startUsingItem(hand);
+      return InteractionResultHolder.consume(stack);
    }
 
    public int getUseDuration(ItemStack stack, LivingEntity entity) {
@@ -82,9 +87,14 @@ public class ExcaliburItem extends SwordItem implements GeoItem, NoblePhantasmIt
    }
 
    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
+      int useTicks = this.getUseDuration(stack, living) - remainingUseDuration;
+      PlayerNoblePhantasmHelper.tickExcaliburCharge(level, living, useTicks);
    }
 
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
+      if (!level.isClientSide() && living instanceof ServerPlayer player) {
+         PlayerNoblePhantasmHelper.releaseExcalibur(player);
+      }
    }
 
    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {

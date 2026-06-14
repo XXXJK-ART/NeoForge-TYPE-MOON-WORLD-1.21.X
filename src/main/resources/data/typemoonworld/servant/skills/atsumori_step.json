@@ -1,0 +1,10 @@
+{
+  "id": "atsumori_step",
+  "display_name": "Atsumori Step",
+  "display_name_zh": "敦盛步法",
+  "type": "active",
+  "mp_cost": 8,
+  "cooldown_ticks": 120,
+  "duration_ticks": 70,
+  "effects": []
+}

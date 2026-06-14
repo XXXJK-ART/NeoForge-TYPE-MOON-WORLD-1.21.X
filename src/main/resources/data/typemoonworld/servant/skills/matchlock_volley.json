@@ -1,0 +1,10 @@
+{
+  "id": "matchlock_volley",
+  "display_name": "Matchlock Volley",
+  "display_name_zh": "铁炮齐射",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 100,
+  "duration_ticks": 60,
+  "effects": []
+}

@@ -532,17 +532,27 @@ public class CommonEvents {
       CompoundTag data = servant.getPersistentData();
       float damage = event.getAmount();
       float originalDamage = damage;
+      long currentTick = servant.level().getGameTime();
       boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), originalDamage);
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
+      boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
-      long currentTick = servant.level().getGameTime();
       if (inPlaceGodHandRevive) {
          data.putLong(GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG, currentTick + 2L);
       }
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
-      if (!artoriaExcalibur) {
+      if (invisibleAirBypass && servant instanceof CursedArmHassanEntity hassan && CursedArmHassanCombatHelper.tryDodge(hassan, event.getSource())) {
+         event.setCanceled(true);
+         data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
+         return;
+      }
+      if (invisibleAirBypass) {
+         data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
+      }
+
+      if (!artoriaExcalibur && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;

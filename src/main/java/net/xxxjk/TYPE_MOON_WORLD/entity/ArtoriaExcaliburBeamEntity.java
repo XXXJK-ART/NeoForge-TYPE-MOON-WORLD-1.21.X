@@ -25,7 +25,6 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class ArtoriaExcaliburBeamEntity extends Entity {
@@ -49,7 +48,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       this.setNoGravity(true);
    }
 
-   public ArtoriaExcaliburBeamEntity(Level level, ArtoriaPendragonEntity owner, Vec3 start, int duration) {
+   public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration) {
       this(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), level);
       this.ownerUuid = owner.getUUID();
       this.setPos(start);
@@ -77,14 +76,14 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    public void tick() {
       super.tick();
       if (this.level() instanceof ServerLevel level) {
-         ArtoriaPendragonEntity owner = this.getOwner(level);
+         LivingEntity owner = this.getOwner(level);
          if (owner == null || !owner.isAlive()) {
             this.queueCrater(level, null, this.getEndPos());
             this.discard();
             return;
          }
          this.updateEndFromOwner(owner);
-         this.setPos(owner.position().add(0.0, owner.getBbHeight() * 0.66, 0.0).add(horizontalLook(owner).scale(1.2)));
+         this.setPos(owner.position().add(0.0, owner.getBbHeight() * 0.66, 0.0).add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(1.2)));
          if (this.tickCount % DAMAGE_INTERVAL == 0) {
             this.applyBeamDamage(level, owner);
          }
@@ -136,30 +135,35 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       return new AABB(start, start).minmax(new AABB(end, end)).inflate(10.0);
    }
 
-   private ArtoriaPendragonEntity getOwner(ServerLevel level) {
+   private LivingEntity getOwner(ServerLevel level) {
       if (this.ownerUuid == null) {
          return null;
       }
       Entity entity = level.getEntity(this.ownerUuid);
-      return entity instanceof ArtoriaPendragonEntity artoria ? artoria : null;
+      return entity instanceof LivingEntity living ? living : null;
    }
 
-   private void updateEndFromOwner(ArtoriaPendragonEntity owner) {
-      Vec3 end = this.position().add(horizontalLook(owner).scale(LENGTH));
+   private void updateEndFromOwner(LivingEntity owner) {
+      Vec3 end = this.position().add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(LENGTH));
       this.entityData.set(END_X, (float)end.x);
       this.entityData.set(END_Y, (float)end.y);
       this.entityData.set(END_Z, (float)end.z);
    }
 
-   private void applyBeamDamage(ServerLevel level, ArtoriaPendragonEntity owner) {
+   private void applyBeamDamage(ServerLevel level, LivingEntity owner) {
       Vec3 start = this.position();
       Vec3 dir = this.getEndPos().subtract(start);
-      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
-      if (horizontal.lengthSqr() < 1.0E-4) {
+      if (dir.lengthSqr() < 1.0E-4) {
          return;
       }
-      Vec3 forward = horizontal.normalize();
-      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 forward = dir.normalize();
+      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0.0, 0.0, 1.0) : new Vec3(0.0, 1.0, 0.0);
+      Vec3 right = forward.cross(worldUp);
+      if (right.lengthSqr() < 1.0E-4) {
+         right = forward.cross(new Vec3(1.0, 0.0, 0.0));
+      }
+      right = right.normalize();
+      Vec3 up = right.cross(forward).normalize();
       AABB search = new AABB(owner.position(), owner.position())
          .minmax(new AABB(this.getEndPos(), this.getEndPos()))
          .inflate(HALF_WIDTH + 2.0, HALF_HEIGHT + 2.0, HALF_WIDTH + 2.0);
@@ -171,7 +175,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
             continue;
          }
          double side = Math.abs(rel.dot(right));
-         double vertical = Math.abs(rel.y);
+         double vertical = Math.abs(rel.dot(up));
          double beamAlong = Math.max(0.0, along);
          double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / LENGTH));
          double allowedWidth = along < 0.0 ? 2.8 : HALF_WIDTH * Math.pow(widthScale, 0.35);
@@ -183,10 +187,16 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       }
    }
 
-   private void destroyBeamBlocks(ServerLevel level, ArtoriaPendragonEntity owner) {
+   private void destroyBeamBlocks(ServerLevel level, LivingEntity owner) {
       Vec3 start = this.position();
-      Vec3 forward = horizontalLook(owner);
-      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 forward = ArtoriaPendragonCombatHelper.excaliburLook(owner);
+      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0.0, 0.0, 1.0) : new Vec3(0.0, 1.0, 0.0);
+      Vec3 right = forward.cross(worldUp);
+      if (right.lengthSqr() < 1.0E-4) {
+         right = forward.cross(new Vec3(1.0, 0.0, 0.0));
+      }
+      right = right.normalize();
+      Vec3 up = right.cross(forward).normalize();
       int phase = this.tickCount % 6;
       int broken = 0;
       int maxBroken = 120;
@@ -195,7 +205,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
          double allowedWidth = HALF_WIDTH * Math.pow(widthScale, 0.35);
          for (double side = -allowedWidth; side <= allowedWidth && broken < maxBroken; side += 1.0) {
             for (double y = -2.0; y <= 3.5 && broken < maxBroken; y += 1.0) {
-               Vec3 sample = start.add(forward.scale(along)).add(right.scale(side)).add(0.0, y, 0.0);
+               Vec3 sample = start.add(forward.scale(along)).add(right.scale(side)).add(up.scale(y));
                if (owner.position().distanceToSqr(sample) <= 9.0) {
                   continue;
                }
@@ -319,8 +329,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
 
    private static Vec3 horizontalLook(LivingEntity entity) {
       Vec3 look = entity.getLookAngle();
-      Vec3 horizontal = new Vec3(look.x, 0.0, look.z);
-      return horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
+      return look.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : look.normalize();
    }
 
    private static void hurtWithoutIFrames(LivingEntity target, DamageSource source, float damage) {

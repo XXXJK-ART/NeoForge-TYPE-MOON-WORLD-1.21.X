@@ -3,8 +3,10 @@ package net.xxxjk.TYPE_MOON_WORLD.event;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -13,6 +15,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickB
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber(
@@ -103,8 +107,18 @@ public class ModPlayerEventHandler {
 
    @SubscribeEvent
    public static void onAttackEntity(AttackEntityEvent event) {
-      if (!event.getEntity().level().isClientSide() && isPetrified(event.getEntity())) {
+      if (event.getEntity().level().isClientSide()) {
+         return;
+      }
+      if (isPetrified(event.getEntity())) {
          event.setCanceled(true);
+         return;
+      }
+      if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof LivingEntity target) {
+         ItemStack stack = player.getMainHandItem();
+         if (stack.getItem() instanceof BizenNagamitsuItem && PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target)) {
+            event.setCanceled(true);
+         }
       }
    }
 }

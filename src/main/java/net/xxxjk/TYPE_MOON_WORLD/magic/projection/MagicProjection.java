@@ -31,6 +31,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
@@ -74,6 +75,9 @@ public class MagicProjection {
 
                ItemStack projected = createProjectedItem(target, swordAttributeActive, player.level().getGameTime());
                player.setItemInHand(handToUse, projected);
+               if (vars.has_unlimited_blade_works) {
+                  PlayerNoblePhantasmHelper.tryCompleteProjectedKanshouBakuyaPair(player, projected, handToUse);
+               }
                if (!autoAnalyzeCandidate.isEmpty() && !isAlreadyAnalyzed(vars, autoAnalyzeCandidate)) {
                   vars.analyzed_items.add(autoAnalyzeCandidate.copy());
                }
@@ -100,6 +104,9 @@ public class MagicProjection {
          } else {
             ItemStack projected = createProjectedItem(analyzedTarget, swordAttributeActive, player.level().getGameTime());
             player.setItemInHand(handToUse, projected);
+            if (vars.has_unlimited_blade_works) {
+               PlayerNoblePhantasmHelper.tryCompleteProjectedKanshouBakuyaPair(player, projected, handToUse);
+            }
             vars.syncPlayerVariables(player);
             grantAdvancement(player, "trace_on");
             player.displayClientMessage(Component.translatable("message.typemoonworld.trace_on"), true);

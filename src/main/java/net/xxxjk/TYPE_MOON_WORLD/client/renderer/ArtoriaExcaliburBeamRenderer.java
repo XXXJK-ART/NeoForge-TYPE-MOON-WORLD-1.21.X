@@ -64,13 +64,22 @@ public class ArtoriaExcaliburBeamRenderer extends EntityRenderer<ArtoriaExcalibu
 
    private void drawCrossLayer(PoseStack.Pose pose, VertexConsumer consumer, Vec3 start, Vec3 end, float width, float r, float g, float b, float a) {
       Vec3 dir = end.subtract(start);
-      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
-      if (horizontal.lengthSqr() < 1.0E-6) {
+      if (dir.lengthSqr() < 1.0E-6) {
          return;
       }
-      Vec3 forward = horizontal.normalize();
-      Vec3 right = new Vec3(-forward.z, 0.0, forward.x).scale(width * 0.5F);
-      Vec3 up = new Vec3(0.0, width * 0.28F, 0.0);
+      Vec3 forward = dir.normalize();
+      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0.0, 0.0, 1.0) : new Vec3(0.0, 1.0, 0.0);
+      Vec3 right = forward.cross(worldUp);
+      if (right.lengthSqr() < 1.0E-6) {
+         right = forward.cross(new Vec3(1.0, 0.0, 0.0));
+      }
+      right = right.normalize().scale(width * 0.5F);
+      Vec3 up = right.cross(forward);
+      if (up.lengthSqr() < 1.0E-6) {
+         up = new Vec3(0.0, width * 0.28F, 0.0);
+      } else {
+         up = up.normalize().scale(width * 0.28F);
+      }
       drawQuad(pose, consumer, start.subtract(right), end.subtract(right.scale(0.45)), end.add(right.scale(0.45)), start.add(right), r, g, b, a);
       drawQuad(pose, consumer, start.subtract(up), end.subtract(up.scale(0.45)), end.add(up.scale(0.45)), start.add(up), r, g, b, a * 0.86F);
    }

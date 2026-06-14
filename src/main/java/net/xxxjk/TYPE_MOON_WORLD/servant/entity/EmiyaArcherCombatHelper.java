@@ -2288,14 +2288,22 @@ public final class EmiyaArcherCombatHelper {
                ? new ItemStack(ganJiang ? ModItems.GAN_JIANG_OVEREDGE.get() : ModItems.MO_YE_OVEREDGE.get())
                : new ItemStack(ganJiang ? ModItems.GAN_JIANG.get() : ModItems.MO_YE.get());
             EmiyaThrownWeaponEntity thrown = new EmiyaThrownWeaponEntity(sl, entity, thrownStack);
-            Vec3 side = sideVector(entity, target).scale(ganJiang ? 1.8 : -1.8);
-            Vec3 spawn = entity.position().add(0.0, entity.getBbHeight() * 0.72, 0.0).add(finalRush ? Vec3.ZERO : side);
+            Vec3 sideUnit = sideVector(entity, target);
+            double sideOffset = finalRush ? (ganJiang ? 0.9 : -0.9) : (ganJiang ? 1.8 : -1.8);
+            Vec3 side = sideUnit.scale(sideOffset);
+            Vec3 spawn = entity.position().add(0.0, entity.getBbHeight() * 0.72, 0.0).add(side);
             thrown.setPos(spawn.x, spawn.y, spawn.z);
             thrown.setFixedDamage(finalRush ? 50.0F : 30.0F + entity.getRandom().nextFloat() * 10.0F);
             thrown.setBreakLowHardnessBlocks(true);
+            thrown.setNoGravity(true);
             Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
             Vec3 pull = finalRush ? Vec3.ZERO : side.scale(-0.75);
             Vec3 dir = aim.subtract(thrown.position()).add(pull).normalize();
+            Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+            if (horizontal.lengthSqr() < 1.0E-4) {
+               horizontal = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+            }
+            thrown.setArcingFlight(horizontal, sideOffset, finalRush ? 5.5 : 7.5);
             thrown.shoot(dir.x, dir.y + (finalRush ? 0.02 : 0.09), dir.z, finalRush ? 2.8F : 2.15F, 0.0F);
             sl.addFreshEntity(thrown);
             if (finalRush) {

@@ -25,7 +25,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class RhoAiasEntity extends Entity implements GeoEntity {
-   private static final float MAX_SHIELD_HP = 3500.0F;
+   private static final float MAX_SHIELD_HP = 2000.0F;
    private static final EntityDataAccessor<Float> SHIELD_HP = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> LAYERS = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
@@ -187,7 +187,22 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    }
 
    private void updateLayers(float hp) {
-      int layers = Mth.clamp(Mth.ceil(Math.max(0.0F, hp) / MAX_SHIELD_HP * 7.0F), 1, 7);
+      int layers;
+      if (hp > 1800.0F) {
+         layers = 7;
+      } else if (hp > 1600.0F) {
+         layers = 6;
+      } else if (hp > 1400.0F) {
+         layers = 5;
+      } else if (hp > 1200.0F) {
+         layers = 4;
+      } else if (hp > 1000.0F) {
+         layers = 3;
+      } else if (hp > 600.0F) {
+         layers = 2;
+      } else {
+         layers = 1;
+      }
       this.entityData.set(LAYERS, layers);
    }
 

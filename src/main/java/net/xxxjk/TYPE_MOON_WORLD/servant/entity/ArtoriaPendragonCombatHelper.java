@@ -18,6 +18,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -44,6 +45,7 @@ public final class ArtoriaPendragonCombatHelper {
    public static final String TAG_EXCALIBUR_RELEASE_UNTIL = "ArtoriaExcaliburReleaseUntil";
    public static final String TAG_HAS_AVALON = "ArtoriaHasAvalon";
    public static final String TAG_INVISIBLE_AIR_RELEASED = "ArtoriaInvisibleAirReleased";
+   public static final String TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL = "ArtoriaInvisibleAirDamageBypassUntil";
 
    private static final String TAG_EXCALIBUR_CHARGE_START = "ArtoriaExcaliburChargeStart";
    private static final String TAG_EXCALIBUR_TARGET = "ArtoriaExcaliburTarget";
@@ -63,7 +65,9 @@ public final class ArtoriaPendragonCombatHelper {
    private static final int CHARISMA_DURATION = 600;
    private static final int CHARISMA_COOLDOWN = 700;
    private static final int INVISIBLE_AIR_DURATION = 80;
-   private static final int INVISIBLE_AIR_COOLDOWN = 100;
+   private static final int INVISIBLE_AIR_COOLDOWN = 200;
+   private static final float INVISIBLE_AIR_DAMAGE = 300.0F;
+   private static final float MANA_BURST_INVISIBLE_AIR_DAMAGE_MULTIPLIER = 4.0F / 3.0F;
    private static final int EXCALIBUR_CHANT = 120;
    private static final int EXCALIBUR_CHARGE = 40;
    private static final int EXCALIBUR_WINDUP = EXCALIBUR_CHANT + EXCALIBUR_CHARGE;
@@ -219,7 +223,7 @@ public final class ArtoriaPendragonCombatHelper {
       if (!isManaBurstActive(attacker) || amount <= 0.0F) {
          return amount;
       }
-      return amount * 2.0F + 15.0F;
+      return amount * 2.0F + 20.0F;
    }
 
    public static void tickSharedBuffCleanup(LivingEntity entity) {
@@ -235,8 +239,8 @@ public final class ArtoriaPendragonCombatHelper {
 
    public static void spawnAvalonFx(LivingEntity entity) {
       if (entity.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ(), fxCount(28), 0.32, 0.55, 0.32, 0.03);
-         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(), fxCount(18), 0.35, 0.45, 0.35, 0.04);
+         level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.64, entity.getZ(), fxCount(12), 0.22, 0.28, 0.22, 0.02);
+         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, entity.getX(), entity.getY() + entity.getBbHeight() * 0.48, entity.getZ(), fxCount(6), 0.22, 0.26, 0.22, 0.03);
          level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.85F, 1.45F);
       }
    }
@@ -256,9 +260,9 @@ public final class ArtoriaPendragonCombatHelper {
       double cz = entity.getZ();
       double height = entity.getBbHeight();
 
-      level.sendParticles(ParticleTypes.CLOUD, cx, cy + height * 0.54, cz, fxCount(6), 0.55, 0.42, 0.55, 0.018);
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + height * 0.66, cz, fxCount(5), 0.42, 0.48, 0.42, 0.018);
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.18, cz, fxCount(6), 0.72, 0.08, 0.72, 0.045);
+      level.sendParticles(ParticleTypes.CLOUD, cx, cy + height * 0.54, cz, fxCount(3), 0.32, 0.26, 0.32, 0.015);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy + height * 0.66, cz, fxCount(2), 0.24, 0.28, 0.24, 0.015);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.18, cz, fxCount(3), 0.42, 0.06, 0.42, 0.03);
 
       for (int i = 0; i < fxCount(8); i++) {
          double angle = time + i * Math.PI * 0.5;
@@ -272,12 +276,12 @@ public final class ArtoriaPendragonCombatHelper {
          level.sendParticles(ParticleTypes.END_ROD, x, y + 0.05, z, 1, swirlX, 0.022, swirlZ, 0.0);
       }
 
-      if (entity.tickCount % 12 == 0) {
-         level.sendParticles(ParticleTypes.ENCHANT, cx, cy + height * 0.6, cz, fxCount(14), 0.75, 0.58, 0.75, 0.035);
+      if (entity.tickCount % 16 == 0) {
+         level.sendParticles(ParticleTypes.ENCHANT, cx, cy + height * 0.6, cz, fxCount(6), 0.45, 0.32, 0.45, 0.025);
       }
       if (entity.tickCount % 28 == 0) {
-         level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.16, cz, 0.28F, 2.45F, 0.055F, 22, 0xEFFFF8, 0.26F, 0.018F));
-         level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + height * 0.52, cz, 0.18F, 1.55F, 0.045F, 18, 0xCFFFEF, 0.18F, 0.012F, 82.0F, (entity.tickCount * 7) % 360));
+         level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.16, cz, 0.18F, 1.65F, 0.04F, 14, 0xEFFFF8, 0.18F, 0.014F));
+         level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + height * 0.52, cz, 0.12F, 1.0F, 0.03F, 12, 0xCFFFEF, 0.12F, 0.01F, 82.0F, (entity.tickCount * 7) % 360));
       }
    }
 
@@ -383,7 +387,7 @@ public final class ArtoriaPendragonCombatHelper {
       entity.setCurrentMp(entity.getCurrentMp() - 150.0);
       data.putLong(TAG_EXCALIBUR_RELEASE_UNTIL, now + EXCALIBUR_RELEASE);
       entity.triggerHorizontalSwingAnimation();
-      Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.66, 0.0).add(horizontalLook(entity).scale(1.2));
+      Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.66, 0.0).add(excaliburLook(entity).scale(1.2));
       ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, entity, start, EXCALIBUR_RELEASE);
       level.addFreshEntity(beam);
       data.putInt(TAG_EXCALIBUR_BEAM_ID, beam.getId());
@@ -575,7 +579,7 @@ public final class ArtoriaPendragonCombatHelper {
       Vec3 look = horizontalLook(entity);
       Vec3 right = new Vec3(-look.z, 0.0, look.x);
       Set<Integer> hit = new HashSet<>();
-      float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.0);
+      float damage = isManaBurstActive(entity) ? INVISIBLE_AIR_DAMAGE * MANA_BURST_INVISIBLE_AIR_DAMAGE_MULTIPLIER : INVISIBLE_AIR_DAMAGE;
       for (double dist = 1.5; dist <= 10.0; dist += 0.8) {
          double halfWidth = dist * 0.45;
          double halfHeight = 0.7 + dist * 0.32;
@@ -594,7 +598,7 @@ public final class ArtoriaPendragonCombatHelper {
                AABB box = new AABB(pos, pos).inflate(0.9, 0.75, 0.9);
                for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != entity && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
                   if (hit.add(living.getId())) {
-                     damageTarget(entity, living, damage);
+                     damageTargetBypassingReactions(entity, living, damage);
                      living.push(look.x * 0.8, 0.28, look.z * 0.8);
                      living.hurtMarked = true;
                   }
@@ -610,13 +614,14 @@ public final class ArtoriaPendragonCombatHelper {
    private static void breakWindConeBlocks(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 origin, Vec3 look, Vec3 right) {
       boolean boosted = isManaBurstActive(entity);
       int broken = 0;
-      int limit = boosted ? 90 : 36;
-      for (double dist = 1.5; dist <= (boosted ? 9.0 : 6.0) && broken < limit; dist += 0.75) {
-         double halfWidth = dist * 0.35;
+      int limit = boosted ? 150 : 56;
+      for (double dist = 1.5; dist <= (boosted ? 11.0 : 7.5) && broken < limit; dist += 0.7) {
+         double halfWidth = dist * (boosted ? 0.48 : 0.42);
          for (double side = -halfWidth; side <= halfWidth && broken < limit; side += 0.75) {
             BlockPos center = BlockPos.containing(origin.add(look.scale(dist)).add(right.scale(side)));
-            int top = boosted ? 4 : 3;
-            for (BlockPos pos : BlockPos.betweenClosed(center.offset(0, -1, 0), center.offset(0, top, 0))) {
+            int top = boosted ? 5 : 4;
+            int bottom = boosted ? -2 : -1;
+            for (BlockPos pos : BlockPos.betweenClosed(center.offset(0, bottom, 0), center.offset(0, top, 0))) {
                BlockState state = level.getBlockState(pos);
                float hardness = state.getDestroySpeed(level, pos);
                if (!state.isAir() && hardness >= 0.0F && hardness < (boosted ? 80.0F : 45.0F) && !state.is(Blocks.BEDROCK)) {
@@ -674,7 +679,7 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static void spawnExcaliburReleaseFx(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 start) {
-      Vec3 look = horizontalLook(entity);
+      Vec3 look = excaliburLook(entity);
       level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, fxCount(4), 0.05, 0.05, 0.05, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, fxCount(90), 0.9, 0.75, 0.9, 0.16);
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, fxCount(80), 0.75, 0.55, 0.75, 0.12);
@@ -744,6 +749,11 @@ public final class ArtoriaPendragonCombatHelper {
       target.invulnerableTime = 0;
    }
 
+   private static void damageTargetBypassingReactions(ArtoriaPendragonEntity entity, LivingEntity target, float damage) {
+      target.getPersistentData().putLong(TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL, target.level().getGameTime() + 2L);
+      damageTarget(entity, target, damage);
+   }
+
    private static void spawnDashTrail(ServerLevel level, Vec3 start, Vec3 end, net.minecraft.core.particles.ParticleOptions particle, int count) {
       for (int i = 0; i < count; i++) {
          double t = count <= 1 ? 1.0 : (double)i / (double)(count - 1);
@@ -774,6 +784,20 @@ public final class ArtoriaPendragonCombatHelper {
       Vec3 look = entity.getLookAngle();
       Vec3 horizontal = new Vec3(look.x, 0.0, look.z);
       return horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
+   }
+
+   public static Vec3 excaliburLook(LivingEntity entity) {
+      Vec3 look = entity.getLookAngle();
+      if (look.lengthSqr() < 1.0E-4) {
+         return new Vec3(0.0, 0.0, 1.0);
+      }
+      if (entity instanceof ServerPlayer) {
+         return look.normalize();
+      }
+      double pitch = -Math.toDegrees(Math.asin(Mth.clamp(look.y, -1.0, 1.0)));
+      pitch = Mth.clamp((float)pitch, -35.0F, 35.0F);
+      double yaw = Math.toDegrees(Math.atan2(-look.x, look.z));
+      return Vec3.directionFromRotation((float)pitch, (float)yaw).normalize();
    }
 
    private static LivingEntity getExcaliburTarget(ArtoriaPendragonEntity entity, LivingEntity fallback, ServerLevel level, CompoundTag data) {

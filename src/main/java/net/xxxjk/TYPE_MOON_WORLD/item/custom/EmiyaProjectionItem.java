@@ -5,11 +5,16 @@ import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaProjectionItemRenderer;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -68,5 +73,30 @@ public class EmiyaProjectionItem extends SwordItem implements GeoItem, NoblePhan
    @Override
    public AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.cache;
+   }
+
+   @Override
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if ("pseudo_spiral_sword".equals(this.projectionId)) {
+         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            PlayerNoblePhantasmHelper.usePseudoSpiralDash(serverPlayer);
+         }
+         return InteractionResultHolder.consume(stack);
+      }
+      if (PlayerNoblePhantasmHelper.isUbwProjection(stack) && isKanshouBakuya()) {
+         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            PlayerNoblePhantasmHelper.useKanshouBakuya(serverPlayer, hand, this.projectionId);
+         }
+         return InteractionResultHolder.consume(stack);
+      }
+      return super.use(level, player, hand);
+   }
+
+   private boolean isKanshouBakuya() {
+      return "gan_jiang".equals(this.projectionId)
+         || "mo_ye".equals(this.projectionId)
+         || "gan_jiang_overedge".equals(this.projectionId)
+         || "mo_ye_overedge".equals(this.projectionId);
    }
 }

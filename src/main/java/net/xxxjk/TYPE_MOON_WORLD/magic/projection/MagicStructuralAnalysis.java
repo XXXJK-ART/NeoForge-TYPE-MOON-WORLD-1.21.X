@@ -30,6 +30,7 @@ import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
@@ -70,7 +71,7 @@ public class MagicStructuralAnalysis {
          }
 
          if (targetItem.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.no_target"), true);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          } else {
             analyzeItem(player, vars, targetItem, swordAttributeActive, crestAnalysisCast);
          }
@@ -93,7 +94,19 @@ public class MagicStructuralAnalysis {
             }
          }
 
-         if (isProjected && !isTempleStone) {
+         if (PlayerNoblePhantasmHelper.isInfiniteProjectedBizen(target)) {
+            double specialCost = calculateCost(target, swordAttributeActive, vars.proficiency_structural_analysis);
+            if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
+               player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
+            } else {
+               PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, target);
+               if (!crestAnalysisCast) {
+                  vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
+               }
+
+               vars.syncPlayerVariables(player);
+            }
+         } else if (isProjected && !isTempleStone) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.projection.cannot_analyze_projected"), true);
          } else if (isProjected) {
             double specialCost = calculateCost(target, swordAttributeActive, vars.proficiency_structural_analysis);

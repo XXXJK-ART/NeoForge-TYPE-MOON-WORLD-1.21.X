@@ -1,0 +1,10 @@
+{
+  "id": "scorched_banner",
+  "display_name": "Scorched Banner",
+  "display_name_zh": "焦灼军旗",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 320,
+  "duration_ticks": 160,
+  "effects": []
+}

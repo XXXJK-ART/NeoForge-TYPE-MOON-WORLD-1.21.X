@@ -1818,7 +1818,7 @@ public final class CombatModule implements ServantAiModule {
       double availableMp = Math.max(0.0, entity.getCurrentMp());
       double maxMp = Math.max(1.0, entity.getMaxMp());
       float damageScale = (float)Math.min(1.0, availableMp / maxMp);
-      float armyDamage = 200.0F + 200.0F * damageScale;
+      float armyDamage = 500.0F;
       entity.setCurrentMp(0.0);
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);

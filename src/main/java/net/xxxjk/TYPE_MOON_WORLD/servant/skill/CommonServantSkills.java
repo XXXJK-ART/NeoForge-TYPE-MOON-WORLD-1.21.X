@@ -28,6 +28,19 @@ public final class CommonServantSkills {
       registry.register("true_mind_eye_b", CommonServantSkills::executeTrueMindEyeB, "typemoonworld_core");
       registry.register("projection_magic_c", CommonServantSkills::executeProjectionMagicC, "typemoonworld_core");
       registry.register("clairvoyance_c", CommonServantSkills::executeClairvoyanceC, "typemoonworld_core");
+      registry.register("strategy_b", CommonServantSkills::executeStrategyB, "typemoonworld_core");
+      registry.register("tenka_fubu_a", CommonServantSkills::executeTenkaFubuA, "typemoonworld_core");
+      registry.register("maou_a", CommonServantSkills::executeMaouA, "typemoonworld_core");
+      registry.register("floating_matchlock", CommonServantSkills::executeOdaFloatingMatchlock, "typemoonworld_core");
+      registry.register("matchlock_volley", CommonServantSkills::executeOdaMatchlockVolley, "typemoonworld_core");
+      registry.register("fire_barrage", CommonServantSkills::executeOdaFireBarrage, "typemoonworld_core");
+      registry.register("atsumori_step", CommonServantSkills::executeOdaAtsumoriStep, "typemoonworld_core");
+      registry.register("anti_mystery_spark", CommonServantSkills::executeOdaAntiMysterySpark, "typemoonworld_core");
+      registry.register("demon_king_pressure", CommonServantSkills::executeOdaDemonKingPressure, "typemoonworld_core");
+      registry.register("hasebe_repel", CommonServantSkills::executeOdaHasebeRepel, "typemoonworld_core");
+      registry.register("ash_field", CommonServantSkills::executeOdaAshField, "typemoonworld_core");
+      registry.register("scorched_banner", CommonServantSkills::executeOdaScorchedBanner, "typemoonworld_core");
+      registry.register("three_line_rotation", CommonServantSkills::executeOdaThreeLineRotation, "typemoonworld_core");
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
@@ -195,6 +208,83 @@ public final class CommonServantSkills {
       entity.getPersistentData().putBoolean("ClairvoyanceActive", true);
       entity.getPersistentData().putFloat("ClairvoyanceAccuracyBonus", 0.30F);
       entity.getPersistentData().putFloat("ClairvoyanceCritBonus", 0.10F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeStrategyB(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean("OdaStrategyBAvailable", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeTenkaFubuA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean("OdaTenkaFubuActive", true);
+      entity.getPersistentData().putFloat("OdaTenkaFubuDivineBaseMultiplier", 2.0F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeMaouA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean("OdaMaouAAvailable", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeOdaFloatingMatchlock(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaFloatingMatchlockAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaMatchlockVolley(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaMatchlockVolleyAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaFireBarrage(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaFireBarrageAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaAtsumoriStep(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaAtsumoriStepAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaAntiMysterySpark(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaAntiMysterySparkAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaDemonKingPressure(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaDemonKingPressureAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaHasebeRepel(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaHasebeRepelAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaAshField(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaAshFieldAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaScorchedBanner(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaScorchedBannerAvailable");
+   }
+
+   private static ServantExecutionResult executeOdaThreeLineRotation(ServantExecutionContext context) {
+      return markOdaSkill(context, "OdaThreeLineRotationAvailable");
+   }
+
+   private static ServantExecutionResult markOdaSkill(ServantExecutionContext context, String key) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean(key, true);
       return ServantExecutionResult.SUCCESS;
    }
 

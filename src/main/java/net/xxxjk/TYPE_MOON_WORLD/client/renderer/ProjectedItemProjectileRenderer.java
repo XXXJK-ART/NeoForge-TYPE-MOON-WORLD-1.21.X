@@ -8,10 +8,12 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.EmiyaProjectionItem;
 
 public class ProjectedItemProjectileRenderer<T extends ThrowableItemProjectile> extends EntityRenderer<T> {
@@ -26,10 +28,17 @@ public class ProjectedItemProjectileRenderer<T extends ThrowableItemProjectile> 
    @Override
    public void render(T entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
       poseStack.pushPose();
-      poseStack.mulPose(Axis.YP.rotationDegrees(entity.getYRot()));
-      poseStack.mulPose(Axis.XP.rotationDegrees(-entity.getXRot()));
+      float ryaw = Mth.rotLerp(partialTicks, entity.yRotO, entity.getYRot());
+      float rpitch = Mth.rotLerp(partialTicks, entity.xRotO, entity.getXRot());
+      poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
+      poseStack.mulPose(Axis.XP.rotationDegrees(-rpitch));
       ItemStack stack = entity.getItem();
       if (stack.getItem() instanceof EmiyaProjectionItem) {
+         if (isKanshouBakuya(stack)) {
+            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees((entity.tickCount + partialTicks) * 42.0F));
+         }
          this.projectionItemRenderer.renderByItem(stack, ItemDisplayContext.NONE, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
       } else {
          this.vanillaItemRenderer.renderStatic(stack, ItemDisplayContext.NONE, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
@@ -41,5 +50,12 @@ public class ProjectedItemProjectileRenderer<T extends ThrowableItemProjectile> 
    @Override
    public ResourceLocation getTextureLocation(T entity) {
       return InventoryMenu.BLOCK_ATLAS;
+   }
+
+   private static boolean isKanshouBakuya(ItemStack stack) {
+      return stack.is(ModItems.GAN_JIANG.get())
+         || stack.is(ModItems.MO_YE.get())
+         || stack.is(ModItems.GAN_JIANG_OVEREDGE.get())
+         || stack.is(ModItems.MO_YE_OVEREDGE.get());
    }
 }

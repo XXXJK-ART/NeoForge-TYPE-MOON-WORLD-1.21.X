@@ -30,8 +30,10 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ProjectionCircuitEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
@@ -45,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
@@ -302,6 +305,25 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ArtoriaPendragonEntity>> ARTORIA_PENDRAGON = ENTITY_TYPES.register(
       "artoria_pendragon", () -> Builder.of(ArtoriaPendragonEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("artoria_pendragon")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<OdaNobunagaEntity>> ODA_NOBUNAGA = ENTITY_TYPES.register(
+      "oda_nobunaga", () -> Builder.of(OdaNobunagaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("oda_nobunaga")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<OdaMatchlockGunEntity>> ODA_MATCHLOCK_GUN = ENTITY_TYPES.register(
+      "oda_matchlock_gun",
+      () -> Builder.<OdaMatchlockGunEntity>of((entityType, level) -> new OdaMatchlockGunEntity(entityType, level), MobCategory.MISC)
+         .sized(1.8F, 0.8F)
+         .clientTrackingRange(64)
+         .updateInterval(1)
+         .build("oda_matchlock_gun")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<RedSkeletonHajunEntity>> RED_SKELETON_HAJUN = ENTITY_TYPES.register(
+      "red_skeleton_hajun",
+      () -> Builder.<RedSkeletonHajunEntity>of((entityType, level) -> new RedSkeletonHajunEntity(entityType, level), MobCategory.MISC)
+         .sized(6.0F, 8.0F)
+         .clientTrackingRange(96)
+         .updateInterval(2)
+         .build("red_skeleton_hajun")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaThrownWeaponEntity>> EMIYA_THROWN_WEAPON = ENTITY_TYPES.register(
       "emiya_thrown_weapon",

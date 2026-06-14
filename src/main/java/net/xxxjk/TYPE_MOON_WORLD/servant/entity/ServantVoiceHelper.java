@@ -56,6 +56,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_ATTACK.get());
+      } else if (isOdaNobunaga(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_ATTACK.get());
       }
    }
 
@@ -96,6 +101,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_VICTORY.get());
+      } else if (isOdaNobunaga(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_VICTORY.get());
       }
    }
 
@@ -116,6 +123,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_FAIL.get());
+      } else if (isOdaNobunaga(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_FAIL.get());
       }
    }
 
@@ -223,6 +232,22 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "excalibur", 1.2F, 1.0F, ModSounds.ARTORIA_VOICE_EXCALIBUR.get());
    }
 
+   public static void tryPlayOdaNobunagaNp(ServantEntity servant) {
+      if (!isOdaNobunaga(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "oda_np", 1.1F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_NP.get());
+   }
+
+   public static void tryPlayOdaNobunagaHajun(ServantEntity servant) {
+      if (!isOdaNobunaga(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "oda_hajun", 1.2F, 0.95F, ModSounds.ODA_NOBUNAGA_VOICE_HAJUN.get());
+   }
+
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
       if (!(servant.level() instanceof ServerLevel serverLevel) || sound == null) {
          return;
@@ -288,5 +313,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isArtoria(ServantEntity servant) {
       return servant != null && ArtoriaPendragonEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isOdaNobunaga(ServantEntity servant) {
+      return servant != null && OdaNobunagaEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

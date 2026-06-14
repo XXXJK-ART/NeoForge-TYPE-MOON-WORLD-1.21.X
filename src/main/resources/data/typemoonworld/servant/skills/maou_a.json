@@ -1,0 +1,10 @@
+{
+  "id": "maou_a",
+  "display_name": "Maou A",
+  "display_name_zh": "魔王 A",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 360,
+  "duration_ticks": 300,
+  "effects": []
+}

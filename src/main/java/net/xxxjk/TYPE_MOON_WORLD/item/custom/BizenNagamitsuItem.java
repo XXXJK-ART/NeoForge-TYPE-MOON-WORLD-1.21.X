@@ -5,18 +5,15 @@ import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BizenNagamitsuRenderer;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -66,23 +63,12 @@ public class BizenNagamitsuItem extends SwordItem implements GeoItem, NoblePhant
       return this.cache;
    }
 
-   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-      ItemStack stack = player.getItemInHand(hand);
-      return InteractionResultHolder.pass(stack);
-   }
-
-   public int getUseDuration(ItemStack stack, LivingEntity entity) {
-      return 72000;
-   }
-
-   public UseAnim getUseAnimation(ItemStack stack) {
-      return UseAnim.BOW;
-   }
-
-   public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
-   }
-
-   public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
+   @Override
+   public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+      if (!attacker.level().isClientSide() && attacker instanceof ServerPlayer player) {
+         PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target);
+      }
+      return super.hurtEnemy(stack, target, attacker);
    }
 
    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {

@@ -99,7 +99,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setArmyDamage(float damage) {
-      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 400.0F));
+      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 500.0F));
    }
 
    public float getArmyDamage() {

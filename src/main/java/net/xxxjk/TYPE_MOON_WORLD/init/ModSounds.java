@@ -49,6 +49,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_INVISIBLE_AIR = register("artoria_voice_invisible_air");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR_RELEASE = register("artoria_voice_excalibur_release");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR = register("artoria_voice_excalibur");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_ATTACK = register("oda_nobunaga_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_FAIL = register("oda_nobunaga_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_VICTORY = register("oda_nobunaga_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_NP = register("oda_nobunaga_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_HAJUN = register("oda_nobunaga_voice_hajun");
 
    private ModSounds() {
    }
