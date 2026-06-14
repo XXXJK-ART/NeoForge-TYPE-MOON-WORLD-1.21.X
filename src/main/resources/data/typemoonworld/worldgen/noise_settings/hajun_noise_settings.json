@@ -35,18 +35,18 @@
         "argument1": {
           "type": "minecraft:y_clamped_gradient",
           "from_y": 0,
-          "to_y": 80,
+          "to_y": 128,
           "from_value": 1.0,
           "to_value": -1.0
         },
         "argument2": {
           "type": "minecraft:mul",
-          "argument1": 0.08,
+          "argument1": 0.24,
           "argument2": {
             "type": "minecraft:noise",
             "noise": "minecraft:surface",
-            "xz_scale": 0.35,
-            "y_scale": 0.35
+            "xz_scale": 0.42,
+            "y_scale": 0.42
           }
         }
       }
@@ -88,10 +88,30 @@
           "secondary_depth_range": 0
         },
         "then_run": {
-          "type": "minecraft:block",
-          "result_state": {
-            "Name": "minecraft:magma_block"
-          }
+          "type": "minecraft:sequence",
+          "sequence": [
+            {
+              "type": "minecraft:condition",
+              "if_true": {
+                "type": "minecraft:noise_threshold",
+                "noise": "minecraft:surface",
+                "min_threshold": 0.0,
+                "max_threshold": 0.35
+              },
+              "then_run": {
+                "type": "minecraft:block",
+                "result_state": {
+                  "Name": "minecraft:magma_block"
+                }
+              }
+            },
+            {
+              "type": "minecraft:block",
+              "result_state": {
+                "Name": "minecraft:netherrack"
+              }
+            }
+          ]
         }
       }
     ]

@@ -105,6 +105,8 @@ public final class EmiyaArcherCombatHelper {
    public static final String LAST_CROSS_BLADE_TICK = "EmiyaLastCrossBladeTick";
    public static final String LAST_ORB_BURST_TICK = "EmiyaLastOrbBurstTick";
    public static final String LAST_CLAIRVOYANCE_SPIRAL_TICK = "EmiyaLastClairvoyanceSpiralTick";
+   public static final String RANGED_STANDOFF_START_TICK = "EmiyaRangedStandoffStartTick";
+   public static final String LAST_PROBING_RANGED_SPECIAL_TICK = "EmiyaLastProbingRangedSpecialTick";
    public static final String LAST_ANALYSIS_TICK = "EmiyaLastAnalysisTick";
    public static final String ANALYZED_WEAPON_STACK = "EmiyaAnalyzedWeaponStack";
    public static final String ANALYZED_WEAPON_BUFF_UNTIL = "EmiyaAnalyzedWeaponBuffUntil";
@@ -138,6 +140,8 @@ public final class EmiyaArcherCombatHelper {
    public static final int CROSS_BLADE_COOLDOWN = 5 * 20;
    public static final int ORB_BURST_COOLDOWN = 4 * 20;
    public static final int CLAIRVOYANCE_SPIRAL_COOLDOWN = 12 * 20;
+   public static final int RANGED_STANDOFF_MIN_TICKS = 8 * 20;
+   public static final int PROBING_RANGED_SPECIAL_COOLDOWN = 10 * 20;
    public static final int ANALYSIS_COOLDOWN = 8 * 20;
    public static final int MIND_EYE_STEP_COOLDOWN = 4 * 20;
    public static final int TWIN_FLURRY_COOLDOWN = 3 * 20;
@@ -215,6 +219,7 @@ public final class EmiyaArcherCombatHelper {
       boolean forceMeleeRange = distance <= 5.2 && entity.getPersistentData().getLong(UBW_CHANT_END_TICK) <= 0L;
       boolean rangedMode = !forceMeleeRange && (ownedShield != null || shouldUseRangedMode(entity, target, distance, now));
       setCombatMode(entity, rangedMode ? MODE_RANGED : MODE_MELEE);
+      updateRangedStandoff(entity, target, rangedMode, distance, now);
 
       if (tickUbwChant(entity, level, target, now)) {
          return;
@@ -233,6 +238,9 @@ public final class EmiyaArcherCombatHelper {
             if (tryDetonateRhoAias(entity, level, activeShield, target, now, phase)) {
                return;
             }
+         }
+         if (tryProbingRangedStandoffSpecial(entity, level, target, now, phase, distance)) {
+            return;
          }
          if (canUse(now, entity.getPersistentData().getLong(LAST_IRON_SWORD_SHOT_TICK), IRON_SWORD_SHOT_COOLDOWN)) {
             shootIronSword(entity, level, target, now);
@@ -1290,6 +1298,83 @@ public final class EmiyaArcherCombatHelper {
          return true;
       }
       return false;
+   }
+
+   private static void updateRangedStandoff(EmiyaArcherEntity entity, LivingEntity target, boolean rangedMode, double distance, long now) {
+      CompoundTag data = entity.getPersistentData();
+      if (!rangedMode || target == null || !target.isAlive() || distance < 12.0 || distance > 42.0 || !entity.getSensing().hasLineOfSight(target)) {
+         data.remove(RANGED_STANDOFF_START_TICK);
+         return;
+      }
+
+      boolean targetEngagedWithEmiya = target.getLastHurtByMob() == entity
+         || entity.getLastHurtByMob() == target
+         || target instanceof Mob mob && mob.getTarget() == entity;
+      if (!targetEngagedWithEmiya && !looksLikeRangedOpponent(target)) {
+         data.remove(RANGED_STANDOFF_START_TICK);
+         return;
+      }
+
+      if (data.getLong(RANGED_STANDOFF_START_TICK) <= 0L) {
+         data.putLong(RANGED_STANDOFF_START_TICK, now);
+      }
+   }
+
+   private static boolean looksLikeRangedOpponent(LivingEntity target) {
+      return target.getMainHandItem().is(Items.BOW)
+         || target.getMainHandItem().is(Items.CROSSBOW)
+         || target.getMainHandItem().is(Items.TRIDENT)
+         || target.getOffhandItem().is(Items.BOW)
+         || target.getOffhandItem().is(Items.CROSSBOW)
+         || target.getOffhandItem().is(Items.TRIDENT);
+   }
+
+   private static boolean tryProbingRangedStandoffSpecial(
+      EmiyaArcherEntity entity,
+      ServerLevel level,
+      LivingEntity target,
+      long now,
+      ServantCombatPhase phase,
+      double distance
+   ) {
+      if (phase != ServantCombatPhase.PROBING) {
+         return false;
+      }
+      CompoundTag data = entity.getPersistentData();
+      long standoffStart = data.getLong(RANGED_STANDOFF_START_TICK);
+      if (standoffStart <= 0L || now - standoffStart < RANGED_STANDOFF_MIN_TICKS) {
+         return false;
+      }
+      if (!canUse(now, data.getLong(LAST_PROBING_RANGED_SPECIAL_TICK), PROBING_RANGED_SPECIAL_COOLDOWN)) {
+         return false;
+      }
+      if (entity.getPersistentData().getLong(UBW_ACTIVE_UNTIL) > now || entity.getCurrentMp() < 20.0) {
+         return false;
+      }
+      int chance = distance >= 18.0 ? 9 : 5;
+      if (target.getHealth() <= target.getMaxHealth() * 0.35F || target.getArmorValue() >= 12 || target.getMaxHealth() >= 90.0F) {
+         chance += 4;
+      }
+      if (entity.getRandom().nextInt(100) >= chance) {
+         return false;
+      }
+
+      boolean canSpiral = entity.getCurrentMp() >= 25.0
+         && canUse(now, data.getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, phase))
+         && shouldUsePseudoSpiralSword(entity, target, now, phase);
+      boolean canCrimson = canUse(now, data.getLong(LAST_CRIMSON_TICK), phasedCooldown(CRIMSON_COOLDOWN, phase))
+         && shouldUseCrimsonHound(entity, target, now, phase);
+      if (!canSpiral && !canCrimson) {
+         return false;
+      }
+
+      data.putLong(LAST_PROBING_RANGED_SPECIAL_TICK, now);
+      if (canSpiral && (!canCrimson || entity.getRandom().nextInt(100) < 42)) {
+         castPseudoSpiralSword(entity, level, target, now);
+      } else {
+         castCrimsonHound(entity, level, target, now);
+      }
+      return true;
    }
 
    private static boolean shouldUseCrimsonHound(EmiyaArcherEntity entity, LivingEntity target, long now, ServantCombatPhase phase) {

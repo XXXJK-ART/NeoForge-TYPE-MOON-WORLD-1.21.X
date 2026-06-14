@@ -42,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaNobunagaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedSkeletonHajunRenderer;
@@ -57,6 +58,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwChantRippleRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectionCircuitEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectedItemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RhoAiasEntityRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.world.HajunDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -200,6 +202,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
+      event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
@@ -262,6 +265,6 @@ public class TypeMoonWorldClientEvents {
    public static void registerDimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event) {
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works"), new UBWDimensionEffects());
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works_emiya"), new UBWDimensionEffects());
-      event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun"), new UBWDimensionEffects());
+      event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun"), new HajunDimensionEffects());
    }
 }

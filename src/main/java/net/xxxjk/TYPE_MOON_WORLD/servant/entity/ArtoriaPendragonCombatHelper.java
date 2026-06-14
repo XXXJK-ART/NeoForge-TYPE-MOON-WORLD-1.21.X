@@ -112,6 +112,9 @@ public final class ArtoriaPendragonCombatHelper {
       }
 
       double distance = entity.distanceTo(target);
+      if (entity.getHealth() <= entity.getMaxHealth() * 0.35F) {
+         ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.DECISIVE);
+      }
       ServantCombatPhase phase = ServantCombatSystem.getPhase(entity);
       boolean normalOrDecisive = phase.id() >= ServantCombatPhase.NORMAL.id();
       boolean decisive = phase == ServantCombatPhase.DECISIVE;

@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ProjectionCircuitEffectEntity;
@@ -316,6 +317,16 @@ public class ModEntities {
          .clientTrackingRange(64)
          .updateInterval(1)
          .build("oda_matchlock_gun")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<OdaMatchlockBulletEntity>> ODA_MATCHLOCK_BULLET = ENTITY_TYPES.register(
+      "oda_matchlock_bullet",
+      () -> Builder.<OdaMatchlockBulletEntity>of(
+            (entityType, level) -> new OdaMatchlockBulletEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.22F, 0.22F)
+         .clientTrackingRange(32)
+         .updateInterval(1)
+         .build("oda_matchlock_bullet")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RedSkeletonHajunEntity>> RED_SKELETON_HAJUN = ENTITY_TYPES.register(
       "red_skeleton_hajun",

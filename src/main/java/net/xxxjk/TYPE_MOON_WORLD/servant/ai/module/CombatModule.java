@@ -357,7 +357,7 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      if (combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
+      if (!(entity instanceof ArtoriaPendragonEntity) && combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
          // 决死一战检测
          int retreatStartTick = data.getInt("RetreatStartTick");
          if (retreatStartTick == 0) {

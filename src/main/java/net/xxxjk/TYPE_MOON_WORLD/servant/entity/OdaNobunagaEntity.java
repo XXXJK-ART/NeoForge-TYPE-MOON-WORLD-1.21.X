@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -18,6 +20,15 @@ public class OdaNobunagaEntity extends ServantEntity {
       if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
          OdaNobunagaCombatHelper.tick(this);
       }
+   }
+
+   @Override
+   public boolean hurt(DamageSource source, float amount) {
+      if (source.is(DamageTypeTags.IS_FIRE) || source.is(DamageTypes.LAVA) || source.is(DamageTypes.HOT_FLOOR)) {
+         this.clearFire();
+         return false;
+      }
+      return super.hurt(source, amount);
    }
 
    @Override
