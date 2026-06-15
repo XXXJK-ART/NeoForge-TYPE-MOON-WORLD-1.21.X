@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -253,7 +254,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
          }
          float damage = (float)Math.max(8.0, this.miniBrokenPhantasmDamage * (1.0 - distance / (radius * 1.45)));
          living.invulnerableTime = 0;
-         living.hurt(this.damageSources().explosion(this, owner), damage);
+         living.hurt(this.damageSources().explosion(this, owner), MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage));
          living.invulnerableTime = 0;
          net.minecraft.world.phys.Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 1.0E-4) {

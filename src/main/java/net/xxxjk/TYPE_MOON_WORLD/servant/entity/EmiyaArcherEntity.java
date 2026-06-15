@@ -93,6 +93,10 @@ public class EmiyaArcherEntity extends ServantEntity {
 
       int phase = data.getInt(CONTINUATION_PHASE);
       if (phase <= 0) {
+         if (this.getRandom().nextFloat() >= 0.50F) {
+            data.putBoolean(CONTINUATION_FORCED_DEATH, true);
+            return false;
+         }
          triggerFirstContinuation(source, now);
       } else if (phase == 1) {
          triggerSecondContinuation(now);

@@ -36,9 +36,11 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import org.joml.Vector3f;
 
 public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
@@ -449,11 +451,13 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
-         if (this.tryConsumeGodHandLife(living, armyDamage, false)) {
+         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, armyDamage);
+         finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         if (this.tryConsumeGodHandLife(living, finalDamage, false)) {
             continue;
          }
 
-         this.applyGuaranteedDamage(living, source, armyDamage);
+         this.applyGuaranteedDamage(living, source, finalDamage);
          Vec3 push = living.position().subtract(center);
          double horizontal = Math.sqrt(push.x * push.x + push.z * push.z);
          if (horizontal > 1.0E-4) {

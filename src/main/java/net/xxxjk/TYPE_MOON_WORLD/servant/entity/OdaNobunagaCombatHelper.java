@@ -866,6 +866,11 @@ public final class OdaNobunagaCombatHelper {
       }
       recordHajunLockedTarget(entity, primary);
       List<LivingEntity> pulled = collectHajunTargets(entity, source, primary);
+      if (pulled.isEmpty()) {
+         restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
+         clearHajunState(entity);
+         return;
+      }
       if (!pulled.isEmpty() && pulled.stream().noneMatch(ServerPlayer.class::isInstance)) {
          restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
          startOffscreenHajunDuel(entity, source, pulled.get(0), now);
@@ -889,10 +894,16 @@ public final class OdaNobunagaCombatHelper {
          source.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, px, entity.getY() + 0.2, pz, 2, 0.08, 0.02, 0.08, 0.0);
       }
 
-      Vec3 entry = new Vec3(entity.getRandom().nextInt(120) - 60 + 0.5, 72.0, entity.getRandom().nextInt(120) - 60 + 0.5);
+      Vec3 randomEntry = UBWInstanceManager.randomEntryPosition(entity.getRandom());
+      Vec3 entry = new Vec3(randomEntry.x, 72.0, randomEntry.z);
       entry = new Vec3(entry.x, findSafeSpawnY(hajunLevel, Mth.floor(entry.x), Mth.floor(entry.z)), entry.z);
       BlockPos entryBlock = BlockPos.containing(entry);
       LivingEntity movedPrimary = moveHajunTargets(entity, source, hajunLevel, pulled, primary, entry);
+      if (movedPrimary == null) {
+         restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
+         clearHajunState(entity);
+         return;
+      }
       Entity moved = entity.changeDimension(new DimensionTransition(hajunLevel, entry, Vec3.ZERO, entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING));
       if (moved instanceof OdaNobunagaEntity nobu) {
          applyHajunState(nobu, hajunLevel.getGameTime(), entryBlock);
@@ -977,13 +988,14 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static LivingEntity moveHajunTargets(OdaNobunagaEntity owner, ServerLevel source, ServerLevel hajunLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 entry) {
-      LivingEntity movedPrimary = moveOneHajunTarget(owner, source, hajunLevel, primary, entry, true);
+      LivingEntity firstMoved = null;
       for (LivingEntity living : targets) {
-         if (living != primary) {
-            moveOneHajunTarget(owner, source, hajunLevel, living, entry, false);
+         LivingEntity moved = moveOneHajunTarget(owner, source, hajunLevel, living, entry, living == primary);
+         if (firstMoved == null && moved != null) {
+            firstMoved = moved;
          }
       }
-      return movedPrimary;
+      return firstMoved;
    }
 
    private static LivingEntity moveOneHajunTarget(OdaNobunagaEntity owner, ServerLevel source, ServerLevel hajunLevel, LivingEntity living, Vec3 entry, boolean primaryTarget) {
@@ -1004,6 +1016,7 @@ public final class OdaNobunagaCombatHelper {
          markHajunTarget(owner, movedLiving, source, returnX, returnY, returnZ, primaryTarget);
          return movedLiving;
       }
+      clearHajunTarget(living);
       return null;
    }
 

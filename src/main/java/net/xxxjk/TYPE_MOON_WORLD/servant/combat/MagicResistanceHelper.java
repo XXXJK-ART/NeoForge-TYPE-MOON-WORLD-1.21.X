@@ -46,6 +46,10 @@ public final class MagicResistanceHelper {
       }
 
       if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
+         MagicResistanceRank definitionRank = getDefinitionMagicResistanceRank(servant);
+         if (definitionRank != MagicResistanceRank.NONE) {
+            return definitionRank;
+         }
          if (servant.getDefinition().traits().contains(ServantTraitTag.MALE) && entity.getPersistentData().contains(MAGIC_RESISTANCE_LEVEL_TAG)) {
             return MagicResistanceRank.fromLevel(entity.getPersistentData().getInt(MAGIC_RESISTANCE_LEVEL_TAG));
          }
@@ -62,7 +66,11 @@ public final class MagicResistanceHelper {
       if (entity == null) {
          return 0.0F;
       }
-      return Math.max(0.0F, entity.getPersistentData().getFloat(MAGIC_RESISTANCE_DAMAGE_REDUCTION_TAG));
+      float stored = Math.max(0.0F, entity.getPersistentData().getFloat(MAGIC_RESISTANCE_DAMAGE_REDUCTION_TAG));
+      if (stored > 0.0F) {
+         return stored;
+      }
+      return damageReductionForRank(getMagicResistanceRank(entity));
    }
 
    public static float getDebuffResistance(LivingEntity entity) {
@@ -89,6 +97,64 @@ public final class MagicResistanceHelper {
 
    public static boolean hasMagicResistance(LivingEntity entity) {
       return getMagicResistanceRank(entity) != MagicResistanceRank.NONE;
+   }
+
+   public static float applyNoblePhantasmMagicResistance(LivingEntity entity, float amount) {
+      if (entity == null || amount <= 0.0F) {
+         return amount;
+      }
+      return amount * (1.0F - damageReductionForRank(getMagicResistanceRank(entity)));
+   }
+
+   public static float damageReductionForRank(MagicResistanceRank rank) {
+      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
+         case A -> 0.35F;
+         case B -> 0.25F;
+         case C -> 0.15F;
+         case D -> 0.10F;
+         case E -> 0.05F;
+         default -> 0.0F;
+      };
+   }
+
+   private static MagicResistanceRank getDefinitionMagicResistanceRank(ServantEntity servant) {
+      if (servant == null || servant.getDefinition() == null || servant.getDefinition().skillIds() == null) {
+         return MagicResistanceRank.NONE;
+      }
+      MagicResistanceRank best = MagicResistanceRank.NONE;
+      for (String skillId : servant.getDefinition().skillIds()) {
+         MagicResistanceRank rank = rankFromSkillId(skillId);
+         if (rank.isAtLeast(best)) {
+            best = rank;
+         }
+      }
+      return best;
+   }
+
+   private static MagicResistanceRank rankFromSkillId(String skillId) {
+      if (skillId == null) {
+         return MagicResistanceRank.NONE;
+      }
+      String normalized = skillId.trim().toLowerCase();
+      if (normalized.startsWith("magic_resistance_")) {
+         String rank = normalized.substring("magic_resistance_".length());
+         if (rank.startsWith("a")) {
+            return MagicResistanceRank.A;
+         }
+         if (rank.startsWith("b")) {
+            return MagicResistanceRank.B;
+         }
+         if (rank.startsWith("c")) {
+            return MagicResistanceRank.C;
+         }
+         if (rank.startsWith("d")) {
+            return MagicResistanceRank.D;
+         }
+         if (rank.startsWith("e")) {
+            return MagicResistanceRank.E;
+         }
+      }
+      return MagicResistanceRank.NONE;
    }
 
    public static boolean isMagicDamage(DamageSource source) {

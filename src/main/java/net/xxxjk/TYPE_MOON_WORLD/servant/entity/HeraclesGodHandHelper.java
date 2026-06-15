@@ -12,12 +12,17 @@ import net.minecraft.world.entity.LivingEntity;
 public final class HeraclesGodHandHelper {
    private static final String CYBELE_ADAPTED_TAG = "GodHandAdaptedMedusaCybele";
    private static final String ZABANIYA_ADAPTED_TAG = "GodHandAdaptedCursedArmZabaniya";
+   private static final float ANTI_HERACLES_NOBLE_PHANTASM_MULTIPLIER = 1.5F;
 
    private HeraclesGodHandHelper() {
    }
 
    public static boolean hasGodHand(LivingEntity target) {
       return target instanceof HeraclesEntity && target.getPersistentData().getBoolean("GodHandActive");
+   }
+
+   public static float applyAntiHeraclesNoblePhantasmSpecialAttack(LivingEntity target, float damage) {
+      return hasGodHand(target) ? damage * ANTI_HERACLES_NOBLE_PHANTASM_MULTIPLIER : damage;
    }
 
    public static boolean isAdaptedToCybele(LivingEntity target) {

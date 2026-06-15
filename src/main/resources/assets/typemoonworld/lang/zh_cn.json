@@ -1059,7 +1059,7 @@
     "entity.typemoonworld.medusa":  "美杜莎",
     "entity.typemoonworld.medusa_pegasus":  "天马珀伽索斯",
     "entity.typemoonworld.red_skeleton_hajun":  "第六天魔王波旬",
-    "item.typemoonworld.oda_nobunaga_spawn_egg":  "织田信长刷怪蛋",
-    "entity.typemoonworld.oda_nobunaga":  "织田信长",
+    "item.typemoonworld.oda_nobunaga_spawn_egg":  "织田信长(Archer)刷怪蛋",
+    "entity.typemoonworld.oda_nobunaga":  "织田信长(Archer)",
     "entity.typemoonworld.oda_matchlock_gun":  "火绳枪"
 }

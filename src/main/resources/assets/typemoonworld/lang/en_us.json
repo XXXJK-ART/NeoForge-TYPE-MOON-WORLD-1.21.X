@@ -1057,7 +1057,7 @@
     "entity.typemoonworld.medusa":  "Medusa",
     "entity.typemoonworld.medusa_pegasus":  "Pegasus",
     "entity.typemoonworld.red_skeleton_hajun":  "Red Skeleton Hajun",
-    "item.typemoonworld.oda_nobunaga_spawn_egg":  "Oda Nobunaga Spawn Egg",
-    "entity.typemoonworld.oda_nobunaga":  "Oda Nobunaga",
+    "item.typemoonworld.oda_nobunaga_spawn_egg":  "Oda Nobunaga (Archer) Spawn Egg",
+    "entity.typemoonworld.oda_nobunaga":  "Oda Nobunaga (Archer)",
     "entity.typemoonworld.oda_matchlock_gun":  "Matchlock Gun"
 }

@@ -18,6 +18,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -201,6 +202,20 @@ public final class ArtoriaPendragonCombatHelper {
          return true;
       }
       return false;
+   }
+
+   public static boolean tryDodgeProjectileWithInstinct(ArtoriaPendragonEntity artoria, Projectile projectile) {
+      if (artoria == null || projectile == null || projectile.getOwner() == artoria) {
+         return false;
+      }
+      if (!artoria.getPersistentData().getBoolean("ArtoriaInstinctAActive")) {
+         return false;
+      }
+      if (artoria.getRandom().nextFloat() >= 0.90F) {
+         return false;
+      }
+      spawnInstinctFx(artoria, false);
+      return true;
    }
 
    public static float applyAvalonDamageReduction(LivingEntity target, DamageSource source, float amount) {

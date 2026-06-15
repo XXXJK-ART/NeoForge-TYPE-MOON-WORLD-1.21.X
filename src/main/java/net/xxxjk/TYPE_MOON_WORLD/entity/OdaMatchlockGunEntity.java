@@ -43,6 +43,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
    private int shootDelay;
+   private int volleyNoTargetTicks;
    private boolean dissolving;
 
    public OdaMatchlockGunEntity(EntityType<?> type, Level level) {
@@ -156,6 +157,17 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       }
 
       LivingEntity target = this.entityData.get(VOLLEY_MODE) ? getVolleyTarget(level, owner) : findTarget(level, owner);
+      if (this.entityData.get(VOLLEY_MODE)) {
+         if (target == null) {
+            this.volleyNoTargetTicks++;
+            if (this.volleyNoTargetTicks >= 40) {
+               dissolveAndDiscard(level);
+               return;
+            }
+         } else {
+            this.volleyNoTargetTicks = 0;
+         }
+      }
       if (target != null) {
          setFacing(target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(this.position()));
       } else if (owner != null) {
@@ -328,6 +340,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       this.entityData.set(VOLLEY_TARGET_ID, tag.contains("VolleyTargetId") ? tag.getInt("VolleyTargetId") : -1);
       this.entityData.set(FOOT_SUPPORT_MODE, tag.getBoolean("FootSupportMode"));
       this.shootDelay = tag.getInt("ShootDelay");
+      this.volleyNoTargetTicks = tag.getInt("VolleyNoTargetTicks");
    }
 
    @Override
@@ -346,6 +359,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       tag.putInt("VolleyTargetId", this.entityData.get(VOLLEY_TARGET_ID));
       tag.putBoolean("FootSupportMode", this.entityData.get(FOOT_SUPPORT_MODE));
       tag.putInt("ShootDelay", this.shootDelay);
+      tag.putInt("VolleyNoTargetTicks", this.volleyNoTargetTicks);
    }
 
    @Override

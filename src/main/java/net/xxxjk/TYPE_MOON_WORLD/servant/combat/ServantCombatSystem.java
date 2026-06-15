@@ -295,6 +295,16 @@ public final class ServantCombatSystem {
          }
 
          double healthRatio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
+         if (entity instanceof EmiyaArcherEntity) {
+            if (healthRatio <= 0.40) {
+               data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
+            } else if (healthRatio <= 0.60) {
+               data.putInt(TAG_PHASE, ServantCombatPhase.NORMAL.id());
+            } else {
+               data.putInt(TAG_PHASE, ServantCombatPhase.PROBING.id());
+            }
+            return;
+         }
          ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
          if (healthRatio <= 0.60 && current.id() < ServantCombatPhase.DECISIVE.id()) {
             data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
@@ -501,33 +511,33 @@ public final class ServantCombatSystem {
       }
       boolean emiya = servant instanceof EmiyaArcherEntity;
       CompoundTag data = servant.getPersistentData();
-      double cost = emiya ? Math.max(2.0, ServantCombatFormulas.blockStaminaCost(params) * 0.45) : ServantCombatFormulas.blockStaminaCost(params);
+      double cost = ServantCombatFormulas.blockStaminaCost(params);
       double stamina = data.getDouble(TAG_STAMINA);
       if (stamina < cost) {
-         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + (emiya ? 20L : 60L));
+         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
          return null;
       }
 
-      boolean shouldBlock = amount >= servant.getMaxHealth() * (emiya ? 0.015F : 0.04F)
+      boolean shouldBlock = amount >= servant.getMaxHealth() * 0.04F
          || getPhase(servant) != ServantCombatPhase.PROBING
          || (emiya && servant.getHealth() <= servant.getMaxHealth() * 0.8F);
       if (!shouldBlock) {
          return null;
       }
 
-      boolean parry = now - data.getLong(TAG_LAST_GUARD_TICK) <= ServantCombatFormulas.parryWindowTicks(params) + (emiya ? 3 : 0);
+      boolean parry = now - data.getLong(TAG_LAST_GUARD_TICK) <= ServantCombatFormulas.parryWindowTicks(params);
       data.putLong(TAG_LAST_GUARD_TICK, now);
-      double parryCost = emiya ? Math.max(1.0, ServantCombatFormulas.parryStaminaCost(params) * 0.5) : ServantCombatFormulas.parryStaminaCost(params);
+      double parryCost = ServantCombatFormulas.parryStaminaCost(params);
       data.putDouble(TAG_STAMINA, Math.max(0.0, stamina - (parry ? parryCost : cost)));
       if (data.getDouble(TAG_STAMINA) <= 0.0) {
-         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + (emiya ? 20L : 60L));
+         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
       }
       spawnGuardFx(servant, parry ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, parry ? 1.65F : 1.1F);
       if (parry && source.getEntity() instanceof ServantEntity attacker) {
          applyStun(attacker, 10);
          return source.is(DamageTypeTags.IS_EXPLOSION) ? amount * 0.5F : 0.0F;
       }
-      float reduction = emiya ? Math.min(0.92F, (float)ServantCombatFormulas.blockReduction(params) + 0.18F) : (float)ServantCombatFormulas.blockReduction(params);
+      float reduction = (float)ServantCombatFormulas.blockReduction(params);
       float reduced = amount * (1.0F - reduction);
       return source.is(DamageTypeTags.IS_EXPLOSION) ? Math.max(reduced, amount * 0.5F) : reduced;
    }

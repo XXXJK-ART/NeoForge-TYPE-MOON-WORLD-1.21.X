@@ -19,6 +19,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class UBWBrokenPhantasmExplosion {
@@ -113,7 +115,9 @@ public class UBWBrokenPhantasmExplosion {
             continue;
          }
          living.invulnerableTime = 0;
-         living.hurt(source, damage);
+         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
+         finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         living.hurt(source, finalDamage);
          living.invulnerableTime = 0;
          Vec3 push = living.position().subtract(center);
          double horizontal = Math.sqrt(push.x * push.x + push.z * push.z);

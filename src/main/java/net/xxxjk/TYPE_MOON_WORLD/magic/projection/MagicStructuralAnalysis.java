@@ -85,132 +85,170 @@ public class MagicStructuralAnalysis {
          player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.cannot_analyze_divine"), true);
       } else {
          boolean isTempleStone = target.getItem() instanceof TempleStoneSwordAxeItem;
-         boolean isProjected = false;
-         if (target.has(DataComponents.CUSTOM_DATA)) {
-            CustomData cd = (CustomData)target.get(DataComponents.CUSTOM_DATA);
-            if (cd != null) {
-               CompoundTag tag = cd.copyTag();
-               isProjected = tag.contains("is_projected") || tag.contains("projection_time");
-            }
+         boolean isProjected = hasProjectionTag(target);
+
+         if (tryHandleSpecialAnalysis(player, vars, target, swordAttributeActive, crestAnalysisCast, isTempleStone, isProjected)) {
+            return;
          }
 
-         if (PlayerNoblePhantasmHelper.isInfiniteProjectedBizen(target)) {
-            double specialCost = calculateCost(target, swordAttributeActive, vars.proficiency_structural_analysis);
-            if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
+         if (isProjected) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.projection.cannot_analyze_projected"), true);
+            return;
+         } else {
+            analyzeNormalItem(player, vars, target, swordAttributeActive, crestAnalysisCast);
+         }
+      }
+   }
+
+   private static boolean tryHandleSpecialAnalysis(
+      ServerPlayer player,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      ItemStack target,
+      boolean swordAttributeActive,
+      boolean crestAnalysisCast,
+      boolean isTempleStone,
+      boolean isProjected
+   ) {
+      if (PlayerNoblePhantasmHelper.isInfiniteProjectedBizen(target)) {
+         double specialCost = calculateCost(target, swordAttributeActive, vars.proficiency_structural_analysis);
+         if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
+         } else {
+            PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, target);
+            if (!crestAnalysisCast) {
+               vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
+            }
+
+            vars.syncPlayerVariables(player);
+         }
+         return true;
+      }
+
+      if (isProjected && isTempleStone) {
+         double specialCost = calculateCost(target, swordAttributeActive, vars.proficiency_structural_analysis);
+         if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
+         } else {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.trigger_on_set"), true);
+            player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
+         }
+         return true;
+      }
+
+      return false;
+   }
+
+   private static void analyzeNormalItem(
+      ServerPlayer player,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      ItemStack target,
+      boolean swordAttributeActive,
+      boolean crestAnalysisCast
+   ) {
+      ItemStack toSave = target.copy();
+      toSave.setCount(1);
+      if (toSave.has(DataComponents.CONTAINER)) {
+         toSave.remove(DataComponents.CONTAINER);
+      }
+
+      if (toSave.has(DataComponents.BUNDLE_CONTENTS)) {
+         toSave.remove(DataComponents.BUNDLE_CONTENTS);
+      }
+
+      if (toSave.has(DataComponents.BLOCK_ENTITY_DATA)) {
+         toSave.remove(DataComponents.BLOCK_ENTITY_DATA);
+      }
+
+      if (toSave.has(DataComponents.CUSTOM_DATA)) {
+         CustomData cd = (CustomData)toSave.get(DataComponents.CUSTOM_DATA);
+         if (cd != null) {
+            CompoundTag customTag = cd.copyTag();
+            if (customTag.contains("BlockEntityTag")) {
+               CompoundTag bet = customTag.getCompound("BlockEntityTag");
+               if (bet.contains("Items")) {
+                  bet.remove("Items");
+                  if (bet.isEmpty()) {
+                     customTag.remove("BlockEntityTag");
+                  } else {
+                     customTag.put("BlockEntityTag", bet);
+                  }
+
+                  if (customTag.isEmpty()) {
+                     toSave.remove(DataComponents.CUSTOM_DATA);
+                  } else {
+                     toSave.set(DataComponents.CUSTOM_DATA, CustomData.of(customTag));
+                  }
+               }
+            }
+         }
+      }
+
+      boolean known = false;
+
+      for (ItemStack s : vars.analyzed_items) {
+         if (ItemStack.isSameItemSameComponents(s, toSave)) {
+            known = true;
+            break;
+         }
+      }
+
+      if (known) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.projection.already_analyzed"), true);
+      } else {
+         double cost = calculateCost(toSave, swordAttributeActive, vars.proficiency_structural_analysis);
+         double successRate = 0.5 + vars.proficiency_structural_analysis * 0.005;
+         if (swordAttributeActive && toSave.getItem() instanceof SwordItem) {
+            successRate = 1.0;
+         }
+
+         if (successRate > 1.0) {
+            successRate = 1.0;
+         }
+
+         boolean success = player.getRandom().nextDouble() < successRate;
+         if (success) {
+            if (!consumeAnalysisManaOrFail(player, vars, cost)) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
             } else {
-               PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, target);
+               vars.analyzed_items.add(toSave);
                if (!crestAnalysisCast) {
                   vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
                }
 
                vars.syncPlayerVariables(player);
-            }
-         } else if (isProjected && !isTempleStone) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.projection.cannot_analyze_projected"), true);
-         } else if (isProjected) {
-            double specialCost = calculateCost(target, swordAttributeActive, vars.proficiency_structural_analysis);
-            if (!consumeAnalysisManaOrFail(player, vars, specialCost)) {
-               player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
-            } else {
-               player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.trigger_on_set"), true);
-               player.addEffect(new MobEffectInstance(ModMobEffects.NINE_LIVES, 600, 0));
-               player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 600, 2));
-               player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
+               player.displayClientMessage(Component.translatable("message.typemoonworld.projection.analysis_complete", (int)cost), true);
+               boolean ubwDirectProjection = vars.has_unlimited_blade_works
+                  && (vars.projection_selected_item == null || vars.projection_selected_item.isEmpty())
+                  && (vars.projection_selected_structure_id == null || vars.projection_selected_structure_id.isEmpty());
+               if (ubwDirectProjection) {
+                  MagicProjection.tryDirectProjectFromAnalysis(player, vars, toSave, swordAttributeActive);
+               }
             }
          } else {
-            ItemStack toSave = target.copy();
-            toSave.setCount(1);
-            if (toSave.has(DataComponents.CONTAINER)) {
-               toSave.remove(DataComponents.CONTAINER);
+            double failCost = cost * 0.3;
+            consumeAnalysisManaOrFail(player, vars, failCost);
+            if (!crestAnalysisCast) {
+               vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.1);
             }
 
-            if (toSave.has(DataComponents.BUNDLE_CONTENTS)) {
-               toSave.remove(DataComponents.BUNDLE_CONTENTS);
-            }
-
-            if (toSave.has(DataComponents.BLOCK_ENTITY_DATA)) {
-               toSave.remove(DataComponents.BLOCK_ENTITY_DATA);
-            }
-
-            if (toSave.has(DataComponents.CUSTOM_DATA)) {
-               CustomData cd = (CustomData)toSave.get(DataComponents.CUSTOM_DATA);
-               if (cd != null) {
-                  CompoundTag customTag = cd.copyTag();
-                  if (customTag.contains("BlockEntityTag")) {
-                     CompoundTag bet = customTag.getCompound("BlockEntityTag");
-                     if (bet.contains("Items")) {
-                        bet.remove("Items");
-                        if (bet.isEmpty()) {
-                           customTag.remove("BlockEntityTag");
-                        } else {
-                           customTag.put("BlockEntityTag", bet);
-                        }
-
-                        if (customTag.isEmpty()) {
-                           toSave.remove(DataComponents.CUSTOM_DATA);
-                        } else {
-                           toSave.set(DataComponents.CUSTOM_DATA, CustomData.of(customTag));
-                        }
-                     }
-                  }
-               }
-            }
-
-            boolean known = false;
-
-            for (ItemStack s : vars.analyzed_items) {
-               if (ItemStack.isSameItemSameComponents(s, toSave)) {
-                  known = true;
-                  break;
-               }
-            }
-
-            if (known) {
-               player.displayClientMessage(Component.translatable("message.typemoonworld.projection.already_analyzed"), true);
-            } else {
-               double cost = calculateCost(toSave, swordAttributeActive, vars.proficiency_structural_analysis);
-               double successRate = 0.5 + vars.proficiency_structural_analysis * 0.005;
-               if (swordAttributeActive && toSave.getItem() instanceof SwordItem) {
-                  successRate = 1.0;
-               }
-
-               if (successRate > 1.0) {
-                  successRate = 1.0;
-               }
-
-               boolean success = player.getRandom().nextDouble() < successRate;
-               if (success) {
-                  if (!consumeAnalysisManaOrFail(player, vars, cost)) {
-                     player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
-                  } else {
-                     vars.analyzed_items.add(toSave);
-                     if (!crestAnalysisCast) {
-                        vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
-                     }
-
-                     vars.syncPlayerVariables(player);
-                     player.displayClientMessage(Component.translatable("message.typemoonworld.projection.analysis_complete", (int)cost), true);
-                     boolean ubwDirectProjection = vars.has_unlimited_blade_works
-                        && (vars.projection_selected_item == null || vars.projection_selected_item.isEmpty())
-                        && (vars.projection_selected_structure_id == null || vars.projection_selected_structure_id.isEmpty());
-                     if (ubwDirectProjection) {
-                        MagicProjection.tryDirectProjectFromAnalysis(player, vars, toSave, swordAttributeActive);
-                     }
-                  }
-               } else {
-                  double failCost = cost * 0.3;
-                  consumeAnalysisManaOrFail(player, vars, failCost);
-                  if (!crestAnalysisCast) {
-                     vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.1);
-                  }
-
-                  vars.syncPlayerVariables(player);
-                  player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
-               }
-            }
+            vars.syncPlayerVariables(player);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.failed"), true);
          }
       }
+   }
+
+   private static boolean hasProjectionTag(ItemStack stack) {
+      if (!stack.has(DataComponents.CUSTOM_DATA)) {
+         return false;
+      }
+      CustomData cd = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
+      if (cd == null) {
+         return false;
+      }
+      CompoundTag tag = cd.copyTag();
+      return tag.getBoolean("is_projected") || tag.getBoolean("is_infinite_projection");
    }
 
    public static boolean consumeAnalysisManaOrFail(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double cost) {

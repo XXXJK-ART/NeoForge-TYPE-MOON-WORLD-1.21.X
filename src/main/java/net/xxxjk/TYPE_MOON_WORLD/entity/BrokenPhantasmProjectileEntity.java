@@ -30,6 +30,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 
 public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> EXPLOSION_POWER = SynchedEntityData.defineId(
@@ -159,7 +161,9 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                if (e instanceof LivingEntity && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e)) {
                   float totalDamage = this.getExplosionPower() * 10.0F;
                   e.invulnerableTime = 0;
-                  e.hurt(explosionSource, totalDamage);
+                  float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance((LivingEntity)e, totalDamage);
+                  finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack((LivingEntity)e, finalDamage);
+                  e.hurt(explosionSource, finalDamage);
                   this.damagedEntities.add(e);
                   if (this.getOwner() instanceof LivingEntity owner) {
                      EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);
@@ -213,7 +217,9 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                   if (dist <= damageRadius * damageRadius) {
                      float totalDamage = this.getExplosionPower() * 10.0F;
                      e.invulnerableTime = 0;
-                     e.hurt(explosionSource, totalDamage);
+                     float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance((LivingEntity)e, totalDamage);
+                     finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack((LivingEntity)e, finalDamage);
+                     e.hurt(explosionSource, finalDamage);
                      this.damagedEntities.add(e);
                      if (this.getOwner() instanceof LivingEntity owner) {
                         EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);

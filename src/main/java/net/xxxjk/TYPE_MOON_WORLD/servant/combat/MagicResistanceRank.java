@@ -2,9 +2,11 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
 public enum MagicResistanceRank {
    NONE(0, "none"),
-   C(1, "c"),
-   B(2, "b"),
-   A(3, "a");
+   E(1, "e"),
+   D(2, "d"),
+   C(3, "c"),
+   B(4, "b"),
+   A(5, "a");
 
    private final int level;
    private final String key;

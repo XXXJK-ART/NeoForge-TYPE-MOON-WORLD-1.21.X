@@ -44,7 +44,7 @@ public final class CommonServantSkills {
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
-      return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.15F, 0.0F);
+      return applyMagicResistance(context.caster(), MagicResistanceRank.D, 0.10F, 0.0F);
    }
 
    private static ServantExecutionResult executeMagicResistanceA(ServantExecutionContext context) {

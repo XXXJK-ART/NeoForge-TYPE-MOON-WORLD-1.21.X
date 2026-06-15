@@ -74,9 +74,11 @@ public class RedSkeletonHajunEntity extends Entity implements GeoEntity {
       }
       Vec3 pos = owner.position().subtract(look.scale(4.5)).add(0.0, 0.6, 0.0);
       this.setPos(pos.x, pos.y, pos.z);
-      float yaw = (float)(Mth.atan2(look.z, look.x) * Mth.RAD_TO_DEG) - 90.0F;
+      float yaw = (float)(Mth.atan2(look.x, look.z) * Mth.RAD_TO_DEG);
       this.setYRot(yaw);
       this.yRotO = yaw;
+      this.setXRot(0.0F);
+      this.xRotO = 0.0F;
    }
 
    private LivingEntity getOwnerLiving(ServerLevel level) {

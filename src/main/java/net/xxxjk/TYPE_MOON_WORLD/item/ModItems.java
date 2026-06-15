@@ -439,7 +439,7 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> DIRK_SMALL_KNIFE = ITEMS.register("dirk_small_knife",
-            () -> new DirkSmallKnifeItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(30)
+            () -> new DirkSmallKnifeItem(new Item.Properties().rarity(Rarity.UNCOMMON).durability(100)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(

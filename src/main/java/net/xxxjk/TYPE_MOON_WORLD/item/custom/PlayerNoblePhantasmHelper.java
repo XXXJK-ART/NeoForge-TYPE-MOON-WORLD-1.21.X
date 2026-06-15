@@ -51,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public final class PlayerNoblePhantasmHelper {
    public static final String ONE_SHOT_TSUBAME_TAG = "TypeMoonOneShotTsubame";
+   private static final String OVEREDGE_USE_COUNT_TAG = "TypeMoonOveredgeUseCount";
    private static final String GAE_DEATH_FLIGHT_TAG = "TypeMoonGaeBulgDeathFlight";
    private static final String GAE_DEATH_FLIGHT_PAID_TAG = "TypeMoonGaeBulgDeathFlightPaid";
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
@@ -138,7 +139,7 @@ public final class PlayerNoblePhantasmHelper {
       player.level().addFreshEntity(projectile);
       player.level().playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.75F, 1.45F);
       if (!player.isCreative()) {
-         player.getItemInHand(hand).shrink(1);
+         player.getItemInHand(hand).hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
       }
       return true;
    }
@@ -306,7 +307,7 @@ public final class PlayerNoblePhantasmHelper {
       if (player.isCrouching() && !isOveredgeKanshouBakuyaId(projectionId)) {
          evolveKanshouBakuyaPair(player);
       } else if (isOveredgeKanshouBakuyaId(projectionId)) {
-         dashSlashOveredge(player);
+         dashSlashOveredge(player, hand);
       } else {
          throwKanshouBakuya(player, hand);
       }
@@ -415,11 +416,14 @@ public final class PlayerNoblePhantasmHelper {
       thrown.setArcingFlight(horizontal, sideOffset, 7.0);
       thrown.shoot(look.x, look.y + 0.04, look.z, 2.6F, 0.0F);
       level.addFreshEntity(thrown);
+      if (!player.isCreative()) {
+         player.getItemInHand(hand).shrink(1);
+      }
       level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.8F, 1.55F);
       level.sendParticles(ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, 10, 0.12, 0.12, 0.12, 0.06);
    }
 
-   private static void dashSlashOveredge(ServerPlayer player) {
+   private static void dashSlashOveredge(ServerPlayer player, InteractionHand hand) {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
@@ -433,7 +437,7 @@ public final class PlayerNoblePhantasmHelper {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          if (hit.add(target.getId())) {
             target.invulnerableTime = 0;
-            target.hurt(player.damageSources().mobAttack(player), 72.0F);
+            target.hurt(player.damageSources().mobAttack(player), 144.0F);
             target.invulnerableTime = 0;
          }
       }
@@ -444,6 +448,25 @@ public final class PlayerNoblePhantasmHelper {
       }
       level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 1.0F, 1.25F);
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 0.85F);
+      consumeProjectedOveredgeUse(player, hand);
+   }
+
+   private static void consumeProjectedOveredgeUse(ServerPlayer player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      CompoundTag tag = customTag(stack);
+      if (tag == null || !tag.getBoolean("is_projected")) {
+         return;
+      }
+      int uses = tag.getInt(OVEREDGE_USE_COUNT_TAG) + 1;
+      if (uses >= 2 && !player.isCreative()) {
+         player.setItemInHand(hand, ItemStack.EMPTY);
+         player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 0.75F);
+         if (player.level() instanceof ServerLevel level) {
+            level.sendParticles(ParticleTypes.POOF, player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ(), 12, 0.28, 0.34, 0.28, 0.04);
+         }
+      } else {
+         updateCustomData(stack, data -> data.putInt(OVEREDGE_USE_COUNT_TAG, uses));
+      }
    }
 
    private static void throwGaeBulgArmy(ServerPlayer player) {

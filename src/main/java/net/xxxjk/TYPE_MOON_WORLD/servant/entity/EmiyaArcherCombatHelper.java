@@ -47,10 +47,14 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
@@ -61,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosio
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -83,6 +88,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String LAST_BLADE_RUPTURE_TICK = "EmiyaLastBladeRuptureTick";
    public static final String LAST_AERIAL_PURSUIT_TICK = "EmiyaLastAerialPursuitTick";
    public static final String LAST_REINFORCED_SLAM_TICK = "EmiyaLastReinforcedSlamTick";
+   public static final String LAST_REINFORCEMENT_TICK = "EmiyaLastReinforcementTick";
    public static final String LAST_UBW_TICK = "EmiyaLastUbwTick";
    public static final String PROJECTED_EXPIRES_TICK = "EmiyaProjectedExpiresTick";
    public static final String PROJECTED_PAIR = "EmiyaProjectedPair";
@@ -110,6 +116,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String LAST_ANALYSIS_TICK = "EmiyaLastAnalysisTick";
    public static final String ANALYZED_WEAPON_STACK = "EmiyaAnalyzedWeaponStack";
    public static final String ANALYZED_WEAPON_BUFF_UNTIL = "EmiyaAnalyzedWeaponBuffUntil";
+   public static final String BORROWED_NP_USED_UNTIL = "EmiyaBorrowedNoblePhantasmUsedUntil";
    public static final String UBW_RETURN_DIMENSION = "EmiyaUbwReturnDimension";
    public static final String UBW_RETURN_X = "EmiyaUbwReturnX";
    public static final String UBW_RETURN_Y = "EmiyaUbwReturnY";
@@ -129,8 +136,10 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_OFFSCREEN_PREVIOUS_NO_AI = "EmiyaUbwOffscreenPrevNoAi";
    public static final int SPIRAL_COOLDOWN = 18 * 20;
    public static final int CRIMSON_COOLDOWN = 16 * 20;
-   public static final int RHO_AIAS_COOLDOWN = 22 * 20;
+   public static final int RHO_AIAS_COOLDOWN = 15 * 20;
+   public static final int RHO_AIAS_HARD_COOLDOWN = 15 * 20;
    public static final int BROKEN_PHANTASM_COOLDOWN = 12 * 20;
+   public static final int REINFORCEMENT_COOLDOWN = 9 * 20;
    public static final int UBW_COOLDOWN = 60 * 20;
    public static final int UBW_CHANT_TICKS = 8 * 20;
    public static final int PROJECTION_VOLLEY_COOLDOWN = 3 * 20;
@@ -153,6 +162,7 @@ public final class EmiyaArcherCombatHelper {
    public static final int BLADE_RUPTURE_COOLDOWN = 7 * 20;
    public static final int AERIAL_PURSUIT_COOLDOWN = 5 * 20;
    public static final int REINFORCED_SLAM_COOLDOWN = 4 * 20;
+   public static final int BORROWED_NP_PROJECTION_TICKS = 5 * 20;
    private static final String MODE_MELEE = "melee";
    private static final String MODE_RANGED = "ranged";
    private static final double TWIN_SWORD_COST = 8.0;
@@ -216,7 +226,8 @@ public final class EmiyaArcherCombatHelper {
       boolean normalOrDecisive = phase.id() >= ServantCombatPhase.NORMAL.id();
       boolean decisive = phase == ServantCombatPhase.DECISIVE;
       RhoAiasEntity ownedShield = findOwnedRhoAias(entity, level);
-      boolean forceMeleeRange = distance <= 5.2 && entity.getPersistentData().getLong(UBW_CHANT_END_TICK) <= 0L;
+      boolean probingMeleeProbe = phase == ServantCombatPhase.PROBING && ownedShield == null && distance <= 7.0 && entity.getRandom().nextInt(100) < 35;
+      boolean forceMeleeRange = (distance <= 5.2 || probingMeleeProbe) && entity.getPersistentData().getLong(UBW_CHANT_END_TICK) <= 0L;
       boolean rangedMode = !forceMeleeRange && (ownedShield != null || shouldUseRangedMode(entity, target, distance, now));
       setCombatMode(entity, rangedMode ? MODE_RANGED : MODE_MELEE);
       updateRangedStandoff(entity, target, rangedMode, distance, now);
@@ -225,8 +236,19 @@ public final class EmiyaArcherCombatHelper {
          return;
       }
 
+      maybeCastReinforcement(entity, level, target, now, phase);
+
       if (shouldCastUbw(entity, target, now, phase)) {
          beginUbwChant(entity, level, target, now);
+         return;
+      }
+
+      if (phase == ServantCombatPhase.PROBING
+         && distance <= 6.0
+         && canUse(now, entity.getPersistentData().getLong(LAST_HRUNTING_STYLE_TICK), phasedCooldown(240, phase))
+         && entity.getCurrentMp() >= 30.0
+         && entity.getRandom().nextInt(100) < 12) {
+         executeKanshouBakuyaTriple(entity, level, target, now);
          return;
       }
 
@@ -290,7 +312,9 @@ public final class EmiyaArcherCombatHelper {
          return;
       }
 
-      equipMeleeWeapon(entity, target, now);
+      if (equipMeleeWeapon(entity, level, target, now)) {
+         return;
+      }
       if (distance > 7.0 && canUse(now, entity.getPersistentData().getLong(LAST_IRON_SWORD_SHOT_TICK), IRON_SWORD_ASSIST_COOLDOWN)) {
          shootIronSword(entity, level, target, now);
          return;
@@ -313,7 +337,11 @@ public final class EmiyaArcherCombatHelper {
          performReinforcedProjectionSlam(entity, level, target, now);
          return;
       }
-      if (decisive && distance <= 3.5 && canUse(now, entity.getPersistentData().getLong(LAST_BROKEN_PHANTASM_TICK), phasedCooldown(BROKEN_PHANTASM_COOLDOWN, phase)) && entity.getHealth() < entity.getMaxHealth() * 0.45F) {
+      if (decisive
+         && distance <= 3.5
+         && canUse(now, entity.getPersistentData().getLong(LAST_BROKEN_PHANTASM_TICK), phasedCooldown(BROKEN_PHANTASM_COOLDOWN, phase))
+         && entity.getHealth() < entity.getMaxHealth() * 0.4F
+         && entity.getRandom().nextInt(100) < 30) {
          triggerBrokenPhantasm(entity, level, now, 0.2F);
          return;
       }
@@ -372,7 +400,7 @@ public final class EmiyaArcherCombatHelper {
          executeKanshouBakuyaTriple(entity, level, target, now);
          return;
       }
-      if (normalOrDecisive && distance <= 8.0 && canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), phasedCooldown(RHO_AIAS_COOLDOWN, phase)) && entity.getCurrentMp() >= 35.0 && target.getLastHurtByMob() != null) {
+      if (normalOrDecisive && distance <= 8.0 && canCastRhoAias(entity, now, phasedCooldown(RHO_AIAS_COOLDOWN, phase)) && entity.getCurrentMp() >= 35.0 && target.getLastHurtByMob() != null) {
          castRhoAias(entity, level, target, now);
       }
    }
@@ -398,6 +426,9 @@ public final class EmiyaArcherCombatHelper {
       }
       RhoAiasEntity shield = findOwnedRhoAias(entity, level);
       if (shield == null || !shield.isAlive()) {
+         if (!canCastRhoAias(entity, now, RHO_AIAS_HARD_COOLDOWN)) {
+            return false;
+         }
          castRhoAias(entity, level, threat, now, false);
          shield = findOwnedRhoAias(entity, level);
       } else {
@@ -436,6 +467,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().remove(PROJECTED_PAIR);
       entity.getPersistentData().remove(ANALYZED_WEAPON_EXPIRES_TICK);
       entity.getPersistentData().remove(ANALYZED_WEAPON_STACK);
+      entity.getPersistentData().remove(BORROWED_NP_USED_UNTIL);
    }
 
    private static void expireProjection(EmiyaArcherEntity entity, long now) {
@@ -477,6 +509,30 @@ public final class EmiyaArcherCombatHelper {
          || target.getHealth() > 140.0F;
    }
 
+   private static void maybeCastReinforcement(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
+      if (target == null || !target.isAlive() || entity.getCurrentMp() < 12.0) {
+         return;
+      }
+      if (!canUse(now, entity.getPersistentData().getLong(LAST_REINFORCEMENT_TICK), phasedCooldown(REINFORCEMENT_COOLDOWN, phase))) {
+         return;
+      }
+      int chance = phase == ServantCombatPhase.DECISIVE ? 34 : phase == ServantCombatPhase.NORMAL ? 24 : 12;
+      if (entity.getHealth() <= entity.getMaxHealth() * 0.45F) {
+         chance += 10;
+      }
+      if (entity.getRandom().nextInt(100) >= chance) {
+         return;
+      }
+      entity.getPersistentData().putLong(LAST_REINFORCEMENT_TICK, now);
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 12.0));
+      int duration = phase == ServantCombatPhase.DECISIVE ? 120 : 90;
+      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, 0, false, false, true));
+      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, duration, 0, false, false, true));
+      entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, duration, 0, false, false, true));
+      level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ(), 16, 0.28, 0.35, 0.28, 0.04);
+      level.playSound(null, entity.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 0.6F, 1.35F);
+   }
+
    private static void beginUbwChant(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
       entity.getPersistentData().putLong(LAST_UBW_TICK, now);
       entity.getPersistentData().putLong(UBW_CHANT_END_TICK, now + UBW_CHANT_TICKS);
@@ -500,7 +556,7 @@ public final class EmiyaArcherCombatHelper {
          RhoAiasEntity shield = findOwnedRhoAias(entity, level);
          if (shield != null) {
             stayBehindRhoAias(entity, shield, fallbackTarget);
-         } else if (canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), Math.min(RHO_AIAS_COOLDOWN, 20)) && entity.getCurrentMp() >= 35.0) {
+         } else if (canCastRhoAias(entity, now, RHO_AIAS_HARD_COOLDOWN) && entity.getCurrentMp() >= 35.0) {
             castRhoAias(entity, level, fallbackTarget, now);
          } else {
             moveDuringUbwChant(entity, fallbackTarget);
@@ -1487,7 +1543,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().remove(PROJECTED_PAIR);
    }
 
-   private static void equipMeleeWeapon(EmiyaArcherEntity entity, LivingEntity target, long now) {
+   private static boolean equipMeleeWeapon(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
       CompoundTag data = entity.getPersistentData();
       if (data.getLong(ANALYZED_WEAPON_EXPIRES_TICK) > 0L && now >= data.getLong(ANALYZED_WEAPON_EXPIRES_TICK)) {
          data.remove(ANALYZED_WEAPON_EXPIRES_TICK);
@@ -1502,7 +1558,7 @@ public final class EmiyaArcherCombatHelper {
             entity.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
             markProjectionExpiry(entity, data.getLong(ANALYZED_WEAPON_EXPIRES_TICK), false);
          }
-         return;
+         return false;
       }
 
       if (canUse(now, data.getLong(LAST_ANALYSIS_TICK), ANALYSIS_COOLDOWN)) {
@@ -1510,10 +1566,13 @@ public final class EmiyaArcherCombatHelper {
          if (!enemyWeapon.isEmpty()) {
             data.putLong(LAST_ANALYSIS_TICK, now);
             if (!shouldProjectEnemyWeapon(entity, now)) {
-               return;
+               return false;
             }
             ItemStack copy = enemyWeapon.copy();
             copy.setCount(1);
+            if (isDivineOrSupremeWeapon(copy)) {
+               return false;
+            }
             addProjectedEnemyAttackPower(copy, target);
             data.putLong(ANALYZED_WEAPON_EXPIRES_TICK, now + 100L);
             data.put(ANALYZED_WEAPON_STACK, copy.save(entity.registryAccess()));
@@ -1523,19 +1582,24 @@ public final class EmiyaArcherCombatHelper {
             applyAnalyzedWeaponProjectionBuffs(entity, target);
             ServantVoiceHelper.tryPlayProjection(entity);
             entity.triggerNamedActionAnimation("projection");
-            if (entity.level() instanceof ServerLevel level) {
-               level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(), 12, 0.25, 0.25, 0.25, 0.02);
+            if (entity.level() instanceof ServerLevel serverLevel) {
+               serverLevel.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(), 12, 0.25, 0.25, 0.25, 0.02);
             }
-            return;
+            return false;
          }
       }
 
-      if (!isKanshouBakuyaPair(entity)) {
-         projectTwinSwords(entity, false, now);
+         if (!isKanshouBakuyaPair(entity)) {
+            projectTwinSwords(entity, false, now);
+         }
+         if (entity.getMainHandItem().is(ModItems.NAMELESS_BOW.get()) || !isMeleeWeapon(entity.getMainHandItem())) {
+            applyProjectedTwinSwords(entity, false, now);
+         }
+
+      if (shouldUseBorrowedNoblePhantasm(entity, target, now)) {
+         return tryBorrowEnemyNoblePhantasm(entity, level, target, now);
       }
-      if (entity.getMainHandItem().is(ModItems.NAMELESS_BOW.get()) || !isMeleeWeapon(entity.getMainHandItem())) {
-         applyProjectedTwinSwords(entity, false, now);
-      }
+      return false;
    }
 
    private static ItemStack readAnalyzedWeapon(EmiyaArcherEntity entity) {
@@ -1556,6 +1620,254 @@ public final class EmiyaArcherCombatHelper {
          chance += 10;
       }
       return entity.getRandom().nextInt(100) < Math.min(65, chance);
+   }
+
+   private static boolean shouldUseBorrowedNoblePhantasm(EmiyaArcherEntity entity, LivingEntity target, long now) {
+      if (entity == null || target == null || !target.isAlive()) {
+         return false;
+      }
+      if (ServantCombatSystem.getPhase(entity).id() < ServantCombatPhase.DECISIVE.id()) {
+         return false;
+      }
+      if (entity.getPersistentData().getLong(UBW_ACTIVE_UNTIL) > now) {
+         return false;
+      }
+      if (entity.getPersistentData().getLong(BORROWED_NP_USED_UNTIL) > now) {
+         return false;
+      }
+      if (!canUse(now, entity.getPersistentData().getLong(LAST_PROJECTION_VOLLEY_TICK), PROJECTION_VOLLEY_COOLDOWN)) {
+         return false;
+      }
+      return entity.getRandom().nextInt(100) < 6;
+   }
+
+   private static boolean tryBorrowEnemyNoblePhantasm(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      if (target instanceof EmiyaArcherEntity) {
+         return false;
+      }
+      ItemStack borrowed = findBorrowableEnemyWeapon(target);
+      if (borrowed.isEmpty()) {
+         return false;
+      }
+      if (borrowed.is(ModItems.EXCALIBUR.get()) || borrowed.is(ModItems.TSUMUKARI_MURAMASA.get())) {
+         if (entity.getHealth() <= 1.0F) {
+            return false;
+         }
+      }
+      if (!hasBorrowedNoblePhantasmAction(borrowed)) {
+         return false;
+      }
+      markBorrowedNoblePhantasmUsed(entity, borrowed, now);
+      if (borrowed.is(ModItems.EXCALIBUR.get())) {
+         performBorrowedExcalibur(entity, level, target, now);
+         return true;
+      }
+      if (borrowed.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
+         performBorrowedNineLives(entity, level, target, now);
+         return true;
+      }
+      if (borrowed.is(ModItems.BIZEN_NAGAMITSU.get())) {
+         performBorrowedTsubame(entity, level, target, now);
+         return true;
+      }
+      if (borrowed.is(ModItems.NAMELESS_CHAIN_DAGGER.get())) {
+         performBorrowedMedusaDagger(entity, level, target, now);
+         return true;
+      }
+      if (borrowed.is(ModItems.RULE_BREAKER.get())) {
+         performBorrowedRuleBreaker(entity, level, target, now);
+         return true;
+      }
+      if (borrowed.is(ModItems.GAE_BULG.get())) {
+         performBorrowedGaeBulg(entity, level, target, now);
+         return true;
+      }
+      return false;
+   }
+
+   private static boolean hasBorrowedNoblePhantasmAction(ItemStack stack) {
+      return stack.is(ModItems.EXCALIBUR.get())
+         || stack.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())
+         || stack.is(ModItems.BIZEN_NAGAMITSU.get())
+         || stack.is(ModItems.NAMELESS_CHAIN_DAGGER.get())
+         || stack.is(ModItems.RULE_BREAKER.get())
+         || stack.is(ModItems.GAE_BULG.get());
+   }
+
+   private static void markBorrowedNoblePhantasmUsed(EmiyaArcherEntity entity, ItemStack borrowed, long now) {
+      entity.getPersistentData().putLong(LAST_PROJECTION_VOLLEY_TICK, now);
+      entity.getPersistentData().putLong(BORROWED_NP_USED_UNTIL, now + BORROWED_NP_PROJECTION_TICKS);
+      ItemStack projected = borrowed.copy();
+      projected.setCount(1);
+      entity.setItemInHand(InteractionHand.MAIN_HAND, projected);
+      entity.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+      markProjectionExpiry(entity, now + BORROWED_NP_PROJECTION_TICKS, false);
+   }
+
+   private static ItemStack findBorrowableEnemyWeapon(LivingEntity target) {
+      if (target == null) {
+         return ItemStack.EMPTY;
+      }
+      ItemStack main = target.getMainHandItem();
+      if (isBorrowableNoblePhantasm(main)) {
+         return main;
+      }
+      ItemStack off = target.getOffhandItem();
+      return isBorrowableNoblePhantasm(off) ? off : ItemStack.EMPTY;
+   }
+
+   private static boolean isBorrowableNoblePhantasm(ItemStack stack) {
+      return !stack.isEmpty()
+         && (stack.is(ModItems.EXCALIBUR.get())
+            || stack.is(ModItems.TSUMUKARI_MURAMASA.get())
+            || stack.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())
+            || stack.is(ModItems.RULE_BREAKER.get())
+            || stack.is(ModItems.NAMELESS_CHAIN_DAGGER.get())
+            || stack.is(ModItems.GAE_BULG.get())
+            || stack.is(ModItems.BIZEN_NAGAMITSU.get()));
+   }
+
+   private static boolean isDivineOrSupremeWeapon(ItemStack stack) {
+      return stack.is(ModItems.EXCALIBUR.get()) || stack.is(ModItems.TSUMUKARI_MURAMASA.get());
+   }
+
+   private static void performBorrowedExcalibur(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 50.0));
+      entity.triggerNamedActionAnimation("projection");
+      Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.66, 0.0).add(ArtoriaPendragonCombatHelper.excaliburLook(entity).scale(1.2));
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, entity, start, 60);
+      level.addFreshEntity(beam);
+      if (entity.level() instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 40, 0.55, 0.55, 0.55, 0.05);
+      }
+      TYPE_MOON_WORLD.queueServerWork(64, () -> {
+         if (entity.isAlive() && entity.level() instanceof ServerLevel) {
+            entity.invulnerableTime = 0;
+            entity.hurt(entity.damageSources().magic(), entity.getMaxHealth() + 500.0F);
+         }
+      });
+   }
+
+   private static void performBorrowedNineLives(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 28.0));
+      entity.triggerNamedActionAnimation("projection");
+      // Borrowed noble phantasms stay visually projected, but do not play the original owner's voice line.
+      Vec3[] lastCenter = new Vec3[]{target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)};
+      for (int i = 1; i <= 9; i++) {
+         final int step = i;
+         TYPE_MOON_WORLD.queueServerWork(step * 2, () -> {
+            if (!entity.isAlive() || !(entity.level() instanceof ServerLevel sl)) {
+               return;
+            }
+            Vec3 center = target.isAlive() ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0) : lastCenter[0];
+            lastCenter[0] = center;
+            Vec3 viewDir = target.position().subtract(entity.position()).normalize();
+            if (viewDir.lengthSqr() < 1.0E-4) {
+               viewDir = entity.getLookAngle();
+            }
+            Vec3 right = viewDir.cross(new Vec3(0.0, 1.0, 0.0)).normalize();
+            if (right.lengthSqr() < 1.0E-4) {
+               right = new Vec3(1.0, 0.0, 0.0);
+            }
+            Vec3 planeUp = right.cross(viewDir).normalize();
+            double angle = sl.random.nextDouble() * Math.PI * 2.0;
+            double span = Math.max(target.getBbWidth(), target.getBbHeight()) * 1.3 + 3.0;
+            Vec3 slashDir = right.scale(Math.cos(angle)).add(planeUp.scale(Math.sin(angle))).normalize();
+            Vec3 start = center.add(slashDir.scale(-span));
+            Vec3 end = center.add(slashDir.scale(span));
+            RubyProjectileEntity slash = new RubyProjectileEntity(sl, start.x, start.y, start.z);
+            slash.setItem(ItemStack.EMPTY);
+            slash.setGemType(99);
+            slash.setVisualScale(Math.max(0.5F, Math.max(target.getBbWidth(), target.getBbHeight()) / 1.8F));
+            slash.setVisualEnd(end);
+            slash.setNoGravity(true);
+            slash.setDeltaMovement(Vec3.ZERO);
+            sl.addFreshEntity(slash);
+            if (target.isAlive()) {
+               target.invulnerableTime = 0;
+               target.hurt(entity.damageSources().mobAttack(entity), 42.0F);
+               target.invulnerableTime = 0;
+            }
+            sl.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 8, 0.45, 0.45, 0.45, 0.35);
+            sl.playSound(null, center.x, center.y, center.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.9F, 1.35F);
+         });
+      }
+   }
+
+   private static void performBorrowedTsubame(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 20.0));
+      entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 45, 2, false, true, true));
+      entity.triggerNamedActionAnimation("projection");
+      entity.triggerSlashAnimation();
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().mobAttack(entity), 300.0F);
+      target.invulnerableTime = 0;
+      Vec3 from = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
+      Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+      Vec3 slashDir = to.subtract(from);
+      if (slashDir.lengthSqr() < 1.0E-4) {
+         slashDir = entity.getLookAngle();
+      }
+      slashDir = slashDir.normalize();
+      Vec3 perp = new Vec3(-slashDir.z, 0.0, slashDir.x);
+      for (int arc = 0; arc < 3; arc++) {
+         double arcOffset = (arc - 1) * 0.4;
+         for (double t = 0.0; t <= 1.0; t += 0.1) {
+            Vec3 pos = from.lerp(to, t);
+            double wave = Math.sin(t * Math.PI) * 0.3 * (arc + 1);
+            pos = pos.add(perp.scale(wave + arcOffset));
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 2, 0.0, 0.0, 0.0, 0.0);
+         }
+      }
+      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(), 25, 0.5, 0.6, 0.5, 0.08);
+      level.sendParticles(ParticleTypes.REVERSE_PORTAL, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 15, 0.4, 0.5, 0.4, 0.05);
+      level.sendParticles(ParticleTypes.SOUL, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 12, 0.3, 0.4, 0.3, 0.04);
+      level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.8F, 0.5F);
+      level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.5F, 0.6F);
+   }
+
+   private static void performBorrowedMedusaDagger(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.triggerNamedActionAnimation("projection");
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+      Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.7, 0.0);
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().mobAttack(entity), 22.0F);
+      target.invulnerableTime = 0;
+      level.sendParticles(ParticleTypes.CRIT, origin.x, origin.y, origin.z, 18, 0.2, 0.2, 0.2, 0.05);
+      Vec3 pull = origin.subtract(aim).normalize().scale(1.6);
+      target.setDeltaMovement(pull.x, Math.max(0.15, pull.y + 0.1), pull.z);
+      target.hurtMarked = true;
+   }
+
+   private static void performBorrowedRuleBreaker(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.triggerNamedActionAnimation("projection");
+      MedeaCombatHelper.applyRuleBreakerHit(target, entity);
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().magic(), 16.0F);
+   }
+
+   private static void performBorrowedGaeBulg(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.triggerNamedActionAnimation("projection");
+      if (entity.distanceToSqr(target) > 64.0 && entity.getRandom().nextInt(100) < 38) {
+         GaeBulgArmyProjectileEntity projectile = new GaeBulgArmyProjectileEntity(level, entity);
+         projectile.setArmyDamage(500.0F);
+         projectile.setTrackedTarget(target);
+         projectile.setPos(entity.getX(), entity.getEyeY() - 0.1, entity.getZ());
+         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
+         Vec3 dir = aim.subtract(projectile.position()).normalize();
+         projectile.shoot(dir.x, dir.y + 0.08, dir.z, 2.25F, 0.0F);
+         level.addFreshEntity(projectile);
+         return;
+      }
+      GaeBulgProjectileEntity projectile = new GaeBulgProjectileEntity(level, entity);
+      projectile.setMode(GaeBulgProjectileEntity.Mode.SINGLE);
+      projectile.setTrackedTarget(target);
+      projectile.setPos(entity.getX(), entity.getEyeY() - 0.1, entity.getZ());
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
+      Vec3 dir = aim.subtract(projectile.position()).normalize();
+      projectile.shoot(dir.x, dir.y + 0.12, dir.z, 2.6F, 0.0F);
+      level.addFreshEntity(projectile);
    }
 
    private static ItemStack findEnemyMeleeWeapon(LivingEntity target) {
@@ -2428,6 +2740,11 @@ public final class EmiyaArcherCombatHelper {
       level.addFreshEntity(shield);
    }
 
+   private static boolean canCastRhoAias(EmiyaArcherEntity entity, long now, int cooldown) {
+      return canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), cooldown)
+         && entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK) + cooldown <= now;
+   }
+
    private static RhoAiasEntity findOwnedRhoAias(EmiyaArcherEntity entity, ServerLevel level) {
       RhoAiasEntity closest = null;
       double closestDistance = Double.MAX_VALUE;
@@ -2486,7 +2803,7 @@ public final class EmiyaArcherCombatHelper {
 
    private static void maybeShield(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
       if ((phase == ServantCombatPhase.DECISIVE || entity.getHealth() < entity.getMaxHealth() * 0.55F)
-         && canUse(now, entity.getPersistentData().getLong(LAST_RHO_AIAS_TICK), phasedCooldown(RHO_AIAS_COOLDOWN, phase))
+         && canCastRhoAias(entity, now, RHO_AIAS_HARD_COOLDOWN)
          && entity.getCurrentMp() >= 35.0) {
          castRhoAias(entity, level, target, now);
       }

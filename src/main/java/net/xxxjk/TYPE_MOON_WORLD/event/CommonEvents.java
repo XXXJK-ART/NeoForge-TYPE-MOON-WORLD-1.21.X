@@ -48,6 +48,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
@@ -62,6 +63,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
@@ -339,6 +341,12 @@ public class CommonEvents {
                      event.setCanceled(true);
                      return;
                   }
+                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity artoria
+                     && directEntity instanceof Projectile projectile
+                     && ArtoriaPendragonCombatHelper.tryDodgeProjectileWithInstinct(artoria, projectile)) {
+                     event.setCanceled(true);
+                     return;
+                  }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
                   event.setAmount(ArtoriaPendragonCombatHelper.applyAvalonDamageReduction(living, event.getSource(), event.getAmount()));
                }
@@ -526,6 +534,10 @@ public class CommonEvents {
       return direct instanceof EmiyaArcherEntity;
    }
 
+   private static boolean isGaeBulgArmyDamage(DamageSource source) {
+      return source != null && source.getDirectEntity() instanceof GaeBulgArmyProjectileEntity;
+   }
+
    private static void handleServantDamage(ServantEntity servant, LivingIncomingDamageEvent event) {
       if (servant.level().isClientSide()) return;
 
@@ -535,6 +547,8 @@ public class CommonEvents {
       long currentTick = servant.level().getGameTime();
       boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), originalDamage);
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
+      boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
+      boolean antiHeraclesNoblePhantasm = HeraclesGodHandHelper.hasGodHand(servant) && (majorBrokenPhantasmExplosion || gaeBulgArmy);
       boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
       if (inPlaceGodHandRevive) {
@@ -552,7 +566,7 @@ public class CommonEvents {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
 
-      if (!artoriaExcalibur && !invisibleAirBypass) {
+      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
@@ -646,7 +660,7 @@ public class CommonEvents {
       // --- God Hand: immunity against low-rank damage ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion && damage < threshold) {
+         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -659,7 +673,7 @@ public class CommonEvents {
          }
 
          // Adaptive resistance: repeated damage types are reduced over time.
-         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion) {
+         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
             float reduction = data.getFloat("GodHandAdaptiveReduction");
             float maxReduction = data.getFloat("GodHandAdaptiveMax");
             float currentResistance = data.getFloat("GodHandCurrentResistance");
