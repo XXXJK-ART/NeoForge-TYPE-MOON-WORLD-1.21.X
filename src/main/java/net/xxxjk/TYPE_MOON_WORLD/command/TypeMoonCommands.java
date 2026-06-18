@@ -22,6 +22,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.command.VFXCommands;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineChunkProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
@@ -74,6 +75,7 @@ public class TypeMoonCommands {
 
    @SuppressWarnings({"unchecked", "rawtypes"})
    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+      VFXCommands.register(dispatcher);
       dispatcher.register(
          (LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal(
                                  "typemoon"

@@ -1,0 +1,125 @@
+{
+  "duration": 6.0,
+  "emitters": [
+    {
+      "rate": 400,
+      "particle_lifetime": 2.0,
+      "size_variance": 0.45,
+      "position_variance": 0.05,
+      "velocity": [0, 0.12, 0],
+      "velocity_variance": 0.08,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau * 8 + progress * tau * 3) * 1.2",
+        "expr_y": "t * 12",
+        "expr_z": "sin(t * tau * 8 + progress * tau * 3) * 1.2",
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFFFFF" },
+        { "t": 0.45, "color": "#FF44CCFF" },
+        { "t": 1.0, "color": "#0000AAFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.10 },
+        { "t": 0.5, "size": 0.35 },
+        { "t": 1.0, "size": 0.05 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [0.5, 1.0, 0.5] },
+        { "t": 0.5, "pos": [0, 0.25, 0], "rot": [0, 0.7071068, 0, 0.7071068], "scale": [1.8, 1.0, 1.8] },
+        { "t": 1.0, "pos": [0, 0.5, 0], "rot": [0, 1.0, 0, 0], "scale": [0.6, 1.0, 0.6] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 300,
+      "particle_lifetime": 1.2,
+      "size_variance": 0.4,
+      "position_variance": 0.03,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau * -12 - progress * tau * 5) * 0.35",
+        "expr_y": "t * 12",
+        "expr_z": "sin(t * tau * -12 - progress * tau * 5) * 0.35",
+        "segments": 140
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 1.0, "color": "#AA44AAFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.10 },
+        { "t": 0.5, "size": 0.20 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [0.8, 1.0, 0.8] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, -1.0, 0, 0], "scale": [1.0, 1.0, 1.0] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 150,
+      "particle_lifetime": 3.0,
+      "size_variance": 0.5,
+      "position_variance": 0.15,
+      "velocity": [0, 0.06, 0],
+      "velocity_variance": 0.12,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau * 4 + progress * tau) * 2.5",
+        "expr_y": "t * 10",
+        "expr_z": "sin(t * tau * 4 + progress * tau) * 2.5",
+        "segments": 110
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFFFFF" },
+        { "t": 1.0, "color": "#11FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 1.0, "size": 0.15 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1.0, 1.0, 1.0] },
+        { "t": 1.0, "pos": [0, 0.3, 0], "rot": [0, 0.7071068, 0, 0.7071068], "scale": [1.4, 1.0, 1.4] }
+      ],
+      "visibility_condition": "true",
+      "blend": "TRANSLUCENT"
+    },
+    {
+      "rate": 200,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.5,
+      "position_variance": 0.08,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau) * 2",
+        "expr_y": "0",
+        "expr_z": "sin(t * tau) * 2",
+        "segments": 72
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88CCCCCC" },
+        { "t": 1.0, "color": "#00CCCCCC" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.125 },
+        { "t": 1.0, "size": 0.30 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1.0, 1.0, 1.0] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, 0.3826834, 0, 0.9238795], "scale": [1.5, 1.0, 1.5] }
+      ],
+      "visibility_condition": "time < 0.3",
+      "blend": "TRANSLUCENT"
+    }
+  ]
+}
