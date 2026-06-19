@@ -42,6 +42,7 @@ public class VFXEffectDefinition {
             definition.maxVanillaParticleSpawnsPerTick,
             seed + i * 31L
          );
+         emitter.setBinding(definition.binding);
          emitter.setOrigin(x, y, z);
          emitter.addComponent(definition.component);
          for (TransformKeyFrame keyFrame : definition.transformKeyFrames) {
@@ -84,6 +85,7 @@ public class VFXEffectDefinition {
       float startTime,
       float endTime,
       int maxVanillaParticleSpawnsPerTick,
+      BindingDefinition binding,
       IVFXComponent component,
       List<TransformKeyFrame> transformKeyFrames,
       List<ColorKeyFrame> colorKeyFrames,
@@ -97,5 +99,9 @@ public class VFXEffectDefinition {
       List<String> onTick,
       List<String> onEnd
    ) {
+   }
+
+   public record BindingDefinition(String mode, String bone, org.joml.Vector3f offset, boolean rotateWithEntity) {
+      public static final BindingDefinition NONE = new BindingDefinition("", "", new org.joml.Vector3f(), false);
    }
 }

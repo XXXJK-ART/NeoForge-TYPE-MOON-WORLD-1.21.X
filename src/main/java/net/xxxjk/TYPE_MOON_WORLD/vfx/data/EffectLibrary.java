@@ -134,6 +134,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          "start_time",
          "end_time",
          "max_vanilla_particles_per_tick",
+         "binding",
          "component",
          "transform_over_life",
          "color_over_life",
@@ -158,6 +159,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       float startTime = GsonHelper.getAsFloat(json, "start_time", 0.0F);
       float endTime = GsonHelper.getAsFloat(json, "end_time", 0.0F);
       int maxVanillaParticleSpawnsPerTick = GsonHelper.getAsInt(json, "max_vanilla_particles_per_tick", 12);
+      VFXEffectDefinition.BindingDefinition binding = parseBinding(json.has("binding") ? requiredObject(json, "binding") : null);
       IVFXComponent component = parseComponent(requiredObject(json, "component"));
       List<TransformKeyFrame> transforms = parseTransformKeyFrames(optionalArray(json, "transform_over_life"));
       List<ColorKeyFrame> colors = parseColorKeyFrames(optionalArray(json, "color_over_life"));
@@ -183,6 +185,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          startTime,
          endTime,
          maxVanillaParticleSpawnsPerTick,
+         binding,
          component,
          transforms,
          colors,
@@ -195,6 +198,19 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          parseStringList(optionalArray(json, "onStart")),
          parseStringList(optionalArray(json, "onTick")),
          onEnd
+      );
+   }
+
+   private static VFXEffectDefinition.BindingDefinition parseBinding(JsonObject json) {
+      if (json == null) {
+         return VFXEffectDefinition.BindingDefinition.NONE;
+      }
+      requireOnly(json, "mode", "bone", "offset", "rotate_with_entity");
+      return new VFXEffectDefinition.BindingDefinition(
+         GsonHelper.getAsString(json, "mode", ""),
+         GsonHelper.getAsString(json, "bone", ""),
+         vec(json, "offset", new Vector3f()),
+         GsonHelper.getAsBoolean(json, "rotate_with_entity", false)
       );
    }
 
@@ -262,6 +278,12 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
             floatValue(json, "roughness", 0.5F),
             floatValue(json, "period", 5.0F),
             floatValue(json, "density", 8.0F),
+            GsonHelper.getAsBoolean(json, "randomize_start", false),
+            GsonHelper.getAsBoolean(json, "randomize_end", false),
+            floatValue(json, "random_radius_min", 0.0F),
+            floatValue(json, "random_radius_max", 0.0F),
+            floatValue(json, "random_height_min", 0.0F),
+            floatValue(json, "random_height_max", 0.0F),
             floatValue(json, "seed1", 0.0F),
             floatValue(json, "seed2", 0.0F),
             floatValue(json, "seed3", 0.0F),
@@ -322,7 +344,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          case "helix" -> requireOnly(json, "type", "radius", "turns", "height", "segments", "sample_count", "detail", "density");
          case "convex_polygon" -> requireOnly(json, "type", "radius", "sides", "segments", "sample_count", "detail", "density");
          case "fractal_tree" -> requireOnly(json, "type", "length", "angle", "depth");
-         case "fractal_lightning" -> requireOnly(json, "type", "start", "end", "iterations", "roughness", "period", "density", "seed1", "seed2", "seed3", "seed4", "seed5", "segments", "sample_count", "detail");
+         case "fractal_lightning" -> requireOnly(json, "type", "start", "end", "iterations", "roughness", "period", "density", "randomize_start", "randomize_end", "random_radius_min", "random_radius_max", "random_height_min", "random_height_max", "seed1", "seed2", "seed3", "seed4", "seed5", "segments", "sample_count", "detail");
          case "tcb_spline" -> requireOnly(json, "type", "points", "tension", "continuity", "bias", "segments", "sample_count", "detail", "density");
          case "parametric", "parametric_curve" -> requireOnly(json, "type", "amplitude", "frequency", "zigzag_frequency", "zigzag_amplitude", "min_nodes", "max_nodes", "jitter", "mode", "expr_x", "expr_y", "expr_z", "t_start", "t_end", "segments", "sample_count", "detail", "density");
          case "bicircle_star", "double_circle_star" -> requireOnly(json, "type", "radius", "inner_radius", "segments", "sample_count", "detail", "density");

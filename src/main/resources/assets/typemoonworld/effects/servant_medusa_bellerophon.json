@@ -1,0 +1,46 @@
+{
+  "duration": 2.8,
+  "notes": "Bellerophon charge aura: white-gold forward lance trail.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.6,
+      "rate": 2600,
+      "particle_lifetime": 0.7,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.0, 0.8],
+      "velocity_variance": 0.18,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.8, 0.8], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "sin(t * 31.4 + time * 10.0) * (0.2 + t * 1.2)",
+        "expr_y": "sin(t * 12.56) * 0.55",
+        "expr_z": "t * 12.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 160
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.4, "color": "#DDFFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.45, "size": 0.5 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.35, 0.35] },
+        { "t": 1.0, "scale": [1.0, 1.0, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "ADDITIVE",
+      "particle_role": "BELLEROPHON_CHARGE_LANCE",
+      "enable_trail": true
+    }
+  ]
+}

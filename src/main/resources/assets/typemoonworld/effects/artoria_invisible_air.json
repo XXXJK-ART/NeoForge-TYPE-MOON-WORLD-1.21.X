@@ -1,0 +1,123 @@
+{
+  "duration": 1.8,
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.8,
+      "rate": 90,
+      "particle_lifetime": 0.75,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.008,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.38], "rotate_with_entity": true },
+      "component": { "type": "ellipsoid", "radius_x": 0.16, "radius_y": 0.16, "radius_z": 0.82, "sample_count": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#003FFFFF" },
+        { "t": 0.2, "color": "#183FFFFF" },
+        { "t": 0.65, "color": "#243FFFFF" },
+        { "t": 1.0, "color": "#003FFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.5, "size": 0.07 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.85, 0.85, 0.95] },
+        { "t": 0.5, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.96, 0.96, 1.0] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.88, 0.88, 0.96] }
+      ],
+      "visibility_condition": "random() > 0.35",
+      "blend": "TRANSLUCENT",
+      "particle_role": "AIR_DISTORTION",
+      "vanilla_particles": [],
+      "enable_trail": false
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.8,
+      "rate": 65,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, -0.025],
+      "velocity_variance": 0.018,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.38], "rotate_with_entity": true },
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "0.08 * cos(t * 18.84)", "expr_y": "0.08 * sin(t * 18.84)", "expr_z": "-0.35 + t * 1.55", "t_start": 0.0, "t_end": 1.0, "segments": 72 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#003FFFFF" },
+        { "t": 0.18, "color": "#2A66FFFF" },
+        { "t": 0.56, "color": "#3A7FFFFF" },
+        { "t": 1.0, "color": "#003FFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.4, "size": 0.075 },
+        { "t": 1.0, "size": 0.024 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0] },
+        { "t": 0.55, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.02, 1.02, 1.0] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.96, 0.96, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.2",
+      "blend": "ADDITIVE",
+      "particle_role": "SURFACE_AIR_FLOW",
+      "vanilla_particles": [],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.8,
+      "rate": 35,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.018,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.38], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "0.06 * sin(t * 9.0) + 0.025 * sin(t * 23.0)",
+        "expr_y": "0.06 * cos(t * 7.0) + 0.025 * cos(t * 19.0)",
+        "expr_z": "-0.35 + t * 1.55",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 52
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#003FFFFF" },
+        { "t": 0.35, "color": "#1866FFFF" },
+        { "t": 0.72, "color": "#207FFFFF" },
+        { "t": 1.0, "color": "#003FFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.028 },
+        { "t": 0.5, "size": 0.06 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.42], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.45",
+      "blend": "TRANSLUCENT",
+      "particle_role": "AIR_BREATHING_STRAND",
+      "vanilla_particles": [],
+      "enable_trail": true
+    }
+  ],
+  "notes": [
+    "ARTORIA_BINDING: bound to Artoria right-hand blade approximation. Anchor follows entity yaw and uses offset [0.32,0.18,0.38] from the upper body.",
+    "STYLE: static transparent cyan wind blade on the right hand. It should read as a short horizontal invisible-air rod, not a rotating fan.",
+    "LAYERS: low-alpha cyan ellipsoid distortion, sparse fixed surface points, and tiny non-rotating breathing strands."
+  ]
+}

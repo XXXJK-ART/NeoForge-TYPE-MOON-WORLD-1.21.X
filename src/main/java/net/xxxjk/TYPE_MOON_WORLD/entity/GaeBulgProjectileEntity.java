@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
 public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
@@ -346,8 +347,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       LivingEntity trackedTarget = this.getTrackedTarget();
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
-      double radius = 20.0;
-      int waveCount = 20;
+      double radius = 24.0;
+      int waveCount = 24;
       double waveStep = radius / waveCount;
       Set<Integer> damagedEntities = new HashSet<>();
       float armyDamage = this.getArmyDamage();
@@ -357,6 +358,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       }
 
       if (this.level() instanceof ServerLevel sl) {
+         VFXServerEffects.spawn(sl, "gae_bolg_army_impact", center, 128.0);
          this.spawnArmyExplosionShellEffects(sl, center, radius);
          sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 0.3, 0.3, 0.3, 0.0);
          sl.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.15, 0.15, 0.15, 0.0);
@@ -470,13 +472,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
       int rInt = (int)Math.ceil(currentRadius);
       int broken = 0;
-      int maxBroken = 96;
+      int maxBroken = 20000;
       for (int x = -rInt; x <= rInt; x++) {
          for (int y = -rInt; y <= rInt; y++) {
             for (int z = -rInt; z <= rInt; z++) {
-               if (broken >= maxBroken) {
-                  return;
-               }
                double distSqr = x * x + y * y + z * z;
                if (distSqr > currentRadius * currentRadius || distSqr <= previousRadius * previousRadius) {
                   continue;
@@ -485,13 +484,16 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
                BlockPos pos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
                BlockState state = level.getBlockState(pos);
                float hardness = state.getDestroySpeed(level, pos);
-               if (state.isAir() || hardness < 0.0F || hardness > 50.0F || state.is(Blocks.BEDROCK)
+               if (state.isAir() || hardness < 0.0F || hardness > 35.0F || state.is(Blocks.BEDROCK)
                   || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
                   continue;
                }
 
                level.removeBlock(pos, false);
                broken++;
+               if (broken >= maxBroken) {
+                  return;
+               }
                if (this.random.nextInt(2) == 0) {
                   level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.35, 0.35, 0.35, 0.0);
                   level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.28, 0.28, 0.28, 0.03);

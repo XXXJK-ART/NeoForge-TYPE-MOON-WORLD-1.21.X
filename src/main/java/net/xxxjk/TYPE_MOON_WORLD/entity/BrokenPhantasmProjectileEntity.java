@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> EXPLOSION_POWER = SynchedEntityData.defineId(
@@ -140,6 +141,9 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
          this.maxRadius = Math.min(this.getExplosionPower(), 50.0F);
          this.currentRadius = 0.0;
          this.explosionTick = 0;
+         if (this.level() instanceof ServerLevel serverLevel) {
+            VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", this.position(), 128.0);
+         }
          this.level()
             .playSound(
                null,
@@ -193,7 +197,12 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                      if (distSqr <= nextRadius * nextRadius && distSqr > this.currentRadius * this.currentRadius && distSqr <= this.maxRadius * this.maxRadius) {
                         BlockPos pos = this.explosionCenter.offset(x, y, z);
                         BlockState state = this.level().getBlockState(pos);
-                        if (!state.isAir() && state.getExplosionResistance(this.level(), pos, null) < 1200.0F) {
+                        float hardness = state.getDestroySpeed(this.level(), pos);
+                        if (!state.isAir()
+                           && !state.is(Blocks.BEDROCK)
+                           && hardness >= 0.0F
+                           && hardness <= 42.0F
+                           && state.getExplosionResistance(this.level(), pos, null) < 1200.0F) {
                            this.level().setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                            if (this.level().random.nextInt(10) == 0) {
                               ((ServerLevel)this.level()).sendParticles(ParticleTypes.EXPLOSION, pos.getX(), pos.getY(), pos.getZ(), 1, 0.5, 0.5, 0.5, 0.0);

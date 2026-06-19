@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class OdaNobunagaCombatHelper {
    public static final String TAG_LAST_STRATEGY = "OdaLastStrategyTick";
@@ -318,6 +319,7 @@ public final class OdaNobunagaCombatHelper {
       entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + FLIGHT_HOLD_TICKS);
       entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, MAOU_DURATION, 0));
       entity.triggerRoarAnimation();
+      VFXServerEffects.spawn(level, "servant_oda_maou", entity, 128.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.0F, 0.75F);
       level.sendParticles(ParticleTypes.FLAME, entity.getX(), entity.getY() + 1.0, entity.getZ(), 32, 0.7, 0.6, 0.7, 0.05);
       return true;
@@ -342,6 +344,7 @@ public final class OdaNobunagaCombatHelper {
       landForNoblePhantasm(entity);
       entity.triggerNamedActionAnimation("strategy");
       ServantVoiceHelper.tryPlayOdaNobunagaNp(entity);
+      VFXServerEffects.spawn(level, "servant_oda_three_thousand", entity, 160.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.95F, 0.85F);
       level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + 1.15, entity.getZ(), 36, 1.2, 0.55, 1.2, 0.08);
       return true;

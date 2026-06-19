@@ -1,0 +1,90 @@
+{
+  "duration": 6.5,
+  "notes": "Three Thousand Worlds: gun-array summoning sigils, layered firing lines, smoke and fire.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 5.8,
+      "rate": 2600,
+      "particle_lifetime": 1.0,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.08,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.4, 2.2], "rotate_with_entity": true },
+      "component": { "type": "bicircle_star", "radius": 1.0, "inner_radius": 0.45, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.3, "color": "#FFFF3300" },
+        { "t": 0.75, "color": "#AA331100" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.4, "size": 0.24 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.5, 0.5, 0.5] },
+        { "t": 0.45, "scale": [5.5, 5.5, 5.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [6.6, 6.6, 6.6] }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "ADDITIVE",
+      "particle_role": "THREE_THOUSAND_ARRAY_SIGIL",
+      "enable_trail": true,
+      "max_vanilla_particles_per_tick": 8,
+      "vanilla_particles": [
+        { "type": "smoke", "count": 1, "spread": [1.0, 0.25, 1.0], "offset": [0.0, 0.2, 0.0], "speed": 0.035, "chance": 0.45 },
+        { "type": "flame", "count": 1, "spread": [0.7, 0.25, 0.7], "offset": [0.0, 0.5, 0.0], "speed": 0.04, "chance": 0.35 }
+      ]
+    },
+    {
+      "start_time": 1.0,
+      "end_time": 6.2,
+      "rate": 4200,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.38,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.0, 0.8],
+      "velocity_variance": 0.16,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 1.4, 2.6], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(sin(t * 37.7) * 5.5)",
+        "expr_y": "sin(t * 18.84) * 2.4",
+        "expr_z": "t * 18.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FFFFAA44" },
+        { "t": 0.65, "color": "#AAFF3300" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.35, "size": 0.35 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.8, 0.8, 0.8] },
+        { "t": 1.0, "scale": [1.15, 1.15, 1.15] }
+      ],
+      "visibility_condition": "floor(time * 12) % 2 == 0 || random() > 0.28",
+      "blend": "ADDITIVE",
+      "particle_role": "THREE_THOUSAND_TRACERS",
+      "enable_trail": true,
+      "max_vanilla_particles_per_tick": 10,
+      "vanilla_particles": [
+        { "type": "crit", "count": 1, "spread": [0.25, 0.25, 0.25], "offset": [0.0, 0.0, 0.0], "speed": 0.06, "chance": 0.45 },
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.08 }
+      ]
+    }
+  ]
+}

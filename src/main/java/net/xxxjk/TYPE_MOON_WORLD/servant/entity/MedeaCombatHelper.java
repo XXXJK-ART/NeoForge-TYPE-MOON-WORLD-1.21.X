@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
 public final class MedeaCombatHelper {
@@ -1734,6 +1735,7 @@ public final class MedeaCombatHelper {
       projectile.setPos(spawnPos);
       projectile.shoot(direction.x, direction.y, direction.z, speed, inaccuracy);
       level.addFreshEntity(projectile);
+      VFXServerEffects.spawn(level, mode == MedeaMagicBoltEntity.Mode.SUPER_BOLT ? "medea_super_magic_orb" : "medea_magic_orb", spawnPos, 80.0);
    }
 
    private static void fractureTerrain(ServerLevel level, MedeaEntity entity, Vec3 center, double radius, double yScale, float maxHardness, int maxBroken) {

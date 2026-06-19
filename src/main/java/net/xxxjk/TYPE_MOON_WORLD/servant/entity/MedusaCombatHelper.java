@@ -44,6 +44,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
 public final class MedusaCombatHelper {
@@ -324,6 +325,7 @@ public final class MedusaCombatHelper {
          releaseEyes(entity, now, 80);
       }
       if (entity.level() instanceof ServerLevel level) {
+         VFXServerEffects.spawn(level, "servant_medusa_cybele", target.position(), 96.0);
          level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 8, 0.25, 0.35, 0.25, 0.01);
          level.sendParticles(ParticleTypes.GLOW, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 10, 0.3, 0.45, 0.3, 0.01);
          level.playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 0.8F, 0.85F);
@@ -429,6 +431,7 @@ public final class MedusaCombatHelper {
       entity.getPersistentData().putDouble(TAG_BLOODFORT_Z, entity.getZ());
       entity.getPersistentData().putBoolean(TAG_BLOODFORT_NP_ACTIVE, noblePhantasm);
       if (entity.level() instanceof ServerLevel level) {
+         VFXServerEffects.spawn(level, "servant_medusa_bloodfort", entity.position(), 128.0);
          startBloodfortSummonSequence(level, entity.position(), radius, noblePhantasm);
          level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8F, 0.65F);
       }
@@ -560,6 +563,7 @@ public final class MedusaCombatHelper {
       releaseEyes(entity, now, CHARGE_WINDUP_TICKS + CHARGE_TICKS + 80);
       ServantVoiceHelper.tryPlayBellerophon(entity);
       if (entity.level() instanceof ServerLevel level) {
+         VFXServerEffects.spawn(level, "servant_medusa_bellerophon", entity, 128.0);
          startBellerophonSummonFx(level, entity, now);
       }
       TYPE_MOON_WORLD.queueServerWork(CHARGE_WINDUP_TICKS, () -> launchBellerophon(entity, target));

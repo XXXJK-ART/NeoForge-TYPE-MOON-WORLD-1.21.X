@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.condition.VFXCondition;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEffectDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXVanillaParticleDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXVanillaParticleSpawn;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.ColorKeyFrame;
@@ -40,6 +42,7 @@ public class VFXEmitter {
    private final float phaseDuration;
    private final int maxVanillaParticleSpawnsPerTick;
    private final Vector3f origin = new Vector3f();
+   private final Quaternionf bindingRotation = new Quaternionf();
    private final List<String> onStart = new ArrayList<>();
    private final List<String> onTick = new ArrayList<>();
    private final List<String> onEnd = new ArrayList<>();
@@ -50,6 +53,9 @@ public class VFXEmitter {
    private float age;
    private float emissionAccumulator;
    private boolean enableTrail;
+   private Supplier<Vector3f> dynamicOrigin;
+   private Supplier<Quaternionf> dynamicRotation;
+   private VFXEffectDefinition.BindingDefinition binding = VFXEffectDefinition.BindingDefinition.NONE;
 
    public VFXEmitter(
       float duration,
@@ -90,6 +96,19 @@ public class VFXEmitter {
 
    public void setOrigin(float x, float y, float z) {
       this.origin.set(x, y, z);
+   }
+
+   public void setDynamicTransform(Supplier<Vector3f> originProvider, Supplier<Quaternionf> rotationProvider) {
+      this.dynamicOrigin = originProvider;
+      this.dynamicRotation = rotationProvider;
+   }
+
+   public void setBinding(VFXEffectDefinition.BindingDefinition binding) {
+      this.binding = binding == null ? VFXEffectDefinition.BindingDefinition.NONE : binding;
+   }
+
+   public VFXEffectDefinition.BindingDefinition binding() {
+      return this.binding;
    }
 
    public void addComponent(IVFXComponent component) {
@@ -147,6 +166,7 @@ public class VFXEmitter {
          this.started = true;
          trigger(this.onStart);
       }
+      updateDynamicTransform();
       this.age += deltaTime;
       float progress = localProgress();
       for (int i = this.particles.size() - 1; i >= 0; i--) {
@@ -229,8 +249,8 @@ public class VFXEmitter {
       this.emissionAccumulator += this.rate * deltaTime;
       int count = (int)this.emissionAccumulator;
       this.emissionAccumulator -= count;
-      Vector3f translation = interpolatePosition(progress);
-      Quaternionf rotation = interpolateRotation(progress);
+      Vector3f translation = interpolatePosition(progress).rotate(this.bindingRotation);
+      Quaternionf rotation = new Quaternionf(this.bindingRotation).mul(interpolateRotation(progress));
       Vector3f scale = interpolateScale(progress);
       int color = interpolateColor(progress);
       float size = interpolateSize(progress);
@@ -244,7 +264,8 @@ public class VFXEmitter {
          particle.previousPosition.set(particle.position);
          particle.velocity
             .set(sample.velocity)
-            .add(this.baseVelocity)
+            .rotate(rotation)
+            .add(new Vector3f(this.baseVelocity).rotate(rotation))
             .add(randomSigned() * this.velocityVariance, randomSigned() * this.velocityVariance, randomSigned() * this.velocityVariance);
          particle.color = color;
          float variance = this.sizeVariance <= 0.0F ? 1.0F : 1.0F + (this.random.nextFloat() * 2.0F - 1.0F) * this.sizeVariance;
@@ -270,6 +291,21 @@ public class VFXEmitter {
          }
       }
       clearSamples();
+   }
+
+   private void updateDynamicTransform() {
+      if (this.dynamicOrigin != null) {
+         Vector3f nextOrigin = this.dynamicOrigin.get();
+         if (nextOrigin != null) {
+            this.origin.set(nextOrigin);
+         }
+      }
+      if (this.dynamicRotation != null) {
+         Quaternionf nextRotation = this.dynamicRotation.get();
+         if (nextRotation != null) {
+            this.bindingRotation.set(nextRotation);
+         }
+      }
    }
 
    private float localProgress() {

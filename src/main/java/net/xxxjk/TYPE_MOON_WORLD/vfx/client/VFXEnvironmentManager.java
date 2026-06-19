@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEnvironmentDefinition;
 )
 public final class VFXEnvironmentManager {
    private static final List<ActiveEnvironment> ACTIVE = new ArrayList<>();
+   private static boolean forcedRainApplied;
 
    private VFXEnvironmentManager() {
    }
@@ -30,6 +32,7 @@ public final class VFXEnvironmentManager {
 
    public static void clear() {
       ACTIVE.clear();
+      clearForcedRain();
    }
 
    @SubscribeEvent
@@ -40,6 +43,37 @@ public final class VFXEnvironmentManager {
             iterator.remove();
          }
       }
+      applyRainWeather();
+   }
+
+   private static void applyRainWeather() {
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.level == null) {
+         forcedRainApplied = false;
+         return;
+      }
+      float rain = 0.0F;
+      for (ActiveEnvironment active : ACTIVE) {
+         if ("rain_weather".equals(active.definition.type())) {
+            rain = Math.max(rain, active.alpha());
+         }
+      }
+      if (rain > 0.0F) {
+         minecraft.level.setRainLevel(Math.min(1.0F, rain));
+         minecraft.level.setThunderLevel(0.0F);
+         forcedRainApplied = true;
+      } else if (forcedRainApplied) {
+         clearForcedRain();
+      }
+   }
+
+   private static void clearForcedRain() {
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.level != null) {
+         minecraft.level.setRainLevel(0.0F);
+         minecraft.level.setThunderLevel(0.0F);
+      }
+      forcedRainApplied = false;
    }
 
    @SubscribeEvent
@@ -68,6 +102,65 @@ public final class VFXEnvironmentManager {
          RenderSystem.depthMask(true);
          RenderSystem.enableDepthTest();
       }
+   }
+
+   @SubscribeEvent
+   public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
+      FogMix fog = fogMix();
+      if (fog.alpha <= 0.0F) {
+         return;
+      }
+      event.setRed(lerp(event.getRed(), fog.red, fog.alpha));
+      event.setGreen(lerp(event.getGreen(), fog.green, fog.alpha));
+      event.setBlue(lerp(event.getBlue(), fog.blue, fog.alpha));
+   }
+
+   @SubscribeEvent
+   public static void onRenderFog(ViewportEvent.RenderFog event) {
+      FogMix fog = fogMix();
+      if (fog.alpha <= 0.0F) {
+         return;
+      }
+      float factor = 1.0F - fog.alpha * 0.72F;
+      event.scaleNearPlaneDistance(Math.max(0.08F, factor * 0.55F));
+      event.scaleFarPlaneDistance(Math.max(0.12F, factor));
+      event.setCanceled(true);
+   }
+
+   private static FogMix fogMix() {
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.level == null || minecraft.player == null || ACTIVE.isEmpty()) {
+         return FogMix.NONE;
+      }
+      float alpha = 0.0F;
+      float red = 0.0F;
+      float green = 0.0F;
+      float blue = 0.0F;
+      for (ActiveEnvironment active : ACTIVE) {
+         if (!active.isWorldFog()) {
+            continue;
+         }
+         float currentAlpha = active.alpha();
+         if (currentAlpha <= 0.0F) {
+            continue;
+         }
+         int color = active.definition.color();
+         float cr = ((color >>> 16) & 255) / 255.0F;
+         float cg = ((color >>> 8) & 255) / 255.0F;
+         float cb = (color & 255) / 255.0F;
+         float nextAlpha = currentAlpha + alpha * (1.0F - currentAlpha);
+         if (nextAlpha > 0.0F) {
+            red = (cr * currentAlpha + red * alpha * (1.0F - currentAlpha)) / nextAlpha;
+            green = (cg * currentAlpha + green * alpha * (1.0F - currentAlpha)) / nextAlpha;
+            blue = (cb * currentAlpha + blue * alpha * (1.0F - currentAlpha)) / nextAlpha;
+         }
+         alpha = nextAlpha;
+      }
+      return new FogMix(red, green, blue, Math.min(0.92F, alpha));
+   }
+
+   private static float lerp(float from, float to, float alpha) {
+      return from + (to - from) * alpha;
    }
 
    private static int blendOver(int base, int over) {
@@ -125,5 +218,14 @@ public final class VFXEnvironmentManager {
          float fadeOutAlpha = fadeOut <= 0.0F ? 1.0F : Math.min(1.0F, (end - time) / fadeOut);
          return Math.max(0.0F, Math.min(1.0F, Math.min(fadeInAlpha, fadeOutAlpha) * this.definition.intensity() * (0.5F + 0.5F * local)));
       }
+
+      private boolean isWorldFog() {
+         String type = this.definition.type();
+         return "world_darkness".equals(type) || "red_fog".equals(type) || "thunderstorm_hint".equals(type);
+      }
+   }
+
+   private record FogMix(float red, float green, float blue, float alpha) {
+      private static final FogMix NONE = new FogMix(0.0F, 0.0F, 0.0F, 0.0F);
    }
 }

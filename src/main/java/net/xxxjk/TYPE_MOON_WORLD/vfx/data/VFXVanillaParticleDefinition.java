@@ -44,6 +44,7 @@ public record VFXVanillaParticleDefinition(ParticleOptions options, int count, V
          case "crit" -> ParticleTypes.CRIT;
          case "enchanted_hit" -> ParticleTypes.ENCHANTED_HIT;
          case "sweep_attack" -> ParticleTypes.SWEEP_ATTACK;
+         case "gust" -> ParticleTypes.GUST;
          case "end_rod" -> ParticleTypes.END_ROD;
          case "poof" -> ParticleTypes.POOF;
          case "flame" -> ParticleTypes.FLAME;

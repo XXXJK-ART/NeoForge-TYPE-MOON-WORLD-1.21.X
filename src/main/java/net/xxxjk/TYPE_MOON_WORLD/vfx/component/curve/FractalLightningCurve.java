@@ -13,10 +13,39 @@ public class FractalLightningCurve extends AbstractCurveComponent {
    private final float roughness;
    private final float period;
    private final float density;
+   private final boolean randomizeStart;
+   private final boolean randomizeEnd;
+   private final float randomRadiusMin;
+   private final float randomRadiusMax;
+   private final float randomHeightMin;
+   private final float randomHeightMax;
    private final float[] seeds;
    private final Random random = new Random(0L);
 
    public FractalLightningCurve(Vector3f start, Vector3f end, int iterations, float roughness, float period, float density, float seed1, float seed2, float seed3, float seed4, float seed5, int segments) {
+      this(start, end, iterations, roughness, period, density, false, false, 0.0F, 0.0F, 0.0F, 0.0F, seed1, seed2, seed3, seed4, seed5, segments);
+   }
+
+   public FractalLightningCurve(
+      Vector3f start,
+      Vector3f end,
+      int iterations,
+      float roughness,
+      float period,
+      float density,
+      boolean randomizeStart,
+      boolean randomizeEnd,
+      float randomRadiusMin,
+      float randomRadiusMax,
+      float randomHeightMin,
+      float randomHeightMax,
+      float seed1,
+      float seed2,
+      float seed3,
+      float seed4,
+      float seed5,
+      int segments
+   ) {
       super(Math.max(2, segments), 0.0F, 0.0F, 0);
       this.start = new Vector3f(start);
       this.end = new Vector3f(end);
@@ -24,12 +53,25 @@ public class FractalLightningCurve extends AbstractCurveComponent {
       this.roughness = roughness;
       this.period = Math.max(0.001F, period);
       this.density = Math.max(0.001F, density);
+      this.randomizeStart = randomizeStart;
+      this.randomizeEnd = randomizeEnd;
+      this.randomRadiusMin = Math.max(0.0F, randomRadiusMin);
+      this.randomRadiusMax = Math.max(this.randomRadiusMin, randomRadiusMax);
+      this.randomHeightMin = randomHeightMin;
+      this.randomHeightMax = Math.max(randomHeightMin, randomHeightMax);
       this.seeds = new float[] {seed1, seed2, seed3, seed4, seed5};
    }
 
    @Override
    public void update(float deltaTime, float lifeProgress, List<VFXParticle> out) {
-      Vector3f dir = new Vector3f(this.end).sub(this.start);
+      long frameSeed = 0x9E3779B97F4A7C15L ^ Float.floatToIntBits(lifeProgress * this.period);
+      for (float seed : this.seeds) {
+         frameSeed = frameSeed * 31L + Float.floatToIntBits(seed);
+      }
+      this.random.setSeed(frameSeed);
+      Vector3f resolvedEnd = resolveEndpoint(this.end, this.randomizeEnd);
+      Vector3f resolvedStart = resolveEndpoint(this.start, this.randomizeStart);
+      Vector3f dir = new Vector3f(resolvedEnd).sub(resolvedStart);
       float length = dir.length();
       if (length < 1.0E-5F) {
          return;
@@ -37,8 +79,17 @@ public class FractalLightningCurve extends AbstractCurveComponent {
       Vector3f forward = dir.normalize();
       Vector3f right = Math.abs(forward.y) > 0.9F ? new Vector3f(1.0F, 0.0F, 0.0F).cross(forward).normalize() : forward.cross(new Vector3f(0.0F, 1.0F, 0.0F)).normalize();
       Vector3f up = new Vector3f(forward).cross(right).normalize();
-      this.random.setSeed(0x9E3779B97F4A7C15L ^ Float.floatToIntBits(lifeProgress * this.period));
-      emitBranch(out, new Vector3f(this.start), forward, right, up, length, this.iterations, 0);
+      emitBranch(out, resolvedStart, forward, right, up, length, this.iterations, 0);
+   }
+
+   private Vector3f resolveEndpoint(Vector3f base, boolean randomize) {
+      if (!randomize || this.randomRadiusMax <= 0.0F) {
+         return new Vector3f(base);
+      }
+      float angle = this.random.nextFloat() * TAU;
+      float radius = Mth.lerp(this.random.nextFloat(), this.randomRadiusMin, this.randomRadiusMax);
+      float height = Mth.lerp(this.random.nextFloat(), this.randomHeightMin, this.randomHeightMax);
+      return new Vector3f(Mth.cos(angle) * radius, height, Mth.sin(angle) * radius);
    }
 
    private void emitBranch(List<VFXParticle> out, Vector3f start, Vector3f forward, Vector3f right, Vector3f up, float length, int depth, int branchIndex) {

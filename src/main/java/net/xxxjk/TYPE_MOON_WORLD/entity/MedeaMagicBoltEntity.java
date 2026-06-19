@@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
 public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
@@ -193,6 +194,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
 
    private void spawnImpactFx(Vec3 position) {
       if (this.level() instanceof ServerLevel serverLevel) {
+         VFXServerEffects.spawn(serverLevel, this.getMode() == Mode.SUPER_BOLT ? "medea_super_orb_impact" : "medea_magic_orb_impact", position, 80.0);
          switch (this.getMode()) {
             case SUPER_BOLT -> {
                serverLevel.sendParticles(BOLT_CORE, position.x, position.y, position.z, 24, 0.45, 0.45, 0.45, 0.0);

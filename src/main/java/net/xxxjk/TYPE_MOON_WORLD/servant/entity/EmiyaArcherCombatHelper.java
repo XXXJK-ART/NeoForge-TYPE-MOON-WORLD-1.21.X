@@ -69,6 +69,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 
 public final class EmiyaArcherCombatHelper {
@@ -2171,6 +2172,7 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void spawnProjectionCastFx(ServerLevel level, EmiyaArcherEntity entity, LivingEntity target, net.minecraft.core.particles.ParticleOptions particle, int count) {
+      VFXServerEffects.spawn(level, "servant_emiya_projection", entity, 96.0);
       Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.72, 0.0);
       Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
       Vec3 delta = end.subtract(start);
@@ -2736,6 +2738,7 @@ public final class EmiyaArcherCombatHelper {
       clearProjection(entity);
       entity.triggerNamedActionAnimation("rho_aias");
       ServantVoiceHelper.tryPlayEmiyaRhoAias(entity);
+      VFXServerEffects.spawn(level, "servant_emiya_rho_aias", entity, 96.0);
       RhoAiasEntity shield = new RhoAiasEntity(level, entity, target);
       level.addFreshEntity(shield);
    }

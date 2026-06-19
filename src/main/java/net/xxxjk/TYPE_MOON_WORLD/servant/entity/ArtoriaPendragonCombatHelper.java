@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class ArtoriaPendragonCombatHelper {
    public static final String TAG_INVISIBLE_AIR_ACTIVE = "ArtoriaInvisibleAirActive";
@@ -55,11 +56,13 @@ public final class ArtoriaPendragonCombatHelper {
    private static final String TAG_LAST_INVISIBLE_AIR = "ArtoriaLastInvisibleAir";
    private static final String TAG_LAST_EXCALIBUR = "ArtoriaLastExcalibur";
    private static final String TAG_EXCALIBUR_BEAM_ID = "ArtoriaExcaliburBeamId";
+   private static final String TAG_LAST_EXCALIBUR_CHARGE_VFX = "ArtoriaLastExcaliburChargeVfx";
    private static final String TAG_LAST_LION_LEAP = "ArtoriaLastLionLeap";
    private static final String TAG_LAST_AIR_CLEAVE = "ArtoriaLastAirCleave";
    private static final String TAG_LAST_BURST_DASH = "ArtoriaLastBurstDash";
    private static final String TAG_LAST_ROYAL_COMBO = "ArtoriaLastRoyalCombo";
    private static final String TAG_LAST_WIND_THRUST = "ArtoriaLastWindThrust";
+   private static final String TAG_LAST_INVISIBLE_AIR_WRAP_VFX = "ArtoriaLastInvisibleAirWrapVfx";
 
    private static final int MANA_BURST_DURATION = 200;
    private static final int MANA_BURST_COOLDOWN = 300;
@@ -73,12 +76,15 @@ public final class ArtoriaPendragonCombatHelper {
    private static final int EXCALIBUR_CHARGE = 40;
    private static final int EXCALIBUR_WINDUP = EXCALIBUR_CHANT + EXCALIBUR_CHARGE;
    private static final int EXCALIBUR_RELEASE = 150;
+   private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
    private static final int EXCALIBUR_COOLDOWN = 1200;
+   private static final double EXCALIBUR_RANGE = 150.0;
    private static final int LION_LEAP_COOLDOWN = 80;
    private static final int AIR_CLEAVE_COOLDOWN = 70;
    private static final int BURST_DASH_COOLDOWN = 90;
    private static final int ROYAL_COMBO_COOLDOWN = 85;
    private static final int WIND_THRUST_COOLDOWN = 65;
+   private static final double ARTORIA_VFX_RADIUS = 128.0;
    private static final ResourceLocation RIDING_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_speed");
    private static final ResourceLocation RIDING_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_armor");
    private static final ResourceLocation MANA_BURST_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_attack");
@@ -100,6 +106,7 @@ public final class ArtoriaPendragonCombatHelper {
       tickTimedModifiers(entity, now);
       tickInvisibleAirCleanup(data, now);
       syncExcaliburVisibility(entity);
+      tickInvisibleAirWrapVfx(entity, level, data, now);
 
       LivingEntity target = context.target();
       if (tickExcaliburState(entity, target, level, data, now)) {
@@ -344,6 +351,10 @@ public final class ArtoriaPendragonCombatHelper {
          if (charging) {
             entity.getNavigation().stop();
             entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.35, 1.0, 0.35));
+            if (now - data.getLong(TAG_LAST_EXCALIBUR_CHARGE_VFX) >= 32L) {
+               data.putLong(TAG_LAST_EXCALIBUR_CHARGE_VFX, now);
+               VFXServerEffects.spawn(level, "artoria_excalibur_charge", entity, ARTORIA_VFX_RADIUS);
+            }
             spawnExcaliburChargeFx(entity, level);
          } else if (entity.tickCount % 20 == 0) {
             level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(), fxCount(4), 0.18, 0.25, 0.18, 0.01);
@@ -373,7 +384,7 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static boolean tryStartExcalibur(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
-      if (entity.getCurrentMp() < 150.0 || now - data.getLong(TAG_LAST_EXCALIBUR) < EXCALIBUR_COOLDOWN || entity.distanceTo(target) > 55.0) {
+      if (entity.getCurrentMp() < 150.0 || now - data.getLong(TAG_LAST_EXCALIBUR) < EXCALIBUR_COOLDOWN || entity.distanceTo(target) > EXCALIBUR_RANGE) {
          return false;
       }
       boolean highHealth = target.getMaxHealth() >= 200.0F || target.getHealth() >= 150.0F;
@@ -406,9 +417,10 @@ public final class ArtoriaPendragonCombatHelper {
       data.putLong(TAG_EXCALIBUR_RELEASE_UNTIL, now + EXCALIBUR_RELEASE);
       entity.triggerHorizontalSwingAnimation();
       Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.66, 0.0).add(excaliburLook(entity).scale(1.2));
-      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, entity, start, EXCALIBUR_RELEASE);
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, entity, start, EXCALIBUR_RELEASE, EXCALIBUR_DAMAGE_START_TICK);
       level.addFreshEntity(beam);
       data.putInt(TAG_EXCALIBUR_BEAM_ID, beam.getId());
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", entity, 192.0);
       spawnExcaliburReleaseFx(entity, level, start);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 2.5F, 0.85F);
       level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.1F, 1.65F);
@@ -588,8 +600,24 @@ public final class ArtoriaPendragonCombatHelper {
       entity.faceToward(target.position());
       entity.triggerHorizontalSwingAnimation();
       ServantVoiceHelper.tryPlayArtoriaInvisibleAir(entity);
+      VFXServerEffects.spawn(level, "artoria_strike_air", entity, ARTORIA_VFX_RADIUS);
       performInvisibleAirCone(entity, level);
       return true;
+   }
+
+   private static void tickInvisibleAirWrapVfx(ArtoriaPendragonEntity entity, ServerLevel level, CompoundTag data, long now) {
+      if (!entity.isAlive() || isInvisibleAirActive(entity) || isExcaliburWindingOrReleasing(entity)) {
+         return;
+      }
+      long lastRelease = data.getLong(TAG_LAST_INVISIBLE_AIR);
+      if (lastRelease > 0L && now - lastRelease < INVISIBLE_AIR_COOLDOWN) {
+         return;
+      }
+      if (now - data.getLong(TAG_LAST_INVISIBLE_AIR_WRAP_VFX) < 34L) {
+         return;
+      }
+      data.putLong(TAG_LAST_INVISIBLE_AIR_WRAP_VFX, now);
+      VFXServerEffects.spawn(level, "artoria_invisible_air", entity, ARTORIA_VFX_RADIUS);
    }
 
    private static void performInvisibleAirCone(ArtoriaPendragonEntity entity, ServerLevel level) {

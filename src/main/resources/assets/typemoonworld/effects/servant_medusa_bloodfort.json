@@ -1,0 +1,76 @@
+{
+  "duration": 4.0,
+  "notes": "Blood Fort Andromeda: crimson-black ground sigil, rising shell, and draining interior haze.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 3.8,
+      "rate": 2600,
+      "particle_lifetime": 1.2,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.05,
+      "component": { "type": "bicircle_star_torus", "radius": 1.0, "inner_radius": 0.42, "tube_radius": 0.05, "u_segments": 120, "v_segments": 5 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFF0033" },
+        { "t": 0.45, "color": "#AA6600AA" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.22 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.08, 0.0], "scale": [0.4, 0.4, 0.4] },
+        { "t": 0.5, "pos": [0.0, 0.08, 0.0], "scale": [9.0, 9.0, 9.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.08, 0.0], "scale": [10.5, 10.5, 10.5] }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "ADDITIVE",
+      "particle_role": "BLOODFORT_GROUND_SIGIL",
+      "enable_trail": true,
+      "max_vanilla_particles_per_tick": 5,
+      "vanilla_particles": [
+        { "type": "smoke", "count": 1, "spread": [0.8, 0.05, 0.8], "offset": [0.0, 0.05, 0.0], "speed": 0.03, "chance": 0.4 }
+      ]
+    },
+    {
+      "start_time": 0.3,
+      "end_time": 3.6,
+      "rate": 2200,
+      "particle_lifetime": 1.0,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.12,
+      "component": { "type": "ellipsoid", "radius_x": 1.0, "radius_y": 0.9, "radius_z": 1.0, "sample_count": 240 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FF0033" },
+        { "t": 0.45, "color": "#888800AA" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.5, "size": 0.16 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.2, 0.0], "scale": [1.0, 0.2, 1.0] },
+        { "t": 0.55, "pos": [0.0, 3.0, 0.0], "scale": [9.0, 4.0, 9.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 4.0, 0.0], "scale": [10.0, 5.0, 10.0] }
+      ],
+      "visibility_condition": "random() > 0.2",
+      "blend": "ADDITIVE",
+      "particle_role": "BLOODFORT_RISING_SHELL",
+      "max_vanilla_particles_per_tick": 6,
+      "vanilla_particles": [
+        { "type": "large_smoke", "count": 1, "spread": [1.2, 0.3, 1.2], "offset": [0.0, 1.0, 0.0], "speed": 0.025, "chance": 0.45 },
+        { "type": "soul_fire_flame", "count": 1, "spread": [0.7, 0.3, 0.7], "offset": [0.0, 0.4, 0.0], "speed": 0.015, "chance": 0.25 }
+      ]
+    }
+  ]
+}

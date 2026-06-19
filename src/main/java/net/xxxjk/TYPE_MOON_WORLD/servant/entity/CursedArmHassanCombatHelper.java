@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
 public final class CursedArmHassanCombatHelper {
@@ -279,6 +280,9 @@ public final class CursedArmHassanCombatHelper {
       entity.getPersistentData().putLong("CursedArmBandagesRestoreTick", now + ZABANIYA_WINDUP + 100L);
       entity.triggerZabaniyaAnimation();
       entity.getNavigation().stop();
+      if (entity.level() instanceof ServerLevel level) {
+         VFXServerEffects.spawn(level, "servant_cursed_arm_zabaniya_windup", entity, 96.0);
+      }
       spawnZabaniyaWindupFx(entity, target);
       return true;
    }
@@ -609,6 +613,7 @@ public final class CursedArmHassanCombatHelper {
       if (!(entity.level() instanceof ServerLevel level)) {
          return;
       }
+      VFXServerEffects.spawn(level, "servant_cursed_arm_zabaniya_impact", target.position(), 96.0);
       level.sendParticles(killed ? ParticleTypes.DRAGON_BREATH : ParticleTypes.SOUL_FIRE_FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), killed ? 36 : 20, 0.35, 0.45, 0.35, 0.04);
       level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 8, 0.25, 0.25, 0.25, 0.08);
       level.playSound(null, target.blockPosition(), killed ? SoundEvents.WITHER_DEATH : SoundEvents.WITHER_HURT, SoundSource.HOSTILE, killed ? 0.9F : 0.7F, 1.25F);

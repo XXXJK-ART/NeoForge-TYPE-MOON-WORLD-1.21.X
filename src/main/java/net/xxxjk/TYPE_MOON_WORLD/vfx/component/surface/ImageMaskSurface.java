@@ -51,6 +51,9 @@ public class ImageMaskSurface extends AbstractSurfaceComponent {
       return switch (this.reveal) {
          case NONE -> true;
          case BOTTOM_TO_TOP -> pointProgress <= lifeProgress;
+         case BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM -> lifeProgress < 0.5F
+            ? pointProgress <= lifeProgress * 2.0F
+            : pointProgress <= 1.0F - (lifeProgress - 0.5F) * 2.0F;
          case TOP_TO_BOTTOM -> pointProgress >= 1.0F - lifeProgress;
          case CENTER_OUT -> Math.abs(pointProgress - 0.5F) <= lifeProgress * 0.5F;
       };
@@ -94,6 +97,7 @@ public class ImageMaskSurface extends AbstractSurfaceComponent {
    public enum Reveal {
       NONE,
       BOTTOM_TO_TOP,
+      BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM,
       TOP_TO_BOTTOM,
       CENTER_OUT
    }

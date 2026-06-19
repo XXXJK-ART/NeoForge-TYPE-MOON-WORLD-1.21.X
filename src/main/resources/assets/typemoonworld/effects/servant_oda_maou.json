@@ -1,0 +1,73 @@
+{
+  "duration": 3.0,
+  "notes": "Oda Maou aura: red-black flame crown, ash field, and anti-mystery pressure.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.6,
+      "rate": 3000,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.48,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.18,
+      "component": { "type": "helix", "radius": 1.1, "turns": 6.0, "height": 3.6, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFEECC" },
+        { "t": 0.25, "color": "#FFFF3300" },
+        { "t": 0.72, "color": "#AA220000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.45, "size": 0.45 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.5, 0.5, 0.5] },
+        { "t": 0.45, "scale": [1.8, 1.8, 1.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.35, 1.35, 1.35] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_FLAME_CROWN",
+      "enable_trail": true,
+      "max_vanilla_particles_per_tick": 10,
+      "vanilla_particles": [
+        { "type": "flame", "count": 1, "spread": [0.5, 0.7, 0.5], "offset": [0.0, 0.8, 0.0], "speed": 0.06, "chance": 0.55 },
+        { "type": "large_smoke", "count": 1, "spread": [0.8, 0.4, 0.8], "offset": [0.0, 0.45, 0.0], "speed": 0.04, "chance": 0.5 }
+      ]
+    },
+    {
+      "start_time": 0.15,
+      "end_time": 2.8,
+      "rate": 1800,
+      "particle_lifetime": 1.0,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.08,
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFF4400" },
+        { "t": 0.45, "color": "#66220000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.5, "size": 0.5 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.08, 0.0], "scale": [0.35, 0.35, 0.35] },
+        { "t": 0.7, "pos": [0.0, 0.08, 0.0], "scale": [6.5, 6.5, 6.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.08, 0.0], "scale": [8.0, 8.0, 8.0] }
+      ],
+      "visibility_condition": "random() > 0.18",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_ASH_RING"
+    }
+  ]
+}

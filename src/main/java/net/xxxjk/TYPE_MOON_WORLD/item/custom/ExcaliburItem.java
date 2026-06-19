@@ -71,6 +71,9 @@ public class ExcaliburItem extends SwordItem implements GeoItem, NoblePhantasmIt
 
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
+      if (player.getCooldowns().isOnCooldown(this)) {
+         return InteractionResultHolder.fail(stack);
+      }
       if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
          PlayerNoblePhantasmHelper.startExcaliburCharge(serverPlayer);
       }

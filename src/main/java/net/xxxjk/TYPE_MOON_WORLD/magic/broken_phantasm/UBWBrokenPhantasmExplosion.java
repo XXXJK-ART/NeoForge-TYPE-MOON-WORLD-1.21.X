@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public class UBWBrokenPhantasmExplosion {
    public static void explode(Level level, Entity source, Entity owner, ItemStack stack, Vec3 pos) {
@@ -44,10 +45,11 @@ public class UBWBrokenPhantasmExplosion {
 
          if (level instanceof ServerLevel serverLevel) {
             float clampedScale = Mth.clamp(scale, 0.35F, 2.0F);
-            double damageRadius = Mth.clamp(radiusPower * 2.45 * clampedScale, 5.5, 16.0);
+            double damageRadius = Mth.clamp(radiusPower * 4.2 * clampedScale, 8.0, 25.0);
             float totalDamage = Mth.clamp(400.0F + damagePower * 18.0F * clampedScale, 400.0F, 600.0F);
             DamageSource explosionSource = level.damageSources().explosion(source, owner);
             Set<Integer> damagedEntities = new HashSet<>();
+            VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", pos, 128.0);
             spawnShellEffects(serverLevel, pos, damageRadius);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 5, 0.35, 0.35, 0.35, 0.0);
             serverLevel.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 7, 0.14, 0.14, 0.14, 0.0);
@@ -131,13 +133,10 @@ public class UBWBrokenPhantasmExplosion {
    private static void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
       int rInt = (int)Math.ceil(currentRadius);
       int broken = 0;
-      int maxBroken = 54;
+      int maxBroken = 20000;
       for (int x = -rInt; x <= rInt; x++) {
          for (int y = -rInt; y <= rInt; y++) {
             for (int z = -rInt; z <= rInt; z++) {
-               if (broken >= maxBroken) {
-                  return;
-               }
                double distSqr = x * x + y * y + z * z;
                if (distSqr > currentRadius * currentRadius || distSqr <= previousRadius * previousRadius) {
                   continue;
@@ -148,12 +147,15 @@ public class UBWBrokenPhantasmExplosion {
                if (state.isAir()
                   || state.is(Blocks.BEDROCK)
                   || hardness < 0.0F
-                  || hardness > 45.0F
+                  || hardness > 32.0F
                   || state.getExplosionResistance(level, blockPos, null) >= 1200.0F) {
                   continue;
                }
                level.removeBlock(blockPos, false);
                broken++;
+               if (broken >= maxBroken) {
+                  return;
+               }
                if ((broken & 1) == 0) {
                   level.sendParticles(ParticleTypes.CLOUD, blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5, 4, 0.24, 0.24, 0.24, 0.025);
                }

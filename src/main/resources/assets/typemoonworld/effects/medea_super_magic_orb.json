@@ -1,0 +1,82 @@
+{
+  "duration": 1.05,
+  "notes": "Dense blue-purple Medea super orb cast bloom.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.85,
+      "rate": 1800,
+      "particle_lifetime": 0.75,
+      "size_variance": 0.42,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.1,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "sphere", "radius": 0.9, "sample_count": 220 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.22, "color": "#FF88CCFF" },
+        { "t": 0.6, "color": "#FF7A44FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.35, "size": 0.55 },
+        { "t": 1.0, "size": 0.06 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.25, 0.25, 0.25], "easing": "ease_out_cubic" },
+        { "t": 0.45, "pos": [0.0, 0.0, 0.0], "scale": [1.65, 1.65, 1.65], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [0.65, 0.65, 0.65], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "MEDEA_SUPER_ORB_CORE",
+      "vanilla_particles": [
+        { "type": "witch", "count": 1, "spread": [0.22, 0.22, 0.22], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.55 },
+        { "type": "end_rod", "count": 2, "spread": [0.16, 0.16, 0.16], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.65 }
+      ]
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 1.0,
+      "rate": 900,
+      "particle_lifetime": 0.6,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.55 + 0.35 * sin(t * 12.56)) * cos(t * 25.13 + time * 18.0)",
+        "expr_y": "sin(t * 18.84 + time * 7.0) * 0.25",
+        "expr_z": "(0.55 + 0.35 * sin(t * 12.56)) * sin(t * 25.13 + time * 18.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 160
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.38, "color": "#BB66AAFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.5, "size": 0.22 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.8, 0.8, 0.8] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [1.45, 1.45, 1.45] }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "ADDITIVE",
+      "particle_role": "MEDEA_SUPER_ORB_STREAMS",
+      "enable_trail": true
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "duration": 1.2,
+  "notes": "Tsubame Gaeshi: three simultaneous silver blade arcs in front of Sasaki.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.75,
+      "rate": 3600,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.05,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.75, 1.2], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(t - 0.5) * 5.0",
+        "expr_y": "sin(t * 3.14159) * 1.3",
+        "expr_z": "sin(t * 6.28318) * 0.25",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 144
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.28, "color": "#FFE8F6FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.35, "size": 0.18 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.4, 0.4, 0.4] },
+        { "t": 0.45, "pos": [0.0, 0.0, 0.0], "scale": [1.35, 1.35, 1.35], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [1.1, 1.1, 1.1] }
+      ],
+      "visibility_condition": "random() > 0.05",
+      "blend": "ADDITIVE",
+      "particle_role": "TSUBAME_HIGH_ARC",
+      "enable_trail": true,
+      "max_vanilla_particles_per_tick": 5,
+      "vanilla_particles": [
+        { "type": "sweep_attack", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.35 },
+        { "type": "crit", "count": 1, "spread": [0.35, 0.25, 0.35], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.45 }
+      ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.85,
+      "rate": 2800,
+      "particle_lifetime": 0.38,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.05,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.65, 1.1], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(t - 0.5) * 5.2",
+        "expr_y": "0.35 - sin(t * 3.14159) * 0.8",
+        "expr_z": "cos(t * 6.28318) * 0.4",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 144
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.45, "color": "#AADDFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.35, "size": 0.16 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.45] },
+        { "t": 0.45, "scale": [1.3, 1.3, 1.3], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.0, 1.0, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "TSUBAME_LOW_ARC",
+      "enable_trail": true
+    }
+  ]
+}

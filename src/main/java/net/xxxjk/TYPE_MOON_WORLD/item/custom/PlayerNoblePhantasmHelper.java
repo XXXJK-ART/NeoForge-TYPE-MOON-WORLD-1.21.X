@@ -19,7 +19,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -36,7 +35,6 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -48,6 +46,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class PlayerNoblePhantasmHelper {
    public static final String ONE_SHOT_TSUBAME_TAG = "TypeMoonOneShotTsubame";
@@ -55,8 +54,12 @@ public final class PlayerNoblePhantasmHelper {
    private static final String GAE_DEATH_FLIGHT_TAG = "TypeMoonGaeBulgDeathFlight";
    private static final String GAE_DEATH_FLIGHT_PAID_TAG = "TypeMoonGaeBulgDeathFlightPaid";
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
+   private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
+   private static final int EXCALIBUR_RELEASE_TICKS = 150;
+   private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
+   private static final int EXCALIBUR_PLAYER_COOLDOWN = 200;
    private static final int GAE_BULG_PLAYER_COOLDOWN = 100;
    private static final double CHARGE_MANA_PER_TICK = 20.0;
 
@@ -206,6 +209,7 @@ public final class PlayerNoblePhantasmHelper {
 
    public static void startExcaliburCharge(ServerPlayer player) {
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, 0);
+      player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
    }
 
    public static void tickExcaliburCharge(Level level, LivingEntity living, int useTicks) {
@@ -218,7 +222,11 @@ public final class PlayerNoblePhantasmHelper {
          if (!consumeStrict(player, CHARGE_MANA_PER_TICK)) {
             player.releaseUsingItem();
          } else if (level instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 6, 0.55, 0.55, 0.55, 0.04);
+            long now = serverLevel.getGameTime();
+            if (now - player.getPersistentData().getLong(EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 32L) {
+               player.getPersistentData().putLong(EXCALIBUR_LAST_CHARGE_VFX_TAG, now);
+               VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 128.0);
+            }
          }
       }
    }
@@ -226,14 +234,15 @@ public final class PlayerNoblePhantasmHelper {
    public static void releaseExcalibur(ServerPlayer player) {
       int charged = player.getPersistentData().getInt(EXCALIBUR_CHARGE_TAG);
       player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG);
+      player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
       if (charged <= 0 || !(player.level() instanceof ServerLevel level)) {
          return;
       }
-      int duration = Math.max(30, Math.min(150, charged + 50));
       Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
-      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, duration);
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK);
       level.addFreshEntity(beam);
-      spawnExcaliburReleaseFx(player, level, start);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
+      addExcaliburCooldown(player);
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.5F, 0.85F);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.1F, 1.65F);
    }
@@ -337,6 +346,15 @@ public final class PlayerNoblePhantasmHelper {
       }
       if (player.getOffhandItem().is(ModItems.GAE_BULG.get())) {
          player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), GAE_BULG_PLAYER_COOLDOWN);
+      }
+   }
+
+   private static void addExcaliburCooldown(ServerPlayer player) {
+      if (player.getMainHandItem().is(ModItems.EXCALIBUR.get())) {
+         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), EXCALIBUR_PLAYER_COOLDOWN);
+      }
+      if (player.getOffhandItem().is(ModItems.EXCALIBUR.get())) {
+         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), EXCALIBUR_PLAYER_COOLDOWN);
       }
    }
 
@@ -596,16 +614,6 @@ public final class PlayerNoblePhantasmHelper {
          if (level.destroyBlock(pos, false, owner)) {
             broken++;
          }
-      }
-   }
-
-   private static void spawnExcaliburReleaseFx(Player player, ServerLevel level, Vec3 start) {
-      Vec3 look = player.getLookAngle().normalize();
-      level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, 4, 0.1, 0.1, 0.1, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 80, 0.8, 0.55, 0.8, 0.12);
-      for (int i = 0; i < 4; i++) {
-         Vec3 center = start.add(look.scale(1.5 + i * 2.0));
-         level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y, center.z, 0.18F, 1.2F + i * 0.7F, 0.08F, 16 + i * 2, 0xF7F7FF, 0.54F, 0.025F, 70.0F, 0.0F));
       }
    }
 

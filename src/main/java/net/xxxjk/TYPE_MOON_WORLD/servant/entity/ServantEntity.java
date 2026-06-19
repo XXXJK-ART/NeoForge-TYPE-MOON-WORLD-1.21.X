@@ -57,6 +57,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -547,6 +548,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       playActionAnimation("roar");
       ServantVoiceHelper.tryPlayRoar(this);
       if (this.level() instanceof ServerLevel sl) {
+         if (this instanceof HeraclesEntity) {
+            VFXServerEffects.spawn(sl, "servant_heracles_roar", this, 128.0);
+         }
          /* 咆哮粒子效果 */         sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(),
             20, 0.8, 0.6, 0.8, 0.15);
@@ -571,6 +575,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.slamAnimationTicks = 40; // 2s
       playActionAnimation("slam");
       if (this.level() instanceof ServerLevel sl) {
+         if (this instanceof HeraclesEntity) {
+            VFXServerEffects.spawn(sl, "servant_heracles_slam", this.position(), 128.0);
+         }
          /* 砸地粒子效果 */         sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + 0.3, this.getZ(),
             30, 1.5, 0.3, 1.5, 0.3);
@@ -847,6 +854,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void triggerTsurigameshiAnimation() {
       playActionAnimation("tsurigameshi");
       ServantVoiceHelper.tryPlayTsurigameshi(this);
+      if (this.level() instanceof ServerLevel sl) {
+         VFXServerEffects.spawn(sl, "servant_sasaki_tsubame", this, 96.0);
+      }
    }
 
    public void triggerBasicAttackAnimation() {
