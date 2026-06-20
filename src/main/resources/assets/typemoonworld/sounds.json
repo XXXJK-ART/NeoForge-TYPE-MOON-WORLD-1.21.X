@@ -305,5 +305,41 @@
     "sounds": [
       "typemoonworld:voice/oda_nobunaga/hajun"
     ]
+  },
+  "gawain_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/gawain/attack1",
+      "typemoonworld:voice/gawain/attack2",
+      "typemoonworld:voice/gawain/attack3"
+    ]
+  },
+  "gawain_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/gawain/fail1",
+      "typemoonworld:voice/gawain/fail2",
+      "typemoonworld:voice/gawain/fail3"
+    ]
+  },
+  "gawain_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/gawain/victory1",
+      "typemoonworld:voice/gawain/victory2",
+      "typemoonworld:voice/gawain/victory3"
+    ]
+  },
+  "gawain_voice_fire_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/gawain/fire_attack"
+    ]
+  },
+  "gawain_voice_np": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/gawain/np"
+    ]
   }
 }

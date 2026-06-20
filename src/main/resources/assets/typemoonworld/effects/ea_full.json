@@ -4,7 +4,7 @@
     {
       "start_time": 0.0,
       "end_time": 14.4,
-      "rate": 6500,
+      "rate": 4000,
       "particle_lifetime": 1.25,
       "size_variance": 0.26,
       "lifetime_variance": 0.12,
@@ -15,14 +15,14 @@
       "component": {
         "type": "image_mask",
         "texture": "typemoonworld:textures/particle/ea_red.png",
-        "width": 73.6,
-        "height": 99.2,
+        "width": 36.8,
+        "height": 49.6,
         "u_segments": 180,
         "v_segments": 260,
         "threshold": 0.32,
         "reveal": "BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM",
-        "use_mask_texture": true,
-        "sample_density_scale": 0.28,
+        "use_mask_texture": false,
+        "sample_density_scale": 0.56,
         "particle_size_multiplier": 2.25
       },
       "color_over_life": [
@@ -55,7 +55,7 @@
     {
       "start_time": 0.0,
       "end_time": 14.4,
-      "rate": 5200,
+      "rate": 4000,
       "particle_lifetime": 1.25,
       "size_variance": 0.26,
       "lifetime_variance": 0.12,
@@ -66,14 +66,14 @@
       "component": {
         "type": "image_mask",
         "texture": "typemoonworld:textures/particle/ea_red.png",
-        "width": 73.6,
-        "height": 99.2,
+        "width": 36.8,
+        "height": 49.6,
         "u_segments": 180,
         "v_segments": 260,
         "threshold": 0.32,
         "reveal": "BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM",
-        "use_mask_texture": true,
-        "sample_density_scale": 0.28,
+        "use_mask_texture": false,
+        "sample_density_scale": 0.56,
         "particle_size_multiplier": 2.25
       },
       "color_over_life": [
@@ -106,7 +106,7 @@
     {
       "start_time": 0.0,
       "end_time": 14.4,
-      "rate": 5200,
+      "rate": 4000,
       "particle_lifetime": 1.25,
       "size_variance": 0.26,
       "lifetime_variance": 0.12,
@@ -117,14 +117,14 @@
       "component": {
         "type": "image_mask",
         "texture": "typemoonworld:textures/particle/ea_red.png",
-        "width": 73.6,
-        "height": 99.2,
+        "width": 36.8,
+        "height": 49.6,
         "u_segments": 180,
         "v_segments": 260,
         "threshold": 0.32,
         "reveal": "BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM",
-        "use_mask_texture": true,
-        "sample_density_scale": 0.28,
+        "use_mask_texture": false,
+        "sample_density_scale": 0.56,
         "particle_size_multiplier": 2.25
       },
       "color_over_life": [
@@ -157,7 +157,7 @@
     {
       "start_time": 0.0,
       "end_time": 14.4,
-      "rate": 5200,
+      "rate": 4000,
       "particle_lifetime": 1.25,
       "size_variance": 0.26,
       "lifetime_variance": 0.12,
@@ -168,14 +168,14 @@
       "component": {
         "type": "image_mask",
         "texture": "typemoonworld:textures/particle/ea_red.png",
-        "width": 73.6,
-        "height": 99.2,
+        "width": 36.8,
+        "height": 49.6,
         "u_segments": 180,
         "v_segments": 260,
         "threshold": 0.32,
         "reveal": "BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM",
-        "use_mask_texture": true,
-        "sample_density_scale": 0.28,
+        "use_mask_texture": false,
+        "sample_density_scale": 0.56,
         "particle_size_multiplier": 2.25
       },
       "color_over_life": [
@@ -1524,7 +1524,7 @@
     }
   ],
   "notes": [
-    "TREE_ORIENTATION: EA red tree projection is upright, now 18.4x24.8 with y recentered upward to 3.7, runs for 14.4s, appears bottom-to-top, then disappears top-to-bottom via BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM.",
+    "TREE_ORIENTATION: EA red tree projection is upright, now half the previous mask size at 36.8x49.6 with y recentered upward to 3.7, tree-layer emission rates doubled, runs for 14.4s, appears bottom-to-top, then disappears top-to-bottom via BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM.",
     "SUMMON_LIGHTNING: lightning now runs from 0.0s through the full wind-pressure ending at 34.4s. Two long outer bolts stay active for the whole summon/wind sequence, while five surrounding jagged bolts overlap in relays so roughly 3-4 positions flicker at once.",
     "SUMMON_SHOCKWAVES: red impact rings are staggered across the key-summon window, lowered to roughly y=-2.3, and expand past 50 blocks with reverse_portal and smoke mixed in for ground-pressure spread.",
     "TIMELINE: total flow is now 50.0s. Summon/tree projection 0-14.4s, huge rotating galaxy wind pressure 14.4-34.4s, charge 34.4-37.9s, shot 37.9-43.6s, impact 42.3-45.9s, residue 44.7-50.0s.",

@@ -164,6 +164,7 @@ public class ClientModEventSubscriber {
          ModItems.MO_YE_OVEREDGE.get(),
          ModItems.PSEUDO_SPIRAL_SWORD.get(),
          ModItems.CRIMSON_HOUND.get(),
+         ModItems.EXCALIBUR_GALLATIN.get(),
          ModItems.RHO_AIAS.get(),
          ModItems.UBW_METAL_1.get(),
          ModItems.UBW_METAL_2.get(),

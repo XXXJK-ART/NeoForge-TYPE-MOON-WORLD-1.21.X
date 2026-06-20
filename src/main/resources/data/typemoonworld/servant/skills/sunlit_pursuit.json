@@ -1,0 +1,10 @@
+{
+  "id": "sunlit_pursuit",
+  "display_name": "Sunlit Pursuit",
+  "display_name_zh": "日轮追击",
+  "type": "active",
+  "mp_cost": 14,
+  "cooldown_ticks": 110,
+  "duration_ticks": 20,
+  "effects": []
+}

@@ -1,0 +1,357 @@
+{
+  "duration": 3.0,
+  "notes": "Excalibur Galatine release: overhead sun and a white-hot horizontal solar blade sweep a 100-block forward fan, leaving heat haze and burned ground.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.25,
+      "rate": 520,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 3.65, 0.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 220 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.38, "color": "#FFEEFFFF" },
+        { "t": 0.72, "color": "#FFFFD700" },
+        { "t": 1.0, "color": "#00DAA520" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.16 },
+        { "t": 0.25, "size": 0.8 },
+        { "t": 0.65, "size": 0.34 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.22, 0.0], "scale": [8.0, 8.0, 8.0] },
+        { "t": 0.25, "pos": [0.0, 0.28, 0.0], "scale": [10.4, 10.4, 10.4], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.18, 0.0], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [6.4, 6.4, 6.4] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_RELEASE_OVERHEAD_SUN",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.08 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.25,
+      "rate": 700,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.015, 0.35],
+      "velocity_variance": 0.1,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 1.05, 1.2], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.45 + t * 48.0) * sin((t - 0.5) * 1.22 + time * 1.25)",
+        "expr_y": "1.0 + 3.0 * sin(t * 3.14159) + 0.28 * sin(t * 25.12 + time * 9.0)",
+        "expr_z": "t * 120.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 360
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FFEEFFFF" },
+        { "t": 0.52, "color": "#FFFFD700" },
+        { "t": 0.78, "color": "#44FFD700" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.35, "size": 1.2 },
+        { "t": 0.72, "size": 0.6 },
+        { "t": 1.0, "size": 0.1 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.75, 0.75, 0.75] },
+        { "t": 0.45, "pos": [0.0, 0.0, 0.0], "scale": [1.25, 1.1, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, -0.04, 0.0], "scale": [1.0, 0.9, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.04",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_WHITE_HOT_HORIZONTAL_SWEEP",
+      "vanilla_particles": [
+        { "type": "flame", "count": 2, "spread": [0.7, 0.18, 0.7], "offset": [0.0, 0.0, 0.0], "speed": 0.09, "chance": 0.3 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 1.65,
+      "rate": 360,
+      "particle_lifetime": 0.95,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.0, 0.18],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 1.12, 1.2], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.65 + t * 46.0) * sin((t - 0.5) * 1.22 + time * 1.25)",
+        "expr_y": "1.2 + 3.4 * sin(t * 3.14159) + 0.2 * sin(t * 31.4)",
+        "expr_z": "t * 116.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 300
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFD700" },
+        { "t": 0.4, "color": "#CCEEFFFF" },
+        { "t": 1.0, "color": "#0044FFD7" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.55, "size": 0.34 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_SWEEP_ARC_AFTERIMAGE",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 1.8,
+      "rate": 220,
+      "particle_lifetime": 1.0,
+      "size_variance": 0.38,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.025,
+      "velocity": [0.0, -0.02, 0.1],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 2.1, 1.2], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.45 + t * 44.0) * sin((t - 0.5) * 1.22 + time * 1.25)",
+        "expr_y": "3.1 - 2.5 * t",
+        "expr_z": "t * 116.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFFFFF" },
+        { "t": 0.42, "color": "#77EEFFFF" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.45, "size": 0.22 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "visibility_condition": "random() > 0.2",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_SUN_FOCUS_TO_SWEEP",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 2.2,
+      "rate": 260,
+      "particle_lifetime": 1.1,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.18, 0.04],
+      "velocity_variance": 0.16,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.08, 3.5], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.2 + 40.0 * t) * sin((t - 0.5) * 1.22 + time * 1.25)",
+        "expr_y": "0.05",
+        "expr_z": "t * 112.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFF4400" },
+        { "t": 0.5, "color": "#CCFF0000" },
+        { "t": 1.0, "color": "#00FF0000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.32 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "visibility_condition": "random() > 0.16",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_GROUND_SCORCH_ARC",
+      "vanilla_particles": [
+        { "type": "flame", "count": 1, "spread": [0.8, 0.05, 0.8], "offset": [0.0, -0.08, 0.0], "speed": 0.02, "chance": 0.28 }
+      ]
+    },
+    {
+      "start_time": 0.15,
+      "end_time": 2.4,
+      "rate": 160,
+      "particle_lifetime": 1.25,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.22, 0.03],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.8, 6.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.0 + 36.0 * t) * sin((t - 0.5) * 1.22 + time * 1.25)",
+        "expr_y": "0.8 + 0.6 * sin(t * 18.84 + time * 8.0)",
+        "expr_z": "t * 104.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFFFFF" },
+        { "t": 0.5, "color": "#22EEFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.55, "size": 0.38 },
+        { "t": 1.0, "size": 0.06 }
+      ],
+      "visibility_condition": "random() > 0.28",
+      "blend": "TRANSLUCENT",
+      "particle_role": "GALLATIN_SOLAR_HEAT_HAZE"
+    },
+    {
+      "start_time": 0.18,
+      "end_time": 1.7,
+      "rate": 120,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.25,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.16],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 1.15, 1.2], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.6 + t * 49.0) * sin((t - 0.5) * 1.22 + time * 1.25)",
+        "expr_y": "1.0 + 3.1 * sin(t * 3.14159) + 0.16 * sin(t * 50.24)",
+        "expr_z": "t * 120.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FF2222" },
+        { "t": 0.2, "color": "#44FFAA00" },
+        { "t": 0.4, "color": "#44FFFF00" },
+        { "t": 0.6, "color": "#4433FF66" },
+        { "t": 0.8, "color": "#443366FF" },
+        { "t": 1.0, "color": "#006633FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.55, "size": 0.14 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "visibility_condition": "random() > 0.32",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_RAINBOW_EDGE_HALO",
+      "enable_trail": true
+    },
+    {
+      "start_time": 1.1,
+      "end_time": 2.55,
+      "rate": 220,
+      "particle_lifetime": 1.2,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.32, 0.0],
+      "velocity_variance": 0.18,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.08, 8.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.0 + 36.0 * t) * sin((t - 0.5) * 1.2)",
+        "expr_y": "0.0",
+        "expr_z": "t * 96.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 160
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#77FF6A00" },
+        { "t": 0.38, "color": "#FFFFB347" },
+        { "t": 0.72, "color": "#AAFF2A00" },
+        { "t": 1.0, "color": "#00FF2A00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.45, "size": 0.42 },
+        { "t": 1.0, "size": 0.07 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.75, 0.8, 0.75] },
+        { "t": 0.45, "pos": [0.0, 1.4, 0.0], "scale": [1.15, 5.2, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 2.7, 0.0], "scale": [0.8, 6.4, 0.8] }
+      ],
+      "visibility_condition": "random() > 0.24",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_RISING_FIRE_AFTERBURN",
+      "vanilla_particles": [
+        { "type": "flame", "count": 2, "spread": [0.4, 0.5, 0.4], "offset": [0.0, 0.35, 0.0], "speed": 0.09, "chance": 0.32 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 2.15,
+      "end_time": 3.0,
+      "rate": 150,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.1,
+      "velocity": [0.0, -0.02, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 2.2, 0.0], "rotate_with_entity": true },
+      "component": { "type": "sphere", "radius": 6.0, "sample_count": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFD700" },
+        { "t": 0.55, "color": "#44FFD700" },
+        { "t": 1.0, "color": "#00DAA520" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.45, "size": 0.12 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "visibility_condition": "random() > 0.35",
+      "blend": "ADDITIVE",
+      "particle_role": "GALLATIN_GOLDEN_DUST_AFTERGLOW"
+    }
+  ],
+  "environment": [
+    { "type": "screen_tint", "color": "#20FFEEFF", "start": 0.0, "end": 1.6, "fade_in": 0.08, "fade_out": 0.55, "intensity": 0.55 },
+    { "type": "screen_tint", "color": "#10FFD700", "start": 1.6, "end": 3.0, "fade_in": 0.1, "fade_out": 0.45, "intensity": 0.25 }
+  ]
+}

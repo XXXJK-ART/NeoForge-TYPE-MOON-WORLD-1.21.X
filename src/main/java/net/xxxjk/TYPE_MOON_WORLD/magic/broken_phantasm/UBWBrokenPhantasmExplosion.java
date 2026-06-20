@@ -156,9 +156,6 @@ public class UBWBrokenPhantasmExplosion {
                if (broken >= maxBroken) {
                   return;
                }
-               if ((broken & 1) == 0) {
-                  level.sendParticles(ParticleTypes.CLOUD, blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5, 4, 0.24, 0.24, 0.24, 0.025);
-               }
             }
          }
       }

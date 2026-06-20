@@ -287,9 +287,6 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          return false;
       }
 
-      if (this.level() instanceof ServerLevel sl) {
-         sl.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(state));
-      }
       this.level().removeBlock(pos, false);
       return true;
    }
@@ -493,11 +490,6 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
                broken++;
                if (broken >= maxBroken) {
                   return;
-               }
-               if (this.random.nextInt(2) == 0) {
-                  level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.35, 0.35, 0.35, 0.0);
-                  level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.28, 0.28, 0.28, 0.03);
-                  level.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.25, 0.25, 0.25, 0.02);
                }
             }
          }

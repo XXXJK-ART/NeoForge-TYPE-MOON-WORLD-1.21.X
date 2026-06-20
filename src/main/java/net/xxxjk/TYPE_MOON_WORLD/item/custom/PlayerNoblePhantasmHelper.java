@@ -23,7 +23,6 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -55,12 +54,18 @@ public final class PlayerNoblePhantasmHelper {
    private static final String GAE_DEATH_FLIGHT_PAID_TAG = "TypeMoonGaeBulgDeathFlightPaid";
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
+   private static final String GALLATIN_CHARGE_TAG = "TypeMoonGallatinCharge";
+   private static final String GALLATIN_LAST_CHARGE_VFX_TAG = "TypeMoonGallatinLastChargeVfx";
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
    private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
    private static final int EXCALIBUR_PLAYER_COOLDOWN = 200;
+   private static final int GALLATIN_MAX_CHARGE_TICKS = 100;
+   private static final int GALLATIN_PLAYER_COOLDOWN = 100;
    private static final int GAE_BULG_PLAYER_COOLDOWN = 100;
+   private static final double GALLATIN_RANGE = 100.0;
+   private static final double GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
    private static final double CHARGE_MANA_PER_TICK = 20.0;
 
    private PlayerNoblePhantasmHelper() {
@@ -247,6 +252,51 @@ public final class PlayerNoblePhantasmHelper {
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.1F, 1.65F);
    }
 
+   public static void startGallatinCharge(ServerPlayer player) {
+      player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, 0);
+      player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
+   }
+
+   public static void tickGallatinCharge(Level level, LivingEntity living, int useTicks) {
+      if (!(living instanceof ServerPlayer player)) {
+         return;
+      }
+      int charged = Math.min(GALLATIN_MAX_CHARGE_TICKS, useTicks);
+      player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, charged);
+      if (useTicks > 0 && useTicks <= GALLATIN_MAX_CHARGE_TICKS) {
+         if (!consumeStrict(player, CHARGE_MANA_PER_TICK)) {
+            player.releaseUsingItem();
+         } else if (level instanceof ServerLevel serverLevel) {
+            long now = serverLevel.getGameTime();
+            if (now - player.getPersistentData().getLong(GALLATIN_LAST_CHARGE_VFX_TAG) >= 28L) {
+               player.getPersistentData().putLong(GALLATIN_LAST_CHARGE_VFX_TAG, now);
+               VFXServerEffects.spawn(serverLevel, "servant_gawain_gallatin_charge", player, 128.0);
+            }
+            if (useTicks % 2 == 0) {
+               Vec3 front = player.position().add(horizontalLook(player).scale(1.2)).add(0.0, player.getBbHeight() * 0.72, 0.0);
+               serverLevel.sendParticles(ParticleTypes.FLAME, front.x, front.y, front.z, 4, 0.24, 0.2, 0.24, 0.03);
+               serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() + 2.2, player.getZ(), 3, 0.7, 0.2, 0.7, 0.015);
+            }
+         }
+      }
+   }
+
+   public static void releaseGallatin(ServerPlayer player) {
+      int charged = player.getPersistentData().getInt(GALLATIN_CHARGE_TAG);
+      player.getPersistentData().remove(GALLATIN_CHARGE_TAG);
+      player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
+      if (charged < GALLATIN_MAX_CHARGE_TICKS || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      Vec3 look = horizontalLook(player);
+      boolean sunlight = isUnderGallatinSun(level, player.blockPosition());
+      VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", player, 3.0F);
+      level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 2.2F, 0.62F);
+      level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.5F, 0.78F);
+      performGallatinCone(player, level, look, sunlight ? 3000.0F : 1000.0F);
+      addGallatinCooldown(player);
+   }
+
    public static boolean usePseudoSpiralDash(ServerPlayer player) {
       if (!consumeStrict(player, 50.0)) {
          return false;
@@ -355,6 +405,15 @@ public final class PlayerNoblePhantasmHelper {
       }
       if (player.getOffhandItem().is(ModItems.EXCALIBUR.get())) {
          player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), EXCALIBUR_PLAYER_COOLDOWN);
+      }
+   }
+
+   private static void addGallatinCooldown(ServerPlayer player) {
+      if (player.getMainHandItem().is(ModItems.EXCALIBUR_GALLATIN.get())) {
+         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), GALLATIN_PLAYER_COOLDOWN);
+      }
+      if (player.getOffhandItem().is(ModItems.EXCALIBUR_GALLATIN.get())) {
+         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), GALLATIN_PLAYER_COOLDOWN);
       }
    }
 
@@ -599,6 +658,99 @@ public final class PlayerNoblePhantasmHelper {
       breakSmallExplosionTerrain(level, owner, center);
    }
 
+   private static void performGallatinCone(ServerPlayer player, ServerLevel level, Vec3 look, float damage) {
+      Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
+      Set<Integer> hit = new HashSet<>();
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         player.getBoundingBox().inflate(GALLATIN_RANGE + 3.0),
+         e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.45, 0.0).subtract(origin);
+         Vec3 horizontal = new Vec3(to.x, 0.0, to.z);
+         double distance = horizontal.length();
+         if (distance > GALLATIN_RANGE || distance < 0.2) {
+            continue;
+         }
+         Vec3 dir = horizontal.normalize();
+         if (dir.dot(look) < GALLATIN_HALF_ANGLE_COS || !hit.add(living.getId())) {
+            continue;
+         }
+         applyFixedDamage(player, living, damage);
+         living.igniteForSeconds(5.0F);
+         living.push(look.x * 5.0, 0.32, look.z * 5.0);
+         living.hurtMarked = true;
+      }
+      spawnGallatinReleaseParticles(level, origin, look);
+      breakGallatinPath(level, origin, look);
+   }
+
+   private static void applyFixedDamage(ServerPlayer player, LivingEntity target, float damage) {
+      float before = target.getHealth();
+      target.invulnerableTime = 0;
+      target.hurt(player.damageSources().playerAttack(player), damage);
+      target.invulnerableTime = 0;
+      if (target.getPersistentData().getBoolean("GodHandActive")) {
+         return;
+      }
+      float desired = Math.max(0.0F, before - damage);
+      if (target.getHealth() > desired && target.getHealth() <= before) {
+         target.setHealth(desired);
+      }
+   }
+
+   private static void spawnGallatinReleaseParticles(ServerLevel level, Vec3 origin, Vec3 look) {
+      Vec3 right = new Vec3(-look.z, 0.0, look.x);
+      for (double dist = 1.0; dist <= GALLATIN_RANGE; dist += 3.0) {
+         double halfWidth = Math.min(20.0, dist * 0.7);
+         Vec3 center = origin.add(look.scale(dist));
+         level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 9, halfWidth * 0.3, 0.3, halfWidth * 0.3, 0.09);
+         if (((int)dist) % 6 == 0) {
+            level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y - 0.2, center.z, 1, halfWidth * 0.16, 0.08, halfWidth * 0.16, 0.0);
+         }
+         if (((int)dist) % 9 == 0) {
+            Vec3 edge = center.add(right.scale(level.random.nextBoolean() ? halfWidth : -halfWidth));
+            level.sendParticles(ParticleTypes.FLAME, edge.x, edge.y, edge.z, 5, 0.2, 0.35, 0.2, 0.08);
+         }
+      }
+   }
+
+   private static void breakGallatinPath(ServerLevel level, Vec3 origin, Vec3 look) {
+      int broken = 0;
+      int limit = 220;
+      Vec3 right = new Vec3(-look.z, 0.0, look.x);
+      for (double dist = 2.0; dist <= GALLATIN_RANGE && broken < limit; dist += 2.0) {
+         double halfWidth = Math.min(20.0, dist * 0.7);
+         for (double side = -halfWidth; side <= halfWidth && broken < limit; side += 2.0) {
+            BlockPos center = BlockPos.containing(origin.add(look.scale(dist)).add(right.scale(side)));
+            for (BlockPos pos : BlockPos.betweenClosed(center.offset(0, -1, 0), center.offset(0, 2, 0))) {
+               BlockState state = level.getBlockState(pos);
+               float hardness = state.getDestroySpeed(level, pos);
+               if (!state.isAir()
+                  && hardness >= 0.0F
+                  && hardness < 55.0F
+                  && !state.is(Blocks.BEDROCK)
+                  && state.getExplosionResistance(level, pos, null) < 1200.0F
+                  && level.removeBlock(pos, false)) {
+                  broken++;
+                  if (broken >= limit) {
+                     break;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   private static boolean isUnderGallatinSun(ServerLevel level, BlockPos pos) {
+      long dayTime = level.getDayTime() % 24000L;
+      return level.dimensionType().hasSkyLight()
+         && dayTime >= 0L && dayTime < 12000L
+         && !level.isRaining()
+         && !level.isThundering()
+         && level.canSeeSky(pos.above());
+   }
+
    private static void breakSmallExplosionTerrain(ServerLevel level, LivingEntity owner, Vec3 center) {
       int broken = 0;
       for (BlockPos pos : BlockPos.betweenClosed(BlockPos.containing(center).offset(-3, -3, -3), BlockPos.containing(center).offset(3, 3, 3))) {
@@ -610,8 +762,7 @@ public final class PlayerNoblePhantasmHelper {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 50.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
             continue;
          }
-         level.levelEvent(2001, pos, Block.getId(state));
-         if (level.destroyBlock(pos, false, owner)) {
+         if (level.removeBlock(pos, false)) {
             broken++;
          }
       }

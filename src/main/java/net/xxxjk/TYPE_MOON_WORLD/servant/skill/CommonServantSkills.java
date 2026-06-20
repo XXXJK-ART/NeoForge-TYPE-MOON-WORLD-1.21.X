@@ -41,6 +41,11 @@ public final class CommonServantSkills {
       registry.register("ash_field", CommonServantSkills::executeOdaAshField, "typemoonworld_core");
       registry.register("scorched_banner", CommonServantSkills::executeOdaScorchedBanner, "typemoonworld_core");
       registry.register("three_line_rotation", CommonServantSkills::executeOdaThreeLineRotation, "typemoonworld_core");
+      registry.register("sunlit_pursuit", CommonServantSkills::executeGawainSunlitPursuit, "typemoonworld_core");
+      registry.register("noon_guard", CommonServantSkills::executeGawainNoonGuard, "typemoonworld_core");
+      registry.register("gallatin_spark", CommonServantSkills::executeGawainGallatinSpark, "typemoonworld_core");
+      registry.register("solar_rebuke", CommonServantSkills::executeGawainSolarRebuke, "typemoonworld_core");
+      registry.register("radiant_field", CommonServantSkills::executeGawainRadiantField, "typemoonworld_core");
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
@@ -80,6 +85,35 @@ public final class CommonServantSkills {
       entity.getPersistentData().putBoolean("RidingBActive", true);
       entity.getPersistentData().putFloat("RidingBSpeedBonus", 0.2F);
       entity.getPersistentData().putFloat("RidingBArmorBonus", 0.1F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeGawainSunlitPursuit(ServantExecutionContext context) {
+      return markGawainSkill(context, "GawainSunlitPursuitAvailable");
+   }
+
+   private static ServantExecutionResult executeGawainNoonGuard(ServantExecutionContext context) {
+      return markGawainSkill(context, "GawainNoonGuardAvailable");
+   }
+
+   private static ServantExecutionResult executeGawainGallatinSpark(ServantExecutionContext context) {
+      return markGawainSkill(context, "GawainGallatinSparkAvailable");
+   }
+
+   private static ServantExecutionResult executeGawainSolarRebuke(ServantExecutionContext context) {
+      return markGawainSkill(context, "GawainSolarRebukeAvailable");
+   }
+
+   private static ServantExecutionResult executeGawainRadiantField(ServantExecutionContext context) {
+      return markGawainSkill(context, "GawainRadiantFieldAvailable");
+   }
+
+   private static ServantExecutionResult markGawainSkill(ServantExecutionContext context, String tag) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean(tag, true);
       return ServantExecutionResult.SUCCESS;
    }
 

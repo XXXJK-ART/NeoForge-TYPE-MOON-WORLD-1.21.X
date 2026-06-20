@@ -514,6 +514,20 @@ public class ModItems {
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> CRIMSON_HOUND = ITEMS.register("crimson_hound",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "crimson_hound"));
+    public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
+            () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "excalibur_gallatin_damage"),
+                                            16.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "excalibur_gallatin_speed"),
+                                            0.15, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build()), "excalibur_gallatin"));
     public static final DeferredItem<Item> RHO_AIAS = ITEMS.register("rho_aias",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "rho_aias"));
     public static final DeferredItem<Item> UBW_METAL_1 = ITEMS.register("ubw_metal_1",
@@ -557,6 +571,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARTORIA_PENDRAGON, 0x1E4FAF, 0xF4D35E));
     public static final DeferredItem<Item> ODA_NOBUNAGA_SPAWN_EGG = ITEMS.register("oda_nobunaga_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ODA_NOBUNAGA, 0xB01818, 0xF4C430));
+    public static final DeferredItem<Item> GAWAIN_SPAWN_EGG = ITEMS.register("gawain_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GAWAIN, 0xC0C0C0, 0xFFD700));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

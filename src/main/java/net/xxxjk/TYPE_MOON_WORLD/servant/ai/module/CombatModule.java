@@ -12,7 +12,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -28,6 +27,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
@@ -72,6 +74,7 @@ public final class CombatModule implements ServantAiModule {
    private static final int IAIJUTSU_STEP_COOLDOWN = 80;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
+   private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
    private static final int CU_RECAST_MP_COST = 25;
    private static final int CU_RUNE_MP_COST = 20;
    private static final ResourceLocation VALOR_RES = ResourceLocation.fromNamespaceAndPath(
@@ -84,16 +87,8 @@ public final class CombatModule implements ServantAiModule {
       if (state.isAir() || hardness < 0.0F || state.is(Blocks.BEDROCK)) {
          return false;
       }
-      level.levelEvent(2001, pos, Block.getId(state));
       if (!level.removeBlock(pos, false)) {
          return false;
-      }
-      double x = pos.getX() + 0.5;
-      double y = pos.getY() + 0.65;
-      double z = pos.getZ() + 0.5;
-      level.sendParticles(ParticleTypes.CLOUD, x, y, z, heavyFx ? 8 : 4, 0.32, 0.22, 0.32, 0.06);
-      if (heavyFx) {
-         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 6, 0.34, 0.3, 0.34, 0.025);
       }
       return true;
    }
@@ -237,7 +232,7 @@ public final class CombatModule implements ServantAiModule {
             entity.triggerAttackSwing();
             entity.doHurtTarget(sharedTarget);
          } else {
-            entity.getNavigation().moveTo(sharedTarget, 1.1);
+            moveToTargetThrottled(entity, sharedTarget, 1.1, (int)entity.level().getGameTime(), 0.8);
          }
          return;
       }
@@ -265,6 +260,9 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
       if (entity instanceof ArtoriaPendragonEntity artoria && ArtoriaPendragonCombatHelper.tick(artoria, context)) {
+         return;
+      }
+      if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {
          return;
       }
 
@@ -357,7 +355,9 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      if (!(entity instanceof ArtoriaPendragonEntity) && combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
+      if (entity instanceof GawainEntity) {
+         data.remove("RetreatStartTick");
+      } else if (!(entity instanceof ArtoriaPendragonEntity) && combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
          // 决死一战检测
          int retreatStartTick = data.getInt("RetreatStartTick");
          if (retreatStartTick == 0) {
@@ -411,6 +411,9 @@ public final class CombatModule implements ServantAiModule {
       }
 
       double distance = entity.distanceTo(target);
+      if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity) && canBreakForwardBlocks) {
+         tryBreakCollisionWall(entity, target, data, tick, entity instanceof HeraclesEntity);
+      }
 
       // ——— 0. 被方块挡住：挥砍砸开前方路径（仅Berserker） ———
       if (canBreakForwardBlocks && (entity.getNavigation().isInProgress() || distance > 3.5)) {
@@ -517,33 +520,35 @@ public final class CombatModule implements ServantAiModule {
 
       // ——— 5. 横扫攻击：近距离 + 周围2+敌人 ———
       if (canSweep && distance <= 4.0) {
-         AABB sweepBox = entity.getBoundingBox().inflate(3.0);
-         List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
-            LivingEntity.class, sweepBox,
-            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
          int lastSweep = data.getInt("LastSweepTick");
-         if (nearby.size() >= 2 && tick - lastSweep >= SWEEP_COOLDOWN
-               && passesSkillChance(entity, 35, skillChanceScale)) {
-            data.putInt("LastSweepTick", tick);
-            entity.triggerSweepAnimation();
-            performSweep(entity);
-            return;
+         if (tick - lastSweep >= SWEEP_COOLDOWN && passesSkillChance(entity, 35, skillChanceScale)) {
+            AABB sweepBox = entity.getBoundingBox().inflate(3.0);
+            List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
+               LivingEntity.class, sweepBox,
+               e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
+            if (nearby.size() >= 2) {
+               data.putInt("LastSweepTick", tick);
+               entity.triggerSweepAnimation();
+               performSweep(entity);
+               return;
+            }
          }
       }
 
       // ——— 6. 斩击：近距离 + 周围1-2敌人 ———
       if (canSlash && distance <= 4.0) {
-         AABB slashBox = entity.getBoundingBox().inflate(3.0);
-         List<LivingEntity> nearSlash = entity.level().getEntitiesOfClass(
-            LivingEntity.class, slashBox,
-            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
          int lastSlash = data.getInt("LastSlashTick");
-         if (nearSlash.size() >= 1 && nearSlash.size() <= 2 && tick - lastSlash >= SLASH_COOLDOWN
-               && passesSkillChance(entity, 40, skillChanceScale)) {
-            data.putInt("LastSlashTick", tick);
-            entity.triggerSlashAnimation();
-            performSlash(entity, target);
-            return;
+         if (tick - lastSlash >= SLASH_COOLDOWN && passesSkillChance(entity, 40, skillChanceScale)) {
+            AABB slashBox = entity.getBoundingBox().inflate(3.0);
+            List<LivingEntity> nearSlash = entity.level().getEntitiesOfClass(
+               LivingEntity.class, slashBox,
+               e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
+            if (!nearSlash.isEmpty() && nearSlash.size() <= 2) {
+               data.putInt("LastSlashTick", tick);
+               entity.triggerSlashAnimation();
+               performSlash(entity, target);
+               return;
+            }
          }
       }
 
@@ -752,13 +757,13 @@ public final class CombatModule implements ServantAiModule {
       // ——— 7. 接近 + 近战 ———
       
       if (!hasLineOfSight) {
-         entity.getNavigation().moveTo(target, distance > 8.0 ? 1.3 : 1.1);
+         moveToTargetThrottled(entity, target, distance > 8.0 ? 1.3 : 1.1, tick, 0.85);
       } else if (distance > Math.max(3.5, attackCommitDistance)) {
          double speed = distance > 10.0 ? 1.35 : (distance > 6.0 ? 1.2 : 1.0);
          if (combatStyle == CombatDisposition.CAUTIOUS && distance < attackCommitDistance + 1.5) {
             speed = 0.9;
          }
-         entity.getNavigation().moveTo(target, speed);
+         moveToTargetThrottled(entity, target, speed, tick, 0.85);
       } else {
          int basicAttackCooldown = canAssassinCombo ? ASSASSIN_BASIC_ATTACK_COOLDOWN : BASIC_ATTACK_COOLDOWN;
          int lastBasicAttack = data.getInt("LastBasicAttackTick");
@@ -828,7 +833,7 @@ public final class CombatModule implements ServantAiModule {
             data.putInt("LastBlockBreakTick", tick);
             breakTowardUndergroundTarget(entity, target);
          }
-         entity.getNavigation().moveTo(target, 1.15);
+         moveToTargetThrottled(entity, target, 1.15, tick, 0.8);
          return true;
       }
 
@@ -848,8 +853,24 @@ public final class CombatModule implements ServantAiModule {
          return true;
       }
 
-      entity.getNavigation().moveTo(target, 1.0);
+      moveToTargetThrottled(entity, target, 1.0, tick, 0.8);
       return true;
+   }
+
+   private void moveToTargetThrottled(ServantEntity entity, LivingEntity target, double speed, int tick, double minTargetMoveSqr) {
+      CompoundTag data = entity.getPersistentData();
+      double dx = target.getX() - data.getDouble("CombatPathTargetX");
+      double dy = target.getY() - data.getDouble("CombatPathTargetY");
+      double dz = target.getZ() - data.getDouble("CombatPathTargetZ");
+      boolean targetMoved = dx * dx + dy * dy + dz * dz >= minTargetMoveSqr;
+      if (!targetMoved && !entity.getNavigation().isDone() && tick - data.getInt("CombatLastPathTick") < COMBAT_PATH_RECALC_INTERVAL) {
+         return;
+      }
+      data.putInt("CombatLastPathTick", tick);
+      data.putDouble("CombatPathTargetX", target.getX());
+      data.putDouble("CombatPathTargetY", target.getY());
+      data.putDouble("CombatPathTargetZ", target.getZ());
+      entity.getNavigation().moveTo(target, speed);
    }
 
    private void breakTowardUndergroundTarget(ServantEntity entity, LivingEntity target) {
@@ -1295,6 +1316,60 @@ public final class CombatModule implements ServantAiModule {
          }
       }
       return false;
+   }
+
+   private boolean tryBreakCollisionWall(ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean heavy) {
+      if (!(entity.level() instanceof ServerLevel sl) || target == null || !target.isAlive()) {
+         return false;
+      }
+      if (tick - data.getInt("LastCombatWallBreakTick") < (heavy ? 6 : 10)) {
+         return false;
+      }
+      boolean pressingWall = entity.horizontalCollision || entity.getNavigation().isInProgress() && !entity.getSensing().hasLineOfSight(target);
+      if (!pressingWall) {
+         return false;
+      }
+      Vec3 dir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (dir.lengthSqr() < 1.0E-4) {
+         dir = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      if (dir.lengthSqr() < 1.0E-4) {
+         return false;
+      }
+      dir = dir.normalize();
+      Vec3 right = new Vec3(-dir.z, 0.0, dir.x);
+      int broken = 0;
+      int maxBroken = heavy ? 26 : 12;
+      float hardnessLimit = heavy ? 75.0F : 45.0F;
+      int height = Math.max(1, (int)Math.ceil(entity.getBbHeight()));
+      BlockPos base = entity.blockPosition();
+      for (int forward = 1; forward <= (heavy ? 3 : 2) && broken < maxBroken; forward++) {
+         for (int side = heavy ? -1 : 0; side <= 1 && broken < maxBroken; side++) {
+            Vec3 offset = dir.scale(forward).add(right.scale(side * (heavy ? 0.9 : 0.6)));
+            BlockPos column = base.offset((int)Math.round(offset.x), 0, (int)Math.round(offset.z));
+            for (int y = 0; y <= height && broken < maxBroken; y++) {
+               BlockPos pos = column.above(y);
+               BlockState state = sl.getBlockState(pos);
+               float hardness = state.getDestroySpeed(sl, pos);
+               if (!state.isAir()
+                  && hardness >= 0.0F
+                  && hardness <= hardnessLimit
+                  && !state.is(Blocks.BEDROCK)
+                  && state.getExplosionResistance(sl, pos, null) < 1200.0F
+                  && destroyBlockWithCombatFx(sl, pos, state, heavy)) {
+                  broken++;
+               }
+            }
+         }
+      }
+      if (broken <= 0) {
+         return false;
+      }
+      data.putInt("LastCombatWallBreakTick", tick);
+      Vec3 fx = entity.position().add(dir.scale(1.4)).add(0.0, entity.getBbHeight() * 0.42, 0.0);
+      sl.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, heavy ? 14 : 8, 0.25, 0.2, 0.25, 0.055);
+      sl.playSound(null, entity.blockPosition(), heavy ? SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR : SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, heavy ? 0.9F : 0.75F, heavy ? 0.65F : 0.85F);
+      return true;
    }
 
    /**

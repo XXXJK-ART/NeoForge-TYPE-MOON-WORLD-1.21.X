@@ -32,6 +32,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.EMIYA_ARCHER.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ARTORIA_PENDRAGON.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }

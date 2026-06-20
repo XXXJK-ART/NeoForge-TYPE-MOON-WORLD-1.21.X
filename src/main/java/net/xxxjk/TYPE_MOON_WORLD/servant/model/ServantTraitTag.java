@@ -11,6 +11,9 @@ public enum ServantTraitTag {
    FAIRY_TALE("fairy_tale"),
    MOUNTED("mounted"),
    CHALDEAN("chaldean"),
+   EARTH("earth"),
+   RIDING("riding"),
+   SUN_KNIGHT("sun_knight"),
 
    HUMAN("human"),
    HUMANOID("humanoid"),

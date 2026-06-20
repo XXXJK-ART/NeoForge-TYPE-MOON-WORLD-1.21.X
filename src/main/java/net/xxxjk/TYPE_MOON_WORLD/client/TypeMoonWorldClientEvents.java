@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GawainRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuChulainnRenderer;
@@ -203,6 +204,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);

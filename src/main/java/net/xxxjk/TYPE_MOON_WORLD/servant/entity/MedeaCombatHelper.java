@@ -1761,8 +1761,7 @@ public final class MedeaCombatHelper {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= maxHardness) {
             continue;
          }
-         level.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(state));
-         if (level.destroyBlock(pos, false, entity)) {
+         if (level.removeBlock(pos, false)) {
             broken++;
          }
       }

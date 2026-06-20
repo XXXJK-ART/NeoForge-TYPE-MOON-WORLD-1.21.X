@@ -17,7 +17,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -767,13 +766,8 @@ public final class ServantCombatSystem {
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
             if (!state.isAir() && hardness >= 0.0F && hardness < hardnessLimit && !state.is(Blocks.BEDROCK)) {
-               level.levelEvent(2001, pos, Block.getId(state));
                if (level.removeBlock(pos, false)) {
                   broken++;
-                  level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.6, pos.getZ() + 0.5, heavy ? 8 : 4, 0.32, 0.2, 0.32, 0.06);
-                  if (heavy) {
-                     level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.getX() + 0.5, pos.getY() + 0.75, pos.getZ() + 0.5, 5, 0.24, 0.18, 0.24, 0.035);
-                  }
                }
                if (broken >= maxBroken) {
                   break;
@@ -827,7 +821,6 @@ public final class ServantCombatSystem {
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
             if (!state.isAir() && hardness >= 0.0F && hardness < (heavy ? 75.0F : 45.0F) && !state.is(Blocks.BEDROCK)) {
-               level.levelEvent(2001, pos, Block.getId(state));
                if (level.removeBlock(pos, false)) {
                   broken++;
                }

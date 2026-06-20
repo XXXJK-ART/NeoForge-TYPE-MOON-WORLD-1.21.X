@@ -41,6 +41,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
@@ -538,6 +539,12 @@ public class CommonEvents {
       return source != null && source.getDirectEntity() instanceof GaeBulgArmyProjectileEntity;
    }
 
+   private static boolean isHeraclesPoisonOrWitherSpecialAttack(ServantEntity servant, DamageSource source) {
+      return HeraclesGodHandHelper.hasGodHand(servant)
+         && source != null
+         && (source.is(NeoForgeMod.POISON_DAMAGE) || source.is(DamageTypes.WITHER));
+   }
+
    private static void handleServantDamage(ServantEntity servant, LivingIncomingDamageEvent event) {
       if (servant.level().isClientSide()) return;
 
@@ -549,6 +556,7 @@ public class CommonEvents {
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
       boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
       boolean antiHeraclesNoblePhantasm = HeraclesGodHandHelper.hasGodHand(servant) && (majorBrokenPhantasmExplosion || gaeBulgArmy);
+      boolean heraclesPoisonOrWitherSpecialAttack = isHeraclesPoisonOrWitherSpecialAttack(servant, event.getSource());
       boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
       if (inPlaceGodHandRevive) {
@@ -566,7 +574,7 @@ public class CommonEvents {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
 
-      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !invisibleAirBypass) {
+      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
@@ -660,7 +668,7 @@ public class CommonEvents {
       // --- God Hand: immunity against low-rank damage ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
+         if (!heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -673,7 +681,7 @@ public class CommonEvents {
          }
 
          // Adaptive resistance: repeated damage types are reduced over time.
-         if (!artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
+         if (!heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
             float reduction = data.getFloat("GodHandAdaptiveReduction");
             float maxReduction = data.getFloat("GodHandAdaptiveMax");
             float currentResistance = data.getFloat("GodHandCurrentResistance");

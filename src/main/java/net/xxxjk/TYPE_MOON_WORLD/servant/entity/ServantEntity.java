@@ -75,6 +75,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final String LAST_MANA_HEAL_TICK_TAG = "ServantLastManaHealTick";
    private static final String NATURAL_REGEN_LAST_COMBAT_TICK_TAG = "ServantNaturalRegenLastCombatTick";
    private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
+   private static final String LAST_FIRE_ESCAPE_SCAN_TICK_TAG = "ServantLastFireEscapeScanTick";
    private static final int MANA_HEAL_INTERVAL_TICKS = 20;
    private static final double MANA_HEAL_MP_COST = 1.0;
    private static final float MANA_HEAL_IN_COMBAT_AMOUNT = 5.0F;
@@ -223,6 +224,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       super.tick();
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
+      GawainCombatHelper.tickSharedBuffCleanup(this);
    }
 
    private void updateWalkAnimationState() {
@@ -335,9 +337,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             }
          }
 
-         /* 着火时寻找水源自救 */         if (this.isOnFire() && this.random.nextFloat() < 0.5F) {
+         /* 着火时寻找水源自救 */
+         if (this.isOnFire() && this.random.nextFloat() < 0.5F && this.tickCount - this.getPersistentData().getInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG) >= 20) {
+            this.getPersistentData().putInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG, this.tickCount);
             BlockPos center = this.blockPosition();
-            for (BlockPos p : BlockPos.betweenClosed(center.offset(-10, -5, -10), center.offset(10, 5, 10))) {
+            for (int attempt = 0; attempt < 18; attempt++) {
+               BlockPos p = center.offset(
+                  this.random.nextIntBetweenInclusive(-10, 10),
+                  this.random.nextIntBetweenInclusive(-5, 2),
+                  this.random.nextIntBetweenInclusive(-10, 10)
+               );
                if (this.level().getFluidState(p).is(FluidTags.WATER)) {
                   this.getNavigation().moveTo(p.getX(), p.getY(), p.getZ(), 1.5);
                   break;

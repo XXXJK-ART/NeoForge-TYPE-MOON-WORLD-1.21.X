@@ -1,0 +1,20 @@
+{
+  "id": "belt_of_berhillak_ex",
+  "display_name": "Belt of Berhillak EX",
+  "display_name_zh": "柏希雷克之带 EX",
+  "type": "active",
+  "mp_cost": 25,
+  "cooldown_ticks": 500,
+  "duration_ticks": 400,
+  "effects": [
+    {
+      "effect_type": "mana_recovery_and_guts",
+      "params": {
+        "mana_recovery_bonus": 0.3,
+        "guts_recovery_ratio": 0.2,
+        "sunlight_guts_recovery_ratio": 0.5,
+        "sunlight_cooldown_multiplier": 0.8
+      }
+    }
+  ]
+}

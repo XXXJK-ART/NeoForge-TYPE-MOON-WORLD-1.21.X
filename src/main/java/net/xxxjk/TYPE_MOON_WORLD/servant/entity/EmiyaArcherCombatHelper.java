@@ -1,10 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.Direction;
@@ -164,6 +166,8 @@ public final class EmiyaArcherCombatHelper {
    public static final int AERIAL_PURSUIT_COOLDOWN = 5 * 20;
    public static final int REINFORCED_SLAM_COOLDOWN = 4 * 20;
    public static final int BORROWED_NP_PROJECTION_TICKS = 5 * 20;
+   private static final double BORROWED_GALLATIN_RANGE = 100.0;
+   private static final double BORROWED_GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
    private static final String MODE_MELEE = "melee";
    private static final String MODE_RANGED = "ranged";
    private static final double TWIN_SWORD_COST = 8.0;
@@ -1650,7 +1654,7 @@ public final class EmiyaArcherCombatHelper {
       if (borrowed.isEmpty()) {
          return false;
       }
-      if (borrowed.is(ModItems.EXCALIBUR.get()) || borrowed.is(ModItems.TSUMUKARI_MURAMASA.get())) {
+      if (borrowed.is(ModItems.EXCALIBUR.get()) || borrowed.is(ModItems.EXCALIBUR_GALLATIN.get()) || borrowed.is(ModItems.TSUMUKARI_MURAMASA.get())) {
          if (entity.getHealth() <= 1.0F) {
             return false;
          }
@@ -1661,6 +1665,10 @@ public final class EmiyaArcherCombatHelper {
       markBorrowedNoblePhantasmUsed(entity, borrowed, now);
       if (borrowed.is(ModItems.EXCALIBUR.get())) {
          performBorrowedExcalibur(entity, level, target, now);
+         return true;
+      }
+      if (borrowed.is(ModItems.EXCALIBUR_GALLATIN.get())) {
+         performBorrowedGallatin(entity, level, target, now);
          return true;
       }
       if (borrowed.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
@@ -1688,6 +1696,7 @@ public final class EmiyaArcherCombatHelper {
 
    private static boolean hasBorrowedNoblePhantasmAction(ItemStack stack) {
       return stack.is(ModItems.EXCALIBUR.get())
+         || stack.is(ModItems.EXCALIBUR_GALLATIN.get())
          || stack.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())
          || stack.is(ModItems.BIZEN_NAGAMITSU.get())
          || stack.is(ModItems.NAMELESS_CHAIN_DAGGER.get())
@@ -1720,6 +1729,7 @@ public final class EmiyaArcherCombatHelper {
    private static boolean isBorrowableNoblePhantasm(ItemStack stack) {
       return !stack.isEmpty()
          && (stack.is(ModItems.EXCALIBUR.get())
+            || stack.is(ModItems.EXCALIBUR_GALLATIN.get())
             || stack.is(ModItems.TSUMUKARI_MURAMASA.get())
             || stack.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())
             || stack.is(ModItems.RULE_BREAKER.get())
@@ -1729,7 +1739,7 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static boolean isDivineOrSupremeWeapon(ItemStack stack) {
-      return stack.is(ModItems.EXCALIBUR.get()) || stack.is(ModItems.TSUMUKARI_MURAMASA.get());
+      return stack.is(ModItems.EXCALIBUR.get()) || stack.is(ModItems.EXCALIBUR_GALLATIN.get()) || stack.is(ModItems.TSUMUKARI_MURAMASA.get());
    }
 
    private static void performBorrowedExcalibur(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -1747,6 +1757,116 @@ public final class EmiyaArcherCombatHelper {
             entity.hurt(entity.damageSources().magic(), entity.getMaxHealth() + 500.0F);
          }
       });
+   }
+
+   private static void performBorrowedGallatin(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 55.0));
+      entity.triggerNamedActionAnimation("projection");
+      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+      Vec3 look = horizontalDirectionTo(entity, target);
+      VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", entity, 3.0F);
+      level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 2.0F, 0.68F);
+      level.playSound(null, entity.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.25F, 0.82F);
+      performBorrowedGallatinCone(entity, level, look, isUnderGallatinSun(level, entity.blockPosition()) ? 3000.0F : 1000.0F);
+      TYPE_MOON_WORLD.queueServerWork(64, () -> {
+         if (entity.isAlive() && entity.level() instanceof ServerLevel) {
+            entity.invulnerableTime = 0;
+            entity.hurt(entity.damageSources().magic(), entity.getMaxHealth() + 500.0F);
+         }
+      });
+   }
+
+   private static void performBorrowedGallatinCone(EmiyaArcherEntity entity, ServerLevel level, Vec3 look, float damage) {
+      Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
+      Set<Integer> hit = new HashSet<>();
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(BORROWED_GALLATIN_RANGE + 3.0),
+         e -> e.isAlive() && e != entity && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.45, 0.0).subtract(origin);
+         Vec3 horizontal = new Vec3(to.x, 0.0, to.z);
+         double distance = horizontal.length();
+         if (distance > BORROWED_GALLATIN_RANGE || distance < 0.2) {
+            continue;
+         }
+         Vec3 dir = horizontal.normalize();
+         if (dir.dot(look) < BORROWED_GALLATIN_HALF_ANGLE_COS || !hit.add(living.getId())) {
+            continue;
+         }
+         applyBorrowedGallatinFixedDamage(entity, living, damage);
+         living.igniteForSeconds(5.0F);
+         living.push(look.x * 5.0, 0.32, look.z * 5.0);
+         living.hurtMarked = true;
+      }
+      spawnBorrowedGallatinReleaseParticles(level, origin, look);
+      breakBorrowedGallatinPath(level, origin, look);
+   }
+
+   private static void applyBorrowedGallatinFixedDamage(EmiyaArcherEntity entity, LivingEntity target, float damage) {
+      float before = target.getHealth();
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().mobAttack(entity), damage);
+      target.invulnerableTime = 0;
+      if (target.getPersistentData().getBoolean("GodHandActive")) {
+         return;
+      }
+      float desired = Math.max(0.0F, before - damage);
+      if (target.getHealth() > desired && target.getHealth() <= before) {
+         target.setHealth(desired);
+      }
+   }
+
+   private static void spawnBorrowedGallatinReleaseParticles(ServerLevel level, Vec3 origin, Vec3 look) {
+      Vec3 right = new Vec3(-look.z, 0.0, look.x);
+      for (double dist = 1.0; dist <= BORROWED_GALLATIN_RANGE; dist += 3.0) {
+         double halfWidth = Math.min(20.0, dist * 0.7);
+         Vec3 center = origin.add(look.scale(dist));
+         level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 8, halfWidth * 0.3, 0.3, halfWidth * 0.3, 0.08);
+         if (((int)dist) % 6 == 0) {
+            level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y - 0.2, center.z, 1, halfWidth * 0.16, 0.08, halfWidth * 0.16, 0.0);
+         }
+         if (((int)dist) % 9 == 0) {
+            Vec3 edge = center.add(right.scale(level.random.nextBoolean() ? halfWidth : -halfWidth));
+            level.sendParticles(ParticleTypes.FLAME, edge.x, edge.y, edge.z, 5, 0.2, 0.35, 0.2, 0.08);
+         }
+      }
+   }
+
+   private static void breakBorrowedGallatinPath(ServerLevel level, Vec3 origin, Vec3 look) {
+      int broken = 0;
+      int limit = 220;
+      Vec3 right = new Vec3(-look.z, 0.0, look.x);
+      for (double dist = 2.0; dist <= BORROWED_GALLATIN_RANGE && broken < limit; dist += 2.0) {
+         double halfWidth = Math.min(20.0, dist * 0.7);
+         for (double side = -halfWidth; side <= halfWidth && broken < limit; side += 2.0) {
+            BlockPos center = BlockPos.containing(origin.add(look.scale(dist)).add(right.scale(side)));
+            for (BlockPos pos : BlockPos.betweenClosed(center.offset(0, -1, 0), center.offset(0, 2, 0))) {
+               BlockState state = level.getBlockState(pos);
+               float hardness = state.getDestroySpeed(level, pos);
+               if (!state.isAir()
+                  && hardness >= 0.0F
+                  && hardness < 55.0F
+                  && !state.is(Blocks.BEDROCK)
+                  && state.getExplosionResistance(level, pos, null) < 1200.0F
+                  && level.removeBlock(pos, false)) {
+                  broken++;
+                  if (broken >= limit) {
+                     break;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   private static boolean isUnderGallatinSun(ServerLevel level, BlockPos pos) {
+      long dayTime = level.getDayTime() % 24000L;
+      return level.dimensionType().hasSkyLight()
+         && dayTime >= 0L && dayTime < 12000L
+         && !level.isRaining()
+         && !level.isThundering()
+         && level.canSeeSky(pos.above());
    }
 
    private static void performBorrowedNineLives(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {

@@ -92,9 +92,9 @@
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
-        { "t": 0.0, "size": 0.7 },
-        { "t": 0.35, "size": 2.6 },
-        { "t": 1.0, "size": 0.45 }
+        { "t": 0.0, "size": 1.4 },
+        { "t": 0.35, "size": 5.2 },
+        { "t": 1.0, "size": 0.9 }
       ],
       "transform_over_life": [
         { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [1.1, 1.1, 0.35], "easing": "ease_out_cubic" },
@@ -106,6 +106,42 @@
       "particle_role": "EXCALIBUR_ASCENDING_HOLY_LIGHT",
       "vanilla_particles": [
         { "type": "end_rod", "count": 1, "spread": [0.25, 0.45, 0.25], "offset": [0.0, 3.0, 0.0], "speed": 0.04, "chance": 0.4 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 1.45,
+      "rate": 3000,
+      "particle_lifetime": 0.72,
+      "size_variance": 0.34,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.06,
+      "velocity": [0.0, 8.0, 0.0],
+      "velocity_variance": 0.18,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "helix", "radius": 1.75, "turns": 14.0, "height": 26.0, "segments": 260 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#B8FFFFFF" },
+        { "t": 0.25, "color": "#B8FFD700" },
+        { "t": 0.68, "color": "#44FFD700" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 1.1 },
+        { "t": 0.35, "size": 4.6 },
+        { "t": 1.0, "size": 0.75 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.85, 1.0, 0.85], "easing": "ease_out_cubic" },
+        { "t": 0.35, "pos": [0.0, 0.0, 0.0], "scale": [1.55, 1.0, 1.55], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [1.05, 1.0, 1.05], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "ADDITIVE",
+      "particle_role": "EXCALIBUR_ASCENDING_HOLY_LIGHT_RING_FILL",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.6, 0.7, 0.6], "offset": [0.0, 4.0, 0.0], "speed": 0.045, "chance": 0.32 }
       ],
       "enable_trail": true
     },
@@ -127,9 +163,9 @@
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
-        { "t": 0.0, "size": 0.7 },
-        { "t": 0.38, "size": 2.6 },
-        { "t": 1.0, "size": 0.45 }
+        { "t": 0.0, "size": 1.4 },
+        { "t": 0.38, "size": 5.2 },
+        { "t": 1.0, "size": 0.9 }
       ],
       "transform_over_life": [
         { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [1.6, 1.6, 0.45], "easing": "ease_out_cubic" },

@@ -312,10 +312,5 @@
         { "type": "large_smoke", "count": 1, "spread": [1.7, 0.45, 1.7], "offset": [0.0, 0.45, 0.0], "speed": 0.045, "chance": 0.22 }
       ]
     }
-  ],
-  "environment": [
-    { "type": "screen_tint", "color": "#33000000", "start": 0.25, "end": 4.4, "fade_in": 0.3, "fade_out": 0.55, "intensity": 0.42 },
-    { "type": "screen_tint", "color": "#22AA0000", "start": 0.7, "end": 4.8, "fade_in": 0.25, "fade_out": 0.6, "intensity": 0.34 },
-    { "type": "screen_tint", "color": "#18FFFFFF", "start": 3.18, "end": 3.72, "fade_in": 0.04, "fade_out": 0.28, "intensity": 0.28 }
   ]
 }

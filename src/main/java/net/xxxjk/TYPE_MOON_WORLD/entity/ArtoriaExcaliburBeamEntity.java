@@ -17,7 +17,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -250,7 +249,6 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 100.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
          return false;
       }
-      level.levelEvent(2001, pos, Block.getId(state));
       return level.removeBlock(pos, false);
    }
 

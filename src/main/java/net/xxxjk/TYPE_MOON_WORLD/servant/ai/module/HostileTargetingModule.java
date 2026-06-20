@@ -118,7 +118,30 @@ public final class HostileTargetingModule implements ServantAiModule {
          return false;
       }
 
-      return isHostileTo(target, faction, entity, morality, principle, createTargetScan(entity, aggressionRange));
+      if (target.isAlliedTo(entity)
+         || entity.isAlliedTo(target)
+         || CursedArmHassanCombatHelper.shouldAvoidPassiveFellowHassanTarget(entity, target)
+         || CursedArmHassanCombatHelper.refusesToHarm(entity, target)
+         || isForbiddenByPrinciple(entity, target)) {
+         return false;
+      }
+      if (isImmediateThreat(entity, target)) {
+         return true;
+      }
+      if (target instanceof ServantEntity otherServant) {
+         ServantFaction otherFaction = otherServant.getDefinition() != null ? otherServant.getDefinition().faction() : ServantFaction.HUMAN;
+         return isFactionEnemy(faction, otherFaction)
+            || morality == MoralAxis.EVIL
+            || principle == PrincipleAxis.CHAOTIC
+            || otherServant.getMoralAxis() == MoralAxis.EVIL && morality == MoralAxis.GOOD;
+      }
+      if (target instanceof Player) {
+         return morality == MoralAxis.EVIL || principle == PrincipleAxis.CHAOTIC || principle == PrincipleAxis.NEUTRAL;
+      }
+      if (isVanillaHostile(target)) {
+         return morality != MoralAxis.EVIL || principle != PrincipleAxis.ORDERLY || isImmediateThreat(entity, target);
+      }
+      return isFriendlyCreature(target) && morality == MoralAxis.EVIL;
    }
 
    private static double scoreTarget(

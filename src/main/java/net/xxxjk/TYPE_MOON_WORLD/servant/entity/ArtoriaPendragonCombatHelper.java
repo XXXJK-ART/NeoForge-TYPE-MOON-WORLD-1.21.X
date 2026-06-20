@@ -23,7 +23,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -671,7 +670,6 @@ public final class ArtoriaPendragonCombatHelper {
                BlockState state = level.getBlockState(pos);
                float hardness = state.getDestroySpeed(level, pos);
                if (!state.isAir() && hardness >= 0.0F && hardness < (boosted ? 80.0F : 45.0F) && !state.is(Blocks.BEDROCK)) {
-                  level.levelEvent(2001, pos, Block.getId(state));
                   if (level.removeBlock(pos, false)) {
                      broken++;
                   }

@@ -19,7 +19,6 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -171,10 +170,6 @@ public class MagicSapphireWinterFrost {
                            exposed = true;
                            break;
                         }
-                     }
-
-                     if (exposed) {
-                        level.levelEvent(2001, data.pos, Block.getId(currentStatex));
                      }
 
                      level.setBlock(data.pos, data.originalState, 2);

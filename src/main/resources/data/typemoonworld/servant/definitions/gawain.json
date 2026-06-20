@@ -1,0 +1,87 @@
+{
+  "id": "gawain",
+  "display_name": "Gawain",
+  "display_name_zh": "高文",
+  "class_type": "saber",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "saber", "male", "lawful", "good", "earth", "round_table", "sun_knight", "riding"],
+  "parameters": {
+    "endurance": "B",
+    "endurance_plus": true,
+    "strength": "B",
+    "strength_plus": true,
+    "agility": "B",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": false,
+    "luck": "A",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/gawain.geo.json",
+    "texture": "typemoonworld:textures/entity/gawain.png",
+    "animation": "typemoonworld:animations/gawain.animation.json",
+    "animations": {
+      "idle": "animation.gawain.idle",
+      "walk": "animation.gawain.walk",
+      "slash": "animation.gawain.slash",
+      "uppercut": "animation.gawain.uppercut",
+      "horizontal_swing": "animation.gawain.horizontal_swing",
+      "sweep": "animation.gawain.sweep",
+      "charge": "animation.gawain.charge",
+      "gallatin_chant": "animation.gawain.gallatin_chant",
+      "gallatin_release": "animation.gawain.gallatin_release"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.12,
+      "y": -0.82,
+      "z": 0.08
+    },
+    "default_weapon": "typemoonworld:excalibur_gallatin",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "break_forward_blocks",
+      "slash",
+      "sweep",
+      "uppercut",
+      "horizontal_swing",
+      "launcher",
+      "pursuit",
+      "charge",
+      "interrupt"
+    ]
+  },
+  "skills": [
+    "magic_resistance_b",
+    "riding_b",
+    "numeral_of_the_saint_ex",
+    "charisma_e_gawain",
+    "belt_of_berhillak_ex",
+    "sunlit_pursuit",
+    "noon_guard",
+    "gallatin_spark",
+    "solar_rebuke",
+    "radiant_field"
+  ],
+  "noble_phantasm": "excalibur_gallatin",
+  "personality": {
+    "obedience": "compliant",
+    "principle": "orderly",
+    "morality": "good",
+    "social": "friendly",
+    "combat": "aggressive",
+    "starting_favor": 65.0
+  },
+  "ai_config": "default_saber",
+  "spawn_egg": {
+    "primary": 16180912,
+    "secondary": 13059104
+  }
+}
