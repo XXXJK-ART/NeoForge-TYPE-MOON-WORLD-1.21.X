@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.vfx.client;
 
-import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
@@ -88,11 +87,13 @@ public final class VFXClientLoop {
       if (minecraft.level == null || minecraft.player == null || activeEffectId == null) {
          return;
       }
-      long seed = minecraft.level.getGameTime() ^ System.nanoTime();
       double x = fixedOrigin ? originX : minecraft.player.getX();
       double y = fixedOrigin ? originY : minecraft.player.getY();
       double z = fixedOrigin ? originZ : minecraft.player.getZ();
-      VFXClientRuntime.spawn(activeEffectId, x, y, z, Optional.empty(), seed);
+      String command = "vfx spawn " + activeEffectId + " " + x + " " + y + " " + z;
+      if (minecraft.player.connection != null) {
+         minecraft.player.connection.sendCommand(command);
+      }
    }
 
    private static int intervalTicks(VFXEffectDefinition definition) {

@@ -262,6 +262,8 @@ public class VFXEmitter {
             particle.position.add(randomSigned() * this.positionVariance, randomSigned() * this.positionVariance, randomSigned() * this.positionVariance);
          }
          particle.previousPosition.set(particle.position);
+         particle.texture = sample.texture;
+         particle.billboardScale = sample.billboardScale;
          particle.velocity
             .set(sample.velocity)
             .rotate(rotation)

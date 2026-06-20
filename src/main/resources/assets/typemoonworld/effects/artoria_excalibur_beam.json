@@ -2,14 +2,14 @@
   "duration": 30.0,
   "notes": "Golden EA-style Excalibur release. No weather/environment changes.",
   "environment": [
-    { "type": "screen_tint", "color": "#66FFF8D8", "start": 0.0, "end": 0.55, "fade_in": 0.05, "fade_out": 0.24, "intensity": 0.32 },
-    { "type": "screen_tint", "color": "#99FFF8D8", "start": 2.65, "end": 3.05, "fade_in": 0.04, "fade_out": 0.22, "intensity": 0.5 }
+    { "type": "screen_tint", "color": "#33FFF8D8", "start": 0.0, "end": 0.55, "fade_in": 0.05, "fade_out": 0.24, "intensity": 0.18 },
+    { "type": "screen_tint", "color": "#55FFF8D8", "start": 2.65, "end": 3.05, "fade_in": 0.04, "fade_out": 0.22, "intensity": 0.28 }
   ],
   "emitters": [
     {
       "start_time": 2.55,
       "end_time": 3.12,
-      "rate": 2600,
+      "rate": 1500,
       "particle_lifetime": 0.45,
       "size_variance": 0.35,
       "lifetime_variance": 0.18,
@@ -20,14 +20,14 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.34, 0.2, 1.25], "rotate_with_entity": true },
       "component": { "type": "sphere", "radius": 1.0, "sample_count": 220 },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFFFFF" },
-        { "t": 0.28, "color": "#FFFFF4AA" },
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.28, "color": "#CCFFF4AA" },
         { "t": 0.7, "color": "#FFFFB800" },
         { "t": 1.0, "color": "#00FFAA00" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.18 },
-        { "t": 0.35, "size": 0.85 },
+        { "t": 0.35, "size": 0.62 },
         { "t": 1.0, "size": 0.06 }
       ],
       "transform_over_life": [
@@ -46,7 +46,7 @@
     {
       "start_time": 2.85,
       "end_time": 7.35,
-      "rate": 7200,
+      "rate": 4800,
       "particle_lifetime": 0.42,
       "size_variance": 0.28,
       "lifetime_variance": 0.18,
@@ -57,15 +57,15 @@
       "binding": { "mode": "entity_yaw", "bone": "", "offset": [0.0, 0.35, 1.6], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 150.0], "segments": 360 },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFFFFF" },
-        { "t": 0.18, "color": "#FFFFF8CC" },
-        { "t": 0.62, "color": "#FFFFCC33" },
+        { "t": 0.0, "color": "#D8FFFFFF" },
+        { "t": 0.18, "color": "#CCFFF8CC" },
+        { "t": 0.62, "color": "#BBFFCC33" },
         { "t": 1.0, "color": "#00FFAA00" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.5 },
-        { "t": 0.16, "size": 2.4 },
-        { "t": 0.6, "size": 1.45 },
+        { "t": 0.16, "size": 1.75 },
+        { "t": 0.6, "size": 1.05 },
         { "t": 1.0, "size": 0.28 }
       ],
       "transform_over_life": [
@@ -85,7 +85,7 @@
     {
       "start_time": 2.65,
       "end_time": 3.1,
-      "rate": 1800,
+      "rate": 1000,
       "particle_lifetime": 0.38,
       "size_variance": 0.35,
       "lifetime_variance": 0.18,
@@ -96,14 +96,14 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.34, 0.2, 1.45], "rotate_with_entity": true },
       "component": { "type": "circle", "radius": 1.0, "segments": 180 },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFFFFF" },
-        { "t": 0.28, "color": "#FFFFD700" },
-        { "t": 0.75, "color": "#66FFD700" },
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.28, "color": "#BBFFD700" },
+        { "t": 0.75, "color": "#44FFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.12 },
-        { "t": 0.32, "size": 0.75 },
+        { "t": 0.32, "size": 0.55 },
         { "t": 1.0, "size": 0.06 }
       ],
       "transform_over_life": [
@@ -122,7 +122,7 @@
     {
       "start_time": 0.0,
       "end_time": 2.75,
-      "rate": 7800,
+      "rate": 5200,
       "particle_lifetime": 0.7,
       "size_variance": 0.32,
       "lifetime_variance": 0.2,
@@ -133,15 +133,15 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.34, 0.2, 0.75], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 150.0, 0.0], "segments": 380 },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFFFFF" },
-        { "t": 0.25, "color": "#FFFFF2AA" },
-        { "t": 0.7, "color": "#FFFFD700" },
+        { "t": 0.0, "color": "#D8FFFFFF" },
+        { "t": 0.25, "color": "#CCFFF2AA" },
+        { "t": 0.7, "color": "#CCFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.45 },
-        { "t": 0.22, "size": 2.8 },
-        { "t": 0.72, "size": 2.65 },
+        { "t": 0.22, "size": 2.15 },
+        { "t": 0.72, "size": 2.0 },
         { "t": 1.0, "size": 0.35 }
       ],
       "transform_over_life": [
@@ -163,7 +163,7 @@
     {
       "start_time": 0.0,
       "end_time": 2.55,
-      "rate": 3400,
+      "rate": 2200,
       "particle_lifetime": 0.95,
       "size_variance": 0.45,
       "lifetime_variance": 0.25,
@@ -174,15 +174,15 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.34, 0.2, 0.75], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 150.0, 0.0], "segments": 300 },
       "color_over_life": [
-        { "t": 0.0, "color": "#88FFFFFF" },
-        { "t": 0.25, "color": "#BBFFE27A" },
-        { "t": 0.72, "color": "#AAFFD700" },
+        { "t": 0.0, "color": "#55FFFFFF" },
+        { "t": 0.25, "color": "#77FFE27A" },
+        { "t": 0.72, "color": "#66FFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 1.0 },
-        { "t": 0.26, "size": 5.2 },
-        { "t": 0.75, "size": 5.0 },
+        { "t": 0.26, "size": 3.4 },
+        { "t": 0.75, "size": 3.1 },
         { "t": 1.0, "size": 0.7 }
       ],
       "transform_over_life": [
@@ -202,7 +202,7 @@
     {
       "start_time": 1.55,
       "end_time": 3.0,
-      "rate": 5200,
+      "rate": 3600,
       "particle_lifetime": 0.7,
       "size_variance": 0.4,
       "lifetime_variance": 0.22,
@@ -223,13 +223,13 @@
       },
       "color_over_life": [
         { "t": 0.0, "color": "#00FFD700" },
-        { "t": 0.18, "color": "#FFFFFFFF" },
-        { "t": 0.5, "color": "#FFFFD700" },
+        { "t": 0.18, "color": "#CCFFFFFF" },
+        { "t": 0.5, "color": "#CCFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.35 },
-        { "t": 0.38, "size": 2.4 },
+        { "t": 0.38, "size": 1.75 },
         { "t": 1.0, "size": 0.28 }
       ],
       "transform_over_life": [
@@ -249,7 +249,7 @@
     {
       "start_time": 2.9,
       "end_time": 7.35,
-      "rate": 3600,
+      "rate": 2400,
       "particle_lifetime": 0.75,
       "size_variance": 0.45,
       "lifetime_variance": 0.25,
@@ -260,14 +260,14 @@
       "binding": { "mode": "entity_yaw", "bone": "", "offset": [0.0, 0.35, 1.6], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 150.0], "segments": 280 },
       "color_over_life": [
-        { "t": 0.0, "color": "#AAFFFFFF" },
-        { "t": 0.35, "color": "#99FFD84A" },
+        { "t": 0.0, "color": "#66FFFFFF" },
+        { "t": 0.35, "color": "#66FFD84A" },
         { "t": 1.0, "color": "#00FFB000" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.9 },
-        { "t": 0.28, "size": 4.5 },
-        { "t": 0.82, "size": 3.2 },
+        { "t": 0.28, "size": 3.0 },
+        { "t": 0.82, "size": 2.1 },
         { "t": 1.0, "size": 0.45 }
       ],
       "transform_over_life": [
@@ -285,7 +285,7 @@
     {
       "start_time": 2.95,
       "end_time": 7.35,
-      "rate": 4200,
+      "rate": 2600,
       "particle_lifetime": 0.65,
       "size_variance": 0.4,
       "lifetime_variance": 0.25,
@@ -305,14 +305,14 @@
         "segments": 420
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFFFFF" },
-        { "t": 0.25, "color": "#FFFFE066" },
-        { "t": 0.75, "color": "#CCFF9A00" },
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.25, "color": "#BBFFE066" },
+        { "t": 0.75, "color": "#99FF9A00" },
         { "t": 1.0, "color": "#00FFAA00" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.22 },
-        { "t": 0.35, "size": 0.95 },
+        { "t": 0.35, "size": 0.68 },
         { "t": 1.0, "size": 0.12 }
       ],
       "transform_over_life": [
@@ -328,7 +328,7 @@
     {
       "start_time": 3.0,
       "end_time": 7.1,
-      "rate": 900,
+      "rate": 520,
       "particle_lifetime": 0.9,
       "size_variance": 0.5,
       "lifetime_variance": 0.3,
@@ -348,13 +348,13 @@
         "segments": 180
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#66FFD86A" },
-        { "t": 0.5, "color": "#44FFFFFF" },
+        { "t": 0.0, "color": "#44FFD86A" },
+        { "t": 0.5, "color": "#33FFFFFF" },
         { "t": 1.0, "color": "#00FFFFFF" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.16 },
-        { "t": 0.55, "size": 0.5 },
+        { "t": 0.55, "size": 0.36 },
         { "t": 1.0, "size": 0.05 }
       ],
       "transform_over_life": [
@@ -372,7 +372,7 @@
     {
       "start_time": 7.35,
       "end_time": 30.0,
-      "rate": 2600,
+      "rate": 1700,
       "particle_lifetime": 7.0,
       "size_variance": 0.55,
       "lifetime_variance": 0.35,
@@ -393,9 +393,9 @@
       },
       "color_over_life": [
         { "t": 0.0, "color": "#00FFD700" },
-        { "t": 0.12, "color": "#DDFFF2AA" },
-        { "t": 0.45, "color": "#AAFFD700" },
-        { "t": 0.82, "color": "#55FFB800" },
+        { "t": 0.12, "color": "#AAFFF2AA" },
+        { "t": 0.45, "color": "#88FFD700" },
+        { "t": 0.82, "color": "#44FFB800" },
         { "t": 1.0, "color": "#00FFAA00" }
       ],
       "size_over_life": [

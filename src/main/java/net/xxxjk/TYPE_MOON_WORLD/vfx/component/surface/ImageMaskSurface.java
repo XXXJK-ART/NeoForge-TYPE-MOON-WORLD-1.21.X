@@ -5,35 +5,59 @@ import java.io.InputStream;
 import java.util.List;
 import javax.imageio.ImageIO;
 import net.minecraft.util.Mth;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXParticle;
 
 public class ImageMaskSurface extends AbstractSurfaceComponent {
    private final float width;
    private final float height;
    private final String texture;
+   private final ResourceLocation particleTexture;
    private final float threshold;
    private final Reveal reveal;
+   private final float sampleDensityScale;
+   private final float particleSizeMultiplier;
    private final BufferedImage image;
 
    public ImageMaskSurface(String texture, float width, float height, int uSegments, int vSegments, float threshold) {
-      this(texture, width, height, uSegments, vSegments, threshold, Reveal.NONE);
+      this(texture, width, height, uSegments, vSegments, threshold, Reveal.NONE, false, 1.0F, 1.0F);
    }
 
    public ImageMaskSurface(String texture, float width, float height, int uSegments, int vSegments, float threshold, Reveal reveal) {
+      this(texture, width, height, uSegments, vSegments, threshold, reveal, false, 1.0F, 1.0F);
+   }
+
+   public ImageMaskSurface(
+      String texture,
+      float width,
+      float height,
+      int uSegments,
+      int vSegments,
+      float threshold,
+      Reveal reveal,
+      boolean useMaskTexture,
+      float sampleDensityScale,
+      float particleSizeMultiplier
+   ) {
       super(uSegments, vSegments, 0.0F);
       this.texture = texture;
       this.width = width;
       this.height = height;
       this.threshold = threshold;
       this.reveal = reveal == null ? Reveal.NONE : reveal;
+      this.particleTexture = useMaskTexture ? parseResourceLocation(texture) : null;
+      this.sampleDensityScale = Mth.clamp(sampleDensityScale, 0.05F, 1.0F);
+      this.particleSizeMultiplier = Math.max(0.0F, particleSizeMultiplier);
       this.image = loadImage(texture);
    }
 
    @Override
    public void update(float deltaTime, float lifeProgress, List<VFXParticle> out) {
-      for (int u = 0; u < this.uSegments; u++) {
+      int uStep = Math.max(1, Math.round(1.0F / this.sampleDensityScale));
+      int vStep = Math.max(1, Math.round(1.0F / this.sampleDensityScale));
+      for (int u = 0; u < this.uSegments; u += uStep) {
          float x = (u / (float)(this.uSegments - 1) - 0.5F) * this.width;
-         for (int v = 0; v < this.vSegments; v++) {
+         for (int v = 0; v < this.vSegments; v += vStep) {
             float revealT = v / (float)(this.vSegments - 1);
             if (!isRevealed(revealT, lifeProgress)) {
                continue;
@@ -41,7 +65,7 @@ public class ImageMaskSurface extends AbstractSurfaceComponent {
             float y = (v / (float)(this.vSegments - 1)) * this.height;
             float mask = sampleMask(x / this.width + 0.5F, y / this.height);
             if (mask >= this.threshold) {
-               sample(out, x, y, 0.0F);
+               sample(out, x, y, 0.0F, this.particleTexture, this.particleSizeMultiplier);
             }
          }
       }
@@ -89,6 +113,14 @@ public class ImageMaskSurface extends AbstractSurfaceComponent {
       }
       try (InputStream stream = ImageMaskSurface.class.getClassLoader().getResourceAsStream(path)) {
          return stream == null ? null : ImageIO.read(stream);
+      } catch (Exception ignored) {
+         return null;
+      }
+   }
+
+   private static ResourceLocation parseResourceLocation(String texture) {
+      try {
+         return texture == null || texture.isBlank() ? null : ResourceLocation.parse(texture);
       } catch (Exception ignored) {
          return null;
       }

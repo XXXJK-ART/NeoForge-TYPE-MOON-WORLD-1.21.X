@@ -58,6 +58,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwChantRippleRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectionCircuitEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectedItemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RhoAiasEntityRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.VFXTriggerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.HajunDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
@@ -188,6 +189,7 @@ public class TypeMoonWorldClientEvents {
    @SubscribeEvent
    @SuppressWarnings("unchecked")
    public static void registerRenderers(RegisterRenderers event) {
+      event.registerEntityRenderer(ModEntities.VFX_TRIGGER.get(), VFXTriggerRenderer::new);
       event.registerEntityRenderer(ModEntities.RYOUGI_SHIKI.get(), RyougiShikiRenderer::new);
       event.registerEntityRenderer(ModEntities.MERLIN.get(), MerlinRenderer::new);
       event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);

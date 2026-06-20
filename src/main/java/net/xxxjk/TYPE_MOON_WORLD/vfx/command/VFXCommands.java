@@ -3,20 +3,17 @@ package net.xxxjk.TYPE_MOON_WORLD.vfx.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import java.util.Optional;
-import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
+import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class VFXCommands {
-   private static final double DEFAULT_RADIUS = 96.0;
+   private static final float DEBUG_TRIGGER_DURATION_SECONDS = 40.0F;
 
    private VFXCommands() {
    }
@@ -79,16 +76,10 @@ public final class VFXCommands {
       if (!(source.getLevel() instanceof ServerLevel level)) {
          return;
       }
-      Optional<UUID> targetUuid = target == null ? Optional.empty() : Optional.of(target.getUUID());
-      VFXSpawnEffectMessage message = new VFXSpawnEffectMessage(
-         effectId,
-         origin[0],
-         origin[1],
-         origin[2],
-         targetUuid,
-         level.dimension().location().toString(),
-         level.getRandom().nextLong()
-      );
-      PacketDistributor.sendToPlayersNear(level, null, origin[0], origin[1], origin[2], DEFAULT_RADIUS, message, new CustomPacketPayload[0]);
+      if (target == null) {
+         VFXServerEffects.spawnReplayable(level, effectId, new Vec3(origin[0], origin[1], origin[2]), DEBUG_TRIGGER_DURATION_SECONDS);
+      } else {
+         VFXServerEffects.spawnReplayable(level, effectId, target, DEBUG_TRIGGER_DURATION_SECONDS);
+      }
    }
 }

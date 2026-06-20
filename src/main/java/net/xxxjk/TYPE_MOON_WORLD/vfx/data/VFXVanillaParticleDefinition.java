@@ -41,6 +41,7 @@ public record VFXVanillaParticleDefinition(ParticleOptions options, int count, V
          case "smoke" -> ParticleTypes.SMOKE;
          case "large_smoke" -> ParticleTypes.LARGE_SMOKE;
          case "campfire_cosy_smoke" -> ParticleTypes.CAMPFIRE_COSY_SMOKE;
+         case "ash" -> ParticleTypes.ASH;
          case "crit" -> ParticleTypes.CRIT;
          case "enchanted_hit" -> ParticleTypes.ENCHANTED_HIT;
          case "sweep_attack" -> ParticleTypes.SWEEP_ATTACK;

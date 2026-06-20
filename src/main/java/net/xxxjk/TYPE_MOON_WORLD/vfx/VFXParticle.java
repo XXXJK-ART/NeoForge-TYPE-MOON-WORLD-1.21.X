@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.vfx;
 
 import java.util.ArrayDeque;
+import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 public class VFXParticle {
@@ -19,9 +20,11 @@ public class VFXParticle {
    public final Vector3f velocity = new Vector3f();
    public int color = 0xFFFFFFFF;
    public float size = 0.08F;
+   public float billboardScale = 1.0F;
    public float currentLife = 0.0F;
    public float totalLife = 1.0F;
    public boolean additive = true;
+   public ResourceLocation texture;
 
    private VFXParticle() {
    }
@@ -43,9 +46,11 @@ public class VFXParticle {
       this.velocity.zero();
       this.color = 0xFFFFFFFF;
       this.size = 0.08F;
+      this.billboardScale = 1.0F;
       this.currentLife = 0.0F;
       this.totalLife = 1.0F;
       this.additive = true;
+      this.texture = null;
       return this;
    }
 

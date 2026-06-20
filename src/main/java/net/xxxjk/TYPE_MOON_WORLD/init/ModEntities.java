@@ -56,9 +56,18 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
+   public static final DeferredHolder<EntityType<?>, EntityType<VFXTriggerEntity>> VFX_TRIGGER = ENTITY_TYPES.register(
+      "vfx_trigger",
+      () -> Builder.<VFXTriggerEntity>of(VFXTriggerEntity::new, MobCategory.MISC)
+         .sized(0.1F, 0.1F)
+         .clientTrackingRange(192)
+         .updateInterval(1)
+         .build("vfx_trigger")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH = ENTITY_TYPES.register(
       "muramasa_slash",
       () -> Builder.<MuramasaSlashProjectileEntity>of(

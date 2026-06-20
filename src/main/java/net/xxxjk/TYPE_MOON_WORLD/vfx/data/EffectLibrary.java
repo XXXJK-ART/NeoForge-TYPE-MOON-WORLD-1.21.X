@@ -325,7 +325,10 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
             intValue(json, "u_segments", 32),
             intValue(json, "v_segments", 48),
             floatValue(json, "threshold", 0.4F),
-            ImageMaskSurface.Reveal.valueOf(GsonHelper.getAsString(json, "reveal", "NONE").toUpperCase(Locale.ROOT))
+            ImageMaskSurface.Reveal.valueOf(GsonHelper.getAsString(json, "reveal", "NONE").toUpperCase(Locale.ROOT)),
+            GsonHelper.getAsBoolean(json, "use_mask_texture", false),
+            floatValue(json, "sample_density_scale", 1.0F),
+            floatValue(json, "particle_size_multiplier", 1.0F)
          );
          case "spritesheet" -> new SpriteSheetSurface(intValue(json, "frames", 1), floatValue(json, "frame_rate", 12.0F), floatValue(json, "width", 1.0F), floatValue(json, "height", 1.0F), intValue(json, "u_segments", 2), intValue(json, "v_segments", 2));
          case "cuboid" -> new CuboidGeometry(floatValue(json, "width", 1.0F), floatValue(json, "height", 1.0F), floatValue(json, "depth", 1.0F), CuboidGeometry.Mode.valueOf(GsonHelper.getAsString(json, "mode", "EDGES").toUpperCase(Locale.ROOT)), resolution(json, 64));
@@ -357,7 +360,20 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          case "ruled_surface" -> requireOnly(json, "type", "start_a", "end_a", "start_b", "end_b", "u_segments", "v_segments");
          case "bicircle_star_torus" -> requireOnly(json, "type", "radius", "inner_radius", "tube_radius", "u_segments", "v_segments");
          case "parametric_surface" -> requireOnly(json, "type", "amplitude", "frequency", "u_segments", "v_segments");
-         case "image", "image_mask" -> requireOnly(json, "type", "texture", "width", "height", "u_segments", "v_segments", "threshold", "reveal");
+         case "image", "image_mask" -> requireOnly(
+            json,
+            "type",
+            "texture",
+            "width",
+            "height",
+            "u_segments",
+            "v_segments",
+            "threshold",
+            "reveal",
+            "use_mask_texture",
+            "sample_density_scale",
+            "particle_size_multiplier"
+         );
          case "spritesheet" -> requireOnly(json, "type", "frames", "frame_rate", "width", "height", "u_segments", "v_segments");
          case "cuboid" -> requireOnly(json, "type", "width", "height", "depth", "mode", "sample_count", "segments", "detail", "density");
          case "sphere" -> requireOnly(json, "type", "radius", "sample_count", "segments", "detail", "density");

@@ -4,7 +4,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -36,6 +38,8 @@ public final class VFXRenderManager {
    private static final ResourceLocation PARTICLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/particle/particle_white.png");
    private static final ResourceLocation BEAM_TEXTURE = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/particle/beam_gradient.png");
    private static final ResourceLocation RING_TEXTURE = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/particle/ring_shockwave.png");
+   private static final Map<ResourceLocation, RenderType> CUSTOM_TRANSLUCENT_TEXTURES = new HashMap<>();
+   private static final Map<ResourceLocation, RenderType> CUSTOM_ADDITIVE_TEXTURES = new HashMap<>();
    private static final List<VFXEmitter> EMITTERS = new ArrayList<>();
    private static final List<VFXBeam> BEAMS = new ArrayList<>();
    private static final List<VFXRingShockwave> RINGS = new ArrayList<>();
@@ -162,8 +166,9 @@ public final class VFXRenderManager {
       RenderType beamType = RenderType.entityTranslucentEmissive(BEAM_TEXTURE);
       RenderType ringType = RenderType.entityTranslucentEmissive(RING_TEXTURE);
       for (VFXEmitter emitter : EMITTERS) {
-         VertexConsumer consumer = source.getBuffer(emitter.blendMode() == VFXBlendMode.ADDITIVE ? additive : translucent);
          for (VFXParticle particle : emitter.particles()) {
+            RenderType particleType = renderTypeFor(particle.texture, emitter.blendMode() == VFXBlendMode.ADDITIVE, translucent, additive);
+            VertexConsumer consumer = source.getBuffer(particleType);
             drawBillboard(event, poseStack, consumer, particle);
             if (emitter.isTrailEnabled()) {
                TRAILS.add(new TrailPoint(particle.previousPosition, particle.position, particle.color, particle.size));
@@ -188,7 +193,7 @@ public final class VFXRenderManager {
    }
 
    private static void drawBillboard(RenderLevelStageEvent event, PoseStack poseStack, VertexConsumer consumer, VFXParticle particle) {
-      float size = particle.size * (1.0F - particle.lifeProgress() * 0.35F);
+      float size = particle.size * particle.billboardScale * (1.0F - particle.lifeProgress() * 0.35F);
       Vector3f left = new Vector3f(-size, 0.0F, 0.0F).rotate(event.getCamera().rotation());
       Vector3f up = new Vector3f(0.0F, size, 0.0F).rotate(event.getCamera().rotation());
       Vector3f center = particle.position;
@@ -201,6 +206,16 @@ public final class VFXRenderManager {
       vertex(poseStack, consumer, center, left, up, -1.0F, 1.0F, r, g, b, a, 0.0F, 1.0F);
       vertex(poseStack, consumer, center, left, up, 1.0F, 1.0F, r, g, b, a, 1.0F, 1.0F);
       vertex(poseStack, consumer, center, left, up, 1.0F, -1.0F, r, g, b, a, 1.0F, 0.0F);
+   }
+
+   private static RenderType renderTypeFor(ResourceLocation texture, boolean additive, RenderType translucent, RenderType additiveDefault) {
+      if (texture == null || texture.equals(PARTICLE_TEXTURE)) {
+         return additive ? additiveDefault : translucent;
+      }
+      if (additive) {
+         return CUSTOM_ADDITIVE_TEXTURES.computeIfAbsent(texture, key -> RenderType.entityTranslucentEmissive(key));
+      }
+      return CUSTOM_TRANSLUCENT_TEXTURES.computeIfAbsent(texture, key -> NeoForgeRenderTypes.getUnlitTranslucent(key, false));
    }
 
    private static void vertex(
