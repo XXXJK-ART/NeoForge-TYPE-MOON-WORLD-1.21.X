@@ -201,6 +201,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
+                        output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
                     }).build());
 

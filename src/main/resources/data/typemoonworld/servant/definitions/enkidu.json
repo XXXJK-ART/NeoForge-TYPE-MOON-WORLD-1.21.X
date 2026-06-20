@@ -1,0 +1,99 @@
+{
+  "id": "enkidu",
+  "display_name": "Enkidu (Lancer)",
+  "display_name_zh": "恩奇都(Lancer)",
+  "class_type": "lancer",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "lancer", "neutral_alignment", "balanced", "divine", "celestial", "earth", "sapient"],
+  "parameters": {
+    "endurance": "A",
+    "endurance_plus": false,
+    "strength": "A",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": false,
+    "luck": "A",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/enkidu.geo.json",
+    "texture": "typemoonworld:textures/entity/enkidu.png",
+    "animation": "typemoonworld:animations/enkidu.animation.json",
+    "animations": {
+      "idle": "animation.enkidu.idle",
+      "walk": "animation.enkidu.walk",
+      "fly": "animation.enkidu.float_idle",
+      "float_idle": "animation.enkidu.float_idle",
+      "slash": "animation.enkidu.slash",
+      "sweep": "animation.enkidu.sweep",
+      "uppercut": "animation.enkidu.uppercut",
+      "horizontal_swing": "animation.enkidu.horizontal_swing",
+      "charge": "animation.enkidu.charge",
+      "transfiguration": "animation.enkidu.transfiguration",
+      "presence_detection": "animation.enkidu.presence_detection",
+      "perfect_form": "animation.enkidu.perfect_form",
+      "chain_of_heaven": "animation.enkidu.chain_of_heaven",
+      "age_of_babylon": "animation.enkidu.age_of_babylon",
+      "enkidu_enuma_elish": "animation.enkidu.enkidu_enuma_elish",
+      "np": "animation.enkidu.enkidu_enuma_elish"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.1,
+      "y": -0.8,
+      "z": -0.2
+    },
+    "default_weapon": "",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "slash",
+      "sweep",
+      "uppercut",
+      "horizontal_swing",
+      "charge",
+      "launcher",
+      "pursuit",
+      "interrupt",
+      "ranged_np",
+      "transfiguration",
+      "presence_detection",
+      "perfect_form",
+      "chain_of_heaven",
+      "age_of_babylon",
+      "enkidu_enuma_elish"
+    ]
+  },
+  "skills": [
+    "magic_resistance_a",
+    "transfiguration_a",
+    "presence_detection_a_plus",
+    "perfect_form_a",
+    "enkidu_chain_lash",
+    "enkidu_earth_spike_sprout",
+    "enkidu_clay_bulwark",
+    "enkidu_stardust_step",
+    "enkidu_nature_pulse"
+  ],
+  "noble_phantasm": "enkidu_enuma_elish",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "orderly",
+    "morality": "neutral",
+    "social": "normal",
+    "combat": "cautious",
+    "starting_favor": 65.0
+  },
+  "ai_config": "enkidu_ai",
+  "spawn_egg": {
+    "primary": 16056311,
+    "secondary": 8382386
+  }
+}

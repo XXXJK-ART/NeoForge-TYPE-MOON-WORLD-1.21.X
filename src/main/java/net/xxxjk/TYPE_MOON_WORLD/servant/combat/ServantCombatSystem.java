@@ -27,6 +27,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -553,6 +555,9 @@ public final class ServantCombatSystem {
       ServantSpecialization specialization = definition != null ? definition.specialization() : ServantSpecialization.empty();
       ServantParams params = definition != null ? definition.parameters() : null;
       if (skillsSuppressed(responder) || cannotAct(responder)) {
+         return;
+      }
+      if (responder instanceof EnkiduEntity enkidu && EnkiduCombatHelper.tryRespondToNoblePhantasm(enkidu, caster, target, now, ranged)) {
          return;
       }
       if (ranged && specialization.hasCombatAction("ranged_np") && canUseNoblePhantasm(responder) && responder.getCurrentMp() >= responder.getMaxMp() * 0.35) {

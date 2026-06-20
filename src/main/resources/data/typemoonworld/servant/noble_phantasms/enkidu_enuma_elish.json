@@ -1,0 +1,14 @@
+{
+  "id": "enkidu_enuma_elish",
+  "display_name": "O Humans, Let Us Restrain the Gods",
+  "display_name_zh": "Enuma Elish",
+  "rank": "A++",
+  "type": "anti_purge",
+  "mp_cost": 150.0,
+  "cooldown_ticks": 1200,
+  "windup_ticks": 200,
+  "duration_ticks": 700,
+  "effects": [],
+  "description": "Enkidu becomes a divine weapon and pierces one target for 5000 fixed damage, doubled against divine and Beast/Human Threat targets.",
+  "description_zh": "Deals 5000 fixed damage, doubled against divine and Beast/Human Threat targets."
+}

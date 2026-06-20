@@ -1,0 +1,13 @@
+{
+  "id": "presence_detection_a_plus",
+  "display_name": "Presence Detection A+",
+  "display_name_zh": "Presence Detection A+",
+  "type": "hybrid",
+  "rank": "A+",
+  "mp_cost": 15.0,
+  "cooldown_ticks": 300,
+  "duration_ticks": 200,
+  "effects": [],
+  "description": "Passively strips invisibility nearby and can mark enemies across a wide radius.",
+  "description_zh": "Removes nearby invisibility and marks enemies in a wide radius."
+}

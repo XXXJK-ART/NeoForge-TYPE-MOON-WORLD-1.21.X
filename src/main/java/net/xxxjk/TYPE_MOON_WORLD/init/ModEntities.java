@@ -10,6 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -17,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
@@ -46,6 +48,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
@@ -320,6 +323,9 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<OdaNobunagaEntity>> ODA_NOBUNAGA = ENTITY_TYPES.register(
       "oda_nobunaga", () -> Builder.of(OdaNobunagaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("oda_nobunaga")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
+      "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<GawainEntity>> GAWAIN = ENTITY_TYPES.register(
       "gawain", () -> Builder.of(GawainEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("gawain")
    );
@@ -349,6 +355,14 @@ public class ModEntities {
          .updateInterval(2)
          .build("red_skeleton_hajun")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<ChainsOfHeavenBindingEntity>> CHAINS_OF_HEAVEN_BINDING = ENTITY_TYPES.register(
+      "chains_of_heaven_binding",
+      () -> Builder.<ChainsOfHeavenBindingEntity>of((entityType, level) -> new ChainsOfHeavenBindingEntity(entityType, level), MobCategory.MISC)
+         .sized(2.2F, 2.6F)
+         .clientTrackingRange(64)
+         .updateInterval(1)
+         .build("chains_of_heaven_binding")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaThrownWeaponEntity>> EMIYA_THROWN_WEAPON = ENTITY_TYPES.register(
       "emiya_thrown_weapon",
       () -> Builder.<EmiyaThrownWeaponEntity>of(
@@ -358,6 +372,16 @@ public class ModEntities {
          .clientTrackingRange(12)
          .updateInterval(1)
          .build("emiya_thrown_weapon")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEarthWeaponProjectileEntity>> ENKIDU_EARTH_WEAPON = ENTITY_TYPES.register(
+      "enkidu_earth_weapon",
+      () -> Builder.<EnkiduEarthWeaponProjectileEntity>of(
+            (entityType, level) -> new EnkiduEarthWeaponProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.32F, 0.32F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("enkidu_earth_weapon")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArrowOrbProjectileEntity>> EMIYA_ARROW_ORB = ENTITY_TYPES.register(
       "emiya_arrow_orb",

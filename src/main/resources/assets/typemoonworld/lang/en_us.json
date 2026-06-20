@@ -1063,5 +1063,12 @@
     "entity.typemoonworld.red_skeleton_hajun":  "Red Skeleton Hajun",
     "item.typemoonworld.oda_nobunaga_spawn_egg":  "Oda Nobunaga (Archer) Spawn Egg",
     "entity.typemoonworld.oda_nobunaga":  "Oda Nobunaga (Archer)",
-    "entity.typemoonworld.oda_matchlock_gun":  "Matchlock Gun"
+    "item.typemoonworld.enkidu_spawn_egg":  "Enkidu (Lancer) Spawn Egg",
+    "entity.typemoonworld.enkidu":  "Enkidu (Lancer)",
+    "entity.typemoonworld.chains_of_heaven_binding":  "Chains of Heaven",
+    "entity.typemoonworld.enkidu_earth_weapon":  "Age of Babylon",
+    "entity.typemoonworld.oda_matchlock_gun":  "Matchlock Gun",
+    "item.typemoonworld.black_key":  "Black Key",
+    "item.typemoonworld.black_key.desc":  "A conceptual weapon used by Executors. Right-click to throw the held keys.",
+    "entity.typemoonworld.black_key_projectile":  "Black Key"
 }

@@ -1531,11 +1531,11 @@
     "GALAXY_WIND_PRESSURE: 20s wind stage with fast expression-driven rotation throughout. Three logarithmic spiral arms and thickness arms are doubled again, ground dust reaches roughly 159 blocks radius, and collapse continues spinning instead of freezing.",
     "BEAM_CORE_SIZE: core beam particles are multiplied by 3 again; halo width is retained from the previous broad-beam pass so the beam reads as a thick forward +Z blast.",
     "IMPACT: final explosion sphere and horizontal shockwave are doubled; shockwave remains flat on XZ at y=0.08 and impact center remains z=26 to avoid being too far forward.",
-    "ENVIRONMENT: black-sky and red-fog world effects are intentionally removed so huge outer VFX remains visible; EA only nudges client rain weather plus light red/white screen flashes for impact beats.",
+    "ENVIRONMENT: black-sky and red-fog world effects are intentionally removed so huge outer VFX remains visible; EA forces client thunderstorm weather plus light red/white screen flashes for impact beats.",
     "TEMP_DIRECTION: firing stages are authored as local +Z forward for easier in-game inspection; later replace with caster look vector or MainHand bone transform."
   ],
   "environment": [
-    { "type": "rain_weather", "color": "#00000000", "start": 0.0, "end": 46.0, "fade_in": 0.6, "fade_out": 1.5, "intensity": 1.0 },
+    { "type": "thunderstorm_weather", "color": "#00000000", "start": 0.0, "end": 46.0, "fade_in": 0.6, "fade_out": 1.5, "intensity": 1.0 },
     { "type": "screen_tint", "color": "#22FF0000", "start": 31.6, "end": 34.8, "fade_in": 0.15, "fade_out": 0.5, "intensity": 0.26 },
     { "type": "screen_tint", "color": "#33FFFFFF", "start": 38.0, "end": 39.1, "fade_in": 0.05, "fade_out": 0.35, "intensity": 0.38 }
   ]

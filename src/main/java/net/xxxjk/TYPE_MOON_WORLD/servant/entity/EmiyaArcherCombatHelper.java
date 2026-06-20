@@ -1662,7 +1662,7 @@ public final class EmiyaArcherCombatHelper {
       if (!hasBorrowedNoblePhantasmAction(borrowed)) {
          return false;
       }
-      markBorrowedNoblePhantasmUsed(entity, borrowed, now);
+      markBorrowedNoblePhantasmUsed(entity, borrowed, target, now);
       if (borrowed.is(ModItems.EXCALIBUR.get())) {
          performBorrowedExcalibur(entity, level, target, now);
          return true;
@@ -1704,14 +1704,16 @@ public final class EmiyaArcherCombatHelper {
          || stack.is(ModItems.GAE_BULG.get());
    }
 
-   private static void markBorrowedNoblePhantasmUsed(EmiyaArcherEntity entity, ItemStack borrowed, long now) {
+   private static void markBorrowedNoblePhantasmUsed(EmiyaArcherEntity entity, ItemStack borrowed, LivingEntity sourceWielder, long now) {
       entity.getPersistentData().putLong(LAST_PROJECTION_VOLLEY_TICK, now);
       entity.getPersistentData().putLong(BORROWED_NP_USED_UNTIL, now + BORROWED_NP_PROJECTION_TICKS);
       ItemStack projected = borrowed.copy();
       projected.setCount(1);
+      addProjectedEnemyAttackPower(projected, sourceWielder);
       entity.setItemInHand(InteractionHand.MAIN_HAND, projected);
       entity.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
       markProjectionExpiry(entity, now + BORROWED_NP_PROJECTION_TICKS, false);
+      applyAnalyzedWeaponProjectionBuffs(entity, sourceWielder);
    }
 
    private static ItemStack findBorrowableEnemyWeapon(LivingEntity target) {
@@ -1767,7 +1769,7 @@ public final class EmiyaArcherCombatHelper {
       VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", entity, 3.0F);
       level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 2.0F, 0.68F);
       level.playSound(null, entity.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.25F, 0.82F);
-      performBorrowedGallatinCone(entity, level, look, isUnderGallatinSun(level, entity.blockPosition()) ? 3000.0F : 1000.0F);
+      performBorrowedGallatinCone(entity, level, look, borrowedGallatinDamage(level, target));
       TYPE_MOON_WORLD.queueServerWork(64, () -> {
          if (entity.isAlive() && entity.level() instanceof ServerLevel) {
             entity.invulnerableTime = 0;
@@ -1867,6 +1869,13 @@ public final class EmiyaArcherCombatHelper {
          && !level.isRaining()
          && !level.isThundering()
          && level.canSeeSky(pos.above());
+   }
+
+   private static float borrowedGallatinDamage(ServerLevel level, LivingEntity sourceWielder) {
+      if (sourceWielder instanceof GawainEntity gawain && GawainCombatHelper.hasSunBlessing(gawain)) {
+         return 3000.0F;
+      }
+      return isUnderGallatinSun(level, sourceWielder.blockPosition()) ? 3000.0F : 1000.0F;
    }
 
    private static void performBorrowedNineLives(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -2039,6 +2048,11 @@ public final class EmiyaArcherCombatHelper {
             speedLevel = rankEffectLevel(params.agility(), params.agilityPlus());
             resistanceLevel = rankEffectLevel(params.endurance(), params.endurancePlus());
             strengthLevel = rankEffectLevel(params.strength(), params.strengthPlus());
+            if (servant instanceof GawainEntity gawain && GawainCombatHelper.hasSunBlessing(gawain)) {
+               speedLevel = amplifiedProjectionLevel(speedLevel, 3.0);
+               resistanceLevel = amplifiedProjectionLevel(resistanceLevel, 3.0);
+               strengthLevel = amplifiedProjectionLevel(strengthLevel, 3.0);
+            }
          }
       }
 
@@ -2066,6 +2080,10 @@ public final class EmiyaArcherCombatHelper {
          case A -> 5;
       };
       return plus ? Math.min(5, level + 1) : level;
+   }
+
+   private static int amplifiedProjectionLevel(int baseLevel, double multiplier) {
+      return Mth.clamp((int)Math.ceil(baseLevel * multiplier), 1, 5);
    }
 
    private static boolean isMeleeWeapon(ItemStack stack) {

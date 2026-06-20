@@ -1,0 +1,22 @@
+{
+  "id": "enkidu_clay_bulwark",
+  "display_name": "Clay Bulwark",
+  "display_name_zh": "\u795e\u4ee3\u7c98\u571f\u62a4\u58c1",
+  "type": "active",
+  "mp_cost": 12,
+  "cooldown_ticks": 320,
+  "duration_ticks": 120,
+  "effects": [
+    {
+      "effect_type": "enkidu_clay_bulwark",
+      "params": {
+        "plant_bulwark": true,
+        "resistance_amplifier": 1,
+        "resistance_ticks": 90,
+        "temporary_blocks_ticks": 130
+      }
+    }
+  ],
+  "description": "Raises a huge irregular half-dome of plants from the ground in front of Enkidu and grants brief Resistance II.",
+  "description_zh": "\u5728\u6069\u5947\u90fd\u524d\u65b9\u4ece\u5927\u5730\u5347\u8d77\u5de8\u5927\u4e0d\u89c4\u5219\u690d\u7269\u534a\u7403\uff0c\u5e76\u77ed\u6682\u83b7\u5f97\u6297\u6027II\u3002"
+}

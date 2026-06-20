@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.EmiyaProjectionItem;
 
@@ -30,9 +31,19 @@ public class ProjectedItemProjectileRenderer<T extends ThrowableItemProjectile> 
       poseStack.pushPose();
       float ryaw = Mth.rotLerp(partialTicks, entity.yRotO, entity.getYRot());
       float rpitch = Mth.rotLerp(partialTicks, entity.xRotO, entity.getXRot());
+      ItemStack stack = entity.getItem();
+      if (entity instanceof EnkiduEarthWeaponProjectileEntity) {
+         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F + ryaw));
+         poseStack.mulPose(Axis.ZP.rotationDegrees(135.0F - rpitch));
+         poseStack.translate(-0.59, -0.59, 0.0);
+         poseStack.scale(1.55F, 1.55F, 1.55F);
+         this.vanillaItemRenderer.renderStatic(stack, ItemDisplayContext.GROUND, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
+         poseStack.popPose();
+         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+         return;
+      }
       poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
       poseStack.mulPose(Axis.XP.rotationDegrees(-rpitch));
-      ItemStack stack = entity.getItem();
       if (stack.getItem() instanceof EmiyaProjectionItem) {
          if (isKanshouBakuya(stack)) {
             poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));

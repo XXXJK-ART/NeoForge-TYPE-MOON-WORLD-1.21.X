@@ -1,0 +1,21 @@
+{
+  "id": "enkidu_earth_spike_sprout",
+  "display_name": "Earth Spike Sprout",
+  "display_name_zh": "\u5927\u5730\u6954\u82bd",
+  "type": "active",
+  "mp_cost": 8,
+  "cooldown_ticks": 120,
+  "duration_ticks": 20,
+  "effects": [
+    {
+      "effect_type": "enkidu_earth_spike_sprout",
+      "params": {
+        "damage_scale": 0.72,
+        "flat_damage": 10,
+        "launch_power": 0.42
+      }
+    }
+  ],
+  "description": "Raises a clay weapon from the ground beneath the enemy, striking upward.",
+  "description_zh": "\u4ece\u654c\u4eba\u811a\u4e0b\u5347\u8d77\u7c98\u571f\u6b66\u5668\uff0c\u5411\u4e0a\u7a81\u523a\u5e76\u77ed\u6682\u51fb\u98de\u3002"
+}

@@ -1065,5 +1065,12 @@
     "entity.typemoonworld.red_skeleton_hajun":  "第六天魔王波旬",
     "item.typemoonworld.oda_nobunaga_spawn_egg":  "织田信长(Archer)刷怪蛋",
     "entity.typemoonworld.oda_nobunaga":  "织田信长(Archer)",
-    "entity.typemoonworld.oda_matchlock_gun":  "火绳枪"
+    "item.typemoonworld.enkidu_spawn_egg":  "恩奇都(Lancer)刷怪蛋",
+    "entity.typemoonworld.enkidu":  "恩奇都(Lancer)",
+    "entity.typemoonworld.chains_of_heaven_binding":  "天之锁",
+    "entity.typemoonworld.enkidu_earth_weapon":  "民之睿智",
+    "entity.typemoonworld.oda_matchlock_gun":  "火绳枪",
+    "item.typemoonworld.black_key":  "黑键",
+    "item.typemoonworld.black_key.desc":  "代行者使用的概念武装,右键投出手中的黑键.",
+    "entity.typemoonworld.black_key_projectile":  "黑键"
 }

@@ -1,0 +1,68 @@
+{
+  "duration": 1.4,
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.25,
+      "rate": 2600,
+      "particle_lifetime": 0.75,
+      "size_variance": 0.25,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.035, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity", "offset": [0.0, 0.15, 0.0], "rotate_with_entity": false },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * 37.699 + time * 10.0) * (1.7 - time * 0.35)",
+        "expr_y": "t * 2.2",
+        "expr_z": "sin(t * 37.699 + time * 10.0) * (1.7 - time * 0.35)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 240
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFD700" },
+        { "t": 0.45, "color": "#CC88FFAA" },
+        { "t": 0.72, "color": "#88DAA520" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.5, "size": 0.12 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_CHAIN_WRAP",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 1.4,
+      "rate": 1200,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.05,
+      "binding": { "mode": "entity", "offset": [0.0, 1.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 1.5, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#8844FFAA" },
+        { "t": 0.45, "color": "#EEAAFFCC" },
+        { "t": 0.72, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.03 },
+        { "t": 0.5, "size": 0.11 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_DIVINE_REACTION"
+    }
+  ]
+}

@@ -306,6 +306,33 @@
       "typemoonworld:voice/oda_nobunaga/hajun"
     ]
   },
+  "enkidu_voice_attack": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/enkidu/attack1",
+      "typemoonworld:voice/enkidu/attack2"
+    ]
+  },
+  "enkidu_voice_fail": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/enkidu/fail1",
+      "typemoonworld:voice/enkidu/fail2"
+    ]
+  },
+  "enkidu_voice_victory": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/enkidu/victory1",
+      "typemoonworld:voice/enkidu/victory2"
+    ]
+  },
+  "enkidu_voice_np": {
+    "category": "hostile",
+    "sounds": [
+      "typemoonworld:voice/enkidu/np"
+    ]
+  },
   "gawain_voice_attack": {
     "category": "hostile",
     "sounds": [

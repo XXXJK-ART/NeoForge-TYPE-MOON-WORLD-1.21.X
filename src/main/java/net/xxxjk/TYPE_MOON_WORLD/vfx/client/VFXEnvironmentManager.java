@@ -53,14 +53,19 @@ public final class VFXEnvironmentManager {
          return;
       }
       float rain = 0.0F;
+      float thunder = 0.0F;
       for (ActiveEnvironment active : ACTIVE) {
          if ("rain_weather".equals(active.definition.type())) {
             rain = Math.max(rain, active.alpha());
+         } else if ("thunderstorm_weather".equals(active.definition.type())) {
+            float alpha = active.alpha();
+            rain = Math.max(rain, alpha);
+            thunder = Math.max(thunder, alpha);
          }
       }
       if (rain > 0.0F) {
          minecraft.level.setRainLevel(Math.min(1.0F, rain));
-         minecraft.level.setThunderLevel(0.0F);
+         minecraft.level.setThunderLevel(Math.min(1.0F, thunder));
          forcedRainApplied = true;
       } else if (forcedRainApplied) {
          clearForcedRain();
@@ -221,7 +226,7 @@ public final class VFXEnvironmentManager {
 
       private boolean isWorldFog() {
          String type = this.definition.type();
-         return "world_darkness".equals(type) || "red_fog".equals(type) || "thunderstorm_hint".equals(type);
+         return "world_darkness".equals(type) || "red_fog".equals(type) || "thunderstorm_hint".equals(type) || "thunderstorm_weather".equals(type);
       }
    }
 

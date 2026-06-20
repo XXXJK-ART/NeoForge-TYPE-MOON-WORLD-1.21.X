@@ -54,6 +54,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_VICTORY = register("oda_nobunaga_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_NP = register("oda_nobunaga_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_HAJUN = register("oda_nobunaga_voice_hajun");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ENKIDU_VOICE_ATTACK = register("enkidu_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ENKIDU_VOICE_FAIL = register("enkidu_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ENKIDU_VOICE_VICTORY = register("enkidu_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ENKIDU_VOICE_NP = register("enkidu_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_ATTACK = register("gawain_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_FAIL = register("gawain_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_VICTORY = register("gawain_voice_victory");

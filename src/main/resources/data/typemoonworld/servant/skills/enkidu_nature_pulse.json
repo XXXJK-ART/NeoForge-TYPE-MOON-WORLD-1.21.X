@@ -1,0 +1,22 @@
+{
+  "id": "enkidu_nature_pulse",
+  "display_name": "Nature Pulse",
+  "display_name_zh": "\u5927\u5730\u8109\u51b2",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 180,
+  "duration_ticks": 70,
+  "effects": [
+    {
+      "effect_type": "enkidu_nature_pulse",
+      "params": {
+        "radius": 5.8,
+        "base_damage": 10,
+        "weakness_ticks": 80,
+        "slow_ticks": 70
+      }
+    }
+  ],
+  "description": "Sends a gentle but firm pulse through the ground, damaging and weakening nearby enemies.",
+  "description_zh": "\u8ba9\u5927\u5730\u6269\u6563\u6e29\u548c\u800c\u575a\u5b9a\u7684\u8109\u51b2\uff0c\u4f24\u5bb3\u5e76\u524a\u5f31\u5468\u56f4\u654c\u4eba\u3002"
+}

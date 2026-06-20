@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
@@ -226,6 +227,12 @@ public final class CombatModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       LivingEntity sharedTarget = context.target();
+      if (entity instanceof EnkiduEntity) {
+         if (sharedTarget == null || sharedTarget.isDeadOrDying() || EntityUtils.isImmunePlayerTarget(sharedTarget)) {
+            entity.setTarget(null);
+         }
+         return;
+      }
       if (sharedTarget != null && ServantCombatSystem.skillsSuppressed(entity)) {
          entity.getLookControl().setLookAt(sharedTarget, 30.0F, 30.0F);
          if (entity.distanceTo(sharedTarget) <= 2.7 && !entity.isPerformingAction()) {
