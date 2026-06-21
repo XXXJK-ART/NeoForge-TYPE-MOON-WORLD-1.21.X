@@ -16,6 +16,7 @@ public class ChainsOfHeavenBindingRenderer extends GeoEntityRenderer<ChainsOfHea
    @Override
    public void render(ChainsOfHeavenBindingEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
       poseStack.pushPose();
+      poseStack.scale(entity.getWidthScale(), entity.getHeightScale(), entity.getWidthScale());
       if (entity.isDivineBind()) {
          poseStack.scale(1.12F, 1.12F, 1.12F);
       }

@@ -1,0 +1,103 @@
+{
+  "duration": 6.0,
+  "notes": "Final impact at Enkidu Enuma Elish collision point. Emerald/gold/white explosion, no screen tint.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.2,
+      "rate": 1400,
+      "particle_lifetime": 0.95,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.06, 0.0],
+      "velocity_variance": 0.24,
+      "max_vanilla_particles_per_tick": 8,
+      "component": { "type": "sphere", "radius": 1.0, "segments": 160 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.22, "color": "#FFFFD700" },
+        { "t": 0.55, "color": "#AA88FF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.25 },
+        { "t": 0.32, "size": 1.1 },
+        { "t": 1.0, "size": 0.06 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.4, 0.4, 0.4], "easing": "ease_out_cubic" },
+        { "t": 0.45, "scale": [14.0, 5.0, 14.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [22.0, 8.0, 22.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_ENUMA_IMPACT_CORE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "explosion", "count": 2, "spread": [1.2, 0.5, 1.2], "offset": [0.0, 0.5, 0.0], "speed": 0.0, "chance": 0.6 },
+        { "type": "end_rod", "count": 2, "spread": [2.5, 1.0, 2.5], "offset": [0.0, 0.8, 0.0], "speed": 0.08, "chance": 0.85 }
+      ]
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 3.5,
+      "rate": 520,
+      "particle_lifetime": 1.2,
+      "size_variance": 0.12,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.3, "color": "#AA88FF44" },
+        { "t": 0.58, "color": "#88FFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.42 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.6, 1.0, 0.6], "easing": "ease_out_cubic" },
+        { "t": 0.5, "scale": [18.0, 1.0, 18.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [28.0, 1.0, 28.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_ENUMA_IMPACT_WAVE",
+      "enable_trail": true
+    },
+    {
+      "start_time": 1.0,
+      "end_time": 6.0,
+      "rate": 180,
+      "particle_lifetime": 1.8,
+      "size_variance": 0.08,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.08,
+      "velocity": [0.0, -0.025, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 1.0, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88AAFF44" },
+        { "t": 0.35, "color": "#88FFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.55, "size": 0.12 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [10.0, 5.0, 10.0] },
+        { "t": 1.0, "scale": [20.0, 8.0, 20.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_ENUMA_CLEANSE_STARDUST"
+    }
+  ]
+}

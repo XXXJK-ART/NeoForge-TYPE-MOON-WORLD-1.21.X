@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -324,6 +325,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       }
       boolean deathThorn = target.isAlive()
          && !(target instanceof EmiyaArcherEntity)
+         && !(target instanceof EnkiduEntity)
          && this.random.nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       if (this.tryConsumeGodHandLife(target, 250.0F, deathThorn)) {
          this.spawnSingleTargetImpact(target);

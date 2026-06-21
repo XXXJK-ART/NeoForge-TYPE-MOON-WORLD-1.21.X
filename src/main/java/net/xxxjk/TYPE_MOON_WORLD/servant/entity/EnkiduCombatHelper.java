@@ -37,6 +37,8 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -72,6 +74,10 @@ public final class EnkiduCombatHelper {
    private static final String TAG_FLIGHT_UNTIL = "EnkiduFlightUntil";
    private static final String TAG_LAND_UNTIL = "EnkiduLandUntil";
    private static final String TAG_NEXT_FLIGHT_TOGGLE = "EnkiduNextFlightToggle";
+   private static final String TAG_UNREACHABLE_TICKS = "EnkiduUnreachableTicks";
+   private static final String TAG_ENUMA_IMPACT_X = "EnkiduEnumaImpactX";
+   private static final String TAG_ENUMA_IMPACT_Y = "EnkiduEnumaImpactY";
+   private static final String TAG_ENUMA_IMPACT_Z = "EnkiduEnumaImpactZ";
    private static final String TAG_BOUND_UNTIL = "EnkiduBoundUntil";
    private static final String TAG_BOUND_OWNER = "EnkiduBoundOwner";
    private static final String TAG_BOUND_PREV_NO_AI = "EnkiduBoundPrevNoAi";
@@ -102,7 +108,8 @@ public final class EnkiduCombatHelper {
    private static final ItemStack[] EARTH_WEAPONS = new ItemStack[] {
       new ItemStack(Items.IRON_SWORD), new ItemStack(Items.IRON_AXE), new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.IRON_SHOVEL),
       new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.DIAMOND_AXE), new ItemStack(Items.DIAMOND_PICKAXE), new ItemStack(Items.TRIDENT),
-      new ItemStack(Items.NETHERITE_SWORD), new ItemStack(Items.NETHERITE_AXE), new ItemStack(Items.NETHERITE_PICKAXE)
+      new ItemStack(Items.NETHERITE_SWORD), new ItemStack(Items.NETHERITE_AXE), new ItemStack(Items.NETHERITE_PICKAXE),
+      new ItemStack(Items.BOW), new ItemStack(Items.CROSSBOW)
    };
 
    private EnkiduCombatHelper() {
@@ -118,6 +125,7 @@ public final class EnkiduCombatHelper {
       tickPerfectFormRegen(entity, level, now);
       tickPassivePresence(entity, level, now);
       tickGroundManaRegen(entity, level, now);
+      tickGroundCombatResourceBoost(entity, now);
       EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
       tickEnumaWindup(entity, level, now);
       if (isEnumaActive(entity, now)) {
@@ -166,7 +174,7 @@ public final class EnkiduCombatHelper {
       if (isFlying(entity) && tryFlyingBasicAttack(entity, level, target, now, distance)) {
          return;
       }
-      if (distance >= 4.0) {
+      if (isFlying(entity) && distance >= 4.0) {
          trySmallAgeOfBabylon(entity, level, target, now);
       }
    }
@@ -231,13 +239,39 @@ public final class EnkiduCombatHelper {
    }
 
    private static void tickGroundManaRegen(EnkiduEntity entity, ServerLevel level, long now) {
-      if (now % 20L != 0L || !entity.onGround()) {
+      if (now % 20L != 0L || !isOnEarth(entity, level)) {
          return;
+      }
+      entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + 6.0));
+      if (entity.getHealth() < entity.getMaxHealth()) {
+         entity.heal(10.0F);
+         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, entity.getX(), entity.getY() + 0.35, entity.getZ(), 10, 0.35, 0.16, 0.35, 0.035);
+      }
+   }
+
+   private static boolean isOnEarth(EnkiduEntity entity, ServerLevel level) {
+      if (!entity.onGround()) {
+         return false;
       }
       BlockPos below = entity.blockPosition().below();
       BlockState state = level.getBlockState(below);
-      if (!state.isAir() && state.isSolidRender(level, below)) {
-         entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + 4.0));
+      return !state.isAir() && state.isSolidRender(level, below);
+   }
+
+   private static void tickGroundCombatResourceBoost(EnkiduEntity entity, long now) {
+      if (!(entity.level() instanceof ServerLevel level) || !isOnEarth(entity, level) || entity.tickCount % 5 != 0) {
+         return;
+      }
+      CompoundTag data = entity.getPersistentData();
+      if (entity.getDefinition() == null || entity.getDefinition().parameters() == null) {
+         return;
+      }
+      double staminaMax = ServantCombatFormulas.staminaMax(entity.getDefinition().parameters());
+      double poiseMax = ServantCombatFormulas.poiseMax(entity.getDefinition().parameters());
+      data.putDouble("TypeMoonCombatStamina", Math.min(staminaMax, data.getDouble("TypeMoonCombatStamina") + ServantCombatFormulas.staminaRegenPerSecond(entity.getDefinition().parameters()) / 4.0));
+      data.putDouble("TypeMoonCombatPoise", Math.min(poiseMax, data.getDouble("TypeMoonCombatPoise") + ServantCombatFormulas.poiseRegenPerSecond(entity.getDefinition().parameters()) / 4.0));
+      if (data.getLong("TypeMoonCombatRecoveryUntil") > now && entity.tickCount % 20 == 0) {
+         entity.heal((float)(entity.getMaxHealth() * ServantCombatFormulas.comboProtectionHealPercentPerSecond(entity.getDefinition().parameters())));
       }
    }
 
@@ -249,7 +283,7 @@ public final class EnkiduCombatHelper {
          return false;
       }
       data.putLong(TAG_LAST_PERFECT_FORM, now);
-      data.putLong(TAG_REGEN_UNTIL, now + 100L);
+      data.putLong(TAG_REGEN_UNTIL, now + 200L);
       data.putLong(TAG_NEXT_REGEN, now);
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 50.0));
       clearNegativeEffects(entity);
@@ -266,7 +300,7 @@ public final class EnkiduCombatHelper {
       }
       clearNegativeEffects(entity);
       if (now >= data.getLong(TAG_NEXT_REGEN)) {
-         entity.heal(30.0F);
+         entity.heal(20.0F);
          data.putLong(TAG_NEXT_REGEN, now + 10L);
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, entity.getX(), entity.getY() + 0.9, entity.getZ(), 20, 0.6, 0.8, 0.6, 0.05);
       }
@@ -337,16 +371,25 @@ public final class EnkiduCombatHelper {
       }
       double distance = entity.distanceTo(target);
       long flightUntil = data.getLong(TAG_FLIGHT_UNTIL);
-      if (distance > 13.0 && flightUntil <= now) {
-         data.putLong(TAG_FLIGHT_UNTIL, now + 80L + entity.getRandom().nextInt(80));
-         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 55L + entity.getRandom().nextInt(45));
-      } else if (distance < 7.0 && flightUntil > now) {
+      boolean lowHealthNeedsEarth = entity.getHealth() <= entity.getMaxHealth() * 0.8F;
+      boolean airborneTarget = !target.onGround() || target.getY() - entity.getY() > 3.0;
+      boolean poorReach = !entity.getSensing().hasLineOfSight(target) && distance > 10.0;
+      if (!entity.getNavigation().isDone() || distance <= 6.0) {
+         data.putLong(TAG_UNREACHABLE_TICKS, 0L);
+      } else if (distance > 8.0) {
+         data.putLong(TAG_UNREACHABLE_TICKS, data.getLong(TAG_UNREACHABLE_TICKS) + 1L);
+      }
+      boolean unreachable = data.getLong(TAG_UNREACHABLE_TICKS) > 45L;
+      boolean shouldFly = !lowHealthNeedsEarth && (airborneTarget || unreachable || poorReach);
+      if (shouldFly && flightUntil <= now) {
+         data.putLong(TAG_FLIGHT_UNTIL, now + 70L + entity.getRandom().nextInt(50));
+         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 70L + entity.getRandom().nextInt(40));
+      } else if ((!shouldFly || distance < 7.0) && flightUntil > now) {
          data.putLong(TAG_FLIGHT_UNTIL, now + 15L + entity.getRandom().nextInt(20));
-         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 25L + entity.getRandom().nextInt(25));
+         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 160L + entity.getRandom().nextInt(80));
       } else if (now >= data.getLong(TAG_NEXT_FLIGHT_TOGGLE)) {
-         boolean fly = flightUntil <= now ? distance > 9.0 : distance > 12.0;
-         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 45L + entity.getRandom().nextInt(40));
-         data.putLong(TAG_FLIGHT_UNTIL, fly ? now + 70L + entity.getRandom().nextInt(70) : now + 12L);
+         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 120L + entity.getRandom().nextInt(80));
+         data.putLong(TAG_FLIGHT_UNTIL, shouldFly ? now + 60L + entity.getRandom().nextInt(60) : now + 10L);
       }
       if (isFlying(entity)) {
          entity.getNavigation().stop();
@@ -496,7 +539,8 @@ public final class EnkiduCombatHelper {
 
    private static boolean tryAgeOfBabylonVolley(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
       CompoundTag data = entity.getPersistentData();
-      boolean highThreat = target.getMaxHealth() >= 160.0F || hasTrait(target, ServantTraitTag.BEAST) || hasTrait(target, ServantTraitTag.HUMAN_THREAT) || target instanceof EnderDragon;
+      boolean counterDuel = isProjectionCounterDuelTarget(target);
+      boolean highThreat = counterDuel || target.getMaxHealth() >= 160.0F || hasTrait(target, ServantTraitTag.BEAST) || hasTrait(target, ServantTraitTag.HUMAN_THREAT) || target instanceof EnderDragon;
       int chance = phase == ServantCombatPhase.DECISIVE ? 55 : phase == ServantCombatPhase.NORMAL ? 40 : 24;
       if ((!highThreat && phase != ServantCombatPhase.DECISIVE)
          || entity.getCurrentMp() < 30.0
@@ -507,17 +551,19 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_LAST_BIG_VOLLEY, now);
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 30.0));
       data.putUUID(TAG_BIG_VOLLEY_TARGET, target.getUUID());
-      data.putLong(TAG_BIG_VOLLEY_TOKEN, now + 24L);
+      int rounds = counterDuel ? 12 + entity.getRandom().nextInt(5) : 5;
+      data.putLong(TAG_BIG_VOLLEY_TOKEN, now + rounds * 10L + 30L);
       entity.triggerNamedActionAnimation("age_of_babylon");
       VFXServerEffects.spawnReplayable(level, "servant_enkidu_age_of_babylon", entity, 2.2F);
-      for (int batch = 0; batch < 8; batch++) {
+      for (int batch = 0; batch < rounds; batch++) {
          final int batchIndex = batch;
-         final int delay = batch * 2 + 1;
+         final int delay = batch * 10 + 1;
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
             if (entity.isAlive() && entity.level() instanceof ServerLevel serverLevel) {
                LivingEntity liveTarget = resolveAgeOfBabylonTarget(serverLevel, entity, data);
                if (liveTarget != null) {
-                  spawnEarthWeapons(entity, serverLevel, liveTarget, 14, batchIndex, 2.7F, true);
+                  spawnEarthWeapons(entity, serverLevel, liveTarget, counterDuel ? 18 : 14, batchIndex, 2.7F, true);
+                  triggerProjectionCounterVolley(liveTarget, entity, serverLevel, batchIndex, counterDuel);
                }
             }
          });
@@ -1063,54 +1109,103 @@ public final class EnkiduCombatHelper {
       }
       forward = forward.normalize();
       Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
-      Vec3 volleyCenter = entity.position().lerp(target.position(), 0.62);
+      Vec3 volleyCenter = entity.position().subtract(forward.scale(4.0 + Math.min(8.0, batch * 0.7)));
       for (int i = 0; i < count; i++) {
          int globalIndex = batch * count + i;
          double spreadIndex = i - (count - 1) * 0.5;
          Vec3 spawn;
          Vec3 aimPoint;
-         Vec3 steering;
          if (volley) {
-            double angle = globalIndex * 0.61 + batch * 0.42 + (entity.getRandom().nextDouble() - 0.5) * 0.14;
-            double radius = 6.0 + (globalIndex % 7) * 2.2 + batch * 0.85 + entity.getRandom().nextDouble() * 2.2;
-            double forwardOffset = Math.sin(angle) * radius + ((i % 5) - 2) * 1.85;
-            double sideOffset = Math.cos(angle) * radius;
-            double rise = 3.0 + (i % 7) * 1.05 + batch * 0.38 + entity.getRandom().nextDouble() * 0.8;
+            int row = i / 7;
+            int col = i % 7;
+            double forwardOffset = -row * 2.2 - entity.getRandom().nextDouble() * 1.2;
+            double sideOffset = (col - 3) * 2.4 + (entity.getRandom().nextDouble() - 0.5) * 1.1;
             Vec3 ringOffset = forward.scale(forwardOffset).add(side.scale(sideOffset));
-            spawn = volleyCenter.add(ringOffset).add(0.0, rise, 0.0);
+            spawn = groundSpawn(level, volleyCenter.add(ringOffset));
             aimPoint = targetCenter
                .add(side.scale((entity.getRandom().nextDouble() - 0.5) * 4.2))
                .add(forward.scale((entity.getRandom().nextDouble() - 0.5) * 3.2))
                .add(0.0, (entity.getRandom().nextDouble() - 0.5) * 2.1, 0.0);
-            Vec3 tangent = new Vec3(-ringOffset.z, 0.0, ringOffset.x);
-            if (tangent.lengthSqr() < 1.0E-4) {
-               tangent = side;
-            } else {
-               tangent = tangent.normalize();
-            }
-            steering = tangent.scale(globalIndex % 2 == 0 ? 0.18 : -0.18).add(0.0, -0.035, 0.0);
          } else {
             double sideOffset = spreadIndex * 1.15 + (entity.getRandom().nextDouble() - 0.5) * 0.75;
             double forwardOffset = 1.8 + (i % 3) * 0.7 + entity.getRandom().nextDouble() * 0.8;
-            double rise = 0.28 + (i % 4) * 0.46;
-            spawn = entity.position().add(forward.scale(forwardOffset)).add(side.scale(sideOffset)).add(0.0, rise, 0.0);
+            spawn = groundSpawn(level, entity.position().add(forward.scale(forwardOffset)).add(side.scale(sideOffset)));
             aimPoint = targetCenter
                .add(side.scale((entity.getRandom().nextDouble() - 0.5) * 1.45))
                .add(0.0, (entity.getRandom().nextDouble() - 0.5) * 0.55, 0.0);
-            steering = side.scale((entity.getRandom().nextDouble() - 0.5) * 0.08);
          }
          ItemStack stack = randomWeapon(entity, volley);
          float damage = weaponDamage(stack, volley);
-         EnkiduEarthWeaponProjectileEntity projectile = new EnkiduEarthWeaponProjectileEntity(level, entity, stack, damage);
-         projectile.setPos(spawn.x, spawn.y, spawn.z);
-         Vec3 aim = aimPoint.subtract(spawn);
-         double shotSpeed = speed + entity.getRandom().nextDouble() * (volley ? 0.72 : 0.42);
-         projectile.setDeltaMovement(aim.normalize().add(steering).normalize().scale(shotSpeed));
-         projectile.alignToMotion();
-         level.addFreshEntity(projectile);
-         spawnEarthWeaponBirthFx(level, spawn, volley);
+         spawnAgeOfBabylonGate(level, spawn, volley);
+         final Vec3 finalSpawn = spawn;
+         final Vec3 finalAimPoint = aimPoint;
+         final ItemStack finalStack = stack;
+         final float finalDamage = damage;
+         final int delay = 6 + (volley ? (globalIndex % 4) : (i % 3));
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            if (!entity.isAlive() || !(entity.level() instanceof ServerLevel serverLevel) || !target.isAlive()) {
+               return;
+            }
+            EnkiduEarthWeaponProjectileEntity projectile;
+            if (finalStack.is(Items.BOW) || finalStack.is(Items.CROSSBOW)) {
+               projectile = EnkiduEarthWeaponProjectileEntity.bow(serverLevel, entity, finalStack, finalDamage, target, finalStack.is(Items.CROSSBOW));
+            } else {
+               projectile = EnkiduEarthWeaponProjectileEntity.weapon(serverLevel, entity, finalStack, finalDamage, target, volley ? 0.22F : 0.16F, true);
+            }
+            projectile.setPos(finalSpawn.x, finalSpawn.y, finalSpawn.z);
+            Vec3 aim = finalAimPoint.subtract(finalSpawn);
+            double shotSpeed = speed + entity.getRandom().nextDouble() * (volley ? 0.72 : 0.42);
+            projectile.setDeltaMovement(aim.normalize().scale(finalStack.is(Items.BOW) || finalStack.is(Items.CROSSBOW) ? 0.12 : shotSpeed));
+            projectile.alignToMotion();
+            serverLevel.addFreshEntity(projectile);
+            spawnEarthWeaponBirthFx(serverLevel, finalSpawn, volley);
+         });
       }
       level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.HOSTILE, volley ? 1.4F : 0.75F, 1.35F);
+   }
+
+   private static Vec3 groundSpawn(ServerLevel level, Vec3 approximate) {
+      BlockPos surface = findSurface(level, BlockPos.containing(approximate));
+      return Vec3.atBottomCenterOf(surface).add(0.0, 0.08, 0.0);
+   }
+
+   private static void spawnAgeOfBabylonGate(ServerLevel level, Vec3 pos, boolean volley) {
+      VFXServerEffects.spawn(level, "servant_enkidu_age_of_babylon_gate", pos, volley ? 160.0 : 96.0);
+      level.sendParticles(ParticleTypes.ENCHANTED_HIT, pos.x, pos.y + 0.04, pos.z, volley ? 18 : 10, volley ? 0.9 : 0.45, 0.02, volley ? 0.9 : 0.45, 0.03);
+      level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y + 0.08, pos.z, volley ? 5 : 2, volley ? 0.45 : 0.25, 0.03, volley ? 0.45 : 0.25, 0.02);
+   }
+
+   private static boolean isProjectionCounterDuelTarget(LivingEntity target) {
+      if (target instanceof EmiyaArcherEntity) {
+         return true;
+      }
+      if (target instanceof ServantEntity servant) {
+         String id = servant.getServantId();
+         return "gilgamesh".equalsIgnoreCase(id) || "archer_gilgamesh".equalsIgnoreCase(id);
+      }
+      return false;
+   }
+
+   private static void triggerProjectionCounterVolley(LivingEntity target, EnkiduEntity enkidu, ServerLevel level, int batch, boolean counterDuel) {
+      if (!counterDuel || !(target instanceof EmiyaArcherEntity emiya) || batch % 2 != 0) {
+         return;
+      }
+      VFXServerEffects.spawn(level, "servant_emiya_projection", emiya, 128.0);
+      Vec3 center = emiya.position().add(0.0, 0.8, 0.0);
+      Vec3 toEnkidu = enkidu.position().add(0.0, enkidu.getBbHeight() * 0.5, 0.0).subtract(center);
+      if (toEnkidu.lengthSqr() < 1.0E-4) {
+         return;
+      }
+      Vec3 dir = toEnkidu.normalize();
+      Vec3 side = new Vec3(-dir.z, 0.0, dir.x);
+      for (int i = 0; i < 4; i++) {
+         Vec3 spawn = center.add(side.scale((i - 1.5) * 0.7)).add(0.0, 0.25 + i * 0.08, 0.0);
+         EnkiduEarthWeaponProjectileEntity counter = EnkiduEarthWeaponProjectileEntity.weapon(level, emiya, new ItemStack(Items.IRON_SWORD), 12.0F, enkidu, 0.18F, false);
+         counter.setPos(spawn.x, spawn.y, spawn.z);
+         counter.setDeltaMovement(dir.scale(2.5));
+         counter.alignToMotion();
+         level.addFreshEntity(counter);
+      }
    }
 
    private static LivingEntity resolveAgeOfBabylonTarget(ServerLevel level, EnkiduEntity entity, CompoundTag data) {
@@ -1178,12 +1273,16 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_ENUMA_FINISH, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL);
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
       data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
-      data.putLong(TAG_LAND_UNTIL, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL + 12L);
-      entity.setNoGravity(false);
+      data.putDouble(TAG_ENUMA_IMPACT_X, target.getX());
+      data.putDouble(TAG_ENUMA_IMPACT_Y, target.getY());
+      data.putDouble(TAG_ENUMA_IMPACT_Z, target.getZ());
+      data.putLong(TAG_FLIGHT_UNTIL, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL + 20L);
+      data.remove(TAG_LAND_UNTIL);
+      entity.setNoGravity(true);
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 150.0));
       entity.triggerNamedActionAnimation("enkidu_enuma_elish");
       ServantVoiceHelper.tryPlayEnkiduNp(entity);
-      VFXServerEffects.spawnReplayable(level, "servant_enkidu_enuma_elish", entity, 35.25F);
+      VFXServerEffects.spawnReplayable(level, "servant_enkidu_enuma_elish", entity, 15.25F);
       level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 1.6F, 0.85F);
       return true;
    }
@@ -1209,37 +1308,123 @@ public final class EnkiduCombatHelper {
          return;
       }
       entity.getNavigation().stop();
-      entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.1, 0.0, 0.1));
-      entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.55, 0.0));
+      Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
+      entity.faceToward(targetPoint);
       if (now < release) {
+         entity.setNoGravity(true);
+         double progress = 1.0 - (double)(release - now) / Math.max(1.0, ENUMA_WINDUP);
+         double desiredY = Math.max(entity.getY(), target.getY() + 12.0 + progress * 8.0);
+         Vec3 hover = new Vec3(entity.getX(), desiredY, entity.getZ()).subtract(entity.position());
+         entity.setDeltaMovement(entity.getDeltaMovement().scale(0.55).add(0.0, Mth.clamp(hover.y * 0.06, 0.04, 0.32), 0.0));
+         emitEnumaDrillFx(level, entity, targetPoint, now, false);
          return;
       }
       if (data.getBoolean(TAG_ENUMA_DAMAGE_DONE)) {
+         emitEnumaDrillFx(level, entity, targetPoint, now, true);
          if (now >= finish) {
             data.remove(TAG_ENUMA_RELEASE);
             data.remove(TAG_ENUMA_FINISH);
             data.remove(TAG_ENUMA_TARGET);
             data.remove(TAG_ENUMA_DAMAGE_DONE);
+            entity.setNoGravity(false);
+            data.putLong(TAG_LAND_UNTIL, now + 160L);
          }
          return;
       }
+      Vec3 impact = targetPoint;
+      Vec3 toImpact = impact.subtract(entity.position());
+      if (toImpact.length() > 1.8 && now < release + ENUMA_RELEASE_VISUAL - 4L) {
+         entity.setNoGravity(true);
+         entity.setDeltaMovement(toImpact.normalize().scale(2.35));
+         emitEnumaDrillFx(level, entity, targetPoint, now, true);
+         return;
+      }
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, true);
-      double damage = 5000.0;
-      if (hasTrait(target, ServantTraitTag.DIVINE)) {
-         damage *= 2.0;
-      }
-      if (hasTrait(target, ServantTraitTag.BEAST) || hasTrait(target, ServantTraitTag.HUMAN_THREAT) || target instanceof EnderDragon) {
-         damage *= 2.0;
-      }
-      applyNoDefenseDamage(entity, target, (float)Math.min(Float.MAX_VALUE, damage));
-      VFXServerEffects.spawn(level, "servant_enkidu_chain_of_heaven", target, 128.0);
-      level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 80, 1.2, 1.0, 1.2, 0.18);
-      level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.0F, 1.35F);
+      data.putDouble(TAG_ENUMA_IMPACT_X, impact.x);
+      data.putDouble(TAG_ENUMA_IMPACT_Y, impact.y);
+      data.putDouble(TAG_ENUMA_IMPACT_Z, impact.z);
+      entity.setPos(impact.x, Math.max(target.getY(), impact.y - entity.getBbHeight() * 0.45), impact.z);
+      entity.setDeltaMovement(Vec3.ZERO);
+      applyNoDefenseDamage(entity, target, 4000.0F);
+      applyEnumaExplosion(entity, level, impact, target);
    }
 
    private static boolean isEnumaActive(EnkiduEntity entity, long now) {
       CompoundTag data = entity.getPersistentData();
       return data.getLong(TAG_ENUMA_RELEASE) > now || data.getLong(TAG_ENUMA_FINISH) > now;
+   }
+
+   private static void emitEnumaDrillFx(ServerLevel level, EnkiduEntity entity, Vec3 targetPoint, long now, boolean release) {
+      Vec3 center = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
+      Vec3 dir = targetPoint.subtract(center);
+      if (dir.lengthSqr() < 1.0E-4) {
+         dir = entity.getLookAngle();
+      }
+      dir = dir.normalize();
+      Vec3 side = new Vec3(-dir.z, 0.0, dir.x);
+      if (side.lengthSqr() < 1.0E-4) {
+         side = new Vec3(1.0, 0.0, 0.0);
+      }
+      side = side.normalize();
+      Vec3 up = side.cross(dir).normalize();
+      int points = release ? 18 : 10;
+      double radius = release ? 1.05 : 0.65;
+      for (int i = 0; i < points; i++) {
+         double angle = (now * 0.48 + i * Math.PI * 2.0 / points);
+         double along = i * (release ? 0.32 : 0.22);
+         Vec3 ring = side.scale(Math.cos(angle) * radius).add(up.scale(Math.sin(angle) * radius));
+         Vec3 pos = center.add(dir.scale(along)).add(ring);
+         level.sendParticles(i % 3 == 0 ? ParticleTypes.END_ROD : ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.01);
+      }
+      if (now % 3L == 0L) {
+         level.sendParticles(ParticleTypes.ENCHANTED_HIT, center.x, center.y, center.z, release ? 16 : 8, 0.65, 0.65, 0.65, 0.08);
+      }
+   }
+
+   private static void applyEnumaExplosion(EnkiduEntity entity, ServerLevel level, Vec3 impact, LivingEntity directTarget) {
+      VFXServerEffects.spawnReplayable(level, "servant_enkidu_enuma_elish_impact", impact, 6.0F);
+      VFXServerEffects.spawn(level, "servant_enkidu_chain_of_heaven", directTarget, 128.0);
+      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 3, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 120, 2.4, 1.8, 2.4, 0.2);
+      level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 3.2F, 1.25F);
+      AABB box = new AABB(impact, impact).inflate(14.0);
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
+         if (living == directTarget) {
+            continue;
+         }
+         double distance = Math.max(1.0, living.position().distanceTo(impact));
+         if (distance <= 14.0) {
+            applyNoDefenseDamage(entity, living, (float)(1000.0 * (1.0 - distance / 18.0)));
+         }
+      }
+      breakEnumaImpactTerrain(level, impact, 14.0, 1100);
+   }
+
+   private static void breakEnumaImpactTerrain(ServerLevel level, Vec3 impact, double radius, int maxBroken) {
+      BlockPos center = BlockPos.containing(impact);
+      int r = Mth.ceil(radius);
+      int broken = 0;
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-r, -r / 2, -r), center.offset(r, r / 2, r))) {
+         if (broken >= maxBroken) {
+            break;
+         }
+         double dx = pos.getX() + 0.5 - impact.x;
+         double dy = (pos.getY() + 0.5 - impact.y) * 1.35;
+         double dz = pos.getZ() + 0.5 - impact.z;
+         double distSqr = dx * dx + dy * dy + dz * dz;
+         if (distSqr > radius * radius || blockNoise(level, pos) < 0.18) {
+            continue;
+         }
+         BlockState state = level.getBlockState(pos);
+         float hardness = state.getDestroySpeed(level, pos);
+         if (state.isAir() || state.hasBlockEntity() || hardness < 0.0F || hardness > 80.0F) {
+            continue;
+         }
+         if (level.removeBlock(pos, false)) {
+            broken++;
+         }
+      }
    }
 
    private static void applyNoDefenseDamage(EnkiduEntity entity, LivingEntity target, float amount) {
@@ -1321,12 +1506,15 @@ public final class EnkiduCombatHelper {
    private static float weaponDamage(ItemStack stack, boolean volley) {
       float base = volley ? 20.0F : 13.0F;
       if (stack.is(Items.NETHERITE_SWORD) || stack.is(Items.NETHERITE_AXE) || stack.is(Items.NETHERITE_PICKAXE)) {
-         return base + 12.0F;
+         return (base + 12.0F) * 2.0F;
       }
-      if (stack.is(Items.DIAMOND_SWORD) || stack.is(Items.DIAMOND_AXE) || stack.is(Items.DIAMOND_PICKAXE) || stack.is(Items.TRIDENT)) {
-         return base + 7.0F;
+      if (stack.is(Items.DIAMOND_SWORD) || stack.is(Items.DIAMOND_AXE) || stack.is(Items.DIAMOND_PICKAXE) || stack.is(Items.TRIDENT) || stack.is(Items.CROSSBOW)) {
+         return (base + 7.0F) * 2.0F;
       }
-      return base;
+      if (stack.is(Items.BOW)) {
+         return (base + 4.0F) * 2.0F;
+      }
+      return base * 2.0F;
    }
 
    private static int phasedCooldown(int baseCooldown, ServantCombatPhase phase) {

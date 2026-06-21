@@ -1936,6 +1936,7 @@ public final class CombatModule implements ServantAiModule {
          }
          boolean deathThorn = resolvedTarget.isAlive()
             && !(resolvedTarget instanceof EmiyaArcherEntity)
+            && !(resolvedTarget instanceof EnkiduEntity)
             && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
          if (!tryConsumeGodHandLife(entity, resolvedTarget, 250.0F, deathThorn)) {
             applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);

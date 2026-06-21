@@ -1,6 +1,6 @@
 {
-  "duration": 35.0,
-  "notes": "Enkidu Enuma Elish v3: 10s windup, 5s piercing release, and roughly 20s Artoria-inspired cleansing afterglow. EA-scale emerald/gold/white, no screen tint environment effects.",
+  "duration": 15.0,
+  "notes": "Enkidu Enuma Elish v4: 10s windup plus 5s real collision release. Final impact explosion is spawned separately at the actual collision point; no screen tint and no lingering final green pillar.",
   "emitters": [
     {
       "start_time": 0.0,

@@ -7,6 +7,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,6 +23,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(ChainsOfHeavenBindingEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> DIVINE_BIND = SynchedEntityData.defineId(ChainsOfHeavenBindingEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Float> WIDTH_SCALE = SynchedEntityData.defineId(ChainsOfHeavenBindingEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Float> HEIGHT_SCALE = SynchedEntityData.defineId(ChainsOfHeavenBindingEntity.class, EntityDataSerializers.FLOAT);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID targetUuid;
    private UUID ownerUuid;
@@ -47,10 +50,20 @@ public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
       return this.entityData.get(DIVINE_BIND);
    }
 
+   public float getWidthScale() {
+      return this.entityData.get(WIDTH_SCALE);
+   }
+
+   public float getHeightScale() {
+      return this.entityData.get(HEIGHT_SCALE);
+   }
+
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       builder.define(DURATION, 20);
       builder.define(DIVINE_BIND, false);
+      builder.define(WIDTH_SCALE, 1.0F);
+      builder.define(HEIGHT_SCALE, 1.0F);
    }
 
    @Override
@@ -78,6 +91,8 @@ public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
       this.setPos(target.getX(), target.getY(), target.getZ());
       this.setYRot(target.getYRot());
       this.yRotO = this.getYRot();
+      this.entityData.set(WIDTH_SCALE, Mth.clamp(target.getBbWidth() / 0.6F, 0.55F, 5.5F));
+      this.entityData.set(HEIGHT_SCALE, Mth.clamp(target.getBbHeight() / 1.8F, 0.55F, 4.5F));
    }
 
    private LivingEntity getTargetLiving(ServerLevel level) {
@@ -98,6 +113,8 @@ public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
       }
       this.entityData.set(DURATION, tag.contains("Duration") ? tag.getInt("Duration") : 20);
       this.entityData.set(DIVINE_BIND, tag.getBoolean("DivineBind"));
+      this.entityData.set(WIDTH_SCALE, tag.contains("WidthScale") ? tag.getFloat("WidthScale") : 1.0F);
+      this.entityData.set(HEIGHT_SCALE, tag.contains("HeightScale") ? tag.getFloat("HeightScale") : 1.0F);
    }
 
    @Override
@@ -110,6 +127,8 @@ public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
       }
       tag.putInt("Duration", this.entityData.get(DURATION));
       tag.putBoolean("DivineBind", this.entityData.get(DIVINE_BIND));
+      tag.putFloat("WidthScale", this.entityData.get(WIDTH_SCALE));
+      tag.putFloat("HeightScale", this.entityData.get(HEIGHT_SCALE));
    }
 
    @Override

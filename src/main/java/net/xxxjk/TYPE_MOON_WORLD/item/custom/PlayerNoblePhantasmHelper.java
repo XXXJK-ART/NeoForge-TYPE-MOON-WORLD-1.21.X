@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -567,6 +568,7 @@ public final class PlayerNoblePhantasmHelper {
       }
       boolean deathThorn = target.isAlive()
          && !(target instanceof EmiyaArcherEntity)
+         && !(target instanceof EnkiduEntity)
          && player.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       DamageSource source = player.damageSources().mobAttack(player);
       target.invulnerableTime = 0;
