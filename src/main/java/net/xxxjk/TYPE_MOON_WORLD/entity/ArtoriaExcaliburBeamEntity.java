@@ -293,17 +293,17 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
                   }
                }
             }
-            damageCraterSlice(level, owner, center, radius, halfHeight, fromY, batchHeight);
+            damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight);
             spawnCraterSliceFx(level, center, radius, fromY, broken);
          });
       }
    }
 
-   private static void damageCraterSlice(ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight) {
+   private static void damageCraterSlice(ArtoriaExcaliburBeamEntity beam, ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight) {
       double yMin = center.y + fromY - 1.5;
       double yMax = center.y + Math.min(halfHeight, fromY + batchHeight) + 1.5;
       AABB box = new AABB(center.x - radius, yMin, center.z - radius, center.x + radius, yMax, center.z + radius);
-      DamageSource source = level.damageSources().explosion(null, owner);
+      DamageSource source = level.damageSources().explosion(beam, owner);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 rel = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(center);
          double normalized = (rel.x * rel.x + rel.z * rel.z) / (double)(radius * radius) + (rel.y * rel.y) / (double)(halfHeight * halfHeight);

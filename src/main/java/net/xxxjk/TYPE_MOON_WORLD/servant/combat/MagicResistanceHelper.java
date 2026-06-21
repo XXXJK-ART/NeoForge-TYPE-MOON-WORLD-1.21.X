@@ -7,6 +7,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Witch;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
@@ -70,6 +71,12 @@ public final class MagicResistanceHelper {
       if (stored > 0.0F) {
          return stored;
       }
+      if (entity instanceof ServantEntity servant
+         && servant.getDefinition() != null
+         && "enkidu".equals(servant.getDefinition().id())
+         && getMagicResistanceRank(entity) == MagicResistanceRank.A) {
+         return 0.55F;
+      }
       return damageReductionForRank(getMagicResistanceRank(entity));
    }
 
@@ -103,7 +110,7 @@ public final class MagicResistanceHelper {
       if (entity == null || amount <= 0.0F) {
          return amount;
       }
-      return amount * (1.0F - damageReductionForRank(getMagicResistanceRank(entity)));
+      return amount * (1.0F - getDamageReduction(entity));
    }
 
    public static float damageReductionForRank(MagicResistanceRank rank) {
@@ -175,6 +182,7 @@ public final class MagicResistanceHelper {
          || direct instanceof SapphireProjectileEntity
          || direct instanceof TopazProjectileEntity
          || direct instanceof GanderProjectileEntity
-         || direct instanceof CyanWindFieldEntity;
+         || direct instanceof CyanWindFieldEntity
+         || direct instanceof ArtoriaExcaliburBeamEntity;
    }
 }

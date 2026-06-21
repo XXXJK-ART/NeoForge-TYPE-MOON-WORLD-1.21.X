@@ -35,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -119,7 +120,15 @@ public final class CursedArmHassanCombatHelper {
       }
 
       if (distance > 2.2) {
-         boolean moving = entity.getNavigation().moveTo(target, 1.35);
+         boolean moving = ServantNavigationHelper.moveToTargetThrottled(
+            entity,
+            target,
+            1.35,
+            now,
+            ServantNavigationHelper.SHORT_REPATH_INTERVAL,
+            0.65,
+            "HassanChasePath"
+         );
          if ((!moving || shouldRepositionWhenBlocked(entity, target, distance)) && tryRepositionNearTarget(entity, target, distance, now)) {
             return;
          }

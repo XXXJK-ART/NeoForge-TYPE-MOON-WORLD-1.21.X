@@ -4,39 +4,76 @@
   "emitters": [
     {
       "start_time": 0.0,
-      "end_time": 1.2,
-      "rate": 1400,
-      "particle_lifetime": 0.95,
-      "size_variance": 0.2,
-      "lifetime_variance": 0.12,
-      "position_variance": 0.04,
-      "velocity": [0.0, 0.06, 0.0],
-      "velocity_variance": 0.24,
-      "max_vanilla_particles_per_tick": 8,
-      "component": { "type": "sphere", "radius": 1.0, "segments": 160 },
+      "end_time": 0.75,
+      "rate": 5600,
+      "particle_lifetime": 0.62,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.24,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.16, 0.0],
+      "velocity_variance": 0.3,
+      "max_vanilla_particles_per_tick": 12,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 260 },
       "color_over_life": [
         { "t": 0.0, "color": "#FFFFFFFF" },
-        { "t": 0.22, "color": "#FFFFD700" },
-        { "t": 0.55, "color": "#AA88FF44" },
+        { "t": 0.18, "color": "#FFFFD700" },
+        { "t": 0.55, "color": "#CC88FF44" },
         { "t": 1.0, "color": "#00000000" }
       ],
       "size_over_life": [
-        { "t": 0.0, "size": 0.25 },
-        { "t": 0.32, "size": 1.1 },
-        { "t": 1.0, "size": 0.06 }
+        { "t": 0.0, "size": 0.36 },
+        { "t": 0.38, "size": 1.75 },
+        { "t": 1.0, "size": 0.08 }
       ],
       "transform_over_life": [
-        { "t": 0.0, "scale": [0.4, 0.4, 0.4], "easing": "ease_out_cubic" },
-        { "t": 0.45, "scale": [14.0, 5.0, 14.0], "easing": "ease_out_cubic" },
-        { "t": 1.0, "scale": [22.0, 8.0, 22.0] }
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.18, 0.18, 0.18], "easing": "ease_out_cubic" },
+        { "t": 0.45, "pos": [0.0, 0.15, 0.0], "scale": [9.5, 9.5, 9.5], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.25, 0.0], "scale": [2.2, 2.2, 2.2], "easing": "ease_in_cubic" }
       ],
       "blend": "ADDITIVE",
       "particle_role": "ENKIDU_ENUMA_IMPACT_CORE",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "explosion", "count": 2, "spread": [1.2, 0.5, 1.2], "offset": [0.0, 0.5, 0.0], "speed": 0.0, "chance": 0.6 },
-        { "type": "end_rod", "count": 2, "spread": [2.5, 1.0, 2.5], "offset": [0.0, 0.8, 0.0], "speed": 0.08, "chance": 0.85 }
+        { "type": "explosion_emitter", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.85 },
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.3, 0.0], "speed": 0.0, "chance": 0.9 },
+        { "type": "explosion", "count": 5, "spread": [2.6, 2.2, 2.6], "offset": [0.0, 0.75, 0.0], "speed": 0.0, "chance": 0.85 },
+        { "type": "end_rod", "count": 6, "spread": [5.0, 4.2, 5.0], "offset": [0.0, 1.1, 0.0], "speed": 0.12, "chance": 0.96 },
+        { "type": "happy_villager", "count": 5, "spread": [4.2, 3.2, 4.2], "offset": [0.0, 0.8, 0.0], "speed": 0.1, "chance": 0.84 },
+        { "type": "cloud", "count": 3, "spread": [2.4, 0.55, 2.4], "offset": [0.0, 0.12, 0.0], "speed": 0.06, "chance": 0.7 },
+        { "type": "large_smoke", "count": 2, "spread": [2.2, 0.5, 2.2], "offset": [0.0, 0.2, 0.0], "speed": 0.04, "chance": 0.55 }
       ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 1.8,
+      "rate": 2600,
+      "particle_lifetime": 0.78,
+      "size_variance": 0.36,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 6,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 240 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.26, "color": "#AAFFD700" },
+        { "t": 0.62, "color": "#8888FF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.18 },
+        { "t": 0.42, "size": 0.82 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.28, 0.28, 0.28], "easing": "ease_out_cubic" },
+        { "t": 0.58, "scale": [15.0, 15.0, 15.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [20.0, 20.0, 20.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_ENUMA_IMPACT_SPHERICAL_SHOCK",
+      "enable_trail": true
     },
     {
       "start_time": 0.1,
@@ -68,7 +105,12 @@
       ],
       "blend": "ADDITIVE",
       "particle_role": "ENKIDU_ENUMA_IMPACT_WAVE",
-      "enable_trail": true
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 2, "spread": [1.0, 0.08, 1.0], "offset": [0.0, -0.05, 0.0], "speed": 0.065, "chance": 0.65 },
+        { "type": "cloud", "count": 2, "spread": [1.2, 0.1, 1.2], "offset": [0.0, -0.1, 0.0], "speed": 0.06, "chance": 0.6 },
+        { "type": "large_smoke", "count": 1, "spread": [1.0, 0.12, 1.0], "offset": [0.0, 0.0, 0.0], "speed": 0.045, "chance": 0.5 }
+      ]
     },
     {
       "start_time": 1.0,
@@ -97,7 +139,11 @@
         { "t": 1.0, "scale": [20.0, 8.0, 20.0] }
       ],
       "blend": "ADDITIVE",
-      "particle_role": "ENKIDU_ENUMA_CLEANSE_STARDUST"
+      "particle_role": "ENKIDU_ENUMA_CLEANSE_STARDUST",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [1.4, 0.9, 1.4], "offset": [0.0, 0.6, 0.0], "speed": 0.055, "chance": 0.55 },
+        { "type": "happy_villager", "count": 1, "spread": [1.6, 0.7, 1.6], "offset": [0.0, 0.5, 0.0], "speed": 0.04, "chance": 0.45 }
+      ]
     }
   ]
 }

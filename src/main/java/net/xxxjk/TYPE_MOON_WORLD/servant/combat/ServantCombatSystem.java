@@ -72,6 +72,13 @@ public final class ServantCombatSystem {
          return false;
       }
 
+      if (EnkiduCombatHelper.isBoundByChainsOfHeaven(entity)) {
+         entity.getNavigation().stop();
+         entity.setDeltaMovement(Vec3.ZERO);
+         entity.hurtMarked = true;
+         return true;
+      }
+
       long now = entity.level().getGameTime();
       ServantDefinition definition = entity.getDefinition();
       ServantParams params = definition != null ? definition.parameters() : null;
@@ -438,6 +445,9 @@ public final class ServantCombatSystem {
          if (!attacker.isAlive() || !target.isAlive() || cannotAct(attacker) || attacker.isPerformingAction() || attacker.isRoaring() || attacker.isSlamming()) {
             return;
          }
+         if (target instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)) {
+            return;
+         }
          if (tryInterruptPursuit(attacker, target)) {
             return;
          }
@@ -476,6 +486,9 @@ public final class ServantCombatSystem {
    }
 
    private static boolean tryAutoDodge(ServantEntity servant, DamageSource source, ServantParams params, long now) {
+      if (EnkiduCombatHelper.isBoundByChainsOfHeaven(servant)) {
+         return false;
+      }
       boolean emiya = servant instanceof EmiyaArcherEntity;
       int dodgeCooldown = emiya ? Math.max(6, ServantCombatFormulas.dodgeCooldownTicks(params) / 2) : ServantCombatFormulas.dodgeCooldownTicks(params);
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {

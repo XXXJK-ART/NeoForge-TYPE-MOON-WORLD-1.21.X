@@ -63,6 +63,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -337,6 +339,23 @@ public class CommonEvents {
                   if (tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }
+                  if (living instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)) {
+                     event.setCanceled(true);
+                     event.setAmount(0.0F);
+                     if (enkidu.level() instanceof ServerLevel serverLevel && enkidu.tickCount % 6 == 0) {
+                        serverLevel.sendParticles(
+                           ParticleTypes.END_ROD,
+                           enkidu.getX(), enkidu.getY() + enkidu.getBbHeight() * 0.55, enkidu.getZ(),
+                           14, 0.32, 0.42, 0.32, 0.05
+                        );
+                        serverLevel.sendParticles(
+                           ParticleTypes.HAPPY_VILLAGER,
+                           enkidu.getX(), enkidu.getY() + enkidu.getBbHeight() * 0.5, enkidu.getZ(),
+                           8, 0.24, 0.3, 0.24, 0.035
+                        );
+                     }
+                     return;
+                  }
                   if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity artoria
                      && ArtoriaPendragonCombatHelper.tryNegateMedeaSmallMagic(artoria, event.getSource(), event.getAmount())) {
                      event.setCanceled(true);
@@ -557,8 +576,15 @@ public class CommonEvents {
       boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
       boolean antiHeraclesNoblePhantasm = HeraclesGodHandHelper.hasGodHand(servant) && (majorBrokenPhantasmExplosion || gaeBulgArmy);
       boolean heraclesPoisonOrWitherSpecialAttack = isHeraclesPoisonOrWitherSpecialAttack(servant, event.getSource());
+      boolean enkiduWitherUndefendable = servant instanceof EnkiduEntity && EnkiduCombatHelper.isPerfectFormUndefendableDamage(event.getSource());
       boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
+      if (servant instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isFireDamage(event.getSource())) {
+         EnkiduCombatHelper.extinguishFire(enkidu);
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return;
+      }
       if (inPlaceGodHandRevive) {
          data.putLong(GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG, currentTick + 2L);
       }
@@ -573,14 +599,25 @@ public class CommonEvents {
       if (invisibleAirBypass) {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
+      if (!enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
+         event.setCanceled(true);
+         return;
+      }
 
-      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !invisibleAirBypass) {
+      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
          }
       }
       damage = event.getAmount();
+      if (servant instanceof EnkiduEntity enkidu) {
+         event.setAmount(EnkiduCombatHelper.applyPerfectFormPassiveDamageReduction(enkidu, event));
+         damage = event.getAmount();
+      }
+      if (servant instanceof EnkiduEntity enkidu && EnkiduCombatHelper.tryClayBodyOnHeavyDamage(enkidu, event)) {
+         return;
+      }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
          if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)

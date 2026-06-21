@@ -681,6 +681,27 @@ private static ServantExecutionResult tickExampleServants(ServantLifecycleContex
 
 专属 Helper 不要替代 `combat_actions`。更稳的做法是：JSON 里保留通用标签，让从者拥有基础战斗能力；Helper 只在合适时机插入角色独有动作。
 
+### 15.1 魔力伤害与对魔力
+
+制作从者技能时，先按原著设定判断伤害性质，再决定是否接入 `MagicResistanceHelper`。
+
+应视为魔力伤害的常见类型：
+
+| 类型 | 处理方式 |
+| --- | --- |
+| 魔术、咒术、符文、宝石魔术、光束魔术 | 直接使用 `damageSources().magic()` 或 `indirectMagic(...)`。 |
+| 风王结界、魔力放出、太阳火焰、圣剑/魔剑光炮、结界内持续吸收 | 使用魔力伤害源，或在固定伤害前调用 `MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage)`。 |
+| 魔眼、精神压制、结界 debuff | 按对魔力等级降低成功率、持续时间或伤害；可参考 `MedusaCombatHelper` 的 Cybele/Blood Fort。 |
+| 纯物理斩击、枪刺、骑乘撞击、普通投掷武器 | 不走对魔力，除非设定明确是魔力构成或魔力放出。 |
+
+普通 `hurt(... magic ...)` 会在 `CommonEvents.onLivingIncomingDamage` 自动套用 `MagicResistanceHelper.applyMagicDamageReduction`。如果技能用了 `setHealth`、固定扣血、绕过受伤事件的兜底逻辑，必须在扣血前手动套一次：
+
+```java
+damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage);
+```
+
+不要同一段伤害既手动套减伤又使用会被识别为魔力的 `DamageSource` 后再兜底扣同一个原始值，否则会双重减伤或绕过减伤。宝具若设定为“贯穿防御/肃正/即死”，需要在代码里明确说明为什么不走对魔力。
+
 ## 16. 宝具：先建数据，再接 Java 入口
 
 宝具数据放在：

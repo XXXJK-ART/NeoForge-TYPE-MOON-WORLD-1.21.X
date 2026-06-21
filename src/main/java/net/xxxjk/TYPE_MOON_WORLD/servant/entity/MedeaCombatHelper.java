@@ -29,6 +29,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
@@ -169,6 +171,7 @@ public final class MedeaCombatHelper {
       } else if (distance < 6.0) {
          entity.setFlyingMode(false);
       }
+      maintainFlightHeight(entity, entity.isFlyingMode() ? target : null);
 
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
       faceTargetWhileFlying(entity, target);
@@ -1221,13 +1224,15 @@ public final class MedeaCombatHelper {
       } else {
          horizontal = horizontal.normalize();
       }
-      Vec3 velocity = horizontal.scale(0.95).add(0.0, 0.58, 0.0);
+      double escapeY = ServantFlightHelper.clampFlyingY(entity, entity.getY() + 4.0, threat);
+      double lift = ServantFlightHelper.verticalVelocityToward(entity.getY(), escapeY, 0.22, 0.08, 0.42, 0.26);
+      Vec3 velocity = horizontal.scale(0.95).add(0.0, lift, 0.0);
       entity.faceVector(horizontal);
       entity.setDeltaMovement(velocity.x, Math.max(entity.getDeltaMovement().y, velocity.y), velocity.z);
       entity.hasImpulse = true;
       entity.getMoveControl().setWantedPosition(
          entity.getX() + horizontal.x * 6.0,
-         entity.getY() + 4.0,
+         escapeY,
          entity.getZ() + horizontal.z * 6.0,
          1.2
       );
@@ -1702,6 +1707,19 @@ public final class MedeaCombatHelper {
       entity.setXRot(Mth.clamp(targetPitch, -40.0F, 40.0F));
    }
 
+   private static void maintainFlightHeight(MedeaEntity entity, LivingEntity target) {
+      if (!entity.isFlyingMode()) {
+         return;
+      }
+      double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
+      double yMotion = ServantFlightHelper.verticalVelocityToward(entity.getY(), desiredY, 0.12, 0.025, 0.18, 0.24);
+      if (yMotion != 0.0) {
+         Vec3 motion = entity.getDeltaMovement();
+         entity.setDeltaMovement(motion.x, Mth.clamp(motion.y * 0.65 + yMotion, -0.24, 0.22), motion.z);
+         entity.hasImpulse = true;
+      }
+   }
+
    private static LivingEntity findCloseThreat(MedeaEntity entity, LivingEntity target) {
       if (target != null && target.isAlive() && entity.distanceToSqr(target) <= 4.5 * 4.5) {
          return target;
@@ -1838,7 +1856,15 @@ public final class MedeaCombatHelper {
       }
 
       if (!entity.isFlyingMode()) {
-         entity.getNavigation().moveTo(target, 1.15);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity,
+            target,
+            1.15,
+            now,
+            ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
+            0.8,
+            "MedeaBlockedLinePath"
+         );
       }
       return blockedTicks >= 2L || repositioning;
    }
@@ -1927,6 +1953,7 @@ public final class MedeaCombatHelper {
          return false;
       }
 
+      bestCandidate = new Vec3(bestCandidate.x, ServantFlightHelper.clampFlyingY(entity, bestCandidate.y, target), bestCandidate.z);
       steerTowards(entity, bestCandidate);
       return true;
    }

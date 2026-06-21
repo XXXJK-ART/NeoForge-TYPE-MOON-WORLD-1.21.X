@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -23,6 +24,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -36,6 +39,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Boolean> GROUND_BORN = SynchedEntityData.defineId(EnkiduEarthWeaponProjectileEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> WEAPON_KIND = SynchedEntityData.defineId(EnkiduEarthWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private final Set<Integer> hitEntities = new HashSet<>();
+   private int brokenBlocks;
 
    public EnkiduEarthWeaponProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -106,6 +110,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
          }
          tickBowOrCrossbow(level);
          interceptNearbyProjectile(level);
+         breakLowHardnessBlocks(level);
       }
       if (this.tickCount > 100) {
          this.discard();
@@ -136,12 +141,72 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
    protected void onHit(HitResult result) {
       super.onHit(result);
       if (!this.level().isClientSide() && result.getType() != HitResult.Type.ENTITY) {
-         this.discard();
+         if (this.level() instanceof ServerLevel level) {
+            breakLowHardnessBlocks(level, result.getLocation(), true);
+         }
+         if (this.brokenBlocks <= 0 || this.tickCount > 12) {
+            this.discard();
+         }
       }
+   }
+
+   private void breakLowHardnessBlocks(ServerLevel level) {
+      if (this.tickCount < 14 || this.entityData.get(WEAPON_KIND) > 0 || this.brokenBlocks >= 6) {
+         return;
+      }
+      Vec3 motion = this.getDeltaMovement();
+      if (motion.lengthSqr() < 0.05) {
+         return;
+      }
+      Vec3 dir = motion.normalize();
+      for (double d = 0.25; d <= 1.35 && this.brokenBlocks < 6; d += 0.35) {
+         breakBlockAt(level, this.position().add(dir.scale(d)));
+      }
+   }
+
+   private void breakLowHardnessBlocks(ServerLevel level, Vec3 center, boolean impact) {
+      int radius = impact ? 1 : 0;
+      for (int dx = -radius; dx <= radius && this.brokenBlocks < 8; dx++) {
+         for (int dy = -radius; dy <= radius && this.brokenBlocks < 8; dy++) {
+            for (int dz = -radius; dz <= radius && this.brokenBlocks < 8; dz++) {
+               breakBlockAt(level, center.add(dx, dy, dz));
+            }
+         }
+      }
+   }
+
+   private boolean breakBlockAt(ServerLevel level, Vec3 sample) {
+      BlockPos pos = BlockPos.containing(sample);
+      BlockState state = level.getBlockState(pos);
+      float hardness = state.getDestroySpeed(level, pos);
+      if (state.isAir()
+         || state.hasBlockEntity()
+         || state.is(Blocks.BEDROCK)
+         || hardness < 0.0F
+         || hardness > 4.0F
+         || state.getExplosionResistance(level, pos, null) >= 60.0F) {
+         return false;
+      }
+      if (level.removeBlock(pos, false)) {
+         this.brokenBlocks++;
+         level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 4, 0.18, 0.18, 0.18, 0.025);
+         if (this.brokenBlocks % 2 == 0) {
+            level.playSound(null, pos, SoundEvents.STONE_BREAK, SoundSource.HOSTILE, 0.35F, 1.55F);
+         }
+         return true;
+      }
+      return false;
    }
 
    private void interceptNearbyProjectile(ServerLevel level) {
       Entity owner = this.getOwner();
+      Projectile matchlockBullet = level.getEntitiesOfClass(OdaMatchlockBulletEntity.class, this.getBoundingBox().inflate(1.65),
+         p -> p.isAlive() && (owner == null || p.getOwner() == null || !owner.isAlliedTo(p.getOwner()))).stream().findFirst().orElse(null);
+      if (matchlockBullet != null) {
+         cancelProjectile(matchlockBullet);
+         this.discard();
+         return;
+      }
       Projectile hostile = level.getEntitiesOfClass(Projectile.class, this.getBoundingBox().inflate(0.6),
          p -> p != this && p.isAlive() && (owner == null || p.getOwner() == null || !owner.isAlliedTo(p.getOwner()))).stream().findFirst().orElse(null);
       if (hostile != null) {
@@ -172,31 +237,38 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
 
    private void tickGroundRiseAndHoming() {
       int kind = this.entityData.get(WEAPON_KIND);
+      Entity target = this.entityData.get(TARGET_ID) >= 0 ? this.level().getEntity(this.entityData.get(TARGET_ID)) : null;
       if (kind > 0) {
-         if (this.tickCount < 12) {
-            this.setDeltaMovement(this.getDeltaMovement().scale(0.72).add(0.0, 0.035, 0.0));
+         if (!(target instanceof LivingEntity living) || !living.isAlive()) {
+            this.discard();
+            return;
+         }
+         if (this.tickCount < 20) {
+            Vec3 motion = this.getDeltaMovement();
+            this.setDeltaMovement(motion.x * 0.18, 0.135, motion.z * 0.18);
          } else {
             this.setDeltaMovement(this.getDeltaMovement().scale(0.35));
          }
          return;
       }
-      if (this.entityData.get(GROUND_BORN) && this.tickCount < 8) {
-         this.setDeltaMovement(this.getDeltaMovement().scale(0.55).add(0.0, 0.11, 0.0));
+      if (this.entityData.get(GROUND_BORN) && this.tickCount < 18) {
+         Vec3 motion = this.getDeltaMovement();
+         this.setDeltaMovement(motion.x * 0.18, 0.14, motion.z * 0.18);
          return;
       }
-      Entity target = this.entityData.get(TARGET_ID) >= 0 ? this.level().getEntity(this.entityData.get(TARGET_ID)) : null;
       float strength = this.entityData.get(HOMING_STRENGTH);
-      if (!(target instanceof LivingEntity living) || !living.isAlive() || strength <= 0.0F) {
-         if (this.tickCount > 36 && this.entityData.get(GROUND_BORN)) {
-            this.discard();
-         }
+      if (strength <= 0.0F) {
+         return;
+      }
+      if (!(target instanceof LivingEntity living) || !living.isAlive()) {
+         this.discard();
          return;
       }
       Vec3 aim = living.position().add(0.0, living.getBbHeight() * 0.55, 0.0).subtract(this.position());
       if (aim.lengthSqr() < 1.0E-4) {
          return;
       }
-      double speed = Math.max(1.1, this.getDeltaMovement().length());
+      double speed = Math.max(2.0, this.getDeltaMovement().length());
       Vec3 desired = aim.normalize().scale(speed);
       this.setDeltaMovement(this.getDeltaMovement().scale(1.0 - strength).add(desired.scale(strength)).normalize().scale(speed));
       this.hasImpulse = true;
@@ -204,7 +276,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
 
    private void tickBowOrCrossbow(ServerLevel level) {
       int kind = this.entityData.get(WEAPON_KIND);
-      if (kind <= 0 || this.tickCount != 16) {
+      if (kind <= 0 || this.tickCount != 24) {
          return;
       }
       Entity targetEntity = this.entityData.get(TARGET_ID) >= 0 ? this.level().getEntity(this.entityData.get(TARGET_ID)) : null;
@@ -235,6 +307,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       this.entityData.set(HOMING_STRENGTH, tag.getFloat("HomingStrength"));
       this.entityData.set(GROUND_BORN, tag.getBoolean("GroundBorn"));
       this.entityData.set(WEAPON_KIND, tag.getInt("WeaponKind"));
+      this.brokenBlocks = tag.getInt("BrokenBlocks");
    }
 
    @Override
@@ -244,5 +317,6 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       tag.putFloat("HomingStrength", this.entityData.get(HOMING_STRENGTH));
       tag.putBoolean("GroundBorn", this.entityData.get(GROUND_BORN));
       tag.putInt("WeaponKind", this.entityData.get(WEAPON_KIND));
+      tag.putInt("BrokenBlocks", this.brokenBlocks);
    }
 }

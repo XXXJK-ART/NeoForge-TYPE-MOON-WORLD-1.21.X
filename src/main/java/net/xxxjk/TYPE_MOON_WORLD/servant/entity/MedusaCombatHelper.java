@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
@@ -731,11 +732,19 @@ public final class MedusaCombatHelper {
    private static void performCloseRangePressure(MedusaEntity entity, LivingEntity target, double distance, long now) {
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
       if (distance > 3.4) {
-         entity.getNavigation().moveTo(target, 1.05);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity,
+            target,
+            1.05,
+            now,
+            ServantNavigationHelper.SHORT_REPATH_INTERVAL,
+            0.65,
+            "MedusaClosePressurePath"
+         );
          return;
       }
 
-      entity.getNavigation().stop();
+      ServantNavigationHelper.stopIfMoving(entity);
       entity.getMoveControl().strafe(0.25F, entity.getRandom().nextBoolean() ? 0.9F : -0.9F);
 
       if (!entity.isPerformingAction() && now - entity.getPersistentData().getLong(TAG_LAST_BASIC_MAUL_TICK) >= BASIC_MAUL_COOLDOWN) {

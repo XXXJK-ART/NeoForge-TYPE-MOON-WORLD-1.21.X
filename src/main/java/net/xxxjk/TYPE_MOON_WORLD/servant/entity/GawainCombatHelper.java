@@ -26,6 +26,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -460,7 +461,7 @@ public final class GawainCombatHelper {
          level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 5, 0.22, 0.18, 0.22, 0.04);
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(1.35), e -> canHit(entity, e))) {
             if (hit.add(living.getId())) {
-               living.hurt(entity.damageSources().mobAttack(entity), 80.0F);
+               living.hurt(entity.damageSources().magic(), 80.0F);
                living.igniteForSeconds(4.0F);
                pushAway(living, look, 1.2, 0.22);
             }
@@ -494,6 +495,10 @@ public final class GawainCombatHelper {
    }
 
    private static void applyFixedDamage(GawainEntity entity, LivingEntity target, float damage) {
+      damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage);
+      if (damage <= 0.0F) {
+         return;
+      }
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(entity.damageSources().mobAttack(entity), damage);

@@ -65,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
@@ -311,7 +312,15 @@ public final class EmiyaArcherCombatHelper {
          } else if (distance < 10.0) {
             kiteBack(entity, target, 5.0);
          } else if (distance > 18.0) {
-            entity.getNavigation().moveTo(target, 1.15);
+            ServantNavigationHelper.moveToTargetThrottled(
+               entity,
+               target,
+               1.15,
+               now,
+               ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
+               1.0,
+               "EmiyaRangedChasePath"
+            );
          }
          maybeShield(entity, level, target, now, phase);
          return;
@@ -612,18 +621,34 @@ public final class EmiyaArcherCombatHelper {
    private static void moveDuringUbwChant(EmiyaArcherEntity entity, LivingEntity target) {
       double distance = entity.distanceTo(target);
       if (distance > 12.0) {
-         entity.getNavigation().moveTo(target, 1.0);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity,
+            target,
+            1.0,
+            entity.level().getGameTime(),
+            ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
+            1.0,
+            "EmiyaUbwChantChasePath"
+         );
          return;
       }
       if (distance < 5.0) {
          Vec3 away = entity.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() > 1.0E-4) {
             Vec3 retreat = entity.position().add(away.normalize().scale(3.0));
-            entity.getNavigation().moveTo(retreat.x, retreat.y, retreat.z, 1.0);
+            ServantNavigationHelper.moveToPositionThrottled(
+               entity,
+               retreat,
+               1.0,
+               entity.level().getGameTime(),
+               ServantNavigationHelper.SHORT_REPATH_INTERVAL,
+               1.0,
+               "EmiyaUbwChantRetreatPath"
+            );
             return;
          }
       }
-      entity.getNavigation().stop();
+      ServantNavigationHelper.stopIfMoving(entity);
    }
 
    private static void activateUbw(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {

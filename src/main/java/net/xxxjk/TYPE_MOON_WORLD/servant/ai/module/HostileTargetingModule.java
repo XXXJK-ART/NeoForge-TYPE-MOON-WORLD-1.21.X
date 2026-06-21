@@ -30,7 +30,11 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class HostileTargetingModule implements ServantAiModule {
    private static final String LAST_TARGET_SCAN_TICK = "ServantLastTargetScanTick";
-   private static final int TARGET_SCAN_INTERVAL_TICKS = 5;
+   private static final String LAST_CURRENT_TARGET_LOS_TICK = "ServantLastCurrentTargetLosTick";
+   private static final String CURRENT_TARGET_LOS_TARGET = "ServantCurrentTargetLosTarget";
+   private static final String CURRENT_TARGET_HAS_LOS = "ServantCurrentTargetHasLos";
+   private static final int TARGET_SCAN_INTERVAL_TICKS = 10;
+   private static final int CURRENT_TARGET_LOS_INTERVAL_TICKS = 5;
    private static final int AGGRESSION_MEMORY_TICKS = 200;
    private static final double MAX_TARGET_SCAN_RANGE = 32.0;
    private static final double MAX_LAGUZ_TARGET_SCAN_RANGE = 48.0;
@@ -56,7 +60,7 @@ public final class HostileTargetingModule implements ServantAiModule {
       ServantFaction faction = entity.getDefinition() != null
          ? entity.getDefinition().faction()
          : ServantFaction.HUMAN;
-      if (isValidCurrentTarget(entity, currentTarget, faction, aggressionRange, morality, principle)) {
+      if (isValidCurrentTarget(entity, currentTarget, faction, aggressionRange, morality, principle, context.gameTick())) {
          return;
       }
 
@@ -100,7 +104,8 @@ public final class HostileTargetingModule implements ServantAiModule {
       ServantFaction faction,
       double aggressionRange,
       MoralAxis morality,
-      PrincipleAxis principle
+      PrincipleAxis principle,
+      long gameTick
    ) {
       if (target == null || target.isDeadOrDying() || !target.isAlive()) {
          return false;
@@ -114,7 +119,7 @@ public final class HostileTargetingModule implements ServantAiModule {
          return false;
       }
 
-      if (!entity.getSensing().hasLineOfSight(target) && targetDistanceSqr >= 16.0) {
+      if (targetDistanceSqr >= 16.0 && !hasCurrentTargetLineOfSight(entity, target, gameTick)) {
          return false;
       }
 
@@ -142,6 +147,22 @@ public final class HostileTargetingModule implements ServantAiModule {
          return morality != MoralAxis.EVIL || principle != PrincipleAxis.ORDERLY || isImmediateThreat(entity, target);
       }
       return isFriendlyCreature(target) && morality == MoralAxis.EVIL;
+   }
+
+   private static boolean hasCurrentTargetLineOfSight(ServantEntity entity, LivingEntity target, long gameTick) {
+      var data = entity.getPersistentData();
+      boolean sameTarget = data.hasUUID(CURRENT_TARGET_LOS_TARGET)
+         && data.getUUID(CURRENT_TARGET_LOS_TARGET).equals(target.getUUID());
+      long lastCheck = data.getLong(LAST_CURRENT_TARGET_LOS_TICK);
+      if (sameTarget && gameTick - lastCheck < CURRENT_TARGET_LOS_INTERVAL_TICKS) {
+         return data.getBoolean(CURRENT_TARGET_HAS_LOS);
+      }
+
+      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      data.putUUID(CURRENT_TARGET_LOS_TARGET, target.getUUID());
+      data.putLong(LAST_CURRENT_TARGET_LOS_TICK, gameTick);
+      data.putBoolean(CURRENT_TARGET_HAS_LOS, hasLineOfSight);
+      return hasLineOfSight;
    }
 
    private static double scoreTarget(

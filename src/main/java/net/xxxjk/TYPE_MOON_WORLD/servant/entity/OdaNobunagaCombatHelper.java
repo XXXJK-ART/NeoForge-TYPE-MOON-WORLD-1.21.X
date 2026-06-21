@@ -35,6 +35,8 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -376,9 +378,17 @@ public final class OdaNobunagaCombatHelper {
       if (distance < 8.0) {
          kiteBack(entity, target, 3.5);
       } else if (distance > 22.0) {
-         entity.getNavigation().moveTo(target, 1.05);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity,
+            target,
+            1.05,
+            now,
+            ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
+            1.0,
+            "OdaRifleChasePath"
+         );
       } else {
-         entity.getNavigation().stop();
+         ServantNavigationHelper.stopIfMoving(entity);
       }
 
       if (canUse(now, entity.getPersistentData().getLong(TAG_LAST_RIFLE_SHOT), hasMaou(entity, now) ? 18 : 26)) {
@@ -1210,11 +1220,16 @@ public final class OdaNobunagaCombatHelper {
          entity.getPersistentData().remove(TAG_MAOU_UNTIL);
       }
       if (entity.getPersistentData().getLong(TAG_FLIGHT_UNTIL) <= now) {
-         entity.getPersistentData().remove(TAG_FLIGHT_UNTIL);
-         if (entity.isNoGravity()) {
-            entity.setNoGravity(false);
+         double desiredY = ServantFlightHelper.desiredHoverY(entity, null);
+         if (entity.isNoGravity() && entity.getY() > desiredY + 0.45) {
+            entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + FLIGHT_RAMPUP_TICKS);
+         } else {
+            entity.getPersistentData().remove(TAG_FLIGHT_UNTIL);
+            if (entity.isNoGravity()) {
+               entity.setNoGravity(false);
+            }
+            clearFootSupportGun(entity, level);
          }
-         clearFootSupportGun(entity, level);
       }
       if (entity.getPersistentData().getLong(TAG_LAND_FOR_NP_UNTIL) <= now) {
          entity.getPersistentData().remove(TAG_LAND_FOR_NP_UNTIL);
@@ -1253,10 +1268,10 @@ public final class OdaNobunagaCombatHelper {
       entity.setNoGravity(true);
       entity.fallDistance = 0.0F;
       ensureFootSupportGun(entity, now);
+      double hoverY = ServantFlightHelper.desiredHoverY(entity, target);
       if (target != null && target.isAlive()) {
          Vec3 toTarget = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
          Vec3 move = toTarget.lengthSqr() > 1.0E-4 ? toTarget.normalize() : entity.getLookAngle().multiply(1.0, 0.0, 1.0);
-         double hoverY = target.getY() + target.getBbHeight() * 0.58 + 0.95;
          double yError = hoverY - entity.getY();
          double yDelta = Mth.clamp(yError * 0.12, -0.28, 0.22);
          entity.setDeltaMovement(
@@ -1270,6 +1285,14 @@ public final class OdaNobunagaCombatHelper {
          } else if (entity.getY() > hoverY + 1.25) {
             entity.setDeltaMovement(entity.getDeltaMovement().x, Math.min(entity.getDeltaMovement().y, -0.06), entity.getDeltaMovement().z);
          }
+      } else {
+         double yMotion = ServantFlightHelper.verticalVelocityToward(entity.getY(), hoverY, 0.12, 0.025, 0.16, 0.24);
+         entity.setDeltaMovement(
+            entity.getDeltaMovement().x * 0.82,
+            Mth.clamp(entity.getDeltaMovement().y * 0.65 + yMotion, -0.24, 0.18),
+            entity.getDeltaMovement().z * 0.82
+         );
+         entity.hasImpulse = true;
       }
       if (entity.getPersistentData().getLong(TAG_FLIGHT_UNTIL) <= now) {
          entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + FLIGHT_RAMPUP_TICKS);

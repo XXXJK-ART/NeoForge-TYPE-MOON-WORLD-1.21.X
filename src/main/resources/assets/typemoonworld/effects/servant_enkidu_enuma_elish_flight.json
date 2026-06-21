@@ -1,0 +1,117 @@
+{
+  "duration": 1.1,
+  "notes": "Entity-bound release trail only: Enkidu has become the Chain of Heaven/light wedge. Kept compact so the world-scale ritual does not follow him.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.1,
+      "rate": 2800,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.0, 0.08],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.05, 0.35], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau * 11.0 + time * 22.0) * (0.35 + t * 0.95)",
+        "expr_y": "sin(t * tau * 11.0 + time * 22.0) * (0.35 + t * 0.95)",
+        "expr_z": "t * 4.8",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AA88FF44" },
+        { "t": 0.32, "color": "#FFFFFFFF" },
+        { "t": 0.58, "color": "#FFFFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.45, "size": 0.22 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_RELEASE_DRILL_SPIRAL",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.08, 0.08, 0.08], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.18 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.1,
+      "rate": 1600,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 0.12],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.05, 0.45], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.55 + 0.12 * sin(time * 14.0)) * (floor(t * 2.0) * 2.0 - 1.0)",
+        "expr_y": "0.18 * sin(t * tau * 2.0 + time * 8.0)",
+        "expr_z": "t * 4.2",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 160
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.16, "color": "#FFFFFFFF" },
+        { "t": 0.5, "color": "#AAFFD700" },
+        { "t": 0.82, "color": "#AA88FF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.36, "size": 0.34 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_TWIN_LIGHT_ORBS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.1,
+      "rate": 2200,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.006,
+      "velocity": [0.0, 0.0, -0.12],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.05, -0.7], "rotate_with_entity": true },
+      "component": {
+        "type": "line",
+        "start": [0.0, 0.0, -2.8],
+        "end": [0.0, 0.0, 1.8],
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88CCCCDD" },
+        { "t": 0.32, "color": "#FFFFFFFF" },
+        { "t": 0.64, "color": "#88FFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.35, "size": 0.22 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_CHAIN_OF_HEAVEN_BODY",
+      "enable_trail": true
+    }
+  ]
+}

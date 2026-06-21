@@ -91,6 +91,9 @@ public final class EnkiduTemporaryPlantHelper {
          || state.is(Blocks.MOSS_CARPET)
          || state.is(Blocks.FERN)
          || state.is(Blocks.SHORT_GRASS)
-         || state.is(Blocks.MANGROVE_ROOTS);
+         || state.is(Blocks.MANGROVE_ROOTS)
+         || state.is(Blocks.ROOTED_DIRT)
+         || state.is(Blocks.STONE)
+         || state.is(Blocks.POINTED_DRIPSTONE);
    }
 }

@@ -795,7 +795,9 @@ public final class ArtoriaPendragonCombatHelper {
 
    private static void damageTargetBypassingReactions(ArtoriaPendragonEntity entity, LivingEntity target, float damage) {
       target.getPersistentData().putLong(TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL, target.level().getGameTime() + 2L);
-      damageTarget(entity, target, damage);
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().magic(), damage);
+      target.invulnerableTime = 0;
    }
 
    private static void spawnDashTrail(ServerLevel level, Vec3 start, Vec3 end, net.minecraft.core.particles.ParticleOptions particle, int count) {

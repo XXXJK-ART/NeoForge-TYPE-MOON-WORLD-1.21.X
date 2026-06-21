@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
@@ -76,6 +77,7 @@ public final class CombatModule implements ServantAiModule {
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
    private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
+   private static final int SURROUNDED_SCAN_INTERVAL = 5;
    private static final int CU_RECAST_MP_COST = 25;
    private static final int CU_RUNE_MP_COST = 20;
    private static final ResourceLocation VALOR_RES = ResourceLocation.fromNamespaceAndPath(
@@ -227,12 +229,6 @@ public final class CombatModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       LivingEntity sharedTarget = context.target();
-      if (entity instanceof EnkiduEntity) {
-         if (sharedTarget == null || sharedTarget.isDeadOrDying() || EntityUtils.isImmunePlayerTarget(sharedTarget)) {
-            entity.setTarget(null);
-         }
-         return;
-      }
       if (sharedTarget != null && ServantCombatSystem.skillsSuppressed(entity)) {
          entity.getLookControl().setLookAt(sharedTarget, 30.0F, 30.0F);
          if (entity.distanceTo(sharedTarget) <= 2.7 && !entity.isPerformingAction()) {
@@ -376,11 +372,7 @@ public final class CombatModule implements ServantAiModule {
          boolean timeout = (tick - retreatStartTick) >= 200;
 
          // 条件2：周围3格内有3+敌人
-         AABB dangerZone = entity.getBoundingBox().inflate(3.0);
-         int enemyCount = entity.level().getEntitiesOfClass(
-            LivingEntity.class, dangerZone,
-            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
-         ).size();
+         int enemyCount = getNearbyEnemyCountCached(entity, data, tick);
          boolean surrounded = enemyCount >= 3;
 
          // 决死一战：清除逃跑计时器，获得临时buff
@@ -818,6 +810,21 @@ public final class CombatModule implements ServantAiModule {
       return entity.getRandom().nextInt(100) < effectivePercent;
    }
 
+   private int getNearbyEnemyCountCached(ServantEntity entity, CompoundTag data, int tick) {
+      int lastScan = data.getInt("CombatSurroundedScanTick");
+      if (lastScan > 0 && tick - lastScan < SURROUNDED_SCAN_INTERVAL) {
+         return data.getInt("CombatSurroundedEnemyCount");
+      }
+      AABB dangerZone = entity.getBoundingBox().inflate(3.0);
+      int enemyCount = entity.level().getEntitiesOfClass(
+         LivingEntity.class, dangerZone,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
+      ).size();
+      data.putInt("CombatSurroundedScanTick", tick);
+      data.putInt("CombatSurroundedEnemyCount", enemyCount);
+      return enemyCount;
+   }
+
    private boolean handleUndergroundTarget(
       ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean canBreakForwardBlocks, boolean canTeleportBehind, boolean hasLineOfSight
    ) {
@@ -865,19 +872,15 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void moveToTargetThrottled(ServantEntity entity, LivingEntity target, double speed, int tick, double minTargetMoveSqr) {
-      CompoundTag data = entity.getPersistentData();
-      double dx = target.getX() - data.getDouble("CombatPathTargetX");
-      double dy = target.getY() - data.getDouble("CombatPathTargetY");
-      double dz = target.getZ() - data.getDouble("CombatPathTargetZ");
-      boolean targetMoved = dx * dx + dy * dy + dz * dz >= minTargetMoveSqr;
-      if (!targetMoved && !entity.getNavigation().isDone() && tick - data.getInt("CombatLastPathTick") < COMBAT_PATH_RECALC_INTERVAL) {
-         return;
-      }
-      data.putInt("CombatLastPathTick", tick);
-      data.putDouble("CombatPathTargetX", target.getX());
-      data.putDouble("CombatPathTargetY", target.getY());
-      data.putDouble("CombatPathTargetZ", target.getZ());
-      entity.getNavigation().moveTo(target, speed);
+      ServantNavigationHelper.moveToTargetThrottled(
+         entity,
+         target,
+         speed,
+         tick,
+         COMBAT_PATH_RECALC_INTERVAL,
+         minTargetMoveSqr,
+         "CombatPath"
+      );
    }
 
    private void breakTowardUndergroundTarget(ServantEntity entity, LivingEntity target) {
@@ -951,7 +954,15 @@ public final class CombatModule implements ServantAiModule {
       }
 
       Vec3 retreatPos = entity.position().add(away.normalize().scale(combatStyle == CombatDisposition.CAUTIOUS ? 6.0 : 4.0));
-      entity.getNavigation().moveTo(retreatPos.x, retreatPos.y, retreatPos.z, combatStyle == CombatDisposition.CAUTIOUS ? 1.25 : 1.05);
+      ServantNavigationHelper.moveToPositionThrottled(
+         entity,
+         retreatPos,
+         combatStyle == CombatDisposition.CAUTIOUS ? 1.25 : 1.05,
+         entity.level().getGameTime(),
+         ServantNavigationHelper.SHORT_REPATH_INTERVAL,
+         1.0,
+         "CombatRetreatPath"
+      );
       if (entity.getRandom().nextInt(4) == 0) {
          float side = entity.getRandom().nextBoolean() ? 0.5F : -0.5F;
          entity.getMoveControl().strafe(-0.6F, side);
@@ -960,7 +971,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void performCombatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle, double distance) {
-      entity.getNavigation().stop();
+      ServantNavigationHelper.stopIfMoving(entity);
       float side = entity.getRandom().nextBoolean() ? 0.45F : -0.45F;
       float forward = switch (combatStyle) {
          case CAUTIOUS -> distance < 2.4 ? -0.35F : -0.10F;

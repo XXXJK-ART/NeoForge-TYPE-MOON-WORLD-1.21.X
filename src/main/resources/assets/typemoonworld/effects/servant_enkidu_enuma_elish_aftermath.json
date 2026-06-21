@@ -1,0 +1,189 @@
+{
+  "duration": 20.0,
+  "notes": "Stationary aftermath after Enkidu's impact explosion. Artoria-like purification without the old lingering green pillar.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 20.0,
+      "rate": 1600,
+      "particle_lifetime": 1.25,
+      "size_variance": 0.46,
+      "lifetime_variance": 0.32,
+      "position_variance": 0.14,
+      "velocity": [0.0, -0.045, 0.0],
+      "velocity_variance": 0.09,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 60.0, "density": 330 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AA88FF44" },
+        { "t": 0.34, "color": "#88FFD700" },
+        { "t": 0.62, "color": "#8844FF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.42, "size": 0.09 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 20.0, 0.0], "scale": [1.0, 0.82, 1.0] },
+        { "t": 1.0, "pos": [0.0, 10.0, 0.0], "scale": [1.12, 0.65, 1.12] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_CLEANSING_STARDUST"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 20.0,
+      "rate": 1200,
+      "particle_lifetime": 0.95,
+      "size_variance": 0.3,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.015,
+      "velocity": [0.0, -0.02, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau * 12.0 + time * 3.0) * (26.0 - progress * 25.0)",
+        "expr_y": "0.2 + t * 9.0 * (1.0 - progress)",
+        "expr_z": "sin(t * tau * 12.0 + time * 3.0) * (26.0 - progress * 25.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 260
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFD700" },
+        { "t": 0.42, "color": "#8844FF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.45, "size": 0.12 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_DISSOLVING_CHAINS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 20.0,
+      "rate": 1700,
+      "particle_lifetime": 6.5,
+      "size_variance": 0.55,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.9,
+      "velocity": [0.0, -0.32, 0.0],
+      "velocity_variance": 0.18,
+      "max_vanilla_particles_per_tick": 4,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "62.0 * sqrt(t) * cos(t * 233.0)",
+        "expr_y": "8.0 + 18.0 * frac(t * 47.0)",
+        "expr_z": "62.0 * sqrt(t) * sin(t * 233.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 760
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#BBFFFFFF" },
+        { "t": 0.34, "color": "#AAFFF2AA" },
+        { "t": 0.62, "color": "#88AAFF44" },
+        { "t": 0.86, "color": "#44FFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.012 },
+        { "t": 0.18, "size": 0.07 },
+        { "t": 0.65, "size": 0.046 },
+        { "t": 1.0, "size": 0.006 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0] },
+        { "t": 0.55, "pos": [0.0, -3.0, 0.0], "scale": [1.04, 1.0, 1.04], "easing": "ease_in_out_cubic" },
+        { "t": 1.0, "pos": [0.0, -8.0, 0.0], "scale": [1.12, 1.0, 1.12], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_PURIFYING_STARFALL",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.02, 0.02, 0.02], "offset": [0.0, 0.0, 0.0], "speed": 0.005, "chance": 0.025 }
+      ]
+    },
+    {
+      "start_time": 0.4,
+      "end_time": 20.0,
+      "rate": 760,
+      "particle_lifetime": 1.6,
+      "size_variance": 0.44,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "circle", "radius": 1.0, "density": 520 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.14, "color": "#99FFFFFF" },
+        { "t": 0.42, "color": "#88FFF2AA" },
+        { "t": 0.72, "color": "#55AAFF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.38, "size": 0.26 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [6.0, 1.0, 6.0], "easing": "ease_out_cubic" },
+        { "t": 0.45, "scale": [42.0, 1.0, 42.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [90.0, 1.0, 90.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_ARTORIA_STYLE_PURIFICATION_RING",
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [1.2, 0.08, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.16 },
+        { "type": "cloud", "count": 1, "spread": [1.8, 0.12, 1.8], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.12 }
+      ]
+    },
+    {
+      "start_time": 2.0,
+      "end_time": 20.0,
+      "rate": 720,
+      "particle_lifetime": 1.8,
+      "size_variance": 0.48,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.18,
+      "velocity": [0.0, 0.12, -0.02],
+      "velocity_variance": 0.15,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(3.0 + 22.0 * random()) * cos(t * tau * 3.0 + time * 1.4)",
+        "expr_y": "0.3 + 6.0 * sin(t * 3.14159) * (1.0 - progress * 0.65)",
+        "expr_z": "52.0 * t + (3.0 + 22.0 * random()) * sin(t * tau * 3.0 + time * 1.4)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#55FFFFFF" },
+        { "t": 0.35, "color": "#66FFF2AA" },
+        { "t": 0.72, "color": "#44AAFF44" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.42, "size": 0.14 },
+        { "t": 1.0, "size": 0.012 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ENKIDU_RESIDUAL_LIGHT_STRANDS",
+      "enable_trail": true
+    }
+  ]
+}
