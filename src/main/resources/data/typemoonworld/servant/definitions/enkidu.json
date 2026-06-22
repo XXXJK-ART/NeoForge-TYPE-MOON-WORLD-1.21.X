@@ -22,7 +22,7 @@
     "texture": "typemoonworld:textures/entity/enkidu.png",
     "animation": "typemoonworld:animations/enkidu.animation.json",
     "animations": {
-      "idle": "animation.enkidu.idle",
+      "idle": "animation.enkidu.standing",
       "walk": "animation.enkidu.walk",
       "fly": "animation.enkidu.float_idle",
       "float_idle": "animation.enkidu.float_idle",

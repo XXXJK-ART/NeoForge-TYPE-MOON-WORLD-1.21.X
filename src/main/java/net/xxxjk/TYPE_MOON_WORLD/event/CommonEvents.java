@@ -147,12 +147,9 @@ public class CommonEvents {
                   CompoundTag data = servant.getPersistentData();
                   long currentTick = serverLevel.getGameTime();
                   long lastHurtTick = data.getLong("LastHurtTick");
-                  boolean wasRecentlyHurt = servant.invulnerableTime > 10
-                     || (currentTick - lastHurtTick) < 100;
-                  if (!wasRecentlyHurt && !servant.hasEffect(MobEffects.INVISIBILITY)) {
-                     if (serverLevel.random.nextInt(100) < 15) {
-                        servant.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 100, 0, false, false, true));
-                     }
+                  boolean wasRecentlyHurt = servant.invulnerableTime > 10 || (currentTick - lastHurtTick) < 100;
+                  if (servant.hasEffect(MobEffects.INVISIBILITY) && !wasRecentlyHurt) {
+                     servant.removeEffect(MobEffects.INVISIBILITY);
                   }
                }
             }
@@ -369,6 +366,10 @@ public class CommonEvents {
                   }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
                   event.setAmount(ArtoriaPendragonCombatHelper.applyAvalonDamageReduction(living, event.getSource(), event.getAmount()));
+                  if (event.getAmount() <= 0.0F) {
+                     event.setCanceled(true);
+                     return;
+                  }
                }
                if (event.getSource().is(DamageTypes.FALL)) {
                   LivingEntity mob = event.getEntity();
@@ -613,6 +614,10 @@ public class CommonEvents {
       damage = event.getAmount();
       if (servant instanceof EnkiduEntity enkidu) {
          event.setAmount(EnkiduCombatHelper.applyPerfectFormPassiveDamageReduction(enkidu, event));
+         damage = event.getAmount();
+      }
+      if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity liShuwen) {
+         event.setAmount(net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper.applyIncomingDamageModifiers(liShuwen, event.getSource(), event.getAmount()));
          damage = event.getAmount();
       }
       if (servant instanceof EnkiduEntity enkidu && EnkiduCombatHelper.tryClayBodyOnHeavyDamage(enkidu, event)) {

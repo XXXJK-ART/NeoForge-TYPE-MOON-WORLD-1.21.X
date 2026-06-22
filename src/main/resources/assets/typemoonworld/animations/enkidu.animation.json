@@ -1,8 +1,22 @@
 {
   "format_version": "1.8.0",
   "animations": {
+    "animation.enkidu.standing": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "bone": {
+          "position": {
+            "vector": [0, -6.5, 0]
+          },
+          "scale": {
+            "vector": [0.75, 0.75, 0.75]
+          }
+        }
+      }
+    },
     "animation.enkidu.idle": {
       "loop": true,
+      "animation_length": 2.0,
       "bones": {
         "bone": {
           "position": {

@@ -485,7 +485,7 @@ public final class GawainCombatHelper {
             continue;
          }
          if (hit.add(living.getId())) {
-            applyFixedDamage(entity, living, damage);
+            applyFixedDamageOverTicks(entity, living, damage, 20);
             living.igniteForSeconds(5.0F);
             pushAway(living, look, 5.0, 0.32);
          }
@@ -494,11 +494,31 @@ public final class GawainCombatHelper {
       breakGallatinPath(entity, level, origin, look);
    }
 
+   private static void applyFixedDamageOverTicks(GawainEntity entity, LivingEntity target, float totalDamage, int ticks) {
+      float adjusted = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, totalDamage);
+      if (adjusted <= 0.0F) {
+         return;
+      }
+      int duration = Math.max(1, ticks);
+      float perTick = adjusted / duration;
+      for (int delay = 0; delay < duration; delay++) {
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            if (entity.isAlive() && target.isAlive()) {
+               applyFixedDamageRaw(entity, target, perTick);
+            }
+         });
+      }
+   }
+
    private static void applyFixedDamage(GawainEntity entity, LivingEntity target, float damage) {
       damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage);
       if (damage <= 0.0F) {
          return;
       }
+      applyFixedDamageRaw(entity, target, damage);
+   }
+
+   private static void applyFixedDamageRaw(GawainEntity entity, LivingEntity target, float damage) {
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(entity.damageSources().mobAttack(entity), damage);

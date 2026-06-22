@@ -11,5 +11,6 @@ public final class BuiltinServantSkills {
       CommonServantSkills.registerBuiltin(registry);
       HeraclesServantSkills.registerBuiltin(registry);
       SasakiKojiroServantSkills.registerBuiltin(registry);
+      LiShuwenServantSkills.registerBuiltin(registry);
    }
 }

@@ -1,0 +1,15 @@
+{
+  "id": "li_shuwen_charge",
+  "display_name": "Li Shuwen - Charge",
+  "display_name_zh": "直突步进",
+  "type": "active",
+  "mp_cost": 6,
+  "cooldown_ticks": 60,
+  "duration_ticks": 10,
+  "effects": [
+    {
+      "effect_type": "li_shuwen_charge",
+      "params": {}
+    }
+  ]
+}

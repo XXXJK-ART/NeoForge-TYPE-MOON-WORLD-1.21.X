@@ -1,372 +1,402 @@
 ﻿{
-  "cym_gem_biubiubiu": {
-    "category": "player",
-    "subtitle": "subtitles.typemoonworld.cym_gem_biubiubiu",
-    "sounds": [
-      "typemoonworld:cym_gem_biubiubiu"
-    ]
-  },
-  "cyq_gem_shoot_star": {
-    "category": "player",
-    "subtitle": "subtitles.typemoonworld.cyq_gem_shoot_star",
-    "sounds": [
-      "typemoonworld:cyq_gem_shoot_star"
-    ]
-  },
-  "sasaki_kojiro_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/sasaki_kojiro/attack1",
-      "typemoonworld:voice/sasaki_kojiro/attack2",
-      "typemoonworld:voice/sasaki_kojiro/attack3"
-    ]
-  },
-  "sasaki_kojiro_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/sasaki_kojiro/fail1",
-      "typemoonworld:voice/sasaki_kojiro/fail2"
-    ]
-  },
-  "sasaki_kojiro_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/sasaki_kojiro/victory1",
-      "typemoonworld:voice/sasaki_kojiro/victory2"
-    ]
-  },
-  "sasaki_kojiro_voice_tsurigameshi": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/sasaki_kojiro/tsurigameshi"
-    ]
-  },
-  "heracles_voice_roar": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/heracles/roar1",
-      "typemoonworld:voice/heracles/roar2",
-      "typemoonworld:voice/heracles/roar3",
-      "typemoonworld:voice/heracles/roar4"
-    ]
-  },
-  "heracles_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/heracles/fail1",
-      "typemoonworld:voice/heracles/fail2"
-    ]
-  },
-  "heracles_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/heracles/victory1"
-    ]
-  },
-  "cu_chulainn_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cu_chulainn/attack1",
-      "typemoonworld:voice/cu_chulainn/attack2",
-      "typemoonworld:voice/cu_chulainn/attack3"
-    ]
-  },
-  "cu_chulainn_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cu_chulainn/fail1",
-      "typemoonworld:voice/cu_chulainn/fail2"
-    ]
-  },
-  "cu_chulainn_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cu_chulainn/victory1",
-      "typemoonworld:voice/cu_chulainn/victory2"
-    ]
-  },
-  "cu_chulainn_voice_gae_bolg": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cu_chulainn/gae_bolg"
-    ]
-  },
-  "medea_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medea/attack1",
-      "typemoonworld:voice/medea/attack2"
-    ]
-  },
-  "medea_voice_spell": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medea/spell"
-    ]
-  },
-  "medea_voice_rule_breaker": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medea/rule_breaker"
-    ]
-  },
-  "medea_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medea/fail1",
-      "typemoonworld:voice/medea/fail2"
-    ]
-  },
-  "medea_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medea/victory1",
-      "typemoonworld:voice/medea/victory2"
-    ]
-  },
-  "medusa_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medusa/attack1",
-      "typemoonworld:voice/medusa/attack2"
-    ]
-  },
-  "medusa_voice_bellerophon": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medusa/bellerophon"
-    ]
-  },
-  "medusa_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medusa/fail1",
-      "typemoonworld:voice/medusa/fail2"
-    ]
-  },
-  "medusa_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/medusa/victory1",
-      "typemoonworld:voice/medusa/victory2"
-    ]
-  },
-  "cursed_arm_hassan_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cursed_arm_hassan/attack1",
-      "typemoonworld:voice/cursed_arm_hassan/attack2"
-    ]
-  },
-  "cursed_arm_hassan_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cursed_arm_hassan/fail1",
-      "typemoonworld:voice/cursed_arm_hassan/fail2"
-    ]
-  },
-  "cursed_arm_hassan_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cursed_arm_hassan/victory1",
-      "typemoonworld:voice/cursed_arm_hassan/victory2"
-    ]
-  },
-  "cursed_arm_hassan_voice_zabaniya": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/cursed_arm_hassan/zabaniya"
-    ]
-  },
-  "emiya_archer_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/attack1",
-      "typemoonworld:voice/emiya_archer/attack2",
-      "typemoonworld:voice/emiya_archer/attack3"
-    ]
-  },
-  "emiya_archer_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/fail1",
-      "typemoonworld:voice/emiya_archer/fail2"
-    ]
-  },
-  "emiya_archer_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/victory1",
-      "typemoonworld:voice/emiya_archer/victory2"
-    ]
-  },
-  "emiya_archer_voice_projection": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/projection"
-    ]
-  },
-  "emiya_archer_voice_twin_throw": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/twin_throw"
-    ]
-  },
-  "emiya_archer_voice_spiral": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/spiral"
-    ]
-  },
-  "emiya_archer_voice_rho_aias": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/rho_aias"
-    ]
-  },
-  "emiya_archer_voice_ubw": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/emiya_archer/ubw"
-    ]
-  },
-  "artoria_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/artoria_pendragon/attack1",
-      "typemoonworld:voice/artoria_pendragon/attack2",
-      "typemoonworld:voice/artoria_pendragon/attack3"
-    ]
-  },
-  "artoria_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/artoria_pendragon/fail1",
-      "typemoonworld:voice/artoria_pendragon/fail2"
-    ]
-  },
-  "artoria_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/artoria_pendragon/victory1",
-      "typemoonworld:voice/artoria_pendragon/victory2",
-      "typemoonworld:voice/artoria_pendragon/victory3",
-      "typemoonworld:voice/artoria_pendragon/victory4"
-    ]
-  },
-  "artoria_voice_invisible_air": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/artoria_pendragon/invisible_air1",
-      "typemoonworld:voice/artoria_pendragon/invisible_air2"
-    ]
-  },
-  "artoria_voice_excalibur_release": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/artoria_pendragon/excalibur_release"
-    ]
-  },
-  "artoria_voice_excalibur": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/artoria_pendragon/excalibur"
-    ]
-  },
-  "oda_nobunaga_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/oda_nobunaga/attack1",
-      "typemoonworld:voice/oda_nobunaga/attack2"
-    ]
-  },
-  "oda_nobunaga_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/oda_nobunaga/fail1",
-      "typemoonworld:voice/oda_nobunaga/fail2"
-    ]
-  },
-  "oda_nobunaga_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/oda_nobunaga/victory1",
-      "typemoonworld:voice/oda_nobunaga/victory2"
-    ]
-  },
-  "oda_nobunaga_voice_np": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/oda_nobunaga/np"
-    ]
-  },
-  "oda_nobunaga_voice_hajun": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/oda_nobunaga/hajun"
-    ]
-  },
-  "enkidu_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/enkidu/attack1",
-      "typemoonworld:voice/enkidu/attack2"
-    ]
-  },
-  "enkidu_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/enkidu/fail1",
-      "typemoonworld:voice/enkidu/fail2"
-    ]
-  },
-  "enkidu_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/enkidu/victory1",
-      "typemoonworld:voice/enkidu/victory2"
-    ]
-  },
-  "enkidu_voice_np": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/enkidu/np"
-    ]
-  },
-  "gawain_voice_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/gawain/attack1",
-      "typemoonworld:voice/gawain/attack2",
-      "typemoonworld:voice/gawain/attack3"
-    ]
-  },
-  "gawain_voice_fail": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/gawain/fail1",
-      "typemoonworld:voice/gawain/fail2",
-      "typemoonworld:voice/gawain/fail3"
-    ]
-  },
-  "gawain_voice_victory": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/gawain/victory1",
-      "typemoonworld:voice/gawain/victory2",
-      "typemoonworld:voice/gawain/victory3"
-    ]
-  },
-  "gawain_voice_fire_attack": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/gawain/fire_attack"
-    ]
-  },
-  "gawain_voice_np": {
-    "category": "hostile",
-    "sounds": [
-      "typemoonworld:voice/gawain/np"
-    ]
-  }
+    "cym_gem_biubiubiu":  {
+                              "category":  "player",
+                              "subtitle":  "subtitles.typemoonworld.cym_gem_biubiubiu",
+                              "sounds":  [
+                                             "typemoonworld:cym_gem_biubiubiu"
+                                         ]
+                          },
+    "cyq_gem_shoot_star":  {
+                               "category":  "player",
+                               "subtitle":  "subtitles.typemoonworld.cyq_gem_shoot_star",
+                               "sounds":  [
+                                              "typemoonworld:cyq_gem_shoot_star"
+                                          ]
+                           },
+    "sasaki_kojiro_voice_attack":  {
+                                       "category":  "hostile",
+                                       "sounds":  [
+                                                      "typemoonworld:voice/sasaki_kojiro/attack1",
+                                                      "typemoonworld:voice/sasaki_kojiro/attack2",
+                                                      "typemoonworld:voice/sasaki_kojiro/attack3"
+                                                  ]
+                                   },
+    "sasaki_kojiro_voice_fail":  {
+                                     "category":  "hostile",
+                                     "sounds":  [
+                                                    "typemoonworld:voice/sasaki_kojiro/fail1",
+                                                    "typemoonworld:voice/sasaki_kojiro/fail2"
+                                                ]
+                                 },
+    "sasaki_kojiro_voice_victory":  {
+                                        "category":  "hostile",
+                                        "sounds":  [
+                                                       "typemoonworld:voice/sasaki_kojiro/victory1",
+                                                       "typemoonworld:voice/sasaki_kojiro/victory2"
+                                                   ]
+                                    },
+    "sasaki_kojiro_voice_tsurigameshi":  {
+                                             "category":  "hostile",
+                                             "sounds":  [
+                                                            "typemoonworld:voice/sasaki_kojiro/tsurigameshi"
+                                                        ]
+                                         },
+    "heracles_voice_roar":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/heracles/roar1",
+                                               "typemoonworld:voice/heracles/roar2",
+                                               "typemoonworld:voice/heracles/roar3",
+                                               "typemoonworld:voice/heracles/roar4"
+                                           ]
+                            },
+    "heracles_voice_fail":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/heracles/fail1",
+                                               "typemoonworld:voice/heracles/fail2"
+                                           ]
+                            },
+    "heracles_voice_victory":  {
+                                   "category":  "hostile",
+                                   "sounds":  [
+                                                  "typemoonworld:voice/heracles/victory1"
+                                              ]
+                               },
+    "cu_chulainn_voice_attack":  {
+                                     "category":  "hostile",
+                                     "sounds":  [
+                                                    "typemoonworld:voice/cu_chulainn/attack1",
+                                                    "typemoonworld:voice/cu_chulainn/attack2",
+                                                    "typemoonworld:voice/cu_chulainn/attack3"
+                                                ]
+                                 },
+    "cu_chulainn_voice_fail":  {
+                                   "category":  "hostile",
+                                   "sounds":  [
+                                                  "typemoonworld:voice/cu_chulainn/fail1",
+                                                  "typemoonworld:voice/cu_chulainn/fail2"
+                                              ]
+                               },
+    "cu_chulainn_voice_victory":  {
+                                      "category":  "hostile",
+                                      "sounds":  [
+                                                     "typemoonworld:voice/cu_chulainn/victory1",
+                                                     "typemoonworld:voice/cu_chulainn/victory2"
+                                                 ]
+                                  },
+    "cu_chulainn_voice_gae_bolg":  {
+                                       "category":  "hostile",
+                                       "sounds":  [
+                                                      "typemoonworld:voice/cu_chulainn/gae_bolg"
+                                                  ]
+                                   },
+    "medea_voice_attack":  {
+                               "category":  "hostile",
+                               "sounds":  [
+                                              "typemoonworld:voice/medea/attack1",
+                                              "typemoonworld:voice/medea/attack2"
+                                          ]
+                           },
+    "medea_voice_spell":  {
+                              "category":  "hostile",
+                              "sounds":  [
+                                             "typemoonworld:voice/medea/spell"
+                                         ]
+                          },
+    "medea_voice_rule_breaker":  {
+                                     "category":  "hostile",
+                                     "sounds":  [
+                                                    "typemoonworld:voice/medea/rule_breaker"
+                                                ]
+                                 },
+    "medea_voice_fail":  {
+                             "category":  "hostile",
+                             "sounds":  [
+                                            "typemoonworld:voice/medea/fail1",
+                                            "typemoonworld:voice/medea/fail2"
+                                        ]
+                         },
+    "medea_voice_victory":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/medea/victory1",
+                                               "typemoonworld:voice/medea/victory2"
+                                           ]
+                            },
+    "medusa_voice_attack":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/medusa/attack1",
+                                               "typemoonworld:voice/medusa/attack2"
+                                           ]
+                            },
+    "medusa_voice_bellerophon":  {
+                                     "category":  "hostile",
+                                     "sounds":  [
+                                                    "typemoonworld:voice/medusa/bellerophon"
+                                                ]
+                                 },
+    "medusa_voice_fail":  {
+                              "category":  "hostile",
+                              "sounds":  [
+                                             "typemoonworld:voice/medusa/fail1",
+                                             "typemoonworld:voice/medusa/fail2"
+                                         ]
+                          },
+    "medusa_voice_victory":  {
+                                 "category":  "hostile",
+                                 "sounds":  [
+                                                "typemoonworld:voice/medusa/victory1",
+                                                "typemoonworld:voice/medusa/victory2"
+                                            ]
+                             },
+    "cursed_arm_hassan_voice_attack":  {
+                                           "category":  "hostile",
+                                           "sounds":  [
+                                                          "typemoonworld:voice/cursed_arm_hassan/attack1",
+                                                          "typemoonworld:voice/cursed_arm_hassan/attack2"
+                                                      ]
+                                       },
+    "cursed_arm_hassan_voice_fail":  {
+                                         "category":  "hostile",
+                                         "sounds":  [
+                                                        "typemoonworld:voice/cursed_arm_hassan/fail1",
+                                                        "typemoonworld:voice/cursed_arm_hassan/fail2"
+                                                    ]
+                                     },
+    "cursed_arm_hassan_voice_victory":  {
+                                            "category":  "hostile",
+                                            "sounds":  [
+                                                           "typemoonworld:voice/cursed_arm_hassan/victory1",
+                                                           "typemoonworld:voice/cursed_arm_hassan/victory2"
+                                                       ]
+                                        },
+    "cursed_arm_hassan_voice_zabaniya":  {
+                                             "category":  "hostile",
+                                             "sounds":  [
+                                                            "typemoonworld:voice/cursed_arm_hassan/zabaniya"
+                                                        ]
+                                         },
+    "emiya_archer_voice_attack":  {
+                                      "category":  "hostile",
+                                      "sounds":  [
+                                                     "typemoonworld:voice/emiya_archer/attack1",
+                                                     "typemoonworld:voice/emiya_archer/attack2",
+                                                     "typemoonworld:voice/emiya_archer/attack3"
+                                                 ]
+                                  },
+    "emiya_archer_voice_fail":  {
+                                    "category":  "hostile",
+                                    "sounds":  [
+                                                   "typemoonworld:voice/emiya_archer/fail1",
+                                                   "typemoonworld:voice/emiya_archer/fail2"
+                                               ]
+                                },
+    "emiya_archer_voice_victory":  {
+                                       "category":  "hostile",
+                                       "sounds":  [
+                                                      "typemoonworld:voice/emiya_archer/victory1",
+                                                      "typemoonworld:voice/emiya_archer/victory2"
+                                                  ]
+                                   },
+    "emiya_archer_voice_projection":  {
+                                          "category":  "hostile",
+                                          "sounds":  [
+                                                         "typemoonworld:voice/emiya_archer/projection"
+                                                     ]
+                                      },
+    "emiya_archer_voice_twin_throw":  {
+                                          "category":  "hostile",
+                                          "sounds":  [
+                                                         "typemoonworld:voice/emiya_archer/twin_throw"
+                                                     ]
+                                      },
+    "emiya_archer_voice_spiral":  {
+                                      "category":  "hostile",
+                                      "sounds":  [
+                                                     "typemoonworld:voice/emiya_archer/spiral"
+                                                 ]
+                                  },
+    "emiya_archer_voice_rho_aias":  {
+                                        "category":  "hostile",
+                                        "sounds":  [
+                                                       "typemoonworld:voice/emiya_archer/rho_aias"
+                                                   ]
+                                    },
+    "emiya_archer_voice_ubw":  {
+                                   "category":  "hostile",
+                                   "sounds":  [
+                                                  "typemoonworld:voice/emiya_archer/ubw"
+                                              ]
+                               },
+    "artoria_voice_attack":  {
+                                 "category":  "hostile",
+                                 "sounds":  [
+                                                "typemoonworld:voice/artoria_pendragon/attack1",
+                                                "typemoonworld:voice/artoria_pendragon/attack2",
+                                                "typemoonworld:voice/artoria_pendragon/attack3"
+                                            ]
+                             },
+    "artoria_voice_fail":  {
+                               "category":  "hostile",
+                               "sounds":  [
+                                              "typemoonworld:voice/artoria_pendragon/fail1",
+                                              "typemoonworld:voice/artoria_pendragon/fail2"
+                                          ]
+                           },
+    "artoria_voice_victory":  {
+                                  "category":  "hostile",
+                                  "sounds":  [
+                                                 "typemoonworld:voice/artoria_pendragon/victory1",
+                                                 "typemoonworld:voice/artoria_pendragon/victory2",
+                                                 "typemoonworld:voice/artoria_pendragon/victory3",
+                                                 "typemoonworld:voice/artoria_pendragon/victory4"
+                                             ]
+                              },
+    "artoria_voice_invisible_air":  {
+                                        "category":  "hostile",
+                                        "sounds":  [
+                                                       "typemoonworld:voice/artoria_pendragon/invisible_air1",
+                                                       "typemoonworld:voice/artoria_pendragon/invisible_air2"
+                                                   ]
+                                    },
+    "artoria_voice_excalibur_release":  {
+                                            "category":  "hostile",
+                                            "sounds":  [
+                                                           "typemoonworld:voice/artoria_pendragon/excalibur_release"
+                                                       ]
+                                        },
+    "artoria_voice_excalibur":  {
+                                    "category":  "hostile",
+                                    "sounds":  [
+                                                   "typemoonworld:voice/artoria_pendragon/excalibur"
+                                               ]
+                                },
+    "oda_nobunaga_voice_attack":  {
+                                      "category":  "hostile",
+                                      "sounds":  [
+                                                     "typemoonworld:voice/oda_nobunaga/attack1",
+                                                     "typemoonworld:voice/oda_nobunaga/attack2"
+                                                 ]
+                                  },
+    "oda_nobunaga_voice_fail":  {
+                                    "category":  "hostile",
+                                    "sounds":  [
+                                                   "typemoonworld:voice/oda_nobunaga/fail1",
+                                                   "typemoonworld:voice/oda_nobunaga/fail2"
+                                               ]
+                                },
+    "oda_nobunaga_voice_victory":  {
+                                       "category":  "hostile",
+                                       "sounds":  [
+                                                      "typemoonworld:voice/oda_nobunaga/victory1",
+                                                      "typemoonworld:voice/oda_nobunaga/victory2"
+                                                  ]
+                                   },
+    "oda_nobunaga_voice_np":  {
+                                  "category":  "hostile",
+                                  "sounds":  [
+                                                 "typemoonworld:voice/oda_nobunaga/np"
+                                             ]
+                              },
+    "oda_nobunaga_voice_hajun":  {
+                                     "category":  "hostile",
+                                     "sounds":  [
+                                                    "typemoonworld:voice/oda_nobunaga/hajun"
+                                                ]
+                                 },
+    "enkidu_voice_attack":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/enkidu/attack1",
+                                               "typemoonworld:voice/enkidu/attack2"
+                                           ]
+                            },
+    "enkidu_voice_fail":  {
+                              "category":  "hostile",
+                              "sounds":  [
+                                             "typemoonworld:voice/enkidu/fail1",
+                                             "typemoonworld:voice/enkidu/fail2"
+                                         ]
+                          },
+    "enkidu_voice_victory":  {
+                                 "category":  "hostile",
+                                 "sounds":  [
+                                                "typemoonworld:voice/enkidu/victory1",
+                                                "typemoonworld:voice/enkidu/victory2"
+                                            ]
+                             },
+    "enkidu_voice_np":  {
+                            "category":  "hostile",
+                            "sounds":  [
+                                           "typemoonworld:voice/enkidu/np"
+                                       ]
+                        },
+    "gawain_voice_attack":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/gawain/attack1",
+                                               "typemoonworld:voice/gawain/attack2",
+                                               "typemoonworld:voice/gawain/attack3"
+                                           ]
+                            },
+    "gawain_voice_fail":  {
+                              "category":  "hostile",
+                              "sounds":  [
+                                             "typemoonworld:voice/gawain/fail1",
+                                             "typemoonworld:voice/gawain/fail2",
+                                             "typemoonworld:voice/gawain/fail3"
+                                         ]
+                          },
+    "gawain_voice_victory":  {
+                                 "category":  "hostile",
+                                 "sounds":  [
+                                                "typemoonworld:voice/gawain/victory1",
+                                                "typemoonworld:voice/gawain/victory2",
+                                                "typemoonworld:voice/gawain/victory3"
+                                            ]
+                             },
+    "gawain_voice_fire_attack":  {
+                                     "category":  "hostile",
+                                     "sounds":  [
+                                                    "typemoonworld:voice/gawain/fire_attack"
+                                                ]
+                                 },
+    "gawain_voice_np":  {
+                            "category":  "hostile",
+                            "sounds":  [
+                                           "typemoonworld:voice/gawain/np"
+                                       ]
+                        },
+    "li_shuwen_voice_attack":  {
+                                   "category":  "hostile",
+                                   "sounds":  [
+                                                  "typemoonworld:voice/li_shuwen/attack1",
+                                                  "typemoonworld:voice/li_shuwen/attack2",
+                                                  "typemoonworld:voice/li_shuwen/attack3"
+                                              ]
+                               },
+    "li_shuwen_voice_fail":  {
+                                 "category":  "hostile",
+                                 "sounds":  [
+                                                "typemoonworld:voice/li_shuwen/fail1",
+                                                "typemoonworld:voice/li_shuwen/fail2"
+                                            ]
+                             },
+    "li_shuwen_voice_victory":  {
+                                    "category":  "hostile",
+                                    "sounds":  [
+                                                   "typemoonworld:voice/li_shuwen/victory1",
+                                                   "typemoonworld:voice/li_shuwen/victory2",
+                                                   "typemoonworld:voice/li_shuwen/victory3",
+                                                   "typemoonworld:voice/li_shuwen/victory4"
+                                               ]
+                                },
+    "li_shuwen_voice_np":  {
+                               "category":  "hostile",
+                               "sounds":  [
+                                              "typemoonworld:voice/li_shuwen/np"
+                                          ]
+                           }
 }

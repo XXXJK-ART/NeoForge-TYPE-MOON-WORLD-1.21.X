@@ -44,6 +44,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.LiShuwenRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaNobunagaRenderer;
@@ -208,6 +209,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
       event.registerEntityRenderer(ModEntities.ENKIDU.get(), EnkiduRenderer::new);
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);
+      event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);

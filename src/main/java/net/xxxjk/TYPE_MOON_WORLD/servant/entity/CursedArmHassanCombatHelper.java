@@ -220,7 +220,9 @@ public final class CursedArmHassanCombatHelper {
    private static void tickStealth(CursedArmHassanEntity entity, long now) {
       LivingEntity target = entity.getTarget();
       boolean inCombat = target != null && target.isAlive() && entity.distanceToSqr(target) < 18.0 * 18.0;
-      if (!inCombat && !entity.hasEffect(MobEffects.INVISIBILITY)) {
+      if (!inCombat) {
+         entity.removeEffect(MobEffects.INVISIBILITY);
+      } else if (!entity.hasEffect(MobEffects.INVISIBILITY)) {
          entity.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80, 0, false, false, true));
       }
       if (inCombat && entity.hasEffect(MobEffects.INVISIBILITY) && entity.distanceToSqr(target) < 3.0 * 3.0) {

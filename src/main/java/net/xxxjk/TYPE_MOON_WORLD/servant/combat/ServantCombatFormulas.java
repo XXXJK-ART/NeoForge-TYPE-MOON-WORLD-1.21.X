@@ -48,19 +48,19 @@ public final class ServantCombatFormulas {
    }
 
    public static int dodgeInvulnerabilityTicks(ServantParams params) {
-      return secondsToTicks(0.30 + agilityStep(params) * 0.02);
+      return secondsToTicks((0.30 + agilityStep(params) * 0.02) * agilityMultiplier(params));
    }
 
    public static int perfectDodgeInvulnerabilityTicks(ServantParams params) {
-      return 10;
+      return Math.max(10, secondsToTicks(0.5 * agilityMultiplier(params)));
    }
 
    public static int dodgeCooldownTicks(ServantParams params) {
-      return secondsToTicks(Math.max(0.70, 1.0 - agilityStep(params) * 0.05));
+      return secondsToTicks(Math.max(0.70, 1.0 - agilityStep(params) * 0.05) / agilityMultiplier(params));
    }
 
    public static int perfectDodgeWindowTicks(ServantParams params) {
-      return secondsToTicks(0.15 + agilityStep(params) * 0.01);
+      return secondsToTicks((0.15 + agilityStep(params) * 0.01) * agilityMultiplier(params));
    }
 
    public static double dodgeMpCost(ServantParams params) {
@@ -92,11 +92,19 @@ public final class ServantCombatFormulas {
    }
 
    public static double poiseMax(ServantParams params) {
-      return 80.0 + enduranceStep(params) * 20.0 + strengthStep(params) * 10.0;
+      return (80.0 + enduranceStep(params) * 20.0 + strengthStep(params) * 10.0) * toughnessMultiplier(params);
    }
 
    public static double poiseRegenPerSecond(ServantParams params) {
-      return 5.0 + enduranceStep(params) * 2.0;
+      return (5.0 + enduranceStep(params) * 2.0) * toughnessMultiplier(params);
+   }
+
+   public static double toughnessMultiplier(ServantParams params) {
+      return 1.0;
+   }
+
+   public static double agilityMultiplier(ServantParams params) {
+      return 1.0;
    }
 
    public static double launcherPoiseCost(ServantParams params) {

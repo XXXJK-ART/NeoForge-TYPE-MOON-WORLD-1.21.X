@@ -63,6 +63,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_VICTORY = register("gawain_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_FIRE_ATTACK = register("gawain_voice_fire_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_NP = register("gawain_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_ATTACK = register("li_shuwen_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_FAIL = register("li_shuwen_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_VICTORY = register("li_shuwen_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_NP = register("li_shuwen_voice_np");
 
    private ModSounds() {
    }

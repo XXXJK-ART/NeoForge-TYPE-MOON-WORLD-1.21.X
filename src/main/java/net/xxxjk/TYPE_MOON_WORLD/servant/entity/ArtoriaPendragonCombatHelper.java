@@ -228,7 +228,8 @@ public final class ArtoriaPendragonCombatHelper {
       if (amount <= 0.0F || !hasAvalon(target)) {
          return amount;
       }
-      return amount * 0.10F;
+      spawnAvalonFx(target);
+      return 0.0F;
    }
 
    public static boolean tryNegateMedeaSmallMagic(ArtoriaPendragonEntity entity, DamageSource source, float amount) {

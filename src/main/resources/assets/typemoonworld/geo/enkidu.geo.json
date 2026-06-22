@@ -6,9 +6,9 @@
 				"identifier": "geometry.unknown",
 				"texture_width": 128,
 				"texture_height": 128,
-				"visible_bounds_width": 2,
-				"visible_bounds_height": 3.5,
-				"visible_bounds_offset": [0, 1.25, 0]
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 4.5,
+				"visible_bounds_offset": [0, 1.75, 0]
 			},
 			"bones": [
 				{
@@ -622,6 +622,18 @@
 								"up": {"uv": [25, 62], "uv_size": [3, 1]},
 								"down": {"uv": [28, 63], "uv_size": [3, -1]}
 							}
+						},
+						{
+							"origin": [-4, 0, -2.41797],
+							"size": [3, 1, 5.92969],
+							"uv": {
+								"north": {"uv": [41, 17], "uv_size": [3, 1]},
+								"east": {"uv": [36, 17], "uv_size": [5, 1]},
+								"south": {"uv": [54, 15], "uv_size": [3, 1]},
+								"west": {"uv": [52, 16], "uv_size": [5, 1]},
+								"up": {"uv": [41, 12], "uv_size": [3, 5]},
+								"down": {"uv": [55, 17], "uv_size": [3, -5]}
+							}
 						}
 					]
 				},
@@ -642,9 +654,6 @@
 								"down": {"uv": [47, 50], "uv_size": [4, -5]}
 							}
 						},
-						{"origin": [1, 1, 1], "size": [3, 1, 2.5], "uv": [46, 63]},
-						{"origin": [0, 10, -1.5], "size": [5, 7, 5], "uv": [0, 43]},
-						{"origin": [1, 1, -1.46484], "size": [3, 1, 2.46484], "uv": [64, 14]},
 						{
 							"origin": [1, 0, -2.41797],
 							"size": [3, 1, 5.92969],
@@ -657,18 +666,9 @@
 								"down": {"uv": [55, 17], "uv_size": [3, -5]}
 							}
 						},
-						{
-							"origin": [-4, 0, -2.41797],
-							"size": [3, 1, 5.92969],
-							"uv": {
-								"north": {"uv": [41, 17], "uv_size": [3, 1]},
-								"east": {"uv": [36, 17], "uv_size": [5, 1]},
-								"south": {"uv": [54, 15], "uv_size": [3, 1]},
-								"west": {"uv": [52, 16], "uv_size": [5, 1]},
-								"up": {"uv": [41, 12], "uv_size": [3, 5]},
-								"down": {"uv": [55, 17], "uv_size": [3, -5]}
-							}
-						}
+						{"origin": [1, 1, 1], "size": [3, 1, 2.5], "uv": [46, 63]},
+						{"origin": [0, 10, -1.5], "size": [5, 7, 5], "uv": [0, 43]},
+						{"origin": [1, 1, -1.46484], "size": [3, 1, 2.46484], "uv": [64, 14]}
 					]
 				}
 			]

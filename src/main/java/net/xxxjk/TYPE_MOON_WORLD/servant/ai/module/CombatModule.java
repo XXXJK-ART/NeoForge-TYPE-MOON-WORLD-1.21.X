@@ -31,6 +31,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
@@ -266,6 +268,10 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
       if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {
+         return;
+      }
+      if (entity instanceof LiShuwenEntity liShuwen) {
+         LiShuwenCombatHelper.tick(liShuwen, context);
          return;
       }
 

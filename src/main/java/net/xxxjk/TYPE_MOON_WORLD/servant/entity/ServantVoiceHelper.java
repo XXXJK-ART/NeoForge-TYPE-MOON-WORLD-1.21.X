@@ -71,6 +71,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.GAWAIN_VOICE_ATTACK.get());
+      } else if (isLiShuwen(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.LI_SHUWEN_VOICE_ATTACK.get());
       }
    }
 
@@ -117,6 +122,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.ENKIDU_VOICE_VICTORY.get());
       } else if (isGawain(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.GAWAIN_VOICE_VICTORY.get());
+      } else if (isLiShuwen(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.LI_SHUWEN_VOICE_VICTORY.get());
       }
    }
 
@@ -143,6 +150,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ENKIDU_VOICE_FAIL.get());
       } else if (isGawain(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.98F, ModSounds.GAWAIN_VOICE_FAIL.get());
+      } else if (isLiShuwen(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.94F, ModSounds.LI_SHUWEN_VOICE_FAIL.get());
       }
    }
 
@@ -290,6 +299,14 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "gawain_np", 1.25F, 1.0F, ModSounds.GAWAIN_VOICE_NP.get());
    }
 
+   public static void tryPlayLiShuwenNp(ServantEntity servant) {
+      if (!isLiShuwen(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "li_shuwen_np", 1.05F, 0.96F, ModSounds.LI_SHUWEN_VOICE_NP.get());
+   }
+
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
       if (!(servant.level() instanceof ServerLevel serverLevel) || sound == null) {
          return;
@@ -367,5 +384,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isGawain(ServantEntity servant) {
       return servant != null && GawainEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isLiShuwen(ServantEntity servant) {
+      return servant != null && LiShuwenEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

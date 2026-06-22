@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 @EventBusSubscriber(
@@ -34,6 +35,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ENKIDU.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }

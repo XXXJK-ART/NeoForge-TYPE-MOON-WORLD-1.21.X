@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -258,7 +259,7 @@ public final class ServantCombatSystem {
          data.putDouble(TAG_STAMINA, staminaMax);
       }
       if (!data.contains(TAG_POISE)) {
-         data.putDouble(TAG_POISE, ServantCombatFormulas.poiseMax(params));
+         data.putDouble(TAG_POISE, adjustedPoiseMax(params, null));
       }
    }
 
@@ -273,7 +274,7 @@ public final class ServantCombatSystem {
       }
 
       double poiseMax = ServantCombatFormulas.poiseMax(params);
-      double poise = Math.min(poiseMax, data.getDouble(TAG_POISE) + ServantCombatFormulas.poiseRegenPerSecond(params) / 4.0);
+      double poise = Math.min(adjustedPoiseMax(params, entity), data.getDouble(TAG_POISE) + adjustedPoiseRegenPerSecond(params, entity) / 4.0);
       data.putDouble(TAG_POISE, poise);
    }
 
@@ -349,7 +350,7 @@ public final class ServantCombatSystem {
    private static void resetCombatState(ServantEntity entity, CompoundTag data) {
       data.putInt(TAG_PHASE, ServantCombatPhase.PROBING.id());
       data.putDouble(TAG_STAMINA, ServantCombatFormulas.staminaMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null));
-      data.putDouble(TAG_POISE, ServantCombatFormulas.poiseMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null));
+      data.putDouble(TAG_POISE, adjustedPoiseMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null, entity));
       data.remove(TAG_LAST_COMBAT_TICK);
       data.remove(TAG_STUN_UNTIL);
       data.remove(TAG_INVULN_UNTIL);
@@ -491,6 +492,9 @@ public final class ServantCombatSystem {
       }
       boolean emiya = servant instanceof EmiyaArcherEntity;
       int dodgeCooldown = emiya ? Math.max(6, ServantCombatFormulas.dodgeCooldownTicks(params) / 2) : ServantCombatFormulas.dodgeCooldownTicks(params);
+      if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {
+         dodgeCooldown = Math.max(1, dodgeCooldown / 2);
+      }
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {
          return false;
       }
@@ -509,6 +513,9 @@ public final class ServantCombatSystem {
       servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
       servant.getPersistentData().putLong(TAG_LAST_DODGE_TICK, now);
       int invulnTicks = ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0);
+      if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {
+         invulnTicks *= 2;
+      }
       servant.getPersistentData().putLong(TAG_INVULN_UNTIL, now + invulnTicks);
       Vec3 away = dodgeDirection(servant, source);
       servant.faceVector(away);
@@ -631,7 +638,7 @@ public final class ServantCombatSystem {
          ServantParams params = servant.getDefinition() != null ? servant.getDefinition().parameters() : null;
          data.putBoolean(TAG_PREFIX + "GuardBroken", true);
          data.putLong(TAG_STUN_UNTIL, now + ServantCombatFormulas.guardBreakTicks(params));
-         data.putDouble(TAG_POISE, ServantCombatFormulas.poiseMax(params) * 0.5);
+         data.putDouble(TAG_POISE, adjustedPoiseMax(params, servant) * 0.5);
          TYPE_MOON_WORLD.queueServerWork(ServantCombatFormulas.guardBreakTicks(params), () -> {
             if (servant.isAlive()) {
                servant.getPersistentData().remove(TAG_PREFIX + "GuardBroken");
@@ -927,5 +934,15 @@ public final class ServantCombatSystem {
 
    private static boolean isBerserker(ServantDefinition definition) {
       return definition != null && definition.classType() == ServantClassType.BERSERKER;
+   }
+
+   private static double adjustedPoiseMax(ServantParams params, ServantEntity entity) {
+      double poiseMax = ServantCombatFormulas.poiseMax(params);
+      return entity != null && LiShuwenCombatHelper.hasChineseMartialArts(entity) ? poiseMax * 2.0 : poiseMax;
+   }
+
+   private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
+      double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      return entity != null && LiShuwenCombatHelper.hasChineseMartialArts(entity) ? poiseRegen * 2.0 : poiseRegen;
    }
 }

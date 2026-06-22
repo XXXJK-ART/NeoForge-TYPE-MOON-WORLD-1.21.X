@@ -1,0 +1,17 @@
+{
+  "id": "sphere_boundary_extreme_a_minus",
+  "display_name": "Sphere Boundary (Extreme) A-",
+  "display_name_zh": "圈境（极） A-",
+  "type": "active",
+  "mp_cost": 5,
+  "cooldown_ticks": 120,
+  "duration_ticks": 100,
+  "effects": [
+    {
+      "effect_type": "stealth",
+      "params": {
+        "break_on_attack": true
+      }
+    }
+  ]
+}

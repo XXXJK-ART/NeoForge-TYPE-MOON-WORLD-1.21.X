@@ -52,6 +52,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
@@ -328,6 +329,9 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GawainEntity>> GAWAIN = ENTITY_TYPES.register(
       "gawain", () -> Builder.of(GawainEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("gawain")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<LiShuwenEntity>> LI_SHUWEN = ENTITY_TYPES.register(
+      "li_shuwen", () -> Builder.of(LiShuwenEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("li_shuwen")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<OdaMatchlockGunEntity>> ODA_MATCHLOCK_GUN = ENTITY_TYPES.register(
       "oda_matchlock_gun",

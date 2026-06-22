@@ -1,0 +1,19 @@
+{
+  "id": "wu_er_da",
+  "display_name": "No Second Strike",
+  "display_name_zh": "无二打",
+  "type": "anti_unit",
+  "rank": "EX",
+  "mp_cost": 30,
+  "cooldown_ticks": 500,
+  "windup_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "instant_death",
+      "params": {
+        "base_chance": 0.80,
+        "range": 3.0
+      }
+    }
+  ]
+}

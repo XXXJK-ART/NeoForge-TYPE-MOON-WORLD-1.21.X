@@ -2111,7 +2111,7 @@ public final class EnkiduCombatHelper {
          data.putDouble(TAG_ENUMA_DIR_Z, flightDir.z);
          entity.setPos(impact.x, Math.max(target.getY(), impact.y - entity.getBbHeight() * 0.45), impact.z);
          entity.setDeltaMovement(Vec3.ZERO);
-         applyNoDefenseDamage(entity, target, 4000.0F);
+         applyNoDefenseDamageOverTicks(entity, target, 4000.0F, 20);
          applyEnumaSmallExplosion(entity, level, impact, target);
          if (impact.distanceTo(groundImpact) > 1.8 && impact.distanceTo(groundImpact) <= 28.0 && now < release + ENUMA_RELEASE_VISUAL - 10L) {
             return;
@@ -2365,6 +2365,18 @@ public final class EnkiduCombatHelper {
          && hardness >= 0.0F
          && hardness <= 80.0F
          && state.getExplosionResistance(level, pos, null) < 1200.0F;
+   }
+
+   private static void applyNoDefenseDamageOverTicks(EnkiduEntity entity, LivingEntity target, float totalAmount, int ticks) {
+      int duration = Math.max(1, ticks);
+      float perTick = totalAmount / duration;
+      for (int delay = 0; delay < duration; delay++) {
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            if (entity.isAlive() && target.isAlive()) {
+               applyNoDefenseDamage(entity, target, perTick);
+            }
+         });
+      }
    }
 
    private static void applyNoDefenseDamage(EnkiduEntity entity, LivingEntity target, float amount) {

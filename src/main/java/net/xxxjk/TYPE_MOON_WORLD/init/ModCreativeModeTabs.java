@@ -203,6 +203,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
+                        output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

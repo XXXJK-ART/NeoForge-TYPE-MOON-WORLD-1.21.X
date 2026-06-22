@@ -678,13 +678,25 @@ public final class PlayerNoblePhantasmHelper {
          if (dir.dot(look) < GALLATIN_HALF_ANGLE_COS || !hit.add(living.getId())) {
             continue;
          }
-         applyFixedDamage(player, living, damage);
+         applyFixedDamageOverTicks(player, living, damage, 20);
          living.igniteForSeconds(5.0F);
          living.push(look.x * 5.0, 0.32, look.z * 5.0);
          living.hurtMarked = true;
       }
       spawnGallatinReleaseParticles(level, origin, look);
       breakGallatinPath(level, origin, look);
+   }
+
+   private static void applyFixedDamageOverTicks(ServerPlayer player, LivingEntity target, float totalDamage, int ticks) {
+      int duration = Math.max(1, ticks);
+      float perTick = totalDamage / duration;
+      for (int delay = 0; delay < duration; delay++) {
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            if (player.isAlive() && target.isAlive()) {
+               applyFixedDamage(player, target, perTick);
+            }
+         });
+      }
    }
 
    private static void applyFixedDamage(ServerPlayer player, LivingEntity target, float damage) {
