@@ -80,6 +80,7 @@ public final class CombatModule implements ServantAiModule {
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
    private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
    private static final int SURROUNDED_SCAN_INTERVAL = 5;
+   private static final int COMBAT_LOS_INTERVAL = 3;
    private static final int CU_RECAST_MP_COST = 25;
    private static final int CU_RUNE_MP_COST = 20;
    private static final ResourceLocation VALOR_RES = ResourceLocation.fromNamespaceAndPath(
@@ -241,6 +242,10 @@ public final class CombatModule implements ServantAiModule {
          }
          return;
       }
+      if (entity instanceof LiShuwenEntity liShuwen) {
+         LiShuwenCombatHelper.tick(liShuwen, context);
+         return;
+      }
       if (sharedTarget != null && ServantCombatSystem.tryRunComboAction(entity, sharedTarget)) {
          return;
       }
@@ -270,11 +275,6 @@ public final class CombatModule implements ServantAiModule {
       if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {
          return;
       }
-      if (entity instanceof LiShuwenEntity liShuwen) {
-         LiShuwenCombatHelper.tick(liShuwen, context);
-         return;
-      }
-
       LivingEntity target = context.target();
       if (target == null || target.isDeadOrDying()) {
          entity.setTarget(null);
@@ -331,7 +331,7 @@ public final class CombatModule implements ServantAiModule {
       }
       double attackCommitDistance = Math.max(3.0, behaviorProfile.attackCommitDistance());
       double skillChanceScale = Math.max(0.75, Math.min(1.35, behaviorProfile.skillUsageFrequency() / 0.65));
-      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      boolean hasLineOfSight = hasLineOfSightCached(entity, target, data, tick);
       boolean gaeBolgWindingUp = CuChulainnCombatHelper.isGaeBolgWindingUp(entity);
 
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
@@ -417,7 +417,7 @@ public final class CombatModule implements ServantAiModule {
 
       double distance = entity.distanceTo(target);
       if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity) && canBreakForwardBlocks) {
-         tryBreakCollisionWall(entity, target, data, tick, entity instanceof HeraclesEntity);
+         tryBreakCollisionWall(entity, target, data, tick, entity instanceof HeraclesEntity, hasLineOfSight);
       }
 
       // ——— 0. 被方块挡住：挥砍砸开前方路径（仅Berserker） ———
@@ -829,6 +829,19 @@ public final class CombatModule implements ServantAiModule {
       data.putInt("CombatSurroundedScanTick", tick);
       data.putInt("CombatSurroundedEnemyCount", enemyCount);
       return enemyCount;
+   }
+
+   private boolean hasLineOfSightCached(ServantEntity entity, LivingEntity target, CompoundTag data, int tick) {
+      boolean sameTarget = data.hasUUID("CombatLosTarget") && data.getUUID("CombatLosTarget").equals(target.getUUID());
+      int lastCheck = data.getInt("CombatLosTick");
+      if (sameTarget && lastCheck > 0 && tick - lastCheck < COMBAT_LOS_INTERVAL) {
+         return data.getBoolean("CombatHasLos");
+      }
+      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      data.putUUID("CombatLosTarget", target.getUUID());
+      data.putInt("CombatLosTick", tick);
+      data.putBoolean("CombatHasLos", hasLineOfSight);
+      return hasLineOfSight;
    }
 
    private boolean handleUndergroundTarget(
@@ -1342,14 +1355,14 @@ public final class CombatModule implements ServantAiModule {
       return false;
    }
 
-   private boolean tryBreakCollisionWall(ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean heavy) {
+   private boolean tryBreakCollisionWall(ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean heavy, boolean hasLineOfSight) {
       if (!(entity.level() instanceof ServerLevel sl) || target == null || !target.isAlive()) {
          return false;
       }
       if (tick - data.getInt("LastCombatWallBreakTick") < (heavy ? 6 : 10)) {
          return false;
       }
-      boolean pressingWall = entity.horizontalCollision || entity.getNavigation().isInProgress() && !entity.getSensing().hasLineOfSight(target);
+      boolean pressingWall = entity.horizontalCollision || entity.getNavigation().isInProgress() && !hasLineOfSight;
       if (!pressingWall) {
          return false;
       }

@@ -49,6 +49,8 @@ public final class LiShuwenCombatHelper {
    private static final String TAG_WU_ER_DA_TARGET = "LiShuwenWuErDaTarget";
    private static final String TAG_CIRCLE_DODGE_UNTIL = "LiShuwenCircleDodgeUntil";
    private static final String TAG_CHINESE_MARTIAL_ARTS_ACTIVE = "LiShuwenChineseMartialArtsActive";
+   private static final String TAG_LAST_SELF_STATE_TICK = "LiShuwenLastSelfStateTick";
+   private static final String TAG_LAST_STEALTH_TARGET_CLEAR = "LiShuwenLastStealthTargetClear";
    private static final String TAG_UNTARGETABLE_UNTIL = "ServantCombat.UntargetableUntil";
    private static final String TAG_STUN_UNTIL = "ServantCombat.StunUntil";
    private static final String TAG_ARMOR_BREAK_UNTIL = "LiShuwenArmorBreakUntil";
@@ -134,14 +136,22 @@ public final class LiShuwenCombatHelper {
          return;
       }
       long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.getLong(TAG_LAST_SELF_STATE_TICK) == now) {
+         return;
+      }
+      data.putLong(TAG_LAST_SELF_STATE_TICK, now);
       tickYinYangCleanup(entity, now);
       clearMentalEffects(entity);
       if (entity.hasEffect(MobEffects.INVISIBILITY)) {
-         clearNonServantTargeting(entity, level);
+         if (now - data.getLong(TAG_LAST_STEALTH_TARGET_CLEAR) >= 10L) {
+            data.putLong(TAG_LAST_STEALTH_TARGET_CLEAR, now);
+            clearNonServantTargeting(entity, level);
+         }
       }
       if (entity.getTarget() == null) {
          entity.removeEffect(MobEffects.INVISIBILITY);
-         entity.getPersistentData().remove(TAG_UNTARGETABLE_UNTIL);
+         data.remove(TAG_UNTARGETABLE_UNTIL);
       }
    }
 
@@ -303,6 +313,8 @@ public final class LiShuwenCombatHelper {
       entity.triggerWuErDaAnimation();
       entity.getNavigation().stop();
       if (WU_ER_DA_WINDUP <= 0) {
+         data.remove(TAG_WU_ER_DA_RELEASE);
+         data.remove(TAG_WU_ER_DA_TARGET);
          entity.setWuErDaTargeting(false);
          resolveWuErDa(entity, target, level);
          return true;
@@ -591,6 +603,9 @@ public final class LiShuwenCombatHelper {
       }
       AttributeModifier existing = attribute.getModifier(id);
       if (existing != null) {
+         if (Math.abs(existing.amount() - amount) < 1.0E-6 && existing.operation() == operation) {
+            return;
+         }
          attribute.removeModifier(id);
       }
       attribute.addTransientModifier(new AttributeModifier(id, amount, operation));
