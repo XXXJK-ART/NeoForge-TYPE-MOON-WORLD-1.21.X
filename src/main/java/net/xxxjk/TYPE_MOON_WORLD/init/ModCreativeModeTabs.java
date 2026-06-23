@@ -74,6 +74,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.NAMELESS_BOW);
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
+                        output.accept(ModItems.PARACELSUS_SWORD);
                         output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
@@ -204,6 +205,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
+                        output.accept(ModItems.PARACELSUS_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

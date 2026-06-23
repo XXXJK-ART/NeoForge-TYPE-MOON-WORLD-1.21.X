@@ -1,0 +1,10 @@
+{
+  "id": "philosopher_stone_a",
+  "display_name": "Philosopher's Stone A",
+  "display_name_zh": "贤者之石 A",
+  "type": "active",
+  "mp_cost": 20,
+  "cooldown_ticks": 900,
+  "duration_ticks": 0,
+  "effects": []
+}

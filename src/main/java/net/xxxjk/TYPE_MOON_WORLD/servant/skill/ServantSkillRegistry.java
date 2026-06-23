@@ -26,6 +26,7 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
          CuChulainnServantSkills.registerBuiltin(INSTANCE);
          HeraclesServantSkills.registerBuiltin(INSTANCE);
          SasakiKojiroServantSkills.registerBuiltin(INSTANCE);
+         ParacelsusServantSkills.registerBuiltin(INSTANCE);
          loadAddonEntrypoints();
       }
    }

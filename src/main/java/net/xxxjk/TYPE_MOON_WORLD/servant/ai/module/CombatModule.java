@@ -33,11 +33,15 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
@@ -244,6 +248,107 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof LiShuwenEntity liShuwen) {
          LiShuwenCombatHelper.tick(liShuwen, context);
+         return;
+      }
+      if (entity instanceof ParacelsusEntity paracelsus) {
+         boolean hasLineOfSight = sharedTarget != null && entity.getSensing().hasLineOfSight(sharedTarget);
+         ServantExecutionResult addonTick = ServantAddonRegistry.runLifecycleHandlers(
+            new ServantLifecycleContext(entity, sharedTarget, context, context.definition(), context.gameTick())
+         );
+         if (addonTick.handled()) {
+            return;
+         }
+         if (sharedTarget != null && sharedTarget.isAlive()) {
+            double distance = entity.distanceTo(sharedTarget);
+            if (distance <= 6.5) {
+               Vec3 away = entity.position().subtract(sharedTarget.position());
+               if (away.lengthSqr() > 1.0E-4) {
+                  away = away.normalize().scale(4.5);
+                  ServantNavigationHelper.moveToPositionThrottled(
+                     entity,
+                     new Vec3(entity.getX() + away.x, entity.getY(), entity.getZ() + away.z),
+                     1.05,
+                     context.gameTick(),
+                     10,
+                     3.5,
+                     "ParacelsusRetreatPath"
+                  );
+               } else {
+                  ServantNavigationHelper.stopIfMoving(entity);
+               }
+            } else if (distance >= 14.0) {
+               ServantNavigationHelper.moveToTargetThrottled(entity, sharedTarget, 0.92, context.gameTick(), 12, 1.5, "ParacelsusAdvancePath");
+            } else {
+               ServantNavigationHelper.stopIfMoving(entity);
+            }
+            if ((paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5 || paracelsus.getCurrentMp() <= paracelsus.getMaxMp() * 0.3)
+               && context.definition().specialization().hasCombatAction("philosopher_stone")
+               && context.gameTick() % 80 == 0) {
+               ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
+                  new ServantCombatActionContext(
+                     entity, sharedTarget, context, context.definition(), "philosopher_stone", distance, hasLineOfSight, context.gameTick()
+                  )
+               );
+               if (result.handled()) {
+                  return;
+               }
+            }
+            if (paracelsus.getCurrentMp() >= 150.0
+               && hasLineOfSight
+               && distance <= 28.0
+               && context.gameTick() - paracelsus.getPersistentData().getLong("ParacelsusLastNpTick") >= 900L) {
+               ServantNoblePhantasmExecutor.activateNp(
+                  paracelsus,
+                  sharedTarget,
+                  new ServantNoblePhantasmDefinition(
+                     context.definition().noblePhantasmId(),
+                     "",
+                     "",
+                     ServantNoblePhantasmDefinition.NpType.ARMY,
+                     "A+",
+                     150,
+                     true,
+                     3,
+                     2.0,
+                     30.0,
+                     java.util.List.of(),
+                     java.util.List.of(),
+                     java.util.List.of()
+                  ),
+                  1
+               );
+               return;
+            }
+            if (context.definition().specialization().hasCombatAction("elemental_spirit")
+               && paracelsus.getCurrentMp() >= 18.0
+               && hasLineOfSight
+               && context.gameTick() % 140 == 0) {
+               ServantAddonRegistry.executeCombatAction(
+                  new ServantCombatActionContext(
+                     entity, sharedTarget, context, context.definition(), "elemental_spirit", distance, hasLineOfSight, context.gameTick()
+                  )
+               );
+               return;
+            }
+            if (distance <= 4.0 && entity.isPerformingAction()) {
+               return;
+            }
+            if (distance <= 4.5 && hasLineOfSight && context.gameTick() % 30 == 0) {
+               entity.triggerAttackSwing();
+               entity.doHurtTarget(sharedTarget);
+               return;
+            }
+            if (context.definition().specialization().hasCombatAction("philosopher_stone")
+               && paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5
+               && paracelsus.getPersistentData().getInt("ParacelsusPhilosopherStoneCount") > 0
+               && context.gameTick() % 100 == 0) {
+               ServantAddonRegistry.executeCombatAction(
+                  new ServantCombatActionContext(
+                     entity, sharedTarget, context, context.definition(), "philosopher_stone", distance, hasLineOfSight, context.gameTick()
+                  )
+               );
+            }
+         }
          return;
       }
       if (sharedTarget != null && ServantCombatSystem.tryRunComboAction(entity, sharedTarget)) {

@@ -1,0 +1,83 @@
+{
+  "duration": 1.1,
+  "notes": "Five-element elemental spirit orbit and burst.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.9,
+      "rate": 1200,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.05, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity", "offset": [0.0, 0.9, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 0.9, "segments": 150 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.2, "color": "#CCFF4444" },
+        { "t": 0.4, "color": "#CC4488FF" },
+        { "t": 0.6, "color": "#CC44FF44" },
+        { "t": 0.8, "color": "#CCFFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.4, "size": 0.32 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.45], "easing": "ease_out_cubic" },
+        { "t": 0.5, "scale": [1.8, 1.8, 1.8], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.85, 0.85, 0.85], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_SPIRIT_CORE",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 2, "spread": [0.2, 0.2, 0.2], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.65 },
+        { "type": "enchant", "count": 2, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.45 }
+      ]
+    },
+    {
+      "start_time": 0.06,
+      "end_time": 1.05,
+      "rate": 1500,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity", "offset": [0.0, 0.05, 0.0], "rotate_with_entity": false },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * 31.415 + time * 10.0) * 0.9",
+        "expr_y": "t * 2.0",
+        "expr_z": "sin(t * 31.415 + time * 10.0) * 0.9",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFF4444" },
+        { "t": 0.22, "color": "#CC4488FF" },
+        { "t": 0.44, "color": "#CC44FF44" },
+        { "t": 0.66, "color": "#CCFFFFFF" },
+        { "t": 0.88, "color": "#CCFFD700" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.5, "size": 0.13 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_SPIRIT_ORBIT",
+      "enable_trail": true
+    }
+  ]
+}

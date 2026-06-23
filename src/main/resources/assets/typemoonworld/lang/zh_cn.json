@@ -113,6 +113,7 @@
     "item.typemoonworld.sasaki_kojiro_spawn_egg":  "佐佐木小次郎(Assassin) 刷怪蛋",
     "item.typemoonworld.cu_chulainn_spawn_egg":  "库·丘林(Lancer) 刷怪蛋",
     "item.typemoonworld.medea_spawn_egg":  "美狄亚(Caster) 刷怪蛋",
+    "item.typemoonworld.paracelsus_spawn_egg":  "冯·霍恩海姆·帕拉塞尔苏斯(Caster) 刷怪蛋",
     "item.typemoonworld.medusa_spawn_egg":  "美杜莎(Rider) 刷怪蛋",
     "item.typemoonworld.cursed_arm_hassan_spawn_egg":  "咒腕哈桑(Assassin) 刷怪蛋",
     "item.typemoonworld.dragonfang_soldier_spawn_egg":  "龙牙兵 刷怪蛋",
@@ -1056,6 +1057,7 @@
     "adv.typemoonworld.trace_on.title":  "Trace On",
     "creativetab.typemoonworld.type_moon_world":  "TYPE MOON WORLD",
     "entity.typemoonworld.artoria_pendragon":  "阿尔托莉雅·潘德拉贡",
+    "entity.typemoonworld.paracelsus":  "冯·霍恩海姆·帕拉塞尔苏斯",
     "entity.typemoonworld.gawain":  "高文(Saber)",
     "entity.typemoonworld.artoria_pendragon.avalon_given":  "已将 Avalon 交给阿尔托莉雅",
     "entity.typemoonworld.artoria_pendragon.avalon_taken":  "已取回 Avalon",
@@ -1074,4 +1076,16 @@
     "item.typemoonworld.black_key":  "黑键",
     "item.typemoonworld.black_key.desc":  "代行者使用的概念武装,右键投出手中的黑键.",
     "entity.typemoonworld.black_key_projectile":  "黑键"
+,
+    "item.typemoonworld.paracelsus_sword":  "元素使的魔剑",
+    "item.typemoonworld.paracelsus_sword.desc":  "刀身由贤者之石构成的魔术礼装,可瞬间执行五大元素仪式并增幅魔术。",
+    "skill.typemoonworld.high_speed_chanting_a":  "高速咏唱 A",
+    "skill.typemoonworld.elemental_spirit_a_plus":  "元素精灵 A+",
+    "skill.typemoonworld.philosopher_stone_a":  "贤者之石 A",
+    "noble_phantasm.typemoonworld.elemental_sword":  "元素使的魔剑",
+    "entity.typemoonworld.paracelsus.speech.attack":  "§7[帕拉塞尔苏斯] 魔术并非蛮力，而是调和。",
+    "entity.typemoonworld.paracelsus.speech.spell":  "§7[帕拉塞尔苏斯] 五大元素，听从我的意志。",
+    "entity.typemoonworld.paracelsus.speech.np":  "§b[帕拉塞尔苏斯] 元素使的魔剑。",
+    "entity.typemoonworld.paracelsus.speech.victory":  "§7[帕拉塞尔苏斯] 以理性统御元素，胜利便水到渠成。",
+    "entity.typemoonworld.paracelsus.speech.fail":  "§c[帕拉塞尔苏斯] ……这次的配比，稍稍失衡了。"
 }

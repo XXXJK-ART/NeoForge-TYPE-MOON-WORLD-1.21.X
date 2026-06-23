@@ -45,6 +45,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -332,6 +334,17 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<LiShuwenEntity>> LI_SHUWEN = ENTITY_TYPES.register(
       "li_shuwen", () -> Builder.of(LiShuwenEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("li_shuwen")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ParacelsusEntity>> PARACELSUS = ENTITY_TYPES.register(
+      "paracelsus", () -> Builder.of(ParacelsusEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("paracelsus")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ParacelsusSpiritCannonEntity>> PARACELSUS_SPIRIT_CANNON = ENTITY_TYPES.register(
+      "paracelsus_spirit_cannon",
+      () -> Builder.<ParacelsusSpiritCannonEntity>of((entityType, level) -> new ParacelsusSpiritCannonEntity(entityType, level), MobCategory.MISC)
+         .sized(0.7F, 0.7F)
+         .clientTrackingRange(32)
+         .updateInterval(1)
+         .build("paracelsus_spirit_cannon")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<OdaMatchlockGunEntity>> ODA_MATCHLOCK_GUN = ENTITY_TYPES.register(
       "oda_matchlock_gun",

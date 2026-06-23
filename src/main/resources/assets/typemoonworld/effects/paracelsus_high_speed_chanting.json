@@ -1,0 +1,68 @@
+{
+  "duration": 0.4,
+  "notes": "Fast chant burst and turquoise magic glyph.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.25,
+      "rate": 1600,
+      "particle_lifetime": 0.22,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity", "offset": [0.0, 0.95, 0.0], "rotate_with_entity": false },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * 50.265 + time * 24.0) * 0.95",
+        "expr_y": "sin(t * 50.265 + time * 24.0) * 0.95",
+        "expr_z": "0.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 140
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAEEDDFF" },
+        { "t": 0.45, "color": "#55FFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.5, "size": 0.14 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_QUICK_CHANT"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 900,
+      "particle_lifetime": 0.2,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.06, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity", "offset": [0.0, 0.95, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 0.5, "segments": 100 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.2, "color": "#CCFFFFFF" },
+        { "t": 0.6, "color": "#88AADDFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.45, "size": 0.24 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_CHANT_FLASH"
+    }
+  ]
+}

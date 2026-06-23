@@ -1,0 +1,145 @@
+{
+  "duration": 2.5,
+  "notes": "Paracelsus noble phantasm with five-element ritual array and blue-white beam.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.6,
+      "rate": 1200,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 6,
+      "binding": { "mode": "entity", "offset": [0.0, -0.9, 0.0], "rotate_with_entity": false },
+      "component": { "type": "circle", "radius": 1.5, "segments": 220 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#55AADDFF" },
+        { "t": 0.4, "color": "#AAFFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.35, "size": 0.22 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.3, 0.3, 0.3], "easing": "ease_out_cubic" },
+        { "t": 0.55, "scale": [2.4, 2.4, 2.4], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.8, 0.8, 0.8], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_RITUAL_ARRAY"
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 1.0,
+      "rate": 1400,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity", "offset": [0.0, 0.9, 0.0], "rotate_with_entity": false },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.8 + 0.4 * sin(t * 31.415 + time * 10.0)) * cos(t * 43.982 + time * 8.0)",
+        "expr_y": "sin(t * 18.0 + time * 12.0) * 0.22",
+        "expr_z": "(0.8 + 0.4 * sin(t * 31.415 + time * 10.0)) * sin(t * 43.982 + time * 8.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFFFFF" },
+        { "t": 0.3, "color": "#88AADDFF" },
+        { "t": 0.7, "color": "#88FFD700" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.5, "size": 0.18 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_ELEMENT_ORBIT",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.8,
+      "end_time": 1.8,
+      "rate": 2600,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.0, 8.0],
+      "velocity_variance": 0.1,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity_yaw", "bone": "", "offset": [0.0, 0.35, 1.6], "rotate_with_entity": true },
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 34.0], "segments": 240 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.2, "color": "#99EEDDFF" },
+        { "t": 0.6, "color": "#88AADDFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.18 },
+        { "t": 0.18, "size": 0.85 },
+        { "t": 0.65, "size": 0.55 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.4, 0.4, 0.1], "easing": "ease_out_cubic" },
+        { "t": 0.2, "scale": [1.3, 1.3, 0.95], "easing": "ease_out_back" },
+        { "t": 0.85, "scale": [1.0, 1.0, 1.0] },
+        { "t": 1.0, "scale": [0.5, 0.5, 1.0], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_CORE_BEAM",
+      "enable_trail": true
+    },
+    {
+      "start_time": 1.0,
+      "end_time": 2.4,
+      "rate": 800,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.0, 6.0],
+      "velocity_variance": 0.15,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity_yaw", "bone": "", "offset": [0.0, 0.35, 1.6], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.6 + 4.8 * t) * cos(t * 100.0 + time * 40.0)",
+        "expr_y": "(0.6 + 4.8 * t) * sin(t * 100.0 + time * 40.0)",
+        "expr_z": "34.0 * t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 320
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#BBD7FFFF" },
+        { "t": 0.4, "color": "#88FFD8AA" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.4, "size": 0.28 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_BEAM_RING",
+      "enable_trail": true
+    }
+  ]
+}

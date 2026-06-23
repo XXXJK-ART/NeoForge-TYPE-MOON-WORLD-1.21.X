@@ -784,7 +784,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    public void triggerRuneCastAnimation() {
-      this.runeCastAnimationTicks = 16;
+      this.triggerRuneCastAnimation(16);
+   }
+
+   public void triggerRuneCastAnimation(int durationTicks) {
+      this.runeCastAnimationTicks = Math.max(this.runeCastAnimationTicks, Math.max(1, durationTicks));
       playActionAnimation("rune_cast");
    }
 

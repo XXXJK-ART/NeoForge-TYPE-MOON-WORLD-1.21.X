@@ -385,14 +385,46 @@
                                             ]
                              },
     "li_shuwen_voice_victory":  {
-                                    "category":  "hostile",
-                                    "sounds":  [
-                                                   "typemoonworld:voice/li_shuwen/victory1",
-                                                   "typemoonworld:voice/li_shuwen/victory2",
-                                                   "typemoonworld:voice/li_shuwen/victory3",
-                                                   "typemoonworld:voice/li_shuwen/victory4"
-                                               ]
-                                },
+                                 "category":  "hostile",
+                                 "sounds":  [
+                                                "typemoonworld:voice/li_shuwen/victory1",
+                                                "typemoonworld:voice/li_shuwen/victory2",
+                                                "typemoonworld:voice/li_shuwen/victory3",
+                                                "typemoonworld:voice/li_shuwen/victory4"
+                                            ]
+                              },
+    "paracelsus_voice_attack":  {
+                                   "category":  "hostile",
+                                   "sounds":  [
+                                                  "typemoonworld:voice/paracelsus/attack1"
+                                              ]
+                               },
+    "paracelsus_voice_spell":  {
+                                  "category":  "hostile",
+                                  "sounds":  [
+                                                 "typemoonworld:voice/paracelsus/spell1"
+                                             ]
+                              },
+    "paracelsus_voice_np":  {
+                              "category":  "hostile",
+                              "sounds":  [
+                                             "typemoonworld:voice/paracelsus/np"
+                                         ]
+                          },
+    "paracelsus_voice_victory":  {
+                                   "category":  "hostile",
+                                   "sounds":  [
+                                                  "typemoonworld:voice/paracelsus/victory1",
+                                                  "typemoonworld:voice/paracelsus/victory2"
+                                              ]
+                               },
+    "paracelsus_voice_fail":  {
+                                "category":  "hostile",
+                                "sounds":  [
+                                               "typemoonworld:voice/paracelsus/fail1",
+                                               "typemoonworld:voice/paracelsus/fail2"
+                                           ]
+                            },
     "li_shuwen_voice_np":  {
                                "category":  "hostile",
                                "sounds":  [

@@ -1,0 +1,64 @@
+{
+  "id": "paracelsus",
+  "display_name": "Paracelsus von Hohenheim",
+  "display_name_zh": "冯·霍恩海姆·帕拉塞尔苏斯",
+  "class_type": "caster",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "caster", "male", "chaotic", "good", "human"],
+  "parameters": {
+    "endurance": "D",
+    "endurance_plus": false,
+    "strength": "E",
+    "strength_plus": false,
+    "agility": "C",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": true,
+    "luck": "B",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/paracelsus.geo.json",
+    "texture": "typemoonworld:textures/entity/paracelsus.png",
+    "animation": "typemoonworld:animations/paracelsus.animation.json",
+    "animations": {
+      "idle": "standing",
+      "walk": "walk",
+      "idle_cast": "animation.paracelsus.cast",
+      "uppercut": "animation.paracelsus.attack",
+      "horizontal_swing": "animation.paracelsus.attack",
+      "rune_cast": "animation.paracelsus.cast",
+      "charge": "animation.paracelsus.cast"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.18,
+      "y": -0.82,
+      "z": 0.12
+    },
+    "default_weapon": "typemoonworld:paracelsus_sword",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["rune_cast", "charge", "horizontal_swing", "uppercut", "elemental_spirit", "philosopher_stone"]
+  },
+  "skills": ["high_speed_chanting_a", "elemental_spirit_a_plus", "philosopher_stone_a"],
+  "noble_phantasm": "elemental_sword",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "chaotic",
+    "morality": "good",
+    "social": "warm",
+    "combat": "cautious",
+    "starting_favor": 60.0
+  },
+  "ai_config": "default_caster_paracelsus",
+  "spawn_egg": {
+    "primary": 11118873,
+    "secondary": 16768418
+  }
+}

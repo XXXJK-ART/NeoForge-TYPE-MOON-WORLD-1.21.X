@@ -6,6 +6,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 
 public final class ServantVoiceHelper {
    private static final String GLOBAL_VOICE_TICK_TAG = "TypeMoonVoiceGlobalTick";
@@ -76,6 +77,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.LI_SHUWEN_VOICE_ATTACK.get());
+      } else if (isParacelsus(servant)) {
+         if (servant.getRandom().nextFloat() > 0.4F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.PARACELSUS_VOICE_ATTACK.get());
       }
    }
 
@@ -124,6 +130,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.GAWAIN_VOICE_VICTORY.get());
       } else if (isLiShuwen(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.LI_SHUWEN_VOICE_VICTORY.get());
+      } else if (isParacelsus(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.PARACELSUS_VOICE_VICTORY.get());
       }
    }
 
@@ -152,6 +160,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.98F, ModSounds.GAWAIN_VOICE_FAIL.get());
       } else if (isLiShuwen(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.94F, ModSounds.LI_SHUWEN_VOICE_FAIL.get());
+      } else if (isParacelsus(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.PARACELSUS_VOICE_FAIL.get());
       }
    }
 
@@ -169,6 +179,22 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "spell", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_SPELL.get());
+   }
+
+   public static void tryPlayParacelsusSpell(ServantEntity servant) {
+      if (!isParacelsus(servant)) {
+         return;
+      }
+
+      playVoice(servant, "spell", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.PARACELSUS_VOICE_SPELL.get());
+   }
+
+   public static void tryPlayParacelsusNp(ServantEntity servant) {
+      if (!isParacelsus(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "paracelsus_np", 1.15F, 1.0F, ModSounds.PARACELSUS_VOICE_NP.get());
    }
 
    public static void tryPlayRuleBreaker(ServantEntity servant) {
@@ -388,5 +414,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isLiShuwen(ServantEntity servant) {
       return servant != null && LiShuwenEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isParacelsus(ServantEntity servant) {
+      return servant != null && ParacelsusEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

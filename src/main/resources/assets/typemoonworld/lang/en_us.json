@@ -109,6 +109,7 @@
     "item.typemoonworld.sasaki_kojiro_spawn_egg":  "Sasaki Kojirou (Assassin) Spawn Egg",
     "item.typemoonworld.cu_chulainn_spawn_egg":  "Cu Chulainn (Lancer) Spawn Egg",
     "item.typemoonworld.medea_spawn_egg":  "Medea (Caster) Spawn Egg",
+    "item.typemoonworld.paracelsus_spawn_egg":  "Paracelsus von Hohenheim (Caster) Spawn Egg",
     "item.typemoonworld.medusa_spawn_egg":  "Medusa (Rider) Spawn Egg",
     "item.typemoonworld.cursed_arm_hassan_spawn_egg":  "Hassan of the Cursed Arm (Assassin) Spawn Egg",
     "item.typemoonworld.dragonfang_soldier_spawn_egg":  "Dragonfang Soldier Spawn Egg",
@@ -1054,6 +1055,7 @@
     "adv.typemoonworld.trace_on.title":  "Trace On",
     "creativetab.typemoonworld.type_moon_world":  "TYPE MOON WORLD",
     "entity.typemoonworld.artoria_pendragon":  "Artoria Pendragon",
+    "entity.typemoonworld.paracelsus":  "Paracelsus von Hohenheim",
     "entity.typemoonworld.gawain":  "Gawain (Saber)",
     "entity.typemoonworld.artoria_pendragon.avalon_given":  "Gave Avalon to Artoria",
     "entity.typemoonworld.artoria_pendragon.avalon_taken":  "Retrieved Avalon",
@@ -1072,4 +1074,16 @@
     "item.typemoonworld.black_key":  "Black Key",
     "item.typemoonworld.black_key.desc":  "A conceptual weapon used by Executors. Right-click to throw the held keys.",
     "entity.typemoonworld.black_key_projectile":  "Black Key"
+    ,
+    "item.typemoonworld.paracelsus_sword":  "Sword of Paracelsus",
+    "item.typemoonworld.paracelsus_sword.desc":  "A magical implement made of Philosopher's Stone, capable of instantly executing five-element rites and amplifying spells.",
+    "skill.typemoonworld.high_speed_chanting_a":  "High-Speed Chanting A",
+    "skill.typemoonworld.elemental_spirit_a_plus":  "Elemental Spirit A+",
+    "skill.typemoonworld.philosopher_stone_a":  "Philosopher's Stone A",
+    "noble_phantasm.typemoonworld.elemental_sword":  "Sword of Paracelsus",
+    "entity.typemoonworld.paracelsus.speech.attack":  "§7[Paracelsus] Magic is not brute force, but harmonization.",
+    "entity.typemoonworld.paracelsus.speech.spell":  "§7[Paracelsus] Five elements, heed my will.",
+    "entity.typemoonworld.paracelsus.speech.np":  "§b[Paracelsus] Sword of Paracelsus.",
+    "entity.typemoonworld.paracelsus.speech.victory":  "§7[Paracelsus] Order the elements and victory follows naturally.",
+    "entity.typemoonworld.paracelsus.speech.fail":  "§c[Paracelsus] ...The proportions were slightly off."
 }

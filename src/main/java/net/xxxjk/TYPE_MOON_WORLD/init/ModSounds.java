@@ -67,6 +67,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_FAIL = register("li_shuwen_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_VICTORY = register("li_shuwen_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_NP = register("li_shuwen_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_ATTACK = register("paracelsus_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_SPELL = register("paracelsus_voice_spell");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_NP = register("paracelsus_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_VICTORY = register("paracelsus_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_FAIL = register("paracelsus_voice_fail");
 
    private ModSounds() {
    }
