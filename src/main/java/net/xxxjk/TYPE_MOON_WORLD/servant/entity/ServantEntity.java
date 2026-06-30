@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
@@ -42,16 +42,21 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiEngine;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.ObedienceAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
+import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -64,6 +69,21 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final String ACTION_CONTROLLER = "action_controller";
    private static final int SPIRITUAL_DISSOLVE_DURATION = 50;
+   private static final int WALK_ANIMATION_GRACE_TICKS = 6;
+   private static final double WALK_ANIMATION_DELTA_THRESHOLD = 1.0E-5;
+   private static final String LAST_MANA_HEAL_TICK_TAG = "ServantLastManaHealTick";
+   private static final String NATURAL_REGEN_LAST_COMBAT_TICK_TAG = "ServantNaturalRegenLastCombatTick";
+   private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
+   private static final String LAST_FIRE_ESCAPE_SCAN_TICK_TAG = "ServantLastFireEscapeScanTick";
+   private static final int MANA_HEAL_INTERVAL_TICKS = 20;
+   private static final double MANA_HEAL_MP_COST = 1.0;
+   private static final float MANA_HEAL_IN_COMBAT_AMOUNT = 5.0F;
+   private static final float MANA_HEAL_OUT_OF_COMBAT_AMOUNT = 10.0F;
+   private static final double MANA_HEAL_HEALTH_THRESHOLD = 0.60;
+   private static final double MANA_HEAL_MP_THRESHOLD = 0.50;
+   private static final int OUT_OF_COMBAT_HEAL_GRACE_TICKS = 100;
+   private static final double COMBAT_HEAL_TARGET_RANGE_SQR = 24.0 * 24.0;
+   private static final float NATURAL_REGEN_HEALTH_RATIO_PER_SECOND = 0.005F;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
@@ -113,6 +133,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int attackSwingTicks = 0;
    private int basicAttackVariant = 0;
    private int spiritualDissolveTicks = 0;
+   private int walkAnimationGraceTicks = 0;
 
    public int getAttackSwingTicks() {
       return this.attackSwingTicks;
@@ -149,10 +170,14 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return this.getAnimationSet().actionAnimation(key).isPresent();
    }
 
-   private void playActionAnimation(String key) {
+   protected void playActionAnimation(String key) {
       if (this.hasActionAnimation(key)) {
          this.triggerAnim(ACTION_CONTROLLER, key);
       }
+   }
+
+   public void triggerNamedActionAnimation(String key) {
+      this.playActionAnimation(key);
    }
 
    @Override
@@ -172,13 +197,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
-      this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, false));
       this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8));
       this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-      this.targetSelector.addGoal(2, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(
-         this, net.minecraft.world.entity.monster.Monster.class, true));
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -194,9 +216,44 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    @Override
+   public void tick() {
+      super.tick();
+      this.updateWalkAnimationState();
+      ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
+      GawainCombatHelper.tickSharedBuffCleanup(this);
+   }
+
+   private void updateWalkAnimationState() {
+      if (this.isSpiritualDissolving() || !this.isAlive()) {
+         this.walkAnimationGraceTicks = 0;
+         return;
+      }
+
+      double dx = this.getX() - this.xo;
+      double dz = this.getZ() - this.zo;
+      double positionDelta = dx * dx + dz * dz;
+      double velocityDelta = this.getDeltaMovement().horizontalDistanceSqr();
+      if (positionDelta > WALK_ANIMATION_DELTA_THRESHOLD || velocityDelta > WALK_ANIMATION_DELTA_THRESHOLD) {
+         this.walkAnimationGraceTicks = WALK_ANIMATION_GRACE_TICKS;
+      } else if (this.walkAnimationGraceTicks > 0) {
+         this.walkAnimationGraceTicks--;
+      }
+   }
+
+   protected boolean isWalkAnimationActive(boolean geckoMoving) {
+      return geckoMoving || this.walkAnimationGraceTicks > 0;
+   }
+
+   @Override
    protected void customServerAiStep() {
       super.customServerAiStep();
       if (!this.level().isClientSide()) {
+         if (this.hasEffect(ModMobEffects.PETRIFIED)) {
+            this.getNavigation().stop();
+            this.setTarget(null);
+            this.setDeltaMovement(Vec3.ZERO);
+            return;
+         }
          if (this.isSpiritualDissolving()) {
             this.getNavigation().stop();
             this.setTarget(null);
@@ -206,9 +263,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         this.aiEngine.tick(this);
+         if (!ServantCombatSystem.tickBeforeAi(this)) {
+            this.aiEngine.tick(this);
+         }
+         this.tickManaHealthConversion();
 
-         /* 鍔ㄧ敾 tick 閫掑噺 */         if (this.roarAnimationTicks > 0) {
+         /* 鍔ㄧ敾 tick 閫掑噺 */         
+         if (this.roarAnimationTicks > 0) {
             this.roarAnimationTicks--;
          }
          if (this.slamAnimationTicks > 0) {
@@ -249,23 +310,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          // 鑴辩鎴樻枟鍚庣紦鎱㈠洖琛€锛堟瘡绉掓仮澶?0.5% 鏈€澶х敓鍛藉€硷級
-         if (this.tickCount % 20 == 0) {
-            LivingEntity combatTarget = this.getTarget();
-            if (combatTarget == null || combatTarget.isDeadOrDying() || this.distanceTo(combatTarget) > 16.0) {
-               int lastCombat = this.getPersistentData().getInt("LastCombatTick");
-               if (lastCombat > 0 && (int)(this.level().getGameTime()) - lastCombat > 100) {
-                  float regenAmount = this.getMaxHealth() * 0.005f;
-                  if (this.getHealth() < this.getMaxHealth()) {
-                     this.heal(regenAmount);
-                     if (this.level() instanceof ServerLevel sl) {
-                        sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                           this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
-                           3, 0.3, 0.3, 0.3, 0.0);
-                     }
-                  }
-               }
-            }
-         }
+         this.tickNaturalHealthRegen();
 
          // 璺岃惤浼ゅ鍏嶇柅
          // 锛堥€氳繃 causeFallDamage override 瀹炵幇锛岃涓嬫柟锛?
@@ -288,9 +333,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             }
          }
 
-         /* 着火时寻找水源自救 */         if (this.isOnFire() && this.random.nextFloat() < 0.5F) {
+         /* 着火时寻找水源自救 */
+         if (this.isOnFire() && this.random.nextFloat() < 0.5F && this.tickCount - this.getPersistentData().getInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG) >= 20) {
+            this.getPersistentData().putInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG, this.tickCount);
             BlockPos center = this.blockPosition();
-            for (BlockPos p : BlockPos.betweenClosed(center.offset(-10, -5, -10), center.offset(10, 5, 10))) {
+            for (int attempt = 0; attempt < 18; attempt++) {
+               BlockPos p = center.offset(
+                  this.random.nextIntBetweenInclusive(-10, 10),
+                  this.random.nextIntBetweenInclusive(-5, 2),
+                  this.random.nextIntBetweenInclusive(-10, 10)
+               );
                if (this.level().getFluidState(p).is(FluidTags.WATER)) {
                   this.getNavigation().moveTo(p.getX(), p.getY(), p.getZ(), 1.5);
                   break;
@@ -306,6 +358,93 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
       return false; // 英灵免疫摔落伤害
+   }
+
+   private void tickManaHealthConversion() {
+      if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
+         return;
+      }
+
+      long now = this.level().getGameTime();
+      CompoundTag data = this.getPersistentData();
+      if (data.getBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG)) {
+         return;
+      }
+      long lastHealTick = data.getLong(LAST_MANA_HEAL_TICK_TAG);
+      if (lastHealTick > 0L && now - lastHealTick < MANA_HEAL_INTERVAL_TICKS) {
+         return;
+      }
+      double maxMp = Math.max(1.0, this.getMaxMp());
+      if (this.getHealth() >= this.getMaxHealth() * MANA_HEAL_HEALTH_THRESHOLD
+         || this.getCurrentMp() < maxMp * MANA_HEAL_MP_THRESHOLD
+         || this.getCurrentMp() < MANA_HEAL_MP_COST) {
+         return;
+      }
+
+      boolean inCombat = this.isManaHealingInCombat(data, now);
+      float healAmount = inCombat ? MANA_HEAL_IN_COMBAT_AMOUNT : MANA_HEAL_OUT_OF_COMBAT_AMOUNT;
+      this.setCurrentMp(Math.max(0.0, this.getCurrentMp() - MANA_HEAL_MP_COST));
+      this.heal(healAmount);
+      data.putLong(LAST_MANA_HEAL_TICK_TAG, now);
+
+      if (this.level() instanceof ServerLevel sl) {
+         sl.sendParticles(inCombat ? ParticleTypes.ENCHANT : ParticleTypes.HAPPY_VILLAGER,
+            this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+            inCombat ? 2 : 3, 0.22, 0.25, 0.22, 0.0);
+      }
+   }
+
+   private void tickNaturalHealthRegen() {
+      if (this.tickCount % 20 != 0 || this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
+         return;
+      }
+
+      long now = this.level().getGameTime();
+      CompoundTag data = this.getPersistentData();
+      LivingEntity combatTarget = this.getTarget();
+      if (combatTarget != null && combatTarget.isAlive() && this.distanceToSqr(combatTarget) <= COMBAT_HEAL_TARGET_RANGE_SQR) {
+         data.putLong(NATURAL_REGEN_LAST_COMBAT_TICK_TAG, now);
+         return;
+      }
+
+      if (data.getBoolean(BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG)) {
+         return;
+      }
+
+      long lastCombat = this.getLastNaturalRegenCombatTick(data);
+      if (lastCombat <= 0L || now - lastCombat <= OUT_OF_COMBAT_HEAL_GRACE_TICKS || this.getHealth() >= this.getMaxHealth()) {
+         return;
+      }
+
+      this.heal(this.getMaxHealth() * NATURAL_REGEN_HEALTH_RATIO_PER_SECOND);
+      if (this.level() instanceof ServerLevel sl) {
+         sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+            this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+            3, 0.3, 0.3, 0.3, 0.0);
+      }
+   }
+
+   private boolean isManaHealingInCombat(CompoundTag data, long now) {
+      LivingEntity combatTarget = this.getTarget();
+      if (combatTarget != null && combatTarget.isAlive() && this.distanceToSqr(combatTarget) <= COMBAT_HEAL_TARGET_RANGE_SQR) {
+         return true;
+      }
+
+      long lastCombat = Math.max(
+         Math.max(data.getLong("TypeMoonCombatLastCombatTick"), data.getLong("CuLastCombatTick")),
+         data.getLong("SasakiKojiroLastCombatTick")
+      );
+      return lastCombat > 0L && now - lastCombat < OUT_OF_COMBAT_HEAL_GRACE_TICKS;
+   }
+
+   private long getLastNaturalRegenCombatTick(CompoundTag data) {
+      return Math.max(
+         Math.max(data.getLong(NATURAL_REGEN_LAST_COMBAT_TICK_TAG), data.getLong("LastCombatTick")),
+         Math.max(
+            Math.max(data.getLong("TypeMoonCombatLastCombatTick"), data.getLong("CuLastCombatTick")),
+            Math.max(data.getLong("SasakiKojiroLastCombatTick"), data.getLong("LastHurtTick"))
+         )
+      );
    }
 
    @Override
@@ -414,6 +553,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       playActionAnimation("roar");
       ServantVoiceHelper.tryPlayRoar(this);
       if (this.level() instanceof ServerLevel sl) {
+         if (this instanceof HeraclesEntity) {
+            VFXServerEffects.spawn(sl, "servant_heracles_roar", this, 128.0);
+         }
          /* 咆哮粒子效果 */         sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(),
             20, 0.8, 0.6, 0.8, 0.15);
@@ -438,6 +580,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.slamAnimationTicks = 40; // 2s
       playActionAnimation("slam");
       if (this.level() instanceof ServerLevel sl) {
+         if (this instanceof HeraclesEntity) {
+            VFXServerEffects.spawn(sl, "servant_heracles_slam", this.position(), 128.0);
+         }
          /* 砸地粒子效果 */         sl.sendParticles(ParticleTypes.CLOUD,
             this.getX(), this.getY() + 0.3, this.getZ(),
             30, 1.5, 0.3, 1.5, 0.3);
@@ -490,7 +635,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
          // 鐮稿湴闊虫晥
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
-            SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 0.5F);
+            SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.5F, 0.5F);
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 1.0F, 0.6F);
       }
@@ -598,7 +743,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.HOSTILE, 1.5F, 0.5F);
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
-            SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.8F, 0.7F);
+            SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.8F, 0.7F);
       }
    }
 
@@ -639,7 +784,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    public void triggerRuneCastAnimation() {
-      this.runeCastAnimationTicks = 16;
+      this.triggerRuneCastAnimation(16);
+   }
+
+   public void triggerRuneCastAnimation(int durationTicks) {
+      this.runeCastAnimationTicks = Math.max(this.runeCastAnimationTicks, Math.max(1, durationTicks));
       playActionAnimation("rune_cast");
    }
 
@@ -651,6 +800,24 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.gaeBolgThrowAnimationTicks = Math.max(this.gaeBolgThrowAnimationTicks, durationTicks);
       playActionAnimation("gae_bolg_throw");
       ServantVoiceHelper.tryPlayGaeBolg(this);
+   }
+
+   public void faceToward(Vec3 target) {
+      this.faceVector(target.subtract(this.position()));
+   }
+
+   public void faceVector(Vec3 direction) {
+      Vec3 horizontal = new Vec3(direction.x, 0.0, direction.z);
+      if (horizontal.lengthSqr() < 1.0E-4) {
+         return;
+      }
+      float yaw = (float)(Mth.atan2(horizontal.z, horizontal.x) * 180.0F / Math.PI) - 90.0F;
+      this.setYRot(yaw);
+      this.yRotO = yaw;
+      this.setYHeadRot(yaw);
+      this.yHeadRotO = yaw;
+      this.yBodyRot = yaw;
+      this.yBodyRotO = yaw;
    }
 
    /**
@@ -696,6 +863,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void triggerTsurigameshiAnimation() {
       playActionAnimation("tsurigameshi");
       ServantVoiceHelper.tryPlayTsurigameshi(this);
+      if (this.level() instanceof ServerLevel sl) {
+         VFXServerEffects.spawn(sl, "servant_sasaki_tsubame", this, 96.0);
+      }
    }
 
    public void triggerBasicAttackAnimation() {
@@ -934,6 +1104,19 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(PRINCIPLE_AXIS, axis.id());
    }
 
+   public MoralAxis getMoralAxis() {
+      ServantDefinition definition = this.getDefinition();
+      return definition != null ? definition.defaultMorality() : MoralAxis.NEUTRAL;
+   }
+
+   public boolean hasSpecialTargetPrinciple(SpecialTargetPrinciple principle) {
+      if (principle == null) {
+         return false;
+      }
+      ServantDefinition definition = this.getDefinition();
+      return definition != null && definition.specialTargetPrinciples().contains(principle);
+   }
+
    public SocialDisposition getSocialDisposition() {
       return SocialDisposition.fromId(this.entityData.get(SOCIAL_DISPOSITION));
    }
@@ -989,6 +1172,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return false;
    }
 
+   @Nullable
+   protected String getLoopAnimationOverride(ServantAnimations animations, boolean moving) {
+      return null;
+   }
+
    @Override
    protected EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
       var specialization = this.getSpecialization();
@@ -1011,11 +1199,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          var animations = this.getAnimationSet();
          String animation = null;
+         boolean moving = this.isWalkAnimationActive(event.isMoving());
+         String override = this.getLoopAnimationOverride(animations, moving);
+         if (override != null && !override.isBlank()) {
+            animation = override;
+         }
          if (this.useFloatingAnimation()) {
             animation = animations.actionAnimation("fly").orElse(null);
          }
          if (animation == null) {
-            animation = event.isMoving() ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
+            animation = moving ? animations.walkAnimation().orElse(null) : animations.idleAnimation().orElse(null);
          }
          return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));

@@ -1,0 +1,13 @@
+{
+  "id": "perfect_form_a",
+  "display_name": "Perfect Form A",
+  "display_name_zh": "Perfect Form A",
+  "type": "active",
+  "rank": "A",
+  "mp_cost": 50.0,
+  "cooldown_ticks": 600,
+  "duration_ticks": 100,
+  "effects": [],
+  "description": "Uses mana from the earth to purge negative states and rapidly regenerate 300 health over five seconds.",
+  "description_zh": "Purges negative effects and rapidly regenerates health."
+}

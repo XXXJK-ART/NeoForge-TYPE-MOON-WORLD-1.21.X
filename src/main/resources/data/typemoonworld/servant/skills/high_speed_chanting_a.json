@@ -1,0 +1,10 @@
+{
+  "id": "high_speed_chanting_a",
+  "display_name": "High-Speed Chanting A",
+  "display_name_zh": "高速咏唱 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

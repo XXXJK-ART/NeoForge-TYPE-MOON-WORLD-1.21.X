@@ -1,0 +1,74 @@
+{
+  "duration": 1.6,
+  "notes": "Large dense Medea super bolt impact.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.7,
+      "rate": 3200,
+      "particle_lifetime": 0.7,
+      "size_variance": 0.42,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.06,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.2,
+      "max_vanilla_particles_per_tick": 7,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 240 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.22, "color": "#FF88CCFF" },
+        { "t": 0.58, "color": "#DD7A44FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.18 },
+        { "t": 0.35, "size": 0.9 },
+        { "t": 1.0, "size": 0.06 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.25, 0.25, 0.25], "easing": "ease_out_cubic" },
+        { "t": 0.45, "pos": [0.0, 0.0, 0.0], "scale": [4.0, 4.0, 4.0], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.15, 0.0], "scale": [0.6, 0.6, 0.6] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "MEDEA_SUPER_ORB_IMPACT_CORE",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.65 },
+        { "type": "explosion", "count": 1, "spread": [0.2, 0.2, 0.2], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.35 },
+        { "type": "witch", "count": 2, "spread": [0.55, 0.55, 0.55], "offset": [0.0, 0.0, 0.0], "speed": 0.05, "chance": 0.7 },
+        { "type": "end_rod", "count": 3, "spread": [0.35, 0.35, 0.35], "offset": [0.0, 0.0, 0.0], "speed": 0.045, "chance": 0.7 }
+      ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 1.3,
+      "rate": 1100,
+      "particle_lifetime": 0.75,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 140 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.35, "color": "#AA66AAFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.5, "size": 0.35 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.2, 0.2, 0.2] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [5.5, 5.5, 5.5], "easing": "ease_out_cubic" }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "ADDITIVE",
+      "particle_role": "MEDEA_SUPER_ORB_IMPACT_RING"
+    }
+  ]
+}

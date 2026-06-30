@@ -1,0 +1,157 @@
+{
+  "duration": 2.2,
+  "notes": "Golden Excalibur charge loop: sword glow, gathering stardust, tip vortex, ground ritual ring.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.2,
+      "rate": 320,
+      "particle_lifetime": 1.1,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.55], "rotate_with_entity": true },
+      "component": { "type": "sphere", "radius": 1.25, "sample_count": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFD700" },
+        { "t": 0.45, "color": "#FFFFD700" },
+        { "t": 0.78, "color": "#AAFFFFFF" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.5, "size": 0.075 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.6, 0.6, 0.6] },
+        { "t": 0.5, "pos": [0.0, 0.0, 0.15], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.25, 1.25, 1.25], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.25], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [0.75, 0.75, 0.75] }
+      ],
+      "visibility_condition": "random() > 0.2",
+      "blend": "ADDITIVE",
+      "particle_role": "EXCALIBUR_CHARGE_STARDUST",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.14, 0.14, 0.14], "offset": [0.0, 0.0, 0.0], "speed": 0.015, "chance": 0.25 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 2.2,
+      "rate": 140,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.08],
+      "velocity_variance": 0.015,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.42], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "0.11 * cos(t * 37.7 + time * 10.0)",
+        "expr_y": "0.11 * sin(t * 37.7 + time * 10.0)",
+        "expr_z": "-0.45 + t * 1.65",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 96
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88DAA520" },
+        { "t": 0.42, "color": "#FFFFD700" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.45, "size": 0.11 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.8, 0.8, 0.8] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.15], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [1.15, 1.15, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "ADDITIVE",
+      "particle_role": "EXCALIBUR_BLADE_RUNE_FLOW",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 2.2,
+      "rate": 560,
+      "particle_lifetime": 0.75,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, -0.12],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 1.35], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.45 - 1.05 * t + 0.18 * sin(time * 6.28)) * cos(t * 31.4 + time * 18.0)",
+        "expr_y": "(1.45 - 1.05 * t + 0.18 * sin(time * 6.28)) * sin(t * 31.4 + time * 18.0)",
+        "expr_z": "0.15 - t * 0.9",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFD700" },
+        { "t": 0.35, "color": "#FFFFD700" },
+        { "t": 0.62, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.42, "size": 0.18 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.75, 0.75, 0.75] },
+        { "t": 0.5, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.1, 1.1, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [0.85, 0.85, 0.85] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "EXCALIBUR_TIP_VORTEX",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 2.2,
+      "rate": 210,
+      "particle_lifetime": 1.2,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "circle", "radius": 1.0, "segments": 140 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#22FFD700" },
+        { "t": 0.45, "color": "#AAFFD700" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.5, "size": 0.18 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -0.05, 0.0], "scale": [0.6, 0.6, 0.6], "easing": "ease_out_cubic" },
+        { "t": 0.55, "pos": [0.0, -0.08, 0.0], "scale": [3.0, 3.0, 3.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, -0.08, 0.0], "scale": [2.0, 2.0, 2.0] }
+      ],
+      "visibility_condition": "random() > 0.18",
+      "blend": "ADDITIVE",
+      "particle_role": "EXCALIBUR_GROUND_RITUAL_RING"
+    }
+  ]
+}

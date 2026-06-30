@@ -1,0 +1,15 @@
+{
+  "id": "li_shuwen_pursuit",
+  "display_name": "Li Shuwen - Pursuit",
+  "display_name_zh": "贴身追击",
+  "type": "active",
+  "mp_cost": 4,
+  "cooldown_ticks": 40,
+  "duration_ticks": 10,
+  "effects": [
+    {
+      "effect_type": "li_shuwen_pursuit",
+      "params": {}
+    }
+  ]
+}

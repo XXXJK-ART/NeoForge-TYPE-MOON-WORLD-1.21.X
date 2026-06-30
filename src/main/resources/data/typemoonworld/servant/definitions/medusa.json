@@ -1,0 +1,93 @@
+{
+  "id": "medusa",
+  "display_name": "Medusa",
+  "display_name_zh": "美杜莎",
+  "class_type": "rider",
+  "faction": "earth",
+  "traits": [
+    "divine",
+    "servant",
+    "humanoid",
+    "living_human",
+    "rider",
+    "female",
+    "chaotic",
+    "good",
+    "demonic",
+    "mounted"
+  ],
+  "parameters": {
+    "endurance": "D",
+    "endurance_plus": false,
+    "strength": "B",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "B",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/medusa.geo.json",
+    "texture": "typemoonworld:textures/entity/medusa.png",
+    "animation": "typemoonworld:animations/medusa.animation.json",
+    "animations": {
+      "idle": "animation.medusa.idle",
+      "walk": "animation.medusa.walk",
+      "uppercut": "animation.medusa.uppercut",
+      "horizontal_swing": "animation.medusa.horizontal_swing",
+      "bend_over": "animation.medusa.bend_over",
+      "remove_blindfold": "animation.medusa.remove_blindfold"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.2,
+      "y": -1,
+      "z": -0.2
+    },
+    "default_weapon": "typemoonworld:nameless_chain_dagger",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "uppercut",
+      "horizontal_swing",
+      "bend_over",
+      "remove_blindfold",
+      "chain_snare",
+      "viper_rush",
+      "serpent_step",
+      "predator_loop",
+      "cybele",
+      "monster_strength",
+      "charm",
+      "bloodfort",
+      "bloodfort_np",
+      "bellerophon"
+    ]
+  },
+  "skills": [
+    "magic_resistance_b",
+    "riding_a_plus",
+    "independent_action_c",
+    "divinity_e_minus"
+  ],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "chaotic",
+    "social": "hermit",
+    "combat": "cautious",
+    "starting_favor": 60.0
+  },
+  "ai_config": "default_rider",
+  "spawn_egg": {
+    "primary": 2825285,
+    "secondary": 13090274
+  }
+}

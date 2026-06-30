@@ -17,16 +17,42 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
+import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 import java.util.List;
@@ -48,22 +74,394 @@ public final class CombatModule implements ServantAiModule {
    private static final int CU_LUNGING_THRUST_COOLDOWN = 55;
    private static final int CU_DRIVING_SLASH_COOLDOWN = 65;
    private static final int CU_SWEEPING_ADVANCE_COOLDOWN = 70;
+   private static final int EARTH_REND_COOLDOWN = 90;
+   private static final int SHOULDER_CHECK_COOLDOWN = 70;
+   private static final int RUNE_BURST_COOLDOWN = 95;
+   private static final int SPEAR_VAULT_COOLDOWN = 75;
+   private static final int AFTERIMAGE_SLASH_COOLDOWN = 65;
+   private static final int IAIJUTSU_STEP_COOLDOWN = 80;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
+   private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
+   private static final int SURROUNDED_SCAN_INTERVAL = 5;
+   private static final int COMBAT_LOS_INTERVAL = 3;
    private static final int CU_RECAST_MP_COST = 25;
    private static final int CU_RUNE_MP_COST = 20;
    private static final ResourceLocation VALOR_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_atk_boost");
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
+   private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 220;
+   private static final int PARACELSUS_WANDER_COOLDOWN = 65;
+   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 35;
+   private static final String TAG_PARACELSUS_LAST_AI_MAGIC = "ParacelsusLastAiMagicTick";
+
+   private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
+      float hardness = state.getDestroySpeed(level, pos);
+      if (state.isAir() || hardness < 0.0F || state.is(Blocks.BEDROCK)) {
+         return false;
+      }
+      if (!level.removeBlock(pos, false)) {
+         return false;
+      }
+      return true;
+   }
+
+   private boolean isInIrregularBreakShape(ServerLevel level, BlockPos pos, BlockPos center, double radius, double yScale, double edgeNoise, double keepChance) {
+      double dx = pos.getX() - center.getX();
+      double dy = (pos.getY() - center.getY()) / Math.max(0.25, yScale);
+      double dz = pos.getZ() - center.getZ();
+      double normalized = (dx * dx + dy * dy + dz * dz) / Math.max(0.25, radius * radius);
+      double noise = blockNoise(level, pos);
+      double edge = 1.0 + (noise - 0.5) * edgeNoise;
+      return normalized <= edge && (normalized <= 0.45 || noise <= keepChance);
+   }
+
+   private double blockNoise(ServerLevel level, BlockPos pos) {
+      long seed = pos.asLong() ^ (level.getGameTime() * 341873128712L);
+      seed ^= seed >>> 33;
+      seed *= 0xff51afd7ed558ccdL;
+      seed ^= seed >>> 33;
+      seed *= 0xc4ceb9fe1a85ec53L;
+      seed ^= seed >>> 33;
+      return (double)(seed & 0xFFFFFFL) / (double)0x1000000;
+   }
+
+   private double terrainBreakScale(ServantEntity entity) {
+      ServantParams params = entity.getDefinition() != null ? entity.getDefinition().parameters() : null;
+      if (params == null) {
+         return 1.0;
+      }
+      int strength = params.strengthPlus() ? params.strength().plusCoefficient() : params.strength().coefficient();
+      return Math.max(0.65, Math.min(1.8, Math.sqrt(strength / 30.0)));
+   }
+
+   private int scaledBreakLimit(int base, double scale) {
+      return Math.max(1, (int)Math.round(base * scale * scale));
+   }
+
+   private void pushWithImpactCrater(ServerLevel level, ServantEntity attacker, LivingEntity target, Vec3 horizontal, double horizontalPower, double verticalPower, double craterRadius, int maxBroken) {
+      Vec3 dir = new Vec3(horizontal.x, 0.0, horizontal.z);
+      if (dir.lengthSqr() < 1.0E-4) {
+         dir = target.position().subtract(attacker.position()).multiply(1.0, 0.0, 1.0);
+      }
+      dir = dir.lengthSqr() < 1.0E-4 ? attacker.getLookAngle().multiply(1.0, 0.0, 1.0) : dir.normalize();
+      long now = level.getGameTime();
+      CompoundTag data = attacker.getPersistentData();
+      long lastControl = data.getLong("CombatControlLastTick");
+      if (lastControl <= 0L || now - lastControl > 120L) {
+         data.putLong("CombatControlStartTick", now);
+      }
+      data.putLong("CombatControlLastTick", now);
+      long combatAge = now - data.getLong("CombatControlStartTick");
+      boolean strongMove = horizontalPower >= 1.6 || verticalPower >= 0.65;
+      double terrainScale = terrainBreakScale(attacker);
+      boolean canKnockback = combatAge >= 80L
+         && now - data.getLong("CombatLastKnockbackTick") >= 70L
+         && attacker.getRandom().nextInt(100) < (strongMove ? 35 : 18);
+      int launchChance = strongMove ? 8 : 2;
+      boolean canLaunch = canKnockback
+         && combatAge >= 140L
+         && now - data.getLong("CombatLastLaunchTick") >= 160L
+         && attacker.getRandom().nextInt(100) < launchChance;
+      if (!canKnockback) {
+         level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 6, 0.22, 0.12, 0.22, 0.035);
+         return;
+      }
+      data.putLong("CombatLastKnockbackTick", now);
+      if (canLaunch) {
+         data.putLong("CombatLastLaunchTick", now);
+      }
+      Vec3 motion = target.getDeltaMovement();
+      double yPower = canLaunch ? Math.max(0.35, verticalPower) : Math.min(0.08, verticalPower * 0.12);
+      target.setDeltaMovement(motion.x + dir.x * horizontalPower, Math.max(motion.y + yPower, yPower), motion.z + dir.z * horizontalPower);
+      target.hasImpulse = true;
+      target.hurtMarked = true;
+      level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 16, 0.35, 0.18, 0.35, 0.08);
+      breakKnockbackPath(level, target.position(), dir, Math.max(2.0, horizontalPower * 2.2) * terrainScale, strongMove, terrainScale);
+      if (canLaunch) {
+         scheduleImpactCrater(target, craterRadius * terrainScale, scaledBreakLimit(maxBroken, terrainScale), strongMove);
+      }
+   }
+
+   private void breakKnockbackPath(ServerLevel level, Vec3 start, Vec3 dir, double distance, boolean heavyFx, double terrainScale) {
+      int radius = Math.max(1, (int)Math.ceil((heavyFx ? 2 : 1) * terrainScale));
+      int maxBroken = scaledBreakLimit(heavyFx ? 22 : 12, terrainScale);
+      int broken = 0;
+      for (double step = 0.75; step <= distance && broken < maxBroken; step += 0.75) {
+         BlockPos center = BlockPos.containing(start.add(dir.scale(step)));
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, 0, -radius), center.offset(radius, 2, radius))) {
+            if (!isInIrregularBreakShape(level, pos, center, radius + 0.45, 1.1, 0.8, heavyFx ? 0.68 : 0.55)) {
+               continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            float hardness = state.getDestroySpeed(level, pos);
+            if (!state.isAir() && hardness >= 0.0F && hardness < (heavyFx ? 45.0F : 25.0F) && destroyBlockWithCombatFx(level, pos, state, heavyFx)) {
+               broken++;
+               if (broken >= maxBroken) {
+                  break;
+               }
+            }
+         }
+      }
+   }
+
+   private void scheduleImpactCrater(LivingEntity target, double radius, int maxBroken, boolean heavyFx) {
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (!target.isAlive() || !(target.level() instanceof ServerLevel level)) {
+            return;
+         }
+         BlockPos center = target.blockPosition().below();
+         int r = Math.max(1, (int)Math.ceil(radius));
+         int broken = 0;
+         double radiusSqr = radius * radius;
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-r, -1, -r), center.offset(r, 1, r))) {
+            if (broken >= maxBroken) {
+               break;
+            }
+            if (!isInIrregularBreakShape(level, pos, center, radius, 0.75, 0.55, heavyFx ? 0.74 : 0.64)) {
+               continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            float hardness = state.getDestroySpeed(level, pos);
+            if (hardness >= 0.0F && hardness < (heavyFx ? 70.0F : 45.0F) && destroyBlockWithCombatFx(level, pos, state, heavyFx)) {
+               broken++;
+            }
+         }
+         if (broken > 0) {
+            Vec3 impact = Vec3.atCenterOf(center).add(0.0, 0.4, 0.0);
+            level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, heavyFx ? 5 : 2, radius * 0.35, 0.15, radius * 0.35, 0.0);
+            level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impact.x, impact.y, impact.z, heavyFx ? 42 : 24, radius * 0.55, 0.28, radius * 0.55, 0.045);
+            level.playSound(null, center, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, heavyFx ? 1.4F : 0.9F, heavyFx ? 0.55F : 0.75F);
+         }
+      });
+   }
+
+   private boolean maybeCastParacelsusElementalMagic(ParacelsusEntity entity, LivingEntity target, boolean hasLineOfSight, ServantAiContext context) {
+      long now = context.gameTick();
+      if (entity.getCurrentMp() < 7.0 || !hasLineOfSight || now - entity.getPersistentData().getLong(TAG_PARACELSUS_LAST_AI_MAGIC) < PARACELSUS_MAGIC_AI_INTERVAL) {
+         return false;
+      }
+      if (!EntityUtils.isValidCombatTarget(entity, target)) {
+         return false;
+      }
+      String[] actions = entity.getCurrentMp() > entity.getMaxMp() * 0.55
+         ? new String[]{"fire_magic_a_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_b_cast", "earth_magic_b_cast", "wind_magic_b_cast"}
+         : new String[]{"water_magic_b_cast", "earth_magic_b_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_b_cast", "fire_magic_a_cast"};
+      int casts = entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now ? 3 : 1;
+      boolean castAny = false;
+      int start = (int)((now / PARACELSUS_MAGIC_AI_INTERVAL) % actions.length);
+      for (int i = 0; i < casts; i++) {
+         if (entity.getCurrentMp() < 7.0) {
+            break;
+         }
+         String action = actions[(start + i) % actions.length];
+         ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
+            new ServantCombatActionContext(entity, target, context, context.definition(), action, entity.distanceTo(target), hasLineOfSight, now)
+         );
+         if (result.handled() && result.success()) {
+            castAny = true;
+         }
+      }
+      if (castAny) {
+         entity.getPersistentData().putLong(TAG_PARACELSUS_LAST_AI_MAGIC, now);
+      }
+      return castAny;
+   }
+
+   private boolean maybeSummonParacelsusCannon(ParacelsusEntity entity, LivingEntity target, boolean hasLineOfSight, ServantAiContext context) {
+      long now = context.gameTick();
+      if (entity.getCurrentMp() < 18.0
+         || !hasLineOfSight
+         || now % 80 != 0
+         || !EntityUtils.isValidCombatTarget(entity, target)
+         || now - entity.getPersistentData().getLong("ParacelsusLastElementalSpiritSummon") < PARACELSUS_CANNON_SUMMON_COOLDOWN) {
+         return false;
+      }
+      if (entity.distanceTo(target) > 22.0) {
+         return false;
+      }
+      ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
+         new ServantCombatActionContext(entity, target, context, context.definition(), "elemental_spirit", entity.distanceTo(target), hasLineOfSight, now)
+      );
+      return result.handled() && result.success();
+   }
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      LivingEntity sharedTarget = context.target();
+      if (sharedTarget != null && ServantCombatSystem.skillsSuppressed(entity)) {
+         entity.getLookControl().setLookAt(sharedTarget, 30.0F, 30.0F);
+         if (entity.distanceTo(sharedTarget) <= 2.7 && !entity.isPerformingAction()) {
+            entity.triggerAttackSwing();
+            entity.doHurtTarget(sharedTarget);
+         } else {
+            moveToTargetThrottled(entity, sharedTarget, 1.1, (int)entity.level().getGameTime(), 0.8);
+         }
+         return;
+      }
+      if (entity instanceof LiShuwenEntity liShuwen) {
+         LiShuwenCombatHelper.tick(liShuwen, context);
+         return;
+      }
+      if (entity instanceof ParacelsusEntity paracelsus) {
+         if (sharedTarget != null && (!sharedTarget.isAlive() || !EntityUtils.isValidCombatTarget(entity, sharedTarget))) {
+            entity.setTarget(null);
+            sharedTarget = null;
+         }
+         boolean hasLineOfSight = sharedTarget != null && entity.getSensing().hasLineOfSight(sharedTarget);
+         ServantExecutionResult addonTick = ServantAddonRegistry.runLifecycleHandlers(
+            new ServantLifecycleContext(entity, sharedTarget, context, context.definition(), context.gameTick())
+         );
+         if (addonTick.handled()) {
+            return;
+         }
+         if (sharedTarget != null && sharedTarget.isAlive()) {
+            double distance = entity.distanceTo(sharedTarget);
+            int phase = paracelsus.getCombatPhase();
+            entity.getLookControl().setLookAt(sharedTarget, 35.0F, 35.0F);
+            if (distance <= 6.5) {
+               Vec3 away = entity.position().subtract(sharedTarget.position());
+               if (away.lengthSqr() > 1.0E-4) {
+                  away = away.normalize().scale(4.5);
+                  ServantNavigationHelper.moveToPositionThrottled(
+                     entity,
+                     new Vec3(entity.getX() + away.x, entity.getY(), entity.getZ() + away.z),
+                     1.05,
+                     context.gameTick(),
+                     10,
+                     3.5,
+                     "ParacelsusRetreatPath"
+                  );
+               } else {
+                  ServantNavigationHelper.stopIfMoving(entity);
+               }
+            } else if (distance >= 14.0) {
+               ServantNavigationHelper.moveToTargetThrottled(entity, sharedTarget, 0.92, context.gameTick(), 12, 1.5, "ParacelsusAdvancePath");
+            } else if (context.gameTick() % PARACELSUS_WANDER_COOLDOWN == 0) {
+               Vec3 toTarget = sharedTarget.position().subtract(entity.position());
+               Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
+               if (horizontal.lengthSqr() > 1.0E-4) {
+                  horizontal = horizontal.normalize();
+                  Vec3 side = new Vec3(-horizontal.z, 0.0, horizontal.x);
+                  double drift = ((context.gameTick() / PARACELSUS_WANDER_COOLDOWN) & 1) == 0 ? 1.0 : -1.0;
+                  Vec3 orbitPoint = sharedTarget.position()
+                     .add(side.scale(4.0 * drift))
+                     .add(horizontal.scale(-2.0))
+                     .add(0.0, 0.0, 0.0);
+                  ServantNavigationHelper.moveToPositionThrottled(
+                     entity,
+                     orbitPoint,
+                     1.0,
+                     context.gameTick(),
+                     10,
+                     2.0,
+                     "ParacelsusOrbitPath"
+                  );
+               }
+            } else {
+               ServantNavigationHelper.stopIfMoving(entity);
+            }
+            if (sharedTarget != null && sharedTarget.isAlive()) {
+               if (maybeCastParacelsusElementalMagic(paracelsus, sharedTarget, hasLineOfSight, context)) {
+                  return;
+               }
+               if (maybeSummonParacelsusCannon(paracelsus, sharedTarget, hasLineOfSight, context)) {
+                  return;
+               }
+            }
+            if ((paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5 || paracelsus.getCurrentMp() <= paracelsus.getMaxMp() * 0.3)
+               && context.definition().specialization().hasCombatAction("philosopher_stone")
+               && context.gameTick() % 80 == 0) {
+               ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
+                  new ServantCombatActionContext(
+                     entity, sharedTarget, context, context.definition(), "philosopher_stone", distance, hasLineOfSight, context.gameTick()
+                  )
+               );
+               if (result.handled()) {
+                  return;
+               }
+            }
+            if (phase >= 3
+               && paracelsus.getHealth() <= paracelsus.getMaxHealth() / 3.0F
+               && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
+               && paracelsus.getCurrentMp() >= 150.0
+               && hasLineOfSight
+               && EntityUtils.isValidCombatTarget(paracelsus, sharedTarget)
+               && distance <= 28.0
+               && context.gameTick() - paracelsus.getPersistentData().getLong("ParacelsusLastNpTick") >= 900L) {
+               ServantNoblePhantasmExecutor.activateNp(
+                  paracelsus,
+                  sharedTarget,
+                  new ServantNoblePhantasmDefinition(
+                     context.definition().noblePhantasmId(),
+                     "",
+                     "",
+                     ServantNoblePhantasmDefinition.NpType.ARMY,
+                     "A+",
+                     150,
+                     true,
+                     3,
+                     2.0,
+                     30.0,
+                     java.util.List.of(),
+                     java.util.List.of(),
+                     java.util.List.of()
+                  ),
+                  1
+               );
+               return;
+            }
+            if (distance <= 4.0 && entity.isPerformingAction()) {
+               return;
+            }
+            if (distance <= 4.5 && hasLineOfSight && context.gameTick() % 30 == 0) {
+               entity.triggerAttackSwing();
+               entity.doHurtTarget(sharedTarget);
+               return;
+            }
+            if (context.definition().specialization().hasCombatAction("philosopher_stone")
+               && paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5
+               && paracelsus.getPersistentData().getInt("ParacelsusPhilosopherStoneCount") > 0
+               && context.gameTick() % 100 == 0) {
+               ServantAddonRegistry.executeCombatAction(
+                  new ServantCombatActionContext(
+                     entity, sharedTarget, context, context.definition(), "philosopher_stone", distance, hasLineOfSight, context.gameTick()
+                  )
+               );
+            }
+         }
+         return;
+      }
+      if (sharedTarget != null && ServantCombatSystem.tryRunComboAction(entity, sharedTarget)) {
+         return;
+      }
+      if (sharedTarget != null && !sharedTarget.isDeadOrDying() && !EntityUtils.isImmunePlayerTarget(sharedTarget)) {
+         ServantExecutionResult addonTick = ServantAddonRegistry.runLifecycleHandlers(
+            new ServantLifecycleContext(entity, sharedTarget, context, context.definition(), context.gameTick())
+         );
+         if (addonTick.handled()) {
+            return;
+         }
+      }
       if (entity instanceof MedeaEntity medea) {
          MedeaCombatHelper.tick(medea, context);
          return;
       }
-
+      if (entity instanceof MedusaEntity medusa) {
+         MedusaCombatHelper.tick(medusa, context);
+         return;
+      }
+      if (entity instanceof CursedArmHassanEntity cursedArm) {
+         CursedArmHassanCombatHelper.tick(cursedArm, context);
+         return;
+      }
+      if (entity instanceof ArtoriaPendragonEntity artoria && ArtoriaPendragonCombatHelper.tick(artoria, context)) {
+         return;
+      }
+      if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {
+         return;
+      }
       LivingEntity target = context.target();
       if (target == null || target.isDeadOrDying()) {
          entity.setTarget(null);
@@ -104,14 +502,23 @@ public final class CombatModule implements ServantAiModule {
       boolean canLungingThrust = specialization.hasCombatAction("lunging_thrust");
       boolean canDrivingSlash = specialization.hasCombatAction("driving_slash");
       boolean canSweepingAdvance = specialization.hasCombatAction("sweeping_advance");
+      boolean canEarthRend = specialization.hasCombatAction("earth_rend");
+      boolean canShoulderCheck = specialization.hasCombatAction("shoulder_check");
+      boolean canRuneBurst = specialization.hasCombatAction("rune_burst");
+      boolean canSpearVault = specialization.hasCombatAction("spear_vault");
+      boolean canAfterimageSlash = specialization.hasCombatAction("afterimage_slash");
+      boolean canIaijutsuStep = specialization.hasCombatAction("iaijutsu_step");
       double retreatThreshold = Math.max(0.08, behaviorProfile.applyCombatDisposition(combatStyle));
       double aggressionRange = Math.max(16.0, behaviorProfile.aggressionRange());
       if (CuChulainnCombatHelper.isLaguzActive(entity)) {
          aggressionRange *= 2.0;
       }
+      if (EmiyaArcherEntity.SERVANT_KEY.equals(entity.getServantId())) {
+         aggressionRange *= entity.getPersistentData().getBoolean("ClairvoyanceActive") ? 4.0 : 2.0;
+      }
       double attackCommitDistance = Math.max(3.0, behaviorProfile.attackCommitDistance());
       double skillChanceScale = Math.max(0.75, Math.min(1.35, behaviorProfile.skillUsageFrequency() / 0.65));
-      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      boolean hasLineOfSight = hasLineOfSightCached(entity, target, data, tick);
       boolean gaeBolgWindingUp = CuChulainnCombatHelper.isGaeBolgWindingUp(entity);
 
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
@@ -127,7 +534,26 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      if (combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
+      ServantExecutionResult addonAction = ServantAddonRegistry.runFirstHandledCombatAction(
+         specialization.combatActions(),
+         actionId -> new ServantCombatActionContext(
+            entity,
+            target,
+            context,
+            context.definition(),
+            actionId,
+            entity.distanceTo(target),
+            hasLineOfSight,
+            context.gameTick()
+         )
+      );
+      if (addonAction.handled()) {
+         return;
+      }
+
+      if (entity instanceof GawainEntity) {
+         data.remove("RetreatStartTick");
+      } else if (!(entity instanceof ArtoriaPendragonEntity) && combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
          // 决死一战检测
          int retreatStartTick = data.getInt("RetreatStartTick");
          if (retreatStartTick == 0) {
@@ -139,11 +565,7 @@ public final class CombatModule implements ServantAiModule {
          boolean timeout = (tick - retreatStartTick) >= 200;
 
          // 条件2：周围3格内有3+敌人
-         AABB dangerZone = entity.getBoundingBox().inflate(3.0);
-         int enemyCount = entity.level().getEntitiesOfClass(
-            LivingEntity.class, dangerZone,
-            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
-         ).size();
+         int enemyCount = getNearbyEnemyCountCached(entity, data, tick);
          boolean surrounded = enemyCount >= 3;
 
          // 决死一战：清除逃跑计时器，获得临时buff
@@ -174,13 +596,16 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      if (!gaeBolgWindingUp && canRecastStance && healthRatio < 0.3 && CuChulainnCombatHelper.canUseRecastStance(entity)
+      if (!gaeBolgWindingUp && canRecastStance && healthRatio < 0.2 && CuChulainnCombatHelper.canUseRecastStance(entity)
             && entity.getCurrentMp() >= CU_RECAST_MP_COST) {
          performRecastStance(entity);
          return;
       }
 
       double distance = entity.distanceTo(target);
+      if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity) && canBreakForwardBlocks) {
+         tryBreakCollisionWall(entity, target, data, tick, entity instanceof HeraclesEntity, hasLineOfSight);
+      }
 
       // ——— 0. 被方块挡住：挥砍砸开前方路径（仅Berserker） ———
       if (canBreakForwardBlocks && (entity.getNavigation().isInProgress() || distance > 3.5)) {
@@ -227,6 +652,7 @@ public final class CombatModule implements ServantAiModule {
          Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
          if (horizontal.lengthSqr() > 1.0E-4) {
             horizontal = horizontal.normalize().scale(0.6);
+            entity.faceVector(horizontal);
          } else {
             horizontal = Vec3.ZERO;
          }
@@ -245,7 +671,8 @@ public final class CombatModule implements ServantAiModule {
             data.putInt("LastChargeTick", tick);
             entity.triggerChargeAnimation();
             // 面朝目标快速冲刺
-            Vec3 chargeDir = target.position().subtract(entity.position()).normalize().scale(1.5);
+            Vec3 chargeDir = target.position().subtract(entity.position()).normalize().scale(2.05);
+            entity.faceVector(chargeDir);
             entity.setDeltaMovement(chargeDir.x, entity.getDeltaMovement().y, chargeDir.z);
             // 冲刺粒子尾迹
             if (entity.level() instanceof ServerLevel sl) {
@@ -255,13 +682,21 @@ public final class CombatModule implements ServantAiModule {
             }
             // 冲刺路径上破坏方块（模拟冲锋）
             BlockPos entityPos = entity.blockPosition();
-            for (int i = 0; i < 5; i++) {
-               BlockPos breakPos = entityPos.relative(entity.getDirection(), i);
-               BlockState state = entity.level().getBlockState(breakPos);
-               float hardness = state.getDestroySpeed(entity.level(), breakPos);
-               if (!state.isAir() && hardness >= 0 && hardness < 50
-                     && !state.is(Blocks.BEDROCK)) {
-                  entity.level().removeBlock(breakPos, false);
+            int chargeBroken = 0;
+            for (int i = 0; i < 8 && chargeBroken < 48; i++) {
+               BlockPos center = entityPos.relative(entity.getDirection(), i);
+               for (BlockPos breakPos : BlockPos.betweenClosed(center.offset(-1, 0, -1), center.offset(1, 2, 1))) {
+                  BlockState state = entity.level().getBlockState(breakPos);
+                  float hardness = state.getDestroySpeed(entity.level(), breakPos);
+                  if (!state.isAir() && hardness >= 0 && hardness < 80
+                        && !state.is(Blocks.BEDROCK)) {
+                     if (entity.level() instanceof ServerLevel sl && destroyBlockWithCombatFx(sl, breakPos, state, true)) {
+                        chargeBroken++;
+                     }
+                     if (chargeBroken >= 48) {
+                        break;
+                     }
+                  }
                }
             }
             // 冲刺结束后对目标造成伤害
@@ -277,33 +712,35 @@ public final class CombatModule implements ServantAiModule {
 
       // ——— 5. 横扫攻击：近距离 + 周围2+敌人 ———
       if (canSweep && distance <= 4.0) {
-         AABB sweepBox = entity.getBoundingBox().inflate(3.0);
-         List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
-            LivingEntity.class, sweepBox,
-            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
          int lastSweep = data.getInt("LastSweepTick");
-         if (nearby.size() >= 2 && tick - lastSweep >= SWEEP_COOLDOWN
-               && passesSkillChance(entity, 35, skillChanceScale)) {
-            data.putInt("LastSweepTick", tick);
-            entity.triggerSweepAnimation();
-            performSweep(entity);
-            return;
+         if (tick - lastSweep >= SWEEP_COOLDOWN && passesSkillChance(entity, 35, skillChanceScale)) {
+            AABB sweepBox = entity.getBoundingBox().inflate(3.0);
+            List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
+               LivingEntity.class, sweepBox,
+               e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
+            if (nearby.size() >= 2) {
+               data.putInt("LastSweepTick", tick);
+               entity.triggerSweepAnimation();
+               performSweep(entity);
+               return;
+            }
          }
       }
 
       // ——— 6. 斩击：近距离 + 周围1-2敌人 ———
       if (canSlash && distance <= 4.0) {
-         AABB slashBox = entity.getBoundingBox().inflate(3.0);
-         List<LivingEntity> nearSlash = entity.level().getEntitiesOfClass(
-            LivingEntity.class, slashBox,
-            e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
          int lastSlash = data.getInt("LastSlashTick");
-         if (nearSlash.size() >= 1 && nearSlash.size() <= 2 && tick - lastSlash >= SLASH_COOLDOWN
-               && passesSkillChance(entity, 40, skillChanceScale)) {
-            data.putInt("LastSlashTick", tick);
-            entity.triggerSlashAnimation();
-            performSlash(entity, target);
-            return;
+         if (tick - lastSlash >= SLASH_COOLDOWN && passesSkillChance(entity, 40, skillChanceScale)) {
+            AABB slashBox = entity.getBoundingBox().inflate(3.0);
+            List<LivingEntity> nearSlash = entity.level().getEntitiesOfClass(
+               LivingEntity.class, slashBox,
+               e -> e != entity && e.isAlive() && !e.isAlliedTo(entity));
+            if (!nearSlash.isEmpty() && nearSlash.size() <= 2) {
+               data.putInt("LastSlashTick", tick);
+               entity.triggerSlashAnimation();
+               performSlash(entity, target);
+               return;
+            }
          }
       }
 
@@ -340,6 +777,26 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
+      if (canEarthRend && distance <= 7.5) {
+         int lastEarthRend = data.getInt("LastEarthRendTick");
+         if (tick - lastEarthRend >= EARTH_REND_COOLDOWN && passesSkillChance(entity, 34, skillChanceScale)) {
+            data.putInt("LastEarthRendTick", tick);
+            entity.triggerGroundSlam();
+            performEarthRend(entity, target);
+            return;
+         }
+      }
+
+      if (canShoulderCheck && distance >= 3.0 && distance <= 9.0 && hasLineOfSight) {
+         int lastShoulder = data.getInt("LastShoulderCheckTick");
+         if (tick - lastShoulder >= SHOULDER_CHECK_COOLDOWN && passesSkillChance(entity, 38, skillChanceScale)) {
+            data.putInt("LastShoulderCheckTick", tick);
+            entity.triggerChargeAnimation();
+            performShoulderCheck(entity, target);
+            return;
+         }
+      }
+
       // ——— 燕返（Assassin专属）：目标HP<40%，100固定真伤 + 概率斩杀 ———
       if (canTsurigameshi && distance < 4.0 && !SasakiKojiroCombatHelper.isBladeBroken(entity)) {
          int lastTsurigameshi = data.getInt("LastTsurigameshiTick");
@@ -369,7 +826,11 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      if (!gaeBolgWindingUp && canGaeBolgArmy && entity.getCurrentMp() > 0.0 && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
+      if (!gaeBolgWindingUp
+         && canGaeBolgArmy
+         && entity.getCurrentMp() > 0.0
+         && ServantCombatSystem.canUseNoblePhantasm(entity)
+         && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
          AABB armyBox = entity.getBoundingBox().inflate(8.0);
          int groupSize = entity.level().getEntitiesOfClass(
             LivingEntity.class, armyBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
@@ -385,7 +846,11 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      if (!gaeBolgWindingUp && canGaeBolg && entity.getCurrentMp() >= 10 && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
+      if (!gaeBolgWindingUp
+         && canGaeBolg
+         && entity.getCurrentMp() >= 10
+         && ServantCombatSystem.canUseNoblePhantasm(entity)
+         && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
          if (distance <= 12.0 && (distance <= 3.0 || passesSkillChance(entity, 28, skillChanceScale))) {
             performGaeBolg(entity, target, distance <= 3.0);
             return;
@@ -419,6 +884,47 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
+      if (canRuneBurst && hasLineOfSight && distance <= 8.0 && entity.getCurrentMp() >= 8.0) {
+         int lastRuneBurst = data.getInt("LastRuneBurstTick");
+         if (tick - lastRuneBurst >= RUNE_BURST_COOLDOWN && passesSkillChance(entity, 32, skillChanceScale)) {
+            data.putInt("LastRuneBurstTick", tick);
+            entity.setCurrentMp(entity.getCurrentMp() - 8.0);
+            entity.triggerRuneCastAnimation();
+            performRuneBurst(entity, target);
+            return;
+         }
+      }
+
+      if (canSpearVault && hasLineOfSight && distance >= 2.5 && distance <= 8.5) {
+         int lastVault = data.getInt("LastSpearVaultTick");
+         if (tick - lastVault >= SPEAR_VAULT_COOLDOWN && passesSkillChance(entity, 36, skillChanceScale)) {
+            data.putInt("LastSpearVaultTick", tick);
+            entity.triggerSweepAnimation();
+            performSpearVault(entity, target);
+            return;
+         }
+      }
+
+      if (canAfterimageSlash && distance <= 5.0) {
+         int lastAfterimage = data.getInt("LastAfterimageSlashTick");
+         if (tick - lastAfterimage >= AFTERIMAGE_SLASH_COOLDOWN && passesSkillChance(entity, 40, skillChanceScale)) {
+            data.putInt("LastAfterimageSlashTick", tick);
+            entity.triggerSlashAnimation();
+            performAfterimageSlash(entity, target);
+            return;
+         }
+      }
+
+      if (canIaijutsuStep && distance >= 2.0 && distance <= 8.0 && hasLineOfSight) {
+         int lastIai = data.getInt("LastIaijutsuStepTick");
+         if (tick - lastIai >= IAIJUTSU_STEP_COOLDOWN && passesSkillChance(entity, 34, skillChanceScale)) {
+            data.putInt("LastIaijutsuStepTick", tick);
+            entity.triggerHorizontalSwingAnimation();
+            performIaijutsuStep(entity, target);
+            return;
+         }
+      }
+
       if (canUppercut && distance <= 3.5) {
          int lastUppercut = data.getInt("LastUppercutTick");
          if (tick - lastUppercut >= UPPERCUT_COOLDOWN && passesSkillChance(entity, 35, skillChanceScale)) {
@@ -443,13 +949,13 @@ public final class CombatModule implements ServantAiModule {
       // ——— 7. 接近 + 近战 ———
       
       if (!hasLineOfSight) {
-         entity.getNavigation().moveTo(target, distance > 8.0 ? 1.3 : 1.1);
+         moveToTargetThrottled(entity, target, distance > 8.0 ? 1.3 : 1.1, tick, 0.85);
       } else if (distance > Math.max(3.5, attackCommitDistance)) {
          double speed = distance > 10.0 ? 1.35 : (distance > 6.0 ? 1.2 : 1.0);
          if (combatStyle == CombatDisposition.CAUTIOUS && distance < attackCommitDistance + 1.5) {
             speed = 0.9;
          }
-         entity.getNavigation().moveTo(target, speed);
+         moveToTargetThrottled(entity, target, speed, tick, 0.85);
       } else {
          int basicAttackCooldown = canAssassinCombo ? ASSASSIN_BASIC_ATTACK_COOLDOWN : BASIC_ATTACK_COOLDOWN;
          int lastBasicAttack = data.getInt("LastBasicAttackTick");
@@ -497,6 +1003,34 @@ public final class CombatModule implements ServantAiModule {
       return entity.getRandom().nextInt(100) < effectivePercent;
    }
 
+   private int getNearbyEnemyCountCached(ServantEntity entity, CompoundTag data, int tick) {
+      int lastScan = data.getInt("CombatSurroundedScanTick");
+      if (lastScan > 0 && tick - lastScan < SURROUNDED_SCAN_INTERVAL) {
+         return data.getInt("CombatSurroundedEnemyCount");
+      }
+      AABB dangerZone = entity.getBoundingBox().inflate(3.0);
+      int enemyCount = entity.level().getEntitiesOfClass(
+         LivingEntity.class, dangerZone,
+         e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
+      ).size();
+      data.putInt("CombatSurroundedScanTick", tick);
+      data.putInt("CombatSurroundedEnemyCount", enemyCount);
+      return enemyCount;
+   }
+
+   private boolean hasLineOfSightCached(ServantEntity entity, LivingEntity target, CompoundTag data, int tick) {
+      boolean sameTarget = data.hasUUID("CombatLosTarget") && data.getUUID("CombatLosTarget").equals(target.getUUID());
+      int lastCheck = data.getInt("CombatLosTick");
+      if (sameTarget && lastCheck > 0 && tick - lastCheck < COMBAT_LOS_INTERVAL) {
+         return data.getBoolean("CombatHasLos");
+      }
+      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      data.putUUID("CombatLosTarget", target.getUUID());
+      data.putInt("CombatLosTick", tick);
+      data.putBoolean("CombatHasLos", hasLineOfSight);
+      return hasLineOfSight;
+   }
+
    private boolean handleUndergroundTarget(
       ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean canBreakForwardBlocks, boolean canTeleportBehind, boolean hasLineOfSight
    ) {
@@ -519,7 +1053,7 @@ public final class CombatModule implements ServantAiModule {
             data.putInt("LastBlockBreakTick", tick);
             breakTowardUndergroundTarget(entity, target);
          }
-         entity.getNavigation().moveTo(target, 1.15);
+         moveToTargetThrottled(entity, target, 1.15, tick, 0.8);
          return true;
       }
 
@@ -539,8 +1073,20 @@ public final class CombatModule implements ServantAiModule {
          return true;
       }
 
-      entity.getNavigation().moveTo(target, 1.0);
+      moveToTargetThrottled(entity, target, 1.0, tick, 0.8);
       return true;
+   }
+
+   private void moveToTargetThrottled(ServantEntity entity, LivingEntity target, double speed, int tick, double minTargetMoveSqr) {
+      ServantNavigationHelper.moveToTargetThrottled(
+         entity,
+         target,
+         speed,
+         tick,
+         COMBAT_PATH_RECALC_INTERVAL,
+         minTargetMoveSqr,
+         "CombatPath"
+      );
    }
 
    private void breakTowardUndergroundTarget(ServantEntity entity, LivingEntity target) {
@@ -586,6 +1132,7 @@ public final class CombatModule implements ServantAiModule {
          if (feet != null) {
             entity.teleportTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
             entity.setDeltaMovement(Vec3.ZERO);
+            entity.faceToward(target.position());
             entity.fallDistance = 0.0F;
             return true;
          }
@@ -613,7 +1160,15 @@ public final class CombatModule implements ServantAiModule {
       }
 
       Vec3 retreatPos = entity.position().add(away.normalize().scale(combatStyle == CombatDisposition.CAUTIOUS ? 6.0 : 4.0));
-      entity.getNavigation().moveTo(retreatPos.x, retreatPos.y, retreatPos.z, combatStyle == CombatDisposition.CAUTIOUS ? 1.25 : 1.05);
+      ServantNavigationHelper.moveToPositionThrottled(
+         entity,
+         retreatPos,
+         combatStyle == CombatDisposition.CAUTIOUS ? 1.25 : 1.05,
+         entity.level().getGameTime(),
+         ServantNavigationHelper.SHORT_REPATH_INTERVAL,
+         1.0,
+         "CombatRetreatPath"
+      );
       if (entity.getRandom().nextInt(4) == 0) {
          float side = entity.getRandom().nextBoolean() ? 0.5F : -0.5F;
          entity.getMoveControl().strafe(-0.6F, side);
@@ -622,7 +1177,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void performCombatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle, double distance) {
-      entity.getNavigation().stop();
+      ServantNavigationHelper.stopIfMoving(entity);
       float side = entity.getRandom().nextBoolean() ? 0.45F : -0.45F;
       float forward = switch (combatStyle) {
          case CAUTIOUS -> distance < 2.4 ? -0.35F : -0.10F;
@@ -672,7 +1227,7 @@ public final class CombatModule implements ServantAiModule {
       // 朝目标方向进行180度扇形检测
       Vec3 look = entity.getLookAngle();
       Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
-      AABB slashBox = entity.getBoundingBox().inflate(3.0).move(look.scale(1.5));
+      AABB slashBox = entity.getBoundingBox().inflate(4.5).move(look.scale(2.0));
       List<LivingEntity> near = sl.getEntitiesOfClass(
          LivingEntity.class, slashBox,
          e -> e != entity && e.isAlive());
@@ -682,23 +1237,33 @@ public final class CombatModule implements ServantAiModule {
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
          if (dist > 0) {
-            double kb = 1.0 * (1.0 - dist / 3.0);
-            le.push(dx / dist * kb, 0.2, dz / dist * kb);
-            le.hurtMarked = true;
+            double kb = Math.max(0.35, 1.8 * (1.0 - dist / 4.5));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.38, 1.8, 10);
          }
       }
 
       // 斩击轨迹粒子
-      for (double r = 0.5; r <= 3.0; r += 0.5) {
+      int slashBroken = 0;
+      double terrainScale = terrainBreakScale(entity);
+      int slashLimit = scaledBreakLimit(36, terrainScale);
+      for (double r = 0.5; r <= 5.0 * terrainScale && slashBroken < slashLimit; r += 0.5) {
          for (double theta = -Math.PI / 2; theta <= Math.PI / 2; theta += Math.PI / 6) {
             double x = look.x * Math.cos(theta) - look.z * Math.sin(theta);
             double z = look.x * Math.sin(theta) + look.z * Math.cos(theta);
             Vec3 offset = new Vec3(x, 0, z).normalize().scale(r);
             BlockPos pos = BlockPos.containing(center.add(offset));
+            if (blockNoise(sl, pos) > 0.82 && r > 1.5) {
+               continue;
+            }
             BlockState state = sl.getBlockState(pos);
             if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0
                   || state.getFluidState().isSource())) {
-               sl.removeBlock(pos, false);
+               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
+                  slashBroken++;
+               }
+               if (slashBroken >= slashLimit) {
+                  break;
+               }
             }
          }
       }
@@ -707,10 +1272,13 @@ public final class CombatModule implements ServantAiModule {
          entity.getX() + look.x * 2.0,
          entity.getY() + entity.getBbHeight() * 0.6,
          entity.getZ() + look.z * 2.0,
-         2, 0.0, 0.0, 0.0, 0.0);
+         5, 0.0, 0.0, 0.0, 0.0);
       sl.sendParticles(ParticleTypes.CRIT,
          target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-         10, 0.3, 0.3, 0.3, 0.2);
+         20, 0.45, 0.4, 0.45, 0.22);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         entity.getX() + look.x * 2.2, entity.getY() + 0.25, entity.getZ() + look.z * 2.2,
+         32, 1.2, 0.25, 1.2, 0.05);
    }
 
    /**
@@ -739,7 +1307,7 @@ public final class CombatModule implements ServantAiModule {
       sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + 0.5, entity.getZ(),
          15, 0.3, 0.5, 0.3, 0.05);
-      sl.sendParticles(ParticleTypes.LARGE_SMOKE,
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + 1.0, entity.getZ(),
          8, 0.2, 0.3, 0.2, 0.03);
 
@@ -749,8 +1317,8 @@ public final class CombatModule implements ServantAiModule {
       double tpDamage = baseAtk * 1.5;
       DamageSource src = entity.damageSources().mobAttack(entity);
       target.hurt(src, (float) tpDamage);
-      target.knockback(0.6, entity.getX() - target.getX(), entity.getZ() - target.getZ());
-      target.hurtMarked = true;
+      Vec3 away = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      pushWithImpactCrater(sl, entity, target, away, 1.45, 0.36, 1.8, 10);
 
       // 攻击粒子
       sl.sendParticles(ParticleTypes.CRIT,
@@ -765,62 +1333,189 @@ public final class CombatModule implements ServantAiModule {
     */
    private void performStomp(ServantEntity entity) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
-      double stompDamage = baseAtk * 1.2;
+      double stompDamage = entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2;
       DamageSource src = entity.damageSources().mobAttack(entity);
-
-      // 2.5格半径AOE伤害 + 击飞
-      double stompRadius = 2.5;
+      double stompRadius = 4.0;
       AABB box = entity.getBoundingBox().inflate(stompRadius);
-      List<LivingEntity> nearby = sl.getEntitiesOfClass(
-         LivingEntity.class, box, e -> e != entity && e.isAlive());
+      List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, box, e -> e != entity && e.isAlive());
       for (LivingEntity le : nearby) {
-         le.hurt(src, (float) stompDamage);
+         le.hurt(src, (float)stompDamage);
          double dx = le.getX() - entity.getX();
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
-         if (dist > 0) {
-            double kb = 1.0 * (1.0 - dist / stompRadius);
-            le.push(dx / dist * kb, 0.5, dz / dist * kb); // 较高击飞
-            le.hurtMarked = true;
+         if (dist > 0.0) {
+            double kb = Math.max(0.45, 1.8 * (1.0 - dist / stompRadius));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.72, 2.2, 16);
          }
       }
 
-      // 地面碎裂：脚下方块部分被破坏
       BlockPos center = entity.blockPosition();
-      for (BlockPos pos : BlockPos.betweenClosed(
-            center.offset(-2, 0, -2),
-            center.offset(2, 0, 2))) {
+      double terrainScale = terrainBreakScale(entity);
+      int stompRadiusBlocks = Math.max(1, (int)Math.ceil(3.0 * terrainScale));
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-stompRadiusBlocks, -1, -stompRadiusBlocks), center.offset(stompRadiusBlocks, 1, stompRadiusBlocks))) {
+         if (!isInIrregularBreakShape(sl, pos, center, 3.45 * terrainScale, 0.8, 0.75, 0.68)) {
+            continue;
+         }
          BlockState state = sl.getBlockState(pos);
          float hardness = state.getDestroySpeed(sl, pos);
-         if (!state.isAir() && hardness >= 0 && hardness < 30
-               && !state.is(Blocks.BEDROCK)) {
-            sl.removeBlock(pos, false);
+         if (!state.isAir() && hardness >= 0.0F && hardness < 30.0F && !state.is(Blocks.BEDROCK)) {
+            destroyBlockWithCombatFx(sl, pos, state, true);
          }
       }
-
-      // 同心圆碎裂扩散
-      for (int i = 0; i < 8; i++) {
-         double angle = (Math.PI * 2) * i / 8.0;
-         BlockPos ringPos = center.offset(
-            (int) Math.round(Math.cos(angle) * 2.5), 0,
-            (int) Math.round(Math.sin(angle) * 2.5));
+      for (int i = 0; i < 16; i++) {
+         double angle = (Math.PI * 2.0) * i / 16.0;
+         BlockPos ringPos = center.offset((int)Math.round(Math.cos(angle) * 4.0 * terrainScale), 0, (int)Math.round(Math.sin(angle) * 4.0 * terrainScale));
+         if (blockNoise(sl, ringPos) > 0.72) {
+            ringPos = ringPos.offset((int)Math.round(Math.cos(angle) * blockNoise(sl, ringPos.above())), 0, (int)Math.round(Math.sin(angle) * blockNoise(sl, ringPos.below())));
+         }
          BlockState state = sl.getBlockState(ringPos);
          float hardness = state.getDestroySpeed(sl, ringPos);
-         if (!state.isAir() && hardness >= 0 && hardness < 30
-               && !state.is(Blocks.BEDROCK)) {
-            sl.removeBlock(ringPos, false);
+         if (!state.isAir() && hardness >= 0.0F && hardness < 30.0F && !state.is(Blocks.BEDROCK)) {
+            destroyBlockWithCombatFx(sl, ringPos, state, true);
          }
       }
 
-      // 跺脚冲击波粒子
-      sl.sendParticles(ParticleTypes.CLOUD,
-         entity.getX(), entity.getY() + 0.1, entity.getZ(),
-         20, 1.0, 0.2, 1.0, 0.2);
-      sl.sendParticles(ParticleTypes.EXPLOSION,
-         entity.getX(), entity.getY() + 0.3, entity.getZ(),
-         3, 1.0, 0.3, 1.0, 0.0);
+      sl.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.1, entity.getZ(), 48, 1.8, 0.35, 1.8, 0.22);
+      sl.sendParticles(ParticleTypes.EXPLOSION, entity.getX(), entity.getY() + 0.3, entity.getZ(), 7, 1.4, 0.4, 1.4, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX(), entity.getY() + 0.25, entity.getZ(), 56, 2.0, 0.35, 2.0, 0.055);
+   }
+   /**
+    * Earth rend.
+    */
+   private void performEarthRend(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = target.position().subtract(entity.position());
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      if (horizontal.lengthSqr() < 1.0E-4) {
+         horizontal = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      horizontal = horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
+      entity.faceVector(horizontal);
+      double baseAtk = entity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+      DamageSource src = entity.damageSources().mobAttack(entity);
+      Vec3 origin = entity.position();
+      int broken = 0;
+      double terrainScale = terrainBreakScale(entity);
+      int maxBroken = scaledBreakLimit(96, terrainScale);
+      for (double step = 1.0; step <= 11.0 * terrainScale && broken < maxBroken; step += 1.0) {
+         Vec3 centerVec = origin.add(horizontal.scale(step));
+         BlockPos center = BlockPos.containing(centerVec);
+         AABB hitBox = new AABB(center).inflate(1.45 + step * 0.16, 1.4, 1.45 + step * 0.16);
+         for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
+            victim.hurt(src, (float)(baseAtk * 0.75));
+            pushWithImpactCrater(sl, entity, victim, horizontal, 1.95, 0.82, 2.4, 18);
+         }
+         int pathRadius = Math.max(1, (int)Math.ceil(2.0 * terrainScale));
+         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-pathRadius, -1, -pathRadius), center.offset(pathRadius, 1, pathRadius))) {
+            if (!isInIrregularBreakShape(sl, pos, center, 2.35 * terrainScale, 0.75, 0.8, 0.72)) {
+               continue;
+            }
+            BlockState state = sl.getBlockState(pos);
+            float hardness = state.getDestroySpeed(sl, pos);
+            if (!state.isAir() && hardness >= 0.0F && hardness < 75.0F && !state.is(Blocks.BEDROCK)) {
+               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
+                  broken++;
+               }
+               if (broken >= maxBroken) {
+                  break;
+               }
+            }
+         }
+         sl.sendParticles(ParticleTypes.CLOUD, centerVec.x, entity.getY() + 0.2, centerVec.z, 16, 0.8, 0.2, 0.8, 0.06);
+         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, centerVec.x, entity.getY() + 0.35, centerVec.z, 12, 0.75, 0.25, 0.75, 0.035);
+      }
+      sl.playSound(null, entity.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.4F, 0.55F);
+   }
+
+   private void performShoulderCheck(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = target.position().subtract(entity.position());
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      if (horizontal.lengthSqr() < 1.0E-4) return;
+      horizontal = horizontal.normalize();
+      entity.faceVector(horizontal);
+      entity.setDeltaMovement(horizontal.x * 2.35, Math.max(entity.getDeltaMovement().y, 0.16), horizontal.z * 2.35);
+      entity.hasImpulse = true;
+      double baseAtk = entity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+      AABB hitBox = entity.getBoundingBox().expandTowards(horizontal.scale(5.5)).inflate(1.2, 0.8, 1.2);
+      for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
+         victim.hurt(entity.damageSources().mobAttack(entity), (float)(baseAtk * 0.95));
+         pushWithImpactCrater(sl, entity, victim, horizontal, 2.45, 0.48, 2.0, 14);
+      }
+      sl.sendParticles(ParticleTypes.EXPLOSION, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.7, entity.getZ() + horizontal.z * 2.0, 6, 0.55, 0.25, 0.55, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.35, entity.getZ() + horizontal.z * 2.0, 34, 0.9, 0.25, 0.9, 0.06);
+   }
+
+   private void performRuneBurst(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.faceToward(target.position());
+      Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+      double baseAtk = entity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+      AABB box = target.getBoundingBox().inflate(2.0);
+      for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, box, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
+         victim.hurt(entity.damageSources().magic(), (float)(baseAtk * 0.65 + 4.0));
+         Vec3 push = victim.position().subtract(center);
+         Vec3 horizontal = new Vec3(push.x, 0.0, push.z);
+         if (horizontal.lengthSqr() > 1.0E-4) {
+            horizontal = horizontal.normalize();
+            pushWithImpactCrater(sl, entity, victim, horizontal, 1.15, 0.32, 1.6, 8);
+         }
+      }
+      sl.sendParticles(ParticleTypes.ENCHANT, center.x, center.y, center.z, 56, 1.8, 0.8, 1.8, 0.05);
+      sl.sendParticles(ParticleTypes.WITCH, center.x, center.y, center.z, 28, 1.2, 0.55, 1.2, 0.02);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y - 0.25, center.z, 22, 1.4, 0.18, 1.4, 0.035);
+      sl.playSound(null, target.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
+   }
+
+   private void performSpearVault(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = target.position().subtract(entity.position());
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      if (horizontal.lengthSqr() < 1.0E-4) return;
+      horizontal = horizontal.normalize();
+      entity.faceVector(horizontal);
+      entity.jumpFromGround();
+      entity.setDeltaMovement(horizontal.x * 1.35, Math.max(entity.getDeltaMovement().y, 0.78), horizontal.z * 1.35);
+      entity.hasImpulse = true;
+      target.hurt(entity.damageSources().mobAttack(entity), (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.85));
+      pushWithImpactCrater(sl, entity, target, horizontal, 1.85, 0.72, 2.1, 14);
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 4, 0.0, 0.0, 0.0, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, target.getX(), target.getY() + 0.2, target.getZ(), 24, 0.7, 0.2, 0.7, 0.05);
+      sl.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.0F, 1.35F);
+   }
+
+   private void performAfterimageSlash(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.faceToward(target.position());
+      double baseAtk = entity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+      for (int i = 0; i < 3; i++) {
+         target.invulnerableTime = 0;
+         target.hurt(entity.damageSources().mobAttack(entity), (float)(baseAtk * 0.42));
+         double side = (i - 1) * 0.45;
+         sl.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX() + side, target.getY() + target.getBbHeight() * (0.35 + i * 0.15), target.getZ() - side, 1, 0.0, 0.0, 0.0, 0.0);
+      }
+      target.push((target.getX() - entity.getX()) * 0.16, 0.25, (target.getZ() - entity.getZ()) * 0.16);
+      target.hurtMarked = true;
+      sl.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.0F, 1.25F);
+   }
+
+   private void performIaijutsuStep(ServantEntity entity, LivingEntity target) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      Vec3 dir = target.position().subtract(entity.position());
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      if (horizontal.lengthSqr() < 1.0E-4) return;
+      horizontal = horizontal.normalize();
+      Vec3 destination = target.position().subtract(horizontal.scale(1.2));
+      entity.teleportTo(destination.x, target.getY(), destination.z);
+      entity.faceVector(horizontal);
+      entity.setDeltaMovement(Vec3.ZERO);
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().mobAttack(entity), (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.1));
+      target.push(horizontal.x * 0.8, 0.18, horizontal.z * 0.8);
+      target.hurtMarked = true;
+      sl.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.4, entity.getZ(), 10, 0.2, 0.2, 0.2, 0.03);
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+      sl.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.0F, 1.1F);
    }
 
    /**
@@ -845,6 +1540,60 @@ public final class CombatModule implements ServantAiModule {
          }
       }
       return false;
+   }
+
+   private boolean tryBreakCollisionWall(ServantEntity entity, LivingEntity target, CompoundTag data, int tick, boolean heavy, boolean hasLineOfSight) {
+      if (!(entity.level() instanceof ServerLevel sl) || target == null || !target.isAlive()) {
+         return false;
+      }
+      if (tick - data.getInt("LastCombatWallBreakTick") < (heavy ? 6 : 10)) {
+         return false;
+      }
+      boolean pressingWall = entity.horizontalCollision || entity.getNavigation().isInProgress() && !hasLineOfSight;
+      if (!pressingWall) {
+         return false;
+      }
+      Vec3 dir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (dir.lengthSqr() < 1.0E-4) {
+         dir = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      if (dir.lengthSqr() < 1.0E-4) {
+         return false;
+      }
+      dir = dir.normalize();
+      Vec3 right = new Vec3(-dir.z, 0.0, dir.x);
+      int broken = 0;
+      int maxBroken = heavy ? 26 : 12;
+      float hardnessLimit = heavy ? 75.0F : 45.0F;
+      int height = Math.max(1, (int)Math.ceil(entity.getBbHeight()));
+      BlockPos base = entity.blockPosition();
+      for (int forward = 1; forward <= (heavy ? 3 : 2) && broken < maxBroken; forward++) {
+         for (int side = heavy ? -1 : 0; side <= 1 && broken < maxBroken; side++) {
+            Vec3 offset = dir.scale(forward).add(right.scale(side * (heavy ? 0.9 : 0.6)));
+            BlockPos column = base.offset((int)Math.round(offset.x), 0, (int)Math.round(offset.z));
+            for (int y = 0; y <= height && broken < maxBroken; y++) {
+               BlockPos pos = column.above(y);
+               BlockState state = sl.getBlockState(pos);
+               float hardness = state.getDestroySpeed(sl, pos);
+               if (!state.isAir()
+                  && hardness >= 0.0F
+                  && hardness <= hardnessLimit
+                  && !state.is(Blocks.BEDROCK)
+                  && state.getExplosionResistance(sl, pos, null) < 1200.0F
+                  && destroyBlockWithCombatFx(sl, pos, state, heavy)) {
+                  broken++;
+               }
+            }
+         }
+      }
+      if (broken <= 0) {
+         return false;
+      }
+      data.putInt("LastCombatWallBreakTick", tick);
+      Vec3 fx = entity.position().add(dir.scale(1.4)).add(0.0, entity.getBbHeight() * 0.42, 0.0);
+      sl.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, heavy ? 14 : 8, 0.25, 0.2, 0.25, 0.055);
+      sl.playSound(null, entity.blockPosition(), heavy ? SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR : SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, heavy ? 0.9F : 0.75F, heavy ? 0.65F : 0.85F);
+      return true;
    }
 
    /**
@@ -1017,11 +1766,12 @@ public final class CombatModule implements ServantAiModule {
       LivingEntity target = entity.getTarget();
       if (target == null) return;
       Vec3 dir = target.position().subtract(entity.position()).normalize();
+      entity.faceVector(dir);
       BlockPos center = entity.blockPosition().above();
       int broken = 0;
-      // 前方3格、中心±1格宽度
-      for (int d = 1; d <= 3; d++) {
-         for (int w = -1; w <= 1; w++) {
+      // 前方3格、中心±2格宽度；限制单次破坏数量，避免战斗 tick 里过量改方块。
+      for (int d = 1; d <= 3 && broken < 12; d++) {
+         for (int w = -2; w <= 2; w++) {
             Vec3 perp = new Vec3(-dir.z, 0, dir.x).scale(w);
             BlockPos pos = center.offset(
                (int) Math.round(dir.x * d + perp.x),
@@ -1029,9 +1779,12 @@ public final class CombatModule implements ServantAiModule {
                (int) Math.round(dir.z * d + perp.z));
             BlockState state = sl.getBlockState(pos);
             float hard = state.getDestroySpeed(sl, pos);
-            if (!state.isAir() && hard >= 0 && hard < 50 && !state.is(Blocks.BEDROCK)) {
+            if (!state.isAir() && hard >= 0 && hard < 70 && !state.is(Blocks.BEDROCK)) {
                sl.removeBlock(pos, false);
                broken++;
+               if (broken >= 12) {
+                  break;
+               }
             }
          }
       }
@@ -1062,8 +1815,8 @@ public final class CombatModule implements ServantAiModule {
       double dmg = baseAtk * 1.4;
       DamageSource src = entity.damageSources().mobAttack(entity);
       target.hurt(src, (float) dmg);
-      target.knockback(0.8, entity.getX() - target.getX(), entity.getZ() - target.getZ());
-      target.hurtMarked = true;
+      Vec3 uppercutDir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      pushWithImpactCrater(sl, entity, target, uppercutDir, 1.35, 1.05, 2.0, 14);
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
          target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
          2, 0.0, 0.0, 0.0, 0.0);
@@ -1092,21 +1845,25 @@ public final class CombatModule implements ServantAiModule {
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
          if (dist > 0) {
-            double kb = 0.7 * (1.0 - dist / 2.5);
-            le.push(dx / dist * kb, 0.2, dz / dist * kb);
-            le.hurtMarked = true;
+            double kb = Math.max(0.3, 1.25 * (1.0 - dist / 3.6));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.32, 1.5, 8);
          }
       }
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
          entity.getX() + look.x * 2.0,
          entity.getY() + entity.getBbHeight() * 0.55,
          entity.getZ() + look.z * 2.0,
-         2, 0.0, 0.0, 0.0, 0.0);
+         4, 0.0, 0.0, 0.0, 0.0);
       sl.sendParticles(ParticleTypes.CLOUD,
          entity.getX() + look.x * 1.5,
          entity.getY() + entity.getBbHeight() * 0.5,
          entity.getZ() + look.z * 1.5,
-         6, 0.2, 0.2, 0.2, 0.05);
+         18, 0.6, 0.25, 0.6, 0.06);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         entity.getX() + look.x * 1.8,
+         entity.getY() + 0.25,
+         entity.getZ() + look.z * 1.8,
+         12, 0.55, 0.2, 0.55, 0.035);
    }
 
    private boolean tryUseCuRune(ServantEntity entity, LivingEntity target, double healthRatio, double distance, boolean hasLineOfSight) {
@@ -1149,7 +1906,8 @@ public final class CombatModule implements ServantAiModule {
    private void performRecastStance(ServantEntity entity) {
       entity.setCurrentMp(entity.getCurrentMp() - CU_RECAST_MP_COST);
       entity.triggerRuneCastAnimation();
-      entity.setHealth(entity.getMaxHealth());
+      entity.getPersistentData().putBoolean("BattleContinuationRecoveryActive", true);
+      entity.getPersistentData().remove("BattleContinuationLastHealTick");
       java.util.List<net.minecraft.world.effect.MobEffectInstance> active = java.util.List.copyOf(entity.getActiveEffects());
       for (net.minecraft.world.effect.MobEffectInstance effect : active) {
          if (effect.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL) {
@@ -1264,7 +2022,7 @@ public final class CombatModule implements ServantAiModule {
             living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 100));
          }
          serverLevel.sendParticles(ParticleTypes.FLAME, impact.x, impact.y, impact.z, 24, 0.8, 0.5, 0.8, 0.05);
-         serverLevel.sendParticles(ParticleTypes.SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
+         serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
          serverLevel.playSound(null, impact.x, impact.y, impact.z, SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.1F, 0.8F);
       });
    }
@@ -1287,7 +2045,7 @@ public final class CombatModule implements ServantAiModule {
          java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
          for (Vec3 pillar : pillars) {
             serverLevel.sendParticles(ParticleTypes.FLAME, pillar.x, pillar.y + 1.2, pillar.z, 20, 0.35, 1.2, 0.35, 0.02);
-            serverLevel.sendParticles(ParticleTypes.SMOKE, pillar.x, pillar.y + 1.1, pillar.z, 10, 0.3, 1.0, 0.3, 0.02);
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pillar.x, pillar.y + 1.1, pillar.z, 10, 0.3, 1.0, 0.3, 0.02);
             AABB pillarBox = new AABB(pillar, pillar).inflate(1.4, 2.2, 1.4);
             for (LivingEntity living : serverLevel.getEntitiesOfClass(
                LivingEntity.class,
@@ -1346,6 +2104,7 @@ public final class CombatModule implements ServantAiModule {
       entity.setCurrentMp(entity.getCurrentMp() - 10.0);
       CuChulainnCombatHelper.markSingleGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
       entity.triggerGaeBolgThrowAnimation(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       Vec3 fallbackAim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, () -> {
@@ -1358,10 +2117,11 @@ public final class CombatModule implements ServantAiModule {
       double availableMp = Math.max(0.0, entity.getCurrentMp());
       double maxMp = Math.max(1.0, entity.getMaxMp());
       float damageScale = (float)Math.min(1.0, availableMp / maxMp);
-      float armyDamage = 200.0F + 200.0F * damageScale;
+      float armyDamage = 500.0F;
       entity.setCurrentMp(0.0);
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
+      ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
       entity.triggerGaeBolgThrowAnimation(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       entity.jumpFromGround();
       Vec3 launch = entity.getDeltaMovement();
@@ -1385,7 +2145,16 @@ public final class CombatModule implements ServantAiModule {
       }
 
       if (preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
-         boolean deathThorn = resolvedTarget.isAlive() && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg")) {
+            sl.sendParticles(ParticleTypes.END_ROD,
+               resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.6, resolvedTarget.getZ(),
+               18, 0.3, 0.3, 0.3, 0.03);
+            return;
+         }
+         boolean deathThorn = resolvedTarget.isAlive()
+            && !(resolvedTarget instanceof EmiyaArcherEntity)
+            && !(resolvedTarget instanceof EnkiduEntity)
+            && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
          if (!tryConsumeGodHandLife(entity, resolvedTarget, 250.0F, deathThorn)) {
             applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
             if (resolvedTarget.isAlive() && deathThorn) {
@@ -1425,12 +2194,8 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      GaeBulgProjectileEntity projectile = new GaeBulgProjectileEntity(sl, entity);
-      projectile.setMode(GaeBulgProjectileEntity.Mode.ARMY);
+      GaeBulgArmyProjectileEntity projectile = new GaeBulgArmyProjectileEntity(sl, entity);
       projectile.setArmyDamage(armyDamage);
-      if (resolvedTarget != null) {
-         projectile.setTrackedTarget(resolvedTarget);
-      }
       projectile.setPos(entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ());
       Vec3 aim = resolvedTarget != null
          ? resolvedTarget.position().add(0.0, resolvedTarget.getBbHeight() * 0.3, 0.0)
@@ -1621,7 +2386,10 @@ public final class CombatModule implements ServantAiModule {
       double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
       double slamDamage = baseAtk * SLAM_DAMAGE_MULTIPLIER;
       DamageSource src = entity.damageSources().mobAttack(entity);
-      AABB box = entity.getBoundingBox().inflate(SLAM_RADIUS);
+      boolean heavySlam = entity.getDefinition() != null && entity.getDefinition().classType() == ServantClassType.BERSERKER;
+      double terrainScale = terrainBreakScale(entity);
+      double slamRadius = (heavySlam ? SLAM_RADIUS + 3.0 : SLAM_RADIUS + 1.25) * terrainScale;
+      AABB box = entity.getBoundingBox().inflate(slamRadius);
       List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
          LivingEntity.class, box, e -> e != entity && e.isAlive());
       for (LivingEntity le : nearby) {
@@ -1630,25 +2398,37 @@ public final class CombatModule implements ServantAiModule {
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
          if (dist > 0) {
-            double kb = 1.2 * (1.0 - dist / SLAM_RADIUS);
-            le.push(dx / dist * kb, 0.4, dz / dist * kb);
-            le.hurtMarked = true;
+            double kb = Math.max(0.55, (heavySlam ? 3.2 : 2.1) * (1.0 - dist / slamRadius));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, heavySlam ? 0.95 : 0.68, heavySlam ? 2.8 : 2.2, heavySlam ? 24 : 16);
          }
       }
       sl.sendParticles(ParticleTypes.EXPLOSION,
          entity.getX(), entity.getY() + 0.5, entity.getZ(),
-         5, 2.0, 0.5, 2.0, 0.0);
+         heavySlam ? 10 : 7, 2.6, 0.65, 2.6, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+         entity.getX(), entity.getY() + 0.25, entity.getZ(),
+         heavySlam ? 90 : 58, slamRadius * 0.35, 0.45, slamRadius * 0.35, 0.06);
       // 砸地地形破坏：3格半径内破坏软方块
       BlockPos center = entity.blockPosition();
-      int radius = 3;
+      int radius = Math.max(1, (int)Math.ceil((heavySlam ? 6 : 4) * terrainScale));
+      int maxBroken = scaledBreakLimit(heavySlam ? 96 : 48, terrainScale);
+      int broken = 0;
       for (BlockPos pos : BlockPos.betweenClosed(
-            center.offset(-radius, 0, -radius),
-            center.offset(radius, 1, radius))) {
+            center.offset(-radius, -1, -radius),
+            center.offset(radius, heavySlam ? 3 : 2, radius))) {
+         if (broken >= maxBroken) {
+            break;
+         }
+         if (!isInIrregularBreakShape(sl, pos, center, radius + (heavySlam ? 0.65 : 0.35), heavySlam ? 1.05 : 0.85, 0.85, heavySlam ? 0.76 : 0.68)) {
+            continue;
+         }
          BlockState state = sl.getBlockState(pos);
          float hardness = state.getDestroySpeed(sl, pos);
-         if (!state.isAir() && hardness >= 0 && hardness < 50
+         if (!state.isAir() && hardness >= 0 && hardness < (heavySlam ? 90 : 55)
                && !state.is(Blocks.BEDROCK)) {
-            sl.removeBlock(pos, false);
+            if (destroyBlockWithCombatFx(sl, pos, state, heavySlam)) {
+               broken++;
+            }
          }
       }
    }
@@ -1663,48 +2443,47 @@ public final class CombatModule implements ServantAiModule {
       if (!(entity.level() instanceof ServerLevel sl)) return;
       Vec3 look = entity.getLookAngle();
       Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
-      AttributeInstance atkAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-      double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
-      double sweepDamage = baseAtk * 1.2;
+      double sweepDamage = entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2;
       DamageSource src = entity.damageSources().mobAttack(entity);
 
-      // 扇形3格范围，前方180度
-      for (double r = 0.5; r <= 3.0; r += 0.5) {
+      int sweepBroken = 0;
+      double terrainScale = terrainBreakScale(entity);
+      int sweepLimit = scaledBreakLimit(40, terrainScale);
+      for (double r = 0.5; r <= 5.0 * terrainScale && sweepBroken < sweepLimit; r += 0.5) {
          for (double theta = -Math.PI / 2; theta <= Math.PI / 2; theta += Math.PI / 8) {
             double x = look.x * Math.cos(theta) - look.z * Math.sin(theta);
             double z = look.x * Math.sin(theta) + look.z * Math.cos(theta);
             Vec3 offset = new Vec3(x, 0, z).normalize().scale(r);
             BlockPos pos = BlockPos.containing(center.add(offset));
+            if (blockNoise(sl, pos) > 0.80 && r > 1.5) {
+               continue;
+            }
             BlockState state = sl.getBlockState(pos);
-            if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0
-                  || state.getFluidState().isSource())) {
-               sl.removeBlock(pos, false);
+            if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0.0F || state.getFluidState().isSource())) {
+               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
+                  sweepBroken++;
+               }
+               if (sweepBroken >= sweepLimit) {
+                  break;
+               }
             }
          }
       }
 
-      // 扇形范围伤害
-      AABB sweepBox = entity.getBoundingBox().inflate(3.0).move(look.scale(1.5));
-      List<LivingEntity> nearby = sl.getEntitiesOfClass(
-         LivingEntity.class, sweepBox,
-         e -> e != entity && e.isAlive());
+      AABB sweepBox = entity.getBoundingBox().inflate(4.5).move(look.scale(2.0));
+      List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, sweepBox, e -> e != entity && e.isAlive());
       for (LivingEntity le : nearby) {
-         le.hurt(src, (float) sweepDamage);
+         le.hurt(src, (float)sweepDamage);
          double dx = le.getX() - entity.getX();
          double dz = le.getZ() - entity.getZ();
          double dist = Math.sqrt(dx * dx + dz * dz);
-         if (dist > 0) {
-            double kb = 0.8 * (1.0 - dist / 3.0);
-            le.push(dx / dist * kb, 0.3, dz / dist * kb);
-            le.hurtMarked = true;
+         if (dist > 0.0) {
+            double kb = Math.max(0.35, 1.55 * (1.0 - dist / 4.5));
+            pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.45, 1.8, 12);
          }
       }
 
-      // 横扫粒子特效
-      sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-         entity.getX() + look.x * 1.5,
-         entity.getY() + entity.getBbHeight() * 0.5,
-         entity.getZ() + look.z * 1.5,
-         3, 0.0, 0.0, 0.0, 0.0);
+      sl.sendParticles(ParticleTypes.SWEEP_ATTACK, entity.getX() + look.x * 1.5, entity.getY() + entity.getBbHeight() * 0.5, entity.getZ() + look.z * 1.5, 6, 0.0, 0.0, 0.0, 0.0);
+      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX() + look.x * 2.2, entity.getY() + 0.25, entity.getZ() + look.z * 2.2, 38, 1.35, 0.28, 1.35, 0.055);
    }
 }

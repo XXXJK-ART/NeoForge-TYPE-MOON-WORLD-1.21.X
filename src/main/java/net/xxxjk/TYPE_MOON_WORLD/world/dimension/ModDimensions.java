@@ -11,11 +11,36 @@ public class ModDimensions {
    public static final ResourceKey<Level> UBW_KEY = ResourceKey.create(
       Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works")
    );
+   public static final ResourceKey<Level> EMIYA_UBW_KEY = ResourceKey.create(
+      Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works_emiya")
+   );
    public static final ResourceKey<DimensionType> UBW_TYPE = ResourceKey.create(
       Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works")
+   );
+   public static final ResourceKey<Level> HAJUN_KEY = ResourceKey.create(
+      Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun")
+   );
+   public static final ResourceKey<DimensionType> HAJUN_TYPE = ResourceKey.create(
+      Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun")
    );
 
    public static void register() {
       TYPE_MOON_WORLD.LOGGER.debug("Registering ModDimensions for {}", "typemoonworld");
+   }
+
+   public static boolean isPlayerUbwDimension(ResourceLocation location) {
+      return UBW_KEY.location().equals(location);
+   }
+
+   public static boolean isEmiyaUbwDimension(ResourceLocation location) {
+      return EMIYA_UBW_KEY.location().equals(location);
+   }
+
+   public static boolean isUbwDimension(ResourceLocation location) {
+      return isPlayerUbwDimension(location) || isEmiyaUbwDimension(location);
+   }
+
+   public static boolean isHajunDimension(ResourceLocation location) {
+      return HAJUN_KEY.location().equals(location);
    }
 }

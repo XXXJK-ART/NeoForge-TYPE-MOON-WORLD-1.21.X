@@ -1,0 +1,21 @@
+{
+  "id": "enkidu_chain_lash",
+  "display_name": "Chain Lash",
+  "display_name_zh": "\u5929\u9501\u97ad\u51fb",
+  "type": "active",
+  "mp_cost": 0,
+  "cooldown_ticks": 80,
+  "duration_ticks": 30,
+  "effects": [
+    {
+      "effect_type": "enkidu_chain_lash",
+      "params": {
+        "damage_scale": 0.58,
+        "divine_bonus_damage": 8,
+        "slow_ticks": 45
+      }
+    }
+  ],
+  "description": "Sweeps a short chain from the earth or hand, damaging and slowing the target. Divine targets are punished harder.",
+  "description_zh": "\u4ece\u624b\u4e2d\u6216\u5927\u5730\u6325\u51fa\u77ed\u9501\uff0c\u4f24\u5bb3\u5e76\u51cf\u901f\u76ee\u6807\uff1b\u5bf9\u795e\u6027\u76ee\u6807\u8ffd\u52a0\u4f24\u5bb3\u3002"
+}

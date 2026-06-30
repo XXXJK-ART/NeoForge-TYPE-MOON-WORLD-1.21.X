@@ -1,0 +1,76 @@
+{
+  "duration": 0.9,
+  "notes": "Red-gold philosopher stone heal and protection bloom.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.35,
+      "rate": 1300,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity", "offset": [0.0, 0.9, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 0.55, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.18, "color": "#FFFF6600" },
+        { "t": 0.45, "color": "#FFFFFFFF" },
+        { "t": 0.75, "color": "#FFFF6600" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.4, "size": 0.34 },
+        { "t": 1.0, "size": 0.07 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.35, 0.35], "easing": "ease_out_cubic" },
+        { "t": 0.5, "scale": [1.8, 1.8, 1.8], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.8, 0.8, 0.8], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_PHILOSOPHER_STONE_CORE"
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.9,
+      "rate": 700,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity", "offset": [0.0, 0.9, 0.0], "rotate_with_entity": false },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.4 + 0.4 * t) * cos(t * 18.84 + time * 12.0)",
+        "expr_y": "0.3 * sin(t * 12.56 + time * 8.0)",
+        "expr_z": "(0.4 + 0.4 * t) * sin(t * 18.84 + time * 12.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 120
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFF6600" },
+        { "t": 0.4, "color": "#CCFFD700" },
+        { "t": 0.8, "color": "#CCFFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.03 },
+        { "t": 0.5, "size": 0.1 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "PARACELSUS_PHILOSOPHER_STONE_ORBIT",
+      "enable_trail": true
+    }
+  ]
+}

@@ -17,9 +17,30 @@ public final class GravityShellMeshHelper {
    }
 
    public static void drawUpperHemisphere(Pose pose, VertexConsumer consumer, float radiusXZ, float radiusY, float red, float green, float blue, float alpha) {
+      drawUpperHemisphere(pose, consumer, radiusXZ, radiusY, red, green, blue, alpha, 1.0F);
+   }
+
+   public static void drawUpperHemisphere(
+      Pose pose,
+      VertexConsumer consumer,
+      float radiusXZ,
+      float radiusY,
+      float red,
+      float green,
+      float blue,
+      float alpha,
+      float visibleFraction
+   ) {
+      float maxFraction = Mth.clamp(visibleFraction, 0.0F, 1.0F);
+      if (maxFraction <= 0.0F) {
+         return;
+      }
       for (int stack = 0; stack < STACKS; stack++) {
          float v0 = (float)stack / (float)STACKS;
-         float v1 = (float)(stack + 1) / (float)STACKS;
+         if (v0 >= maxFraction) {
+            break;
+         }
+         float v1 = Math.min((float)(stack + 1) / (float)STACKS, maxFraction);
          float elevation0 = v0 * HALF_PI;
          float elevation1 = v1 * HALF_PI;
          float ringRadius0 = Mth.cos(elevation0) * radiusXZ;

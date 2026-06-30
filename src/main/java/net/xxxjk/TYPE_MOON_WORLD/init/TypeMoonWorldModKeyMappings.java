@@ -18,6 +18,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
@@ -156,6 +157,7 @@ public class TypeMoonWorldModKeyMappings {
             syncProjectionSelectionFromCurrentCrestPreset(player, vars);
             updateMachineGunFiringPose(vars);
             StructuralProjectionPlacementClient.cancelIfInvalid(vars);
+            boolean suppressScreens = ReplayUiSuppressor.shouldSuppressTypeMoonScreens();
             if (TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH.isDown()) {
                if (!isModeSwitchDown) {
                   if (vars.is_magus
@@ -167,7 +169,7 @@ public class TypeMoonWorldModKeyMappings {
                      if (vars.isCurrentSelectionFromCrest(currentMagic)) {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
                      } else if ("sword_barrel_full_open".equals(currentMagic)) {
-                        if (Minecraft.getInstance().screen == null) {
+                        if (!suppressScreens && Minecraft.getInstance().screen == null) {
                            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.sword_barrel_mode));
                            isModeSwitchDown = true;
                         }
@@ -176,7 +178,7 @@ public class TypeMoonWorldModKeyMappings {
                         && !"reinforcement_other".equals(currentMagic)
                         && !"reinforcement_item".equals(currentMagic)) {
                         if ("gravity_magic".equals(currentMagic)) {
-                           if (Minecraft.getInstance().screen == null) {
+                           if (!suppressScreens && Minecraft.getInstance().screen == null) {
                               Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.gravity_magic_mode));
                               isModeSwitchDown = true;
                            }
@@ -184,7 +186,7 @@ public class TypeMoonWorldModKeyMappings {
                            PacketDistributor.sendToServer(new MagicModeSwitchMessage(1, 1), new CustomPacketPayload[0]);
                            isModeSwitchDown = true;
                         }
-                     } else if (Minecraft.getInstance().screen == null) {
+                     } else if (!suppressScreens && Minecraft.getInstance().screen == null) {
                         Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));
                         isModeSwitchDown = true;
                      }
@@ -199,7 +201,10 @@ public class TypeMoonWorldModKeyMappings {
             if (TypeMoonWorldModKeyMappings.MAGIC_WHEEL_SWITCH.isDown()) {
                if (!isWheelSwitchDown) {
                   isWheelSwitchDown = true;
-                  if (vars.is_magus && vars.is_magic_circuit_open && !(Minecraft.getInstance().screen instanceof MagicWheelSwitchScreen)) {
+                  if (!suppressScreens
+                     && vars.is_magus
+                     && vars.is_magic_circuit_open
+                     && !(Minecraft.getInstance().screen instanceof MagicWheelSwitchScreen)) {
                      Minecraft.getInstance().setScreen(new MagicWheelSwitchScreen(vars.active_wheel_index));
                   }
                }
@@ -214,6 +219,7 @@ public class TypeMoonWorldModKeyMappings {
                   if (vars.is_magus
                      && vars.is_magic_circuit_open
                      && !vars.selected_magics.isEmpty()
+                     && !suppressScreens
                      && !(Minecraft.getInstance().screen instanceof MagicRadialMenuScreen)) {
                      Minecraft.getInstance()
                         .setScreen(
@@ -238,7 +244,7 @@ public class TypeMoonWorldModKeyMappings {
                Lose_health_regain_mana_Message.pressAction(player, 0, 0);
             }
 
-            if (TypeMoonWorldModKeyMappings.BASIC_INFORMATION_GUI.consumeClick() && vars.is_magus) {
+            if (TypeMoonWorldModKeyMappings.BASIC_INFORMATION_GUI.consumeClick() && vars.is_magus && !suppressScreens) {
                PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0), new CustomPacketPayload[0]);
                Basic_information_gui_Message.pressAction(player, 0, 0);
             }
@@ -251,7 +257,7 @@ public class TypeMoonWorldModKeyMappings {
             if (TypeMoonWorldModKeyMappings.OPEN_PROJECTION_PRESET.isDown()) {
                if (!isTabDown) {
                   isTabDown = true;
-                  if (vars.is_magus && vars.is_magic_circuit_open && !vars.selected_magics.isEmpty()) {
+                  if (!suppressScreens && vars.is_magus && vars.is_magic_circuit_open && !vars.selected_magics.isEmpty()) {
                      int index = vars.current_magic_index;
                      if (index >= 0 && index < vars.selected_magics.size()) {
                         String magicId = vars.selected_magics.get(index);

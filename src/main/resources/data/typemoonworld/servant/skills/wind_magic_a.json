@@ -1,0 +1,10 @@
+{
+  "id": "wind_magic_a",
+  "display_name": "Wind Elemental Magic A",
+  "display_name_zh": "风之元素魔术 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 1200,
+  "effects": []
+}

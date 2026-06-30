@@ -23,7 +23,9 @@ public record ServantSpecialization(
       bodyHeight = Math.max(0.0F, bodyHeight);
       eyeHeight = Math.max(0.0F, eyeHeight);
       defaultWeaponItemId = normalize(defaultWeaponItemId);
-      combatActions = combatActions == null || combatActions.isEmpty() ? Collections.emptySet() : Set.copyOf(new LinkedHashSet<>(combatActions));
+      combatActions = combatActions == null || combatActions.isEmpty()
+         ? Collections.emptySet()
+         : Collections.unmodifiableSet(new LinkedHashSet<>(combatActions));
    }
 
    public static ServantSpecialization empty() {

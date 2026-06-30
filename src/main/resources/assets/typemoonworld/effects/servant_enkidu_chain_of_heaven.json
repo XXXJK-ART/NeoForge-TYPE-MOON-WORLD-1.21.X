@@ -1,0 +1,224 @@
+{
+  "duration": 1.4,
+  "notes": "Chains of Heaven binding: golden ripples open around the target, silver chains with golden glow pierce downward and lock the body. Timing follows the mod's existing Enkidu bind window.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.32,
+      "rate": 2600,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.22,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity", "offset": [0.0, 2.35, 0.0], "rotate_with_entity": false },
+      "component": { "type": "circle", "radius": 1.0, "density": 360 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFD700" },
+        { "t": 0.35, "color": "#FFFFD700" },
+        { "t": 0.68, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#44FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.45, "size": 0.16 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.28, 1.0, 0.28], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.25, 1.0, 1.25] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_CHAIN_GOLDEN_TOP_RIPPLE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.35, 0.04, 0.35], "offset": [0.0, 0.0, 0.0], "speed": 0.025, "chance": 0.3 }
+      ]
+    },
+    {
+      "start_time": 0.03,
+      "end_time": 0.42,
+      "rate": 1900,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.22,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity", "offset": [0.0, 1.05, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.55 + 0.18 * sin(time * 18.0)) * cos(t * tau * 4.0)",
+        "expr_y": "0.35 * sin(t * tau * 4.0)",
+        "expr_z": "(1.55 + 0.18 * sin(time * 18.0)) * sin(t * tau * 4.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 280
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFD700" },
+        { "t": 0.32, "color": "#FFFFD700" },
+        { "t": 0.65, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.02 },
+        { "t": 0.48, "size": 0.13 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_CHAIN_SIDE_RIPPLES",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.16,
+      "end_time": 0.72,
+      "rate": 2900,
+      "particle_lifetime": 0.68,
+      "size_variance": 0.22,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.014,
+      "velocity": [0.0, -0.035, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity", "offset": [0.0, 2.45, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "line",
+        "start": [0.0, 0.0, 0.0],
+        "end": [0.0, -2.75, 0.0],
+        "segments": 150
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88CCCCDD" },
+        { "t": 0.38, "color": "#FFFFFFFF" },
+        { "t": 0.72, "color": "#88FFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.42, "size": 0.085 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [1.0, 0.15, 1.0], "easing": "ease_out_cubic" },
+        { "t": 0.38, "pos": [0.0, -0.95, 0.0], "scale": [1.0, 0.8, 1.0], "easing": "ease_in_cubic" },
+        { "t": 1.0, "pos": [0.0, -1.2, 0.0], "scale": [1.0, 1.0, 1.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_SILVER_CHAIN_DOWNWARD",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "enchanted_hit", "count": 1, "spread": [0.08, 0.55, 0.08], "offset": [0.0, -0.8, 0.0], "speed": 0.025, "chance": 0.2 }
+      ]
+    },
+    {
+      "start_time": 0.18,
+      "end_time": 0.82,
+      "rate": 3600,
+      "particle_lifetime": 0.72,
+      "size_variance": 0.24,
+      "lifetime_variance": 0.15,
+      "position_variance": 0.012,
+      "velocity": [0.0, -0.01, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity", "offset": [0.0, 1.2, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.55 - 1.15 * t) * cos(time * 11.0 + t * tau * 5.0)",
+        "expr_y": "1.2 - 1.9 * t",
+        "expr_z": "(1.55 - 1.15 * t) * sin(time * 11.0 + t * tau * 5.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 260
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88CCCCDD" },
+        { "t": 0.32, "color": "#FFFFFFFF" },
+        { "t": 0.58, "color": "#AAFFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.022 },
+        { "t": 0.45, "size": 0.075 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_SILVER_CHAIN_SIDE_STABS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.5,
+      "end_time": 1.4,
+      "rate": 1800,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.014,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity", "offset": [0.0, 0.95, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "0.62 * cos(t * tau * 3.0 + time * 4.0)",
+        "expr_y": "-0.85 + 2.15 * t",
+        "expr_z": "0.62 * sin(t * tau * 3.0 + time * 4.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFD700" },
+        { "t": 0.45, "color": "#66FFFFFF" },
+        { "t": 1.0, "color": "#88FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.032 },
+        { "t": 0.5, "size": 0.08 },
+        { "t": 1.0, "size": 0.028 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_TAUT_CHAIN_GOLD_PULSE",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.62,
+      "end_time": 1.12,
+      "rate": 900,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.3,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.06,
+      "binding": { "mode": "entity", "offset": [0.0, 1.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 1.0, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.18, "color": "#FFFFFFFF" },
+        { "t": 0.55, "color": "#FFFFD700" },
+        { "t": 0.82, "color": "#44FFD700" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.38, "size": 0.2 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.45], "easing": "ease_out_cubic" },
+        { "t": 0.52, "scale": [1.75, 1.4, 1.75], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.7, 0.7, 0.7] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_CHAIN_LOCK_FLASH"
+    }
+  ]
+}

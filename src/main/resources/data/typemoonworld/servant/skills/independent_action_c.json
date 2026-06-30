@@ -1,0 +1,17 @@
+{
+  "id": "independent_action_c",
+  "display_name": "Independent Action C",
+  "display_name_zh": "单独行动 C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "crit_damage_bonus",
+      "params": {
+        "bonus": 0.05
+      }
+    }
+  ]
+}

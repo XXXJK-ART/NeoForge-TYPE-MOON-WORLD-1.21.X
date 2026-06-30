@@ -1,0 +1,15 @@
+{
+  "id": "presence_concealment_circle_realm",
+  "display_name": "Presence Concealment - Circle Realm",
+  "display_name_zh": "气息遮断·圈境",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "stealth_passive",
+      "params": {}
+    }
+  ]
+}

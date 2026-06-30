@@ -1,0 +1,12 @@
+{
+  "id": "excalibur_gallatin",
+  "display_name": "Excalibur Gallatin",
+  "display_name_zh": "轮转胜利之剑",
+  "rank": "A+",
+  "type": "army",
+  "mp_cost": 80,
+  "cooldown_ticks": 700,
+  "windup_ticks": 100,
+  "duration_ticks": 60,
+  "description": "A five-second solar chant followed by a 100-block, 70-degree horizontal solar sweep. Deals 1000 fixed damage, or 3000 while Numeral of the Saint is active."
+}

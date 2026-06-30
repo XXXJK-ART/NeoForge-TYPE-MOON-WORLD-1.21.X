@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,7 +30,7 @@ public abstract class MixinMinecraft {
          try {
             if (this.player != null && this.player.level() != null) {
                ResourceLocation currentDim = this.player.level().dimension().location();
-               boolean currentlyInUBW = currentDim.toString().equals("typemoonworld:unlimited_blade_works");
+               boolean currentlyInUBW = ModDimensions.isUbwDimension(currentDim);
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)this.player
                   .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                boolean chanting = vars.is_chanting_ubw;

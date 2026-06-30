@@ -1,0 +1,78 @@
+{
+  "id": "li_shuwen",
+  "display_name": "Li Shuwen",
+  "display_name_zh": "李书文(Assassin)",
+  "class_type": "assassin",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "assassin", "male", "lawful", "evil", "earth"],
+  "parameters": {
+    "endurance": "D",
+    "endurance_plus": false,
+    "strength": "C",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": true,
+    "magic": "E",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/li_shuwen.geo.json",
+    "texture": "typemoonworld:textures/entity/li_shuwen.png",
+    "animation": "typemoonworld:animations/li_shuwen.animation.json",
+    "animations": {
+      "idle": "animation.li_shuwen.idle",
+      "walk": "animation.li_shuwen.walk",
+      "punch": "animation.li_shuwen.punch",
+      "step": "animation.li_shuwen.step",
+      "wu_er_da": "animation.li_shuwen.wu_er_da",
+      "pursuit": "animation.li_shuwen.step",
+      "charge": "animation.li_shuwen.step",
+      "interrupt": "animation.li_shuwen.punch",
+      "uppercut": "animation.li_shuwen.punch",
+      "horizontal_swing": "animation.li_shuwen.punch",
+      "slash": "animation.li_shuwen.punch",
+      "sweep": "animation.li_shuwen.step"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.08,
+      "y": -0.78,
+      "z": -0.05
+    },
+    "default_weapon": "minecraft:air",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["slash", "sweep", "uppercut", "horizontal_swing", "launcher", "pursuit", "charge", "interrupt", "step", "wu_er_da"]
+  },
+  "skills": [
+    "presence_concealment_circle_realm",
+    "seasoned_a_plus",
+    "chinese_martial_arts_a_triple_plus",
+    "sphere_boundary_extreme_a_minus",
+    "yin_yang_crossing_b",
+    "li_shuwen_pursuit",
+    "li_shuwen_charge",
+    "li_shuwen_interrupt"
+  ],
+  "noble_phantasm": "wu_er_da",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "neutral",
+    "morality": "evil",
+    "social": "normal",
+    "combat": "cautious",
+    "starting_favor": 50.0
+  },
+  "ai_config": "default_assassin",
+  "spawn_egg": {
+    "primary": 1710610,
+    "secondary": 14139592
+  }
+}

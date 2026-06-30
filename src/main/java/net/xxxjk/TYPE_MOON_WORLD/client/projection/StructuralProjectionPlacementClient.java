@@ -20,6 +20,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -46,6 +47,10 @@ public final class StructuralProjectionPlacementClient {
    }
 
    public static void startPreview() {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null && mc.level != null) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)mc.player
@@ -63,6 +68,11 @@ public final class StructuralProjectionPlacementClient {
    }
 
    public static void confirmPlacement() {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         cancel();
+         return;
+      }
+
       if (stage == StructuralProjectionPlacementClient.Stage.PREVIEW) {
          stage = StructuralProjectionPlacementClient.Stage.LOCKED;
          Minecraft mc = Minecraft.getInstance();
@@ -87,6 +97,11 @@ public final class StructuralProjectionPlacementClient {
    }
 
    public static boolean handleScroll(double deltaY) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         cancel();
+         return false;
+      }
+
       if ((stage == StructuralProjectionPlacementClient.Stage.PREVIEW || stage == StructuralProjectionPlacementClient.Stage.LOCKED) && deltaY != 0.0) {
          rotationIndex = Math.floorMod(rotationIndex + (deltaY > 0.0 ? 1 : -1), 4);
          Minecraft mc = Minecraft.getInstance();
@@ -124,6 +139,10 @@ public final class StructuralProjectionPlacementClient {
    @SubscribeEvent
    public static void onRenderLevelStage(RenderLevelStageEvent event) {
       if (stage != StructuralProjectionPlacementClient.Stage.IDLE) {
+         if (ReplayUiSuppressor.shouldHideTypeMoonHud()) {
+            return;
+         }
+
          if (event.getStage() == net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.level != null) {

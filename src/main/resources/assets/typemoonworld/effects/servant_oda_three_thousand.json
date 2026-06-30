@@ -1,0 +1,1020 @@
+﻿{
+    "duration":  7.2,
+    "notes":  [
+                  "Three Thousand Worlds: three-stage battlefield VFX. 0.0-1.15s gun-array summon, 1.15-3.25s matchlock volley, 3.05-7.2s smoke/sparks/scorched residue.",
+                  "All firing geometry is authored as local +Z forward and remains bound to Nobunaga yaw without changing noble phantasm trigger logic."
+              ],
+    "emitters":  [
+                     {
+                         "start_time":  0.0,
+                         "end_time":  1.65,
+                         "rate":  3200,
+                         "particle_lifetime":  0.92,
+                         "size_variance":  0.34,
+                         "lifetime_variance":  0.22,
+                         "position_variance":  0.025,
+                         "velocity":  [
+                                          0.0,
+                                          0.035,
+                                          0.0
+                                      ],
+                         "velocity_variance":  0.05,
+                         "max_vanilla_particles_per_tick":  4,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        0.08,
+                                                        2.15
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "bicircle_star",
+                                           "radius":  1.0,
+                                           "inner_radius":  0.42,
+                                           "segments":  220
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.16,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.45,
+                                                     "color":  "#FFFFBB55"
+                                                 },
+                                                 {
+                                                     "t":  0.76,
+                                                     "color":  "#88663322"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.055
+                                                },
+                                                {
+                                                    "t":  0.36,
+                                                    "size":  0.2
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.035
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.45,
+                                                                       0.45,
+                                                                       0.45
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.42,
+                                                         "scale":  [
+                                                                       4.8,
+                                                                       4.8,
+                                                                       4.8
+                                                                   ],
+                                                         "easing":  "ease_out_cubic"
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       6.8,
+                                                                       6.8,
+                                                                       6.8
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "random() \u003e 0.08",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "THREE_THOUSAND_ARRAY_SIGIL",
+                         "enable_trail":  true,
+                         "vanilla_particles":  [
+                                                   {
+                                                       "type":  "smoke",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.8,
+                                                                      0.2,
+                                                                      0.8
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.1,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.03,
+                                                       "chance":  0.22
+                                                   },
+                                                   {
+                                                       "type":  "flame",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.55,
+                                                                      0.15,
+                                                                      0.55
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.35,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.035,
+                                                       "chance":  0.16
+                                                   }
+                                               ]
+                     },
+                     {
+                         "start_time":  0.18,
+                         "end_time":  1.95,
+                         "rate":  3800,
+                         "particle_lifetime":  0.74,
+                         "size_variance":  0.28,
+                         "lifetime_variance":  0.18,
+                         "position_variance":  0.02,
+                         "velocity":  [
+                                          0.0,
+                                          0.015,
+                                          0.0
+                                      ],
+                         "velocity_variance":  0.035,
+                         "max_vanilla_particles_per_tick":  2,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        0.0,
+                                                        1.25
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(floor(t * 15.0) - 7.0) * 0.58 + sin(t * 173.0) * 0.05",
+                                           "expr_y":  "0.25 + mod(floor(t * 45.0), 3.0) * 0.42 + sin(t * 61.0) * 0.04",
+                                           "expr_z":  "1.0 + mod(floor(t * 15.0), 5.0) * 0.42 + cos(t * 89.0) * 0.05",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  360
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.2,
+                                                     "color":  "#DDFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.55,
+                                                     "color":  "#CCFFAA33"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.035
+                                                },
+                                                {
+                                                    "t":  0.42,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.025
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.35,
+                                                                       0.35,
+                                                                       0.35
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.52,
+                                                         "scale":  [
+                                                                       1.45,
+                                                                       1.45,
+                                                                       1.45
+                                                                   ],
+                                                         "easing":  "ease_out_back"
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       1.65,
+                                                                       1.65,
+                                                                       1.65
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "random() \u003e 0.12",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "THREE_THOUSAND_MATCHLOCK_ARRAY"
+                     },
+                     {
+                         "start_time":  0.76,
+                         "end_time":  2.3,
+                         "rate":  2600,
+                         "particle_lifetime":  0.38,
+                         "size_variance":  0.42,
+                         "lifetime_variance":  0.18,
+                         "position_variance":  0.035,
+                         "velocity":  [
+                                          0.0,
+                                          0.02,
+                                          0.06
+                                      ],
+                         "velocity_variance":  0.16,
+                         "max_vanilla_particles_per_tick":  6,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        0.08,
+                                                        1.9
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(floor(t * 13.0) - 6.0) * 0.72 + sin(t * 127.0 + time * 18.0) * 0.12",
+                                           "expr_y":  "0.45 + mod(floor(t * 39.0), 3.0) * 0.48 + random() * 0.08",
+                                           "expr_z":  "0.2 + mod(floor(t * 13.0), 4.0) * 0.52",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  300
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.14,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.34,
+                                                     "color":  "#FFFF7A00"
+                                                 },
+                                                 {
+                                                     "t":  0.74,
+                                                     "color":  "#AA552211"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.055
+                                                },
+                                                {
+                                                    "t":  0.22,
+                                                    "size":  0.22
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.025
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.9,
+                                                                       0.9,
+                                                                       0.9
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.65,
+                                                         "scale":  [
+                                                                       1.2,
+                                                                       1.2,
+                                                                       1.2
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       0.8,
+                                                                       0.8,
+                                                                       0.8
+                                                                   ],
+                                                         "easing":  "ease_in_cubic"
+                                                     }
+                                                 ],
+                         "visibility_condition":  "floor(time * 14) % 2 == 0 || random() \u003e 0.45",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "THREE_THOUSAND_PRIMING_SPARKS",
+                         "vanilla_particles":  [
+                                                   {
+                                                       "type":  "flame",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.35,
+                                                                      0.22,
+                                                                      0.25
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.4,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.04,
+                                                       "chance":  0.32
+                                                   },
+                                                   {
+                                                       "type":  "smoke",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.5,
+                                                                      0.18,
+                                                                      0.5
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.25,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.035,
+                                                       "chance":  0.28
+                                                   },
+                                                   {
+                                                       "type":  "flash",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.7,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.0,
+                                                       "chance":  0.04
+                                                   }
+                                               ]
+                     },
+                     {
+                         "start_time":  1.12,
+                         "end_time":  2.75,
+                         "rate":  5400,
+                         "particle_lifetime":  0.5,
+                         "size_variance":  0.3,
+                         "lifetime_variance":  0.18,
+                         "position_variance":  0.035,
+                         "velocity":  [
+                                          0.0,
+                                          0.0,
+                                          10.5
+                                      ],
+                         "velocity_variance":  0.55,
+                         "max_vanilla_particles_per_tick":  7,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        0.55,
+                                                        2.15
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(t * 2.0 - 1.0) * (2.2 + t * 7.4) + sin(t * 91.0 + time * 30.0) * 0.22",
+                                           "expr_y":  "0.25 + sin(t * 31.0) * 0.45 + random() * 0.18",
+                                           "expr_z":  "t * 24.0",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  320
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.08,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.24,
+                                                     "color":  "#FFFFC46A"
+                                                 },
+                                                 {
+                                                     "t":  0.62,
+                                                     "color":  "#CCFF3B00"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  0.22,
+                                                    "size":  0.48
+                                                },
+                                                {
+                                                    "t":  0.7,
+                                                    "size":  0.22
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.045
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.65,
+                                                                       0.65,
+                                                                       0.65
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.32,
+                                                         "scale":  [
+                                                                       1.2,
+                                                                       1.2,
+                                                                       1.2
+                                                                   ],
+                                                         "easing":  "ease_out_cubic"
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       1.6,
+                                                                       1.6,
+                                                                       1.6
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "floor(time * 30) % 2 == 0 || random() \u003e 0.18",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "THREE_THOUSAND_MAIN_VOLLEY",
+                         "enable_trail":  true,
+                         "vanilla_particles":  [
+                                                   {
+                                                       "type":  "crit",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.35,
+                                                                      0.25,
+                                                                      0.35
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.07,
+                                                       "chance":  0.25
+                                                   },
+                                                   {
+                                                       "type":  "flash",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.2,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.0,
+                                                       "chance":  0.04
+                                                   }
+                                               ]
+                     },
+                     {
+                         "start_time":  1.38,
+                         "end_time":  3.15,
+                         "rate":  3200,
+                         "particle_lifetime":  0.62,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.2,
+                         "position_variance":  0.075,
+                         "velocity":  [
+                                          0.0,
+                                          0.0,
+                                          7.2
+                                      ],
+                         "velocity_variance":  0.95,
+                         "max_vanilla_particles_per_tick":  5,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        0.52,
+                                                        2.0
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(t * 2.0 - 1.0) * (1.2 + t * 9.6) + sin(t * 151.0 + time * 19.0) * 0.38",
+                                           "expr_y":  "0.1 + sin(t * 43.0 + time * 6.0) * 0.62",
+                                           "expr_z":  "t * 21.5 + sin(t * 70.0) * 0.35",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  220
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00663311"
+                                                 },
+                                                 {
+                                                     "t":  0.16,
+                                                     "color":  "#99774433"
+                                                 },
+                                                 {
+                                                     "t":  0.46,
+                                                     "color":  "#AAFF5A18"
+                                                 },
+                                                 {
+                                                     "t":  0.82,
+                                                     "color":  "#664C4C44"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.32
+                                                },
+                                                {
+                                                    "t":  0.32,
+                                                    "size":  0.88
+                                                },
+                                                {
+                                                    "t":  0.72,
+                                                    "size":  0.42
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.08
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.85,
+                                                                       0.85,
+                                                                       0.85
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.55,
+                                                         "scale":  [
+                                                                       1.55,
+                                                                       1.55,
+                                                                       1.55
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       2.35,
+                                                                       2.35,
+                                                                       2.35
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "random() \u003e 0.16",
+                         "blend":  "TRANSLUCENT",
+                         "particle_role":  "THREE_THOUSAND_GUNSMOKE_STREAMS",
+                         "vanilla_particles":  [
+                                                   {
+                                                       "type":  "large_smoke",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      0.9,
+                                                                      0.35,
+                                                                      1.2
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.2,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.06,
+                                                       "chance":  0.32
+                                                   },
+                                                   {
+                                                       "type":  "smoke",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      1.1,
+                                                                      0.25,
+                                                                      1.4
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.1,
+                                                                      0.5
+                                                                  ],
+                                                       "speed":  0.045,
+                                                       "chance":  0.28
+                                                   },
+                                                   {
+                                                       "type":  "cloud",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      1.0,
+                                                                      0.2,
+                                                                      1.0
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0
+                                                                  ],
+                                                       "speed":  0.035,
+                                                       "chance":  0.18
+                                                   }
+                                               ]
+                     },
+                     {
+                         "start_time":  2.9,
+                         "end_time":  7.2,
+                         "rate":  900,
+                         "particle_lifetime":  1.65,
+                         "size_variance":  0.48,
+                         "lifetime_variance":  0.35,
+                         "position_variance":  0.15,
+                         "velocity":  [
+                                          0.0,
+                                          0.12,
+                                          0.08
+                                      ],
+                         "velocity_variance":  0.2,
+                         "max_vanilla_particles_per_tick":  5,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        -0.35,
+                                                        6.0
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(t * 2.0 - 1.0) * (2.0 + t * 8.0) + sin(t * 53.0 + time * 5.0) * 0.55",
+                                           "expr_y":  "0.08 + t * 1.35 + sin(t * 37.0) * 0.25",
+                                           "expr_z":  "t * 17.0",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  180
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00554433"
+                                                 },
+                                                 {
+                                                     "t":  0.18,
+                                                     "color":  "#88776655"
+                                                 },
+                                                 {
+                                                     "t":  0.58,
+                                                     "color":  "#6655483F"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.42
+                                                },
+                                                {
+                                                    "t":  0.32,
+                                                    "size":  1.15
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.16
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.75,
+                                                                       0.75,
+                                                                       0.75
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.5,
+                                                         "scale":  [
+                                                                       1.55,
+                                                                       1.55,
+                                                                       1.55
+                                                                   ],
+                                                         "easing":  "ease_out_cubic"
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       2.3,
+                                                                       2.3,
+                                                                       2.3
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "random() \u003e 0.28",
+                         "blend":  "TRANSLUCENT",
+                         "particle_role":  "THREE_THOUSAND_RESIDUAL_SMOKE",
+                         "vanilla_particles":  [
+                                                   {
+                                                       "type":  "large_smoke",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      2.4,
+                                                                      0.25,
+                                                                      3.0
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.05,
+                                                                      3.0
+                                                                  ],
+                                                       "speed":  0.035,
+                                                       "chance":  0.24
+                                                   },
+                                                   {
+                                                       "type":  "smoke",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      2.8,
+                                                                      0.2,
+                                                                      3.4
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.0,
+                                                                      4.0
+                                                                  ],
+                                                       "speed":  0.03,
+                                                       "chance":  0.22
+                                                   }
+                                               ]
+                     },
+                     {
+                         "start_time":  2.2,
+                         "end_time":  6.8,
+                         "rate":  1250,
+                         "particle_lifetime":  1.15,
+                         "size_variance":  0.4,
+                         "lifetime_variance":  0.34,
+                         "position_variance":  0.1,
+                         "velocity":  [
+                                          0.0,
+                                          0.08,
+                                          0.03
+                                      ],
+                         "velocity_variance":  0.18,
+                         "max_vanilla_particles_per_tick":  2,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        -0.25,
+                                                        4.0
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(random() * 2.0 - 1.0) * (2.0 + t * 8.0)",
+                                           "expr_y":  "0.05 + random() * 0.35 + t * 0.8",
+                                           "expr_z":  "2.0 + t * 18.0 + sin(t * 71.0) * 0.4",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  160
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.18,
+                                                     "color":  "#FFFFD07A"
+                                                 },
+                                                 {
+                                                     "t":  0.5,
+                                                     "color":  "#FFFF4A00"
+                                                 },
+                                                 {
+                                                     "t":  0.82,
+                                                     "color":  "#77664433"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.045
+                                                },
+                                                {
+                                                    "t":  0.28,
+                                                    "size":  0.18
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.018
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.9,
+                                                                       0.9,
+                                                                       0.9
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       1.35,
+                                                                       1.35,
+                                                                       1.35
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "random() \u003e 0.2",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "THREE_THOUSAND_SPARK_RESIDUE",
+                         "vanilla_particles":  [
+                                                   {
+                                                       "type":  "flame",
+                                                       "count":  1,
+                                                       "spread":  [
+                                                                      1.2,
+                                                                      0.15,
+                                                                      1.8
+                                                                  ],
+                                                       "offset":  [
+                                                                      0.0,
+                                                                      0.08,
+                                                                      4.0
+                                                                  ],
+                                                       "speed":  0.02,
+                                                       "chance":  0.08
+                                                   }
+                                               ]
+                     },
+                     {
+                         "start_time":  2.45,
+                         "end_time":  6.2,
+                         "rate":  560,
+                         "particle_lifetime":  1.35,
+                         "size_variance":  0.35,
+                         "lifetime_variance":  0.22,
+                         "position_variance":  0.055,
+                         "velocity":  [
+                                          0.0,
+                                          0.025,
+                                          0.0
+                                      ],
+                         "velocity_variance":  0.05,
+                         "max_vanilla_particles_per_tick":  1,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        -0.45,
+                                                        7.5
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(t * 2.0 - 1.0) * 8.5 + sin(t * 29.0) * 0.28",
+                                           "expr_y":  "0.04 + sin(t * 19.0 + time * 3.0) * 0.035",
+                                           "expr_z":  "t * 15.5",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  140
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00442211"
+                                                 },
+                                                 {
+                                                     "t":  0.18,
+                                                     "color":  "#99552211"
+                                                 },
+                                                 {
+                                                     "t":  0.5,
+                                                     "color":  "#77554433"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  0.34,
+                                                    "size":  0.46
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.08
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "scale":  [
+                                                                       0.7,
+                                                                       0.7,
+                                                                       0.7
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.55,
+                                                         "scale":  [
+                                                                       1.1,
+                                                                       1.1,
+                                                                       1.1
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "scale":  [
+                                                                       1.45,
+                                                                       1.45,
+                                                                       1.45
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "random() \u003e 0.34",
+                         "blend":  "TRANSLUCENT",
+                         "particle_role":  "THREE_THOUSAND_SCORCHED_GROUND"
+                     }
+                 ]
+}

@@ -1,0 +1,1457 @@
+﻿{
+    "duration":  6.5,
+    "emitters":  [
+                     {
+                         "rate":  260,
+                         "particle_lifetime":  0.8,
+                         "size_variance":  0.25,
+                         "lifetime_variance":  0.2,
+                         "position_variance":  0.02,
+                         "velocity":  [
+                                          0,
+                                          0.02,
+                                          0
+                                      ],
+                         "velocity_variance":  0.04,
+                         "component":  {
+                                           "type":  "sphere",
+                                           "radius":  0.2,
+                                           "density":  64
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FF1E1E"
+                                                 },
+                                                 {
+                                                     "t":  0.08,
+                                                     "color":  "#FFFF1E1E"
+                                                 },
+                                                 {
+                                                     "t":  0.32,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.52,
+                                                     "color":  "#FFFF3232"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00FF0000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.10
+                                                },
+                                                {
+                                                    "t":  0.25,
+                                                    "size":  0.20
+                                                },
+                                                {
+                                                    "t":  0.52,
+                                                    "size":  0.15
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.04
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.18,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.25,
+                                                                       1.25,
+                                                                       1.25
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.36,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1.0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.9,
+                                                                       0.9,
+                                                                       0.9
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1.0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.2,
+                                                                       0.2,
+                                                                       0.2
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003c 0.46",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "VOLUME"
+                     },
+                     {
+                         "rate":  300,
+                         "particle_lifetime":  0.9,
+                         "size_variance":  0.3,
+                         "lifetime_variance":  0.2,
+                         "position_variance":  0.03,
+                         "velocity":  [
+                                          0,
+                                          0.02,
+                                          0
+                                      ],
+                         "velocity_variance":  0.05,
+                         "component":  {
+                                           "type":  "circle",
+                                           "radius":  10.0,
+                                           "density":  360
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FF1E1E"
+                                                 },
+                                                 {
+                                                     "t":  0.10,
+                                                     "color":  "#CCFF1E1E"
+                                                 },
+                                                 {
+                                                     "t":  0.42,
+                                                     "color":  "#AAFF0000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00FF0000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.06
+                                                },
+                                                {
+                                                    "t":  0.16,
+                                                    "size":  0.22
+                                                },
+                                                {
+                                                    "t":  0.44,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.03
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.2,
+                                                                       0.2,
+                                                                       0.2
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.18,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.46,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1.0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.65,
+                                                                       0.65,
+                                                                       0.65
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1.0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.1,
+                                                                       0.1,
+                                                                       0.1
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003c 0.46 \u0026\u0026 floor(time * 18) % 2 == 0",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "RING_VOLUME"
+                     },
+                     {
+                         "rate":  520,
+                         "particle_lifetime":  0.55,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.3,
+                         "position_variance":  0.10,
+                         "velocity":  [
+                                          0,
+                                          0.12,
+                                          0
+                                      ],
+                         "velocity_variance":  0.16,
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(1 - t) * 8.0 * cos(progress * tau * 5) + 0.45 * sin(t * 24 + progress * tau * 6)",
+                                           "expr_y":  "1.4 + (1 - t) * 4.0 * sin(progress * tau * 3) + 0.28 * sin(t * 18)",
+                                           "expr_z":  "(1 - t) * 8.0 * sin(progress * tau * 5) + 0.45 * cos(t * 21 + progress * tau * 5)",
+                                           "segments":  128
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.12,
+                                                     "color":  "#CCFF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.40,
+                                                     "color":  "#FFFF8080"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00FF0000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.04
+                                                },
+                                                {
+                                                    "t":  0.22,
+                                                    "size":  0.24
+                                                },
+                                                {
+                                                    "t":  0.55,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.02
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.06 \u0026\u0026 time \u003c 0.46 \u0026\u0026 floor(time * 22) % 2 == 0",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "DETAIL_FLOW"
+                     },
+                     {
+                         "rate":  520,
+                         "particle_lifetime":  0.55,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.3,
+                         "position_variance":  0.10,
+                         "velocity":  [
+                                          0,
+                                          0.12,
+                                          0
+                                      ],
+                         "velocity_variance":  0.16,
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "(1 - t) * 8.0 * cos(progress * tau * 5 + 2.094) + 0.45 * sin(t * 24 + progress * tau * 6)",
+                                           "expr_y":  "1.4 + (1 - t) * 3.0 * sin(progress * tau * 4 + 1.2) + 0.28 * sin(t * 18)",
+                                           "expr_z":  "(1 - t) * 8.0 * sin(progress * tau * 5 + 2.094) + 0.45 * cos(t * 21 + progress * tau * 5)",
+                                           "segments":  128
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.12,
+                                                     "color":  "#CCFF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.40,
+                                                     "color":  "#FFFF8080"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00FF0000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.04
+                                                },
+                                                {
+                                                    "t":  0.22,
+                                                    "size":  0.24
+                                                },
+                                                {
+                                                    "t":  0.55,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.02
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.08 \u0026\u0026 time \u003c 0.46 \u0026\u0026 floor(time * 22) % 2 == 0",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "DETAIL_FLOW"
+                     },
+                     {
+                         "rate":  900,
+                         "particle_lifetime":  0.22,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.25,
+                         "position_variance":  0.02,
+                         "velocity":  [
+                                          0,
+                                          -0.20,
+                                          0
+                                      ],
+                         "velocity_variance":  0.18,
+                         "component":  {
+                                           "type":  "fractal_lightning",
+                                           "start":  [
+                                                         14,
+                                                         22,
+                                                         7
+                                                     ],
+                                           "end":  [
+                                                       0,
+                                                       1.4,
+                                                       0
+                                                   ],
+                                           "iterations":  6,
+                                           "roughness":  0.5,
+                                           "period":  5.0,
+                                           "density":  8.0,
+                                           "seed1":  13,
+                                           "seed2":  274,
+                                           "seed3":  811,
+                                           "seed4":  42,
+                                           "seed5":  653,
+                                           "segments":  160
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.10,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.35,
+                                                     "color":  "#FFFF3030"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00FF0000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.06
+                                                },
+                                                {
+                                                    "t":  0.18,
+                                                    "size":  0.55
+                                                },
+                                                {
+                                                    "t":  0.55,
+                                                    "size":  0.18
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.02
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.10 \u0026\u0026 time \u003c 0.76 \u0026\u0026 floor(time * 18) % 2 == 0 \u0026\u0026 random() \u003e 0.2",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "DETAIL"
+                     },
+                     {
+                         "rate":  620,
+                         "particle_lifetime":  0.45,
+                         "size_variance":  0.35,
+                         "lifetime_variance":  0.2,
+                         "position_variance":  0.04,
+                         "velocity":  [
+                                          0,
+                                          0.08,
+                                          0
+                                      ],
+                         "velocity_variance":  0.06,
+                         "component":  {
+                                           "type":  "sphere",
+                                           "radius":  0.5,
+                                           "density":  96
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00FF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.45,
+                                                     "color":  "#FFFF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.56,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.70,
+                                                     "color":  "#AAFF0000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00FF0000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.06
+                                                },
+                                                {
+                                                    "t":  0.46,
+                                                    "size":  0.30
+                                                },
+                                                {
+                                                    "t":  0.58,
+                                                    "size":  0.75
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.06
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.1,
+                                                                       0.1,
+                                                                       0.1
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.46,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.5,
+                                                                       0.5,
+                                                                       0.5
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.58,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       3.0,
+                                                                       3.0,
+                                                                       3.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.4,
+                                                                       0.4,
+                                                                       0.4
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.44 \u0026\u0026 time \u003c 0.66",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "IMPACT_VOLUME"
+                     },
+                     {
+                         "rate":  1050,
+                         "particle_lifetime":  0.58,
+                         "size_variance":  0.35,
+                         "lifetime_variance":  0.25,
+                         "position_variance":  0.03,
+                         "velocity":  [
+                                          0,
+                                          0,
+                                          0.05
+                                      ],
+                         "velocity_variance":  0.06,
+                         "component":  {
+                                           "type":  "line",
+                                           "start":  [
+                                                         0,
+                                                         1.4,
+                                                         0
+                                                     ],
+                                           "end":  [
+                                                       0,
+                                                       1.4,
+                                                       36
+                                                   ],
+                                           "density":  260
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00000000"
+                                                 },
+                                                 {
+                                                     "t":  0.50,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.60,
+                                                     "color":  "#FFFF3232"
+                                                 },
+                                                 {
+                                                     "t":  0.85,
+                                                     "color":  "#AA660000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.08
+                                                },
+                                                {
+                                                    "t":  0.52,
+                                                    "size":  0.75
+                                                },
+                                                {
+                                                    "t":  0.64,
+                                                    "size":  1.10
+                                                },
+                                                {
+                                                    "t":  0.86,
+                                                    "size":  0.38
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.06
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.50 \u0026\u0026 time \u003c 0.88",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "BEAM_VOLUME"
+                     },
+                     {
+                         "rate":  520,
+                         "particle_lifetime":  0.75,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.25,
+                         "position_variance":  0.08,
+                         "velocity":  [
+                                          0,
+                                          0,
+                                          0.02
+                                      ],
+                         "velocity_variance":  0.08,
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "cos(t * tau * 10 + progress * tau * 14) * 1.2",
+                                           "expr_y":  "1.4 + sin(t * tau * 10 + progress * tau * 14) * 1.2",
+                                           "expr_z":  "t * 34",
+                                           "segments":  220
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00000000"
+                                                 },
+                                                 {
+                                                     "t":  0.50,
+                                                     "color":  "#AAFF0000"
+                                                 },
+                                                 {
+                                                     "t":  0.64,
+                                                     "color":  "#FFFF2020"
+                                                 },
+                                                 {
+                                                     "t":  0.86,
+                                                     "color":  "#55FF0000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.06
+                                                },
+                                                {
+                                                    "t":  0.58,
+                                                    "size":  0.36
+                                                },
+                                                {
+                                                    "t":  0.80,
+                                                    "size":  0.18
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.04
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.50 \u0026\u0026 time \u003c 0.88",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "BEAM_VOLUME"
+                     },
+                     {
+                         "rate":  520,
+                         "particle_lifetime":  0.75,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.25,
+                         "position_variance":  0.08,
+                         "velocity":  [
+                                          0,
+                                          0,
+                                          0.02
+                                      ],
+                         "velocity_variance":  0.08,
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "cos(t * tau * 10 - progress * tau * 14 + pi) * 1.2",
+                                           "expr_y":  "1.4 + sin(t * tau * 10 - progress * tau * 14 + pi) * 1.2",
+                                           "expr_z":  "t * 34",
+                                           "segments":  220
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00000000"
+                                                 },
+                                                 {
+                                                     "t":  0.50,
+                                                     "color":  "#AAFF0000"
+                                                 },
+                                                 {
+                                                     "t":  0.64,
+                                                     "color":  "#FFFF2020"
+                                                 },
+                                                 {
+                                                     "t":  0.86,
+                                                     "color":  "#55FF0000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.06
+                                                },
+                                                {
+                                                    "t":  0.58,
+                                                    "size":  0.36
+                                                },
+                                                {
+                                                    "t":  0.80,
+                                                    "size":  0.18
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.04
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.50 \u0026\u0026 time \u003c 0.88",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "BEAM_VOLUME"
+                     },
+                     {
+                         "rate":  360,
+                         "particle_lifetime":  0.55,
+                         "size_variance":  0.35,
+                         "position_variance":  0.03,
+                         "component":  {
+                                           "type":  "circle",
+                                           "radius":  2.0,
+                                           "density":  720
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00000000"
+                                                 },
+                                                 {
+                                                     "t":  0.52,
+                                                     "color":  "#CCFF1E1E"
+                                                 },
+                                                 {
+                                                     "t":  0.76,
+                                                     "color":  "#66FF0000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.08
+                                                },
+                                                {
+                                                    "t":  0.58,
+                                                    "size":  0.35
+                                                },
+                                                {
+                                                    "t":  0.86,
+                                                    "size":  0.12
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.03
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     0
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.1,
+                                                                       1.0,
+                                                                       0.1
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.58,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     12
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.8,
+                                                                       1.0,
+                                                                       0.8
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.72,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     24
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.2,
+                                                                       1.0,
+                                                                       1.2
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.88,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     34
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.6,
+                                                                       1.0,
+                                                                       1.6
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.2,
+                                                                       1.0,
+                                                                       0.2
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.52 \u0026\u0026 time \u003c 0.88 \u0026\u0026 floor(time * 32) % 2 == 0",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "RING_VOLUME"
+                     },
+                     {
+                         "rate":  720,
+                         "particle_lifetime":  1.1,
+                         "size_variance":  0.45,
+                         "lifetime_variance":  0.3,
+                         "position_variance":  0.18,
+                         "velocity":  [
+                                          0,
+                                          0.25,
+                                          0
+                                      ],
+                         "velocity_variance":  0.35,
+                         "component":  {
+                                           "type":  "sphere",
+                                           "radius":  1.0,
+                                           "density":  128
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00000000"
+                                                 },
+                                                 {
+                                                     "t":  0.76,
+                                                     "color":  "#FFFFFFFF"
+                                                 },
+                                                 {
+                                                     "t":  0.88,
+                                                     "color":  "#FFFF3232"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.08
+                                                },
+                                                {
+                                                    "t":  0.78,
+                                                    "size":  0.75
+                                                },
+                                                {
+                                                    "t":  0.92,
+                                                    "size":  0.25
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.04
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     1
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.1,
+                                                                       0.1,
+                                                                       0.1
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.78,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.5,
+                                                                       0.5,
+                                                                       0.5
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.92,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1.0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       5.5,
+                                                                       5.5,
+                                                                       5.5
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0,
+                                                                     1.0,
+                                                                     0,
+                                                                     0
+                                                                 ],
+                                                         "scale":  [
+                                                                       8.0,
+                                                                       8.0,
+                                                                       8.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.76",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "IMPACT_VOLUME"
+                     },
+                     {
+                         "rate":  420,
+                         "particle_lifetime":  1.0,
+                         "size_variance":  0.4,
+                         "position_variance":  0.08,
+                         "component":  {
+                                           "type":  "circle",
+                                           "radius":  1.0,
+                                           "density":  360
+                                       },
+                         "color_over_life":  [
+                                                 {
+                                                     "t":  0.0,
+                                                     "color":  "#00000000"
+                                                 },
+                                                 {
+                                                     "t":  0.78,
+                                                     "color":  "#FFFF5533"
+                                                 },
+                                                 {
+                                                     "t":  0.94,
+                                                     "color":  "#66FF0000"
+                                                 },
+                                                 {
+                                                     "t":  1.0,
+                                                     "color":  "#00000000"
+                                                 }
+                                             ],
+                         "size_over_life":  [
+                                                {
+                                                    "t":  0.0,
+                                                    "size":  0.10
+                                                },
+                                                {
+                                                    "t":  0.82,
+                                                    "size":  1.10
+                                                },
+                                                {
+                                                    "t":  1.0,
+                                                    "size":  0.15
+                                                }
+                                            ],
+                         "transform_over_life":  [
+                                                     {
+                                                         "t":  0.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       0.1,
+                                                                       1.0,
+                                                                       0.1
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  0.82,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       1.0,
+                                                                       1.0,
+                                                                       1.0
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "t":  1.0,
+                                                         "pos":  [
+                                                                     0,
+                                                                     1.4,
+                                                                     36
+                                                                 ],
+                                                         "rot":  [
+                                                                     0.7071068,
+                                                                     0,
+                                                                     0,
+                                                                     0.7071068
+                                                                 ],
+                                                         "scale":  [
+                                                                       12.0,
+                                                                       1.0,
+                                                                       12.0
+                                                                   ]
+                                                     }
+                                                 ],
+                         "visibility_condition":  "time \u003e= 0.78",
+                         "blend":  "ADDITIVE",
+                         "particle_role":  "RING_VOLUME"
+                     }
+                 ],
+    "notes":  [
+                  "TEMP_DIRECTION: beam axis is currently authored as local +Z forward for easier in-game viewing; replace with caster look/bone orientation later.",
+                  "PARTICLE_STYLE: DETAIL layers use small dense particles; VOLUME/BEAM/IMPACT layers use larger particles with lower geometric precision."
+              ],
+    "environment":  [
+                        {
+                            "type":  "screen_tint",
+                            "color":  "#66100000",
+                            "start":  0.05,
+                            "end":  6.5,
+                            "fade_in":  0.25,
+                            "fade_out":  0.75,
+                            "intensity":  0.55
+                        }
+                    ]
+}

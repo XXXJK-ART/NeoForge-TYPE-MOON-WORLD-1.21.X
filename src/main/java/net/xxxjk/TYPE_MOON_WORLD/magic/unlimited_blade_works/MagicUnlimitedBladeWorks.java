@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 
 public class MagicUnlimitedBladeWorks {
    public static void execute(Entity entity) {
@@ -19,7 +18,7 @@ public class MagicUnlimitedBladeWorks {
                vars.syncPlayerVariables(player);
                player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.cancelled"), true);
             } else {
-               boolean isInUBWDimension = player.level().dimension().location().equals(ModDimensions.UBW_KEY.location());
+               boolean isInUBWDimension = UBWInstanceManager.isUbwDimension(player.level());
                if (!vars.is_in_ubw && !isInUBWDimension) {
                   double initialCost = 50.0;
                   if (ManaHelper.consumeManaOrHealth(player, initialCost)) {

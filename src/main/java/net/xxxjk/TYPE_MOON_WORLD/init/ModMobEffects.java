@@ -10,12 +10,16 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.effect.NineLivesEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.ReinforcementEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
    public static final DeferredHolder<MobEffect, MobEffect> NINE_LIVES = MOB_EFFECTS.register(
       "nine_lives", () -> new NineLivesEffect(MobEffectCategory.BENEFICIAL, 9109504)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> PETRIFIED = MOB_EFFECTS.register(
+      "petrified", () -> new PetrifiedEffect(MobEffectCategory.HARMFUL, 0x8E8E8E)
    );
    public static final DeferredHolder<MobEffect, MobEffect> REINFORCEMENT_SELF_STRENGTH = MOB_EFFECTS.register(
       "reinforcement_self_strength",

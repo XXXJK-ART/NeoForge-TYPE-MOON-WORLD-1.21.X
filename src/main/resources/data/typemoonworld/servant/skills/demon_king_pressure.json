@@ -1,0 +1,10 @@
+{
+  "id": "demon_king_pressure",
+  "display_name": "Demon King Pressure",
+  "display_name_zh": "魔王威压",
+  "type": "active",
+  "mp_cost": 16,
+  "cooldown_ticks": 240,
+  "duration_ticks": 90,
+  "effects": []
+}

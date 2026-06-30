@@ -53,6 +53,8 @@
       "lunging_thrust",
       "driving_slash",
       "sweeping_advance",
+      "rune_burst",
+      "spear_vault",
       "rune_cast",
       "gae_bolg",
       "gae_bolg_army",
@@ -61,6 +63,7 @@
   },
   "skills": [
     "battle_continuation_a",
+    "magic_resistance_c",
     "protection_from_arrows_b",
     "recast_stance_c",
     "divinity_b"
@@ -69,8 +72,10 @@
   "personality": {
     "obedience": "cooperative",
     "principle": "orderly",
+    "morality": "neutral",
     "social": "enthusiastic",
     "combat": "frenzied",
+    "special_principles": ["spare_canines"],
     "starting_favor": 55.0
   },
   "ai_config": "default_lancer",

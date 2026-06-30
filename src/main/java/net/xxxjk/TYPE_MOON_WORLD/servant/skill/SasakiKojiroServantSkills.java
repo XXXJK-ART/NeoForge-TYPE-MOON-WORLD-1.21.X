@@ -52,7 +52,8 @@ public final class SasakiKojiroServantSkills {
       LivingEntity entity = context.caster();
       if (entity == null) return ServantExecutionResult.FAILED;
       entity.getPersistentData().putBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG, true);
-      entity.getPersistentData().putFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG, 0.9F);
+      entity.getPersistentData().putFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG, 0.8F);
+      entity.getPersistentData().putFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG, 0.4F);
       return ServantExecutionResult.SUCCESS;
    }
 }

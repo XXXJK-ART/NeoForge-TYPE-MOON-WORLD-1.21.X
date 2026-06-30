@@ -1,0 +1,19 @@
+{
+  "id": "magic_resistance_b",
+  "display_name": "Magic Resistance B",
+  "display_name_zh": "对魔力 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "magic_resistance",
+      "params": {
+        "rank": "B",
+        "damage_reduction": 0.25,
+        "debuff_resistance": 0.175
+      }
+    }
+  ]
+}

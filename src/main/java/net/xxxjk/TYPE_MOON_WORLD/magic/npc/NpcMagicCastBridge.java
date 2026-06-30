@@ -1626,7 +1626,7 @@ public final class NpcMagicCastBridge {
             }
          }
 
-         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.45F, 1.25F);
+         caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.45F, 1.25F);
          return true;
       }
    }
@@ -2580,23 +2580,10 @@ public final class NpcMagicCastBridge {
                      }
                   }
 
-                  if (exposed && shouldPlayWinterFrostBreakFx(data.pos())) {
-                     level.levelEvent(2001, data.pos(), net.minecraft.world.level.block.Block.getId(currentState));
-                  }
-
                   level.setBlock(data.pos(), data.originalState(), 2);
                }
             }
          });
-      }
-   }
-
-   private static boolean shouldPlayWinterFrostBreakFx(BlockPos pos) {
-      if (pos == null) {
-         return false;
-      } else {
-         int hash = pos.getX() * 73428767 ^ pos.getY() * 912931 ^ pos.getZ() * 42331;
-         return Math.floorMod(hash, 4) == 0;
       }
    }
 

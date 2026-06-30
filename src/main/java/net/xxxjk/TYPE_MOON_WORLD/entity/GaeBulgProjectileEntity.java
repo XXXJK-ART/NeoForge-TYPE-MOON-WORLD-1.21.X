@@ -1,8 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -32,18 +34,32 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import org.joml.Vector3f;
 
 public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
+   private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
    private int lifeTime = 0;
+   public final List<Vec3> tracePos = new ArrayList<>();
 
    public GaeBulgProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
+   }
+
+   public GaeBulgProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, LivingEntity shooter, Level level) {
+      super(type, shooter, level);
+      this.setItem(new ItemStack(ModItems.GAE_BULG.get()));
    }
 
    public GaeBulgProjectileEntity(Level level, LivingEntity shooter) {
@@ -87,7 +103,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setArmyDamage(float damage) {
-      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 400.0F));
+      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 500.0F));
    }
 
    public float getArmyDamage() {
@@ -116,14 +132,24 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    @Override
    public void tick() {
       super.tick();
+      this.recordTrailPoint();
       if (this.level().isClientSide()) {
-         if (this.tickCount % 2 == 0) {
+         if (this.getMode() == Mode.SINGLE && this.tickCount % 2 == 0) {
+            this.level().addParticle(DEATH_THORN_TRAIL, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
             this.level().addParticle(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          }
          return;
       }
 
       this.lifeTime++;
+      if (this.getMode() == Mode.SINGLE && this.level() instanceof ServerLevel level) {
+         Vec3 motion = this.getDeltaMovement();
+         Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.42) : Vec3.ZERO;
+         for (int i = 0; i < 3; i++) {
+            Vec3 pos = this.position().add(back.scale(i));
+            level.sendParticles(DEATH_THORN_TRAIL, pos.x, pos.y, pos.z, 1, 0.025, 0.025, 0.025, 0.0);
+         }
+      }
       LivingEntity target = this.getTrackedTarget();
       if (target != null && target.isAlive()) {
          if (this.getMode() == Mode.SINGLE) {
@@ -156,6 +182,19 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       if (this.getMode() == Mode.SINGLE) {
          this.syncRotationToMotion();
+      }
+   }
+
+   private void recordTrailPoint() {
+      if (this.getMode() != Mode.SINGLE) {
+         return;
+      }
+      Vec3 current = this.position();
+      if (this.tracePos.isEmpty() || this.tracePos.get(this.tracePos.size() - 1).distanceToSqr(current) > 0.04) {
+         this.tracePos.add(current);
+      }
+      while (this.tracePos.size() > 18) {
+         this.tracePos.remove(0);
       }
    }
 
@@ -249,9 +288,6 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          return false;
       }
 
-      if (this.level() instanceof ServerLevel sl) {
-         sl.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(state));
-      }
       this.level().removeBlock(pos, false);
       return true;
    }
@@ -282,7 +318,15 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().generic();
-      boolean deathThorn = target.isAlive() && this.random.nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
+      if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_projectile")) {
+         this.spawnSingleTargetImpact(target);
+         this.discard();
+         return;
+      }
+      boolean deathThorn = target.isAlive()
+         && !(target instanceof EmiyaArcherEntity)
+         && !(target instanceof EnkiduEntity)
+         && this.random.nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       if (this.tryConsumeGodHandLife(target, 250.0F, deathThorn)) {
          this.spawnSingleTargetImpact(target);
          this.discard();
@@ -302,8 +346,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       LivingEntity trackedTarget = this.getTrackedTarget();
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
-      double radius = 20.0;
-      int waveCount = 20;
+      double radius = 24.0;
+      int waveCount = 24;
       double waveStep = radius / waveCount;
       Set<Integer> damagedEntities = new HashSet<>();
       float armyDamage = this.getArmyDamage();
@@ -313,6 +357,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       }
 
       if (this.level() instanceof ServerLevel sl) {
+         VFXServerEffects.spawn(sl, "gae_bolg_army_impact", center, 128.0);
          this.spawnArmyExplosionShellEffects(sl, center, radius);
          sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 0.3, 0.3, 0.3, 0.0);
          sl.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.15, 0.15, 0.15, 0.0);
@@ -407,7 +452,13 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
-         this.applyGuaranteedDamage(living, source, armyDamage);
+         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, armyDamage);
+         finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         if (this.tryConsumeGodHandLife(living, finalDamage, false)) {
+            continue;
+         }
+
+         this.applyGuaranteedDamage(living, source, finalDamage);
          Vec3 push = living.position().subtract(center);
          double horizontal = Math.sqrt(push.x * push.x + push.z * push.z);
          if (horizontal > 1.0E-4) {
@@ -419,6 +470,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
       int rInt = (int)Math.ceil(currentRadius);
+      int broken = 0;
+      int maxBroken = 20000;
       for (int x = -rInt; x <= rInt; x++) {
          for (int y = -rInt; y <= rInt; y++) {
             for (int z = -rInt; z <= rInt; z++) {
@@ -430,16 +483,15 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
                BlockPos pos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
                BlockState state = level.getBlockState(pos);
                float hardness = state.getDestroySpeed(level, pos);
-               if (state.isAir() || hardness < 0.0F || hardness > 50.0F || state.is(Blocks.BEDROCK)
+               if (state.isAir() || hardness < 0.0F || hardness > 35.0F || state.is(Blocks.BEDROCK)
                   || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
                   continue;
                }
 
                level.removeBlock(pos, false);
-               if (this.random.nextInt(2) == 0) {
-                  level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.35, 0.35, 0.35, 0.0);
-                  level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.28, 0.28, 0.28, 0.03);
-                  level.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.25, 0.25, 0.25, 0.02);
+               broken++;
+               if (broken >= maxBroken) {
+                  return;
                }
             }
          }

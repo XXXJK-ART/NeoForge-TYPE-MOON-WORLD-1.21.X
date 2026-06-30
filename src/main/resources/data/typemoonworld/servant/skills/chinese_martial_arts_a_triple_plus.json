@@ -1,0 +1,19 @@
+{
+  "id": "chinese_martial_arts_a_triple_plus",
+  "display_name": "Chinese Martial Arts A+++",
+  "display_name_zh": "中华武术 A+++",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "martial_damage_boost",
+      "params": {
+        "damage_multiplier": 1.3,
+        "armor_pierce_ratio": 0.2,
+        "dodge_bonus": 0.15
+      }
+    }
+  ]
+}

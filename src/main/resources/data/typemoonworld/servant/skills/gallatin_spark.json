@@ -1,0 +1,10 @@
+{
+  "id": "gallatin_spark",
+  "display_name": "Gallatin Spark",
+  "display_name_zh": "加拉廷火闪",
+  "type": "active",
+  "mp_cost": 16,
+  "cooldown_ticks": 150,
+  "duration_ticks": 25,
+  "effects": []
+}

@@ -1,0 +1,36 @@
+{
+  "duration": 2.4,
+  "notes": "Heracles roar: heavy ground pressure ring and dust shockwave.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.1,
+      "rate": 1800,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.08,
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFFFFF" },
+        { "t": 0.4, "color": "#778844FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.18 },
+        { "t": 0.5, "size": 0.75 },
+        { "t": 1.0, "size": 0.05 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.05, 0.0], "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.6, "pos": [0.0, 0.05, 0.0], "scale": [5.0, 5.0, 5.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.05, 0.0], "scale": [7.5, 7.5, 7.5] }
+      ],
+      "visibility_condition": "random() > 0.2",
+      "blend": "ADDITIVE",
+      "particle_role": "HERACLES_ROAR_PRESSURE_RING"
+    }
+  ]
+}

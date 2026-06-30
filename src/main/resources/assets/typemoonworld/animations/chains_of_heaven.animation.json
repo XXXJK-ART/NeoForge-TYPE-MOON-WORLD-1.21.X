@@ -1,0 +1,23 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.chains_of_heaven.bind": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "bone7": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "0.5": [0, 12, 0],
+            "1.0": [0, 0, 0]
+          },
+          "scale": {
+            "0.0": [1.0, 1.0, 1.0],
+            "0.5": [1.06, 1.06, 1.06],
+            "1.0": [1.0, 1.0, 1.0]
+          }
+        }
+      }
+    }
+  }
+}

@@ -39,7 +39,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.SwordBarrelBlockEntity;
-import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -122,7 +122,7 @@ public class SwordBarrelBlock extends BaseEntityBlock {
             }
          } else if (!level.isEmptyBlock(belowPos) && !level.getBlockState(belowPos).isAir()) {
             double range = 20.0;
-            if (level.dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+            if (UBWInstanceManager.isUbwDimension(level)) {
                range = 36.0;
             }
 

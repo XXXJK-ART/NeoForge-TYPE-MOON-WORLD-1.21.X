@@ -1,0 +1,125 @@
+package net.xxxjk.TYPE_MOON_WORLD.vfx.client;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXEmitter;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.data.EffectLibrary;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEffectDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEnvironmentDefinition;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+public final class VFXClientRuntime {
+   private VFXClientRuntime() {
+   }
+
+   public static void spawn(String effectId, double x, double y, double z, int targetEntityId, long seed) {
+      VFXEffectDefinition definition = EffectLibrary.INSTANCE.get(effectId);
+      if (definition == null) {
+         TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
+         return;
+      }
+      for (VFXEnvironmentDefinition environment : definition.environments()) {
+         VFXEnvironmentManager.add(environment, x, y, z);
+      }
+      List<VFXEmitter> emitters = definition.createEmitters((float)x, (float)y, (float)z, seed);
+      if (targetEntityId >= 0) {
+         Minecraft mc = Minecraft.getInstance();
+         Entity entity = mc.level == null ? null : mc.level.getEntity(targetEntityId);
+         if (entity != null) {
+            for (VFXEmitter emitter : emitters) {
+               emitter.setOrigin((float)entity.getX(), (float)entity.getY(), (float)entity.getZ());
+               bindToTarget(emitter, entity);
+            }
+         }
+      }
+      for (VFXEmitter emitter : emitters) {
+         VFXRenderManager.addEmitter(emitter);
+      }
+   }
+
+   public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed) {
+      VFXEffectDefinition definition = EffectLibrary.INSTANCE.get(effectId);
+      if (definition == null) {
+         TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
+         return;
+      }
+      Minecraft mc = Minecraft.getInstance();
+      Entity target = null;
+      if (targetEntityUuid.isPresent() && mc.level != null) {
+         for (Entity entity : mc.level.entitiesForRendering()) {
+            if (targetEntityUuid.get().equals(entity.getUUID())) {
+               target = entity;
+               break;
+            }
+         }
+      }
+      double originX = x;
+      double originY = y;
+      double originZ = z;
+      if (target != null) {
+         originX = target.getX();
+         originY = target.getY();
+         originZ = target.getZ();
+      }
+      for (VFXEnvironmentDefinition environment : definition.environments()) {
+         VFXEnvironmentManager.add(environment, originX, originY, originZ);
+      }
+      List<VFXEmitter> emitters = definition.createEmitters((float)originX, (float)originY, (float)originZ, seed);
+      if (target != null) {
+         Entity boundTarget = target;
+         for (VFXEmitter emitter : emitters) {
+            bindToTarget(emitter, boundTarget);
+         }
+      }
+      for (VFXEmitter emitter : emitters) {
+         VFXRenderManager.addEmitter(emitter);
+      }
+   }
+
+   public static void spawnTest(double x, double y, double z) {
+      VFXRenderManager.spawnTest((float)x, (float)y, (float)z);
+   }
+
+   private static void bindToTarget(VFXEmitter emitter, Entity target) {
+      VFXEffectDefinition.BindingDefinition binding = emitter.binding();
+      if (binding == null || binding.mode().isBlank() || target == null) {
+         return;
+      }
+      String mode = binding.mode();
+      if ("artoria_blade".equals(mode) || "entity_yaw".equals(mode)) {
+         emitter.setDynamicTransform(
+            () -> bindingOrigin(target, binding),
+            () -> binding.rotateWithEntity() ? yawRotation(target) : new Quaternionf()
+         );
+      }
+   }
+
+   private static Vector3f bindingOrigin(Entity target, VFXEffectDefinition.BindingDefinition binding) {
+      Vec3 look = target.getLookAngle();
+      Vec3 forward = new Vec3(look.x, 0.0, look.z);
+      if (forward.lengthSqr() < 1.0E-6) {
+         forward = Vec3.directionFromRotation(0.0F, target.getYRot());
+      }
+      forward = forward.normalize();
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vector3f offset = binding.offset();
+      double baseY = target instanceof LivingEntity living ? living.getY() + living.getBbHeight() * 0.58 : target.getY() + target.getBbHeight() * 0.55;
+      Vec3 origin = new Vec3(target.getX(), baseY, target.getZ())
+         .add(right.scale(offset.x))
+         .add(0.0, offset.y, 0.0)
+         .add(forward.scale(offset.z));
+      return new Vector3f((float)origin.x, (float)origin.y, (float)origin.z);
+   }
+
+   private static Quaternionf yawRotation(Entity target) {
+      float radians = (float)Math.toRadians(-target.getYRot());
+      return new Quaternionf().rotateY(radians);
+   }
+}

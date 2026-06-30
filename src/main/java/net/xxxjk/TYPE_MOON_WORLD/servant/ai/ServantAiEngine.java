@@ -37,14 +37,17 @@ public final class ServantAiEngine {
       ServantBehaviorProfile profile = BehaviorProfileMatrix.lookup(
          entity.getObedienceAxis(), entity.getPrincipleAxis()
       );
-
-      LivingEntity target = entity.getTarget();
+      long gameTick = entity.level().getGameTime();
       ServantAiContext ctx = new ServantAiContext(
-         entity, target, definition, profile, entity.level().getGameTime()
+         entity, entity.getTarget(), definition, profile, gameTick
       );
 
       for (ServantAiModule module : this.modules) {
          try {
+            LivingEntity currentTarget = entity.getTarget();
+            if (currentTarget != ctx.target()) {
+               ctx = new ServantAiContext(entity, currentTarget, definition, profile, gameTick);
+            }
             module.tick(entity, ctx);
          } catch (Exception e) {
             TYPE_MOON_WORLD.LOGGER.error("Servant AI module {} failed", module.getClass().getSimpleName(), e);

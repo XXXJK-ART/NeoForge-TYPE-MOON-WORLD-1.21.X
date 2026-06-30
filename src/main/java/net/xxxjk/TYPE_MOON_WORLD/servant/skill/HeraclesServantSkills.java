@@ -14,7 +14,6 @@ public final class HeraclesServantSkills {
    public static void registerBuiltin(ServantSkillRegistry registry) {
       registry.register("god_hand_passive", HeraclesServantSkills::executeGodHandPassive, "typemoonworld_core");
       registry.register("mad_enhancement_b", HeraclesServantSkills::executeMadEnhancement, "typemoonworld_core");
-      registry.register("battle_continuation_a", HeraclesServantSkills::executeBattleContinuation, "typemoonworld_core");
       registry.register("valor_a_plus", HeraclesServantSkills::executeValor, "typemoonworld_core");
       registry.register("false_mind_eye_b", HeraclesServantSkills::executeFalseMindEye, "typemoonworld_core");
       registry.register("divinity_a", HeraclesServantSkills::executeDivinity, "typemoonworld_core");
@@ -23,13 +22,16 @@ public final class HeraclesServantSkills {
    private static ServantExecutionResult executeGodHandPassive(ServantExecutionContext context) {
       LivingEntity entity = context.caster();
       if (entity == null) return ServantExecutionResult.FAILED;
-      entity.getPersistentData().putBoolean("GodHandActive", true);
-      entity.getPersistentData().putFloat("GodHandThreshold", 3.0F);
-      entity.getPersistentData().putInt("GodHandLives", 11);
-      entity.getPersistentData().putFloat("GodHandAdaptiveReduction", 0.25F);
-      entity.getPersistentData().putFloat("GodHandAdaptiveMax", 0.75F);
-      entity.getPersistentData().putInt("GodHandStrongCost", 2);
-      entity.getPersistentData().putInt("GodHandExtraStrongCost", 3);
+      var data = entity.getPersistentData();
+      data.putBoolean("GodHandActive", true);
+      data.putFloat("GodHandThreshold", 3.0F);
+      if (!data.contains("GodHandLives")) {
+         data.putInt("GodHandLives", 11);
+      }
+      data.putFloat("GodHandAdaptiveReduction", 0.25F);
+      data.putFloat("GodHandAdaptiveMax", 0.75F);
+      data.putInt("GodHandStrongCost", 2);
+      data.putInt("GodHandExtraStrongCost", 3);
       return ServantExecutionResult.SUCCESS;
    }
 
@@ -39,15 +41,6 @@ public final class HeraclesServantSkills {
       entity.getPersistentData().putBoolean("MadEnhancementActive", true);
       entity.getPersistentData().putFloat("MadEnhancementPenalty", 0.3F);
       entity.getPersistentData().putFloat("MadEnhancementDamageBonus", 0.15F);
-      return ServantExecutionResult.SUCCESS;
-   }
-
-   private static ServantExecutionResult executeBattleContinuation(ServantExecutionContext context) {
-      LivingEntity entity = context.caster();
-      if (entity == null) return ServantExecutionResult.FAILED;
-      entity.getPersistentData().putBoolean("BattleContinuationActive", true);
-      entity.getPersistentData().putInt("BattleContinuationCooldown", 0);
-      entity.getPersistentData().putInt("BattleContinuationMaxCooldown", 6000);
       return ServantExecutionResult.SUCCESS;
    }
 

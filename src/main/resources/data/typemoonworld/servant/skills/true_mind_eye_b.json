@@ -1,0 +1,10 @@
+{
+  "id": "true_mind_eye_b",
+  "display_name": "Mind's Eye (True) B",
+  "display_name_zh": "心眼(真) B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

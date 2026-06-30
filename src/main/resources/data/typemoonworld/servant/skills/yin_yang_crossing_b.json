@@ -1,0 +1,17 @@
+{
+  "id": "yin_yang_crossing_b",
+  "display_name": "Yin-Yang Crossing B",
+  "display_name_zh": "阴阳交错 B",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 120,
+  "duration_ticks": 200,
+  "effects": [
+    {
+      "effect_type": "attack_boost",
+      "params": {
+        "multiplier": 1.3
+      }
+    }
+  ]
+}

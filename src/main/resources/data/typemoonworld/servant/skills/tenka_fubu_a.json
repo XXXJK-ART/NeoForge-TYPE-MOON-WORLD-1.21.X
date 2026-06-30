@@ -1,0 +1,10 @@
+{
+  "id": "tenka_fubu_a",
+  "display_name": "Tenka Fubu A",
+  "display_name_zh": "天下布武 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

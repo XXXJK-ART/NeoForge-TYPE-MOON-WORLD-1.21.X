@@ -64,11 +64,6 @@ public class MedeaEntity extends ServantEntity {
       this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-      this.targetSelector.addGoal(2, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(
-         this,
-         net.minecraft.world.entity.monster.Monster.class,
-         true
-      ));
    }
 
    @Override
@@ -149,6 +144,14 @@ public class MedeaEntity extends ServantEntity {
          }
       }
       return super.hurt(source, amount);
+   }
+
+   @Override
+   public boolean isAlliedTo(net.minecraft.world.entity.Entity other) {
+      if (super.isAlliedTo(other)) {
+         return true;
+      }
+      return isOwnedDragonfang(other);
    }
 
    @Override

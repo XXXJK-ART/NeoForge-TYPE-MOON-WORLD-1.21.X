@@ -23,7 +23,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -36,12 +35,12 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.TridentItem;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -63,6 +62,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -78,8 +78,10 @@ import org.jetbrains.annotations.Nullable;
 )
 public class ChantHandler {
    private static final int BASE_CHANT_INTERVAL = 40;
+   private static final int UBW_ACTIVATION_WAIT_MAX_ATTEMPTS = 10;
    private static final Map<UUID, Vec3> UBW_LOCATIONS = new ConcurrentHashMap<>();
    private static final Map<UUID, Vec3> PENDING_UBW_LOCATIONS = new ConcurrentHashMap<>();
+   private static final Map<UUID, Integer> PENDING_UBW_ACTIVATION_ATTEMPTS = new ConcurrentHashMap<>();
    private static final Map<UUID, List<ChantHandler.RemovalEntry>> REMOVAL_QUEUES = new ConcurrentHashMap<>();
    private static final Map<UUID, Map<BlockPos, ChantHandler.BlockBackup>> BACKUP_BLOCKS = new ConcurrentHashMap<>();
    private static final Map<UUID, List<ChantHandler.ItemBackup>> BACKUP_ITEMS = new ConcurrentHashMap<>();
@@ -98,12 +100,14 @@ public class ChantHandler {
    @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
       UUID uuid = event.getEntity().getUUID();
+      MinecraftServer server = event.getEntity().getServer();
       if (WAS_CHANTING.getOrDefault(uuid, false) && event.getEntity() instanceof ServerPlayer serverPlayer) {
          restoreTerrainInstantly(serverPlayer);
       }
 
       UBW_LOCATIONS.remove(uuid);
       PENDING_UBW_LOCATIONS.remove(uuid);
+      PENDING_UBW_ACTIVATION_ATTEMPTS.remove(uuid);
       REMOVAL_QUEUES.remove(uuid);
       BACKUP_BLOCKS.remove(uuid);
       BACKUP_ITEMS.remove(uuid);
@@ -116,8 +120,9 @@ public class ChantHandler {
       ACTIVE_UBW_ENTITIES.remove(uuid);
       ACTIVE_ENTITY_POSITIONS.remove(uuid);
       REFILL_QUEUES.remove(uuid);
-      discardUbwRipple(event.getEntity().getServer() == null ? null : event.getEntity().getServer().overworld(), uuid);
+      discardUbwRipple(server == null ? null : server.overworld(), uuid);
       WAS_CHANTING.remove(uuid);
+      UBWInstanceManager.scheduleDeleteInstance(server, uuid);
    }
 
    public static void registerPlacedSword(UUID playerUUID, BlockPos pos) {
@@ -144,11 +149,42 @@ public class ChantHandler {
       }
    }
 
+   private static void attachGeneratedEntityToOwner(Entity entity, UUID playerUUID, ServerLevel serverLevel) {
+      TypeMoonWorldModVariables.UBWReturnData data = (TypeMoonWorldModVariables.UBWReturnData)entity.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+      data.ownerUUID = playerUUID;
+      data.generated = true;
+      ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayer(playerUUID);
+      if (owner == null) {
+         data.returnX = entity.getX();
+         data.returnY = entity.getY();
+         data.returnZ = entity.getZ();
+         data.returnDim = serverLevel.getServer().overworld().dimension().location().toString();
+      } else {
+         TypeMoonWorldModVariables.PlayerVariables ownerVars = (TypeMoonWorldModVariables.PlayerVariables)owner.getData(
+            TypeMoonWorldModVariables.PLAYER_VARIABLES
+         );
+         data.returnX = ownerVars.ubw_return_x;
+         data.returnY = ownerVars.ubw_return_y;
+         data.returnZ = ownerVars.ubw_return_z;
+         data.returnDim = ownerVars.ubw_return_dimension != null && !ownerVars.ubw_return_dimension.isEmpty()
+            ? ownerVars.ubw_return_dimension
+            : owner.serverLevel().dimension().location().toString();
+      }
+
+      GENERATED_ENTITIES.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(entity.getUUID());
+      ACTIVE_UBW_ENTITIES.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(entity.getUUID());
+      ACTIVE_ENTITY_POSITIONS.put(entity.getUUID(), entity.position());
+   }
+
    @SubscribeEvent
    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
-         if (event.getLevel().dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+         if (UBWInstanceManager.isUbwDimension(event.getLevel().dimension().location())) {
             Entity entity = event.getEntity();
+            if (event.getLevel() instanceof ServerLevel serverLevel && entity instanceof Projectile projectile) {
+               spawnUbwProjectileInterceptor(serverLevel, projectile);
+            }
+
             if (entity instanceof LivingEntity && !(entity instanceof ServerPlayer) && !(entity instanceof EnderDragon)) {
                TypeMoonWorldModVariables.UBWReturnData data = (TypeMoonWorldModVariables.UBWReturnData)entity.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
                if (data.ownerUUID != null) {
@@ -156,35 +192,21 @@ public class ChantHandler {
                }
 
                Vec3 pos = entity.position();
+               if (event.getLevel() instanceof ServerLevel serverLevel) {
+                  UUID instanceOwner = UBWInstanceManager.getOwnerId(serverLevel.dimension());
+                  if (instanceOwner != null && serverLevel.getServer().getPlayerList().getPlayer(instanceOwner) != null) {
+                     attachGeneratedEntityToOwner(entity, instanceOwner, serverLevel);
+                     return;
+                  }
+               }
 
                for (Entry<UUID, Vec3> entry : UBW_LOCATIONS.entrySet()) {
                   if (entry.getValue().distanceToSqr(pos) < 40000.0) {
                      UUID playerUUID = entry.getKey();
-                     data.ownerUUID = playerUUID;
-                     data.generated = true;
                      if (event.getLevel() instanceof ServerLevel serverLevel) {
-                        ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayer(playerUUID);
-                        if (owner == null) {
-                           data.returnX = entity.getX();
-                           data.returnY = entity.getY();
-                           data.returnZ = entity.getZ();
-                           data.returnDim = serverLevel.getServer().overworld().dimension().location().toString();
-                        } else {
-                           TypeMoonWorldModVariables.PlayerVariables ownerVars = (TypeMoonWorldModVariables.PlayerVariables)owner.getData(
-                              TypeMoonWorldModVariables.PLAYER_VARIABLES
-                           );
-                           data.returnX = ownerVars.ubw_return_x;
-                           data.returnY = ownerVars.ubw_return_y;
-                           data.returnZ = ownerVars.ubw_return_z;
-                           data.returnDim = ownerVars.ubw_return_dimension != null && !ownerVars.ubw_return_dimension.isEmpty()
-                              ? ownerVars.ubw_return_dimension
-                              : owner.serverLevel().dimension().location().toString();
-                        }
+                        attachGeneratedEntityToOwner(entity, playerUUID, serverLevel);
                      }
 
-                     GENERATED_ENTITIES.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(entity.getUUID());
-                     ACTIVE_UBW_ENTITIES.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(entity.getUUID());
-                     ACTIVE_ENTITY_POSITIONS.put(entity.getUUID(), entity.position());
                      break;
                   }
                }
@@ -193,10 +215,71 @@ public class ChantHandler {
       }
    }
 
+   private static void spawnUbwProjectileInterceptor(ServerLevel serverLevel, Projectile projectile) {
+      if (projectile instanceof UBWInterceptorSwordEntity) {
+         return;
+      }
+
+      UUID ownerId = resolveUbwOwner(serverLevel, projectile.position());
+      if (ownerId == null) {
+         return;
+      }
+
+      Entity shooter = projectile.getOwner();
+      if (shooter != null && ownerId.equals(shooter.getUUID())) {
+         return;
+      }
+
+      Vec3 spawnPos = findInterceptorSpawnPos(projectile);
+      UBWInterceptorSwordEntity interceptor = new UBWInterceptorSwordEntity(serverLevel, projectile, ownerId, spawnPos);
+      serverLevel.addFreshEntity(interceptor);
+   }
+
+   @Nullable
+   private static UUID resolveUbwOwner(ServerLevel serverLevel, Vec3 pos) {
+      UUID instanceOwner = UBWInstanceManager.getOwnerId(serverLevel.dimension());
+      if (instanceOwner != null) {
+         return instanceOwner;
+      }
+
+      for (Entry<UUID, Vec3> entry : UBW_LOCATIONS.entrySet()) {
+         if (entry.getValue().distanceToSqr(pos) < 40000.0) {
+            return entry.getKey();
+         }
+      }
+
+      return null;
+   }
+
+   private static Vec3 findInterceptorSpawnPos(Projectile projectile) {
+      RandomSource random = projectile.level().getRandom();
+      Vec3 projectileMotion = projectile.getDeltaMovement();
+      Vec3 baseDirection;
+      if (projectileMotion.lengthSqr() > 1.0E-4) {
+         baseDirection = projectileMotion.normalize().scale(-1.0);
+      } else {
+         double angle = random.nextDouble() * Math.PI * 2.0;
+         baseDirection = new Vec3(Math.cos(angle), 0.0, Math.sin(angle));
+      }
+
+      Vec3 side = baseDirection.cross(new Vec3(0.0, 1.0, 0.0));
+      if (side.lengthSqr() < 1.0E-4) {
+         side = new Vec3(1.0, 0.0, 0.0);
+      } else {
+         side = side.normalize();
+      }
+
+      Vec3 up = side.cross(baseDirection).normalize();
+      Vec3 lateralOffset = side.scale((random.nextDouble() - 0.5) * 1.4).add(up.scale((random.nextDouble() - 0.5) * 1.0));
+      double distance = 5.0 + random.nextDouble() * 5.0;
+      return projectile.position().add(baseDirection.scale(distance)).add(lateralOffset).add(0.0, 0.4 + random.nextDouble() * 0.8, 0.0);
+   }
+
    @SubscribeEvent
    public static void onPlayerTick(Post event) {
       if (!event.getEntity().level().isClientSide) {
          if (event.getEntity() instanceof ServerPlayer player) {
+            UBWInstanceManager.processPendingDeletions(player.getServer());
             processRemovalQueue(player);
             processRestorationQueue(player);
             processRefillQueue(player, (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
@@ -211,13 +294,9 @@ public class ChantHandler {
                startTerrainRestoration(player);
                beginCollapseUbwRipple(player);
                if (PENDING_UBW_LOCATIONS.containsKey(player.getUUID())) {
-                  Vec3 pending = PENDING_UBW_LOCATIONS.remove(player.getUUID());
-                  ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
-                  if (ubwLevel != null) {
-                     BlockPos targetPos = new BlockPos((int)pending.x, 100, (int)pending.z);
-                     ChunkPos chunkPos = new ChunkPos(targetPos);
-                     ubwLevel.getChunkSource().removeRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
-                  }
+                  PENDING_UBW_LOCATIONS.remove(player.getUUID());
+                  PENDING_UBW_ACTIVATION_ATTEMPTS.remove(player.getUUID());
+                  UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
                }
 
                if (vars.ubw_chant_progress > 0) {
@@ -231,7 +310,7 @@ public class ChantHandler {
             boolean isOwner = false;
             if (vars.is_in_ubw && UBW_LOCATIONS.containsKey(player.getUUID())) {
                Vec3 center = UBW_LOCATIONS.get(player.getUUID());
-               if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location()) && player.position().distanceToSqr(center) < 40000.0) {
+               if (UBWInstanceManager.isUbwDimension(player.level()) && player.position().distanceToSqr(center) < 40000.0) {
                   isOwner = true;
                }
             }
@@ -259,7 +338,9 @@ public class ChantHandler {
                vars.ubw_chant_timer++;
 
                int currentInterval = Math.max(20, 40 - (int)(vars.proficiency_unlimited_blade_works * 0.2));
-               if (vars.ubw_chant_timer >= currentInterval) {
+               if (vars.ubw_chant_progress > 9) {
+                  processChantStep(player, vars);
+               } else if (vars.ubw_chant_timer >= currentInterval) {
                   vars.ubw_chant_timer = 0;
                   vars.ubw_chant_progress++;
                   if (vars.proficiency_unlimited_blade_works < 100.0) {
@@ -326,8 +407,8 @@ public class ChantHandler {
    }
 
    private static void checkAndRefillSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location())) {
-         for (Entity entity : player.getServer().getLevel(ModDimensions.UBW_KEY).getEntities().getAll()) {
+      if (UBWInstanceManager.isUbwDimension(player.level())) {
+         for (Entity entity : player.serverLevel().getEntities().getAll()) {
             if (entity instanceof LivingEntity target && target.isAlive() && (!(target instanceof ServerPlayer p) || !p.isSpectator())) {
                double checkRadius = 30.0;
                int swordCount = 0;
@@ -698,7 +779,7 @@ public class ChantHandler {
 
    private static void spawnEntrySwords(ServerPlayer player, Vec3 targetCenter) {
       if (targetCenter != null) {
-         ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
+         ServerLevel ubwLevel = player.serverLevel();
          if (ubwLevel != null) {
             RandomSource random = player.getRandom();
             int count = 30;
@@ -729,17 +810,18 @@ public class ChantHandler {
       double cost = 50.0;
       String chantText = "";
       if (progress == 1) {
-         ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
-         if (ubwLevel != null) {
-            double offsetX = (player.getRandom().nextDouble() - 0.5) * 2000000.0;
-            double offsetZ = (player.getRandom().nextDouble() - 0.5) * 2000000.0;
-            offsetX = Math.round(offsetX / 16.0) * 16L + 0.5;
-            offsetZ = Math.round(offsetZ / 16.0) * 16L + 0.5;
-            BlockPos targetPos = new BlockPos((int)offsetX, 100, (int)offsetZ);
-            ChunkPos chunkPos = new ChunkPos(targetPos);
-            ubwLevel.getChunkSource().addRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
-            PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0.0, offsetZ));
+         ServerLevel ubwLevel = UBWInstanceManager.getOrCreateFreshPlayerInstance(player);
+         if (ubwLevel == null) {
+            interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.occupied");
+            return;
          }
+
+         Vec3 entryPos = UBWInstanceManager.randomEntryPosition(player.getRandom());
+         double offsetX = entryPos.x;
+         double offsetZ = entryPos.z;
+         BlockPos targetPos = new BlockPos((int)offsetX, 100, (int)offsetZ);
+         UBWInstanceManager.keepInstanceTicking(player.getUUID(), ubwLevel, targetPos);
+         PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0.0, offsetZ));
       } else if (progress == 2) {
          chantText = "§bSteel is my body, and fire is my blood.";
       } else if (progress == 3) {
@@ -758,8 +840,22 @@ public class ChantHandler {
       } else if (progress == 9) {
          chantText = "§bMy whole life was,";
       } else if (progress > 9) {
-         if (ManaHelper.consumeManaOrHealth(player, cost)) {
-            activateUBW(player, vars);
+         if (UBWInstanceManager.ensureRegisteredPlayerInstance(player) == null) {
+            int attempts = PENDING_UBW_ACTIVATION_ATTEMPTS.merge(player.getUUID(), 1, Integer::sum);
+            if (attempts >= UBW_ACTIVATION_WAIT_MAX_ATTEMPTS) {
+               PENDING_UBW_ACTIVATION_ATTEMPTS.remove(player.getUUID());
+               interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.interrupted");
+               UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
+            } else {
+               vars.ubw_chant_timer = 0;
+               vars.syncPlayerVariables(player);
+            }
+         } else if (ManaHelper.consumeManaOrHealth(player, cost)) {
+            PENDING_UBW_ACTIVATION_ATTEMPTS.remove(player.getUUID());
+            if (!activateUBW(player, vars)) {
+               vars.ubw_chant_timer = 0;
+               vars.syncPlayerVariables(player);
+            }
          } else {
             interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.mana_depleted");
          }
@@ -835,7 +931,13 @@ public class ChantHandler {
       return surfaceY == -999 ? 64 : surfaceY + 1;
    }
 
-   private static void activateUBW(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   private static boolean activateUBW(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServerLevel ubwLevel = UBWInstanceManager.getRegisteredPlayerInstance(player);
+      if (ubwLevel == null) {
+         return false;
+      }
+
+      PENDING_UBW_ACTIVATION_ATTEMPTS.remove(player.getUUID());
       beginCollapseUbwRipple(player);
       vars.is_chanting_ubw = false;
       vars.ubw_chant_progress = 0;
@@ -846,6 +948,7 @@ public class ChantHandler {
       vars.ubw_return_z = player.getZ();
       vars.ubw_return_dimension = player.level().dimension().location().toString();
       vars.syncPlayerVariables(player);
+      player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
       player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.activated"), true);
       restoreTerrainInstantly(player);
       clearVisualSwords(player);
@@ -861,7 +964,6 @@ public class ChantHandler {
       List<ChantHandler.EntityReturnData> teleported = new ArrayList<>();
       TELEPORTED_ENTITIES.put(player.getUUID(), teleported);
       List<Entity> swordRainTargets = new ArrayList<>();
-      ServerLevel ubwLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
       if (ubwLevel != null) {
          double offsetX;
          double offsetZ;
@@ -870,10 +972,9 @@ public class ChantHandler {
             offsetX = pending.x;
             offsetZ = pending.z;
          } else {
-            offsetX = (player.getRandom().nextDouble() - 0.5) * 2000000.0;
-            offsetZ = (player.getRandom().nextDouble() - 0.5) * 2000000.0;
-            offsetX = Math.round(offsetX / 16.0) * 16L + 0.5;
-            offsetZ = Math.round(offsetZ / 16.0) * 16L + 0.5;
+            Vec3 entryPos = UBWInstanceManager.randomEntryPosition(player.getRandom());
+            offsetX = entryPos.x;
+            offsetZ = entryPos.z;
          }
 
          int safeY = findSafeSpawnY(ubwLevel, (int)offsetX, (int)offsetZ);
@@ -881,8 +982,7 @@ public class ChantHandler {
          entrySwordCenter = new Vec3(offsetX, targetY, offsetZ);
          player.teleportTo(ubwLevel, offsetX, targetY, offsetZ, player.getYRot(), player.getXRot());
          BlockPos targetPos = new BlockPos((int)offsetX, (int)targetY, (int)offsetZ);
-         ChunkPos chunkPos = new ChunkPos(targetPos);
-         ubwLevel.getChunkSource().removeRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
+         UBWInstanceManager.keepInstanceTicking(player.getUUID(), ubwLevel, targetPos);
          UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, targetY, offsetZ));
          swordRainTargets.add(player);
 
@@ -893,7 +993,7 @@ public class ChantHandler {
             data.returnX = originalPos.x;
             data.returnY = originalPos.y;
             data.returnZ = originalPos.z;
-            data.returnDim = player.level().dimension().location().toString();
+            data.returnDim = vars.ubw_return_dimension;
             double relX = target.getX() - vars.ubw_return_x;
             double relZ = target.getZ() - vars.ubw_return_z;
             double entityTargetX = offsetX + relX;
@@ -922,7 +1022,7 @@ public class ChantHandler {
                newData.returnX = originalPos.x;
                newData.returnY = originalPos.y;
                newData.returnZ = originalPos.z;
-               newData.returnDim = player.level().dimension().location().toString();
+               newData.returnDim = vars.ubw_return_dimension;
                if (newEntity instanceof ServerPlayer targetPlayer) {
                   TypeMoonWorldModVariables.PlayerVariables targetVars = (TypeMoonWorldModVariables.PlayerVariables)targetPlayer.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -942,6 +1042,7 @@ public class ChantHandler {
       }
 
       player.level().playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.0F, 1.0F);
+      return true;
    }
 
    private static void initialUBWFill(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, List<Entity> targets) {
@@ -979,6 +1080,7 @@ public class ChantHandler {
       vars.ubw_chant_progress = 0;
       vars.ubw_chant_timer = 0;
       vars.syncPlayerVariables(player);
+      PENDING_UBW_ACTIVATION_ATTEMPTS.remove(player.getUUID());
       clearVisualSwords(player);
       startTerrainRestoration(player);
       player.displayClientMessage(Component.translatable(reasonKey), true);
@@ -1002,8 +1104,8 @@ public class ChantHandler {
    public static void onPlayerChangedDimension(PlayerChangedDimensionEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (event.getFrom().location().equals(ModDimensions.UBW_KEY.location()) && vars.is_in_ubw) {
-            ServerLevel sourceLevel = player.getServer().getLevel(ModDimensions.UBW_KEY);
+         if (UBWInstanceManager.isUbwDimension(event.getFrom().location()) && vars.is_in_ubw) {
+            ServerLevel sourceLevel = player.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, event.getFrom().location()));
             ServerLevel targetLevel = (ServerLevel)player.level();
             if (sourceLevel != null) {
                Vec3 center = UBW_LOCATIONS.get(player.getUUID());
@@ -1018,6 +1120,7 @@ public class ChantHandler {
             vars.is_in_ubw = false;
             vars.syncPlayerVariables(player);
             UBW_LOCATIONS.remove(player.getUUID());
+            UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
          }
       }
    }
@@ -1029,7 +1132,7 @@ public class ChantHandler {
          returnLevel = player.serverLevel();
       }
 
-      if (player.level() instanceof ServerLevel sourceLevel && sourceLevel.dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+      if (player.level() instanceof ServerLevel sourceLevel && UBWInstanceManager.isUbwDimension(sourceLevel)) {
          clearVisualSwords(player);
          Vec3 center = player.position();
          returnEntitiesOnly(player, vars, sourceLevel, returnLevel, center);
@@ -1041,6 +1144,7 @@ public class ChantHandler {
       ACTIVE_UBW_ENTITIES.remove(player.getUUID());
       ACTIVE_ENTITY_POSITIONS.remove(player.getUUID());
       player.teleportTo(returnLevel, vars.ubw_return_x, vars.ubw_return_y, vars.ubw_return_z, player.getYRot(), player.getXRot());
+      UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
    }
 
    private static void returnEntitiesOnly(
@@ -1132,7 +1236,7 @@ public class ChantHandler {
    public static void onLevelTick(net.neoforged.neoforge.event.tick.LevelTickEvent.Post event) {
       Level level = event.getLevel();
       if (!level.isClientSide) {
-         if (level.dimension().location().equals(ModDimensions.UBW_KEY.location())) {
+         if (UBWInstanceManager.isUbwDimension(level)) {
             if (level.getGameTime() % 20L == 0L) {
                if (level instanceof ServerLevel serverLevel) {
                   for (Entry<UUID, List<UUID>> entry : ACTIVE_UBW_ENTITIES.entrySet()) {
@@ -1212,7 +1316,7 @@ public class ChantHandler {
             );
             if (vars.is_in_ubw && UBW_LOCATIONS.containsKey(player.getUUID())) {
                Vec3 center = UBW_LOCATIONS.get(player.getUUID());
-               if (player.level().dimension().location().equals(ModDimensions.UBW_KEY.location())
+               if (UBWInstanceManager.isUbwDimension(player.level())
                   && player.position().distanceToSqr(center) < 40000.0
                   && (
                      event.getSource().getDirectEntity() instanceof UBWProjectileEntity

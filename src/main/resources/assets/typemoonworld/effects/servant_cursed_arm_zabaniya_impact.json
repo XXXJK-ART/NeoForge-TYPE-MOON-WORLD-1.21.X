@@ -1,0 +1,73 @@
+{
+  "duration": 1.5,
+  "notes": "Zabaniya impact: heart crush pulse, dark smoke, and soul flash.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.75,
+      "rate": 3600,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.18,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.18, "color": "#FFFF0044" },
+        { "t": 0.58, "color": "#AA330088" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.38, "size": 0.55 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.9, 0.0], "scale": [0.15, 0.15, 0.15] },
+        { "t": 0.35, "pos": [0.0, 0.9, 0.0], "scale": [1.8, 1.8, 1.8], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.9, 0.0], "scale": [0.4, 0.4, 0.4], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "ZABANIYA_HEART_CRUSH",
+      "enable_trail": true,
+      "max_vanilla_particles_per_tick": 10,
+      "vanilla_particles": [
+        { "type": "soul", "count": 1, "spread": [0.35, 0.55, 0.35], "offset": [0.0, 0.9, 0.0], "speed": 0.06, "chance": 0.65 },
+        { "type": "large_smoke", "count": 1, "spread": [0.45, 0.45, 0.45], "offset": [0.0, 0.7, 0.0], "speed": 0.04, "chance": 0.55 },
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.9, 0.0], "speed": 0.0, "chance": 0.3 }
+      ]
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 1.25,
+      "rate": 1500,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.08,
+      "component": { "type": "circle", "radius": 1.0, "segments": 144 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88220033" },
+        { "t": 0.55, "color": "#AA6600AA" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.5, "size": 0.22 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.1, 0.0], "scale": [0.4, 0.4, 0.4] },
+        { "t": 1.0, "pos": [0.0, 0.1, 0.0], "scale": [3.0, 3.0, 3.0], "easing": "ease_out_cubic" }
+      ],
+      "visibility_condition": "random() > 0.15",
+      "blend": "ADDITIVE",
+      "particle_role": "ZABANIYA_CURSE_RING"
+    }
+  ]
+}

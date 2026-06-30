@@ -1,0 +1,10 @@
+{
+  "id": "strategy_b",
+  "display_name": "Strategy B",
+  "display_name_zh": "军略 B",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 400,
+  "duration_ticks": 500,
+  "effects": []
+}

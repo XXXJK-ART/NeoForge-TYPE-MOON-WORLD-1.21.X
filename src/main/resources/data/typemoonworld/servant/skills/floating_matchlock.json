@@ -1,0 +1,10 @@
+{
+  "id": "floating_matchlock",
+  "display_name": "Floating Matchlock",
+  "display_name_zh": "浮游火绳枪",
+  "type": "active",
+  "mp_cost": 8,
+  "cooldown_ticks": 160,
+  "duration_ticks": 240,
+  "effects": []
+}

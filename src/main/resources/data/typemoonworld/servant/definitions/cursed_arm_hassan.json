@@ -1,0 +1,80 @@
+{
+  "id": "cursed_arm_hassan",
+  "display_name": "Hassan of the Cursed Arm",
+  "display_name_zh": "咒腕哈桑",
+  "class_type": "assassin",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "assassin", "male", "lawful", "evil"],
+  "parameters": {
+    "endurance": "C",
+    "endurance_plus": false,
+    "strength": "B",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "C",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/cursed_arm_hassan.geo.json",
+    "texture": "typemoonworld:textures/entity/cursed_arm_hassan.png",
+    "animation": "typemoonworld:animations/cursed_arm_hassan.animation.json",
+    "animations": {
+      "idle": "animation.cursed_arm_hassan.idle",
+      "walk": "animation.cursed_arm_hassan.walk",
+      "uppercut": "animation.cursed_arm_hassan.stab",
+      "horizontal_swing": "animation.cursed_arm_hassan.stab",
+      "dirk_throw": "animation.cursed_arm_hassan.dirk_throw",
+      "assassin_stab": "animation.cursed_arm_hassan.stab",
+      "shadow_step": "animation.cursed_arm_hassan.shadow_step",
+      "no_cape": "No Cape",
+      "no_bandages": "No Bandages",
+      "zabaniya": "animation.cursed_arm_hassan.zabaniya"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": -0.25,
+      "y": -1.40,
+      "z": 0
+    },
+    "default_weapon": "typemoonworld:dirk_small_knife",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "no_cape",
+      "no_bandages",
+      "zabaniya",
+      "dirk_throw",
+      "assassin_stab",
+      "shadow_step",
+      "knife_feint",
+      "shadow_lunge",
+      "launcher",
+      "pursuit",
+      "uppercut",
+      "horizontal_swing"
+    ]
+  },
+  "skills": ["stealth_d", "spiritualization_b_plus"],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "lawful",
+    "social": "hermit",
+    "combat": "cautious",
+    "special_principles": ["spare_pigs"],
+    "starting_favor": 50.0
+  },
+  "ai_config": "default_assassin",
+  "spawn_egg": {
+    "primary": 1775773,
+    "secondary": 7216940
+  }
+}

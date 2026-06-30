@@ -1,0 +1,10 @@
+{
+  "id": "anti_mystery_spark",
+  "display_name": "Anti-Mystery Spark",
+  "display_name_zh": "反神秘火花",
+  "type": "active",
+  "mp_cost": 14,
+  "cooldown_ticks": 200,
+  "duration_ticks": 100,
+  "effects": []
+}

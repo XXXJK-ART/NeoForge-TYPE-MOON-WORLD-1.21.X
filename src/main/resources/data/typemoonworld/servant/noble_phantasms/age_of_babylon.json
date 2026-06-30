@@ -1,0 +1,14 @@
+{
+  "id": "age_of_babylon",
+  "display_name": "Age of Babylon",
+  "display_name_zh": "Age of Babylon",
+  "rank": "?",
+  "type": "anti_army",
+  "mp_cost": 30.0,
+  "cooldown_ticks": 0,
+  "windup_ticks": 0,
+  "duration_ticks": 40,
+  "effects": [],
+  "description": "Large-scale Age of Babylon volley. Ordinary earth-weapon shots and interception are treated as free basic attacks.",
+  "description_zh": "\u5927\u89c4\u6a21\u6c11\u4e4b\u667a\u6167\u9f50\u5c04\u3002\u666e\u901a\u5730\u9762\u6b66\u5668\u6295\u5c04\u4e0e\u62e6\u622a\u89c6\u4e3a\u514d\u8d39\u666e\u901a\u653b\u51fb\u3002"
+}

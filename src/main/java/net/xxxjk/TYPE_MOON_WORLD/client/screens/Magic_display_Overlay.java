@@ -11,6 +11,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber({Dist.CLIENT})
@@ -18,8 +19,11 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 public class Magic_display_Overlay {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void eventHandler(RenderGuiEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (ReplayUiSuppressor.shouldHideTypeMoonHud()) return;
+
         int h = event.getGuiGraphics().guiHeight();
-        Player entity = Minecraft.getInstance().player;
+        Player entity = minecraft.player;
         if (entity == null) return;
 
         try {
@@ -69,10 +73,10 @@ public class Magic_display_Overlay {
             event.getGuiGraphics().fill(barX + barWidth, barY - 1, barX + barWidth + 1, barY + barHeight + 1, 0xFFFFFFFF);
 
             String manaText = (int) currentMana + " / " + (int) maxMana;
-            int textWidth = Minecraft.getInstance().font.width(manaText);
+            int textWidth = minecraft.font.width(manaText);
             int textX = barX + (barWidth - textWidth) / 2;
             int textY = barY + (barHeight - 8) / 2 + 1;
-            event.getGuiGraphics().drawString(Minecraft.getInstance().font, manaText, textX, textY, 0xFFFFFFFF, true);
+            event.getGuiGraphics().drawString(minecraft.font, manaText, textX, textY, 0xFFFFFFFF, true);
 
             int iconX = barX - 4;
             int iconY = barY - 3;
@@ -188,11 +192,11 @@ public class Magic_display_Overlay {
                 int magicTextX = barX;
                 int magicTextY = barY - 12;
 
-                event.getGuiGraphics().drawString(Minecraft.getInstance().font, labelStr, magicTextX, magicTextY, 0xFFFFFFFF, true);
+                event.getGuiGraphics().drawString(minecraft.font, labelStr, magicTextX, magicTextY, 0xFFFFFFFF, true);
                 event.getGuiGraphics().drawString(
-                        Minecraft.getInstance().font,
+                        minecraft.font,
                         magicName,
-                        magicTextX + Minecraft.getInstance().font.width(labelStr),
+                        magicTextX + minecraft.font.width(labelStr),
                         magicTextY,
                         magicColor,
                         true

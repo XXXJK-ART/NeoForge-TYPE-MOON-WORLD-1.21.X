@@ -9,6 +9,10 @@ public final class GemGravityModeClient {
    }
 
    public static void openSelector(InteractionHand hand) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft != null && minecraft.player != null) {
          minecraft.setScreen(new GemGravityModeSelectScreen(hand));

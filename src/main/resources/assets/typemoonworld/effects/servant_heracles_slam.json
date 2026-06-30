@@ -1,0 +1,72 @@
+{
+  "duration": 2.0,
+  "notes": "Heracles ground slam: heavy dust, stone shock ring, and purple impact core.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.65,
+      "rate": 4200,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.06,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.2,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#CCAA88FF" },
+        { "t": 0.75, "color": "#88443322" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.35, "size": 1.2 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.2, 0.0], "scale": [0.25, 0.12, 0.25] },
+        { "t": 0.55, "pos": [0.0, 0.25, 0.0], "scale": [3.5, 1.5, 3.5], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.15, 0.0], "scale": [1.0, 0.5, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "HERACLES_SLAM_CORE",
+      "max_vanilla_particles_per_tick": 12,
+      "vanilla_particles": [
+        { "type": "poof", "count": 1, "spread": [0.8, 0.25, 0.8], "offset": [0.0, 0.15, 0.0], "speed": 0.08, "chance": 0.7 },
+        { "type": "large_smoke", "count": 1, "spread": [1.0, 0.2, 1.0], "offset": [0.0, 0.1, 0.0], "speed": 0.06, "chance": 0.75 }
+      ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 1.8,
+      "rate": 2600,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.08,
+      "component": { "type": "circle", "radius": 1.0, "segments": 220 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.4, "color": "#99886655" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.45, "size": 0.9 },
+        { "t": 1.0, "size": 0.05 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.05, 0.0], "scale": [0.4, 0.4, 0.4] },
+        { "t": 0.5, "pos": [0.0, 0.05, 0.0], "scale": [7.5, 7.5, 7.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.05, 0.0], "scale": [11.0, 11.0, 11.0] }
+      ],
+      "visibility_condition": "random() > 0.15",
+      "blend": "ADDITIVE",
+      "particle_role": "HERACLES_SLAM_SHOCKWAVE"
+    }
+  ]
+}

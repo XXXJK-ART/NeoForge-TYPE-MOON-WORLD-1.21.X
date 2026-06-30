@@ -1,0 +1,10 @@
+{
+  "id": "noon_guard",
+  "display_name": "Noon Guard",
+  "display_name_zh": "正午守护",
+  "type": "active",
+  "mp_cost": 18,
+  "cooldown_ticks": 280,
+  "duration_ticks": 80,
+  "effects": []
+}

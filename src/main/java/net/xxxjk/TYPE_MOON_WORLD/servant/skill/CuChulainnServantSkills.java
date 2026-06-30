@@ -25,8 +25,11 @@ public final class CuChulainnServantSkills {
    private static ServantExecutionResult executeRecastStance(ServantExecutionContext context) {
       LivingEntity entity = context.caster();
       if (entity == null) return ServantExecutionResult.FAILED;
-      entity.getPersistentData().putBoolean(CuChulainnCombatHelper.RECAST_STANCE_READY_TAG, true);
-      entity.getPersistentData().putBoolean(CuChulainnCombatHelper.RECAST_STANCE_USED_TAG, false);
+      var data = entity.getPersistentData();
+      data.putBoolean(CuChulainnCombatHelper.RECAST_STANCE_READY_TAG, true);
+      if (!data.contains(CuChulainnCombatHelper.RECAST_STANCE_USED_TAG)) {
+         data.putBoolean(CuChulainnCombatHelper.RECAST_STANCE_USED_TAG, false);
+      }
       return ServantExecutionResult.SUCCESS;
    }
 

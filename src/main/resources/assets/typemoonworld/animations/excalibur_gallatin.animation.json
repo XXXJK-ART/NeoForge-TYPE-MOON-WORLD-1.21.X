@@ -1,0 +1,40 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "1": {
+      "loop": true,
+      "bones": {
+        "sword": {
+          "scale": {
+            "vector": [0.60938, 1, 0.76797]
+          }
+        },
+        "sword2": {
+          "scale": {
+            "vector": [1, 1, 0.68477]
+          }
+        },
+        "sword3": {
+          "scale": {
+            "vector": [1, 1, 0.61836]
+          }
+        },
+        "sword4": {
+          "scale": {
+            "vector": [1, 1, 0.36875]
+          }
+        },
+        "sword5": {
+          "scale": {
+            "vector": [0.64414, 1, 0.56836]
+          }
+        },
+        "bone2": {
+          "scale": {
+            "vector": [1, 1, 0.2]
+          }
+        }
+      }
+    }
+  }
+}

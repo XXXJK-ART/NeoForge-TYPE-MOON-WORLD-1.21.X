@@ -1,0 +1,15 @@
+{
+  "id": "li_shuwen_interrupt",
+  "display_name": "Li Shuwen - Interrupt",
+  "display_name_zh": "断息突入",
+  "type": "active",
+  "mp_cost": 5,
+  "cooldown_ticks": 50,
+  "duration_ticks": 10,
+  "effects": [
+    {
+      "effect_type": "li_shuwen_interrupt",
+      "params": {}
+    }
+  ]
+}

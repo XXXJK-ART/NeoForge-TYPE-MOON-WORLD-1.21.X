@@ -28,7 +28,7 @@ public record ServantParams(
    }
 
    public double movementSpeed() {
-      return 0.1 + effectiveCoefficient(this.agility, this.agilityPlus) * 0.002;
+      return 0.16 + effectiveCoefficient(this.agility, this.agilityPlus) * 0.004;
    }
 
    public double armor() {
@@ -36,7 +36,7 @@ public record ServantParams(
    }
 
    public double manaPool() {
-      return effectiveCoefficient(this.magic, this.magicPlus) * 10.0;
+      return effectiveCoefficient(this.magic, this.magicPlus) * 20.0;
    }
 
    public double critRatePercent() {

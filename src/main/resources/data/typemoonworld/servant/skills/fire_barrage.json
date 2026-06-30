@@ -1,0 +1,10 @@
+{
+  "id": "fire_barrage",
+  "display_name": "Fire Barrage",
+  "display_name_zh": "烈火弹幕",
+  "type": "active",
+  "mp_cost": 12,
+  "cooldown_ticks": 140,
+  "duration_ticks": 40,
+  "effects": []
+}

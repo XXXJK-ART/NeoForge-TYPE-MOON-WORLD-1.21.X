@@ -24,6 +24,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage;
 import net.neoforged.neoforge.client.event.ScreenEvent.Opening;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.StructuralSelectionConfirmScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.StructuralSelectionNamingScreen;
 import net.xxxjk.TYPE_MOON_WORLD.network.SaveStructuralSelectionMessage;
@@ -51,6 +52,10 @@ public final class StructuralAnalysisSelectionClient {
    }
 
    public static boolean startSelectionFromCrosshair() {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return false;
+      }
+
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null && mc.level != null) {
          BlockPos target = getCrosshairBlockPos(mc);
@@ -75,6 +80,11 @@ public final class StructuralAnalysisSelectionClient {
 
    public static void confirmWithCrosshair() {
       if (active) {
+         if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+            cancelSelection();
+            return;
+         }
+
          Minecraft mc = Minecraft.getInstance();
          if (mc.player != null && mc.level != null) {
             int maxSideLength = getMaxSideLength(mc);
@@ -213,6 +223,10 @@ public final class StructuralAnalysisSelectionClient {
    @SubscribeEvent
    public static void onRenderLevelStage(RenderLevelStageEvent event) {
       if (active) {
+         if (ReplayUiSuppressor.shouldHideTypeMoonHud()) {
+            return;
+         }
+
          if (event.getStage() == Stage.AFTER_TRANSLUCENT_BLOCKS) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.level != null) {

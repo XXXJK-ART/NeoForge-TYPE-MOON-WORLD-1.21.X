@@ -1,0 +1,13 @@
+{
+  "id": "transfiguration_a",
+  "display_name": "Transfiguration A",
+  "display_name_zh": "Transfiguration A",
+  "type": "active",
+  "rank": "A",
+  "mp_cost": 15.0,
+  "cooldown_ticks": 200,
+  "duration_ticks": 0,
+  "effects": [],
+  "description": "Redistributes Enkidu's combat parameters between balanced, attack, and agility modes.",
+  "description_zh": "Switches Enkidu between balanced, attack, and agility modes."
+}

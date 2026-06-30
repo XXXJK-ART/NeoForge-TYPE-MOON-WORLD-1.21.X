@@ -1,0 +1,151 @@
+{
+  "duration": 0.7,
+  "emitters": [
+    {
+      "rate": 600,
+      "particle_lifetime": 0.15,
+      "size_variance": 0.45,
+      "position_variance": 0.04,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "sin(t * tau * 9 + progress * tau * 20) * 0.45 + sin(t * tau * 23) * 0.18",
+        "expr_y": "t * 8",
+        "expr_z": "cos(t * tau * 7 + progress * tau * 18) * 0.45 + sin(t * tau * 31) * 0.18",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 112
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.3, "color": "#FF88CCFF" },
+        { "t": 1.0, "color": "#004488FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.20 },
+        { "t": 1.0, "size": 0.045 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "floor(time * 20) % 2 == 0 && random() > 0.3",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 150,
+      "particle_lifetime": 0.15,
+      "size_variance": 0.45,
+      "position_variance": 0.03,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "t * 0.95 + sin(t * tau * 8 + progress * tau * 16) * 0.18",
+        "expr_y": "t * 0.75",
+        "expr_z": "sin(t * tau * 10) * 0.22",
+        "segments": 32
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFFFFF" },
+        { "t": 0.3, "color": "#8888CCFF" },
+        { "t": 1.0, "color": "#004488FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1125 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.15, 2.67, 0.0], "rot": [0, 0, -0.3826834, 0.9238795], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0.15, 2.67, 0.0], "rot": [0, 0, -0.3826834, 0.9238795], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "floor(time * 20) % 2 == 0 && random() > 0.3",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 150,
+      "particle_lifetime": 0.15,
+      "size_variance": 0.45,
+      "position_variance": 0.03,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "-t * 1.1 + cos(t * tau * 11 + progress * tau * 13) * 0.24",
+        "expr_y": "t * 0.95",
+        "expr_z": "sin(t * tau * 9) * 0.28",
+        "segments": 36
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#99FFFFFF" },
+        { "t": 0.3, "color": "#7788CCFF" },
+        { "t": 1.0, "color": "#004488FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.105 },
+        { "t": 1.0, "size": 0.0275 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [-0.1, 4.0, 0.1], "rot": [0.3826834, 0, 0, 0.9238795], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [-0.1, 4.0, 0.1], "rot": [0.3826834, 0, 0, 0.9238795], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "floor(time * 20) % 2 == 0 && random() > 0.3",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 150,
+      "particle_lifetime": 0.15,
+      "size_variance": 0.45,
+      "position_variance": 0.03,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "sin(t * tau * 7) * 0.24",
+        "expr_y": "t * 0.8",
+        "expr_z": "t * 0.75 + cos(t * tau * 8 + progress * tau * 14) * 0.18",
+        "segments": 28
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFFFFF" },
+        { "t": 0.3, "color": "#6688CCFF" },
+        { "t": 1.0, "color": "#004488FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.095 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 5.33, -0.2], "rot": [-0.258819, 0, 0.258819, 0.9330127], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0.0, 5.33, -0.2], "rot": [-0.258819, 0, 0.258819, 0.9330127], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "floor(time * 20) % 2 == 0 && random() > 0.3",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 200,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.5,
+      "position_variance": 0.06,
+      "velocity": [0, -0.25, 0],
+      "velocity_variance": 0.12,
+      "component": {
+        "type": "sphere",
+        "radius": 0.3,
+        "sample_count": 32
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.5, "color": "#FFFFAA55" },
+        { "t": 1.0, "color": "#FFFF4400" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.375 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 8, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0, 8, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "time < 0.5",
+      "blend": "ADDITIVE"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "radiant_field",
+  "display_name": "Radiant Field",
+  "display_name_zh": "烈日领域",
+  "type": "active",
+  "mp_cost": 22,
+  "cooldown_ticks": 260,
+  "duration_ticks": 60,
+  "effects": []
+}

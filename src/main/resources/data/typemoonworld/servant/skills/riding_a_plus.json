@@ -1,0 +1,18 @@
+{
+  "id": "riding_a_plus",
+  "display_name": "Riding A+",
+  "display_name_zh": "骑乘 A+",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mounted_bonus",
+      "params": {
+        "speed_bonus": 0.5,
+        "armor_bonus": 0.2
+      }
+    }
+  ]
+}

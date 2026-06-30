@@ -57,6 +57,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.AVALON);
                         output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
+                        output.accept(ModItems.HESHIKIRI_HASEBE);
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
@@ -64,6 +65,17 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GAE_BULG);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
+                        output.accept(ModItems.NAMELESS_CHAIN_DAGGER);
+                        output.accept(ModItems.DIRK_SMALL_KNIFE);
+                        output.accept(ModItems.GAN_JIANG);
+                        output.accept(ModItems.MO_YE);
+                        output.accept(ModItems.GAN_JIANG_OVEREDGE);
+                        output.accept(ModItems.MO_YE_OVEREDGE);
+                        output.accept(ModItems.NAMELESS_BOW);
+                        output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
+                        output.accept(ModItems.CRIMSON_HOUND);
+                        output.accept(ModItems.PARACELSUS_SWORD);
+                        output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
                         output.accept(ModItems.CHISEL);
@@ -184,7 +196,16 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
                         output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
                         output.accept(ModItems.MEDEA_SPAWN_EGG);
+                        output.accept(ModItems.MEDUSA_SPAWN_EGG);
+                        output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.DRAGONFANG_SOLDIER_SPAWN_EGG);
+                        output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
+                        output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
+                        output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
+                        output.accept(ModItems.ENKIDU_SPAWN_EGG);
+                        output.accept(ModItems.GAWAIN_SPAWN_EGG);
+                        output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
+                        output.accept(ModItems.PARACELSUS_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

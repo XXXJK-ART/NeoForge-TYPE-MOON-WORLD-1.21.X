@@ -1,0 +1,13 @@
+{
+  "id": "elemental_sword",
+  "display_name": "Sword of Paracelsus",
+  "display_name_zh": "元素使的魔剑",
+  "rank": "A+",
+  "type": "army",
+  "mp_cost": 150,
+  "cooldown_ticks": 1200,
+  "windup_ticks": 40,
+  "duration_ticks": 50,
+  "effects": [],
+  "description": "Fires a five-element ritual blast forward in a broad cone, then leaves a brief alchemical afterglow."
+}

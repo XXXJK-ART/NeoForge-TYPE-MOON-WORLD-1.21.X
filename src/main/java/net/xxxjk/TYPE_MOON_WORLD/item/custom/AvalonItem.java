@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -25,6 +26,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -38,6 +40,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private static final long TICKS_FOR_SWORD_ATTRIBUTE = 24000L;
+   private static final String AVALON_ACTIVE_TAG = "TypeMoonAvalonActive";
+   private static final String LEGACY_PLAYER_AVALON_UNTIL_TAG = "TypeMoonPlayerAvalonUntil";
 
    public AvalonItem(Properties properties) {
       super(properties);
@@ -74,31 +78,46 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
             }
          }
 
-         if (this.hasSaberMana(player)) {
-            player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 20, 5, false, false));
-            player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 20, 4, false, false));
+         if (isAvalonActivated(stack)) {
+            applyPlayerAvalonEffects(player);
+         } else if (player.getPersistentData().getLong(LEGACY_PLAYER_AVALON_UNTIL_TAG) > player.level().getGameTime()) {
+            activateAvalonStack(stack);
+            player.getPersistentData().remove(LEGACY_PLAYER_AVALON_UNTIL_TAG);
+            applyPlayerAvalonEffects(player);
          }
       }
    }
 
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
-      if (!level.isClientSide) {
-         if (this.hasSaberMana(player)) {
-            player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 2));
-            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 0));
-            player.getCooldowns().addCooldown(this, 200);
-            return InteractionResultHolder.success(player.getItemInHand(usedHand));
-         } else {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.avalon.no_saber_mana"), true);
-            return InteractionResultHolder.fail(player.getItemInHand(usedHand));
-         }
-      } else {
-         return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+      ItemStack stack = player.getItemInHand(usedHand);
+      if (!player.isCrouching()) {
+         return InteractionResultHolder.pass(stack);
       }
+      if (!level.isClientSide) {
+         activateAvalonStack(stack);
+         applyPlayerAvalonEffects(player);
+         if (player.level() instanceof ServerLevel serverLevel) {
+            ArtoriaPendragonCombatHelper.spawnAvalonFx(player);
+            serverLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 1.35F);
+         }
+         player.getCooldowns().addCooldown(this, 200);
+      }
+      return InteractionResultHolder.success(stack);
    }
 
-   private boolean hasSaberMana(Player player) {
-      return false;
+   private static boolean isAvalonActivated(ItemStack stack) {
+      CompoundTag tag = customTag(stack);
+      return tag != null && tag.getBoolean(AVALON_ACTIVE_TAG);
+   }
+
+   private static void activateAvalonStack(ItemStack stack) {
+      updateCustomData(stack, tag -> tag.putBoolean(AVALON_ACTIVE_TAG, true));
+      stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+   }
+
+   private static void applyPlayerAvalonEffects(Player player) {
+      player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 4, false, false, true));
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 3, false, false, true));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -113,9 +132,31 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
       tooltip.add(Component.translatable("item.typemoonworld.avalon.desc").withStyle(ChatFormatting.GOLD));
+      if (isAvalonActivated(stack)) {
+         tooltip.add(Component.translatable("item.typemoonworld.avalon.active").withStyle(ChatFormatting.AQUA));
+      }
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.cache;
+   }
+
+   private static CompoundTag customTag(ItemStack stack) {
+      CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+      return data == null ? null : data.copyTag();
+   }
+
+   private static void updateCustomData(ItemStack stack, TagUpdater updater) {
+      CompoundTag tag = customTag(stack);
+      if (tag == null) {
+         tag = new CompoundTag();
+      }
+      updater.update(tag);
+      stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+   }
+
+   @FunctionalInterface
+   private interface TagUpdater {
+      void update(CompoundTag tag);
    }
 }

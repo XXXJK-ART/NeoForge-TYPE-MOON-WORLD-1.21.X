@@ -1,0 +1,417 @@
+{
+  "duration": 1.2,
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.12,
+      "rate": 1200,
+      "particle_lifetime": 0.18,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.98], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.16, "color": "#FFFFFFFF" },
+        { "t": 0.55, "color": "#88FFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.28, "size": 0.3 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.2, 0.2, 0.2], "easing": "ease_out_cubic" },
+        { "t": 0.55, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.8, 0.8, 0.8], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.1, 1.1, 1.1] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "RELEASE_RING",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.05, 0.05, 0.05], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.65 },
+        { "type": "gust", "count": 1, "spread": [0.25, 0.2, 0.25], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.45 }
+      ],
+      "enable_trail": false
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.18,
+      "rate": 900,
+      "particle_lifetime": 0.22,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.38], "rotate_with_entity": true },
+      "component": { "type": "helix", "radius": 0.2, "turns": 7.0, "height": 3.2, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#66FFFFFF" },
+        { "t": 0.24, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.36, "size": 0.22 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -1.6, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.65, 1.0, 0.65] },
+        { "t": 0.45, "pos": [0.0, -1.45, 0.35], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.8, 1.0, 1.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, -1.1, 1.1], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [2.8, 0.8, 2.8] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "VISIBLE_UNWRAP_HELIX",
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [0.1, 0.2, 0.1], "offset": [0.0, 0.0, 0.0], "speed": 0.035, "chance": 0.2 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.56,
+      "rate": 1600,
+      "particle_lifetime": 0.38,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.0, 9.5],
+      "velocity_variance": 0.7,
+      "max_vanilla_particles_per_tick": 6,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 1.1], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.16 + 1.85 * pow(t, 0.85)) * (0.62 + 0.38 * random()) * cos(t * 62.83 + time * 26.0)",
+        "expr_y": "(0.16 + 1.85 * pow(t, 0.85)) * (0.62 + 0.38 * random()) * sin(t * 62.83 + time * 26.0) + (random() - 0.5) * (0.25 + 0.9 * t)",
+        "expr_z": "t * 20.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.24, "color": "#FFEEEEFF" },
+        { "t": 0.72, "color": "#66FFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.15 },
+        { "t": 0.35, "size": 0.42 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.2, 0.2, 0.2], "easing": "ease_out_cubic" },
+        { "t": 0.4, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [1.28, 1.28, 1.05] }
+      ],
+      "visibility_condition": "random() > 0.06",
+      "blend": "ADDITIVE",
+      "particle_role": "STORM_COLUMN_MAIN",
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.7, 0.7, 0.7], "offset": [0.0, 0.0, 4.0], "speed": 0.12, "chance": 0.25 },
+        { "type": "cloud", "count": 1, "spread": [1.0, 0.8, 1.0], "offset": [0.0, 0.0, 7.0], "speed": 0.08, "chance": 0.2 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 0.6,
+      "rate": 1050,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.06,
+      "velocity": [0.0, 0.0, 7.5],
+      "velocity_variance": 0.55,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 1.1], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.38 + 2.7 * pow(t, 0.9)) * cos(t * 37.7 - time * 22.0)",
+        "expr_y": "(0.38 + 2.7 * pow(t, 0.9)) * sin(t * 37.7 - time * 22.0) + sin(t * 18.84 + time * 8.0) * (0.15 + 0.55 * t)",
+        "expr_z": "1.2 + t * 18.5",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 240
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.38, "color": "#AAEFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.42, "size": 0.32 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.2, 0.2, 0.2], "easing": "ease_out_cubic" },
+        { "t": 0.45, "pos": [0.0, 0.0, 0.0], "rot": [0.0, -0.7071068, 0.0, 0.7071068], "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, -1.0, 0.0, 0.0], "scale": [1.2, 1.2, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "TRANSLUCENT",
+      "particle_role": "STORM_COLUMN_VOLUME_SHELL",
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [1.0, 1.0, 1.0], "offset": [0.0, 0.0, 8.0], "speed": 0.1, "chance": 0.22 },
+        { "type": "cloud", "count": 1, "spread": [1.4, 0.8, 1.4], "offset": [0.0, 0.0, 11.0], "speed": 0.06, "chance": 0.18 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 0.55,
+      "rate": 620,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.3,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.0, 11.0],
+      "velocity_variance": 0.4,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 1.1], "rotate_with_entity": true },
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 22.0], "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.45, "color": "#99FFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.28, "size": 0.25 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.4, 0.4, 0.15] },
+        { "t": 0.35, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.4, 1.4, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.9, 1.9, 1.0] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "COMPRESSED_AIR_CORE",
+      "vanilla_particles": [],
+      "enable_trail": false
+    },
+    {
+      "start_time": 0.14,
+      "end_time": 0.72,
+      "rate": 420,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.0, 4.0],
+      "velocity_variance": 0.4,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 1.1], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.72 + 0.42 * sin(t * 6.28)) * cos(t * 18.84 + time * 10.0)",
+        "expr_y": "(0.72 + 0.42 * sin(t * 6.28)) * sin(t * 18.84 + time * 10.0)",
+        "expr_z": "2.0 + t * 20.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 120
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFFFFF" },
+        { "t": 0.48, "color": "#66FFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.42, "size": 0.25 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.25, 0.25, 0.25] },
+        { "t": 0.5, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [1.1, 1.1, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "TRANSLUCENT",
+      "particle_role": "OUTER_SPIRAL_AIR_STRANDS",
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [1.2, 0.6, 1.2], "offset": [0.0, 0.0, 10.0], "speed": 0.05, "chance": 0.18 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.48,
+      "end_time": 0.82,
+      "rate": 1200,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.12,
+      "velocity": [0.0, 0.0, 0.5],
+      "velocity_variance": 0.45,
+      "max_vanilla_particles_per_tick": 8,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 23.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFFFFF" },
+        { "t": 0.18, "color": "#FFFFFFFF" },
+        { "t": 0.55, "color": "#88FFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.28, "size": 0.5 },
+        { "t": 1.0, "size": 0.05 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.2, 0.2, 0.2], "easing": "ease_out_cubic" },
+        { "t": 0.48, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [3.8, 3.8, 3.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [5.4, 5.4, 5.4] }
+      ],
+      "visibility_condition": "random() > 0.04",
+      "blend": "ADDITIVE",
+      "particle_role": "IMPACT_EXPLOSION_RING",
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [2.5, 1.0, 2.5], "offset": [0.0, 0.0, 0.0], "speed": 0.16, "chance": 0.5 },
+        { "type": "cloud", "count": 1, "spread": [3.2, 1.0, 3.2], "offset": [0.0, 0.0, 0.0], "speed": 0.08, "chance": 0.35 }
+      ],
+      "enable_trail": false
+    },
+    {
+      "start_time": 0.52,
+      "end_time": 0.9,
+      "rate": 700,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.42,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.0, 0.2],
+      "velocity_variance": 0.3,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, -1.05, 23.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFFFFF" },
+        { "t": 0.5, "color": "#44FFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.3, "size": 0.6 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.1, 1.0, 0.1] },
+        { "t": 0.5, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [4.5, 1.0, 4.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [6.5, 1.0, 6.5] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "TRANSLUCENT",
+      "particle_role": "GROUND_AIR_SHOCKWAVE",
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [2.5, 0.15, 2.5], "offset": [0.0, 0.0, 0.0], "speed": 0.09, "chance": 0.3 }
+      ],
+      "enable_trail": false
+    },
+    {
+      "start_time": 0.56,
+      "end_time": 0.95,
+      "rate": 460,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.14,
+      "velocity": [0.0, 0.08, 2.8],
+      "velocity_variance": 0.65,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 22.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "t * 6.2 * sin(-0.628 + random() * 1.256)",
+        "expr_y": "t * 2.0 * random()",
+        "expr_z": "t * 6.2 * cos(-0.628 + random() * 1.256)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 120
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.5, "color": "#44FFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.36, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.25, 0.25, 0.25] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.9, 0.9, 0.9] }
+      ],
+      "visibility_condition": "random() > 0.18",
+      "blend": "ADDITIVE",
+      "particle_role": "FAN_SCATTER",
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [1.5, 0.7, 1.5], "offset": [0.0, 0.0, 0.0], "speed": 0.08, "chance": 0.18 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.78,
+      "end_time": 1.2,
+      "rate": 130,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.03, 0.5],
+      "velocity_variance": 0.18,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 8.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "1.8 * sin(t * 10.0 + time * 5.0)",
+        "expr_y": "0.6 * sin(t * 4.0) - t * 0.8",
+        "expr_z": "t * 14.0 + 0.8 * cos(t * 9.0 + time * 4.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 80
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.42, "size": 0.12 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.8, 0.8, 0.8] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.3826834, 0.0, 0.9238795], "scale": [1.4, 1.0, 1.4] }
+      ],
+      "visibility_condition": "random() > 0.35",
+      "blend": "TRANSLUCENT",
+      "particle_role": "RESIDUAL_AIR_STRANDS",
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [0.8, 0.4, 0.8], "offset": [0.0, 0.0, 0.0], "speed": 0.035, "chance": 0.12 }
+      ],
+      "enable_trail": true
+    }
+  ],
+  "notes": [
+    "ARTORIA_BINDING: Strike Air is bound to Artoria's right-hand blade approximation and rotates with entity yaw. Local +Z is the forward blast direction.",
+    "TIMELINE: 0.0-0.1s release ring and blade-air reveal, 0.1-0.5s narrow cone spiral storm column, 0.5-0.8s compact hit shockwave, 0.8-1.2s residual air strands.",
+    "STYLE: white and transparent-white compressed air only. Uses vanilla flash/gust/cloud particles as support, while all main structure is VFX JSON."
+  ]
+}

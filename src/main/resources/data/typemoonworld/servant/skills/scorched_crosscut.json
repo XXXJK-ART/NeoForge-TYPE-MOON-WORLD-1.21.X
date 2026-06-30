@@ -1,0 +1,10 @@
+{
+  "id": "scorched_crosscut",
+  "display_name": "Scorched Crosscut",
+  "display_name_zh": "焦土十文字",
+  "type": "active",
+  "mp_cost": 12,
+  "cooldown_ticks": 140,
+  "duration_ticks": 30,
+  "effects": []
+}

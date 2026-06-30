@@ -1,0 +1,9 @@
+{
+  "id": "invisible_air",
+  "display_name": "Invisible Air",
+  "display_name_zh": "风王结界",
+  "rank": "C",
+  "type": "anti_unit",
+  "mp_cost": 20,
+  "description": "Conceals Excalibur and releases a forward wind blade cone."
+}

@@ -1,0 +1,29 @@
+{
+  "duration": 0.25,
+  "emitters": [
+    {
+      "rate": 40,
+      "particle_lifetime": 1.2,
+      "component": {
+        "type": "line",
+        "start": [0, 0, 0],
+        "end": [0, 0.8, 0],
+        "segments": 10
+      },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0] },
+        { "t": 1.0, "pos": [0, 0.4, 0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#AAFFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 1.0, "size": 0.06 }
+      ],
+      "visibility_condition": "t >= 0.0",
+      "blend": "ADDITIVE"
+    }
+  ]
+}

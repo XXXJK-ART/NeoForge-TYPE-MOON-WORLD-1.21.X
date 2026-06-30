@@ -1,0 +1,73 @@
+{
+  "duration": 1.0,
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.8,
+      "rate": 2200,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity", "offset": [0.0, 0.9, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 1.0, "segments": 160 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.2, "color": "#DD88FFAA" },
+        { "t": 0.5, "color": "#FFFFD700" },
+        { "t": 0.72, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.45, "size": 0.38 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.5, 0.5, 0.5] },
+        { "t": 0.45, "scale": [2.2, 2.2, 2.2], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [1.0, 1.0, 1.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_TRANSFIG_FLASH"
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 1.0,
+      "rate": 1600,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.25,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.045, 0.0],
+      "velocity_variance": 0.04,
+      "binding": { "mode": "entity", "offset": [0.0, 0.05, 0.0], "rotate_with_entity": false },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * 25.132 + time * 8.0) * 0.85",
+        "expr_y": "t * 2.0",
+        "expr_z": "sin(t * 25.132 + time * 8.0) * 0.85",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 160
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DD44FFAA" },
+        { "t": 0.45, "color": "#EEAAFFCC" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.5, "size": 0.12 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_PARAMETER_FLOW",
+      "enable_trail": true
+    }
+  ]
+}

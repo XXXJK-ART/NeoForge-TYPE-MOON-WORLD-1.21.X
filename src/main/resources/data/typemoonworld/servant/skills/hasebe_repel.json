@@ -1,0 +1,10 @@
+{
+  "id": "hasebe_repel",
+  "display_name": "Heshikiri Repel",
+  "display_name_zh": "压切击退",
+  "type": "active",
+  "mp_cost": 8,
+  "cooldown_ticks": 100,
+  "duration_ticks": 30,
+  "effects": []
+}

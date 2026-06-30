@@ -1,0 +1,17 @@
+{
+  "id": "seasoned_a_plus",
+  "display_name": "Seasoned A+",
+  "display_name_zh": "老练 A+",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mental_stability",
+      "params": {
+        "ally_radius": 20
+      }
+    }
+  ]
+}

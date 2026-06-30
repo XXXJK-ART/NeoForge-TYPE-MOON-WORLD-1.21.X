@@ -16,6 +16,7 @@ import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 public class MerlinRenderer extends GeoEntityRenderer<MerlinEntity> {
    public MerlinRenderer(Context renderManager) {
       super(renderManager, new MerlinModel());
+      this.addRenderLayer(new PetrifiedGeoLayer<>(this));
       this.addRenderLayer(
          new BlockAndItemGeoLayer<MerlinEntity>(this) {
             protected ItemStack getStackForBone(GeoBone bone, MerlinEntity animatable) {

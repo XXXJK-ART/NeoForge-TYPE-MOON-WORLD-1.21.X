@@ -60,6 +60,8 @@
       "teleport_behind",
       "stomp",
       "slam",
+      "earth_rend",
+      "shoulder_check",
       "uppercut",
       "horizontal_swing"
     ]

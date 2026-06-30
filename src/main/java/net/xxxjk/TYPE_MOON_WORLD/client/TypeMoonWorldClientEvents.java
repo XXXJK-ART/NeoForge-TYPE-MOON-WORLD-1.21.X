@@ -20,20 +20,38 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaExcaliburBeamRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaPendragonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GawainRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuChulainnRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CursedArmHassanRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DirkProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DragonfangSoldierRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaArcherRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EnkiduRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ChainsOfHeavenBindingRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HeraclesRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaBeamEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaMagicBoltRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.LiShuwenRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ParacelsusRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ParacelsusSpiritCannonRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaNobunagaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedSkeletonHajunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SasakiKojiroRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer;
@@ -41,9 +59,15 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariWaveProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariLightColumnEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TypeMoonEffectShaders;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWInterceptorSwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwChantRippleRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectionCircuitEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ProjectedItemProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RhoAiasEntityRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.VFXTriggerRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.world.HajunDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
@@ -171,6 +195,7 @@ public class TypeMoonWorldClientEvents {
    @SubscribeEvent
    @SuppressWarnings("unchecked")
    public static void registerRenderers(RegisterRenderers event) {
+      event.registerEntityRenderer(ModEntities.VFX_TRIGGER.get(), VFXTriggerRenderer::new);
       event.registerEntityRenderer(ModEntities.RYOUGI_SHIKI.get(), RyougiShikiRenderer::new);
       event.registerEntityRenderer(ModEntities.MERLIN.get(), MerlinRenderer::new);
       event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);
@@ -179,8 +204,24 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), SasakiKojiroRenderer::new);
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), CuChulainnRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA.get(), MedeaRenderer::new);
+      event.registerEntityRenderer(ModEntities.MEDUSA.get(), MedusaRenderer::new);
+      event.registerEntityRenderer(ModEntities.CURSED_ARM_HASSAN.get(), CursedArmHassanRenderer::new);
+      event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
+      event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
+      event.registerEntityRenderer(ModEntities.ENKIDU.get(), EnkiduRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);
+      event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
+      event.registerEntityRenderer(ModEntities.PARACELSUS.get(), ParacelsusRenderer::new);
+      event.registerEntityRenderer(ModEntities.PARACELSUS_SPIRIT_CANNON.get(), ParacelsusSpiritCannonRenderer::new);
+      event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
+      event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
+      event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);
+      event.registerEntityRenderer(ModEntities.CHAINS_OF_HEAVEN_BINDING.get(), ChainsOfHeavenBindingRenderer::new);
+      event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.UBW_INTERCEPTOR_SWORD.get(), UBWInterceptorSwordRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), SwordBarrelBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 0.0F, 0.0F));
       event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 0.0F, 0.0F, 1.0F));
@@ -188,6 +229,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GANDER_PROJECTILE.get(), GanderProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);
       event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_SHELL_EFFECT.get(), GravityShellRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_FIELD_SHELL_EFFECT.get(), GravityFieldShellRenderer::new);
@@ -196,6 +238,16 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.UBW_CHANT_RIPPLE.get(), UbwChantRippleRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_WAVE_PROJECTILE.get(), TsumukariWaveProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_LIGHT_COLUMN_EFFECT.get(), TsumukariLightColumnEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAE_BULG_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.GAE_BULG_ARMY_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.DIRK_PROJECTILE.get(), DirkProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.EMIYA_THROWN_WEAPON.get(), ProjectedItemProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.ENKIDU_EARTH_WEAPON.get(), ProjectedItemProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.EMIYA_ARROW_ORB.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.CRIMSON_HOUND_PROJECTILE.get(), ProjectedItemProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.PSEUDO_SPIRAL_SWORD_PROJECTILE.get(), ProjectedItemProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.RHO_AIAS_SHIELD.get(), RhoAiasEntityRenderer::new);
+      event.registerEntityRenderer(ModEntities.UBW_SKY_GEAR.get(), UbwSkyGearEntityRenderer::new);
    }
 
    @SubscribeEvent
@@ -227,5 +279,7 @@ public class TypeMoonWorldClientEvents {
    @SubscribeEvent
    public static void registerDimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event) {
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works"), new UBWDimensionEffects());
+      event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works_emiya"), new UBWDimensionEffects());
+      event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun"), new HajunDimensionEffects());
    }
 }

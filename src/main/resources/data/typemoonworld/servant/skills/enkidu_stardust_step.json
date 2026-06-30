@@ -1,0 +1,20 @@
+{
+  "id": "enkidu_stardust_step",
+  "display_name": "Stardust Step",
+  "display_name_zh": "\u661f\u5c18\u6b65",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 140,
+  "duration_ticks": 70,
+  "effects": [
+    {
+      "effect_type": "enkidu_stardust_step",
+      "params": {
+        "speed_amplifier": 1,
+        "reposition_distance": 3.0
+      }
+    }
+  ],
+  "description": "Repositions with green stardust, keeping ideal range for chains and earth weapons.",
+  "description_zh": "\u4ee5\u7fe0\u7eff\u661f\u5c18\u91cd\u65b0\u7ad9\u4f4d\uff0c\u4fdd\u6301\u5929\u4e4b\u9501\u4e0e\u5730\u9762\u6b66\u5668\u7684\u7406\u60f3\u8ddd\u79bb\u3002"
+}

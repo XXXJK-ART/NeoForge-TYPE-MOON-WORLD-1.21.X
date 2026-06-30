@@ -1,0 +1,316 @@
+{
+  "duration": 4.8,
+  "notes": [
+    "Demon King of the Sixth Heaven: red-black Maou field with close flame crown and domain pressure.",
+    "Visual identity is anti-divinity/anti-mystery pressure: dark canopy, heavy pulse rings, ash, black-red fire, and thin cold-white burn-away scars."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 3.55,
+      "rate": 4300,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.16, 0.0],
+      "velocity_variance": 0.2,
+      "max_vanilla_particles_per_tick": 8,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.0, 0.0], "rotate_with_entity": true },
+      "component": { "type": "helix", "radius": 1.0, "turns": 8.0, "height": 4.2, "segments": 240 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#FFFFE6D2" },
+        { "t": 0.3, "color": "#FFFF2400" },
+        { "t": 0.68, "color": "#AA330000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.34, "size": 0.54 },
+        { "t": 0.72, "size": 0.26 },
+        { "t": 1.0, "size": 0.045 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.45] },
+        { "t": 0.36, "scale": [2.15, 2.15, 2.15], "easing": "ease_out_cubic" },
+        { "t": 0.72, "scale": [1.72, 2.35, 1.72] },
+        { "t": 1.0, "scale": [1.35, 2.0, 1.35], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_RED_BLACK_FLAME_CROWN",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flame", "count": 1, "spread": [0.55, 0.85, 0.55], "offset": [0.0, 0.75, 0.0], "speed": 0.065, "chance": 0.42 },
+        { "type": "large_smoke", "count": 1, "spread": [0.8, 0.45, 0.8], "offset": [0.0, 0.45, 0.0], "speed": 0.04, "chance": 0.36 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 4.8,
+      "rate": 1550,
+      "particle_lifetime": 1.35,
+      "size_variance": 0.55,
+      "lifetime_variance": 0.35,
+      "position_variance": 0.12,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.11,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -0.42, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.1 + t * 5.2) * cos(angle + time * 2.4) + sin(t * 47.0) * 0.18",
+        "expr_y": "0.06 + random() * 0.35",
+        "expr_z": "(1.1 + t * 5.2) * sin(angle + time * 2.4) + cos(t * 43.0) * 0.18",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00110A08" },
+        { "t": 0.22, "color": "#77402A24" },
+        { "t": 0.58, "color": "#665C1000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.4, "size": 0.34 },
+        { "t": 1.0, "size": 0.05 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.75, 0.75, 0.75] },
+        { "t": 0.5, "scale": [1.55, 1.0, 1.55], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [2.15, 1.0, 2.15] }
+      ],
+      "visibility_condition": "random() > 0.18",
+      "blend": "TRANSLUCENT",
+      "particle_role": "ODA_MAOU_LOW_ASH_FIELD",
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [1.4, 0.12, 1.4], "offset": [0.0, 0.08, 0.0], "speed": 0.02, "chance": 0.35 },
+        { "type": "smoke", "count": 1, "spread": [1.1, 0.15, 1.1], "offset": [0.0, 0.05, 0.0], "speed": 0.025, "chance": 0.2 }
+      ]
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 4.15,
+      "rate": 1850,
+      "particle_lifetime": 0.92,
+      "size_variance": 0.42,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -0.34, 0.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 260 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF2200" },
+        { "t": 0.1, "color": "#AAFF2600" },
+        { "t": 0.38, "color": "#771A0000" },
+        { "t": 0.68, "color": "#552B0000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.14 },
+        { "t": 0.25, "size": 0.56 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.35, 0.35] },
+        { "t": 0.58, "scale": [8.8, 8.8, 8.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [11.5, 11.5, 11.5] }
+      ],
+      "visibility_condition": "floor(time * 8) % 2 == 0 || random() > 0.36",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_PRESSURE_PULSE_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "large_smoke", "count": 1, "spread": [1.8, 0.08, 1.8], "offset": [0.0, 0.05, 0.0], "speed": 0.028, "chance": 0.08 }
+      ]
+    },
+    {
+      "start_time": 0.38,
+      "end_time": 4.45,
+      "rate": 760,
+      "particle_lifetime": 1.45,
+      "size_variance": 0.38,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.09,
+      "velocity": [0.0, -0.06, 0.0],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 3.4, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "ellipsoid",
+        "radius_x": 1.0,
+        "radius_y": 0.45,
+        "radius_z": 1.0,
+        "sample_count": 240
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00160000" },
+        { "t": 0.18, "color": "#66120000" },
+        { "t": 0.46, "color": "#88330000" },
+        { "t": 0.76, "color": "#44080000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.28 },
+        { "t": 0.4, "size": 0.72 },
+        { "t": 1.0, "size": 0.12 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [3.2, 0.35, 3.2] },
+        { "t": 0.55, "scale": [11.5, 0.62, 11.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [15.0, 0.52, 15.0] }
+      ],
+      "visibility_condition": "random() > 0.42",
+      "blend": "TRANSLUCENT",
+      "particle_role": "ODA_MAOU_DARK_RED_CANOPY"
+    },
+    {
+      "start_time": 0.7,
+      "end_time": 4.55,
+      "rate": 900,
+      "particle_lifetime": 0.34,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.55, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "fractal_lightning",
+        "start": [-5.2, 2.7, -4.5],
+        "end": [4.6, 0.2, 4.4],
+        "iterations": 5,
+        "roughness": 0.62,
+        "period": 4.0,
+        "density": 6.0,
+        "randomize_start": true,
+        "randomize_end": true,
+        "random_radius_min": 2.0,
+        "random_radius_max": 7.5,
+        "random_height_min": 0.15,
+        "random_height_max": 2.8,
+        "seed1": 103.0,
+        "seed2": 307.0,
+        "seed3": 601.0,
+        "seed4": 907.0,
+        "seed5": 1201.0,
+        "segments": 120
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#CCFFFFFF" },
+        { "t": 0.34, "color": "#AAFF3A1A" },
+        { "t": 0.78, "color": "#55100000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.18, "size": 0.22 },
+        { "t": 0.62, "size": 0.075 },
+        { "t": 1.0, "size": 0.012 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.65, 0.65, 0.65] },
+        { "t": 1.0, "scale": [1.05, 1.05, 1.05] }
+      ],
+      "visibility_condition": "floor(time * 18) % 2 == 0 && random() > 0.18",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_ANTI_MYSTERY_BURN_SCARS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "enchanted_hit", "count": 1, "spread": [0.2, 0.2, 0.2], "offset": [0.0, 0.0, 0.0], "speed": 0.025, "chance": 0.03 }
+      ]
+    },
+    {
+      "start_time": 1.15,
+      "end_time": 4.8,
+      "rate": 720,
+      "particle_lifetime": 1.05,
+      "size_variance": 0.5,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.12,
+      "velocity": [0.0, 0.18, 0.0],
+      "velocity_variance": 0.25,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -0.25, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(random() * 2.0 - 1.0) * (1.5 + t * 6.5)",
+        "expr_y": "0.05 + t * 2.7 + random() * 0.5",
+        "expr_z": "(random() * 2.0 - 1.0) * (1.5 + t * 6.5)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 140
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFAA88" },
+        { "t": 0.16, "color": "#AAEEE6DC" },
+        { "t": 0.42, "color": "#88FF1800" },
+        { "t": 0.72, "color": "#55200000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.28, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.8, 0.8, 0.8] },
+        { "t": 1.0, "scale": [1.55, 1.55, 1.55] }
+      ],
+      "visibility_condition": "random() > 0.26",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_WHITE_ASH_SPARKS",
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [1.8, 0.2, 1.8], "offset": [0.0, 0.15, 0.0], "speed": 0.035, "chance": 0.28 },
+        { "type": "flame", "count": 1, "spread": [1.2, 0.3, 1.2], "offset": [0.0, 0.25, 0.0], "speed": 0.04, "chance": 0.12 }
+      ]
+    },
+    {
+      "start_time": 3.2,
+      "end_time": 4.8,
+      "rate": 1600,
+      "particle_lifetime": 0.72,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.16,
+      "max_vanilla_particles_per_tick": 5,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.35, 0.0], "rotate_with_entity": true },
+      "component": { "type": "sphere", "radius": 0.75, "sample_count": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.14, "color": "#FFFFFFFF" },
+        { "t": 0.32, "color": "#FFFF2600" },
+        { "t": 0.68, "color": "#88100000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.24 },
+        { "t": 0.28, "size": 0.95 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.35, 0.35] },
+        { "t": 0.45, "scale": [5.2, 2.2, 5.2], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [7.8, 2.8, 7.8] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_DOMAIN_CRUSH_BURST",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.8, 0.0], "speed": 0.0, "chance": 0.05 },
+        { "type": "large_smoke", "count": 1, "spread": [1.7, 0.45, 1.7], "offset": [0.0, 0.45, 0.0], "speed": 0.045, "chance": 0.22 }
+      ]
+    }
+  ]
+}

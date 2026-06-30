@@ -1,0 +1,20 @@
+{
+  "id": "mana_burst_a",
+  "display_name": "Mana Burst A",
+  "display_name_zh": "魔力放出 A",
+  "type": "active",
+  "mp_cost": 30,
+  "cooldown_ticks": 300,
+  "duration_ticks": 200,
+  "effects": [
+    {
+      "effect_type": "artoria_mana_burst",
+      "params": {
+        "attack_multiplier": 2.0,
+        "attack_speed_bonus": 0.3,
+        "flat_magic_damage": 15,
+        "terrain_break_scale": 2.0
+      }
+    }
+  ]
+}

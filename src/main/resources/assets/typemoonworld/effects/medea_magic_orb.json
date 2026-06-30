@@ -1,0 +1,72 @@
+{
+  "duration": 0.75,
+  "notes": "Medea basic magic orb cast bloom.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.5,
+      "rate": 900,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 0.55, "sample_count": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FF66AAFF" },
+        { "t": 0.75, "color": "#CCB044FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.35, "size": 0.28 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.35, 0.35, 0.35], "easing": "ease_out_cubic" },
+        { "t": 0.45, "pos": [0.0, 0.0, 0.0], "scale": [1.2, 1.2, 1.2], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [0.45, 0.45, 0.45], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "MEDEA_ORB_CORE",
+      "vanilla_particles": [
+        { "type": "witch", "count": 1, "spread": [0.12, 0.12, 0.12], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.4 },
+        { "type": "end_rod", "count": 1, "spread": [0.08, 0.08, 0.08], "offset": [0.0, 0.0, 0.0], "speed": 0.015, "chance": 0.5 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.7,
+      "rate": 500,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.25,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "circle", "radius": 0.75, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFFFFF" },
+        { "t": 0.45, "color": "#9966CCFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.5, "size": 0.16 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.4, 0.4, 0.4] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 1.0, 0.0, 0.0], "scale": [1.4, 1.4, 1.4] }
+      ],
+      "visibility_condition": "random() > 0.2",
+      "blend": "ADDITIVE",
+      "particle_role": "MEDEA_ORB_RING"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "emiya_style_battle_continuation",
+  "display_name": "Emiya-Style Battle Continuation",
+  "display_name_zh": "卫宫式战斗续航",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "emiya_exclusive_survival_chain",
+      "params": {
+        "first_recovery_ratio": 0.5,
+        "second_recovery_ratio": 0.3,
+        "second_duration_ticks": 3600,
+        "final_recovery_ratio": 0.2,
+        "final_lock_ticks": 1200
+      }
+    }
+  ]
+}

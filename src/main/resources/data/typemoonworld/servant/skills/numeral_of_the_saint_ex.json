@@ -1,0 +1,21 @@
+{
+  "id": "numeral_of_the_saint_ex",
+  "display_name": "Numeral of the Saint EX",
+  "display_name_zh": "圣者的数字 EX",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "sunlight_attribute_tripling",
+      "params": {
+        "condition": "daytime_clear_sky_direct_sun",
+        "attack_multiplier": 3.0,
+        "health_multiplier": 3.0,
+        "movement_multiplier": 3.0,
+        "armor_multiplier": 3.0
+      }
+    }
+  ]
+}

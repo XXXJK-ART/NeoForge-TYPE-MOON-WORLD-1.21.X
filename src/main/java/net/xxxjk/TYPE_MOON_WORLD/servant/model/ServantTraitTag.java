@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.model;
 
 public enum ServantTraitTag {
-   // 能力/血统
    DIVINE("divine"),
    DEMONIC("demonic"),
    DRAGON("dragon"),
@@ -12,24 +11,23 @@ public enum ServantTraitTag {
    FAIRY_TALE("fairy_tale"),
    MOUNTED("mounted"),
    CHALDEAN("chaldean"),
+   EARTH("earth"),
+   RIDING("riding"),
+   SUN_KNIGHT("sun_knight"),
 
-   // 人类相关
    HUMAN("human"),
    HUMANOID("humanoid"),
    LIVING_HUMAN("living_human"),
    HUMAN_THREAT("human_threat"),
    SAPIENT("sapient"),
 
-   // 性别
    MALE("male"),
    FEMALE("female"),
    CHILD("child"),
 
-   // 季节/外观
    SUMMER("summer"),
    COSTUME("costume"),
 
-   // 职阶
    SABER("saber"),
    LANCER("lancer"),
    ARCHER("archer"),
@@ -45,12 +43,10 @@ public enum ServantTraitTag {
    PRETENDER("pretender"),
    SHIELDER("shielder"),
 
-   // 从者通用
    SERVANT("servant"),
    SEVEN_KNIGHTS("seven_knights"),
    SHADOW_SERVANT("shadow_servant"),
 
-   // 阵营/属性
    CHAOTIC("chaotic"),
    LAWFUL("lawful"),
    NEUTRAL("neutral_alignment"),
@@ -58,7 +54,6 @@ public enum ServantTraitTag {
    EVIL("evil"),
    BALANCED("balanced"),
 
-   // 特殊/文化
    ROMAN("roman"),
    ROUND_TABLE("round_table"),
    STAR_BORN("star_born"),

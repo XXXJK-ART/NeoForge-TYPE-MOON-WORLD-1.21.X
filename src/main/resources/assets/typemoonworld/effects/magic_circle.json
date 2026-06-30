@@ -1,0 +1,127 @@
+{
+  "duration": 5.0,
+  "emitters": [
+    {
+      "rate": 360,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.3,
+      "position_variance": 0.02,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau) * 2.5",
+        "expr_y": "0.05 + sin(t * tau * 12 + progress * tau * 2) * 0.025",
+        "expr_z": "sin(t * tau) * 2.5",
+        "segments": 96
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#8800FFAA" },
+        { "t": 0.5, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#88FFAA00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.15 },
+        { "t": 0.5, "size": 0.30 },
+        { "t": 1.0, "size": 0.15 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] },
+        { "t": 0.5, "pos": [0, 0, 0], "rot": [0, 0.7071068, 0, 0.7071068], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, 1.0, 0, 0], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 240,
+      "particle_lifetime": 0.6,
+      "size_variance": 0.3,
+      "position_variance": 0.02,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau) * 1.8",
+        "expr_y": "-0.05 + cos(t * tau * 10 - progress * tau * 2) * 0.025",
+        "expr_z": "sin(t * tau) * 1.8",
+        "segments": 64
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CC44FFFF" },
+        { "t": 1.0, "color": "#FFFFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.15 },
+        { "t": 0.5, "size": 0.24 },
+        { "t": 1.0, "size": 0.15 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] },
+        { "t": 0.5, "pos": [0, 0, 0], "rot": [0, -0.7071068, 0, 0.7071068], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, -1.0, 0, 0], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE"
+    },
+    {
+      "rate": 300,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.3,
+      "position_variance": 0.02,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau) * (3.2 + 1.6 * cos(t * tau * 2))",
+        "expr_y": "0.03 + sin(t * tau * 6) * 0.03",
+        "expr_z": "sin(t * tau) * (3.2 + 1.6 * cos(t * tau * 2))",
+        "segments": 90
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#884488FF" },
+        { "t": 1.0, "color": "#8844FFCC" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.15 },
+        { "t": 0.5, "size": 0.30 },
+        { "t": 1.0, "size": 0.15 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] },
+        { "t": 0.5, "pos": [0, 0, 0], "rot": [0, 0.9238795, 0, 0.3826834], "scale": [1, 1, 1] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, 0.7071068, 0, -0.7071068], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "true",
+      "blend": "TRANSLUCENT"
+    },
+    {
+      "rate": 150,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.3,
+      "position_variance": 0.02,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "cos(t * tau) * 2.5",
+        "expr_y": "-0.03 + sin(t * tau * 16 + progress * tau * 8) * 0.05",
+        "expr_z": "sin(t * tau) * 2.5",
+        "segments": 96
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#44FFFFFF" },
+        { "t": 0.5, "color": "#88FFFFFF" },
+        { "t": 1.0, "color": "#22FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.15 },
+        { "t": 0.5, "size": 0.30 },
+        { "t": 1.0, "size": 0.15 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0, 1], "scale": [1, 1, 1] },
+        { "t": 0.5, "pos": [0, 0, 0], "rot": [0, 0.7071068, 0, 0.7071068], "scale": [1.05, 1, 1.05] },
+        { "t": 1.0, "pos": [0, 0, 0], "rot": [0, 1.0, 0, 0], "scale": [1, 1, 1] }
+      ],
+      "visibility_condition": "sin(time * 4 + angle * 0.5) > 0",
+      "blend": "TRANSLUCENT"
+    }
+  ]
+}

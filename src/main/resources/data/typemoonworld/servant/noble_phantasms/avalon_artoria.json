@@ -1,0 +1,9 @@
+{
+  "id": "avalon_artoria",
+  "display_name": "Avalon",
+  "display_name_zh": "远离尘世的理想乡",
+  "rank": "EX",
+  "type": "barrier",
+  "mp_cost": 0,
+  "description": "Activated by giving Avalon to Artoria. Reduces all damage to 10%, regenerates each tick, and negates special instant-death judgements."
+}

@@ -1,0 +1,10 @@
+{
+  "id": "ash_field",
+  "display_name": "Ash Field",
+  "display_name_zh": "焦土阵",
+  "type": "active",
+  "mp_cost": 18,
+  "cooldown_ticks": 280,
+  "duration_ticks": 60,
+  "effects": []
+}

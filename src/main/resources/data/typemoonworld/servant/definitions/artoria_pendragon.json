@@ -1,0 +1,79 @@
+{
+  "id": "artoria_pendragon",
+  "display_name": "Artoria Pendragon",
+  "display_name_zh": "阿尔托莉雅·潘德拉贡",
+  "class_type": "saber",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "saber", "female", "lawful", "good"],
+  "parameters": {
+    "endurance": "B",
+    "endurance_plus": false,
+    "strength": "B",
+    "strength_plus": false,
+    "agility": "B",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": false,
+    "luck": "A",
+    "luck_plus": true
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/artoria_pendragon.geo.json",
+    "texture": "typemoonworld:textures/entity/artoria_pendragon.png",
+    "animation": "typemoonworld:animations/artoria_pendragon.animation.json",
+    "animations": {
+      "idle": "animation.artoria_pendragon.idle",
+      "walk": "animation.artoria_pendragon.walk",
+      "sweep": "animation.artoria_pendragon.sweep",
+      "slash": "animation.artoria_pendragon.slash",
+      "uppercut": "animation.artoria_pendragon.uppercut",
+      "horizontal_swing": "animation.artoria_pendragon.horizontal_swing"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.12,
+      "y": -0.82,
+      "z": 0.08
+    },
+    "default_weapon": "typemoonworld:excalibur",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "break_forward_blocks",
+      "slash",
+      "sweep",
+      "uppercut",
+      "horizontal_swing",
+      "launcher",
+      "pursuit",
+      "charge",
+      "interrupt"
+    ]
+  },
+  "skills": [
+    "magic_resistance_a",
+    "riding_b",
+    "artoria_instinct_a",
+    "mana_burst_a",
+    "charisma_b"
+  ],
+  "noble_phantasm": "excalibur_beam",
+  "personality": {
+    "obedience": "compliant",
+    "principle": "orderly",
+    "morality": "good",
+    "social": "normal",
+    "combat": "balanced",
+    "starting_favor": 65.0
+  },
+  "ai_config": "default_saber",
+  "spawn_egg": {
+    "primary": 1986479,
+    "secondary": 16044894
+  }
+}

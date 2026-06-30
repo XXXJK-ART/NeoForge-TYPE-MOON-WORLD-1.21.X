@@ -1,0 +1,14 @@
+{
+  "id": "chain_of_heaven",
+  "display_name": "Chains of Heaven",
+  "display_name_zh": "Chains of Heaven",
+  "rank": "?",
+  "type": "anti_divine",
+  "mp_cost": 30.0,
+  "cooldown_ticks": 400,
+  "windup_ticks": 0,
+  "duration_ticks": 20,
+  "effects": [],
+  "description": "Binds a single target. Divine targets are held much longer and have their AI suppressed.",
+  "description_zh": "Binds one target and suppresses movement and AI."
+}

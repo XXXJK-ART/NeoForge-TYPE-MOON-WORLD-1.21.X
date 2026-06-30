@@ -1,0 +1,19 @@
+{
+  "id": "charisma_e_gawain",
+  "display_name": "Charisma E",
+  "display_name_zh": "领导力 E",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 55,
+  "effects": [
+    {
+      "effect_type": "ally_attack_aura",
+      "params": {
+        "radius": 20,
+        "self_attack_bonus": 0.15,
+        "ally_attack_bonus": 0.1
+      }
+    }
+  ]
+}

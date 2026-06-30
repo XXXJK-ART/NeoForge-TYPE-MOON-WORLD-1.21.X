@@ -1,0 +1,10 @@
+{
+  "id": "hasebe_thrust",
+  "display_name": "Heshikiri Thrust",
+  "display_name_zh": "压切突刺",
+  "type": "active",
+  "mp_cost": 7,
+  "cooldown_ticks": 80,
+  "duration_ticks": 20,
+  "effects": []
+}
