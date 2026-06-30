@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> DIRECT_DAMAGE = SynchedEntityData.defineId(EmiyaArrowOrbProjectileEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> BROKEN_PHANTASM = SynchedEntityData.defineId(EmiyaArrowOrbProjectileEntity.class, EntityDataSerializers.BOOLEAN);
+   private int maxLifeTicks = 80;
 
    public EmiyaArrowOrbProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -54,6 +55,10 @@ public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
 
    public void setBrokenPhantasm(boolean brokenPhantasm) {
       this.entityData.set(BROKEN_PHANTASM, brokenPhantasm);
+   }
+
+   public void setMaxLifeTicks(int maxLifeTicks) {
+      this.maxLifeTicks = Math.max(20, maxLifeTicks);
    }
 
    @Override
@@ -84,7 +89,7 @@ public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
       if (this.level().isClientSide) {
          this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          this.level().addParticle(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
-      } else if (this.tickCount > 80) {
+      } else if (this.tickCount > this.maxLifeTicks) {
          this.discard();
       }
    }

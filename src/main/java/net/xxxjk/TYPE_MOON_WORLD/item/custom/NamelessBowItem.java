@@ -13,10 +13,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
-import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -38,6 +38,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class NamelessBowItem extends net.minecraft.world.item.Item implements GeoItem, NoblePhantasmItem {
    private static final int MIN_CHARGE_TICKS = 4;
    private static final int FULL_CHARGE_TICKS = 20;
+   private static final double MAX_TARGET_RANGE = 300.0;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public NamelessBowItem(Properties properties) {
@@ -86,14 +87,15 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       if (payload.is(ModItems.CRIMSON_HOUND.get())) {
          CrimsonHoundProjectileEntity projectile = new CrimsonHoundProjectileEntity(serverLevel, player);
          projectile.setPos(spawn.x, spawn.y - 0.12, spawn.z);
-         projectile.setTrackedTarget(findLookTarget(serverLevel, player, 64.0));
+         projectile.setTrackedTarget(findLookTarget(serverLevel, player, MAX_TARGET_RANGE));
          projectile.setDeltaMovement(player.getLookAngle().normalize().scale(2.2 + charge * 0.8));
          serverLevel.addFreshEntity(projectile);
       } else {
          EmiyaArrowOrbProjectileEntity projectile = new EmiyaArrowOrbProjectileEntity(serverLevel, player, payload);
          projectile.setPos(spawn.x, spawn.y - 0.12, spawn.z);
          projectile.setDirectDamage(10.0F + charge * 10.0F);
-         projectile.setBrokenPhantasm(hasPayload);
+         projectile.setBrokenPhantasm(isNoblePhantasmPayload(payload));
+         projectile.setMaxLifeTicks(160);
          projectile.setDeltaMovement(player.getLookAngle().normalize().scale(2.4 + charge * 1.0));
          serverLevel.addFreshEntity(projectile);
       }
@@ -111,6 +113,7 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       AABB area = player.getBoundingBox().expandTowards(look.scale(range)).inflate(3.0);
       LivingEntity best = null;
       double bestScore = 0.985;
+
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          area,
@@ -130,6 +133,10 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       }
 
       return best;
+   }
+
+   private static boolean isNoblePhantasmPayload(ItemStack stack) {
+      return stack.getItem() instanceof NoblePhantasmItem;
    }
 
    @Override

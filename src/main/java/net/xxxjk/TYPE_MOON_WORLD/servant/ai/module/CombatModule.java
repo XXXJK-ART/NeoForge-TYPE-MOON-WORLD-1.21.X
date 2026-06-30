@@ -91,6 +91,10 @@ public final class CombatModule implements ServantAiModule {
       "typemoonworld", "frenzy_atk_boost");
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
+   private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 220;
+   private static final int PARACELSUS_WANDER_COOLDOWN = 65;
+   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 35;
+   private static final String TAG_PARACELSUS_LAST_AI_MAGIC = "ParacelsusLastAiMagicTick";
 
    private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
       float hardness = state.getDestroySpeed(level, pos);
@@ -233,6 +237,56 @@ public final class CombatModule implements ServantAiModule {
       });
    }
 
+   private boolean maybeCastParacelsusElementalMagic(ParacelsusEntity entity, LivingEntity target, boolean hasLineOfSight, ServantAiContext context) {
+      long now = context.gameTick();
+      if (entity.getCurrentMp() < 7.0 || !hasLineOfSight || now - entity.getPersistentData().getLong(TAG_PARACELSUS_LAST_AI_MAGIC) < PARACELSUS_MAGIC_AI_INTERVAL) {
+         return false;
+      }
+      if (!EntityUtils.isValidCombatTarget(entity, target)) {
+         return false;
+      }
+      String[] actions = entity.getCurrentMp() > entity.getMaxMp() * 0.55
+         ? new String[]{"fire_magic_a_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_b_cast", "earth_magic_b_cast", "wind_magic_b_cast"}
+         : new String[]{"water_magic_b_cast", "earth_magic_b_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_b_cast", "fire_magic_a_cast"};
+      int casts = entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now ? 3 : 1;
+      boolean castAny = false;
+      int start = (int)((now / PARACELSUS_MAGIC_AI_INTERVAL) % actions.length);
+      for (int i = 0; i < casts; i++) {
+         if (entity.getCurrentMp() < 7.0) {
+            break;
+         }
+         String action = actions[(start + i) % actions.length];
+         ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
+            new ServantCombatActionContext(entity, target, context, context.definition(), action, entity.distanceTo(target), hasLineOfSight, now)
+         );
+         if (result.handled() && result.success()) {
+            castAny = true;
+         }
+      }
+      if (castAny) {
+         entity.getPersistentData().putLong(TAG_PARACELSUS_LAST_AI_MAGIC, now);
+      }
+      return castAny;
+   }
+
+   private boolean maybeSummonParacelsusCannon(ParacelsusEntity entity, LivingEntity target, boolean hasLineOfSight, ServantAiContext context) {
+      long now = context.gameTick();
+      if (entity.getCurrentMp() < 18.0
+         || !hasLineOfSight
+         || now % 80 != 0
+         || !EntityUtils.isValidCombatTarget(entity, target)
+         || now - entity.getPersistentData().getLong("ParacelsusLastElementalSpiritSummon") < PARACELSUS_CANNON_SUMMON_COOLDOWN) {
+         return false;
+      }
+      if (entity.distanceTo(target) > 22.0) {
+         return false;
+      }
+      ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
+         new ServantCombatActionContext(entity, target, context, context.definition(), "elemental_spirit", entity.distanceTo(target), hasLineOfSight, now)
+      );
+      return result.handled() && result.success();
+   }
+
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       LivingEntity sharedTarget = context.target();
@@ -251,6 +305,10 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
       if (entity instanceof ParacelsusEntity paracelsus) {
+         if (sharedTarget != null && (!sharedTarget.isAlive() || !EntityUtils.isValidCombatTarget(entity, sharedTarget))) {
+            entity.setTarget(null);
+            sharedTarget = null;
+         }
          boolean hasLineOfSight = sharedTarget != null && entity.getSensing().hasLineOfSight(sharedTarget);
          ServantExecutionResult addonTick = ServantAddonRegistry.runLifecycleHandlers(
             new ServantLifecycleContext(entity, sharedTarget, context, context.definition(), context.gameTick())
@@ -260,6 +318,8 @@ public final class CombatModule implements ServantAiModule {
          }
          if (sharedTarget != null && sharedTarget.isAlive()) {
             double distance = entity.distanceTo(sharedTarget);
+            int phase = paracelsus.getCombatPhase();
+            entity.getLookControl().setLookAt(sharedTarget, 35.0F, 35.0F);
             if (distance <= 6.5) {
                Vec3 away = entity.position().subtract(sharedTarget.position());
                if (away.lengthSqr() > 1.0E-4) {
@@ -278,8 +338,37 @@ public final class CombatModule implements ServantAiModule {
                }
             } else if (distance >= 14.0) {
                ServantNavigationHelper.moveToTargetThrottled(entity, sharedTarget, 0.92, context.gameTick(), 12, 1.5, "ParacelsusAdvancePath");
+            } else if (context.gameTick() % PARACELSUS_WANDER_COOLDOWN == 0) {
+               Vec3 toTarget = sharedTarget.position().subtract(entity.position());
+               Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
+               if (horizontal.lengthSqr() > 1.0E-4) {
+                  horizontal = horizontal.normalize();
+                  Vec3 side = new Vec3(-horizontal.z, 0.0, horizontal.x);
+                  double drift = ((context.gameTick() / PARACELSUS_WANDER_COOLDOWN) & 1) == 0 ? 1.0 : -1.0;
+                  Vec3 orbitPoint = sharedTarget.position()
+                     .add(side.scale(4.0 * drift))
+                     .add(horizontal.scale(-2.0))
+                     .add(0.0, 0.0, 0.0);
+                  ServantNavigationHelper.moveToPositionThrottled(
+                     entity,
+                     orbitPoint,
+                     1.0,
+                     context.gameTick(),
+                     10,
+                     2.0,
+                     "ParacelsusOrbitPath"
+                  );
+               }
             } else {
                ServantNavigationHelper.stopIfMoving(entity);
+            }
+            if (sharedTarget != null && sharedTarget.isAlive()) {
+               if (maybeCastParacelsusElementalMagic(paracelsus, sharedTarget, hasLineOfSight, context)) {
+                  return;
+               }
+               if (maybeSummonParacelsusCannon(paracelsus, sharedTarget, hasLineOfSight, context)) {
+                  return;
+               }
             }
             if ((paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5 || paracelsus.getCurrentMp() <= paracelsus.getMaxMp() * 0.3)
                && context.definition().specialization().hasCombatAction("philosopher_stone")
@@ -293,8 +382,12 @@ public final class CombatModule implements ServantAiModule {
                   return;
                }
             }
-            if (paracelsus.getCurrentMp() >= 150.0
+            if (phase >= 3
+               && paracelsus.getHealth() <= paracelsus.getMaxHealth() / 3.0F
+               && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
+               && paracelsus.getCurrentMp() >= 150.0
                && hasLineOfSight
+               && EntityUtils.isValidCombatTarget(paracelsus, sharedTarget)
                && distance <= 28.0
                && context.gameTick() - paracelsus.getPersistentData().getLong("ParacelsusLastNpTick") >= 900L) {
                ServantNoblePhantasmExecutor.activateNp(
@@ -316,17 +409,6 @@ public final class CombatModule implements ServantAiModule {
                      java.util.List.of()
                   ),
                   1
-               );
-               return;
-            }
-            if (context.definition().specialization().hasCombatAction("elemental_spirit")
-               && paracelsus.getCurrentMp() >= 18.0
-               && hasLineOfSight
-               && context.gameTick() % 140 == 0) {
-               ServantAddonRegistry.executeCombatAction(
-                  new ServantCombatActionContext(
-                     entity, sharedTarget, context, context.definition(), "elemental_spirit", distance, hasLineOfSight, context.gameTick()
-                  )
                );
                return;
             }

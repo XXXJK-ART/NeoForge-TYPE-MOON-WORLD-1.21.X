@@ -1,0 +1,10 @@
+{
+  "id": "water_magic_b",
+  "display_name": "Water Elemental Magic B",
+  "display_name_zh": "水之元素魔术 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 1200,
+  "effects": []
+}

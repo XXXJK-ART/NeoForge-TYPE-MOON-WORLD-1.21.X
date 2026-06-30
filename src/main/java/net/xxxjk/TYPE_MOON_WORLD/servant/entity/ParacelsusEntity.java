@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusWorkshopHelper;
 
 public class ParacelsusEntity extends ServantEntity {
    public static final String SERVANT_KEY = "paracelsus";
@@ -74,6 +75,10 @@ public class ParacelsusEntity extends ServantEntity {
    @Override
    public double getMaxMp() {
       return Math.max(200.0, super.getMaxMp());
+   }
+
+   public boolean isInsideWorkshop() {
+      return this.getPersistentData().getBoolean(ParacelsusWorkshopHelper.TAG_INSIDE_WORKSHOP);
    }
 
    public int getCombatPhase() {

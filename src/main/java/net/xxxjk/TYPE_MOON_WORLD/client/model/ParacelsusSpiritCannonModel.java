@@ -7,16 +7,16 @@ import software.bernie.geckolib.model.GeoModel;
 public class ParacelsusSpiritCannonModel extends GeoModel<ParacelsusSpiritCannonEntity> {
    @Override
    public ResourceLocation getModelResource(ParacelsusSpiritCannonEntity object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/oda_matchlock_gun.geo.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/empty.geo.json");
    }
 
    @Override
    public ResourceLocation getTextureResource(ParacelsusSpiritCannonEntity object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/oda_matchlock_gun.png");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/empty.png");
    }
 
    @Override
    public ResourceLocation getAnimationResource(ParacelsusSpiritCannonEntity object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/oda_matchlock_gun.animation.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/empty.animation.json");
    }
 }

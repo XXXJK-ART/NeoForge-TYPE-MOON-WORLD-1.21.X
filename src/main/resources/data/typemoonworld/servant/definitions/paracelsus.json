@@ -38,15 +38,15 @@
       "eye_height": 1.62
     },
     "hand_item_offset": {
-      "x": 0.18,
+      "x": 0.0,
       "y": -0.82,
-      "z": 0.12
+      "z": 0.0
     },
     "default_weapon": "typemoonworld:paracelsus_sword",
     "immune_to_stone_axe_debuff": false,
     "combat_actions": ["rune_cast", "charge", "horizontal_swing", "uppercut", "elemental_spirit", "philosopher_stone"]
   },
-  "skills": ["high_speed_chanting_a", "elemental_spirit_a_plus", "philosopher_stone_a"],
+  "skills": ["high_speed_chanting_a", "elemental_spirit_a_plus", "philosopher_stone_a", "fire_magic_a", "fire_magic_b", "water_magic_a", "water_magic_b", "earth_magic_a", "earth_magic_b", "wind_magic_a", "wind_magic_b"],
   "noble_phantasm": "elemental_sword",
   "personality": {
     "obedience": "cooperative",
