@@ -1,7 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,11 +19,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class ArtoriaExcaliburBeamEntity extends Entity {
    private static final EntityDataAccessor<Float> END_X = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
@@ -265,36 +263,12 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       int radius = 28;
       int halfHeight = 112;
       int batchHeight = 3;
-      Set<BlockPos> visited = new HashSet<>();
+      DeferredTerrainDestruction.queueEllipsoid(level, center, radius, halfHeight, 120.0F, 80);
       for (int yStart = -halfHeight; yStart <= halfHeight; yStart += batchHeight) {
          final int fromY = yStart;
-         TYPE_MOON_WORLD.queueServerWork((yStart + halfHeight) / batchHeight, () -> {
-            int broken = 0;
-            int maxBroken = 24000;
-            for (int x = -radius; x <= radius && broken < maxBroken; x++) {
-               for (int y = fromY; y < fromY + batchHeight && y <= halfHeight && broken < maxBroken; y++) {
-                  for (int z = -radius; z <= radius && broken < maxBroken; z++) {
-                     double normalized = (x * x + z * z) / (double)(radius * radius) + (y * y) / (double)(halfHeight * halfHeight);
-                     if (normalized > 1.0) {
-                        continue;
-                     }
-                     BlockPos pos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
-                     if (!visited.add(pos.immutable())) {
-                        continue;
-                     }
-                     BlockState state = level.getBlockState(pos);
-                     float hardness = state.getDestroySpeed(level, pos);
-                     if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 120.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
-                        continue;
-                     }
-                     if (level.removeBlock(pos, false)) {
-                        broken++;
-                     }
-                  }
-               }
-            }
+         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork((yStart + halfHeight) / batchHeight, () -> {
             damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight);
-            spawnCraterSliceFx(level, center, radius, fromY, broken);
+            spawnCraterSliceFx(level, center, radius, fromY);
          });
       }
    }
@@ -319,16 +293,14 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       }
    }
 
-   private static void spawnCraterSliceFx(ServerLevel level, Vec3 center, int radius, int fromY, int broken) {
+   private static void spawnCraterSliceFx(ServerLevel level, Vec3 center, int radius, int fromY) {
       double y = center.y + fromY;
       level.sendParticles(ParticleTypes.EXPLOSION, center.x, y, center.z, 4, radius * 0.22, 0.9, radius * 0.22, 0.0);
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, y, center.z, 95, radius * 0.55, 1.9, radius * 0.55, 0.055);
       level.sendParticles(ParticleTypes.CLOUD, center.x, y + 0.4, center.z, 80, radius * 0.48, 1.2, radius * 0.48, 0.11);
       level.sendParticles(ParticleTypes.END_ROD, center.x, y + 0.5, center.z, 70, radius * 0.38, 1.6, radius * 0.38, 0.08);
       level.sendParticles(ParticleTypes.FLASH, center.x, y + 0.6, center.z, 2, radius * 0.08, 0.4, radius * 0.08, 0.0);
-      if (broken > 0) {
-         level.levelEvent(2008, BlockPos.containing(center.x, y, center.z), 0);
-      }
+      level.levelEvent(2008, BlockPos.containing(center.x, y, center.z), 0);
       if (fromY % 9 == 0) {
          level.playSound(null, BlockPos.containing(center.x, y, center.z), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.8F, 0.72F + (fromY + 25) * 0.006F);
       }

@@ -67,6 +67,11 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SaveStructuralSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionStructureMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardReleaseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantMasterContractMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
@@ -179,6 +184,11 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
       registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
+      registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);
+      registrar.playToServer(ServantCardFlightMessage.TYPE, ServantCardFlightMessage.STREAM_CODEC, ServantCardFlightMessage::handleData);
+      registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
+      registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);
+      registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
       registrar.playToClient(
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE,
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC,

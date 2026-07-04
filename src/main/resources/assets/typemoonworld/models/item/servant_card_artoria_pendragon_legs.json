@@ -1,0 +1,7 @@
+﻿{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "typemoonworld:item/servant_cards/artoria_pendragon_card"
+  }
+}
+

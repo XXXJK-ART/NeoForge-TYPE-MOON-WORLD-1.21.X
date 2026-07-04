@@ -32,6 +32,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -77,6 +80,9 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isModeSwitchDown = false;
       private static boolean isWheelSwitchDown = false;
       private static final boolean[] numpadWheelDown = new boolean[10];
+      private static boolean servantJumpDown = false;
+      private static long servantLastJumpTapMs = 0L;
+      private static int servantFlightInputSendDelay = 0;
       private static long castPressStartMs = -1L;
       private static boolean castLongTriggered = false;
       private static boolean machineGunCastKeyDown = false;
@@ -158,6 +164,10 @@ public class TypeMoonWorldModKeyMappings {
             updateMachineGunFiringPose(vars);
             StructuralProjectionPlacementClient.cancelIfInvalid(vars);
             boolean suppressScreens = ReplayUiSuppressor.shouldSuppressTypeMoonScreens();
+            if (vars.servant_card_transformed) {
+               handleServantCardControls(vars);
+               return;
+            }
             if (TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH.isDown()) {
                if (!isModeSwitchDown) {
                   if (vars.is_magus
@@ -432,6 +442,48 @@ public class TypeMoonWorldModKeyMappings {
                numpadWheelDown[i] = false;
             }
          }
+      }
+
+      private static void handleServantCardControls(TypeMoonWorldModVariables.PlayerVariables vars) {
+         if (Minecraft.getInstance().screen != null) {
+            return;
+         }
+         long window = Minecraft.getInstance().getWindow().getWindow();
+         int[] keys = new int[]{320, 321, 322, 323, 324, 325, 326, 327, 328, 329};
+         for (int slot = 0; slot < keys.length; slot++) {
+            boolean down = GLFW.glfwGetKey(window, keys[slot]) == 1;
+            if (down && !numpadWheelDown[slot]) {
+               PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
+            }
+            numpadWheelDown[slot] = down;
+         }
+
+         boolean jumpDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1;
+         boolean sneakDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
+         boolean backDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == 1;
+         if (jumpDown && !servantJumpDown) {
+            long now = System.currentTimeMillis();
+            boolean flightServant = "medea".equals(vars.servant_card_id) || "oda_nobunaga".equals(vars.servant_card_id) || "enkidu".equals(vars.servant_card_id);
+            if (flightServant && now - servantLastJumpTapMs <= 280L && !sneakDown && !backDown) {
+               PacketDistributor.sendToServer(new ServantCardFlightMessage(true, 0.0F, 0.0F, 0.0F), new CustomPacketPayload[0]);
+               servantLastJumpTapMs = 0L;
+            } else {
+               servantLastJumpTapMs = now;
+               if (sneakDown || backDown) {
+                  PacketDistributor.sendToServer(new ServantCardJumpMessage(backDown), new CustomPacketPayload[0]);
+               }
+            }
+         }
+         if (vars.servant_card_flying && servantFlightInputSendDelay-- <= 0) {
+            servantFlightInputSendDelay = 1;
+            float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (backDown ? -1.0F : 0.0F);
+            float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
+            float vertical = (jumpDown ? 1.0F : 0.0F) + (sneakDown ? -1.0F : 0.0F);
+            PacketDistributor.sendToServer(new ServantCardFlightMessage(false, forward, strafe, vertical), new CustomPacketPayload[0]);
+         } else if (!vars.servant_card_flying) {
+            servantFlightInputSendDelay = 0;
+         }
+         servantJumpDown = jumpDown;
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

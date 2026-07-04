@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
@@ -61,10 +62,11 @@ public final class PlayerNoblePhantasmHelper {
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
    private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
-   private static final int EXCALIBUR_PLAYER_COOLDOWN = 200;
+   private static final int EXCALIBUR_PLAYER_COOLDOWN = 1200;
    private static final int GALLATIN_MAX_CHARGE_TICKS = 100;
-   private static final int GALLATIN_PLAYER_COOLDOWN = 100;
-   private static final int GAE_BULG_PLAYER_COOLDOWN = 100;
+   private static final int GALLATIN_PLAYER_COOLDOWN = 1200;
+   private static final int GAE_BULG_SINGLE_PLAYER_COOLDOWN = 600;
+   private static final int GAE_BULG_ARMY_PLAYER_COOLDOWN = 2400;
    private static final double GALLATIN_RANGE = 100.0;
    private static final double GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
    private static final double CHARGE_MANA_PER_TICK = 20.0;
@@ -73,6 +75,14 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean consumeStrict(ServerPlayer player, double amount) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed) {
+         if (ServantCardManaService.consume(player, vars, amount)) {
+            return true;
+         }
+         player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+         return false;
+      }
       if (ManaHelper.consumeManaStrict(player, amount, false)) {
          return true;
       }
@@ -163,7 +173,7 @@ public final class PlayerNoblePhantasmHelper {
          return true;
       }
       resolveGaeBulgHit(player, target);
-      addGaeBulgCooldown(player);
+      addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
       return true;
    }
 
@@ -200,13 +210,13 @@ public final class PlayerNoblePhantasmHelper {
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_PAID_TAG);
       if (deathFlight && charged >= GAE_DEATH_FLIGHT_CHARGE_TICKS && deathFlightPaid) {
          throwGaeBulgArmy(player);
-         addGaeBulgCooldown(player);
+         addGaeBulgCooldown(player, GAE_BULG_ARMY_PLAYER_COOLDOWN);
          return true;
       }
       if (crouchingRelease || deathFlight) {
          if (consumeStrict(player, 20.0)) {
             throwGaeBulgSingle(player);
-            addGaeBulgCooldown(player);
+            addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
          }
          return true;
       }
@@ -371,7 +381,7 @@ public final class PlayerNoblePhantasmHelper {
       } else {
          throwKanshouBakuya(player, hand);
       }
-      player.getCooldowns().addCooldown(stack.getItem(), 30);
+      player.getCooldowns().addCooldown(stack.getItem(), 80);
       return true;
    }
 
@@ -391,12 +401,12 @@ public final class PlayerNoblePhantasmHelper {
       level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 1.0F, 0.75F);
    }
 
-   private static void addGaeBulgCooldown(ServerPlayer player) {
+   private static void addGaeBulgCooldown(ServerPlayer player, int cooldownTicks) {
       if (player.getMainHandItem().is(ModItems.GAE_BULG.get())) {
-         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), GAE_BULG_PLAYER_COOLDOWN);
+         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), cooldownTicks);
       }
       if (player.getOffhandItem().is(ModItems.GAE_BULG.get())) {
-         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), GAE_BULG_PLAYER_COOLDOWN);
+         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), cooldownTicks);
       }
    }
 

@@ -211,6 +211,30 @@ public class TypeMoonWorldModVariables {
          clone.crest_practice_count = new HashMap<>(original.crest_practice_count);
          if (!event.isWasDeath()) {
             clone.player_mana = original.player_mana;
+            clone.servant_card_transformed = original.servant_card_transformed;
+            clone.servant_card_id = original.servant_card_id;
+            clone.servant_card_master_uuid = original.servant_card_master_uuid;
+            clone.servant_card_mana = original.servant_card_mana;
+            clone.servant_card_max_mana = original.servant_card_max_mana;
+            clone.servant_card_mana_regen = original.servant_card_mana_regen;
+            clone.servant_card_jump_charges = original.servant_card_jump_charges;
+            clone.servant_card_jump_recovery_ticks = original.servant_card_jump_recovery_ticks;
+            clone.servant_card_skill_cooldowns = original.servant_card_skill_cooldowns;
+            clone.servant_card_np_cooldown = original.servant_card_np_cooldown;
+            clone.servant_card_saved_armor = original.servant_card_saved_armor.copy();
+            clone.servant_card_saved_hands = original.servant_card_saved_hands.copy();
+            clone.servant_card_flying = original.servant_card_flying;
+            clone.servant_card_flight_forward = original.servant_card_flight_forward;
+            clone.servant_card_flight_strafe = original.servant_card_flight_strafe;
+            clone.servant_card_flight_vertical = original.servant_card_flight_vertical;
+            clone.servant_card_flight_toggle_cooldown = original.servant_card_flight_toggle_cooldown;
+            clone.servant_card_action_mode = original.servant_card_action_mode;
+            clone.servant_card_transform_cooldown = original.servant_card_transform_cooldown;
+            clone.servant_card_release_cooldown = original.servant_card_release_cooldown;
+            clone.servant_card_was_magus = original.servant_card_was_magus;
+            clone.servant_card_was_magic_circuit_open = original.servant_card_was_magic_circuit_open;
+         } else {
+            clone.servant_card_death_release = original.servant_card_death_release;
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
@@ -439,6 +463,29 @@ public class TypeMoonWorldModVariables {
       public int merlin_favor = 0;
       public int merlin_talk_counter = 0;
       public boolean crest_cast_context = false;
+      public boolean servant_card_transformed = false;
+      public String servant_card_id = "";
+      public String servant_card_master_uuid = "";
+      public double servant_card_mana = 0.0;
+      public double servant_card_max_mana = 0.0;
+      public double servant_card_mana_regen = 0.0;
+      public int servant_card_jump_charges = 0;
+      public int servant_card_jump_recovery_ticks = 0;
+      public String servant_card_skill_cooldowns = "";
+      public int servant_card_np_cooldown = 0;
+      public CompoundTag servant_card_saved_armor = new CompoundTag();
+      public CompoundTag servant_card_saved_hands = new CompoundTag();
+      public boolean servant_card_flying = false;
+      public double servant_card_flight_forward = 0.0;
+      public double servant_card_flight_strafe = 0.0;
+      public double servant_card_flight_vertical = 0.0;
+      public int servant_card_flight_toggle_cooldown = 0;
+      public int servant_card_action_mode = 0;
+      public int servant_card_transform_cooldown = 0;
+      public int servant_card_release_cooldown = 0;
+      public boolean servant_card_was_magus = false;
+      public boolean servant_card_was_magic_circuit_open = false;
+      public boolean servant_card_death_release = false;
 
       public TypeMoonWorldModVariables.PlayerVariables.SavedStructure getStructureById(String id) {
          if (id != null && !id.isEmpty()) {
@@ -1345,6 +1392,29 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("ubw_broken_phantasm_enabled", this.ubw_broken_phantasm_enabled);
          nbt.putInt("merlin_favor", this.merlin_favor);
          nbt.putInt("merlin_talk_counter", this.merlin_talk_counter);
+         nbt.putBoolean("servant_card_transformed", this.servant_card_transformed);
+         nbt.putString("servant_card_id", this.servant_card_id == null ? "" : this.servant_card_id);
+         nbt.putString("servant_card_master_uuid", this.servant_card_master_uuid == null ? "" : this.servant_card_master_uuid);
+         nbt.putDouble("servant_card_mana", this.servant_card_mana);
+         nbt.putDouble("servant_card_max_mana", this.servant_card_max_mana);
+         nbt.putDouble("servant_card_mana_regen", this.servant_card_mana_regen);
+         nbt.putInt("servant_card_jump_charges", this.servant_card_jump_charges);
+         nbt.putInt("servant_card_jump_recovery_ticks", this.servant_card_jump_recovery_ticks);
+         nbt.putString("servant_card_skill_cooldowns", this.servant_card_skill_cooldowns == null ? "" : this.servant_card_skill_cooldowns);
+         nbt.putInt("servant_card_np_cooldown", this.servant_card_np_cooldown);
+         nbt.put("servant_card_saved_armor", this.servant_card_saved_armor == null ? new CompoundTag() : this.servant_card_saved_armor.copy());
+         nbt.put("servant_card_saved_hands", this.servant_card_saved_hands == null ? new CompoundTag() : this.servant_card_saved_hands.copy());
+         nbt.putBoolean("servant_card_flying", this.servant_card_flying);
+         nbt.putDouble("servant_card_flight_forward", this.servant_card_flight_forward);
+         nbt.putDouble("servant_card_flight_strafe", this.servant_card_flight_strafe);
+         nbt.putDouble("servant_card_flight_vertical", this.servant_card_flight_vertical);
+         nbt.putInt("servant_card_flight_toggle_cooldown", this.servant_card_flight_toggle_cooldown);
+         nbt.putInt("servant_card_action_mode", this.servant_card_action_mode);
+         nbt.putInt("servant_card_transform_cooldown", this.servant_card_transform_cooldown);
+         nbt.putInt("servant_card_release_cooldown", this.servant_card_release_cooldown);
+         nbt.putBoolean("servant_card_was_magus", this.servant_card_was_magus);
+         nbt.putBoolean("servant_card_was_magic_circuit_open", this.servant_card_was_magic_circuit_open);
+         nbt.putBoolean("servant_card_death_release", this.servant_card_death_release);
          nbt.putInt("magic_system_data_version", this.magic_system_data_version);
          nbt.putInt("active_wheel_index", this.active_wheel_index);
          ListTag wheelList = new ListTag();
@@ -1548,6 +1618,29 @@ public class TypeMoonWorldModVariables {
             this.merlin_talk_counter = nbt.getInt("merlin_talk_counter");
          }
 
+         this.servant_card_transformed = nbt.getBoolean("servant_card_transformed");
+         this.servant_card_id = nbt.contains("servant_card_id") ? nbt.getString("servant_card_id") : "";
+         this.servant_card_master_uuid = nbt.contains("servant_card_master_uuid") ? nbt.getString("servant_card_master_uuid") : "";
+         this.servant_card_mana = nbt.getDouble("servant_card_mana");
+         this.servant_card_max_mana = nbt.getDouble("servant_card_max_mana");
+         this.servant_card_mana_regen = nbt.getDouble("servant_card_mana_regen");
+         this.servant_card_jump_charges = nbt.contains("servant_card_jump_charges") ? nbt.getInt("servant_card_jump_charges") : 0;
+         this.servant_card_jump_recovery_ticks = nbt.contains("servant_card_jump_recovery_ticks") ? nbt.getInt("servant_card_jump_recovery_ticks") : 0;
+         this.servant_card_skill_cooldowns = nbt.contains("servant_card_skill_cooldowns") ? nbt.getString("servant_card_skill_cooldowns") : "";
+         this.servant_card_np_cooldown = nbt.contains("servant_card_np_cooldown") ? nbt.getInt("servant_card_np_cooldown") : 0;
+         this.servant_card_saved_armor = nbt.contains("servant_card_saved_armor", 10) ? nbt.getCompound("servant_card_saved_armor").copy() : new CompoundTag();
+         this.servant_card_saved_hands = nbt.contains("servant_card_saved_hands", 10) ? nbt.getCompound("servant_card_saved_hands").copy() : new CompoundTag();
+         this.servant_card_flying = nbt.getBoolean("servant_card_flying");
+         this.servant_card_flight_forward = nbt.contains("servant_card_flight_forward") ? nbt.getDouble("servant_card_flight_forward") : 0.0;
+         this.servant_card_flight_strafe = nbt.contains("servant_card_flight_strafe") ? nbt.getDouble("servant_card_flight_strafe") : 0.0;
+         this.servant_card_flight_vertical = nbt.contains("servant_card_flight_vertical") ? nbt.getDouble("servant_card_flight_vertical") : 0.0;
+         this.servant_card_flight_toggle_cooldown = nbt.contains("servant_card_flight_toggle_cooldown") ? nbt.getInt("servant_card_flight_toggle_cooldown") : 0;
+         this.servant_card_action_mode = nbt.contains("servant_card_action_mode") ? nbt.getInt("servant_card_action_mode") : 0;
+         this.servant_card_transform_cooldown = nbt.contains("servant_card_transform_cooldown") ? nbt.getInt("servant_card_transform_cooldown") : 0;
+         this.servant_card_release_cooldown = nbt.contains("servant_card_release_cooldown") ? nbt.getInt("servant_card_release_cooldown") : 0;
+         this.servant_card_was_magus = nbt.getBoolean("servant_card_was_magus");
+         this.servant_card_was_magic_circuit_open = nbt.getBoolean("servant_card_was_magic_circuit_open");
+         this.servant_card_death_release = nbt.getBoolean("servant_card_death_release");
          this.magic_system_data_version = nbt.contains("magic_system_data_version") ? nbt.getInt("magic_system_data_version") : 0;
          this.active_wheel_index = nbt.contains("active_wheel_index") ? nbt.getInt("active_wheel_index") : 0;
          this.magic_wheels.clear();

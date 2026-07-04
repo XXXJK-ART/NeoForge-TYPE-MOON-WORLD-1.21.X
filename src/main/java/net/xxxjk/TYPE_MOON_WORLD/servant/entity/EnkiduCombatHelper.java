@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public final class EnkiduCombatHelper {
    private static final String TAG_MODE = "EnkiduMode";
@@ -2274,45 +2275,26 @@ public final class EnkiduCombatHelper {
 
    private static void breakEnumaImpactTerrain(ServerLevel level, Vec3 impact, double radius, int maxBroken) {
       BlockPos center = BlockPos.containing(impact);
-      int r = Mth.ceil(radius);
-      int broken = 0;
       double radiusSqr = radius * radius;
       double guaranteedCore = Math.min(radius * 0.34, 18.0);
       double guaranteedCoreSqr = guaranteedCore * guaranteedCore;
-      for (int shell = 0; shell <= r && broken < maxBroken; shell++) {
-         for (int x = -shell; x <= shell && broken < maxBroken; x++) {
-            for (int y = -shell; y <= shell && broken < maxBroken; y++) {
-               for (int z = -shell; z <= shell && broken < maxBroken; z++) {
-                  if (Math.max(Math.max(Math.abs(x), Math.abs(y)), Math.abs(z)) != shell) {
-                     continue;
-                  }
-                  double dx = x + 0.5 - (impact.x - center.getX());
-                  double dy = y + 0.5 - (impact.y - center.getY());
-                  double dz = z + 0.5 - (impact.z - center.getZ());
-                  double distSqr = dx * dx + dy * dy + dz * dz;
-                  if (distSqr > radiusSqr) {
-                     continue;
-                  }
-                  BlockPos pos = center.offset(x, y, z);
-                  double edge = Math.sqrt(distSqr) / Math.max(1.0, radius);
-                  boolean innerCore = distSqr <= guaranteedCoreSqr;
-                  double noiseThreshold = radius > 40.0 ? 0.24 + edge * 0.18 : 0.1;
-                  if (!innerCore && blockNoise(level, pos) < noiseThreshold) {
-                     continue;
-                  }
-                  if (!canEnumaBreakBlock(level, pos)) {
-                     continue;
-                  }
-                  if (level.removeBlock(pos, false)) {
-                     broken++;
-                     if ((broken & 63) == 0) {
-                        level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
-                     }
-                  }
-               }
-            }
+      DeferredTerrainDestruction.queueSphere(level, impact, radius, 24, (serverLevel, pos, ignoredDistanceSqr, currentRadius, origin) -> {
+         double dx = pos.getX() - center.getX() + 0.5 - (impact.x - center.getX());
+         double dy = pos.getY() - center.getY() + 0.5 - (impact.y - center.getY());
+         double dz = pos.getZ() - center.getZ() + 0.5 - (impact.z - center.getZ());
+         double distSqr = dx * dx + dy * dy + dz * dz;
+         if (distSqr > radiusSqr) {
+            return false;
          }
-      }
+         double edge = Math.sqrt(distSqr) / Math.max(1.0, radius);
+         boolean innerCore = distSqr <= guaranteedCoreSqr;
+         double noiseThreshold = radius > 40.0 ? 0.24 + edge * 0.18 : 0.1;
+         return (innerCore || blockNoise(serverLevel, pos) >= noiseThreshold) && canEnumaBreakBlock(serverLevel, pos);
+      }, (serverLevel, pos, removed) -> {
+         if ((removed & 63) == 0) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
+         }
+      });
    }
 
    private static void breakEnumaImpactTerrainInWaves(ServerLevel level, Vec3 impact, double radius) {
@@ -2332,29 +2314,13 @@ public final class EnkiduCombatHelper {
    }
 
    private static void breakEnumaImpactTerrainShell(ServerLevel level, Vec3 impact, double currentRadius, double previousRadius) {
-      int r = Mth.ceil(currentRadius);
-      double currentSqr = currentRadius * currentRadius;
-      double previousSqr = previousRadius * previousRadius;
-      int broken = 0;
-      for (int x = -r; x <= r; x++) {
-         for (int y = -r; y <= r; y++) {
-            for (int z = -r; z <= r; z++) {
-               double distSqr = x * x + y * y + z * z;
-               if (distSqr > currentSqr || distSqr <= previousSqr) {
-                  continue;
-               }
-               BlockPos pos = BlockPos.containing(impact.x + x, impact.y + y, impact.z + z);
-               if (!canEnumaBreakBlock(level, pos)) {
-                  continue;
-               }
-               level.removeBlock(pos, false);
-               broken++;
-               if ((broken & 127) == 0) {
-                  level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.24, 0.24, 0.24, 0.0);
-               }
+      DeferredTerrainDestruction.queueShell(level, impact, currentRadius, previousRadius, 48,
+         (serverLevel, pos, distanceSqr, radius, origin) -> canEnumaBreakBlock(serverLevel, pos),
+         (serverLevel, pos, removed) -> {
+            if ((removed & 127) == 0) {
+               serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.24, 0.24, 0.24, 0.0);
             }
-         }
-      }
+         });
    }
 
    private static boolean canEnumaBreakBlock(ServerLevel level, BlockPos pos) {

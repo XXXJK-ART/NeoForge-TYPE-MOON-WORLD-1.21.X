@@ -26,6 +26,7 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BizenNagamitsuItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+   private static final int TSUBAME_COOLDOWN = 700;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public BizenNagamitsuItem(Properties properties) {
@@ -66,7 +67,9 @@ public class BizenNagamitsuItem extends SwordItem implements GeoItem, NoblePhant
    @Override
    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
       if (!attacker.level().isClientSide() && attacker instanceof ServerPlayer player) {
-         PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target);
+         if (PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target)) {
+            player.getCooldowns().addCooldown(this, TSUBAME_COOLDOWN);
+         }
       }
       return super.hurtEnemy(stack, target, attacker);
    }

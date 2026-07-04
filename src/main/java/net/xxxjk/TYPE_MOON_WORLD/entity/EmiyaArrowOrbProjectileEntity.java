@@ -124,7 +124,7 @@ public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
          level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 20, 0.22, 0.22, 0.22, 0.08);
          level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.65F, 1.65F);
          if (this.entityData.get(BROKEN_PHANTASM)) {
-            UBWBrokenPhantasmExplosion.explode(level, this, this.getOwner(), this.getItem(), pos, isCrimsonHoundPayload() ? 1.65F : 1.0F);
+            UBWBrokenPhantasmExplosion.explode(level, this, this.getOwner(), this.getItem(), pos, isCrimsonHoundPayload() ? 0.55F : 1.0F);
          }
       }
 

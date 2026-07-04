@@ -1,0 +1,65 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"1": {
+			"loop": true,
+			"bones": {
+				"body": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"bone9": {
+					"position": {
+						"vector": [0.5, -0.65, 1.6]
+					},
+					"scale": {
+						"vector": [1, 0.5, 0.5]
+					}
+				},
+				"bone5": {
+					"position": {
+						"vector": [0.5, 0, 1.5]
+					},
+					"scale": {
+						"vector": [0.5, 0.5, 0.5]
+					}
+				},
+				"bone7": {
+					"position": {
+						"vector": [0.5, 0, 1.5]
+					},
+					"scale": {
+						"vector": [0.5, 0.5, 0.5]
+					}
+				},
+				"bone8": {
+					"position": {
+						"vector": [0, 0, 0.25]
+					},
+					"scale": {
+						"vector": [0.7, 0.7, 0.8]
+					}
+				},
+				"bone10": {
+					"position": {
+						"vector": [0, -0.5, 0]
+					},
+					"scale": {
+						"vector": [1, 0.9, 0.7]
+					}
+				},
+				"bone": {
+					"scale": {
+						"vector": [1.05, 1, 0.8]
+					}
+				},
+				"bone2": {
+					"scale": {
+						"vector": [0.8, 1, 0.9]
+					}
+				}
+			}
+		}
+	}
+}

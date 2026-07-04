@@ -71,6 +71,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
@@ -228,6 +229,10 @@ public class CommonEvents {
                );
                TypeMoonAdvancementHelper.syncPassive(serverPlayer, vars);
             }
+            TypeMoonWorldModVariables.PlayerVariables cardVars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
+               TypeMoonWorldModVariables.PLAYER_VARIABLES
+            );
+            ServantCardTransformManager.tick(serverPlayer, cardVars);
          }
 
          if (player.isSpectator()) {
@@ -329,10 +334,35 @@ public class CommonEvents {
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
-               if (event.getSource().getEntity() instanceof LivingEntity attacker) {
-                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+            if (event.getSource().getEntity() instanceof LivingEntity attacker) {
+               event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+            }
+            if (event.getEntity() instanceof ServerPlayer player) {
+               TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
+                  TypeMoonWorldModVariables.PLAYER_VARIABLES
+               );
+               if (vars.servant_card_transformed
+                  && "li_shuwen".equals(vars.servant_card_id)
+                  && player.getPersistentData().getInt("ServantCardLiPassiveDodgeCooldown") <= player.tickCount
+                  && player.getRandom().nextFloat() < 0.16F) {
+                  player.getPersistentData().putInt("ServantCardLiPassiveDodgeCooldown", player.tickCount + 80);
+                  player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, true));
+                  if (player.level() instanceof ServerLevel serverLevel) {
+                     serverLevel.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.8, player.getZ(), 16, 0.32, 0.35, 0.32, 0.03);
+                     serverLevel.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.6F, 1.8F);
+                  }
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  return;
                }
-               if (event.getEntity() instanceof LivingEntity living) {
+               if (vars.servant_card_transformed && vars.servant_card_death_release && player.getHealth() - event.getAmount() <= 0.0F) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  ServantCardTransformManager.release(player, true);
+                  return;
+               }
+            }
+            if (event.getEntity() instanceof LivingEntity living) {
                   if (tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }

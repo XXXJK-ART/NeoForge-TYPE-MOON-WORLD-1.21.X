@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import org.joml.Vector3f;
 
 public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
@@ -469,33 +470,19 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
-      int rInt = (int)Math.ceil(currentRadius);
-      int broken = 0;
-      int maxBroken = 20000;
-      for (int x = -rInt; x <= rInt; x++) {
-         for (int y = -rInt; y <= rInt; y++) {
-            for (int z = -rInt; z <= rInt; z++) {
-               double distSqr = x * x + y * y + z * z;
-               if (distSqr > currentRadius * currentRadius || distSqr <= previousRadius * previousRadius) {
-                  continue;
-               }
-
-               BlockPos pos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
-               BlockState state = level.getBlockState(pos);
-               float hardness = state.getDestroySpeed(level, pos);
-               if (state.isAir() || hardness < 0.0F || hardness > 35.0F || state.is(Blocks.BEDROCK)
-                  || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
-                  continue;
-               }
-
-               level.removeBlock(pos, false);
-               broken++;
-               if (broken >= maxBroken) {
-                  return;
-               }
-            }
+      DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, 36, (serverLevel, pos, distanceSqr, radius, origin) -> {
+         BlockState state = serverLevel.getBlockState(pos);
+         float hardness = state.getDestroySpeed(serverLevel, pos);
+         return !state.isAir()
+            && hardness >= 0.0F
+            && hardness <= 35.0F
+            && !state.is(Blocks.BEDROCK)
+            && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
+      }, (serverLevel, pos, removed) -> {
+         if ((removed & 127) == 0) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
          }
-      }
+      });
    }
 
    private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {

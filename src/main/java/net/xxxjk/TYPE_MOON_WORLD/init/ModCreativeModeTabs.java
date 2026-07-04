@@ -17,6 +17,53 @@ public class ModCreativeModeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TAB =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, TYPE_MOON_WORLD.MOD_ID);
 
+    public static final Supplier<CreativeModeTab> SERVANT_CARDS_TAB = CREATIVE_MODE_TAB.register("servant_cards_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.SERVANT_CARD_EMIYA_ARCHER.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.servant_cards"))
+                    .displayItems((itemDisplayParameters, output) -> {
+                        output.accept(ModItems.SERVANT_MASTER_CONTRACT);
+                        output.accept(ModItems.SERVANT_CARD_RELEASE);
+                        output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
+                        output.accept(ModItems.SERVANT_CARD_CU_CHULAINN);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN);
+                        output.accept(ModItems.SERVANT_CARD_HERACLES);
+                        output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU);
+                        output.accept(ModItems.SERVANT_CARD_GAWAIN);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS);
+                        output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
+                        output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_HERACLES_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_HERACLES_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_GAWAIN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_GAWAIN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_LEGS);
+                    }).build());
+
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.MAGIC_FRAGMENTS.get()))
                     .title(Component.translatable("creativetab.typemoonworld.type_moon_world"))

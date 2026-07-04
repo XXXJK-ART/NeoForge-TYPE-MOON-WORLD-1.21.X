@@ -34,6 +34,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class RuleBreakerItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+   private static final int RULE_BREAKER_COOLDOWN = 400;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public RuleBreakerItem(Properties properties) {
@@ -49,8 +50,12 @@ public class RuleBreakerItem extends SwordItem implements GeoItem, NoblePhantasm
    @Override
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
+      if (player.getCooldowns().isOnCooldown(this)) {
+         return InteractionResultHolder.fail(stack);
+      }
       if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
          PlayerNoblePhantasmHelper.useRuleBreaker(serverPlayer);
+         player.getCooldowns().addCooldown(this, RULE_BREAKER_COOLDOWN);
       }
       return InteractionResultHolder.consume(stack);
    }

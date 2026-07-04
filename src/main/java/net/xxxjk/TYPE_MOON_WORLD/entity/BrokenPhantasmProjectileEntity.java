@@ -23,8 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -33,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> EXPLOSION_POWER = SynchedEntityData.defineId(
@@ -143,6 +142,13 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
          this.explosionTick = 0;
          if (this.level() instanceof ServerLevel serverLevel) {
             VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", this.position(), 128.0);
+            DeferredTerrainDestruction.queueSphere(
+               serverLevel,
+               Vec3.atCenterOf(this.explosionCenter),
+               (int)Math.ceil(this.maxRadius),
+               42.0F,
+               this.maxRadius >= 28.0F ? 80 : 45
+            );
          }
          this.level()
             .playSound(
@@ -184,35 +190,6 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
       } else {
          double step = Math.max(0.5, this.maxRadius / 20.0);
          double nextRadius = this.currentRadius + step;
-         if (this.maxRadius > 0.0F && this.currentRadius < this.maxRadius) {
-            int rInt = (int)Math.ceil(nextRadius);
-            if (rInt > this.maxRadius) {
-               rInt = (int)Math.ceil(this.maxRadius);
-            }
-
-            for (int x = -rInt; x <= rInt; x++) {
-               for (int y = -rInt; y <= rInt; y++) {
-                  for (int z = -rInt; z <= rInt; z++) {
-                     double distSqr = x * x + y * y + z * z;
-                     if (distSqr <= nextRadius * nextRadius && distSqr > this.currentRadius * this.currentRadius && distSqr <= this.maxRadius * this.maxRadius) {
-                        BlockPos pos = this.explosionCenter.offset(x, y, z);
-                        BlockState state = this.level().getBlockState(pos);
-                        float hardness = state.getDestroySpeed(this.level(), pos);
-                        if (!state.isAir()
-                           && !state.is(Blocks.BEDROCK)
-                           && hardness >= 0.0F
-                           && hardness <= 42.0F
-                           && state.getExplosionResistance(this.level(), pos, null) < 1200.0F) {
-                           this.level().setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-                           if (this.level().random.nextInt(10) == 0) {
-                              ((ServerLevel)this.level()).sendParticles(ParticleTypes.EXPLOSION, pos.getX(), pos.getY(), pos.getZ(), 1, 0.5, 0.5, 0.5, 0.0);
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-         }
 
          if (this.getExplosionPower() > 5.0F) {
             double damageRadius = nextRadius * 1.2;

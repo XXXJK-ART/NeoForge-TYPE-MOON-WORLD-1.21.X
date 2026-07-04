@@ -6,6 +6,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,6 +31,8 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class EmiyaProjectionItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+   private static final int PSEUDO_SPIRAL_COOLDOWN = 700;
+   private static final int PARACELSUS_SWORD_COOLDOWN = 1200;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String projectionId;
 
@@ -91,8 +95,23 @@ public class EmiyaProjectionItem extends SwordItem implements GeoItem, NoblePhan
          return InteractionResultHolder.consume(stack);
       }
       if ("pseudo_spiral_sword".equals(this.projectionId)) {
+         if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
+         }
          if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             PlayerNoblePhantasmHelper.usePseudoSpiralDash(serverPlayer);
+            player.getCooldowns().addCooldown(this, PSEUDO_SPIRAL_COOLDOWN);
+         }
+         return InteractionResultHolder.consume(stack);
+      }
+      if ("paracelsus_sword".equals(this.projectionId)) {
+         if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
+         }
+         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && PlayerNoblePhantasmHelper.consumeStrict(serverPlayer, 80.0)) {
+            serverPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 300, 1, false, true, true));
+            serverPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300, 0, false, true, true));
+            player.getCooldowns().addCooldown(this, PARACELSUS_SWORD_COOLDOWN);
          }
          return InteractionResultHolder.consume(stack);
       }

@@ -22,6 +22,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.command.VFXCommands;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineChunkProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
@@ -76,6 +77,15 @@ public class TypeMoonCommands {
    @SuppressWarnings({"unchecked", "rawtypes"})
    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
       VFXCommands.register(dispatcher);
+      dispatcher.register(
+         Commands.literal("fate_card_death")
+            .requires(source -> source.hasPermission(2))
+            .then(Commands.argument("enabled", BoolArgumentType.bool()).executes(ctx -> setFateCardDeath(ctx, BoolArgumentType.getBool(ctx, "enabled"))))
+      );
+      dispatcher.register(
+         Commands.literal("fate_card_release")
+            .executes(TypeMoonCommands::releaseFateCard)
+      );
       dispatcher.register(
          (LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal(
                                  "typemoon"
@@ -286,6 +296,36 @@ public class TypeMoonCommands {
                   )
             )
       );
+   }
+
+   private static int setFateCardDeath(CommandContext<CommandSourceStack> ctx, boolean enabled) {
+      try {
+         ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         vars.servant_card_death_release = enabled;
+         vars.syncPlayerVariables(player);
+         ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("fate_card_death = " + enabled), true);
+         return 1;
+      } catch (Exception e) {
+         ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("This command requires a player."));
+         return 0;
+      }
+   }
+
+   private static int releaseFateCard(CommandContext<CommandSourceStack> ctx) {
+      try {
+         ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
+         boolean released = ServantCardTransformManager.release(player, false);
+         if (released) {
+            ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Released servant card."), false);
+            return 1;
+         }
+         ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("You are not transformed by a servant card."));
+         return 0;
+      } catch (Exception e) {
+         ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("This command requires a player."));
+         return 0;
+      }
    }
 
    private static int showHelp(CommandContext<CommandSourceStack> ctx) {

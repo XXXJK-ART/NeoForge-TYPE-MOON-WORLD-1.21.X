@@ -20,6 +20,7 @@ public class Magic_display_Overlay {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void eventHandler(RenderGuiEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.hideGui) return;
         if (ReplayUiSuppressor.shouldHideTypeMoonHud()) return;
 
         int h = event.getGuiGraphics().guiHeight();
