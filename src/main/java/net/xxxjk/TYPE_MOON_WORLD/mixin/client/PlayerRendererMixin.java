@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MagicCrestVisualHelper;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
@@ -31,17 +32,27 @@ public abstract class PlayerRendererMixin {
 
    @Inject(
       method = {"renderRightHand"},
-      at = {@At("HEAD")}
+      at = {@At("HEAD")},
+      cancellable = true
    )
    private void applyRightHandCastingPose(PoseStack poseStack, MultiBufferSource buffer, int packedLight, AbstractClientPlayer player, CallbackInfo ci) {
+      if (ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+         ci.cancel();
+         return;
+      }
       this.applyFirstPersonCastingPose(player, HumanoidArm.RIGHT);
    }
 
    @Inject(
       method = {"renderLeftHand"},
-      at = {@At("HEAD")}
+      at = {@At("HEAD")},
+      cancellable = true
    )
    private void applyLeftHandCastingPose(PoseStack poseStack, MultiBufferSource buffer, int packedLight, AbstractClientPlayer player, CallbackInfo ci) {
+      if (ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+         ci.cancel();
+         return;
+      }
       this.applyFirstPersonCastingPose(player, HumanoidArm.LEFT);
    }
 

@@ -10,6 +10,7 @@ import software.bernie.geckolib.renderer.GeoArmorRenderer;
 public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorItem> {
    public ServantCardArmorRenderer() {
       super(new ServantCardArmorModel());
+      withScale(0.92F, 0.92F);
    }
 
    @Override
@@ -28,5 +29,30 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
    @Override
    public GeoBone getHeadBone(GeoModel<ServantCardArmorItem> model) {
       return model.getBone("armorHead").orElse(null);
+   }
+
+   @Override
+   public GeoBone getBodyBone(GeoModel<ServantCardArmorItem> model) {
+      return model.getBone("armorBody").orElse(null);
+   }
+
+   @Override
+   public GeoBone getRightArmBone(GeoModel<ServantCardArmorItem> model) {
+      return model.getBone("armorRightArm").orElse(null);
+   }
+
+   @Override
+   public GeoBone getLeftArmBone(GeoModel<ServantCardArmorItem> model) {
+      return model.getBone("armorLeftArm").orElse(null);
+   }
+
+   @Override
+   public GeoBone getRightLegBone(GeoModel<ServantCardArmorItem> model) {
+      return model.getBone("armorRightLeg").orElse(null);
+   }
+
+   @Override
+   public GeoBone getLeftLegBone(GeoModel<ServantCardArmorItem> model) {
+      return model.getBone("armorLeftLeg").orElse(null);
    }
 }

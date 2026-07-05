@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.LeylineSurveyMapScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.MedeaCraftSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 
 public class ClientPacketHandler {
@@ -25,6 +26,17 @@ public class ClientPacketHandler {
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
          mc.setScreen(new LeylineSurveyMapScreen(gridSize, centerChunkX, centerChunkZ, dimensionId, concentrations));
+      }
+   }
+
+   public static void openMedeaCraftScreen(int dragonfangStock, int manaCharmStock, int healCharmStock) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.player != null) {
+         mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock));
       }
    }
 }

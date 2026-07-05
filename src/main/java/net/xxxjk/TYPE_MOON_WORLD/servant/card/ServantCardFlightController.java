@@ -49,7 +49,7 @@ public final class ServantCardFlightController {
       player.fallDistance = 0.0F;
       double yaw = Math.toRadians(player.getYRot());
       Vec3 forward = new Vec3(-Math.sin(yaw), 0.0, Math.cos(yaw));
-      Vec3 right = new Vec3(forward.z, 0.0, -forward.x);
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
       Vec3 movement = forward.scale(vars.servant_card_flight_forward).add(right.scale(vars.servant_card_flight_strafe));
       if (movement.lengthSqr() > 1.0) {
          movement = movement.normalize();
@@ -88,7 +88,7 @@ public final class ServantCardFlightController {
          return;
       }
       if (!canFly(vars.servant_card_id)) {
-         player.displayClientMessage(Component.literal("This servant cannot fly"), true);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.flight_unavailable"), true);
          return;
       }
       vars.servant_card_flying = !vars.servant_card_flying;
@@ -96,6 +96,6 @@ public final class ServantCardFlightController {
       if (!vars.servant_card_flying) {
          player.setNoGravity(false);
       }
-      player.displayClientMessage(Component.literal(vars.servant_card_flying ? "Flight enabled" : "Flight disabled"), true);
+      player.displayClientMessage(Component.translatable(vars.servant_card_flying ? "message.typemoonworld.servant_card.flight_enabled" : "message.typemoonworld.servant_card.flight_disabled"), true);
    }
 }

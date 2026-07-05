@@ -31,7 +31,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class EmiyaProjectionItem extends SwordItem implements GeoItem, NoblePhantasmItem {
-   private static final int PSEUDO_SPIRAL_COOLDOWN = 700;
+   private static final int PSEUDO_SPIRAL_COOLDOWN = 10;
    private static final int PARACELSUS_SWORD_COOLDOWN = 1200;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String projectionId;

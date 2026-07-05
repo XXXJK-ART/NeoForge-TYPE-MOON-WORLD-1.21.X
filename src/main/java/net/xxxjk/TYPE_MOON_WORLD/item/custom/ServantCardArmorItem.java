@@ -14,6 +14,10 @@ import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -56,6 +60,14 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
 
    @Override
    public void registerControllers(ControllerRegistrar controllers) {
+      if (this.hasRealArmorModel()) {
+         controllers.add(new AnimationController<>(this, "servant_card_armor", 0, this::predicate));
+      }
+   }
+
+   private PlayState predicate(AnimationState<ServantCardArmorItem> state) {
+      state.getController().setAnimation(RawAnimation.begin().thenLoop("1"));
+      return PlayState.CONTINUE;
    }
 
    @Override

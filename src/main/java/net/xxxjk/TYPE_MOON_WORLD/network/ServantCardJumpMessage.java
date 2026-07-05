@@ -9,13 +9,16 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import org.jetbrains.annotations.NotNull;
 
-public record ServantCardJumpMessage(boolean backward) implements CustomPacketPayload {
+public record ServantCardJumpMessage(float forward, float strafe) implements CustomPacketPayload {
    public static final Type<ServantCardJumpMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "servant_card_jump")
    );
    public static final StreamCodec<RegistryFriendlyByteBuf, ServantCardJumpMessage> STREAM_CODEC = StreamCodec.of(
-      (buffer, message) -> buffer.writeBoolean(message.backward),
-      buffer -> new ServantCardJumpMessage(buffer.readBoolean())
+      (buffer, message) -> {
+         buffer.writeFloat(message.forward);
+         buffer.writeFloat(message.strafe);
+      },
+      buffer -> new ServantCardJumpMessage(buffer.readFloat(), buffer.readFloat())
    );
 
    @Override
@@ -27,7 +30,7 @@ public record ServantCardJumpMessage(boolean backward) implements CustomPacketPa
    public static void handleData(ServantCardJumpMessage message, IPayloadContext context) {
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player) {
-            ServantCardTransformManager.bigJump(player, message.backward);
+            ServantCardTransformManager.bigJump(player, message.forward, message.strafe);
          }
       });
    }

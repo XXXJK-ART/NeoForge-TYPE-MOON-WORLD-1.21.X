@@ -1,7 +1,7 @@
 ﻿{
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "typemoonworld:item/servant_cards/emiya_archer_card"
+    "layer0": "typemoonworld:item/servant_card_armor/emiya_archer_chest"
   }
 }
 

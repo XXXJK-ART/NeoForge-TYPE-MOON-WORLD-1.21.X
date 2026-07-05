@@ -78,12 +78,10 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
             }
          }
 
-         if (isAvalonActivated(stack)) {
-            applyPlayerAvalonEffects(player);
-         } else if (player.getPersistentData().getLong(LEGACY_PLAYER_AVALON_UNTIL_TAG) > player.level().getGameTime()) {
+         applyPlayerAvalonEffects(player);
+         if (player.getPersistentData().getLong(LEGACY_PLAYER_AVALON_UNTIL_TAG) > player.level().getGameTime()) {
             activateAvalonStack(stack);
             player.getPersistentData().remove(LEGACY_PLAYER_AVALON_UNTIL_TAG);
-            applyPlayerAvalonEffects(player);
          }
       }
    }
@@ -132,9 +130,7 @@ public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
       tooltip.add(Component.translatable("item.typemoonworld.avalon.desc").withStyle(ChatFormatting.GOLD));
-      if (isAvalonActivated(stack)) {
-         tooltip.add(Component.translatable("item.typemoonworld.avalon.active").withStyle(ChatFormatting.AQUA));
-      }
+      tooltip.add(Component.translatable("item.typemoonworld.avalon.active").withStyle(ChatFormatting.AQUA));
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {

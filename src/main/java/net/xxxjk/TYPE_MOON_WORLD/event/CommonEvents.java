@@ -71,6 +71,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -95,6 +97,17 @@ public class CommonEvents {
    private static final float BATTLE_CONTINUATION_HEAL_AMOUNT = 10.0F;
    private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
+
+   @SubscribeEvent
+   public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
+      if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer serverPlayer)) {
+         return;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed) {
+         ServantCardTransformManager.normalizeFood(serverPlayer);
+      }
+   }
 
    @SubscribeEvent
    public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -245,6 +258,10 @@ public class CommonEvents {
                boolean skipDebuff = player instanceof LivingEntity le
                   && le.level().getEntity(le.getId()) instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant
                   && servant.isExemptFromStoneAxeDebuff();
+               if (!skipDebuff && player instanceof ServerPlayer serverPlayer) {
+                  TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                  skipDebuff = vars.servant_card_transformed && "heracles".equals(vars.servant_card_id);
+               }
                if (!skipDebuff) {
                   boolean hasStrength = player.hasEffect(MobEffects.DAMAGE_BOOST);
                   if (hasStrength) {
@@ -336,23 +353,16 @@ public class CommonEvents {
             } else {
             if (event.getSource().getEntity() instanceof LivingEntity attacker) {
                event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+               event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
             }
             if (event.getEntity() instanceof ServerPlayer player) {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
-               if (vars.servant_card_transformed
-                  && "li_shuwen".equals(vars.servant_card_id)
-                  && player.getPersistentData().getInt("ServantCardLiPassiveDodgeCooldown") <= player.tickCount
-                  && player.getRandom().nextFloat() < 0.16F) {
-                  player.getPersistentData().putInt("ServantCardLiPassiveDodgeCooldown", player.tickCount + 80);
-                  player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, true));
-                  if (player.level() instanceof ServerLevel serverLevel) {
-                     serverLevel.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.8, player.getZ(), 16, 0.32, 0.35, 0.32, 0.03);
-                     serverLevel.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.6F, 1.8F);
-                  }
-                  event.setCanceled(true);
-                  event.setAmount(0.0F);
+               if (ServantCardDefenseHandler.handleIncomingDamage(player, vars, event)) {
+                  return;
+               }
+               if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
                   return;
                }
                if (vars.servant_card_transformed && vars.servant_card_death_release && player.getHealth() - event.getAmount() <= 0.0F) {

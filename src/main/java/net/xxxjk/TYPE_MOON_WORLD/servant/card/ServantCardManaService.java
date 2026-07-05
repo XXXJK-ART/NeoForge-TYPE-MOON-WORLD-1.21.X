@@ -22,7 +22,7 @@ public final class ServantCardManaService {
          return 4.0;
       }
       ServantParams params = definition.parameters();
-      return Math.max(2.0, params.manaPool() / 100.0);
+      return params.manaPool() / fullRegenSeconds(params);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -32,13 +32,24 @@ public final class ServantCardManaService {
       if (vars.servant_card_max_mana <= 0.0) {
          vars.servant_card_max_mana = maxManaFor(vars.servant_card_id);
       }
-      if (vars.servant_card_mana_regen <= 0.0) {
-         vars.servant_card_mana_regen = regenPerSecondFor(vars.servant_card_id);
+      double expectedRegen = regenPerSecondFor(vars.servant_card_id);
+      if (Math.abs(vars.servant_card_mana_regen - expectedRegen) > 1.0E-6) {
+         vars.servant_card_mana_regen = expectedRegen;
       }
       vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
       if (player.tickCount % 20 == 0) {
          vars.syncPlayerVariables(player);
       }
+   }
+
+   private static double fullRegenSeconds(ServantParams params) {
+      return switch (params.magic()) {
+         case A -> 60.0;
+         case B -> 120.0;
+         case C -> 180.0;
+         case D -> 240.0;
+         case E -> 300.0;
+      };
    }
 
    public static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {

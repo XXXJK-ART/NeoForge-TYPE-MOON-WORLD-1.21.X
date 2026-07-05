@@ -56,9 +56,12 @@ public final class PlayerNoblePhantasmHelper {
    private static final String GAE_DEATH_FLIGHT_PAID_TAG = "TypeMoonGaeBulgDeathFlightPaid";
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
+   private static final String EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonExcaliburMinChargePaid";
    private static final String GALLATIN_CHARGE_TAG = "TypeMoonGallatinCharge";
    private static final String GALLATIN_LAST_CHARGE_VFX_TAG = "TypeMoonGallatinLastChargeVfx";
+   private static final String GALLATIN_MIN_CHARGE_PAID_TAG = "TypeMoonGallatinMinChargePaid";
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 30;
+   private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
    private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
@@ -69,7 +72,7 @@ public final class PlayerNoblePhantasmHelper {
    private static final int GAE_BULG_ARMY_PLAYER_COOLDOWN = 2400;
    private static final double GALLATIN_RANGE = 100.0;
    private static final double GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
-   private static final double CHARGE_MANA_PER_TICK = 20.0;
+   private static final double CHARGE_MANA_PER_TICK = 10.0;
 
    private PlayerNoblePhantasmHelper() {
    }
@@ -126,6 +129,20 @@ public final class PlayerNoblePhantasmHelper {
       return true;
    }
 
+   public static boolean hasTsubameGaeshiTarget(ServerPlayer player) {
+      return findLookTarget(player, 5.5, 1.25) != null;
+   }
+
+   public static boolean useTsubameGaeshi(ServerPlayer player) {
+      LivingEntity target = findLookTarget(player, 5.5, 1.25);
+      if (target == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
+      performTsubame(player, target);
+      return true;
+   }
+
    public static boolean useRuleBreaker(ServerPlayer player) {
       if (!consumeStrict(player, 20.0)) {
          return false;
@@ -164,13 +181,13 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useGaeBulgMelee(ServerPlayer player) {
-      if (!consumeStrict(player, 20.0)) {
-         return false;
-      }
       LivingEntity target = findLookTarget(player, 4.0, 1.15);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return true;
+      }
+      if (!consumeStrict(player, 20.0)) {
+         return false;
       }
       resolveGaeBulgHit(player, target);
       addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
@@ -226,6 +243,7 @@ public final class PlayerNoblePhantasmHelper {
    public static void startExcaliburCharge(ServerPlayer player) {
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, 0);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
+      player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
    }
 
    public static void tickExcaliburCharge(Level level, LivingEntity living, int useTicks) {
@@ -234,14 +252,20 @@ public final class PlayerNoblePhantasmHelper {
       }
       int charged = Math.min(EXCALIBUR_MAX_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, charged);
-      if (useTicks > 0 && useTicks <= EXCALIBUR_MAX_CHARGE_TICKS) {
-         if (!consumeStrict(player, CHARGE_MANA_PER_TICK)) {
+      if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= EXCALIBUR_MAX_CHARGE_TICKS) {
+         double cost = player.getPersistentData().getBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG)
+            ? CHARGE_MANA_PER_TICK
+            : CHARGE_MANA_PER_TICK * MIN_CHARGE_NP_RELEASE_TICKS;
+         if (!consumeStrict(player, cost)) {
             player.releaseUsingItem();
-         } else if (level instanceof ServerLevel serverLevel) {
+         } else {
+            player.getPersistentData().putBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG, true);
+            if (level instanceof ServerLevel serverLevel) {
             long now = serverLevel.getGameTime();
             if (now - player.getPersistentData().getLong(EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 32L) {
                player.getPersistentData().putLong(EXCALIBUR_LAST_CHARGE_VFX_TAG, now);
                VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 128.0);
+            }
             }
          }
       }
@@ -251,21 +275,28 @@ public final class PlayerNoblePhantasmHelper {
       int charged = player.getPersistentData().getInt(EXCALIBUR_CHARGE_TAG);
       player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
-      if (charged <= 0 || !(player.level() instanceof ServerLevel level)) {
+      player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
+      if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
+      if (charged < MIN_CHARGE_NP_RELEASE_TICKS) {
+         level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.45F, 1.65F);
+         return;
+      }
+      float powerScale = chargePower(charged, EXCALIBUR_MAX_CHARGE_TICKS);
       Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
-      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK);
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK, powerScale);
       level.addFreshEntity(beam);
       VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
-      addExcaliburCooldown(player);
-      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.5F, 0.85F);
-      level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.1F, 1.65F);
+      addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
+      level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
    }
 
    public static void startGallatinCharge(ServerPlayer player) {
       player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, 0);
       player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
+      player.getPersistentData().remove(GALLATIN_MIN_CHARGE_PAID_TAG);
    }
 
    public static void tickGallatinCharge(Level level, LivingEntity living, int useTicks) {
@@ -274,10 +305,15 @@ public final class PlayerNoblePhantasmHelper {
       }
       int charged = Math.min(GALLATIN_MAX_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, charged);
-      if (useTicks > 0 && useTicks <= GALLATIN_MAX_CHARGE_TICKS) {
-         if (!consumeStrict(player, CHARGE_MANA_PER_TICK)) {
+      if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= GALLATIN_MAX_CHARGE_TICKS) {
+         double cost = player.getPersistentData().getBoolean(GALLATIN_MIN_CHARGE_PAID_TAG)
+            ? CHARGE_MANA_PER_TICK
+            : CHARGE_MANA_PER_TICK * MIN_CHARGE_NP_RELEASE_TICKS;
+         if (!consumeStrict(player, cost)) {
             player.releaseUsingItem();
-         } else if (level instanceof ServerLevel serverLevel) {
+         } else {
+            player.getPersistentData().putBoolean(GALLATIN_MIN_CHARGE_PAID_TAG, true);
+            if (level instanceof ServerLevel serverLevel) {
             long now = serverLevel.getGameTime();
             if (now - player.getPersistentData().getLong(GALLATIN_LAST_CHARGE_VFX_TAG) >= 28L) {
                player.getPersistentData().putLong(GALLATIN_LAST_CHARGE_VFX_TAG, now);
@@ -288,6 +324,7 @@ public final class PlayerNoblePhantasmHelper {
                serverLevel.sendParticles(ParticleTypes.FLAME, front.x, front.y, front.z, 4, 0.24, 0.2, 0.24, 0.03);
                serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() + 2.2, player.getZ(), 3, 0.7, 0.2, 0.7, 0.015);
             }
+            }
          }
       }
    }
@@ -296,16 +333,22 @@ public final class PlayerNoblePhantasmHelper {
       int charged = player.getPersistentData().getInt(GALLATIN_CHARGE_TAG);
       player.getPersistentData().remove(GALLATIN_CHARGE_TAG);
       player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
-      if (charged < GALLATIN_MAX_CHARGE_TICKS || !(player.level() instanceof ServerLevel level)) {
+      player.getPersistentData().remove(GALLATIN_MIN_CHARGE_PAID_TAG);
+      if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
+      if (charged < MIN_CHARGE_NP_RELEASE_TICKS) {
+         level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.45F, 1.65F);
+         return;
+      }
+      float powerScale = chargePower(charged, GALLATIN_MAX_CHARGE_TICKS);
       Vec3 look = horizontalLook(player);
       boolean sunlight = isUnderGallatinSun(level, player.blockPosition());
       VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", player, 3.0F);
-      level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 2.2F, 0.62F);
-      level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.5F, 0.78F);
-      performGallatinCone(player, level, look, sunlight ? 3000.0F : 1000.0F);
-      addGallatinCooldown(player);
+      level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F + powerScale * 1.4F, 0.62F);
+      level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.6F + powerScale * 0.9F, 0.78F);
+      performGallatinCone(player, level, look, (sunlight ? 3000.0F : 1000.0F) * powerScale, powerScale);
+      addGallatinCooldown(player, scaledCooldown(GALLATIN_PLAYER_COOLDOWN, powerScale));
    }
 
    public static boolean usePseudoSpiralDash(ServerPlayer player) {
@@ -381,7 +424,7 @@ public final class PlayerNoblePhantasmHelper {
       } else {
          throwKanshouBakuya(player, hand);
       }
-      player.getCooldowns().addCooldown(stack.getItem(), 80);
+      player.getCooldowns().addCooldown(stack.getItem(), 10);
       return true;
    }
 
@@ -410,21 +453,30 @@ public final class PlayerNoblePhantasmHelper {
       }
    }
 
-   private static void addExcaliburCooldown(ServerPlayer player) {
+   private static float chargePower(int chargedTicks, int maxTicks) {
+      float ratio = Mth.clamp(chargedTicks / (float)Math.max(1, maxTicks), 0.0F, 1.0F);
+      return 0.2F + ratio * 0.8F;
+   }
+
+   private static int scaledCooldown(int fullCooldown, float powerScale) {
+      return Math.max(200, Mth.floor(fullCooldown * (0.25F + powerScale * 0.75F)));
+   }
+
+   private static void addExcaliburCooldown(ServerPlayer player, int cooldownTicks) {
       if (player.getMainHandItem().is(ModItems.EXCALIBUR.get())) {
-         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), EXCALIBUR_PLAYER_COOLDOWN);
+         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), cooldownTicks);
       }
       if (player.getOffhandItem().is(ModItems.EXCALIBUR.get())) {
-         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), EXCALIBUR_PLAYER_COOLDOWN);
+         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), cooldownTicks);
       }
    }
 
-   private static void addGallatinCooldown(ServerPlayer player) {
+   private static void addGallatinCooldown(ServerPlayer player, int cooldownTicks) {
       if (player.getMainHandItem().is(ModItems.EXCALIBUR_GALLATIN.get())) {
-         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), GALLATIN_PLAYER_COOLDOWN);
+         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), cooldownTicks);
       }
       if (player.getOffhandItem().is(ModItems.EXCALIBUR_GALLATIN.get())) {
-         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), GALLATIN_PLAYER_COOLDOWN);
+         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), cooldownTicks);
       }
    }
 
@@ -602,6 +654,7 @@ public final class PlayerNoblePhantasmHelper {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
+      VFXServerEffects.spawn(level, "servant_sasaki_tsubame", player, 96.0);
       target.invulnerableTime = 0;
       target.hurt(player.damageSources().mobAttack(player), 300.0F);
       target.invulnerableTime = 0;
@@ -625,7 +678,10 @@ public final class PlayerNoblePhantasmHelper {
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(), 25, 0.5, 0.6, 0.5, 0.08);
       level.sendParticles(ParticleTypes.REVERSE_PORTAL, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 15, 0.4, 0.5, 0.4, 0.05);
       level.sendParticles(ParticleTypes.SOUL, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 12, 0.3, 0.4, 0.3, 0.04);
+      level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 8, 0.3, 0.3, 0.3, 0.15);
+      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.5, player.getZ(), 20, 0.3, 0.5, 0.3, 0.04);
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.8F, 0.5F);
+      level.playSound(null, player.blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.2F, 0.7F);
       level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.5F, 0.6F);
    }
 
@@ -670,22 +726,24 @@ public final class PlayerNoblePhantasmHelper {
       breakSmallExplosionTerrain(level, owner, center);
    }
 
-   private static void performGallatinCone(ServerPlayer player, ServerLevel level, Vec3 look, float damage) {
+   private static void performGallatinCone(ServerPlayer player, ServerLevel level, Vec3 look, float damage, float powerScale) {
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
+      double range = GALLATIN_RANGE * (0.28 + powerScale * 0.72);
+      double halfAngleCos = Math.cos(Math.toRadians(12.0 + 23.0 * powerScale));
       Set<Integer> hit = new HashSet<>();
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
-         player.getBoundingBox().inflate(GALLATIN_RANGE + 3.0),
+         player.getBoundingBox().inflate(range + 3.0),
          e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e)
       )) {
          Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.45, 0.0).subtract(origin);
          Vec3 horizontal = new Vec3(to.x, 0.0, to.z);
          double distance = horizontal.length();
-         if (distance > GALLATIN_RANGE || distance < 0.2) {
+         if (distance > range || distance < 0.2) {
             continue;
          }
          Vec3 dir = horizontal.normalize();
-         if (dir.dot(look) < GALLATIN_HALF_ANGLE_COS || !hit.add(living.getId())) {
+         if (dir.dot(look) < halfAngleCos || !hit.add(living.getId())) {
             continue;
          }
          applyFixedDamageOverTicks(player, living, damage, 20);
@@ -693,8 +751,8 @@ public final class PlayerNoblePhantasmHelper {
          living.push(look.x * 5.0, 0.32, look.z * 5.0);
          living.hurtMarked = true;
       }
-      spawnGallatinReleaseParticles(level, origin, look);
-      breakGallatinPath(level, origin, look);
+      spawnGallatinReleaseParticles(level, origin, look, range, powerScale);
+      breakGallatinPath(level, origin, look, range, powerScale);
    }
 
    private static void applyFixedDamageOverTicks(ServerPlayer player, LivingEntity target, float totalDamage, int ticks) {
@@ -723,10 +781,10 @@ public final class PlayerNoblePhantasmHelper {
       }
    }
 
-   private static void spawnGallatinReleaseParticles(ServerLevel level, Vec3 origin, Vec3 look) {
+   private static void spawnGallatinReleaseParticles(ServerLevel level, Vec3 origin, Vec3 look, double range, float powerScale) {
       Vec3 right = new Vec3(-look.z, 0.0, look.x);
-      for (double dist = 1.0; dist <= GALLATIN_RANGE; dist += 3.0) {
-         double halfWidth = Math.min(20.0, dist * 0.7);
+      for (double dist = 1.0; dist <= range; dist += 3.0) {
+         double halfWidth = Math.min(20.0 * powerScale, dist * (0.18 + powerScale * 0.52));
          Vec3 center = origin.add(look.scale(dist));
          level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 9, halfWidth * 0.3, 0.3, halfWidth * 0.3, 0.09);
          if (((int)dist) % 6 == 0) {
@@ -739,12 +797,12 @@ public final class PlayerNoblePhantasmHelper {
       }
    }
 
-   private static void breakGallatinPath(ServerLevel level, Vec3 origin, Vec3 look) {
+   private static void breakGallatinPath(ServerLevel level, Vec3 origin, Vec3 look, double range, float powerScale) {
       int broken = 0;
-      int limit = 220;
+      int limit = Math.max(24, Mth.floor(220.0F * powerScale));
       Vec3 right = new Vec3(-look.z, 0.0, look.x);
-      for (double dist = 2.0; dist <= GALLATIN_RANGE && broken < limit; dist += 2.0) {
-         double halfWidth = Math.min(20.0, dist * 0.7);
+      for (double dist = 2.0; dist <= range && broken < limit; dist += 2.0) {
+         double halfWidth = Math.min(20.0 * powerScale, dist * (0.18 + powerScale * 0.52));
          for (double side = -halfWidth; side <= halfWidth && broken < limit; side += 2.0) {
             BlockPos center = BlockPos.containing(origin.add(look.scale(dist)).add(right.scale(side)));
             for (BlockPos pos : BlockPos.betweenClosed(center.offset(0, -1, 0), center.offset(0, 2, 0))) {

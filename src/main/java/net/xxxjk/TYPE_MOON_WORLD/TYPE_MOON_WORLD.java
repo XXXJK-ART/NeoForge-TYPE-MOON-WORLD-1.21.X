@@ -59,8 +59,10 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.MedeaCraftSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenLeylineSurveyMapMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenMedeaCraftScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenProjectionGuiMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SaveStructuralSelectionMessage;
@@ -189,6 +191,8 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);
       registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
+      registrar.playToServer(MedeaCraftSelectionMessage.TYPE, MedeaCraftSelectionMessage.STREAM_CODEC, MedeaCraftSelectionMessage::handleData);
+      registrar.playToClient(OpenMedeaCraftScreenMessage.TYPE, OpenMedeaCraftScreenMessage.STREAM_CODEC, OpenMedeaCraftScreenMessage::handleData);
       registrar.playToClient(
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE,
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC,

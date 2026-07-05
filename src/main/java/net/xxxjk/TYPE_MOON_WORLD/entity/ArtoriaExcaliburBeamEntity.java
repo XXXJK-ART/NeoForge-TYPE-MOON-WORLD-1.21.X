@@ -31,6 +31,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    private static final EntityDataAccessor<Float> END_Z = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> DAMAGE_START_TICK = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> POWER_SCALE = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final double LENGTH = 150.0;
    private static final double HALF_WIDTH = 12.0;
    private static final double HALF_HEIGHT = 7.0;
@@ -53,11 +54,16 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    }
 
    public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick) {
+      this(level, owner, start, duration, damageStartTick, 1.0F);
+   }
+
+   public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick, float powerScale) {
       this(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), level);
       this.ownerUuid = owner.getUUID();
       this.setPos(start);
       this.entityData.set(DURATION, duration);
       this.entityData.set(DAMAGE_START_TICK, Math.max(0, Math.min(duration, damageStartTick)));
+      this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, powerScale)));
       this.updateEndFromOwner(owner);
    }
 
@@ -68,6 +74,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       builder.define(END_Z, 0.0F);
       builder.define(DURATION, 150);
       builder.define(DAMAGE_START_TICK, 0);
+      builder.define(POWER_SCALE, 1.0F);
    }
 
    public Vec3 getEndPos() {
@@ -119,6 +126,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       this.entityData.set(END_Z, tag.getFloat("EndZ"));
       this.entityData.set(DURATION, tag.getInt("Duration"));
       this.entityData.set(DAMAGE_START_TICK, tag.getInt("DamageStartTick"));
+      this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, tag.contains("PowerScale") ? tag.getFloat("PowerScale") : 1.0F)));
       this.craterQueued = tag.getBoolean("CraterQueued");
       if (tag.hasUUID("Owner")) {
          this.ownerUuid = tag.getUUID("Owner");
@@ -132,6 +140,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       tag.putFloat("EndZ", this.entityData.get(END_Z));
       tag.putInt("Duration", this.entityData.get(DURATION));
       tag.putInt("DamageStartTick", this.entityData.get(DAMAGE_START_TICK));
+      tag.putFloat("PowerScale", this.entityData.get(POWER_SCALE));
       tag.putBoolean("CraterQueued", this.craterQueued);
       if (this.ownerUuid != null) {
          tag.putUUID("Owner", this.ownerUuid);
@@ -149,7 +158,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       Vec3 end = this.getEndPos();
       AABB box = new AABB(start, start).minmax(new AABB(end, end));
       if (this.getDamageStartTick() > 0 && this.tickCount < this.getDamageStartTick()) {
-         box = box.minmax(new AABB(start.add(0.0, LENGTH, 0.0), start.add(0.0, LENGTH, 0.0)));
+         box = box.minmax(new AABB(start.add(0.0, this.beamLength(), 0.0), start.add(0.0, this.beamLength(), 0.0)));
       }
       return box.inflate(16.0);
    }
@@ -163,10 +172,26 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    }
 
    private void updateEndFromOwner(LivingEntity owner) {
-      Vec3 end = this.position().add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(LENGTH));
+      Vec3 end = this.position().add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(this.beamLength()));
       this.entityData.set(END_X, (float)end.x);
       this.entityData.set(END_Y, (float)end.y);
       this.entityData.set(END_Z, (float)end.z);
+   }
+
+   private float powerScale() {
+      return Math.max(0.2F, Math.min(1.0F, this.entityData.get(POWER_SCALE)));
+   }
+
+   private double beamLength() {
+      return LENGTH * (0.35 + this.powerScale() * 0.65);
+   }
+
+   private double beamHalfWidth() {
+      return HALF_WIDTH * (0.28 + this.powerScale() * 0.72);
+   }
+
+   private double beamHalfHeight() {
+      return HALF_HEIGHT * (0.35 + this.powerScale() * 0.65);
    }
 
    private boolean isBeamActive() {
@@ -189,21 +214,22 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       Vec3 up = right.cross(forward).normalize();
       AABB search = new AABB(owner.position(), owner.position())
          .minmax(new AABB(this.getEndPos(), this.getEndPos()))
-         .inflate(HALF_WIDTH + 2.0, HALF_HEIGHT + 2.0, HALF_WIDTH + 2.0);
+         .inflate(this.beamHalfWidth() + 2.0, this.beamHalfHeight() + 2.0, this.beamHalfWidth() + 2.0);
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 rel = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(start);
          double along = rel.dot(forward);
-         if (along < -POINT_BLANK_DAMAGE_LENGTH || along > LENGTH) {
+         double length = this.beamLength();
+         if (along < -POINT_BLANK_DAMAGE_LENGTH || along > length) {
             continue;
          }
          double side = Math.abs(rel.dot(right));
          double vertical = Math.abs(rel.dot(up));
          double beamAlong = Math.max(0.0, along);
-         double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / LENGTH));
-         double allowedWidth = along < 0.0 ? 2.8 : HALF_WIDTH * Math.pow(widthScale, 0.35);
-         if (side <= allowedWidth && vertical <= HALF_HEIGHT) {
-            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE);
+         double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / length));
+         double allowedWidth = along < 0.0 ? 2.8 : this.beamHalfWidth() * Math.pow(widthScale, 0.35);
+         if (side <= allowedWidth && vertical <= this.beamHalfHeight()) {
+            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE * this.powerScale());
             living.push(forward.x * 0.15, 0.0, forward.z * 0.15);
             living.hurtMarked = true;
          }
@@ -222,12 +248,13 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       Vec3 up = right.cross(forward).normalize();
       int phase = this.tickCount % BLOCK_DESTROY_PHASE_TICKS;
       int broken = 0;
-      int maxBroken = 260;
-      for (double along = phase + 0.75; along <= LENGTH && broken < maxBroken; along += BLOCK_DESTROY_PHASE_TICKS) {
-         double widthScale = Math.max(0.25, Math.sin(Math.PI * along / LENGTH));
-         double allowedWidth = HALF_WIDTH * Math.pow(widthScale, 0.35);
+      int maxBroken = Math.max(36, (int)Math.floor(260.0F * this.powerScale()));
+      double length = this.beamLength();
+      for (double along = phase + 0.75; along <= length && broken < maxBroken; along += BLOCK_DESTROY_PHASE_TICKS) {
+         double widthScale = Math.max(0.25, Math.sin(Math.PI * along / length));
+         double allowedWidth = this.beamHalfWidth() * Math.pow(widthScale, 0.35);
          for (double side = -allowedWidth; side <= allowedWidth && broken < maxBroken; side += 0.85) {
-            for (double y = -2.4; y <= 4.2 && broken < maxBroken; y += 0.85) {
+            for (double y = -this.beamHalfHeight() * 0.34; y <= this.beamHalfHeight() * 0.6 && broken < maxBroken; y += 0.85) {
                Vec3 sample = start.add(forward.scale(along)).add(right.scale(side)).add(up.scale(y));
                if (owner.position().distanceToSqr(sample) <= 2.25) {
                   continue;
@@ -260,20 +287,21 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 10, 1.0, 0.8, 1.0, 0.0);
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.35, 0.35, 0.35, 0.0);
       VFXServerEffects.spawn(level, "artoria_excalibur_impact", center, 192.0);
-      int radius = 28;
-      int halfHeight = 112;
+      float powerScale = this.powerScale();
+      int radius = Math.max(6, (int)Math.floor(28.0F * (0.25F + powerScale * 0.75F)));
+      int halfHeight = Math.max(18, (int)Math.floor(112.0F * (0.22F + powerScale * 0.78F)));
       int batchHeight = 3;
       DeferredTerrainDestruction.queueEllipsoid(level, center, radius, halfHeight, 120.0F, 80);
       for (int yStart = -halfHeight; yStart <= halfHeight; yStart += batchHeight) {
          final int fromY = yStart;
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork((yStart + halfHeight) / batchHeight, () -> {
-            damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight);
+            damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight, powerScale);
             spawnCraterSliceFx(level, center, radius, fromY);
          });
       }
    }
 
-   private static void damageCraterSlice(ArtoriaExcaliburBeamEntity beam, ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight) {
+   private static void damageCraterSlice(ArtoriaExcaliburBeamEntity beam, ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight, float powerScale) {
       double yMin = center.y + fromY - 1.5;
       double yMax = center.y + Math.min(halfHeight, fromY + batchHeight) + 1.5;
       AABB box = new AABB(center.x - radius, yMin, center.z - radius, center.x + radius, yMax, center.z + radius);
@@ -284,7 +312,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
          if (normalized > 1.18) {
             continue;
          }
-         float scaledDamage = (float)(CRATER_DAMAGE * Math.max(0.35, 1.15 - normalized));
+         float scaledDamage = (float)(CRATER_DAMAGE * powerScale * Math.max(0.35, 1.15 - normalized));
          hurtWithoutIFrames(living, source, scaledDamage);
          Vec3 horizontal = new Vec3(rel.x, 0.0, rel.z);
          Vec3 push = horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 0.0) : horizontal.normalize().scale(0.42);

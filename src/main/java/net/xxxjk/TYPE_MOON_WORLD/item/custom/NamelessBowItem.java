@@ -40,10 +40,6 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
    private static final int MIN_CHARGE_TICKS = 4;
    private static final int FULL_CHARGE_TICKS = 20;
    private static final double MAX_TARGET_RANGE = 300.0;
-   private static final int NORMAL_COOLDOWN = 40;
-   private static final int CRIMSON_HOUND_COOLDOWN = 300;
-   private static final int PSEUDO_SPIRAL_COOLDOWN = 700;
-   private static final int BROKEN_PHANTASM_COOLDOWN = 900;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public NamelessBowItem(Properties properties) {
@@ -56,10 +52,6 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       if (hand != InteractionHand.MAIN_HAND) {
          return InteractionResultHolder.pass(stack);
       }
-      if (player.getCooldowns().isOnCooldown(this)) {
-         return InteractionResultHolder.fail(stack);
-      }
-
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
    }
@@ -119,20 +111,6 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       }
       serverLevel.sendParticles(ParticleTypes.END_ROD, spawn.x, spawn.y, spawn.z, 18, 0.16, 0.16, 0.16, 0.08);
       serverLevel.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.8F, 1.5F);
-      player.getCooldowns().addCooldown(this, cooldownForPayload(payload));
-   }
-
-   private static int cooldownForPayload(ItemStack payload) {
-      if (payload.is(ModItems.PSEUDO_SPIRAL_SWORD.get())) {
-         return PSEUDO_SPIRAL_COOLDOWN;
-      }
-      if (payload.is(ModItems.CRIMSON_HOUND.get())) {
-         return CRIMSON_HOUND_COOLDOWN;
-      }
-      if (isNoblePhantasmPayload(payload)) {
-         return BROKEN_PHANTASM_COOLDOWN;
-      }
-      return NORMAL_COOLDOWN;
    }
 
    private static LivingEntity findLookTarget(ServerLevel level, Player player, double range) {

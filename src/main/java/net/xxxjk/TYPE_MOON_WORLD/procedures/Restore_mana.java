@@ -50,6 +50,10 @@ public class Restore_mana {
    private static void execute(@Nullable Event event, LevelAccessor world, Entity entity) {
       if (entity != null && entity.isAlive()) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed) {
+            TYPE_MOON_WORLD.queueServerWork(100, () -> execute(world, entity));
+            return;
+         }
          if (!vars.is_magus) {
             TYPE_MOON_WORLD.queueServerWork(100, () -> execute(world, entity));
          } else {

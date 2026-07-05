@@ -26,6 +26,9 @@ public class Magic_display_Overlay {
         int h = event.getGuiGraphics().guiHeight();
         Player entity = minecraft.player;
         if (entity == null) return;
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        if (vars.servant_card_transformed) return;
+        if (!vars.is_magus) return;
 
         try {
             RenderSystem.disableDepthTest();
@@ -38,9 +41,6 @@ public class Magic_display_Overlay {
                     GlStateManager.DestFactor.ZERO
             );
             RenderSystem.setShaderColor(1, 1, 1, 1);
-
-            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (!vars.is_magus) return;
 
             double currentMana = vars.player_mana;
             double maxMana = vars.player_max_mana;

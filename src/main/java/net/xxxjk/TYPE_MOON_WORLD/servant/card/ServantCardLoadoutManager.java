@@ -1,11 +1,13 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -53,7 +55,9 @@ public final class ServantCardLoadoutManager {
       ItemStack main = ItemStack.EMPTY;
       ItemStack off = ItemStack.EMPTY;
       switch (servantId == null ? "" : servantId) {
-         case "artoria_pendragon" -> main = stack(ModItems.EXCALIBUR.get());
+         case "artoria_pendragon" -> {
+            main = veiledExcalibur();
+         }
          case "cu_chulainn" -> main = stack(ModItems.GAE_BULG.get());
          case "heracles" -> main = stack(ModItems.TEMPLE_STONE_SWORD_AXE.get());
          case "medea" -> {
@@ -79,5 +83,15 @@ public final class ServantCardLoadoutManager {
 
    private static ItemStack stack(Item item) {
       return item == null ? ItemStack.EMPTY : new ItemStack(item);
+   }
+
+   private static ItemStack veiledExcalibur() {
+      ItemStack stack = stack(ModItems.EXCALIBUR.get());
+      if (!stack.isEmpty()) {
+         CompoundTag tag = new CompoundTag();
+         tag.putBoolean("ServantCardArtoriaWindVeiled", true);
+         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+      }
+      return stack;
    }
 }

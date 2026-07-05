@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -18,11 +19,13 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -32,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -47,6 +51,7 @@ public final class ArtoriaPendragonCombatHelper {
    public static final String TAG_HAS_AVALON = "ArtoriaHasAvalon";
    public static final String TAG_INVISIBLE_AIR_RELEASED = "ArtoriaInvisibleAirReleased";
    public static final String TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL = "ArtoriaInvisibleAirDamageBypassUntil";
+   public static final String TAG_WIND_REGATHER_UNTIL = "ArtoriaWindRegatherUntil";
 
    private static final String TAG_EXCALIBUR_CHARGE_START = "ArtoriaExcaliburChargeStart";
    private static final String TAG_EXCALIBUR_TARGET = "ArtoriaExcaliburTarget";
@@ -69,6 +74,7 @@ public final class ArtoriaPendragonCombatHelper {
    private static final int CHARISMA_COOLDOWN = 700;
    private static final int INVISIBLE_AIR_DURATION = 80;
    private static final int INVISIBLE_AIR_COOLDOWN = 200;
+   private static final int INVISIBLE_AIR_RELEASE_COOLDOWN = 100;
    private static final float INVISIBLE_AIR_DAMAGE = 300.0F;
    private static final float MANA_BURST_INVISIBLE_AIR_DAMAGE_MULTIPLIER = 4.0F / 3.0F;
    private static final int EXCALIBUR_CHANT = 120;
@@ -101,6 +107,7 @@ public final class ArtoriaPendragonCombatHelper {
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
       tickAvalon(entity, level);
+      tickLakeProtection(entity);
       tickRidingB(entity);
       tickTimedModifiers(entity, now);
       tickInvisibleAirCleanup(data, now);
@@ -138,6 +145,9 @@ public final class ArtoriaPendragonCombatHelper {
       if (tryArtoriaSmallSkill(entity, target, level, data, now, distance)) {
          return true;
       }
+      if (normalOrDecisive && distance <= 5.5 && tryInvisibleAirRelease(entity, target, level, data, now)) {
+         return true;
+      }
       if (normalOrDecisive && distance >= 3.0 && distance <= 12.0 && tryInvisibleAir(entity, target, level, data, now)) {
          return true;
       }
@@ -145,10 +155,35 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    public static boolean hasAvalon(LivingEntity entity) {
-      return entity instanceof ArtoriaPendragonEntity && entity.getPersistentData().getBoolean(TAG_HAS_AVALON);
+      if (entity instanceof ArtoriaPendragonEntity && entity.getPersistentData().getBoolean(TAG_HAS_AVALON)) {
+         return true;
+      }
+      return entity instanceof Player player && hasAvalonInInventory(player);
+   }
+
+   private static boolean hasAvalonInInventory(Player player) {
+      for (ItemStack stack : player.getInventory().items) {
+         if (stack.is(ModItems.AVALON.get())) {
+            return true;
+         }
+      }
+      for (ItemStack stack : player.getInventory().offhand) {
+         if (stack.is(ModItems.AVALON.get())) {
+            return true;
+         }
+      }
+      return false;
    }
 
    public static boolean isInvisibleAirActive(ArtoriaPendragonEntity entity) {
+      if (entity == null) {
+         return false;
+      }
+      CompoundTag data = entity.getPersistentData();
+      return data.getBoolean(TAG_INVISIBLE_AIR_ACTIVE) && data.getLong(TAG_INVISIBLE_AIR_ACTIVE + "Until") > entity.level().getGameTime();
+   }
+
+   public static boolean isInvisibleAirRevealed(LivingEntity entity) {
       if (entity == null) {
          return false;
       }
@@ -183,7 +218,7 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    public static boolean isManaBurstActive(LivingEntity entity) {
-      return entity instanceof ArtoriaPendragonEntity && entity.getPersistentData().getLong(TAG_MANA_BURST_UNTIL) > entity.level().getGameTime();
+      return entity != null && entity.getPersistentData().getLong(TAG_MANA_BURST_UNTIL) > entity.level().getGameTime();
    }
 
    public static boolean isExcaliburWindingOrReleasing(LivingEntity entity) {
@@ -249,6 +284,29 @@ public final class ArtoriaPendragonCombatHelper {
          return amount;
       }
       return amount * 2.0F + 20.0F;
+   }
+
+   public static void tickLakeProtection(LivingEntity entity) {
+      if (entity == null || entity.level().isClientSide() || entity.isShiftKeyDown() || entity.isPassenger()) {
+         return;
+      }
+      BlockPos feet = BlockPos.containing(entity.getX(), entity.getY() - 0.08, entity.getZ());
+      BlockPos below = feet.below();
+      boolean waterAtFeet = entity.level().getFluidState(feet).is(FluidTags.WATER);
+      boolean waterBelow = entity.level().getFluidState(below).is(FluidTags.WATER);
+      if (!waterAtFeet && !waterBelow) {
+         return;
+      }
+      double surfaceY = (waterAtFeet ? feet.getY() : below.getY()) + 1.02;
+      double lift = Mth.clamp((surfaceY - entity.getY()) * 0.42, -0.04, 0.18);
+      Vec3 motion = entity.getDeltaMovement();
+      entity.setDeltaMovement(motion.x, Math.max(motion.y, lift), motion.z);
+      entity.setOnGround(true);
+      entity.fallDistance = 0.0F;
+      if (entity.tickCount % 10 == 0 && entity.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SPLASH, entity.getX(), surfaceY - 0.05, entity.getZ(), fxCount(4), 0.28, 0.02, 0.28, 0.02);
+         level.sendParticles(ParticleTypes.END_ROD, entity.getX(), surfaceY + 0.02, entity.getZ(), fxCount(2), 0.22, 0.02, 0.22, 0.005);
+      }
    }
 
    public static void tickSharedBuffCleanup(LivingEntity entity) {
@@ -589,13 +647,14 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static boolean tryInvisibleAir(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
-      if (entity.getCurrentMp() < 20.0 || now - data.getLong(TAG_LAST_INVISIBLE_AIR) < INVISIBLE_AIR_COOLDOWN) {
+      if (entity.getCurrentMp() < 20.0 || data.getLong(TAG_WIND_REGATHER_UNTIL) > now) {
          return false;
       }
       data.putLong(TAG_LAST_INVISIBLE_AIR, now);
       data.putBoolean(TAG_INVISIBLE_AIR_ACTIVE, true);
       data.putBoolean(TAG_INVISIBLE_AIR_RELEASED, true);
       data.putLong(TAG_INVISIBLE_AIR_ACTIVE + "Until", now + INVISIBLE_AIR_DURATION);
+      data.putLong(TAG_WIND_REGATHER_UNTIL, now + INVISIBLE_AIR_COOLDOWN);
       entity.setCurrentMp(entity.getCurrentMp() - 20.0);
       entity.faceToward(target.position());
       entity.triggerHorizontalSwingAnimation();
@@ -605,12 +664,28 @@ public final class ArtoriaPendragonCombatHelper {
       return true;
    }
 
+   private static boolean tryInvisibleAirRelease(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
+      if (entity.getCurrentMp() < 12.0 || data.getLong(TAG_WIND_REGATHER_UNTIL) > now || entity.getRandom().nextFloat() > 0.34F) {
+         return false;
+      }
+      data.putLong(TAG_LAST_INVISIBLE_AIR, now);
+      data.putBoolean(TAG_INVISIBLE_AIR_ACTIVE, true);
+      data.putBoolean(TAG_INVISIBLE_AIR_RELEASED, true);
+      data.putLong(TAG_INVISIBLE_AIR_ACTIVE + "Until", now + INVISIBLE_AIR_RELEASE_COOLDOWN);
+      data.putLong(TAG_WIND_REGATHER_UNTIL, now + INVISIBLE_AIR_RELEASE_COOLDOWN);
+      entity.setCurrentMp(entity.getCurrentMp() - 12.0);
+      entity.faceToward(target.position());
+      entity.triggerSweepAnimation();
+      performInvisibleAirReleaseBurst(entity, level);
+      level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.HOSTILE, 1.1F, 1.45F);
+      return true;
+   }
+
    private static void tickInvisibleAirWrapVfx(ArtoriaPendragonEntity entity, ServerLevel level, CompoundTag data, long now) {
       if (!entity.isAlive() || isInvisibleAirActive(entity) || isExcaliburWindingOrReleasing(entity)) {
          return;
       }
-      long lastRelease = data.getLong(TAG_LAST_INVISIBLE_AIR);
-      if (lastRelease > 0L && now - lastRelease < INVISIBLE_AIR_COOLDOWN) {
+      if (data.getLong(TAG_WIND_REGATHER_UNTIL) > now) {
          return;
       }
       if (now - data.getLong(TAG_LAST_INVISIBLE_AIR_WRAP_VFX) < 34L) {
@@ -655,6 +730,53 @@ public final class ArtoriaPendragonCombatHelper {
       spawnInvisibleAirWhiteFx(level, origin, look);
       breakWindConeBlocks(entity, level, origin, look, right);
       level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_3.value(), SoundSource.HOSTILE, 1.6F, 1.25F);
+   }
+
+   private static void performInvisibleAirReleaseBurst(ArtoriaPendragonEntity entity, ServerLevel level) {
+      double radius = 6.2;
+      Vec3 center = entity.position().add(0.0, entity.getBbHeight() * 0.48, 0.0);
+      float baseDamage = isManaBurstActive(entity) ? 34.0F : 22.0F;
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(radius, 2.2, radius), e -> e.isAlive() && e != entity && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
+         Vec3 away = living.position().subtract(entity.position());
+         Vec3 horizontal = new Vec3(away.x, 0.0, away.z);
+         double distance = horizontal.length();
+         if (distance > radius || distance < 0.05) {
+            continue;
+         }
+         Vec3 dir = horizontal.normalize();
+         float scaledDamage = (float)(baseDamage * Mth.clamp(1.0 - distance / (radius * 1.35), 0.35, 1.0));
+         damageTarget(entity, living, scaledDamage);
+         living.push(dir.x * 1.05, 0.26, dir.z * 1.05);
+         living.hurtMarked = true;
+      }
+      for (Projectile projectile : level.getEntitiesOfClass(Projectile.class, entity.getBoundingBox().inflate(radius + 1.5), p -> p.isAlive() && p.getOwner() != entity)) {
+         Entity owner = projectile.getOwner();
+         if (owner instanceof LivingEntity living && entity.isAlliedTo(living)) {
+            continue;
+         }
+         Vec3 away = projectile.position().subtract(center);
+         if (away.lengthSqr() > (radius + 1.5) * (radius + 1.5)) {
+            continue;
+         }
+         Vec3 dir = away.lengthSqr() < 0.01 ? entity.getLookAngle().scale(-1.0) : away.normalize();
+         projectile.setDeltaMovement(projectile.getDeltaMovement().add(dir.scale(1.9)).add(0.0, 0.18, 0.0));
+         projectile.hurtMarked = true;
+      }
+      for (double r = 1.2; r <= radius; r += 1.0) {
+         int points = Math.max(12, Mth.floor(r * 8.0));
+         for (int i = 0; i < points; i++) {
+            double angle = (Math.PI * 2.0) * i / points;
+            double x = entity.getX() + Math.cos(angle) * r;
+            double z = entity.getZ() + Math.sin(angle) * r;
+            double y = entity.getY() + 0.35 + (i % 3) * 0.18;
+            if (i % 2 == 0) {
+               level.sendParticles(ParticleTypes.CLOUD, x, y, z, fxCount(1), 0.02, 0.02, 0.02, 0.01);
+            } else {
+               level.sendParticles(ParticleTypes.END_ROD, x, y + 0.08, z, fxCount(1), 0.02, 0.02, 0.02, 0.006);
+            }
+         }
+      }
+      level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + entity.getBbHeight() * 0.56, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    private static void breakWindConeBlocks(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 origin, Vec3 look, Vec3 right) {

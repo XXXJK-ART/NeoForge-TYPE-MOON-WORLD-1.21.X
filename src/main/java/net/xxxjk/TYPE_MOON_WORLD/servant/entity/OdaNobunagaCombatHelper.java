@@ -39,6 +39,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
@@ -1175,30 +1177,31 @@ public final class OdaNobunagaCombatHelper {
       if (!hasTrait(target, ServantTraitTag.DIVINE)) {
          return damageAfterOtherMultipliers;
       }
+      applyDivineDefenseBreak(owner, target);
       float cappedMultiplier = divineMultiplierCap(target);
-      float withTenkaFubu = damageAfterOtherMultipliers * 2.0F;
-      return Math.min(withTenkaFubu, damageAfterOtherMultipliers * cappedMultiplier);
+      float desiredMultiplier = Mth.clamp(2.0F + cappedMultiplier * 0.5F, 2.0F, cappedMultiplier);
+      return damageAfterOtherMultipliers * desiredMultiplier;
    }
 
    private static float divineMultiplierCap(LivingEntity target) {
-      if (target instanceof ServantEntity servant && servant.getDefinition() != null) {
-         List<String> skills = servant.getDefinition().skillIds();
-         if (skills.contains("divinity_a") || skills.contains("god_hand_a")) {
+      List<String> skills = ServantIdentityHelper.skillIdsOf(target);
+      if (!skills.isEmpty()) {
+         if (hasAnySkill(skills, "divinity_a", "god_hand_a", "god_hand_passive")) {
             return 16.0F;
          }
-         if (skills.contains("divinity_b_plus")) {
+         if (hasAnySkill(skills, "divinity_b_plus")) {
             return 10.0F;
          }
-         if (skills.contains("divinity_b")) {
+         if (hasAnySkill(skills, "divinity_b")) {
             return 8.0F;
          }
-         if (skills.contains("divinity_c")) {
+         if (hasAnySkill(skills, "divinity_c")) {
             return 6.0F;
          }
-         if (skills.contains("divinity_d")) {
+         if (hasAnySkill(skills, "divinity_d")) {
             return 4.0F;
          }
-         if (skills.contains("divinity_e") || skills.contains("divinity_e_minus")) {
+         if (hasAnySkill(skills, "divinity_e", "divinity_e_minus")) {
             return 2.0F;
          }
       }
@@ -1206,8 +1209,19 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static boolean hasTrait(LivingEntity entity, ServantTraitTag trait) {
-      if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
-         return servant.getDefinition().traits().contains(trait);
+      return ServantIdentityHelper.hasTrait(entity, trait);
+   }
+
+   private static boolean hasAnySkill(List<String> skills, String... ids) {
+      if (skills == null || skills.isEmpty()) {
+         return false;
+      }
+      for (String skill : skills) {
+         for (String id : ids) {
+            if (id.equals(skill)) {
+               return true;
+            }
+         }
       }
       return false;
    }
@@ -1641,8 +1655,9 @@ public final class OdaNobunagaCombatHelper {
       score += living.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.4;
       score += living.getAttributeValue(Attributes.ARMOR) * 0.75;
       score += living.getAttributeValue(Attributes.MOVEMENT_SPEED) * 55.0;
-      if (living instanceof ServantEntity servant && servant.getDefinition() != null) {
-         ServantParams params = servant.getDefinition().parameters();
+      ServantDefinition definition = ServantIdentityHelper.definitionOf(living);
+      if (definition != null) {
+         ServantParams params = definition.parameters();
          score += effectiveRank(params.strength(), params.strengthPlus()) * 0.45;
          score += effectiveRank(params.agility(), params.agilityPlus()) * 0.38;
          score += effectiveRank(params.magic(), params.magicPlus()) * 0.28;

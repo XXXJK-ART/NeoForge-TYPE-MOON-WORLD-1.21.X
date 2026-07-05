@@ -16,6 +16,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
+import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
@@ -55,6 +56,18 @@ public class TypeMoonWorldModKeyMappings {
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
+   public static final KeyMapping[] SERVANT_CARD_SKILL_KEYS = new KeyMapping[]{
+      new KeyMapping("key.typemoonworld.servant_card.slot0", GLFW.GLFW_KEY_KP_0, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot1", GLFW.GLFW_KEY_KP_1, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot2", GLFW.GLFW_KEY_KP_2, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot3", GLFW.GLFW_KEY_KP_3, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot4", GLFW.GLFW_KEY_KP_4, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot5", GLFW.GLFW_KEY_KP_5, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot6", GLFW.GLFW_KEY_KP_6, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot7", GLFW.GLFW_KEY_KP_7, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot8", GLFW.GLFW_KEY_KP_8, KEY_CATEGORY),
+      new KeyMapping("key.typemoonworld.servant_card.slot9", GLFW.GLFW_KEY_KP_9, KEY_CATEGORY)
+   };
 
    @SubscribeEvent
    public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
@@ -67,6 +80,9 @@ public class TypeMoonWorldModKeyMappings {
       event.register(CYCLE_MAGIC);
       event.register(MAGIC_MODE_SWITCH);
       event.register(MAGIC_WHEEL_SWITCH);
+      for (KeyMapping mapping : SERVANT_CARD_SKILL_KEYS) {
+         event.register(mapping);
+      }
    }
 
    @EventBusSubscriber({Dist.CLIENT})
@@ -95,6 +111,21 @@ public class TypeMoonWorldModKeyMappings {
       private static int machineGunPoseWarmupTicks = 0;
       private static int machineGunPoseNoCooldownTicks = 0;
       private static HumanoidArm localCastingArm = HumanoidArm.RIGHT;
+
+      @SubscribeEvent
+      public static void onInteractionKey(InteractionKeyMappingTriggered event) {
+         Minecraft minecraft = Minecraft.getInstance();
+         Player player = minecraft.player;
+         if (player == null || minecraft.screen != null || !event.isAttack() || !player.isCrouching()) {
+            return;
+         }
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
+            PacketDistributor.sendToServer(new ServantCardActionMessage(-1), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
+         }
+      }
 
       @SubscribeEvent
       public static void onMouseScroll(MouseScrollingEvent event) {
@@ -449,13 +480,10 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
-         int[] keys = new int[]{320, 321, 322, 323, 324, 325, 326, 327, 328, 329};
-         for (int slot = 0; slot < keys.length; slot++) {
-            boolean down = GLFW.glfwGetKey(window, keys[slot]) == 1;
-            if (down && !numpadWheelDown[slot]) {
+         for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
+            while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].consumeClick()) {
                PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
             }
-            numpadWheelDown[slot] = down;
          }
 
          boolean jumpDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1;
@@ -469,8 +497,10 @@ public class TypeMoonWorldModKeyMappings {
                servantLastJumpTapMs = 0L;
             } else {
                servantLastJumpTapMs = now;
-               if (sneakDown || backDown) {
-                  PacketDistributor.sendToServer(new ServantCardJumpMessage(backDown), new CustomPacketPayload[0]);
+               if (sneakDown) {
+                  float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (backDown ? -1.0F : 0.0F);
+                  float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
+                  PacketDistributor.sendToServer(new ServantCardJumpMessage(forward, strafe), new CustomPacketPayload[0]);
                }
             }
          }
@@ -484,6 +514,10 @@ public class TypeMoonWorldModKeyMappings {
             servantFlightInputSendDelay = 0;
          }
          servantJumpDown = jumpDown;
+      }
+
+      private static boolean supportsCrouchAttack(String servantId) {
+         return "emiya_archer".equals(servantId) || "sasaki_kojiro".equals(servantId) || "cu_chulainn".equals(servantId);
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

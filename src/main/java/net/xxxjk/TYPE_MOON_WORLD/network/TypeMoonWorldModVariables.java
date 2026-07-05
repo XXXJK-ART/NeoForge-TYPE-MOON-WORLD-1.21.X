@@ -233,6 +233,9 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_release_cooldown = original.servant_card_release_cooldown;
             clone.servant_card_was_magus = original.servant_card_was_magus;
             clone.servant_card_was_magic_circuit_open = original.servant_card_was_magic_circuit_open;
+            clone.servant_card_medea_dragonfang_stock = original.servant_card_medea_dragonfang_stock;
+            clone.servant_card_medea_mana_charm_stock = original.servant_card_medea_mana_charm_stock;
+            clone.servant_card_medea_heal_charm_stock = original.servant_card_medea_heal_charm_stock;
          } else {
             clone.servant_card_death_release = original.servant_card_death_release;
          }
@@ -486,6 +489,9 @@ public class TypeMoonWorldModVariables {
       public boolean servant_card_was_magus = false;
       public boolean servant_card_was_magic_circuit_open = false;
       public boolean servant_card_death_release = false;
+      public int servant_card_medea_dragonfang_stock = 0;
+      public int servant_card_medea_mana_charm_stock = 0;
+      public int servant_card_medea_heal_charm_stock = 0;
 
       public TypeMoonWorldModVariables.PlayerVariables.SavedStructure getStructureById(String id) {
          if (id != null && !id.isEmpty()) {
@@ -1415,6 +1421,9 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("servant_card_was_magus", this.servant_card_was_magus);
          nbt.putBoolean("servant_card_was_magic_circuit_open", this.servant_card_was_magic_circuit_open);
          nbt.putBoolean("servant_card_death_release", this.servant_card_death_release);
+         nbt.putInt("servant_card_medea_dragonfang_stock", this.servant_card_medea_dragonfang_stock);
+         nbt.putInt("servant_card_medea_mana_charm_stock", this.servant_card_medea_mana_charm_stock);
+         nbt.putInt("servant_card_medea_heal_charm_stock", this.servant_card_medea_heal_charm_stock);
          nbt.putInt("magic_system_data_version", this.magic_system_data_version);
          nbt.putInt("active_wheel_index", this.active_wheel_index);
          ListTag wheelList = new ListTag();
@@ -1641,6 +1650,9 @@ public class TypeMoonWorldModVariables {
          this.servant_card_was_magus = nbt.getBoolean("servant_card_was_magus");
          this.servant_card_was_magic_circuit_open = nbt.getBoolean("servant_card_was_magic_circuit_open");
          this.servant_card_death_release = nbt.getBoolean("servant_card_death_release");
+         this.servant_card_medea_dragonfang_stock = nbt.contains("servant_card_medea_dragonfang_stock") ? nbt.getInt("servant_card_medea_dragonfang_stock") : 0;
+         this.servant_card_medea_mana_charm_stock = nbt.contains("servant_card_medea_mana_charm_stock") ? nbt.getInt("servant_card_medea_mana_charm_stock") : 0;
+         this.servant_card_medea_heal_charm_stock = nbt.contains("servant_card_medea_heal_charm_stock") ? nbt.getInt("servant_card_medea_heal_charm_stock") : 0;
          this.magic_system_data_version = nbt.contains("magic_system_data_version") ? nbt.getInt("magic_system_data_version") : 0;
          this.active_wheel_index = nbt.contains("active_wheel_index") ? nbt.getInt("active_wheel_index") : 0;
          this.magic_wheels.clear();

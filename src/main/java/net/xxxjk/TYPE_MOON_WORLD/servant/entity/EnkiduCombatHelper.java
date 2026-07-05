@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -2373,16 +2374,16 @@ public final class EnkiduCombatHelper {
    }
 
    private static boolean hasTrait(LivingEntity entity, ServantTraitTag trait) {
-      if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
-         return servant.getDefinition().traits().contains(trait);
+      if (ServantIdentityHelper.hasTrait(entity, trait)) {
+         return true;
       }
       return trait == ServantTraitTag.BEAST && entity instanceof Enemy && entity.getMaxHealth() >= 200.0F;
    }
 
    private static int divinityLevel(LivingEntity entity) {
-      if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
-         List<String> skills = servant.getDefinition().skillIds();
-         if (hasAnySkill(skills, "divinity_a", "god_hand_a")) {
+      List<String> skills = ServantIdentityHelper.skillIdsOf(entity);
+      if (!skills.isEmpty()) {
+         if (hasAnySkill(skills, "divinity_a", "god_hand_a", "god_hand_passive")) {
             return 5;
          }
          if (hasAnySkill(skills, "divinity_b_plus")) {
