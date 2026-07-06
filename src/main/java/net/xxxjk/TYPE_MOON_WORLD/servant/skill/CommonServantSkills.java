@@ -46,6 +46,7 @@ public final class CommonServantSkills {
       registry.register("gallatin_spark", CommonServantSkills::executeGawainGallatinSpark, "typemoonworld_core");
       registry.register("solar_rebuke", CommonServantSkills::executeGawainSolarRebuke, "typemoonworld_core");
       registry.register("radiant_field", CommonServantSkills::executeGawainRadiantField, "typemoonworld_core");
+      registry.register("flame_tornado", CommonServantSkills::executeGawainFlameTornado, "typemoonworld_core");
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
@@ -106,6 +107,10 @@ public final class CommonServantSkills {
 
    private static ServantExecutionResult executeGawainRadiantField(ServantExecutionContext context) {
       return markGawainSkill(context, "GawainRadiantFieldAvailable");
+   }
+
+   private static ServantExecutionResult executeGawainFlameTornado(ServantExecutionContext context) {
+      return markGawainSkill(context, "GawainFlameTornadoAvailable");
    }
 
    private static ServantExecutionResult markGawainSkill(ServantExecutionContext context, String tag) {

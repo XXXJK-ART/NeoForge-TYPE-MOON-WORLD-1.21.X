@@ -142,6 +142,9 @@ public class ModPlayerEventHandler {
          if (vars.servant_card_transformed && "li_shuwen".equals(vars.servant_card_id)) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills.revealCircleRealm(player);
          }
+         if (vars.servant_card_transformed) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);
+         }
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.triggerHeraclesAttackImpact(player, target);
       }
    }

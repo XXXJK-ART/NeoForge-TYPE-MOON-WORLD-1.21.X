@@ -40,6 +40,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Hecate Bind", "bind", 32.0, 220);
             case 7 -> new ServantCardSkillAction("Aerial Escape", "escape", 28.0, 180);
             case 8 -> new ServantCardSkillAction(crouching ? "Greater Hecate Beam" : "Thunderstorm", crouching ? "medea_beam" : "thunder", crouching ? 40.0 : 42.0, crouching ? 220 : 320);
+            case 9 -> new ServantCardSkillAction("Rule Breaker", "rule_breaker", 80.0, 3600);
             default -> null;
          };
          case "medusa" -> switch (slot) {
@@ -48,7 +49,7 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction("Serpent Step", "serpent_step", 20.0, 100);
             case 3 -> new ServantCardSkillAction("Mystic Eyes", "medusa_mystic_eyes", 12.0, 80);
             case 4 -> new ServantCardSkillAction("Bloodfort Andromeda", "bloodfort_field", 38.0, 600);
-            case 9 -> new ServantCardSkillAction("Bellerophon", "bellerophon", 90.0, 1600);
+            case 9 -> new ServantCardSkillAction("Bellerophon", "bellerophon", 90.0, 3600);
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
@@ -67,13 +68,13 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Projection Loadout Cycle", "emiya_cycle", 100.0, 20);
             case 5 -> new ServantCardSkillAction("Trace Opponent Weapon", "copy_weapon", 38.0, 360);
             case 6 -> new ServantCardSkillAction("Layered Projection", "emiya_layered_projection", 36.0, 240);
-            case 9 -> new ServantCardSkillAction("Unlimited Blade Works", "ubw", 0.0, 2400);
+            case 9 -> new ServantCardSkillAction("Unlimited Blade Works", "ubw", 0.0, 3600);
             default -> null;
          };
          case "sasaki_kojiro" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Iaijutsu Step", "sasaki_crouch_combo", 10.0, 20);
             case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 220);
-            case 1 -> new ServantCardSkillAction("Tsubame Gaeshi", "tsubame_gaeshi", 0.0, 60);
+            case 1 -> new ServantCardSkillAction("Tsubame Gaeshi", "tsubame_gaeshi", 0.0, 1200);
             default -> null;
          };
          case "oda_nobunaga" -> switch (slot) {
@@ -86,7 +87,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Strategy", "strategy", 24.0, 360);
             case 7 -> new ServantCardSkillAction("Ash Field", "ash_field", 38.0, 420);
             case 8 -> new ServantCardSkillAction("Hasebe Repel", "hasebe_repel", 24.0, 160);
-            case 9 -> new ServantCardSkillAction(crouching ? "Hajun" : "Three Thousand Worlds", crouching ? "hajun" : "three_thousand", crouching ? 130.0 : 95.0, crouching ? 2800 : 1800);
+            case 9 -> new ServantCardSkillAction(crouching ? "Hajun" : "Three Thousand Worlds", crouching ? "hajun" : "three_thousand", crouching ? 130.0 : 95.0, 3600);
             default -> null;
          };
          case "enkidu" -> switch (slot) {
@@ -99,7 +100,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Clay Bulwark", "bulwark", 30.0, 320);
             case 7 -> new ServantCardSkillAction("Stardust Step", "stardust", 20.0, 100);
             case 8 -> new ServantCardSkillAction("Mega Age of Babylon", "mega_age", 50.0, 420);
-            case 9 -> new ServantCardSkillAction("Enuma Elish", "enuma_elish", 120.0, 2400);
+            case 9 -> new ServantCardSkillAction("Enuma Elish", "enuma_elish", 120.0, 3600);
             default -> null;
          };
          case "gawain" -> switch (slot) {
@@ -107,15 +108,16 @@ public final class ServantCardSkillLayout {
             case 0 -> new ServantCardSkillAction("Gallatin Spark", "gallatin_spark", 28.0, 180);
             case 1 -> new ServantCardSkillAction("Solar Rebuke", "solar_rebuke", 32.0, 220);
             case 2 -> new ServantCardSkillAction("Radiant Field", "radiant_field", 36.0, 520);
+            case 3 -> new ServantCardSkillAction("Flame Tornado", "flame_tornado", 34.0, 260);
             default -> null;
          };
          case "li_shuwen" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Baji Step", "shoulder_charge", 0.0, 24);
-            case 0 -> new ServantCardSkillAction("Circle Realm", "circle_realm", 16.0, 260);
+            case 0 -> new ServantCardSkillAction("Circle Realm (Extreme)", "circle_realm", 16.0, 260);
             case 1 -> new ServantCardSkillAction("Yin Yang Crossing", "yin_yang", 28.0, 160);
             case 2 -> new ServantCardSkillAction("Counter", "counter", 26.0, 240);
             case 3 -> new ServantCardSkillAction("Tremor Interrupt", "interrupt", 24.0, 160);
-            case 9 -> new ServantCardSkillAction("Wu Er Da", "wu_er_da", 0.0, 200);
+            case 9 -> new ServantCardSkillAction("Wu Er Da", "wu_er_da", 0.0, 1200);
             default -> null;
          };
          case "paracelsus" -> switch (slot) {

@@ -236,6 +236,18 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_medea_dragonfang_stock = original.servant_card_medea_dragonfang_stock;
             clone.servant_card_medea_mana_charm_stock = original.servant_card_medea_mana_charm_stock;
             clone.servant_card_medea_heal_charm_stock = original.servant_card_medea_heal_charm_stock;
+            clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
+            clone.master_active = original.master_active;
+            clone.master_servant_uuid = original.master_servant_uuid;
+            clone.master_command_spells = original.master_command_spells;
+            clone.master_revive_available = original.master_revive_available;
+            clone.master_saved_player_mana = original.master_saved_player_mana;
+            clone.master_saved_player_max_mana = original.master_saved_player_max_mana;
+            clone.master_saved_player_mana_regen = original.master_saved_player_mana_regen;
+            clone.master_saved_player_restore_magic_moment = original.master_saved_player_restore_magic_moment;
+            clone.master_saved_is_magus = original.master_saved_is_magus;
+            clone.master_saved_magic_circuit_open = original.master_saved_magic_circuit_open;
+            clone.master_saved_magic_circuit_open_timer = original.master_saved_magic_circuit_open_timer;
          } else {
             clone.servant_card_death_release = original.servant_card_death_release;
          }
@@ -492,6 +504,18 @@ public class TypeMoonWorldModVariables {
       public int servant_card_medea_dragonfang_stock = 0;
       public int servant_card_medea_mana_charm_stock = 0;
       public int servant_card_medea_heal_charm_stock = 0;
+      public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
+      public boolean master_active = false;
+      public String master_servant_uuid = "";
+      public int master_command_spells = 0;
+      public boolean master_revive_available = false;
+      public double master_saved_player_mana = 0.0;
+      public double master_saved_player_max_mana = 0.0;
+      public double master_saved_player_mana_regen = 0.0;
+      public double master_saved_player_restore_magic_moment = 0.0;
+      public boolean master_saved_is_magus = false;
+      public boolean master_saved_magic_circuit_open = false;
+      public double master_saved_magic_circuit_open_timer = 0.0;
 
       public TypeMoonWorldModVariables.PlayerVariables.SavedStructure getStructureById(String id) {
          if (id != null && !id.isEmpty()) {
@@ -1424,6 +1448,18 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("servant_card_medea_dragonfang_stock", this.servant_card_medea_dragonfang_stock);
          nbt.putInt("servant_card_medea_mana_charm_stock", this.servant_card_medea_mana_charm_stock);
          nbt.putInt("servant_card_medea_heal_charm_stock", this.servant_card_medea_heal_charm_stock);
+         nbt.putString("servant_card_enkidu_transfiguration_points", this.servant_card_enkidu_transfiguration_points == null ? "6,6,6,6,6" : this.servant_card_enkidu_transfiguration_points);
+         nbt.putBoolean("master_active", this.master_active);
+         nbt.putString("master_servant_uuid", this.master_servant_uuid == null ? "" : this.master_servant_uuid);
+         nbt.putInt("master_command_spells", this.master_command_spells);
+         nbt.putBoolean("master_revive_available", this.master_revive_available);
+         nbt.putDouble("master_saved_player_mana", this.master_saved_player_mana);
+         nbt.putDouble("master_saved_player_max_mana", this.master_saved_player_max_mana);
+         nbt.putDouble("master_saved_player_mana_regen", this.master_saved_player_mana_regen);
+         nbt.putDouble("master_saved_player_restore_magic_moment", this.master_saved_player_restore_magic_moment);
+         nbt.putBoolean("master_saved_is_magus", this.master_saved_is_magus);
+         nbt.putBoolean("master_saved_magic_circuit_open", this.master_saved_magic_circuit_open);
+         nbt.putDouble("master_saved_magic_circuit_open_timer", this.master_saved_magic_circuit_open_timer);
          nbt.putInt("magic_system_data_version", this.magic_system_data_version);
          nbt.putInt("active_wheel_index", this.active_wheel_index);
          ListTag wheelList = new ListTag();
@@ -1653,6 +1689,18 @@ public class TypeMoonWorldModVariables {
          this.servant_card_medea_dragonfang_stock = nbt.contains("servant_card_medea_dragonfang_stock") ? nbt.getInt("servant_card_medea_dragonfang_stock") : 0;
          this.servant_card_medea_mana_charm_stock = nbt.contains("servant_card_medea_mana_charm_stock") ? nbt.getInt("servant_card_medea_mana_charm_stock") : 0;
          this.servant_card_medea_heal_charm_stock = nbt.contains("servant_card_medea_heal_charm_stock") ? nbt.getInt("servant_card_medea_heal_charm_stock") : 0;
+         this.servant_card_enkidu_transfiguration_points = nbt.contains("servant_card_enkidu_transfiguration_points") ? nbt.getString("servant_card_enkidu_transfiguration_points") : "6,6,6,6,6";
+         this.master_active = nbt.getBoolean("master_active");
+         this.master_servant_uuid = nbt.contains("master_servant_uuid") ? nbt.getString("master_servant_uuid") : "";
+         this.master_command_spells = nbt.contains("master_command_spells") ? nbt.getInt("master_command_spells") : 0;
+         this.master_revive_available = nbt.getBoolean("master_revive_available");
+         this.master_saved_player_mana = nbt.contains("master_saved_player_mana") ? nbt.getDouble("master_saved_player_mana") : 0.0;
+         this.master_saved_player_max_mana = nbt.contains("master_saved_player_max_mana") ? nbt.getDouble("master_saved_player_max_mana") : 0.0;
+         this.master_saved_player_mana_regen = nbt.contains("master_saved_player_mana_regen") ? nbt.getDouble("master_saved_player_mana_regen") : 0.0;
+         this.master_saved_player_restore_magic_moment = nbt.contains("master_saved_player_restore_magic_moment") ? nbt.getDouble("master_saved_player_restore_magic_moment") : 0.0;
+         this.master_saved_is_magus = nbt.getBoolean("master_saved_is_magus");
+         this.master_saved_magic_circuit_open = nbt.getBoolean("master_saved_magic_circuit_open");
+         this.master_saved_magic_circuit_open_timer = nbt.contains("master_saved_magic_circuit_open_timer") ? nbt.getDouble("master_saved_magic_circuit_open_timer") : 0.0;
          this.magic_system_data_version = nbt.contains("magic_system_data_version") ? nbt.getInt("magic_system_data_version") : 0;
          this.active_wheel_index = nbt.contains("active_wheel_index") ? nbt.getInt("active_wheel_index") : 0;
          this.magic_wheels.clear();

@@ -139,6 +139,36 @@ public final class ServantCardGawainSkills {
       }
    }
 
+   public static void performGawainFlameTornado(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      for (int step = 1; step <= 14; step++) {
+         final int index = step;
+         TYPE_MOON_WORLD.queueServerWork(step * 2, () -> {
+            if (!player.isAlive() || !(player.level() instanceof ServerLevel delayedLevel)) {
+               return;
+            }
+            Vec3 center = player.position().add(dir.scale(1.6 + index * 1.15)).add(0.0, 0.7, 0.0);
+            delayedLevel.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 18, 0.55, 0.75, 0.55, 0.08);
+            delayedLevel.sendParticles(ParticleTypes.SMOKE, center.x, center.y + 0.15, center.z, 10, 0.45, 0.6, 0.45, 0.04);
+            delayedLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+            for (LivingEntity living : delayedLevel.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().move(dir.scale(index * 1.15)).inflate(1.8, 1.4, 1.8), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+               living.setRemainingFireTicks(100);
+               living.invulnerableTime = 0;
+               living.hurt(player.damageSources().playerAttack(player), hasSunBlessing(player) ? 18.0F : 12.0F);
+               living.invulnerableTime = 0;
+               living.push(dir.x * 0.75, 0.18, dir.z * 0.75);
+               living.hurtMarked = true;
+            }
+            if (index == 1) {
+               delayedLevel.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0F, 0.8F);
+            }
+         });
+      }
+   }
+
    public static void performGawainRadiantField(ServerPlayer player) {
       boolean solar = hasSunBlessing(player);
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 260, solar ? 2 : 1, false, true, true));

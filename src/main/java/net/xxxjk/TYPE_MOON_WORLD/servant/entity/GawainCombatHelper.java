@@ -52,6 +52,7 @@ public final class GawainCombatHelper {
    private static final String TAG_LAST_GALLATIN_SPARK = "GawainLastGallatinSpark";
    private static final String TAG_LAST_SOLAR_REBUKE = "GawainLastSolarRebuke";
    private static final String TAG_LAST_RADIANT_FIELD = "GawainLastRadiantField";
+   private static final String TAG_LAST_FLAME_TORNADO = "GawainLastFlameTornado";
 
    private static final int BELT_DURATION = 400;
    private static final int BELT_COOLDOWN = 500;
@@ -66,6 +67,7 @@ public final class GawainCombatHelper {
    private static final int GALLATIN_SPARK_COOLDOWN = 150;
    private static final int SOLAR_REBUKE_COOLDOWN = 120;
    private static final int RADIANT_FIELD_COOLDOWN = 260;
+   private static final int FLAME_TORNADO_COOLDOWN = 260;
    private static final double GALLATIN_RANGE = 100.0;
    private static final double GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
    private static final double GAWAIN_VFX_RADIUS = 128.0;
@@ -247,6 +249,9 @@ public final class GawainCombatHelper {
       if ((vertical > 1.35 || distance >= 5.0) && distance <= 18.0 && entity.getSensing().hasLineOfSight(target) && tryGallatinSpark(entity, target, level, data, now, solar)) {
          return true;
       }
+      if (distance >= 6.0 && distance <= 18.0 && entity.getSensing().hasLineOfSight(target) && tryFlameTornado(entity, target, level, data, now, solar)) {
+         return true;
+      }
       return distance >= 7.0 && distance <= 24.0 && trySunlitPursuit(entity, target, level, data, now, solar);
    }
 
@@ -350,6 +355,40 @@ public final class GawainCombatHelper {
       }
       level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_AMBIENT, SoundSource.HOSTILE, 1.0F, 0.82F);
       return true;
+   }
+
+   private static boolean tryFlameTornado(GawainEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now, boolean solar) {
+      double mpCost = solar ? 18.0 : 24.0;
+      if (!consumeSkill(entity, data, now, TAG_LAST_FLAME_TORNADO, FLAME_TORNADO_COOLDOWN, mpCost)) {
+         return false;
+      }
+      entity.faceToward(target.position());
+      entity.triggerHorizontalSwingAnimation();
+      ServantVoiceHelper.tryPlayGawainFireAttack(entity);
+      Vec3 dir = horizontalDirection(entity, target);
+      Vec3 origin = entity.position();
+      for (int step = 1; step <= 14; step++) {
+         final int index = step;
+         TYPE_MOON_WORLD.queueServerWork(step * 2, () -> applyFlameTornadoStep(entity, origin, dir, index, solar));
+      }
+      level.playSound(null, entity.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.05F, 0.8F);
+      return true;
+   }
+
+   private static void applyFlameTornadoStep(GawainEntity entity, Vec3 origin, Vec3 dir, int index, boolean solar) {
+      if (!entity.isAlive() || !(entity.level() instanceof ServerLevel level)) {
+         return;
+      }
+      Vec3 center = origin.add(dir.scale(1.6 + index * 1.15)).add(0.0, 0.7, 0.0);
+      level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 18, 0.55, 0.75, 0.55, 0.08);
+      level.sendParticles(ParticleTypes.SMOKE, center.x, center.y + 0.15, center.z, 10, 0.45, 0.6, 0.45, 0.04);
+      level.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+      AABB hitBox = new AABB(center, center).inflate(1.8, 1.4, 1.8);
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, hitBox, e -> canHit(entity, e))) {
+         damageTarget(entity, living, solar ? 18.0F : 12.0F);
+         living.igniteForSeconds(solar ? 6.0F : 5.0F);
+         pushAway(living, dir, 0.75, 0.18);
+      }
    }
 
    private static void applyRadiantFieldPulse(GawainEntity entity, Vec3 center, boolean solar) {

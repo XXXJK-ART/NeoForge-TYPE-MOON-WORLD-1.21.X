@@ -27,7 +27,7 @@ public class ServantCardHud {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed) {
+      if (!vars.servant_card_transformed && !vars.master_active) {
          return;
       }
       ResourceLocation layer = event.getName();
@@ -47,7 +47,7 @@ public class ServantCardHud {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed) {
+      if (!vars.servant_card_transformed && !vars.master_active) {
          return;
       }
 
@@ -64,15 +64,29 @@ public class ServantCardHud {
 
       int manaX = 10;
       int manaY = guiHeight - 20;
-      drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
-      Player master = findMaster(minecraft, vars);
-      if (master != null) {
-         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         drawBar(gui, minecraft, manaX, manaY - 11, 120, "Master", masterVars.player_mana, masterVars.player_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+      if (vars.master_active) {
+         drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.player_mana, vars.player_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+         Player servant = findServant(minecraft, vars);
+         if (servant != null) {
+            TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            drawBar(gui, minecraft, manaX, manaY - 11, 120, "Servant", servantVars.servant_card_mana, servantVars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
+         }
+      } else {
+         drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
+         Player master = findMaster(minecraft, vars);
+         if (master != null) {
+            TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            drawBar(gui, minecraft, manaX, manaY - 11, 120, "Master", masterVars.player_mana, masterVars.player_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+         }
       }
 
       int x = 6;
       int y = 10;
+      if (vars.master_active) {
+         drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.master.status"), x, y + 38, 0xFFFFFFFF, 0.72F);
+         drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.master.command_spells", vars.master_command_spells), x, y + 48, 0xFFE0E0E0, 0.62F);
+         return;
+      }
       String servant = vars.servant_card_id == null || vars.servant_card_id.isBlank() ? "servant" : vars.servant_card_id;
       Component servantName = "servant".equals(servant) ? Component.literal(servant) : Component.translatable("item.typemoonworld.servant_card_" + servant);
       drawScaledString(gui, minecraft, servantName, x, y + 38, 0xFFFFFFFF, 0.72F);
@@ -103,6 +117,18 @@ public class ServantCardHud {
       }
       try {
          UUID uuid = UUID.fromString(vars.servant_card_master_uuid);
+         return minecraft.level.getPlayerByUUID(uuid);
+      } catch (IllegalArgumentException ignored) {
+         return null;
+      }
+   }
+
+   private static Player findServant(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (minecraft.level == null || vars.master_servant_uuid == null || vars.master_servant_uuid.isBlank()) {
+         return null;
+      }
+      try {
+         UUID uuid = UUID.fromString(vars.master_servant_uuid);
          return minecraft.level.getPlayerByUUID(uuid);
       } catch (IllegalArgumentException ignored) {
          return null;
@@ -143,8 +169,10 @@ public class ServantCardHud {
             : (ticks <= 0 ? Component.translatable(skillKey) : Component.literal(ticksToSeconds(ticks)));
          Component text = Component.literal(i + ":").append(label);
          int color = empty ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
-         gui.fill(drawX - 1, drawY - 1, drawX + 36, drawY + 6, 0x44000000);
-         drawScaledString(gui, minecraft, text, drawX + 1, drawY - 1, color, 0.58F);
+         float scale = 0.54F;
+         int width = Math.min(142, Math.max(38, (int)(minecraft.font.width(text) * scale) + 5));
+         gui.fill(drawX - 1, drawY - 1, drawX + width, drawY + 6, 0x44000000);
+         drawScaledString(gui, minecraft, text, drawX + 1, drawY - 1, color, scale);
       }
    }
 

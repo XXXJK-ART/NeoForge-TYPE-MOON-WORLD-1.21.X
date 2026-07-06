@@ -22,6 +22,7 @@ public class ModCreativeModeTabs {
                     .title(Component.translatable("creativetab.typemoonworld.servant_cards"))
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
+                        output.accept(ModItems.COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);

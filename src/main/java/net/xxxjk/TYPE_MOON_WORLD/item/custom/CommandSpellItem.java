@@ -8,20 +8,17 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
-public class ServantCardReleaseItem extends Item {
-   public ServantCardReleaseItem(Properties properties) {
+public class CommandSpellItem extends Item {
+   public CommandSpellItem(Properties properties) {
       super(properties);
    }
 
    @Override
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
-      if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-         if (!ServantCardTransformManager.release(serverPlayer, false)) {
-            MasterStateManager.release(serverPlayer);
-         }
+      if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && MasterStateManager.activate(serverPlayer) && !serverPlayer.getAbilities().instabuild) {
+         stack.shrink(1);
       }
       return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
    }

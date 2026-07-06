@@ -61,14 +61,11 @@ public final class ServantCardLoadoutManager {
          case "cu_chulainn" -> main = stack(ModItems.GAE_BULG.get());
          case "heracles" -> main = stack(ModItems.TEMPLE_STONE_SWORD_AXE.get());
          case "medea" -> {
-            main = stack(ModItems.RULE_BREAKER.get());
             off = stack(ModItems.HECATES_STAFF.get());
          }
          case "medusa" -> main = stack(ModItems.NAMELESS_CHAIN_DAGGER.get());
          case "cursed_arm_hassan" -> main = stack(ModItems.DIRK_SMALL_KNIFE.get());
          case "emiya_archer" -> {
-            main = stack(ModItems.NAMELESS_BOW.get());
-            off = stack(ModItems.PSEUDO_SPIRAL_SWORD.get());
          }
          case "sasaki_kojiro" -> main = stack(ModItems.BIZEN_NAGAMITSU.get());
          case "oda_nobunaga" -> main = stack(ModItems.HESHIKIRI_HASEBE.get());

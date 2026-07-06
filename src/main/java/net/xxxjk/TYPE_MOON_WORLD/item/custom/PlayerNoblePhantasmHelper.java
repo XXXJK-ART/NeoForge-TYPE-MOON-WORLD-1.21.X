@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
@@ -252,6 +253,7 @@ public final class PlayerNoblePhantasmHelper {
       }
       int charged = Math.min(EXCALIBUR_MAX_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, charged);
+      applyNoblePhantasmChargeSlow(player);
       if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= EXCALIBUR_MAX_CHARGE_TICKS) {
          double cost = player.getPersistentData().getBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG)
             ? CHARGE_MANA_PER_TICK
@@ -289,6 +291,7 @@ public final class PlayerNoblePhantasmHelper {
       level.addFreshEntity(beam);
       VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
       addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
+      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get(), SoundSource.VOICE, 1.0F, 1.0F);
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
    }
@@ -305,6 +308,7 @@ public final class PlayerNoblePhantasmHelper {
       }
       int charged = Math.min(GALLATIN_MAX_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, charged);
+      applyNoblePhantasmChargeSlow(player);
       if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= GALLATIN_MAX_CHARGE_TICKS) {
          double cost = player.getPersistentData().getBoolean(GALLATIN_MIN_CHARGE_PAID_TAG)
             ? CHARGE_MANA_PER_TICK
@@ -345,10 +349,20 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 look = horizontalLook(player);
       boolean sunlight = isUnderGallatinSun(level, player.blockPosition());
       VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", player, 3.0F);
+      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get(), SoundSource.VOICE, 1.0F, 1.0F);
       level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F + powerScale * 1.4F, 0.62F);
       level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.6F + powerScale * 0.9F, 0.78F);
       performGallatinCone(player, level, look, (sunlight ? 3000.0F : 1000.0F) * powerScale, powerScale);
       addGallatinCooldown(player, scaledCooldown(GALLATIN_PLAYER_COOLDOWN, powerScale));
+   }
+
+   public static boolean isChargingMovementLocked(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      return data.getInt(EXCALIBUR_CHARGE_TAG) > 0 || data.getInt(GALLATIN_CHARGE_TAG) > 0;
+   }
+
+   private static void applyNoblePhantasmChargeSlow(ServerPlayer player) {
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 6, 1, false, false, true));
    }
 
    public static boolean usePseudoSpiralDash(ServerPlayer player) {

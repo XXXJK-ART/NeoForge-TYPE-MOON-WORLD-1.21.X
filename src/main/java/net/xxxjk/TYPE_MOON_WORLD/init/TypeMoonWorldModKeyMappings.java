@@ -20,9 +20,11 @@ import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTrigg
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.EnkiduTransfigurationScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
@@ -35,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -56,6 +59,7 @@ public class TypeMoonWorldModKeyMappings {
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
+   public static final KeyMapping ENKIDU_TRANSFIGURATION_WHEEL = new KeyMapping("key.typemoonworld.enkidu_transfiguration_wheel", GLFW.GLFW_KEY_LEFT_ALT, KEY_CATEGORY);
    public static final KeyMapping[] SERVANT_CARD_SKILL_KEYS = new KeyMapping[]{
       new KeyMapping("key.typemoonworld.servant_card.slot0", GLFW.GLFW_KEY_KP_0, KEY_CATEGORY),
       new KeyMapping("key.typemoonworld.servant_card.slot1", GLFW.GLFW_KEY_KP_1, KEY_CATEGORY),
@@ -80,6 +84,7 @@ public class TypeMoonWorldModKeyMappings {
       event.register(CYCLE_MAGIC);
       event.register(MAGIC_MODE_SWITCH);
       event.register(MAGIC_WHEEL_SWITCH);
+      event.register(ENKIDU_TRANSFIGURATION_WHEEL);
       for (KeyMapping mapping : SERVANT_CARD_SKILL_KEYS) {
          event.register(mapping);
       }
@@ -96,9 +101,11 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isModeSwitchDown = false;
       private static boolean isWheelSwitchDown = false;
       private static final boolean[] numpadWheelDown = new boolean[10];
+      private static final boolean[] servantCardHoldDown = new boolean[10];
       private static boolean servantJumpDown = false;
       private static long servantLastJumpTapMs = 0L;
       private static int servantFlightInputSendDelay = 0;
+      private static boolean enkiduTransfigurationWheelDown = false;
       private static long castPressStartMs = -1L;
       private static boolean castLongTriggered = false;
       private static boolean machineGunCastKeyDown = false;
@@ -195,6 +202,10 @@ public class TypeMoonWorldModKeyMappings {
             updateMachineGunFiringPose(vars);
             StructuralProjectionPlacementClient.cancelIfInvalid(vars);
             boolean suppressScreens = ReplayUiSuppressor.shouldSuppressTypeMoonScreens();
+            if (vars.master_active) {
+               handleMasterControls(suppressScreens);
+               return;
+            }
             if (vars.servant_card_transformed) {
                handleServantCardControls(vars);
                return;
@@ -480,9 +491,27 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
+         if ("enkidu".equals(vars.servant_card_id) && ENKIDU_TRANSFIGURATION_WHEEL.isDown()) {
+            if (!enkiduTransfigurationWheelDown) {
+               enkiduTransfigurationWheelDown = true;
+               Minecraft.getInstance().setScreen(new EnkiduTransfigurationScreen());
+            }
+            return;
+         } else {
+            enkiduTransfigurationWheelDown = false;
+         }
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
-            while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].consumeClick()) {
-               PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
+            if (isHoldServantCardSkill(vars, slot)) {
+               boolean down = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].isDown();
+               if (down != servantCardHoldDown[slot]) {
+                  servantCardHoldDown[slot] = down;
+                  PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, down), new CustomPacketPayload[0]);
+               }
+            } else {
+               servantCardHoldDown[slot] = false;
+               while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].consumeClick()) {
+                  PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
+               }
             }
          }
 
@@ -514,6 +543,21 @@ public class TypeMoonWorldModKeyMappings {
             servantFlightInputSendDelay = 0;
          }
          servantJumpDown = jumpDown;
+      }
+
+      private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
+         return ("emiya_archer".equals(vars.servant_card_id) && slot == 1) || ("li_shuwen".equals(vars.servant_card_id) && slot == 2);
+      }
+
+      private static void handleMasterControls(boolean suppressScreens) {
+         if (Minecraft.getInstance().screen != null) {
+            return;
+         }
+         while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[0].consumeClick()) {
+            if (!suppressScreens) {
+               Minecraft.getInstance().setScreen(new MasterCommandSpellScreen());
+            }
+         }
       }
 
       private static boolean supportsCrouchAttack(String servantId) {

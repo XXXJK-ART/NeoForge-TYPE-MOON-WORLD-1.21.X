@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
-import java.util.UUID;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
@@ -36,7 +35,9 @@ public final class ServantCardManaService {
       if (Math.abs(vars.servant_card_mana_regen - expectedRegen) > 1.0E-6) {
          vars.servant_card_mana_regen = expectedRegen;
       }
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
+      if (vars.servant_card_mana < vars.servant_card_max_mana) {
+         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
+      }
       if (player.tickCount % 20 == 0) {
          vars.syncPlayerVariables(player);
       }
@@ -62,7 +63,7 @@ public final class ServantCardManaService {
       TypeMoonWorldModVariables.PlayerVariables masterVars = master == null
          ? null
          : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (remaining > 0.0 && (masterVars == null || masterVars.player_mana < remaining)) {
+      if (remaining > 0.0 && (masterVars == null || !MasterStateManager.canDrawMasterMana(player, vars, master) || masterVars.player_mana < remaining)) {
          return false;
       }
       vars.servant_card_mana -= own;
@@ -75,14 +76,6 @@ public final class ServantCardManaService {
    }
 
    public static ServerPlayer getMaster(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (player == null || player.getServer() == null || vars.servant_card_master_uuid == null || vars.servant_card_master_uuid.isBlank()) {
-         return null;
-      }
-      try {
-         UUID uuid = UUID.fromString(vars.servant_card_master_uuid);
-         return player.getServer().getPlayerList().getPlayer(uuid);
-      } catch (IllegalArgumentException ignored) {
-         return null;
-      }
+      return MasterStateManager.getMaster(player, vars);
    }
 }

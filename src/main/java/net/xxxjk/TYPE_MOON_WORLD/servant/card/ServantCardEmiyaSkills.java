@@ -156,7 +156,19 @@ public final class ServantCardEmiyaSkills {
       if (player.level() instanceof ServerLevel level) {
          RhoAiasEntity shield = new RhoAiasEntity(level, player, findLookTarget(player, 24.0, 2.0));
          level.addFreshEntity(shield);
+         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 320, 2, false, true, true));
          level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.15F);
+      }
+   }
+
+   public static void stopRhoAias(ServerPlayer player) {
+      if (player.level() instanceof ServerLevel level) {
+         for (RhoAiasEntity shield : level.getEntitiesOfClass(RhoAiasEntity.class, player.getBoundingBox().inflate(10.0), e -> e.isAlive() && e.getOwnerEntity() == player)) {
+            shield.discard();
+         }
+      }
+      if (player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+         player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
       }
    }
 

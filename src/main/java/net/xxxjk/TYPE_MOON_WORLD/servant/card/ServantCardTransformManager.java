@@ -61,9 +61,15 @@ public final class ServantCardTransformManager {
       vars.servant_card_jump_recovery_ticks = 0;
       vars.servant_card_np_cooldown = 0;
       vars.servant_card_skill_cooldowns = "";
+      if ("medea".equals(servantId)) {
+         vars.servant_card_np_cooldown = 3600;
+      }
       vars.servant_card_transform_cooldown = 40;
       vars.servant_card_release_cooldown = 40;
       vars.servant_card_action_mode = 0;
+      if ("enkidu".equals(servantId)) {
+         vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
+      }
       vars.servant_card_flying = false;
       vars.servant_card_flight_forward = 0.0;
       vars.servant_card_flight_strafe = 0.0;
@@ -99,6 +105,7 @@ public final class ServantCardTransformManager {
       ServantCardDefenseHandler.clear(player);
       restoreArmor(player, vars);
       ServantCardLoadoutManager.restore(player, vars);
+      MasterStateManager.clearServantSide(player, vars);
       vars.servant_card_transformed = false;
       vars.servant_card_id = "";
       vars.servant_card_master_uuid = "";
@@ -186,7 +193,11 @@ public final class ServantCardTransformManager {
       }
       boolean np = slot == 9;
       if ("ubw".equals(action.effectId())) {
-         return ServantCardEmiyaSkills.performUbwAction(player, vars, action);
+         boolean success = ServantCardEmiyaSkills.performUbwAction(player, vars, action);
+         if (success) {
+            ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
+         }
+         return success;
       }
       int cooldownSlot = slot < 0 ? 6 : slot;
       int currentCooldown = np ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
@@ -215,6 +226,7 @@ public final class ServantCardTransformManager {
             return false;
          }
          vars.syncPlayerVariables(player);
+         ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
          return true;
       }
@@ -238,32 +250,43 @@ public final class ServantCardTransformManager {
       if (!performAction(player, vars, action)) {
          return false;
       }
+      ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
+      int cooldownTicks = effectiveCooldownTicks(action, np);
       if (np) {
-         vars.servant_card_np_cooldown = action.cooldownTicks();
+         vars.servant_card_np_cooldown = cooldownTicks;
       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
-         setSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, action.cooldownTicks());
-         setSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, action.cooldownTicks());
+         setSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, cooldownTicks);
+         setSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, cooldownTicks);
       } else {
-         setSkillCooldown(vars, cooldownSlot, action.cooldownTicks());
+         setSkillCooldown(vars, cooldownSlot, cooldownTicks);
       }
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
       return true;
    }
 
-   public static boolean bindMaster(ServerPlayer servant, ServerPlayer master) {
-      if (servant == master) {
-         return false;
-      }
-      TypeMoonWorldModVariables.PlayerVariables vars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+   public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed) {
-         return false;
+         return;
       }
-      vars.servant_card_master_uuid = master.getUUID().toString();
-      vars.syncPlayerVariables(servant);
-      servant.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.master_bound", master.getGameProfile().getName()), true);
-      master.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.servant_bound", servant.getGameProfile().getName()), true);
-      return true;
+      if ("emiya_archer".equals(vars.servant_card_id) && slot == 1) {
+         if (pressed) {
+            triggerAction(player, slot);
+         } else {
+            ServantCardEmiyaSkills.stopRhoAias(player);
+         }
+      } else if ("li_shuwen".equals(vars.servant_card_id) && slot == 2) {
+         if (pressed) {
+            triggerAction(player, slot);
+         } else {
+            player.getPersistentData().remove("ServantCardLiCounterUntil");
+         }
+      }
+   }
+
+   public static boolean bindMaster(ServerPlayer servant, ServerPlayer master) {
+      return MasterStateManager.bind(master, servant);
    }
 
    public static String skillTranslationKey(String servantId, int slot, boolean crouching) {
@@ -278,6 +301,9 @@ public final class ServantCardTransformManager {
    public static boolean bigJump(ServerPlayer player, float forwardInput, float strafeInput) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || vars.servant_card_jump_charges <= 0) {
+         return false;
+      }
+      if (PlayerNoblePhantasmHelper.isChargingMovementLocked(player)) {
          return false;
       }
       ServantDefinition definition = ServantDataRegistry.get(vars.servant_card_id);
@@ -456,6 +482,18 @@ public final class ServantCardTransformManager {
       return builder.toString();
    }
 
+   private static int effectiveCooldownTicks(ServantCardSkillAction action, boolean npSlot) {
+      if (action == null) {
+         return 0;
+      }
+      String id = action.effectId();
+      int cooldown = action.cooldownTicks();
+      if ("tsubame_gaeshi".equals(id) || "zabaniya".equals(id) || "wu_er_da".equals(id)) {
+         return Math.max(cooldown, 1200);
+      }
+      return npSlot ? Math.max(cooldown, 3600) : cooldown;
+   }
+
    private static ServantCardSkillAction actionFor(String servantId, int slot, boolean crouching) {
       return ServantCardSkillLayout.actionFor(servantId, slot, crouching);
    }
@@ -519,6 +557,11 @@ public final class ServantCardTransformManager {
          }
          case "blink_volley" -> ServantCardMedeaSkills.performMedeaBlinkVolley(player);
          case "bind" -> ServantCardMedeaSkills.performMedeaBind(player);
+         case "rule_breaker" -> {
+            if (!PlayerNoblePhantasmHelper.useRuleBreaker(player)) {
+               return false;
+            }
+         }
          case "escape" -> {
             if (!ServantCardMedeaSkills.performMedeaEscape(player)) {
                return false;
@@ -569,6 +612,7 @@ public final class ServantCardTransformManager {
          case "gallatin_spark" -> ServantCardGawainSkills.performGawainGallatinSpark(player);
          case "solar_rebuke" -> ServantCardGawainSkills.performGawainSolarRebuke(player);
          case "radiant_field" -> ServantCardGawainSkills.performGawainRadiantField(player);
+         case "flame_tornado" -> ServantCardGawainSkills.performGawainFlameTornado(player);
          case "solar_combo" -> ServantCardGawainSkills.performGawainSolarCombo(player);
          case "yin_yang" -> ServantCardLiShuwenSkills.performLiYinYang(player);
          case "shoulder_charge" -> ServantCardLiShuwenSkills.performLiShoulder(player);

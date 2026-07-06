@@ -65,17 +65,61 @@ public final class ServantCardEnkiduSkills {
    }
 
    public static void performEnkiduTransfiguration(ServerPlayer player) {
-      CompoundTag data = player.getPersistentData();
-      int mode = Math.floorMod(data.getInt("ServantCardEnkiduTransfigurationMode") + 1, 3);
-      data.putInt("ServantCardEnkiduTransfigurationMode", mode);
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 260, mode == 0 ? 2 : 0, false, true, true));
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 260, mode == 1 ? 2 : 0, false, true, true));
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 260, mode == 2 ? 2 : 0, false, true, true));
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      int[] points = parseTransfigurationPoints(vars);
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 260, Math.max(0, points[0] / 3 - 1), false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 260, Math.max(0, points[1] / 3 - 1), false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 260, Math.max(0, points[2] / 3 - 1), false, true, true));
+      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + Math.max(0, points[3] * 3.0));
+      if (points[4] >= 6) {
+         player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 260, Math.max(0, points[4] / 4 - 1), false, true, true));
+      }
+      vars.syncPlayerVariables(player);
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + 1.0, player.getZ(), 42, 0.75, 0.65, 0.75, 0.06);
-         level.sendParticles(mode == 0 ? ParticleTypes.CRIT : mode == 1 ? ParticleTypes.END_ROD : ParticleTypes.WAX_ON, player.getX(), player.getY() + 1.0, player.getZ(), 22, 0.45, 0.4, 0.45, 0.04);
-         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 0.8F, 1.0F + mode * 0.15F);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 22, 0.45, 0.4, 0.45, 0.04);
+         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 0.8F, 1.1F);
       }
+   }
+
+   public static void adjustTransfigurationPoint(ServerPlayer player, int stat, int delta) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.servant_card_transformed || !"enkidu".equals(vars.servant_card_id) || stat < 0 || stat >= 5 || delta == 0) {
+         return;
+      }
+      int[] points = parseTransfigurationPoints(vars);
+      int next = Mth.clamp(points[stat] + (delta > 0 ? 1 : -1), 0, 30);
+      if (next == points[stat]) {
+         return;
+      }
+      int total = 0;
+      for (int i = 0; i < points.length; i++) {
+         total += i == stat ? next : points[i];
+      }
+      if (total > 30) {
+         return;
+      }
+      points[stat] = next;
+      vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(points);
+      vars.syncPlayerVariables(player);
+   }
+
+   public static int[] parseTransfigurationPoints(TypeMoonWorldModVariables.PlayerVariables vars) {
+      int[] points = new int[]{6, 6, 6, 6, 6};
+      String raw = vars.servant_card_enkidu_transfiguration_points == null ? "" : vars.servant_card_enkidu_transfiguration_points;
+      String[] parts = raw.split(",");
+      for (int i = 0; i < points.length && i < parts.length; i++) {
+         try {
+            points[i] = Mth.clamp(Integer.parseInt(parts[i]), 0, 30);
+         } catch (NumberFormatException ignored) {
+            points[i] = 6;
+         }
+      }
+      return points;
+   }
+
+   private static String serializeTransfigurationPoints(int[] points) {
+      return points[0] + "," + points[1] + "," + points[2] + "," + points[3] + "," + points[4];
    }
 
    public static void performEnkiduPerfectForm(ServerPlayer player) {
@@ -189,21 +233,59 @@ public final class ServantCardEnkiduSkills {
    }
 
    public static void performEnkiduEnumaElish(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 44.0, 2.4);
-      if (target == null || !(player.level() instanceof ServerLevel level)) {
+      if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", player, 192.0);
-      performEnkiduChains(player);
-      TYPE_MOON_WORLD.queueServerWork(30, () -> {
-         if (player.isAlive() && target.isAlive() && player.level() instanceof ServerLevel delayedLevel) {
-            performEnkiduAgeOfBabylon(player, 40, 24.0F, true);
-            target.invulnerableTime = 0;
-            target.hurt(player.damageSources().playerAttack(player), hasTrait(target, ServantTraitTag.DIVINE) ? 110.0F : 70.0F);
-            target.invulnerableTime = 0;
-            delayedLevel.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 3, 0.0, 0.0, 0.0, 0.0);
-         }
-      });
+      CompoundTag data = player.getPersistentData();
+      data.putBoolean("ServantCardEnkiduEnumaFlightActive", true);
+      data.putBoolean("ServantCardEnkiduEnumaReleased", false);
+      for (int tick = 1; tick <= 120; tick++) {
+         final int index = tick;
+         TYPE_MOON_WORLD.queueServerWork(index, () -> tickEnumaElishFlight(player, index >= 120));
+      }
+   }
+
+   private static void tickEnumaElishFlight(ServerPlayer player, boolean timeout) {
+      CompoundTag data = player.getPersistentData();
+      if (!player.isAlive() || !data.getBoolean("ServantCardEnkiduEnumaFlightActive") || data.getBoolean("ServantCardEnkiduEnumaReleased")) {
+         return;
+      }
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      Vec3 dir = player.getLookAngle();
+      if (dir.lengthSqr() < 1.0E-4) {
+         dir = new Vec3(0.0, 0.0, 1.0);
+      }
+      player.setDeltaMovement(dir.normalize().scale(2.35));
+      player.hurtMarked = true;
+      level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 0.8, player.getZ(), 10, 0.25, 0.25, 0.25, 0.04);
+      LivingEntity hit = findFlightHit(player, level);
+      if (timeout || player.horizontalCollision || hit != null) {
+         data.putBoolean("ServantCardEnkiduEnumaReleased", true);
+         data.putBoolean("ServantCardEnkiduEnumaFlightActive", false);
+         releaseEnumaElishImpact(player, level, hit);
+      }
+   }
+
+   private static LivingEntity findFlightHit(ServerPlayer player, ServerLevel level) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(1.6), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+         return living;
+      }
+      return null;
+   }
+
+   private static void releaseEnumaElishImpact(ServerPlayer player, ServerLevel level, LivingEntity directHit) {
+      Vec3 center = directHit == null ? player.position() : directHit.position();
+      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", center, 192.0);
+      performEnkiduAgeOfBabylon(player, 40, 24.0F, true);
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(8.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+         living.invulnerableTime = 0;
+         living.hurt(player.damageSources().playerAttack(player), hasTrait(living, ServantTraitTag.DIVINE) ? 110.0F : 70.0F);
+         living.invulnerableTime = 0;
+      }
+      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.8, center.z, 4, 0.0, 0.0, 0.0, 0.0);
    }
 
 }

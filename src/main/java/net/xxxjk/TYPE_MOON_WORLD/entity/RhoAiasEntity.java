@@ -222,7 +222,10 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       if (look.lengthSqr() < 1.0E-4) {
          return;
       }
-      this.setFacingDirection(look.normalize());
+      Vec3 direction = look.normalize();
+      Vec3 pos = owner.position().add(direction.scale(2.2)).add(0.0, owner.getBbHeight() * 0.55, 0.0);
+      this.setPos(pos.x, pos.y, pos.z);
+      this.setFacingDirection(direction);
    }
 
    private void setFacingDirection(Vec3 direction) {

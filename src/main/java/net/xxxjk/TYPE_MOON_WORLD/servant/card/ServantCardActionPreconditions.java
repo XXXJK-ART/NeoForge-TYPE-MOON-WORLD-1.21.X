@@ -6,7 +6,7 @@ public final class ServantCardActionPreconditions {
 
    public static boolean requiresLookTarget(String id) {
       return switch (id) {
-         case "cybele", "charm", "chains", "enuma_elish", "anti_mystery", "hasebe_repel" -> true;
+         case "cybele", "charm", "chains", "anti_mystery", "hasebe_repel" -> true;
          default -> false;
       };
    }

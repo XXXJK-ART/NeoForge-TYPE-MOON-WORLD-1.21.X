@@ -11,6 +11,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -21,7 +22,7 @@ import static net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.*;
 public final class ServantCardLiShuwenSkills {
    private static final String CONCEALMENT_UNTIL_TAG = "ServantCardConcealmentUntil";
    private static final int CIRCLE_REALM_DURATION = 1400;
-   private static final int WU_ER_DA_HIT_COOLDOWN = 200;
+   private static final int WU_ER_DA_HIT_COOLDOWN = 1200;
    private static final int WU_ER_DA_MISS_COOLDOWN = 100;
    private static final double WU_ER_DA_HIT_COST = 15.0;
    private static final double WU_ER_DA_MISS_COST = 2.0;
@@ -110,15 +111,29 @@ public final class ServantCardLiShuwenSkills {
          return true;
       }
       vars.servant_card_np_cooldown = WU_ER_DA_HIT_COOLDOWN;
-      target.invulnerableTime = 0;
-      target.hurt(player.damageSources().playerAttack(player), 96.0F);
-      target.invulnerableTime = 0;
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 180, 2, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 3, false, true, true));
+      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 5, false, true, true));
       spawnLiHitFx(player, target);
       if (player.level() instanceof ServerLevel level) {
          VFXServerEffects.spawn(level, "servant_li_wu_er_da", target, 96.0);
       }
+      TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (!player.isAlive() || !target.isAlive()) {
+            return;
+         }
+         Vec3 dir = target.position().subtract(player.position());
+         if (dir.lengthSqr() < 0.001) {
+            dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+         } else {
+            dir = new Vec3(dir.x, 0.0, dir.z).normalize();
+         }
+         target.invulnerableTime = 0;
+         target.hurt(player.damageSources().playerAttack(player), 96.0F);
+         target.invulnerableTime = 0;
+         target.push(dir.x * 2.8, 0.35, dir.z * 2.8);
+         target.hurtMarked = true;
+         spawnLiHitFx(player, target);
+      });
       return true;
    }
 

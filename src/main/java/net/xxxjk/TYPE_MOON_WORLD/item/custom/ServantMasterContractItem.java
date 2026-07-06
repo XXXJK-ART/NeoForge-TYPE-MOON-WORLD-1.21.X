@@ -7,7 +7,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 
 public class ServantMasterContractItem extends Item {
    public ServantMasterContractItem(Properties properties) {
@@ -16,8 +16,8 @@ public class ServantMasterContractItem extends Item {
 
    @Override
    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand hand) {
-      if (!player.level().isClientSide && player instanceof ServerPlayer servant && target instanceof ServerPlayer master) {
-         return ServantCardTransformManager.bindMaster(servant, master) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+      if (!player.level().isClientSide && player instanceof ServerPlayer actor && target instanceof ServerPlayer other) {
+         return MasterStateManager.bindByContract(actor, other) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
       }
       return InteractionResult.sidedSuccess(player.level().isClientSide);
    }

@@ -74,6 +74,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
@@ -104,7 +105,7 @@ public class CommonEvents {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed) {
+      if (vars.servant_card_transformed || vars.master_active) {
          ServantCardTransformManager.normalizeFood(serverPlayer);
       }
    }
@@ -246,6 +247,7 @@ public class CommonEvents {
                TypeMoonWorldModVariables.PLAYER_VARIABLES
             );
             ServantCardTransformManager.tick(serverPlayer, cardVars);
+            MasterStateManager.tick(serverPlayer, cardVars);
          }
 
          if (player.isSpectator()) {
@@ -369,6 +371,12 @@ public class CommonEvents {
                   event.setCanceled(true);
                   event.setAmount(0.0F);
                   ServantCardTransformManager.release(player, true);
+                  return;
+               }
+               if (vars.master_active && vars.master_revive_available && player.getHealth() - event.getAmount() <= 0.0F) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  MasterStateManager.tryRevive(player, vars);
                   return;
                }
             }

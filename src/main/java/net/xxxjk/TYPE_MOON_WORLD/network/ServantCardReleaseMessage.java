@@ -6,6 +6,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +28,9 @@ public record ServantCardReleaseMessage() implements CustomPacketPayload {
    public static void handleData(ServantCardReleaseMessage message, IPayloadContext context) {
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player) {
-            ServantCardTransformManager.release(player, false);
+            if (!ServantCardTransformManager.release(player, false)) {
+               MasterStateManager.release(player);
+            }
          }
       });
    }

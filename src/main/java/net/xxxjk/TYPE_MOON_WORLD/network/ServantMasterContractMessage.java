@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import org.jetbrains.annotations.NotNull;
 
 public record ServantMasterContractMessage(int targetEntityId) implements CustomPacketPayload {
@@ -27,10 +27,10 @@ public record ServantMasterContractMessage(int targetEntityId) implements Custom
 
    public static void handleData(ServantMasterContractMessage message, IPayloadContext context) {
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer servant) {
-            Entity target = servant.level().getEntity(message.targetEntityId);
-            if (target instanceof ServerPlayer master) {
-               ServantCardTransformManager.bindMaster(servant, master);
+         if (context.player() instanceof ServerPlayer actor) {
+            Entity target = actor.level().getEntity(message.targetEntityId);
+            if (target instanceof ServerPlayer other) {
+               MasterStateManager.bindByContract(actor, other);
             }
          }
       });

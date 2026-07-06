@@ -7,6 +7,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChiselItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.CommandSpellItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DirkSmallKnifeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomGemItem;
@@ -158,6 +159,8 @@ public class ModItems {
 
     public static final DeferredItem<Item> SERVANT_MASTER_CONTRACT = ITEMS.register("servant_master_contract",
             () -> new ServantMasterContractItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> COMMAND_SPELL = ITEMS.register("command_spell",
+            () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> SERVANT_CARD_RELEASE = ITEMS.register("servant_card_release",
             () -> new ServantCardReleaseItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
 

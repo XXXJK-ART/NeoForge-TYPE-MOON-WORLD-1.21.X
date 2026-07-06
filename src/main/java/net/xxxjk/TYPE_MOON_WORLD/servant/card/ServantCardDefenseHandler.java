@@ -109,6 +109,25 @@ public final class ServantCardDefenseHandler {
       if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken)) {
          return true;
       }
+      if ("li_shuwen".equals(vars.servant_card_id) && player.tickCount <= data.getInt("ServantCardLiCounterUntil")) {
+         data.remove("ServantCardLiCounterUntil");
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         Entity sourceEntity = event.getSource().getEntity();
+         if (sourceEntity instanceof LivingEntity attacker && attacker != player) {
+            Vec3 dir = attacker.position().subtract(player.position());
+            if (dir.lengthSqr() < 0.001) {
+               dir = player.getLookAngle();
+            }
+            dir = new Vec3(dir.x, 0.0, dir.z).normalize();
+            attacker.invulnerableTime = 0;
+            attacker.hurt(player.damageSources().playerAttack(player), 28.0F);
+            attacker.push(dir.x * 3.4, 0.45, dir.z * 3.4);
+            attacker.hurtMarked = true;
+         }
+         ServantCardLiShuwenSkills.spawnLiHitFx(player, sourceEntity instanceof LivingEntity living ? living : null);
+         return true;
+      }
       if ("cu_chulainn".equals(vars.servant_card_id)) {
          float shield = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
          if (shield > 0.0F) {
