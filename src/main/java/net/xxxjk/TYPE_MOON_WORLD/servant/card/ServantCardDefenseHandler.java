@@ -109,6 +109,11 @@ public final class ServantCardDefenseHandler {
       if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken)) {
          return true;
       }
+      if (!divineDefenseBroken && "paracelsus".equals(vars.servant_card_id) && event.getAmount() >= 18.0F && ServantCardParacelsusSkills.useDiamondShield(player)) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
       if ("li_shuwen".equals(vars.servant_card_id) && player.tickCount <= data.getInt("ServantCardLiCounterUntil")) {
          data.remove("ServantCardLiCounterUntil");
          event.setCanceled(true);

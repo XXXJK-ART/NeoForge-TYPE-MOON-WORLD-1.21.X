@@ -23,9 +23,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
@@ -142,13 +144,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
          this.explosionTick = 0;
          if (this.level() instanceof ServerLevel serverLevel) {
             VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", this.position(), 128.0);
-            DeferredTerrainDestruction.queueSphere(
-               serverLevel,
-               Vec3.atCenterOf(this.explosionCenter),
-               (int)Math.ceil(this.maxRadius),
-               42.0F,
-               this.maxRadius >= 28.0F ? 80 : 45
-            );
+            queueBrokenPhantasmTerrain(serverLevel, Vec3.atCenterOf(this.explosionCenter), this.maxRadius, 42.0F, this.maxRadius >= 28.0F ? 80 : 45);
          }
          this.level()
             .playSound(
@@ -244,6 +240,27 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
 
          this.currentRadius = nextRadius;
          this.explosionTick++;
+      }
+   }
+
+   private static void queueBrokenPhantasmTerrain(ServerLevel level, Vec3 center, double radius, float maxHardness, int targetTicks) {
+      int waveCount = Math.max(6, Math.min(28, (int)Math.ceil(radius)));
+      double waveStep = radius / waveCount;
+      for (int wave = 1; wave <= waveCount; wave++) {
+         final int waveIndex = wave;
+         TYPE_MOON_WORLD.queueServerWork(waveIndex, () -> {
+            double previousRadius = Math.max(0.0, (waveIndex - 1) * waveStep);
+            double currentRadius = waveIndex * waveStep;
+            DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, Math.max(8, targetTicks / waveCount), (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
+               BlockState state = serverLevel.getBlockState(pos);
+               float hardness = state.getDestroySpeed(serverLevel, pos);
+               return !state.isAir()
+                  && hardness >= 0.0F
+                  && hardness <= maxHardness
+                  && !state.is(net.minecraft.world.level.block.Blocks.BEDROCK)
+                  && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
+            }, null);
+         });
       }
    }
 

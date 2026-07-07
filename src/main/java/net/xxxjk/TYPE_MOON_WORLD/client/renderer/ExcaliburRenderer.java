@@ -9,8 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.client.model.ExcaliburModel;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
-import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
 public class ExcaliburRenderer extends GeoItemRenderer<ExcaliburItem> {
@@ -31,16 +29,21 @@ public class ExcaliburRenderer extends GeoItemRenderer<ExcaliburItem> {
          return false;
       }
       CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-      if (customData == null || !customData.copyTag().getBoolean("ServantCardArtoriaWindVeiled")) {
+      if (customData == null) {
+         return false;
+      }
+      var tag = customData.copyTag();
+      if (!tag.getBoolean("ServantCardArtoriaWindVeiled")) {
          return false;
       }
       if (Minecraft.getInstance().player == null) {
          return false;
       }
-      TypeMoonWorldModVariables.PlayerVariables vars = Minecraft.getInstance().player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars.servant_card_transformed
-         && "artoria_pendragon".equals(vars.servant_card_id)
-         && !ArtoriaPendragonCombatHelper.isInvisibleAirRevealed(Minecraft.getInstance().player);
+      long revealUntil = tag.getLong("ServantCardArtoriaWindRevealUntil");
+      if (revealUntil > Minecraft.getInstance().player.level().getGameTime()) {
+         return false;
+      }
+      return true;
    }
 
    private static boolean isHandDisplay(ItemDisplayContext displayContext) {

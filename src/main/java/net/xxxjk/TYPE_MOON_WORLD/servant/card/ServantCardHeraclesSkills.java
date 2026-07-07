@@ -19,6 +19,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -100,30 +101,10 @@ public final class ServantCardHeraclesSkills {
    }
 
    private static void tickHeraclesSprintCollisionBreak(ServerPlayer player, CompoundTag data) {
-      if (!player.isSprinting()
-         || !player.onGround()
-         || player.getDeltaMovement().horizontalDistanceSqr() < 0.045
-         || !(player.level() instanceof ServerLevel level)) {
+      if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
-      long now = level.getGameTime();
-      if (now - data.getLong(HERACLES_LAST_SPRINT_COLLISION_BREAK_TAG) < 5L) {
-         return;
-      }
-      Vec3 motion = player.getDeltaMovement().multiply(1.0, 0.0, 1.0);
-      Vec3 dir = motion.lengthSqr() > 1.0E-4 ? motion.normalize() : PlayerNoblePhantasmHelper.horizontalLook(player);
-      if (!hasHeraclesBreakableBlockAhead(level, player, dir)) {
-         return;
-      }
-      int broken = breakHeraclesForwardBlocks(level, player, dir, 1.45, 1, 6, 42.0F);
-      if (broken <= 0) {
-         return;
-      }
-      data.putLong(HERACLES_LAST_SPRINT_COLLISION_BREAK_TAG, now);
-      Vec3 fx = player.position().add(dir.scale(1.15)).add(0.0, 0.75, 0.0);
-      level.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, 12, 0.42, 0.25, 0.42, 0.06);
-      level.sendParticles(ParticleTypes.CRIT, fx.x, fx.y + 0.1, fx.z, 6, 0.28, 0.18, 0.28, 0.08);
-      level.playSound(null, player.blockPosition(), SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.PLAYERS, 0.68F, 0.7F);
+      ServantSprintCollisionHelper.tryPlayerSprintCollision(player, level, data, HERACLES_LAST_SPRINT_COLLISION_BREAK_TAG, false, 10.0F, 1.25, 0.26, 32, 45.0F);
    }
 
    private static boolean hasHeraclesBreakableBlockAhead(ServerLevel level, ServerPlayer player, Vec3 dir) {

@@ -19,6 +19,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -103,6 +104,7 @@ public final class ServantCardTransformManager {
       removeAttributes(player);
       ServantCardFlightController.stop(player, vars, false);
       ServantCardDefenseHandler.clear(player);
+      stopActiveNoblePhantasmVoices(player);
       restoreArmor(player, vars);
       ServantCardLoadoutManager.restore(player, vars);
       MasterStateManager.clearServantSide(player, vars);
@@ -169,7 +171,11 @@ public final class ServantCardTransformManager {
       ServantCardHeraclesSkills.tick(player, vars);
       ServantCardGawainSkills.tick(player, vars);
       ServantCardMedeaSkills.tick(player, vars);
+      ServantCardParacelsusSkills.tick(player, vars);
+      ServantCardOdaNobunagaSkills.tick(player, vars);
       ServantCardMedusaSkills.tick(player, vars);
+      ServantCardLiShuwenSkills.tick(player, vars);
+      ServantCardEnkiduSkills.tick(player, vars);
       ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
       ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
       ServantCardEmiyaSkills.tickEmiyaUbwSupport(player, vars);
@@ -193,17 +199,20 @@ public final class ServantCardTransformManager {
       }
       boolean np = slot == 9;
       if ("ubw".equals(action.effectId())) {
-         boolean success = ServantCardEmiyaSkills.performUbwAction(player, vars, action);
-         if (success) {
-            ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
-         }
-         return success;
+         return ServantCardEmiyaSkills.performUbwAction(player, vars, action);
+      }
+      if ("hajun".equals(action.effectId())) {
+         return ServantCardOdaNobunagaSkills.performOdaHajunAction(player, vars, action);
       }
       int cooldownSlot = slot < 0 ? 6 : slot;
       int currentCooldown = np ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
       if (ServantCardArtoriaSkills.isWindAction(action)) {
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT));
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT));
+      }
+      if (ServantCardArtoriaSkills.isWindAction(action) && ServantCardArtoriaSkills.isWindLockedByExcalibur(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.artoria_excalibur_wind_locked"), true);
+         return false;
       }
       if (currentCooldown > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", currentCooldown / 20.0F)), true);
@@ -238,6 +247,10 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.medea_no_workshop"), true);
          return false;
       }
+      if ("paracelsus_workshop_teleport".equals(action.effectId()) && "paracelsus".equals(vars.servant_card_id) && !ServantCardParacelsusSkills.hasWorkshop(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_no_workshop"), true);
+         return false;
+      }
       if (ServantCardActionPreconditions.requiresLookTarget(action.effectId())
          && ServantCardSkillUtils.findLookTarget(player, ServantCardActionPreconditions.targetRangeFor(action.effectId()), 1.8) == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
@@ -250,7 +263,9 @@ public final class ServantCardTransformManager {
       if (!performAction(player, vars, action)) {
          return false;
       }
-      ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
+      if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId()) && !"oda_charged_matchlock".equals(action.effectId())) {
+         ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
+      }
       int cooldownTicks = effectiveCooldownTicks(action, np);
       if (np) {
          vars.servant_card_np_cooldown = cooldownTicks;
@@ -263,6 +278,28 @@ public final class ServantCardTransformManager {
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
       return true;
+   }
+
+   private static void stopActiveNoblePhantasmVoices(ServerPlayer player) {
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
+         player,
+         "artoria_pendragon",
+         ModSounds.ARTORIA_VOICE_EXCALIBUR.get(),
+         ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get()
+      );
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
+         player,
+         "gawain",
+         ModSounds.GAWAIN_VOICE_NP.get(),
+         ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get()
+      );
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
+         player,
+         "emiya_archer",
+         ModSounds.EMIYA_ARCHER_VOICE_UBW.get(),
+         ModSounds.EMIYA_ARCHER_VOICE_UBW_SHORT.get()
+      );
    }
 
    public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {
@@ -281,6 +318,20 @@ public final class ServantCardTransformManager {
             triggerAction(player, slot);
          } else {
             player.getPersistentData().remove("ServantCardLiCounterUntil");
+         }
+      } else if ("oda_nobunaga".equals(vars.servant_card_id)) {
+         if (slot == 4) {
+            if (pressed) {
+               triggerAction(player, slot);
+            } else {
+               ServantCardOdaNobunagaSkills.releaseOdaChargedMatchlock(player);
+            }
+         } else if (slot == 8) {
+            if (pressed) {
+               triggerAction(player, slot);
+            } else {
+               ServantCardOdaNobunagaSkills.markOdaThreeThousandRelease(player);
+            }
          }
       }
    }
@@ -508,7 +559,6 @@ public final class ServantCardTransformManager {
          case "circle_realm" -> ServantCardLiShuwenSkills.performCircleRealm(player);
          case "berkana" -> ServantCardCommonSkills.performBerkana(player);
          case "perfect_form" -> ServantCardEnkiduSkills.performEnkiduPerfectForm(player);
-         case "stone" -> ServantCardParacelsusSkills.performParacelsusStone(player);
          case "rho_aias" -> ServantCardEmiyaSkills.spawnRhoAias(player);
          case "invisible_air_hammer" -> ServantCardArtoriaSkills.performInvisibleAirHammer(player, action.cooldownTicks());
          case "invisible_air_release" -> ServantCardArtoriaSkills.performInvisibleAirRelease(player, action.cooldownTicks());
@@ -534,7 +584,6 @@ public final class ServantCardTransformManager {
          case "self_mod" -> ServantCardHassanSkills.performSelfModification(player);
          case "transfiguration" -> ServantCardEnkiduSkills.performEnkiduTransfiguration(player);
          case "maou" -> ServantCardOdaNobunagaSkills.performOdaMaou(player);
-         case "chant" -> ServantCardParacelsusSkills.performParacelsusChant(player);
          case "workshop" -> {
             if (!ServantCardMedeaSkills.performMedeaWorkshop(player)) {
                return false;
@@ -591,8 +640,52 @@ public final class ServantCardTransformManager {
          }
          case "emiya_layered_projection" -> ServantCardEmiyaSkills.startLayeredProjection(player);
          case "emiya_cycle" -> ServantCardEmiyaSkills.cycleAction(player, vars);
-         case "element_cycle" -> ServantCardParacelsusSkills.cycleElement(player, vars);
+         case "paracelsus_workshop" -> {
+            if (!ServantCardParacelsusSkills.performParacelsusWorkshop(player)) {
+               return false;
+            }
+         }
+         case "paracelsus_craft_stone" -> {
+            if (!ServantCardParacelsusSkills.performParacelsusCraftStone(player)) {
+               return false;
+            }
+         }
+         case "paracelsus_spirit_toggle" -> {
+            if (!ServantCardParacelsusSkills.toggleParacelsusSpirits(player)) {
+               return false;
+            }
+         }
+         case "paracelsus_workshop_teleport" -> {
+            if (!ServantCardParacelsusSkills.performParacelsusWorkshopTeleport(player)) {
+               return false;
+            }
+         }
+         case "paracelsus_elemental_guardian" -> {
+            if (!ServantCardParacelsusSkills.openElementalGuardianScreen(player)) {
+               return false;
+            }
+         }
+         case "paracelsus_fire_furnace" -> ServantCardParacelsusSkills.performParacelsusFireFurnace(player);
+         case "paracelsus_water_pressure" -> ServantCardParacelsusSkills.performParacelsusWaterPressure(player);
+         case "paracelsus_earth_roar" -> ServantCardParacelsusSkills.performParacelsusEarthRoar(player);
+         case "paracelsus_wind_cut" -> ServantCardParacelsusSkills.performParacelsusWindCut(player);
          case "ubw" -> ServantCardEmiyaSkills.startUbwChant(player, vars);
+         case "oda_hasebe_short_thrust" -> ServantCardOdaNobunagaSkills.performOdaHasebeShortThrust(player);
+         case "oda_floating_refill" -> ServantCardOdaNobunagaSkills.performOdaFloatingRefill(player);
+         case "oda_three_line" -> ServantCardOdaNobunagaSkills.performOdaThreeLine(player);
+         case "oda_encircle_matchlocks" -> {
+            if (!ServantCardOdaNobunagaSkills.performOdaEncirclingMatchlocks(player)) {
+               return false;
+            }
+         }
+         case "oda_charged_matchlock" -> ServantCardOdaNobunagaSkills.startOdaChargedMatchlock(player);
+         case "oda_crossfire_net" -> {
+            if (!ServantCardOdaNobunagaSkills.performOdaCrossfireNet(player)) {
+               return false;
+            }
+         }
+         case "oda_scorched_earth" -> ServantCardOdaNobunagaSkills.performOdaScorchedEarth(player);
+         case "oda_hasebe_breakthrough" -> ServantCardOdaNobunagaSkills.performOdaHasebeBreakthrough(player);
          case "matchlock" -> ServantCardOdaNobunagaSkills.performOdaMatchlock(player, 1, 13.0F);
          case "volley" -> ServantCardOdaNobunagaSkills.performOdaMatchlock(player, 8, 10.0F);
          case "fire_barrage" -> ServantCardOdaNobunagaSkills.performOdaFireBarrage(player);
@@ -600,14 +693,18 @@ public final class ServantCardTransformManager {
          case "anti_mystery" -> ServantCardOdaNobunagaSkills.performOdaAntiMystery(player);
          case "ash_field" -> ServantCardOdaNobunagaSkills.performOdaAshField(player);
          case "hasebe_repel" -> ServantCardOdaNobunagaSkills.performOdaHasebeRepel(player);
-         case "three_thousand" -> ServantCardOdaNobunagaSkills.performOdaThreeThousand(player);
-         case "hajun" -> ServantCardOdaNobunagaSkills.performOdaHajun(player);
+         case "three_thousand" -> ServantCardOdaNobunagaSkills.startOdaThreeThousand(player);
+         case "hajun" -> ServantCardOdaNobunagaSkills.startOdaHajun(player);
          case "detection" -> ServantCardEnkiduSkills.performEnkiduDetection(player);
          case "chains" -> ServantCardEnkiduSkills.performEnkiduChains(player);
          case "age_babylon" -> ServantCardEnkiduSkills.performEnkiduAgeOfBabylon(player, 12, 16.0F, false);
+         case "age_babylon_grand" -> ServantCardEnkiduSkills.performEnkiduGrandAgeOfBabylon(player);
          case "earth_wedge" -> ServantCardEnkiduSkills.performEnkiduEarthWedge(player);
          case "stardust" -> ServantCardEnkiduSkills.performEnkiduStardust(player);
-         case "mega_age" -> ServantCardEnkiduSkills.performEnkiduAgeOfBabylon(player, 28, 20.0F, true);
+         case "mega_age" -> ServantCardEnkiduSkills.performEnkiduMegaAgeOfBabylon(player);
+         case "earth_spike" -> ServantCardEnkiduSkills.performEnkiduEarthSpike(player);
+         case "sky_spear_sweep" -> ServantCardEnkiduSkills.performEnkiduSkySpearSweep(player);
+         case "enkidu_morph_melee" -> ServantCardEnkiduSkills.performEnkiduMorphMelee(player);
          case "enuma_elish" -> ServantCardEnkiduSkills.performEnkiduEnumaElish(player);
          case "gallatin_spark" -> ServantCardGawainSkills.performGawainGallatinSpark(player);
          case "solar_rebuke" -> ServantCardGawainSkills.performGawainSolarRebuke(player);
@@ -619,9 +716,6 @@ public final class ServantCardTransformManager {
          case "interrupt" -> ServantCardLiShuwenSkills.performLiInterrupt(player);
          case "counter" -> ServantCardLiShuwenSkills.performLiCounter(player);
          case "pursuit" -> ServantCardLiShuwenSkills.performLiPursuit(player);
-         case "elemental_spirit" -> ServantCardParacelsusSkills.performParacelsusSpirit(player);
-         case "fire", "water", "earth", "wind" -> ServantCardParacelsusSkills.performParacelsusElement(player, id);
-         case "mixed_element" -> ServantCardParacelsusSkills.performParacelsusMixedElement(player);
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

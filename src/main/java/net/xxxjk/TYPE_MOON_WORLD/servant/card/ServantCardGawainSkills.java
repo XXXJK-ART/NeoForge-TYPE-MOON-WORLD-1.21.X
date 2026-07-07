@@ -21,6 +21,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -208,31 +209,8 @@ public final class ServantCardGawainSkills {
    }
 
    private static void tickSunCollisionBreak(ServerPlayer player, ServerLevel level, CompoundTag data) {
-      if (!data.getBoolean(TAG_SUN_BLESSING)
-         || !player.isSprinting()
-         || !player.onGround()
-         || player.getDeltaMovement().horizontalDistanceSqr() < 0.045) {
-         return;
-      }
-      long now = level.getGameTime();
-      if (now - data.getLong(TAG_LAST_SUN_COLLISION_BREAK) < 5L) {
-         return;
-      }
-      Vec3 motion = player.getDeltaMovement().multiply(1.0, 0.0, 1.0);
-      Vec3 dir = motion.lengthSqr() > 1.0E-4 ? motion.normalize() : PlayerNoblePhantasmHelper.horizontalLook(player);
-      if (!hasSunBreakableBlockAhead(level, player, dir)) {
-         return;
-      }
-      int broken = breakSunForwardBlocks(level, player, dir, 1.45, 1, 6, 42.0F);
-      if (broken <= 0) {
-         return;
-      }
-      data.putLong(TAG_LAST_SUN_COLLISION_BREAK, now);
-      Vec3 fx = player.position().add(dir.scale(1.15)).add(0.0, 0.75, 0.0);
-      level.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, 10, 0.42, 0.25, 0.42, 0.06);
-      level.sendParticles(ParticleTypes.END_ROD, fx.x, fx.y + 0.08, fx.z, 10, 0.28, 0.18, 0.28, 0.07);
-      level.sendParticles(ParticleTypes.FLAME, fx.x, fx.y + 0.1, fx.z, 8, 0.32, 0.18, 0.32, 0.05);
-      level.playSound(null, player.blockPosition(), SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.PLAYERS, 0.68F, 0.85F);
+      boolean solar = data.getBoolean(TAG_SUN_BLESSING);
+      ServantSprintCollisionHelper.tryPlayerSprintCollision(player, level, data, TAG_LAST_SUN_COLLISION_BREAK, solar, solar ? 8.0F : 6.0F, solar ? 1.0 : 0.85, solar ? 0.2 : 0.16, 27, 42.0F);
    }
 
    private static boolean isUnderSun(ServerLevel level, BlockPos pos) {

@@ -2,18 +2,21 @@ package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
-import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationPointMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationSetMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public class EnkiduTransfigurationScreen extends Screen {
    private static final String[] KEYS = {"strength", "endurance", "agility", "mana", "luck"};
    private static final int[] COLORS = {0xFFE57373, 0xFF81C784, 0xFF64B5F6, 0xFFBA68C8, 0xFFFFD54F};
+   private static final int TOTAL_POINTS = 30;
+   private static final int RADIUS = 74;
+   private static final int INNER_RADIUS = 20;
+   private int[] localPoints = new int[]{6, 6, 6, 6, 6};
+   private boolean submitted = false;
 
    public EnkiduTransfigurationScreen() {
       super(Component.translatable("gui.typemoonworld.enkidu_transfiguration.title"));
@@ -21,28 +24,62 @@ public class EnkiduTransfigurationScreen extends Screen {
 
    @Override
    protected void init() {
-      int x = this.width / 2 - 95;
-      int y = this.height / 2 - 58;
-      for (int i = 0; i < KEYS.length; i++) {
-         final int stat = i;
-         this.addRenderableWidget(Button.builder(Component.literal("-"), button -> adjust(stat, -1)).bounds(x + 122, y + i * 24, 24, 20).build());
-         this.addRenderableWidget(Button.builder(Component.literal("+"), button -> adjust(stat, 1)).bounds(x + 150, y + i * 24, 24, 20).build());
-      }
+      this.localPoints = points();
    }
 
    @Override
    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
-      this.renderBackground(gui, mouseX, mouseY, partialTick);
-      gui.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 82, 0xFFE8F5E9);
-      int[] points = points();
-      int x = this.width / 2 - 95;
-      int y = this.height / 2 - 56;
-      for (int i = 0; i < KEYS.length; i++) {
-         gui.fill(x - 6, y + i * 24 - 2, x + 116, y + i * 24 + 18, 0x66000000 | (COLORS[i] & 0x00FFFFFF));
-         Component label = Component.translatable("gui.typemoonworld.enkidu_transfiguration." + KEYS[i], points[i], rank(points[i]));
-         gui.drawString(this.font, label, x, y + i * 24 + 4, 0xFFFFFFFF, true);
+      int centerX = this.width / 2;
+      int centerY = this.height / 2;
+      for (int y = -RADIUS; y <= RADIUS; y += 2) {
+         for (int x = -RADIUS; x <= RADIUS; x += 2) {
+            int distSqr = x * x + y * y;
+            if (distSqr <= RADIUS * RADIUS && distSqr >= INNER_RADIUS * INNER_RADIUS) {
+               int sector = sectorFor(centerX + x, centerY + y, centerX, centerY);
+               gui.fill(centerX + x, centerY + y, centerX + x + 2, centerY + y + 2, 0xAA000000 | (COLORS[sector] & 0x00FFFFFF));
+            }
+         }
       }
-      super.render(gui, mouseX, mouseY, partialTick);
+      gui.drawCenteredString(this.font, this.title, centerX, centerY - RADIUS - 22, 0xFFE8F5E9);
+      int remaining = Math.max(0, TOTAL_POINTS - sum(this.localPoints));
+      gui.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.enkidu_transfiguration.remaining", remaining), centerX, centerY - 4, 0xFFFFFFFF);
+      for (int i = 0; i < KEYS.length; i++) {
+         double angle = -Math.PI / 2.0 + (i + 0.5) * Math.PI * 2.0 / KEYS.length;
+         int labelX = centerX + (int)(Math.cos(angle) * 96.0);
+         int labelY = centerY + (int)(Math.sin(angle) * 96.0);
+         Component label = Component.translatable("gui.typemoonworld.enkidu_transfiguration." + KEYS[i], this.localPoints[i], rank(this.localPoints[i]));
+         gui.drawCenteredString(this.font, label, labelX, labelY, 0xFFFFFFFF);
+      }
+   }
+
+   @Override
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      int centerX = this.width / 2;
+      int centerY = this.height / 2;
+      double dx = mouseX - centerX;
+      double dy = mouseY - centerY;
+      double distSqr = dx * dx + dy * dy;
+      if (distSqr > RADIUS * RADIUS || distSqr < INNER_RADIUS * INNER_RADIUS) {
+         if (button != 0 && button != 1) {
+            this.onClose();
+         }
+         return true;
+      }
+      int stat = sectorFor(mouseX, mouseY, centerX, centerY);
+      if (button == 0) {
+         if (sum(this.localPoints) < TOTAL_POINTS) {
+            this.localPoints[stat]++;
+         }
+      } else if (button == 1 && this.localPoints[stat] > 0) {
+         this.localPoints[stat]--;
+      }
+      return true;
+   }
+
+   @Override
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      this.onClose();
+      return true;
    }
 
    @Override
@@ -51,15 +88,45 @@ public class EnkiduTransfigurationScreen extends Screen {
    }
 
    @Override
-   public void tick() {
-      super.tick();
-      if (!TypeMoonWorldModKeyMappings.ENKIDU_TRANSFIGURATION_WHEEL.isDown()) {
-         this.onClose();
-      }
+   public void removed() {
+      submit();
+      super.removed();
    }
 
-   private static void adjust(int stat, int delta) {
-      PacketDistributor.sendToServer(new EnkiduTransfigurationPointMessage(stat, delta), new CustomPacketPayload[0]);
+   private void submit() {
+      if (this.submitted) {
+         return;
+      }
+      this.submitted = true;
+      averageRemaining(this.localPoints);
+      PacketDistributor.sendToServer(
+         new EnkiduTransfigurationSetMessage(this.localPoints[0], this.localPoints[1], this.localPoints[2], this.localPoints[3], this.localPoints[4]),
+         new CustomPacketPayload[0]
+      );
+   }
+
+   private static int sectorFor(double mouseX, double mouseY, int centerX, int centerY) {
+      double angle = Math.atan2(mouseY - centerY, mouseX - centerX) + Math.PI / 2.0;
+      if (angle < 0.0) {
+         angle += Math.PI * 2.0;
+      }
+      return Math.min(4, (int)(angle / (Math.PI * 2.0 / KEYS.length)));
+   }
+
+   private static int sum(int[] points) {
+      int total = 0;
+      for (int point : points) {
+         total += Math.max(0, point);
+      }
+      return total;
+   }
+
+   private static void averageRemaining(int[] points) {
+      int remaining = Math.max(0, TOTAL_POINTS - sum(points));
+      int index = 0;
+      while (remaining-- > 0) {
+         points[index++ % points.length]++;
+      }
    }
 
    private static int[] points() {
@@ -72,11 +139,12 @@ public class EnkiduTransfigurationScreen extends Screen {
       String[] parts = (vars.servant_card_enkidu_transfiguration_points == null ? "" : vars.servant_card_enkidu_transfiguration_points).split(",");
       for (int i = 0; i < result.length && i < parts.length; i++) {
          try {
-            result[i] = Integer.parseInt(parts[i]);
+            result[i] = Math.max(0, Integer.parseInt(parts[i]));
          } catch (NumberFormatException ignored) {
             result[i] = 6;
          }
       }
+      averageRemaining(result);
       return result;
    }
 

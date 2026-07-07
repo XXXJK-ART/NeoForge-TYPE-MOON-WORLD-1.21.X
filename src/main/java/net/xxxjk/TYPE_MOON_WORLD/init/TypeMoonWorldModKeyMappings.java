@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardBasicAttackMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
@@ -123,14 +124,20 @@ public class TypeMoonWorldModKeyMappings {
       public static void onInteractionKey(InteractionKeyMappingTriggered event) {
          Minecraft minecraft = Minecraft.getInstance();
          Player player = minecraft.player;
-         if (player == null || minecraft.screen != null || !event.isAttack() || !player.isCrouching()) {
+         if (player == null || minecraft.screen != null || !event.isAttack()) {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
+         if (player.isCrouching() && vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardActionMessage(-1), new CustomPacketPayload[0]);
             event.setCanceled(true);
             event.setSwingHand(true);
+            return;
+         }
+         if (vars.servant_card_transformed
+            && "oda_nobunaga".equals(vars.servant_card_id)
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
          }
       }
 
@@ -491,15 +498,7 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
-         if ("enkidu".equals(vars.servant_card_id) && ENKIDU_TRANSFIGURATION_WHEEL.isDown()) {
-            if (!enkiduTransfigurationWheelDown) {
-               enkiduTransfigurationWheelDown = true;
-               Minecraft.getInstance().setScreen(new EnkiduTransfigurationScreen());
-            }
-            return;
-         } else {
-            enkiduTransfigurationWheelDown = false;
-         }
+         enkiduTransfigurationWheelDown = false;
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
             if (isHoldServantCardSkill(vars, slot)) {
                boolean down = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].isDown();
@@ -546,7 +545,9 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
-         return ("emiya_archer".equals(vars.servant_card_id) && slot == 1) || ("li_shuwen".equals(vars.servant_card_id) && slot == 2);
+         return ("emiya_archer".equals(vars.servant_card_id) && slot == 1)
+            || ("li_shuwen".equals(vars.servant_card_id) && slot == 2)
+            || ("oda_nobunaga".equals(vars.servant_card_id) && (slot == 4 || slot == 8));
       }
 
       private static void handleMasterControls(boolean suppressScreens) {
@@ -561,7 +562,11 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static boolean supportsCrouchAttack(String servantId) {
-         return "emiya_archer".equals(servantId) || "sasaki_kojiro".equals(servantId) || "cu_chulainn".equals(servantId);
+         return "emiya_archer".equals(servantId)
+            || "sasaki_kojiro".equals(servantId)
+            || "cu_chulainn".equals(servantId)
+            || "oda_nobunaga".equals(servantId)
+            || "enkidu".equals(servantId);
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

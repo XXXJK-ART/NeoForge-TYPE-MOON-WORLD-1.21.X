@@ -43,7 +43,6 @@ public final class ServantCardVoiceHelper {
       SoundEvent sound = switch (effectId) {
          case "zabaniya" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA_SHORT.get();
          case "bellerophon" -> ModSounds.MEDUSA_VOICE_BELLEROPHON.get();
-         case "ubw" -> ModSounds.EMIYA_ARCHER_VOICE_UBW.get();
          case "rho_aias" -> ModSounds.EMIYA_ARCHER_VOICE_RHO_AIAS.get();
          case "emiya_spiral" -> ModSounds.EMIYA_ARCHER_VOICE_SPIRAL.get();
          case "copy_weapon", "emiya_kb", "emiya_hound", "emiya_layered_projection" -> ModSounds.EMIYA_ARCHER_VOICE_PROJECTION.get();
@@ -51,11 +50,10 @@ public final class ServantCardVoiceHelper {
          case "enuma_elish" -> ModSounds.ENKIDU_VOICE_NP.get();
          case "gallatin_spark" -> ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get();
          case "flame_tornado" -> ModSounds.GAWAIN_VOICE_FIRE_ATTACK.get();
-         case "three_thousand", "hajun" -> ModSounds.ODA_NOBUNAGA_VOICE_NP.get();
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();
          case "rule_breaker" -> ModSounds.MEDEA_VOICE_RULE_BREAKER_SHORT.get();
-         case "mixed_element" -> ModSounds.PARACELSUS_VOICE_NP_SHORT.get();
-         case "chant", "elemental_spirit" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
+         case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
+         case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
          default -> null;
       };
       play(player, sound, 40);

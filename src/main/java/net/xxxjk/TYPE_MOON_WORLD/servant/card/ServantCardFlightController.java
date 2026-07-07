@@ -41,6 +41,9 @@ public final class ServantCardFlightController {
          }
          return;
       }
+      if ("oda_nobunaga".equals(vars.servant_card_id) && ServantCardOdaNobunagaSkills.tickMountFlight(player, vars)) {
+         return;
+      }
       if (!canFly(vars.servant_card_id) || !ServantCardManaService.consume(player, vars, MP_PER_TICK)) {
          stop(player, vars, true);
          return;
@@ -71,6 +74,10 @@ public final class ServantCardFlightController {
    }
 
    public static void stop(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, boolean sync) {
+      if ("oda_nobunaga".equals(vars.servant_card_id)) {
+         ServantCardOdaNobunagaSkills.stopMountFlight(player, vars, sync);
+         return;
+      }
       if (vars.servant_card_flying || player.isNoGravity()) {
          player.setNoGravity(false);
          vars.servant_card_flying = false;
@@ -89,6 +96,12 @@ public final class ServantCardFlightController {
       }
       if (!canFly(vars.servant_card_id)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.flight_unavailable"), true);
+         return;
+      }
+      if ("oda_nobunaga".equals(vars.servant_card_id)) {
+         if (ServantCardOdaNobunagaSkills.toggleMountFlight(player, vars)) {
+            player.displayClientMessage(Component.translatable(vars.servant_card_flying ? "message.typemoonworld.servant_card.flight_enabled" : "message.typemoonworld.servant_card.flight_disabled"), true);
+         }
          return;
       }
       vars.servant_card_flying = !vars.servant_card_flying;

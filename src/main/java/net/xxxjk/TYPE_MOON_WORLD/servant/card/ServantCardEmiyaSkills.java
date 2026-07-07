@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
@@ -87,6 +88,7 @@ public final class ServantCardEmiyaSkills {
       vars.is_chanting_ubw = true;
       vars.ubw_chant_progress = 0;
       vars.ubw_chant_timer = 0;
+      PlayerNoblePhantasmHelper.startServantCardVoiceSession(player, "emiya_archer", ModSounds.EMIYA_ARCHER_VOICE_UBW.get());
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0, false, true, true));
    }
    public static void equipPair(ServerPlayer player, net.minecraft.world.item.Item main, net.minecraft.world.item.Item off) {
@@ -124,6 +126,12 @@ public final class ServantCardEmiyaSkills {
                return false;
             }
             if (ChantHandler.activateServantCardUbwNow(player, vars)) {
+               PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
+                  player,
+                  "emiya_archer",
+                  ModSounds.EMIYA_ARCHER_VOICE_UBW.get(),
+                  ModSounds.EMIYA_ARCHER_VOICE_UBW_SHORT.get()
+               );
                vars.servant_card_np_cooldown = action.cooldownTicks();
                vars.syncPlayerVariables(player);
                spawnServantCardSwordRain(player, 36, 18.0);
@@ -146,6 +154,7 @@ public final class ServantCardEmiyaSkills {
       vars.is_chanting_ubw = true;
       vars.ubw_chant_progress = 1;
       vars.ubw_chant_timer = 0;
+      PlayerNoblePhantasmHelper.startServantCardVoiceSession(player, "emiya_archer", ModSounds.EMIYA_ARCHER_VOICE_UBW.get());
       vars.syncPlayerVariables(player);
       spawnServantCardUbwChantFallingSwords(player);
       player.displayClientMessage(Component.literal("\u00A7bI am the bone of my sword."), true);

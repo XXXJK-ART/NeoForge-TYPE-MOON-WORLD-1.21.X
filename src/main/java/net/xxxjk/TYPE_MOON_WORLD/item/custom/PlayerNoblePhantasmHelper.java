@@ -7,8 +7,11 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -58,9 +61,14 @@ public final class PlayerNoblePhantasmHelper {
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
    private static final String EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonExcaliburMinChargePaid";
+   private static final String ARTORIA_WIND_REVEAL_UNTIL_TAG = "ServantCardArtoriaWindRevealUntil";
+   private static final String ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG = "ServantCardArtoriaExcaliburWindLockUntil";
    private static final String GALLATIN_CHARGE_TAG = "TypeMoonGallatinCharge";
    private static final String GALLATIN_LAST_CHARGE_VFX_TAG = "TypeMoonGallatinLastChargeVfx";
    private static final String GALLATIN_MIN_CHARGE_PAID_TAG = "TypeMoonGallatinMinChargePaid";
+   private static final String SERVANT_CARD_NP_CHARGE_VOICE_TAG = "TypeMoonServantCardNpChargeVoice";
+   private static final int SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS = 60;
+   private static final double SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS = 96.0;
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 30;
    private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
@@ -199,6 +207,7 @@ public final class PlayerNoblePhantasmHelper {
       player.getPersistentData().putBoolean(GAE_DEATH_FLIGHT_TAG, true);
       player.getPersistentData().putInt(GAE_DEATH_FLIGHT_TAG + "Ticks", 0);
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_PAID_TAG);
+      startServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get());
    }
 
    public static void tickGaeBulgUse(Level level, LivingEntity living, int useTicks) {
@@ -207,8 +216,10 @@ public final class PlayerNoblePhantasmHelper {
       }
       int charged = Math.min(GAE_DEATH_FLIGHT_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(GAE_DEATH_FLIGHT_TAG + "Ticks", charged);
+      tickServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
       if (useTicks >= GAE_DEATH_FLIGHT_CHARGE_TICKS && !player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_PAID_TAG)) {
          if (!consumeStrict(player, CHARGE_MANA_PER_TICK * GAE_DEATH_FLIGHT_CHARGE_TICKS)) {
+            stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
             player.releaseUsingItem();
          } else {
             player.getPersistentData().putBoolean(GAE_DEATH_FLIGHT_PAID_TAG, true);
@@ -223,6 +234,7 @@ public final class PlayerNoblePhantasmHelper {
       boolean deathFlight = player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_TAG);
       int charged = player.getPersistentData().getInt(GAE_DEATH_FLIGHT_TAG + "Ticks");
       boolean deathFlightPaid = player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_PAID_TAG);
+      stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_TAG);
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_TAG + "Ticks");
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_PAID_TAG);
@@ -245,6 +257,7 @@ public final class PlayerNoblePhantasmHelper {
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, 0);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
+      startServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get());
    }
 
    public static void tickExcaliburCharge(Level level, LivingEntity living, int useTicks) {
@@ -254,11 +267,16 @@ public final class PlayerNoblePhantasmHelper {
       int charged = Math.min(EXCALIBUR_MAX_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, charged);
       applyNoblePhantasmChargeSlow(player);
+      tickServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
+      if (useTicks >= SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS) {
+         revealArtoriaWindVeiledExcaliburForNp(player, 12);
+      }
       if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= EXCALIBUR_MAX_CHARGE_TICKS) {
          double cost = player.getPersistentData().getBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG)
             ? CHARGE_MANA_PER_TICK
             : CHARGE_MANA_PER_TICK * MIN_CHARGE_NP_RELEASE_TICKS;
          if (!consumeStrict(player, cost)) {
+            stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
             player.releaseUsingItem();
          } else {
             player.getPersistentData().putBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG, true);
@@ -275,6 +293,7 @@ public final class PlayerNoblePhantasmHelper {
 
    public static void releaseExcalibur(ServerPlayer player) {
       int charged = player.getPersistentData().getInt(EXCALIBUR_CHARGE_TAG);
+      stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
       player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
@@ -289,9 +308,9 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
       ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK, powerScale);
       level.addFreshEntity(beam);
+      revealArtoriaWindVeiledExcaliburForNp(player, EXCALIBUR_RELEASE_TICKS + 100);
       VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
       addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
-      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get(), SoundSource.VOICE, 1.0F, 1.0F);
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
    }
@@ -300,6 +319,7 @@ public final class PlayerNoblePhantasmHelper {
       player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, 0);
       player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(GALLATIN_MIN_CHARGE_PAID_TAG);
+      startServantCardChargeVoice(player, "gawain", ModSounds.GAWAIN_VOICE_NP.get());
    }
 
    public static void tickGallatinCharge(Level level, LivingEntity living, int useTicks) {
@@ -309,11 +329,13 @@ public final class PlayerNoblePhantasmHelper {
       int charged = Math.min(GALLATIN_MAX_CHARGE_TICKS, useTicks);
       player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, charged);
       applyNoblePhantasmChargeSlow(player);
+      tickServantCardChargeVoice(player, "gawain", ModSounds.GAWAIN_VOICE_NP.get(), ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get());
       if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= GALLATIN_MAX_CHARGE_TICKS) {
          double cost = player.getPersistentData().getBoolean(GALLATIN_MIN_CHARGE_PAID_TAG)
             ? CHARGE_MANA_PER_TICK
             : CHARGE_MANA_PER_TICK * MIN_CHARGE_NP_RELEASE_TICKS;
          if (!consumeStrict(player, cost)) {
+            stopServantCardChargeVoice(player, "gawain", ModSounds.GAWAIN_VOICE_NP.get(), ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get());
             player.releaseUsingItem();
          } else {
             player.getPersistentData().putBoolean(GALLATIN_MIN_CHARGE_PAID_TAG, true);
@@ -335,6 +357,7 @@ public final class PlayerNoblePhantasmHelper {
 
    public static void releaseGallatin(ServerPlayer player) {
       int charged = player.getPersistentData().getInt(GALLATIN_CHARGE_TAG);
+      stopServantCardChargeVoice(player, "gawain", ModSounds.GAWAIN_VOICE_NP.get(), ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get());
       player.getPersistentData().remove(GALLATIN_CHARGE_TAG);
       player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(GALLATIN_MIN_CHARGE_PAID_TAG);
@@ -349,7 +372,6 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 look = horizontalLook(player);
       boolean sunlight = isUnderGallatinSun(level, player.blockPosition());
       VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", player, 3.0F);
-      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get(), SoundSource.VOICE, 1.0F, 1.0F);
       level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F + powerScale * 1.4F, 0.62F);
       level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.6F + powerScale * 0.9F, 0.78F);
       performGallatinCone(player, level, look, (sunlight ? 3000.0F : 1000.0F) * powerScale, powerScale);
@@ -868,6 +890,149 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 look = entity.getLookAngle();
       Vec3 horizontal = new Vec3(look.x, 0.0, look.z);
       return horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
+   }
+
+   public static void startServantCardVoiceSession(ServerPlayer player, String servantId, SoundEvent sound) {
+      startServantCardChargeVoice(player, servantId, sound);
+   }
+
+   public static boolean finishServantCardVoiceSession(ServerPlayer player, String servantId, SoundEvent longSound, SoundEvent shortSound) {
+      return stopServantCardChargeVoice(player, servantId, longSound, shortSound);
+   }
+
+   private static void startServantCardChargeVoice(ServerPlayer player, String servantId, SoundEvent sound) {
+      if (sound == null || !isServantCard(player, servantId) || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      String baseKey = chargeVoiceKey(servantId);
+      long now = level.getGameTime();
+      if (data.getBoolean(baseKey + "_active")) {
+         return;
+      }
+      data.putBoolean(baseKey + "_active", true);
+      data.putBoolean(baseKey + "_short", false);
+      data.putBoolean(baseKey + "_ready_short", false);
+      data.putLong(baseKey + "_start", now);
+      level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.VOICE, 1.0F, 1.0F);
+   }
+
+   private static void tickServantCardChargeVoice(ServerPlayer player, String servantId, SoundEvent longSound, SoundEvent shortSound) {
+      if (!isServantCard(player, servantId) || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      String baseKey = chargeVoiceKey(servantId);
+      if (!data.getBoolean(baseKey + "_active")) {
+         return;
+      }
+      long start = data.getLong(baseKey + "_start");
+      if (level.getGameTime() - start >= SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS) {
+         data.putBoolean(baseKey + "_ready_short", true);
+         data.putLong(baseKey + "_short_until", level.getGameTime() + 40L);
+      }
+   }
+
+   private static boolean stopServantCardChargeVoice(ServerPlayer player, String servantId, SoundEvent longSound, SoundEvent shortSound) {
+      CompoundTag data = player.getPersistentData();
+      String baseKey = chargeVoiceKey(servantId);
+      boolean active = data.getBoolean(baseKey + "_active");
+      boolean playShort = false;
+      long now = player.level() instanceof ServerLevel level ? level.getGameTime() : 0L;
+      if (active) {
+         stopSound(player, longSound);
+         if (isServantCard(player, servantId) && shortSound != null && !data.getBoolean(baseKey + "_short") && player.level() instanceof ServerLevel level) {
+            long start = data.getLong(baseKey + "_start");
+            playShort = data.getBoolean(baseKey + "_ready_short") || level.getGameTime() - start >= SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS;
+            if (playShort) {
+               data.putBoolean(baseKey + "_short", true);
+               level.playSound(null, player.getX(), player.getY(), player.getZ(), shortSound, SoundSource.VOICE, 1.0F, 1.0F);
+            }
+         }
+      } else if (isServantCard(player, servantId)
+         && shortSound != null
+         && !data.getBoolean(baseKey + "_short")
+         && data.getLong(baseKey + "_short_until") >= now
+         && player.level() instanceof ServerLevel level) {
+         playShort = true;
+         data.putBoolean(baseKey + "_short", true);
+         level.playSound(null, player.getX(), player.getY(), player.getZ(), shortSound, SoundSource.VOICE, 1.0F, 1.0F);
+      }
+      long shortUntil = data.getLong(baseKey + "_short_until");
+      data.remove(baseKey + "_active");
+      data.remove(baseKey + "_short");
+      data.remove(baseKey + "_ready_short");
+      data.remove(baseKey + "_start");
+      if (!playShort && shortUntil >= now) {
+         data.putLong(baseKey + "_short_until", shortUntil);
+      } else {
+         data.remove(baseKey + "_short_until");
+      }
+      return playShort;
+   }
+
+   public static void revealArtoriaWindVeiledExcalibur(ServerPlayer player, int ticks) {
+      if (player == null || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      long until = level.getGameTime() + Math.max(1, ticks);
+      player.getPersistentData().putLong(ARTORIA_WIND_REVEAL_UNTIL_TAG, until);
+      revealArtoriaWindVeiledStack(player.getMainHandItem(), until);
+      revealArtoriaWindVeiledStack(player.getOffhandItem(), until);
+      player.getInventory().setChanged();
+   }
+
+   public static void revealArtoriaWindVeiledExcaliburForNp(ServerPlayer player, int ticks) {
+      if (player == null || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      long until = level.getGameTime() + Math.max(1, ticks);
+      player.getPersistentData().putLong(ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG, until);
+      revealArtoriaWindVeiledExcalibur(player, ticks);
+   }
+
+   public static boolean isArtoriaExcaliburWindLocked(ServerPlayer player) {
+      return player != null
+         && player.level() instanceof ServerLevel level
+         && player.getPersistentData().getLong(ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG) > level.getGameTime();
+   }
+
+   public static void clearArtoriaExcaliburWindLock(ServerPlayer player) {
+      if (player != null) {
+         player.getPersistentData().remove(ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG);
+      }
+   }
+
+   private static void revealArtoriaWindVeiledStack(ItemStack stack, long until) {
+      if (stack.isEmpty() || !stack.is(ModItems.EXCALIBUR.get())) {
+         return;
+      }
+      updateCustomData(stack, tag -> {
+         if (tag.getBoolean("ServantCardArtoriaWindVeiled")) {
+            tag.putLong(ARTORIA_WIND_REVEAL_UNTIL_TAG, until);
+         }
+      });
+   }
+
+   private static void stopSound(ServerPlayer player, SoundEvent sound) {
+      if (sound == null || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      ResourceLocation location = sound.getLocation();
+      ClientboundStopSoundPacket packet = new ClientboundStopSoundPacket(location, SoundSource.VOICE);
+      double radiusSqr = SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS * SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS;
+      for (ServerPlayer listener : level.getPlayers(listener -> listener.distanceToSqr(player) <= radiusSqr)) {
+         listener.connection.send(packet);
+      }
+   }
+
+   private static String chargeVoiceKey(String servantId) {
+      return SERVANT_CARD_NP_CHARGE_VOICE_TAG + "_" + servantId;
+   }
+
+   private static boolean isServantCard(ServerPlayer player, String servantId) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && servantId.equals(vars.servant_card_id);
    }
 
    private static CompoundTag customTag(ItemStack stack) {

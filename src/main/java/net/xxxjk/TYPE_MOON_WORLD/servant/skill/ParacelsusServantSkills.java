@@ -536,6 +536,9 @@ public final class ParacelsusServantSkills {
          level.playSound(null, entity.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.HOSTILE, 1.0F, 1.25F);
          ParacelsusSpiritCannonEntity cannon = ParacelsusSpiritCannonEntity.summon(level, entity, target, ELEMENTAL_SPIRIT_DURATION);
          level.addFreshEntity(cannon);
+         Vec3 guardianPos = target.position().add(0.0, target.getBbHeight() + 1.2, 0.0);
+         ParacelsusSpiritCannonEntity guardian = ParacelsusSpiritCannonEntity.summonGuardian(level, entity, guardianPos, entity.getRandom().nextInt(4), 120 * 20);
+         level.addFreshEntity(guardian);
       }
       return ServantExecutionResult.SUCCESS.withMpCost(18.0);
    }

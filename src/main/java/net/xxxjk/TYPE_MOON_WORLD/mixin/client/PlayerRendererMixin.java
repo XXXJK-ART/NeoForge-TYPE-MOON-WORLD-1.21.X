@@ -16,6 +16,8 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CommandSpellMarkRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MagicCrestVisualHelper;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
@@ -72,6 +74,9 @@ public abstract class PlayerRendererMixin {
          PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
          MagicCrestVisualHelper.renderArm(model, buffer, HumanoidArm.RIGHT, poseStack);
       }
+
+      PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
+      CommandSpellMarkRenderer.renderRightHandMark(model, player, poseStack, buffer);
    }
 
    @Inject(
@@ -130,12 +135,13 @@ public abstract class PlayerRendererMixin {
          boolean gandrMachineGunCasting = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGandrMachineGunCasting();
          boolean tapCastPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalTapCastPoseActive();
          boolean machineGunFiringPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalMachineGunFiringPoseActive();
-         if (ganderCharging || gandrMachineGunCasting || tapCastPose || machineGunFiringPose) {
-            HumanoidArm castingArm = TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
+         boolean commandSpellPose = CommandSpellVisualClient.isCommandSpellPoseActive(player);
+         if (ganderCharging || gandrMachineGunCasting || tapCastPose || machineGunFiringPose || commandSpellPose) {
+            HumanoidArm castingArm = commandSpellPose ? HumanoidArm.RIGHT : TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
             if (castingArm == armToRender) {
                PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
                float pitchRad = Mth.clamp(player.getXRot(), -80.0F, 80.0F) * (float) (Math.PI / 180.0);
-               float raiseRot = -1.35F + pitchRad * 0.85F;
+               float raiseRot = commandSpellPose ? -1.55F + pitchRad * 0.9F : -1.35F + pitchRad * 0.85F;
                if (castingArm == HumanoidArm.LEFT) {
                   model.leftArm.xRot = raiseRot;
                   model.leftArm.yRot = 0.08F;

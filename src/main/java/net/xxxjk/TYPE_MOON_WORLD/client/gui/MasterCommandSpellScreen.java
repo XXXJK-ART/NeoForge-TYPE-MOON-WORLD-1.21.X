@@ -6,7 +6,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellPoseMessage;
 
 public class MasterCommandSpellScreen extends Screen {
    public MasterCommandSpellScreen() {
@@ -15,6 +17,7 @@ public class MasterCommandSpellScreen extends Screen {
 
    @Override
    protected void init() {
+      setPoseActive(true);
       int width = 180;
       int height = 20;
       int x = (this.width - width) / 2;
@@ -42,8 +45,19 @@ public class MasterCommandSpellScreen extends Screen {
       return false;
    }
 
+   @Override
+   public void onClose() {
+      setPoseActive(false);
+      super.onClose();
+   }
+
    private void cast(int action) {
       PacketDistributor.sendToServer(new MasterCommandSpellMessage(action), new CustomPacketPayload[0]);
       this.onClose();
+   }
+
+   private static void setPoseActive(boolean active) {
+      CommandSpellVisualClient.setLocalCommandSpellPoseActive(active);
+      PacketDistributor.sendToServer(new MasterCommandSpellPoseMessage(active), new CustomPacketPayload[0]);
    }
 }

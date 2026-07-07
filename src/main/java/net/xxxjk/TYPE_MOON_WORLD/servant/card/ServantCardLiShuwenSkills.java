@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -30,10 +31,29 @@ public final class ServantCardLiShuwenSkills {
    private ServantCardLiShuwenSkills() {
    }
 
+   public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!vars.servant_card_transformed || !"li_shuwen".equals(vars.servant_card_id)) {
+         player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
+         return;
+      }
+      int concealmentUntil = player.getPersistentData().getInt(CONCEALMENT_UNTIL_TAG);
+      if (concealmentUntil <= 0) {
+         return;
+      }
+      if (player.tickCount > concealmentUntil || !player.hasEffect(MobEffects.INVISIBILITY)) {
+         player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
+         return;
+      }
+      if (player.level() instanceof ServerLevel level) {
+         clearEnemyAggro(player, level);
+      }
+   }
+
    public static void performCircleRealm(ServerPlayer player) {
       player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, CIRCLE_REALM_DURATION, 0, false, false, false));
       player.getPersistentData().putInt(CONCEALMENT_UNTIL_TAG, player.tickCount + CIRCLE_REALM_DURATION);
       if (player.level() instanceof ServerLevel level) {
+         clearEnemyAggro(player, level);
          VFXServerEffects.spawn(level, "servant_li_shuwen_quanjing", player, 64.0);
          level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.85, player.getZ(), 18, 0.35, 0.22, 0.35, 0.015);
          level.playSound(null, player.blockPosition(), SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 0.55F, 0.55F);
@@ -160,6 +180,13 @@ public final class ServantCardLiShuwenSkills {
          level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 10, 0.22, 0.18, 0.22, 0.02);
          level.playSound(null, BlockPos.containing(pos), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 0.8F, 0.72F);
+      }
+   }
+
+   private static void clearEnemyAggro(ServerPlayer player, ServerLevel level) {
+      for (Mob mob : level.getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(48.0), mob -> mob.isAlive() && mob.getTarget() == player)) {
+         mob.setTarget(null);
+         mob.getNavigation().stop();
       }
    }
 

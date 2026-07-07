@@ -101,6 +101,7 @@ public class ServantCardHud {
       );
       drawCooldownGrid(gui, minecraft, vars, 5, 68);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
+      drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
    }
 
    private static boolean isSurvivalLike(Minecraft minecraft) {
@@ -208,6 +209,33 @@ public class ServantCardHud {
          x,
          y + 26,
          0xFFC8FFC8,
+         0.58F
+      );
+   }
+
+   private static void drawParacelsusStocks(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int guiWidth, int y) {
+      if (!"paracelsus".equals(vars.servant_card_id)) {
+         return;
+      }
+      int x = guiWidth - 78;
+      gui.fill(x - 3, y - 4, guiWidth - 5, y + 22, 0x44000000);
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.paracelsus_items"), x, y - 2, 0xFFE6D8FF, 0.62F);
+      drawScaledString(
+         gui,
+         minecraft,
+         Component.translatable("hud.typemoonworld.servant_card.paracelsus_stone_count", vars.servant_card_paracelsus_stone_stock),
+         x,
+         y + 8,
+         0xFFFFE0A8,
+         0.58F
+      );
+      drawScaledString(
+         gui,
+         minecraft,
+         Component.translatable("hud.typemoonworld.servant_card.paracelsus_diamond_shield_count", vars.servant_card_paracelsus_diamond_shield_stock),
+         x,
+         y + 17,
+         0xFFBFEFFF,
          0.58F
       );
    }

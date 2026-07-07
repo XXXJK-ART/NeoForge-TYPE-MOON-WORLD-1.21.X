@@ -1,9 +1,14 @@
 package net.xxxjk.TYPE_MOON_WORLD.client;
 
+import java.util.UUID;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.LeylineSurveyMapScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MedeaCraftSelectScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.EnkiduTransfigurationScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusCraftSelectScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusElementSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 
 public class ClientPacketHandler {
@@ -38,5 +43,46 @@ public class ClientPacketHandler {
       if (mc.player != null) {
          mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock));
       }
+   }
+
+   public static void openParacelsusCraftScreen(int stoneStock, int diamondShieldStock) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.player != null) {
+         mc.setScreen(new ParacelsusCraftSelectScreen(stoneStock, diamondShieldStock));
+      }
+   }
+
+   public static void openParacelsusElementScreen() {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.player != null) {
+         mc.setScreen(new ParacelsusElementSelectScreen());
+      }
+   }
+
+   public static void openEnkiduTransfigurationScreen() {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.player != null) {
+         mc.setScreen(new EnkiduTransfigurationScreen());
+      }
+   }
+
+   public static void handleMasterVisualState(UUID playerId, boolean masterActive, int commandSpells, boolean poseActive) {
+      CommandSpellVisualClient.apply(playerId, masterActive, commandSpells, poseActive);
+   }
+
+   public static void handleEnkiduDetectionHighlight(List<Integer> entityIds, int ticks) {
+      EnkiduDetectionHighlightClient.apply(entityIds, ticks);
    }
 }

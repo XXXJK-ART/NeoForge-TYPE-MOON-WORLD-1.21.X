@@ -361,6 +361,22 @@ public class CommonEvents {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
+               if (vars.servant_card_transformed
+                  && "paracelsus".equals(vars.servant_card_id)
+                  && isParacelsusIgnoredDamage(event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  player.clearFire();
+                  return;
+               }
+               if (vars.servant_card_transformed
+                  && "oda_nobunaga".equals(vars.servant_card_id)
+                  && isOdaNobunagaIgnoredDamage(event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  player.clearFire();
+                  return;
+               }
                if (ServantCardDefenseHandler.handleIncomingDamage(player, vars, event)) {
                   return;
                }
@@ -1136,6 +1152,25 @@ public class CommonEvents {
          return false;
       }
       return false;
+   }
+
+   private static boolean isParacelsusIgnoredDamage(DamageSource source) {
+      return source != null
+         && (source.is(DamageTypeTags.IS_FIRE)
+            || source.is(DamageTypes.LAVA)
+            || source.is(DamageTypes.HOT_FLOOR)
+            || source.is(DamageTypes.IN_FIRE)
+            || source.is(DamageTypes.ON_FIRE)
+            || source.is(DamageTypes.IN_WALL));
+   }
+
+   private static boolean isOdaNobunagaIgnoredDamage(DamageSource source) {
+      return source != null
+         && (source.is(DamageTypeTags.IS_FIRE)
+            || source.is(DamageTypes.LAVA)
+            || source.is(DamageTypes.HOT_FLOOR)
+            || source.is(DamageTypes.IN_FIRE)
+            || source.is(DamageTypes.ON_FIRE));
    }
 
    @SubscribeEvent

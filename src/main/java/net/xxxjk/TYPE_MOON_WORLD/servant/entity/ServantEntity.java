@@ -221,6 +221,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
       GawainCombatHelper.tickSharedBuffCleanup(this);
+      ServantSprintCollisionHelper.tickNpcSprintCollision(this);
    }
 
    private void updateWalkAnimationState() {

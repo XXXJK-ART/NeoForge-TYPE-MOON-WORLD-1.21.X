@@ -29,8 +29,12 @@ public final class MasterStateManager {
    public static boolean activate(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.master_active) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.master.already_active"), true);
-         return false;
+         vars.master_command_spells += MAX_COMMAND_SPELLS;
+         vars.master_command_spell_pose_active = false;
+         vars.syncPlayerVariables(player);
+         MasterVisualStateSync.broadcast(player, vars);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spells_added", vars.master_command_spells), true);
+         return true;
       }
       if (vars.servant_card_transformed) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master.servant_cannot_master"), true);
@@ -48,6 +52,7 @@ public final class MasterStateManager {
       vars.master_active = true;
       vars.master_servant_uuid = "";
       vars.master_command_spells = MAX_COMMAND_SPELLS;
+      vars.master_command_spell_pose_active = false;
       vars.master_revive_available = true;
       vars.is_magus = true;
       vars.is_magic_circuit_open = false;
@@ -59,6 +64,7 @@ public final class MasterStateManager {
       applyAttributes(player);
       player.setHealth((float)MASTER_MAX_HEALTH);
       vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
       player.displayClientMessage(Component.translatable("message.typemoonworld.master.activated", maxMp), true);
       return true;
    }
@@ -73,6 +79,7 @@ public final class MasterStateManager {
       vars.master_active = false;
       vars.master_servant_uuid = "";
       vars.master_command_spells = 0;
+      vars.master_command_spell_pose_active = false;
       vars.master_revive_available = false;
       vars.player_mana = vars.master_saved_player_mana;
       vars.player_max_mana = vars.master_saved_player_max_mana;
@@ -89,6 +96,7 @@ public final class MasterStateManager {
       vars.master_saved_magic_circuit_open = false;
       vars.master_saved_magic_circuit_open_timer = 0.0;
       vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
       player.displayClientMessage(Component.translatable("message.typemoonworld.master.released"), true);
       return true;
    }
@@ -204,11 +212,15 @@ public final class MasterStateManager {
    public static boolean useCommandSpell(ServerPlayer master, int action) {
       TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.master_active || vars.master_command_spells <= 0) {
+         vars.master_command_spell_pose_active = false;
+         MasterVisualStateSync.broadcast(master, vars);
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.no_command_spells"), true);
          return false;
       }
       ServerPlayer servant = getBoundServant(master, vars);
       if (servant == null) {
+         vars.master_command_spell_pose_active = false;
+         MasterVisualStateSync.broadcast(master, vars);
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.no_servant"), true);
          return false;
       }
@@ -236,11 +248,13 @@ public final class MasterStateManager {
          return false;
       }
       vars.master_command_spells = Math.max(0, vars.master_command_spells - 1);
+      vars.master_command_spell_pose_active = false;
       if (vars.master_command_spells <= 0) {
          clearBoundServant(master, vars);
          vars.master_servant_uuid = "";
       }
       vars.syncPlayerVariables(master);
+      MasterVisualStateSync.broadcast(master, vars);
       master.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_used", vars.master_command_spells), true);
       return true;
    }

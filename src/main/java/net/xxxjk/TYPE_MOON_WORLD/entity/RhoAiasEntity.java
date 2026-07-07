@@ -29,6 +29,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Float> SHIELD_HP = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> LAYERS = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> FACING_YAW = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.FLOAT);
    private static final double PROTECT_RADIUS = 6.0;
    private static final double OWNER_EXIT_DISTANCE = 5.4;
    private static final double OWNER_BEHIND_DOT = -0.25;
@@ -67,11 +68,16 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       builder.define(SHIELD_HP, MAX_SHIELD_HP);
       builder.define(DURATION, 20 * 15);
       builder.define(LAYERS, 7);
+      builder.define(FACING_YAW, 0.0F);
    }
 
    @Override
    public void tick() {
       super.tick();
+      if (this.level().isClientSide()) {
+         this.applySyncedFacingYaw();
+         return;
+      }
       if (!(this.level() instanceof ServerLevel level)) {
          return;
       }
@@ -177,8 +183,12 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    }
 
    public Vec3 getFacingDirection() {
-      double radians = (this.getYRot() + 90.0F) * Mth.DEG_TO_RAD;
+      double radians = (this.entityData.get(FACING_YAW) + 90.0F) * Mth.DEG_TO_RAD;
       return new Vec3(Math.cos(radians), 0.0, Math.sin(radians)).normalize();
+   }
+
+   public float getFacingYaw() {
+      return this.entityData.get(FACING_YAW);
    }
 
    public Vec3 getCoverPosition(double ownerY) {
@@ -225,7 +235,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       Vec3 direction = look.normalize();
       Vec3 pos = owner.position().add(direction.scale(2.2)).add(0.0, owner.getBbHeight() * 0.55, 0.0);
       this.setPos(pos.x, pos.y, pos.z);
-      this.setFacingDirection(direction);
+      this.setFacingYaw(owner.getYRot());
    }
 
    private void setFacingDirection(Vec3 direction) {
@@ -234,6 +244,17 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
          return;
       }
       float yaw = (float)(Mth.atan2(horizontal.z, horizontal.x) * Mth.RAD_TO_DEG) - 90.0F;
+      this.setFacingYaw(yaw);
+   }
+
+   private void setFacingYaw(float yaw) {
+      this.yRotO = this.getYRot();
+      this.setYRot(yaw);
+      this.entityData.set(FACING_YAW, yaw);
+   }
+
+   private void applySyncedFacingYaw() {
+      float yaw = this.entityData.get(FACING_YAW);
       this.yRotO = this.getYRot();
       this.setYRot(yaw);
    }
@@ -261,6 +282,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       if (tag.contains("FixedYaw")) {
          float yaw = tag.getFloat("FixedYaw");
          this.setYRot(yaw);
+         this.entityData.set(FACING_YAW, yaw);
          this.yRotO = yaw;
       }
    }

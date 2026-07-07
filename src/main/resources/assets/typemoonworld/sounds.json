@@ -466,5 +466,13 @@
     "okita_voice_np_short": {
                                "category": "hostile",
                                "sounds": [ "typemoonworld:voice/short_np/okita_np_short" ]
+                           },
+    "emiya_archer_voice_ubw_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/ubw_short" ]
+                           },
+    "oda_nobunaga_voice_hajun_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/hajun_short" ]
                            }
 }

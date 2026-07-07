@@ -13,8 +13,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -40,6 +42,13 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Boolean> VOLLEY_MODE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> VOLLEY_TARGET_ID = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> FOOT_SUPPORT_MODE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> MOUNT_MODE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Float> HEALTH = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Float> MOVE_FORWARD = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Float> MOVE_STRAFE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Float> MOVE_VERTICAL = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Boolean> STATIC_VOLLEY_MODE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final float MOUNT_MAX_HEALTH = 120.0F;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
    private int shootDelay;
@@ -80,11 +89,39 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       return gun;
    }
 
+   public static OdaMatchlockGunEntity oneShotTracking(Level level, LivingEntity owner, LivingEntity target, Vec3 pos, int initialDelay) {
+      Vec3 facing = target == null ? owner.getLookAngle() : target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(pos);
+      OdaMatchlockGunEntity gun = new OdaMatchlockGunEntity(level, owner, pos, facing, initialDelay);
+      gun.entityData.set(VOLLEY_MODE, true);
+      gun.entityData.set(VOLLEY_TARGET_ID, target == null ? -1 : target.getId());
+      gun.entityData.set(SHOTS_LEFT, 1);
+      gun.entityData.set(LIFE_TICKS, 20 * 4);
+      return gun;
+   }
+
+   public static OdaMatchlockGunEntity threeThousandWorldsFollow(Level level, LivingEntity owner, LivingEntity target, int orbitIndex, int orbitCount, int initialDelay) {
+      OdaMatchlockGunEntity gun = floating(level, owner, orbitIndex, orbitCount, 20 * 16, initialDelay);
+      gun.entityData.set(VOLLEY_MODE, true);
+      gun.entityData.set(VOLLEY_TARGET_ID, target == null ? -1 : target.getId());
+      gun.entityData.set(SHOTS_LEFT, 3);
+      return gun;
+   }
+
    public static OdaMatchlockGunEntity footSupport(Level level, LivingEntity owner) {
       OdaMatchlockGunEntity gun = new OdaMatchlockGunEntity(level, owner, owner.position(), owner.getLookAngle(), 0);
       gun.entityData.set(FOOT_SUPPORT_MODE, true);
       gun.entityData.set(SHOTS_LEFT, 9999);
       gun.entityData.set(LIFE_TICKS, 20 * 4);
+      return gun;
+   }
+
+   public static OdaMatchlockGunEntity flightMount(Level level, LivingEntity owner) {
+      OdaMatchlockGunEntity gun = new OdaMatchlockGunEntity(level, owner, owner.position().add(0.0, 0.08, 0.0), owner.getLookAngle(), 0);
+      gun.entityData.set(MOUNT_MODE, true);
+      gun.entityData.set(SHOTS_LEFT, 0);
+      gun.entityData.set(LIFE_TICKS, 20 * 60);
+      gun.entityData.set(HEALTH, MOUNT_MAX_HEALTH);
+      gun.setBoundingBox(new AABB(gun.getX() - 0.9, gun.getY() - 0.25, gun.getZ() - 0.9, gun.getX() + 0.9, gun.getY() + 0.55, gun.getZ() + 0.9));
       return gun;
    }
 
@@ -94,6 +131,20 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    public boolean isFootSupportFor(UUID ownerId) {
       return ownerId != null && this.entityData.get(FOOT_SUPPORT_MODE) && ownerId.equals(this.ownerUuid);
+   }
+
+   public boolean isMountFor(UUID ownerId) {
+      return ownerId != null && this.entityData.get(MOUNT_MODE) && ownerId.equals(this.ownerUuid);
+   }
+
+   public boolean isMountMode() {
+      return this.entityData.get(MOUNT_MODE);
+   }
+
+   public void setMountInput(double forward, double strafe, double vertical) {
+      this.entityData.set(MOVE_FORWARD, (float)Mth.clamp(forward, -1.0, 1.0));
+      this.entityData.set(MOVE_STRAFE, (float)Mth.clamp(strafe, -1.0, 1.0));
+      this.entityData.set(MOVE_VERTICAL, (float)Mth.clamp(vertical, -1.0, 1.0));
    }
 
    @Override
@@ -108,6 +159,12 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       builder.define(VOLLEY_MODE, false);
       builder.define(VOLLEY_TARGET_ID, -1);
       builder.define(FOOT_SUPPORT_MODE, false);
+      builder.define(MOUNT_MODE, false);
+      builder.define(HEALTH, MOUNT_MAX_HEALTH);
+      builder.define(MOVE_FORWARD, 0.0F);
+      builder.define(MOVE_STRAFE, 0.0F);
+      builder.define(MOVE_VERTICAL, 0.0F);
+      builder.define(STATIC_VOLLEY_MODE, false);
    }
 
    public float getAimYaw() {
@@ -127,6 +184,10 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       LivingEntity owner = getOwnerLiving(level);
       if (owner == null && this.ownerUuid != null) {
          dissolveAndDiscard(level);
+         return;
+      }
+      if (this.entityData.get(MOUNT_MODE)) {
+         tickMount(level, owner);
          return;
       }
       if (this.entityData.get(FOOT_SUPPORT_MODE)) {
@@ -186,6 +247,76 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       fireAt(level, owner, target);
       this.entityData.set(SHOTS_LEFT, this.entityData.get(SHOTS_LEFT) - 1);
       this.shootDelay = this.entityData.get(VOLLEY_MODE) ? 20 : this.entityData.get(FOLLOW_MODE) ? 18 + this.random.nextInt(12) : 16 + this.random.nextInt(10);
+   }
+
+   private void tickMount(ServerLevel level, LivingEntity owner) {
+      if (!(owner instanceof Player player) || !owner.isAlive() || !this.hasPassenger(owner)) {
+         dissolveAndDiscard(level);
+         return;
+      }
+      this.entityData.set(LIFE_TICKS, 20 * 60);
+      this.fallDistance = 0.0F;
+      this.noPhysics = true;
+      double yaw = Math.toRadians(owner.getYRot());
+      Vec3 forward = new Vec3(-Math.sin(yaw), 0.0, Math.cos(yaw));
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 movement = forward.scale(this.entityData.get(MOVE_FORWARD)).add(right.scale(this.entityData.get(MOVE_STRAFE)));
+      if (movement.lengthSqr() > 1.0) {
+         movement = movement.normalize();
+      }
+      Vec3 velocity = movement.scale(0.54).add(0.0, this.entityData.get(MOVE_VERTICAL) * 0.42, 0.0);
+      if (velocity.lengthSqr() < 0.0001) {
+         velocity = new Vec3(0.0, -0.015, 0.0);
+      }
+      this.setDeltaMovement(velocity);
+      this.move(net.minecraft.world.entity.MoverType.SELF, velocity);
+      setFacing(forward);
+      owner.fallDistance = 0.0F;
+      if (this.tickCount % 6 == 0) {
+         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.08, this.getZ(), 3, 0.22, 0.05, 0.22, 0.01);
+         level.sendParticles(ParticleTypes.FLAME, this.getX(), this.getY() + 0.08, this.getZ(), 2, 0.12, 0.04, 0.12, 0.005);
+      }
+   }
+
+   @Override
+   protected boolean canAddPassenger(Entity passenger) {
+      return this.entityData.get(MOUNT_MODE) && this.getPassengers().isEmpty() && passenger instanceof Player;
+   }
+
+   @Override
+   protected void positionRider(Entity passenger, MoveFunction callback) {
+      if (this.entityData.get(MOUNT_MODE)) {
+         callback.accept(passenger, this.getX(), this.getY() + 0.18, this.getZ());
+      } else {
+         super.positionRider(passenger, callback);
+      }
+   }
+
+   @Override
+   public boolean isPickable() {
+      return this.entityData.get(MOUNT_MODE) || super.isPickable();
+   }
+
+   @Override
+   public boolean hurt(DamageSource source, float amount) {
+      if (this.level().isClientSide || !this.entityData.get(MOUNT_MODE) || amount <= 0.0F) {
+         return false;
+      }
+      Entity attacker = source.getEntity();
+      if (attacker != null && this.ownerUuid != null && attacker.getUUID().equals(this.ownerUuid)) {
+         return false;
+      }
+      float health = this.entityData.get(HEALTH) - amount;
+      this.entityData.set(HEALTH, health);
+      if (this.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY() + 0.25, this.getZ(), 8, 0.35, 0.18, 0.35, 0.05);
+         level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 0.35F, 1.6F);
+         if (health <= 0.0F) {
+            this.ejectPassengers();
+            dissolveAndDiscard(level);
+         }
+      }
+      return true;
    }
 
    private void updateFollowPosition(LivingEntity owner) {
@@ -339,6 +470,12 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       this.entityData.set(VOLLEY_MODE, tag.getBoolean("VolleyMode"));
       this.entityData.set(VOLLEY_TARGET_ID, tag.contains("VolleyTargetId") ? tag.getInt("VolleyTargetId") : -1);
       this.entityData.set(FOOT_SUPPORT_MODE, tag.getBoolean("FootSupportMode"));
+      this.entityData.set(MOUNT_MODE, tag.getBoolean("MountMode"));
+      this.entityData.set(HEALTH, tag.contains("Health") ? tag.getFloat("Health") : MOUNT_MAX_HEALTH);
+      this.entityData.set(MOVE_FORWARD, tag.getFloat("MoveForward"));
+      this.entityData.set(MOVE_STRAFE, tag.getFloat("MoveStrafe"));
+      this.entityData.set(MOVE_VERTICAL, tag.getFloat("MoveVertical"));
+      this.entityData.set(STATIC_VOLLEY_MODE, tag.getBoolean("StaticVolleyMode"));
       this.shootDelay = tag.getInt("ShootDelay");
       this.volleyNoTargetTicks = tag.getInt("VolleyNoTargetTicks");
    }
@@ -358,6 +495,12 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       tag.putBoolean("VolleyMode", this.entityData.get(VOLLEY_MODE));
       tag.putInt("VolleyTargetId", this.entityData.get(VOLLEY_TARGET_ID));
       tag.putBoolean("FootSupportMode", this.entityData.get(FOOT_SUPPORT_MODE));
+      tag.putBoolean("MountMode", this.entityData.get(MOUNT_MODE));
+      tag.putFloat("Health", this.entityData.get(HEALTH));
+      tag.putFloat("MoveForward", this.entityData.get(MOVE_FORWARD));
+      tag.putFloat("MoveStrafe", this.entityData.get(MOVE_STRAFE));
+      tag.putFloat("MoveVertical", this.entityData.get(MOVE_VERTICAL));
+      tag.putBoolean("StaticVolleyMode", this.entityData.get(STATIC_VOLLEY_MODE));
       tag.putInt("ShootDelay", this.shootDelay);
       tag.putInt("VolleyNoTargetTicks", this.volleyNoTargetTicks);
    }

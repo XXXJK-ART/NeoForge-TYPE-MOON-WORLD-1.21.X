@@ -72,6 +72,12 @@ public class ModPlayerEventHandler {
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
+         if (event.getEntity() instanceof ServerPlayer player) {
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && !player.isCrouching()) {
+               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
+            }
+         }
       }
    }
 
@@ -141,6 +147,9 @@ public class ModPlayerEventHandler {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.servant_card_transformed && "li_shuwen".equals(vars.servant_card_id)) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills.revealCircleRealm(player);
+         }
+         if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && !player.isCrouching()) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
          }
          if (vars.servant_card_transformed) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);

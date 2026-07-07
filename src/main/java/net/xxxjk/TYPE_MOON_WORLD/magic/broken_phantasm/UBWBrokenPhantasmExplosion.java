@@ -13,6 +13,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -50,7 +52,7 @@ public class UBWBrokenPhantasmExplosion {
             Set<Integer> damagedEntities = new HashSet<>();
             VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", pos, 128.0);
             spawnShellEffects(serverLevel, pos, damageRadius);
-            DeferredTerrainDestruction.queueSphere(serverLevel, pos, (int)Math.ceil(damageRadius), 32.0F, damageRadius >= 22.0 ? 80 : 45);
+            queueTerrainFromCenter(serverLevel, pos, damageRadius, 32.0F, damageRadius >= 22.0 ? 80 : 45);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 5, 0.35, 0.35, 0.35, 0.0);
             serverLevel.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 7, 0.14, 0.14, 0.14, 0.0);
             serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y + 0.25, pos.z, 72, 1.45, 0.55, 1.45, 0.07);
@@ -112,6 +114,27 @@ public class UBWBrokenPhantasmExplosion {
       level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y + 0.16, center.z, 0.16F, outerRadius * 0.72F, 0.22F, 18, emberRed, 0.72F, 0.01F));
       level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y + 0.1, center.z, 0.18F, outerRadius, 0.18F, 18, emberRed, 0.48F, 0.0F, 90.0F, 0.0F));
       level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y + 0.1, center.z, 0.18F, outerRadius, 0.18F, 18, ironWhite, 0.42F, 0.0F, 90.0F, 90.0F));
+   }
+
+   private static void queueTerrainFromCenter(ServerLevel level, Vec3 center, double radius, float maxHardness, int targetTicks) {
+      int waveCount = Mth.clamp((int)Math.ceil(radius), 6, 28);
+      double waveStep = radius / waveCount;
+      for (int wave = 1; wave <= waveCount; wave++) {
+         final int waveIndex = wave;
+         TYPE_MOON_WORLD.queueServerWork(waveIndex, () -> {
+            double previousRadius = Math.max(0.0, (waveIndex - 1) * waveStep);
+            double currentRadius = waveIndex * waveStep;
+            DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, Math.max(8, targetTicks / waveCount), (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
+               BlockState state = serverLevel.getBlockState(pos);
+               float hardness = state.getDestroySpeed(serverLevel, pos);
+               return !state.isAir()
+                  && hardness >= 0.0F
+                  && hardness <= maxHardness
+                  && !state.is(Blocks.BEDROCK)
+                  && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
+            }, null);
+         });
+      }
    }
 
    private static void processWave(

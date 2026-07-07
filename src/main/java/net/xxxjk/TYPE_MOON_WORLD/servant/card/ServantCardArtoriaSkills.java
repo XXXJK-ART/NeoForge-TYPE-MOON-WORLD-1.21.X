@@ -36,6 +36,10 @@ public final class ServantCardArtoriaSkills {
       return action != null && ("invisible_air_hammer".equals(action.effectId()) || "invisible_air_release".equals(action.effectId()));
    }
 
+   public static boolean isWindLockedByExcalibur(ServerPlayer player) {
+      return PlayerNoblePhantasmHelper.isArtoriaExcaliburWindLocked(player);
+   }
+
    public static void performManaBurst(ServerPlayer player) {
       long until = player.level().getGameTime() + ARTORIA_MANA_BURST_DURATION;
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, ARTORIA_MANA_BURST_DURATION, 2, false, true, true));
@@ -58,6 +62,7 @@ public final class ServantCardArtoriaSkills {
       data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_RELEASED);
       data.remove(ArtoriaPendragonCombatHelper.TAG_WIND_REGATHER_UNTIL);
       data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
+      PlayerNoblePhantasmHelper.clearArtoriaExcaliburWindLock(player);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -104,6 +109,7 @@ public final class ServantCardArtoriaSkills {
       data.putBoolean(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_RELEASED, true);
       data.putLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_ACTIVE + "Until", now + Math.max(80, revealTicks));
       data.putLong(ArtoriaPendragonCombatHelper.TAG_WIND_REGATHER_UNTIL, now + Math.max(80, revealTicks));
+      PlayerNoblePhantasmHelper.revealArtoriaWindVeiledExcalibur(player, Math.max(80, revealTicks));
       VFXServerEffects.spawn(level, "artoria_strike_air", player, 128.0);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
       Vec3 look = PlayerNoblePhantasmHelper.horizontalLook(player);
@@ -149,6 +155,7 @@ public final class ServantCardArtoriaSkills {
       data.putBoolean(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_RELEASED, true);
       data.putLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_ACTIVE + "Until", now + Math.max(60, revealTicks));
       data.putLong(ArtoriaPendragonCombatHelper.TAG_WIND_REGATHER_UNTIL, now + Math.max(60, revealTicks));
+      PlayerNoblePhantasmHelper.revealArtoriaWindVeiledExcalibur(player, Math.max(60, revealTicks));
       Vec3 center = player.position().add(0.0, player.getBbHeight() * 0.48, 0.0);
       double radius = 6.0;
       float damage = ArtoriaPendragonCombatHelper.isManaBurstActive(player) ? 32.0F : 22.0F;
