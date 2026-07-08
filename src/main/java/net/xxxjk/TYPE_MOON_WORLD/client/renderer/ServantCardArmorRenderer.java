@@ -16,11 +16,19 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
    @Override
    protected void applyBoneVisibilityBySlot(EquipmentSlot currentSlot) {
       setAllBonesVisible(false);
+      boolean medea = this.currentStack != null
+         && this.currentStack.getItem() instanceof ServantCardArmorItem armor
+         && "medea".equals(armor.servantId());
       if (currentSlot == EquipmentSlot.CHEST) {
          setBoneVisible(this.body, true);
          setBoneVisible(this.rightArm, true);
          setBoneVisible(this.leftArm, true);
+      } else if (currentSlot == EquipmentSlot.HEAD) {
+         setBoneVisible(this.head, true);
       } else if (currentSlot == EquipmentSlot.LEGS) {
+         if (medea) {
+            return;
+         }
          setBoneVisible(this.rightLeg, true);
          setBoneVisible(this.leftLeg, true);
       }

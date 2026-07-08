@@ -34,25 +34,25 @@ public class ClientPacketHandler {
       }
    }
 
-   public static void openMedeaCraftScreen(int dragonfangStock, int manaCharmStock, int healCharmStock) {
+   public static void openMedeaCraftScreen(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock) {
       if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
          return;
       }
 
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
-         mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock));
+         mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock, leylineMapStock));
       }
    }
 
-   public static void openParacelsusCraftScreen(int stoneStock, int diamondShieldStock) {
+   public static void openParacelsusCraftScreen(int stoneStock, int diamondShieldStock, int leylineMapStock) {
       if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
          return;
       }
 
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
-         mc.setScreen(new ParacelsusCraftSelectScreen(stoneStock, diamondShieldStock));
+         mc.setScreen(new ParacelsusCraftSelectScreen(stoneStock, diamondShieldStock, leylineMapStock));
       }
    }
 

@@ -90,6 +90,13 @@ public final class ServantCardEnkiduSkills {
    private static final String ENUMA_START_X = "ServantCardEnkiduEnumaStartX";
    private static final String ENUMA_START_Y = "ServantCardEnkiduEnumaStartY";
    private static final String ENUMA_START_Z = "ServantCardEnkiduEnumaStartZ";
+   private static final ResourceLocation TRANSFIG_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_attack");
+   private static final ResourceLocation TRANSFIG_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_health");
+   private static final ResourceLocation TRANSFIG_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_speed");
+   private static final ResourceLocation TRANSFIG_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_armor");
+   private static final ResourceLocation TRANSFIG_TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_toughness");
+   private static final ResourceLocation TRANSFIG_JUMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_jump");
+   private static final ResourceLocation TRANSFIG_LUCK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_luck");
    private static final int ENUMA_WINDUP = 10 * 20;
    private static final int ENUMA_RELEASE_VISUAL = 5 * 20;
    private static final double ENUMA_GROUND_EXPLOSION_RADIUS = 60.0;
@@ -126,6 +133,7 @@ public final class ServantCardEnkiduSkills {
       }
       int[] normalized = normalizeTransfigurationPoints(requested);
       vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(normalized);
+      applyTransfigurationAttributes(player, vars, normalized);
       vars.syncPlayerVariables(player);
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + 1.0, player.getZ(), 42, 0.75, 0.65, 0.75, 0.06);
@@ -161,7 +169,9 @@ public final class ServantCardEnkiduSkills {
    public static void applyCurrentTransfiguration(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int[] points = parseTransfigurationPoints(vars);
-      vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(normalizeTransfigurationPoints(points));
+      int[] normalized = normalizeTransfigurationPoints(points);
+      vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(normalized);
+      applyTransfigurationAttributes(player, vars, normalized);
       vars.syncPlayerVariables(player);
    }
 
@@ -184,7 +194,119 @@ public final class ServantCardEnkiduSkills {
       }
       points[stat] = next;
       vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(points);
+      applyTransfigurationAttributes(player, vars, points);
       vars.syncPlayerVariables(player);
+   }
+
+   public static void clearTransfigurationAttributes(ServerPlayer player) {
+      removeModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), TRANSFIG_ATTACK_ID);
+      removeModifier(player.getAttribute(Attributes.MAX_HEALTH), TRANSFIG_HEALTH_ID);
+      removeModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), TRANSFIG_SPEED_ID);
+      removeModifier(player.getAttribute(Attributes.ARMOR), TRANSFIG_ARMOR_ID);
+      removeModifier(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TRANSFIG_TOUGHNESS_ID);
+      removeModifier(player.getAttribute(Attributes.JUMP_STRENGTH), TRANSFIG_JUMP_ID);
+      removeModifier(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), TRANSFIG_LUCK_ID);
+   }
+
+   private static void applyTransfigurationAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int[] points) {
+      clearTransfigurationAttributes(player);
+      int strength = points.length > 0 ? points[0] : 6;
+      int endurance = points.length > 1 ? points[1] : 6;
+      int agility = points.length > 2 ? points[2] : 6;
+      int mana = points.length > 3 ? points[3] : 6;
+      int luck = points.length > 4 ? points[4] : 6;
+      ServantDefinition definition = ServantDataRegistry.get("enkidu");
+      ServantParams base = definition != null ? definition.parameters() : ServantParams.of("B", false, "B", false, "B", false, "B", false, "B", false);
+      double targetHealth = maxHealthFor(endurance);
+      double targetAttack = attackFor(strength);
+      double targetArmor = armorFor(endurance);
+      double targetSpeed = speedFor(agility);
+      addModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), TRANSFIG_ATTACK_ID, targetAttack - base.attackDamage(), AttributeModifier.Operation.ADD_VALUE);
+      addModifier(player.getAttribute(Attributes.MAX_HEALTH), TRANSFIG_HEALTH_ID, targetHealth - base.maxHealth(), AttributeModifier.Operation.ADD_VALUE);
+      addModifier(player.getAttribute(Attributes.ARMOR), TRANSFIG_ARMOR_ID, targetArmor - base.armor(), AttributeModifier.Operation.ADD_VALUE);
+      addModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), TRANSFIG_SPEED_ID, targetSpeed - base.movementSpeed(), AttributeModifier.Operation.ADD_VALUE);
+      addModifier(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TRANSFIG_TOUGHNESS_ID, armorToughnessFor(targetArmor, targetAttack) - armorToughnessFor(base.armor(), base.attackDamage()), AttributeModifier.Operation.ADD_VALUE);
+      addModifier(player.getAttribute(Attributes.JUMP_STRENGTH), TRANSFIG_JUMP_ID, jumpStrengthFor(targetSpeed) - jumpStrengthFor(base.movementSpeed()), AttributeModifier.Operation.ADD_VALUE);
+      addModifier(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), TRANSFIG_LUCK_ID, Mth.clamp((coefficientFor(luck) - effectiveLuckCoefficient(base)) * 0.004, -0.16, 0.28), AttributeModifier.Operation.ADD_VALUE);
+      double ratio = vars.servant_card_max_mana <= 0.0 ? 1.0 : vars.servant_card_mana / vars.servant_card_max_mana;
+      vars.servant_card_max_mana = Math.max(50.0, manaPoolFor(mana));
+      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, Math.max(0.0, vars.servant_card_max_mana * ratio));
+      if (player.getHealth() > player.getMaxHealth()) {
+         player.setHealth(player.getMaxHealth());
+      }
+   }
+
+   private static int coefficientFor(int points) {
+      if (points < 3) {
+         return 5;
+      }
+      if (points == 3) {
+         return 10;
+      }
+      if (points == 4) {
+         return 20;
+      }
+      if (points == 5) {
+         return 30;
+      }
+      if (points == 6) {
+         return 40;
+      }
+      if (points <= 8) {
+         return 50;
+      }
+      return 100;
+   }
+
+   private static double maxHealthFor(int points) {
+      return coefficientFor(points) * 10.0;
+   }
+
+   private static double attackFor(int points) {
+      return coefficientFor(points) * 0.5;
+   }
+
+   private static double speedFor(int points) {
+      return 0.16 + coefficientFor(points) * 0.004;
+   }
+
+   private static double armorFor(int points) {
+      return coefficientFor(points) * 0.3;
+   }
+
+   private static double manaPoolFor(int points) {
+      return coefficientFor(points) * 20.0;
+   }
+
+   private static double armorToughnessFor(double armor, double attack) {
+      double endurance = Mth.clamp(armor / 15.0, 0.0, 1.2);
+      double strength = Mth.clamp(attack / 25.0, 0.0, 1.2);
+      return 2.0 + endurance * 5.5 + strength * 2.0;
+   }
+
+   private static double jumpStrengthFor(double speed) {
+      double agility = Mth.clamp((speed - 0.16) / 0.20, 0.0, 1.0);
+      return 0.30 + agility * 0.12;
+   }
+
+   private static int effectiveLuckCoefficient(ServantParams params) {
+      return params.luckPlus() ? params.luck().plusCoefficient() : params.luck().coefficient();
+   }
+
+   private static void addModifier(AttributeInstance attribute, ResourceLocation id, double amount, AttributeModifier.Operation operation) {
+      if (attribute == null) {
+         return;
+      }
+      attribute.removeModifier(id);
+      if (Math.abs(amount) > 1.0E-6) {
+         attribute.addPermanentModifier(new AttributeModifier(id, amount, operation));
+      }
+   }
+
+   private static void removeModifier(AttributeInstance attribute, ResourceLocation id) {
+      if (attribute != null) {
+         attribute.removeModifier(id);
+      }
    }
 
    public static int[] parseTransfigurationPoints(TypeMoonWorldModVariables.PlayerVariables vars) {

@@ -28,9 +28,12 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
@@ -373,6 +376,21 @@ public final class MedeaCombatHelper {
          servant.getPersistentData().remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
          servant.getPersistentData().remove(CuChulainnCombatHelper.GAE_BOLG_WINDUP_UNTIL_TAG);
          CuChulainnCombatHelper.clearRune(servant);
+      }
+
+      if (target instanceof net.minecraft.server.level.ServerPlayer targetPlayer) {
+         TypeMoonWorldModVariables.PlayerVariables targetVars = targetPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (targetVars.servant_card_transformed) {
+            net.minecraft.server.level.ServerPlayer master = MasterStateManager.getMaster(targetPlayer, targetVars);
+            if (master != null) {
+               MasterServantLinkService.breakLink(master, targetPlayer, true);
+            }
+         } else if (targetVars.master_active) {
+            net.minecraft.server.level.ServerPlayer servant = MasterServantLinkService.getLinkedServant(targetPlayer, targetVars);
+            if (servant != null) {
+               MasterServantLinkService.breakLink(targetPlayer, servant, true);
+            }
+         }
       }
 
       if (target.getPersistentData().getBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON)) {

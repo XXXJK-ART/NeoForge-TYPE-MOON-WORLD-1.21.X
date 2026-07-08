@@ -91,6 +91,9 @@ public final class ServantCardTransformManager {
       equipArmor(player, servantId);
       ServantCardLoadoutManager.saveAndEquip(player, vars, servantId);
       applyAttributes(player, definition.parameters());
+      if ("enkidu".equals(servantId)) {
+         ServantCardEnkiduSkills.applyCurrentTransfiguration(player);
+      }
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.transformed", definition.displayName()), true);
       return true;
@@ -107,7 +110,12 @@ public final class ServantCardTransformManager {
       stopActiveNoblePhantasmVoices(player);
       restoreArmor(player, vars);
       ServantCardLoadoutManager.restore(player, vars);
-      MasterStateManager.clearServantSide(player, vars);
+      ServerPlayer linkedMaster = MasterServantLinkService.getLinkedMaster(player, vars);
+      if (linkedMaster != null) {
+         MasterServantLinkService.breakLink(linkedMaster, player, false);
+      } else {
+         MasterStateManager.clearServantSide(player, vars);
+      }
       vars.servant_card_transformed = false;
       vars.servant_card_id = "";
       vars.servant_card_master_uuid = "";
@@ -130,6 +138,7 @@ public final class ServantCardTransformManager {
       ServantCardHeraclesSkills.clear(player);
       ServantCardGawainSkills.clear(player);
       ServantCardMedusaSkills.clear(player);
+      ServantCardEnkiduSkills.clearTransfigurationAttributes(player);
       ServantCardTraitService.clear(player);
       vars.is_magus = vars.servant_card_was_magus;
       vars.is_magic_circuit_open = vars.servant_card_was_magic_circuit_open;
@@ -256,7 +265,9 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
-      if (!ServantCardManaService.consume(player, vars, ServantCardSkillCostRules.effectiveMpCost(vars, action))) {
+      double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
+      boolean paid = np ? ServantCardManaService.consumeNoblePhantasm(player, vars, mpCost) : ServantCardManaService.consume(player, vars, mpCost);
+      if (!paid) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
@@ -463,6 +474,12 @@ public final class ServantCardTransformManager {
    }
 
    private static void equipArmor(ServerPlayer player, String servantId) {
+      if ("medea".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.HEAD)));
+         player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.CHEST)));
+         player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+         return;
+      }
       player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.CHEST)));
       player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.LEGS)));
    }

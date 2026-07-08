@@ -13,16 +13,20 @@ import org.jetbrains.annotations.NotNull;
 public class ParacelsusCraftSelectScreen extends Screen {
    private static final int MAX_STONE = 5;
    private static final int MAX_DIAMOND_SHIELD = 3;
+   private static final int CHOICE_COUNT = 3;
    private static final ResourceLocation STONE_ICON = ResourceLocation.withDefaultNamespace("textures/item/nether_star.png");
    private static final ResourceLocation SHIELD_ICON = ResourceLocation.withDefaultNamespace("textures/item/diamond.png");
+   private static final ResourceLocation LEYLINE_MAP_ICON = ResourceLocation.withDefaultNamespace("textures/item/map.png");
    private final int stoneStock;
    private final int diamondShieldStock;
+   private final int leylineMapStock;
    private int selectedIndex = 0;
 
-   public ParacelsusCraftSelectScreen(int stoneStock, int diamondShieldStock) {
+   public ParacelsusCraftSelectScreen(int stoneStock, int diamondShieldStock, int leylineMapStock) {
       super(Component.translatable("gui.typemoonworld.paracelsus_craft.title"));
       this.stoneStock = Math.max(0, stoneStock);
       this.diamondShieldStock = Math.max(0, diamondShieldStock);
+      this.leylineMapStock = Math.max(0, leylineMapStock);
    }
 
    @Override
@@ -45,7 +49,7 @@ public class ParacelsusCraftSelectScreen extends Screen {
    @Override
    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
       if (scrollY != 0.0) {
-         this.selectedIndex = 1 - this.selectedIndex;
+         this.selectedIndex = scrollY > 0.0 ? (this.selectedIndex + CHOICE_COUNT - 1) % CHOICE_COUNT : (this.selectedIndex + 1) % CHOICE_COUNT;
       }
       return true;
    }
@@ -71,7 +75,7 @@ public class ParacelsusCraftSelectScreen extends Screen {
       int itemWidth = 104;
       int itemHeight = 58;
       int gap = 12;
-      int totalWidth = itemWidth * 2 + gap;
+      int totalWidth = itemWidth * CHOICE_COUNT + gap * (CHOICE_COUNT - 1);
       int startX = (this.width - totalWidth) / 2;
       int startY = this.height / 2 - itemHeight / 2;
       int bgX1 = startX - 12;
@@ -85,7 +89,7 @@ public class ParacelsusCraftSelectScreen extends Screen {
       guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 8, 0xFFEDE6FF);
       this.updateSelectionAt(mouseX, mouseY);
 
-      for (int i = 0; i < 2; i++) {
+      for (int i = 0; i < CHOICE_COUNT; i++) {
          int x = startX + i * (itemWidth + gap);
          this.renderChoice(guiGraphics, i, x, startY, itemWidth, itemHeight);
       }
@@ -121,10 +125,10 @@ public class ParacelsusCraftSelectScreen extends Screen {
       int itemWidth = 104;
       int itemHeight = 58;
       int gap = 12;
-      int totalWidth = itemWidth * 2 + gap;
+      int totalWidth = itemWidth * CHOICE_COUNT + gap * (CHOICE_COUNT - 1);
       int startX = (this.width - totalWidth) / 2;
       int startY = this.height / 2 - itemHeight / 2;
-      for (int i = 0; i < 2; i++) {
+      for (int i = 0; i < CHOICE_COUNT; i++) {
          int x = startX + i * (itemWidth + gap);
          if (mouseX >= x && mouseX < x + itemWidth && mouseY >= startY && mouseY < startY + itemHeight) {
             this.selectedIndex = i;
@@ -139,22 +143,38 @@ public class ParacelsusCraftSelectScreen extends Screen {
    }
 
    private boolean isFull(int index) {
-      return index == 0 ? this.stoneStock >= MAX_STONE : this.diamondShieldStock >= MAX_DIAMOND_SHIELD;
+      return switch (index) {
+         case 0 -> this.stoneStock >= MAX_STONE;
+         case 1 -> this.diamondShieldStock >= MAX_DIAMOND_SHIELD;
+         case 2 -> false;
+         default -> true;
+      };
    }
 
    private Component label(int index) {
-      return index == 0
-         ? Component.translatable("hud.typemoonworld.servant_card.paracelsus_stone")
-         : Component.translatable("hud.typemoonworld.servant_card.paracelsus_diamond_shield");
+      return switch (index) {
+         case 0 -> Component.translatable("hud.typemoonworld.servant_card.paracelsus_stone");
+         case 1 -> Component.translatable("hud.typemoonworld.servant_card.paracelsus_diamond_shield");
+         case 2 -> Component.translatable("item.typemoonworld.leyline_survey_map");
+         default -> Component.empty();
+      };
    }
 
    private Component count(int index) {
-      return index == 0
-         ? Component.literal(this.stoneStock + "/" + MAX_STONE)
-         : Component.literal(this.diamondShieldStock + "/" + MAX_DIAMOND_SHIELD);
+      return switch (index) {
+         case 0 -> Component.literal(this.stoneStock + "/" + MAX_STONE);
+         case 1 -> Component.literal(this.diamondShieldStock + "/" + MAX_DIAMOND_SHIELD);
+         case 2 -> Component.literal(String.valueOf(this.leylineMapStock));
+         default -> Component.empty();
+      };
    }
 
    private ResourceLocation icon(int index) {
-      return index == 0 ? STONE_ICON : SHIELD_ICON;
+      return switch (index) {
+         case 0 -> STONE_ICON;
+         case 1 -> SHIELD_ICON;
+         case 2 -> LEYLINE_MAP_ICON;
+         default -> STONE_ICON;
+      };
    }
 }

@@ -11,6 +11,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.CommandSpellItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DirkSmallKnifeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomStartAttributesItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
@@ -110,6 +111,8 @@ public class ModItems {
 
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));
+    public static final DeferredItem<Item> RANDOM_START_ATTRIBUTES = ITEMS.register("random_start_attributes",
+            () -> new RandomStartAttributesItem(new Item.Properties().rarity(Rarity.RARE)));
 
     public static final DeferredItem<Item> CLAW_OF_CHAOS = registerSimpleItem("claw_of_chaos");
     public static final DeferredItem<Item> DRAGON_FANG = registerSimpleItem("dragon_fang");
@@ -186,6 +189,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_LEGS = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_CU_CHULAINN_CHEST = registerServantArmor("cu_chulainn", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_CU_CHULAINN_LEGS = registerServantArmor("cu_chulainn", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDEA_HEAD = registerServantArmor("medea", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_MEDEA_CHEST = registerServantArmor("medea", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_MEDEA_LEGS = registerServantArmor("medea", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_CHEST = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -682,13 +686,14 @@ public class ModItems {
     }
 
     public static Item getServantCardArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {
+        boolean head = slot == net.minecraft.world.entity.EquipmentSlot.HEAD;
         boolean legs = slot == net.minecraft.world.entity.EquipmentSlot.LEGS;
         return switch (servantId == null ? "" : servantId) {
             case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
             case "artoria_pendragon" -> (legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
             case "sasaki_kojiro" -> (legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();
             case "cu_chulainn" -> (legs ? SERVANT_CARD_CU_CHULAINN_LEGS : SERVANT_CARD_CU_CHULAINN_CHEST).get();
-            case "medea" -> (legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();
+            case "medea" -> (head ? SERVANT_CARD_MEDEA_HEAD : legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();
             case "medusa" -> (legs ? SERVANT_CARD_MEDUSA_LEGS : SERVANT_CARD_MEDUSA_CHEST).get();
             case "cursed_arm_hassan" -> (legs ? SERVANT_CARD_CURSED_ARM_HASSAN_LEGS : SERVANT_CARD_CURSED_ARM_HASSAN_CHEST).get();
             case "heracles" -> (legs ? SERVANT_CARD_HERACLES_LEGS : SERVANT_CARD_HERACLES_CHEST).get();

@@ -72,6 +72,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
@@ -248,6 +249,7 @@ public class CommonEvents {
             );
             ServantCardTransformManager.tick(serverPlayer, cardVars);
             MasterStateManager.tick(serverPlayer, cardVars);
+            MasterServantLinkService.tick(serverPlayer, cardVars);
          }
 
          if (player.isSpectator()) {
@@ -383,6 +385,9 @@ public class CommonEvents {
                if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
                   return;
                }
+               if (vars.servant_card_transformed && player.getHealth() - event.getAmount() <= 0.0F) {
+                  MasterServantLinkService.onServantDeath(player, vars);
+               }
                if (vars.servant_card_transformed && vars.servant_card_death_release && player.getHealth() - event.getAmount() <= 0.0F) {
                   event.setCanceled(true);
                   event.setAmount(0.0F);
@@ -394,6 +399,12 @@ public class CommonEvents {
                   event.setAmount(0.0F);
                   MasterStateManager.tryRevive(player, vars);
                   return;
+               }
+               if (vars.master_active && player.getHealth() - event.getAmount() <= 0.0F) {
+                  ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
+                  if (servant != null) {
+                     MasterServantLinkService.breakLink(player, servant, true);
+                  }
                }
             }
             if (event.getEntity() instanceof LivingEntity living) {

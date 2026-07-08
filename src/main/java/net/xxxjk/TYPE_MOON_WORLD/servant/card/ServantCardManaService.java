@@ -32,10 +32,17 @@ public final class ServantCardManaService {
          vars.servant_card_max_mana = maxManaFor(vars.servant_card_id);
       }
       double expectedRegen = regenPerSecondFor(vars.servant_card_id);
+      ServerPlayer master = getMaster(player, vars);
+      boolean linked = MasterServantLinkService.canUseMasterMana(player, vars, master);
+      boolean medeaException = "medea".equals(vars.servant_card_id);
+      if (linked && master != null && !medeaException) {
+         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         expectedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
+      }
       if (Math.abs(vars.servant_card_mana_regen - expectedRegen) > 1.0E-6) {
          vars.servant_card_mana_regen = expectedRegen;
       }
-      if (vars.servant_card_mana < vars.servant_card_max_mana) {
+      if ((medeaException || !linked || expectedRegen > 0.0) && vars.servant_card_mana < vars.servant_card_max_mana) {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
       }
       if (player.tickCount % 20 == 0) {
@@ -54,8 +61,26 @@ public final class ServantCardManaService {
    }
 
    public static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      return consume(player, vars, amount, false);
+   }
+
+   public static boolean consumeNoblePhantasm(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      return consume(player, vars, amount, true);
+   }
+
+   public static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount, boolean noblePhantasm) {
       if (amount <= 0.0) {
          return true;
+      }
+      if (noblePhantasm && MasterServantLinkService.STATE_INDEPENDENT.equals(vars.master_servant_link_state)) {
+         return false;
+      }
+      if (noblePhantasm) {
+         double multiplier = MasterServantLinkService.noblePhantasmCostMultiplier(player, vars);
+         if (!Double.isFinite(multiplier)) {
+            return false;
+         }
+         amount *= multiplier;
       }
       double own = Math.min(vars.servant_card_mana, amount);
       double remaining = amount - own;
@@ -69,6 +94,7 @@ public final class ServantCardManaService {
       vars.servant_card_mana -= own;
       if (remaining > 0.0 && masterVars != null) {
          masterVars.player_mana -= remaining;
+         MasterServantLinkService.markDrawingMasterMana(master, player);
          masterVars.syncPlayerVariables(master);
       }
       vars.syncPlayerVariables(player);

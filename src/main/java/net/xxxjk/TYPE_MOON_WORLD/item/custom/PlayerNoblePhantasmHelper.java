@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class PlayerNoblePhantasmHelper {
    public static final String ONE_SHOT_TSUBAME_TAG = "TypeMoonOneShotTsubame";
+   public static final String ONE_SHOT_NINE_LIVES_TAG = "TypeMoonOneShotNineLives";
    private static final String OVEREDGE_USE_COUNT_TAG = "TypeMoonOveredgeUseCount";
    private static final String GAE_DEATH_FLIGHT_TAG = "TypeMoonGaeBulgDeathFlight";
    private static final String GAE_DEATH_FLIGHT_PAID_TAG = "TypeMoonGaeBulgDeathFlightPaid";
@@ -129,12 +130,51 @@ public final class PlayerNoblePhantasmHelper {
       updateCustomData(stack, tag -> tag.remove(ONE_SHOT_TSUBAME_TAG));
    }
 
+   public static boolean hasOneShotNineLives(ItemStack stack) {
+      CompoundTag tag = customTag(stack);
+      return tag != null && tag.getBoolean(ONE_SHOT_NINE_LIVES_TAG);
+   }
+
+   public static void armNineLives(ItemStack stack) {
+      if (!stack.isEmpty()) {
+         updateCustomData(stack, tag -> tag.putBoolean(ONE_SHOT_NINE_LIVES_TAG, true));
+      }
+   }
+
+   public static void clearOneShotNineLives(ItemStack stack) {
+      updateCustomData(stack, tag -> tag.remove(ONE_SHOT_NINE_LIVES_TAG));
+   }
+
+   public static boolean useOneShotNineLives(ServerPlayer player, ItemStack stack) {
+      if (!hasOneShotNineLives(stack)) {
+         return false;
+      }
+      if (!consumeStrict(player, 90.0)) {
+         return true;
+      }
+      clearOneShotNineLives(stack);
+      LivingEntity target = findLookTarget(player, 7.0, 1.7);
+      performNineLives(player, target);
+      player.getCooldowns().addCooldown(stack.getItem(), 1200);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed) {
+         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 1200);
+         vars.syncPlayerVariables(player);
+      }
+      return true;
+   }
+
    public static boolean triggerTsubameOnHit(ServerPlayer player, ItemStack stack, LivingEntity target) {
       if (!hasOneShotTsubame(stack) || target == null || !target.isAlive() || player.distanceToSqr(target) > 16.0) {
          return false;
       }
       clearOneShotTsubame(stack);
       performTsubame(player, target);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed) {
+         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 1200);
+         vars.syncPlayerVariables(player);
+      }
       return true;
    }
 
@@ -719,6 +759,46 @@ public final class PlayerNoblePhantasmHelper {
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.8F, 0.5F);
       level.playSound(null, player.blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.2F, 0.7F);
       level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.5F, 0.6F);
+   }
+
+   private static void performNineLives(ServerPlayer player, LivingEntity target) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      Vec3 forward = horizontalLook(player);
+      Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.45, 0.0);
+      Vec3 end = start.add(forward.scale(7.0));
+      AABB box = new AABB(start, end).inflate(2.0, 1.2, 2.0);
+      Set<Integer> hit = new HashSet<>();
+      for (int i = 0; i < 9; i++) {
+         LivingEntity victim = target;
+         if (victim == null || !victim.isAlive() || victim.distanceToSqr(player) > 81.0) {
+            victim = null;
+            for (LivingEntity candidate : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+               if (hit.add(candidate.getId())) {
+                  victim = candidate;
+                  break;
+               }
+            }
+         }
+         if (victim != null) {
+            victim.invulnerableTime = 0;
+            victim.hurt(player.damageSources().mobAttack(player), 72.0F);
+            victim.invulnerableTime = 0;
+            Vec3 away = victim.position().subtract(player.position());
+            if (away.lengthSqr() < 1.0E-4) {
+               away = forward;
+            }
+            victim.setDeltaMovement(victim.getDeltaMovement().add(away.normalize().scale(0.5)).add(0.0, 0.12, 0.0));
+            victim.hurtMarked = true;
+         }
+      }
+      player.setDeltaMovement(player.getDeltaMovement().add(forward.scale(1.2)).add(0.0, 0.1, 0.0));
+      player.hurtMarked = true;
+      VFXServerEffects.spawn(level, "servant_heracles_nine_lives", player, 128.0);
+      level.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 80, 1.6, 0.8, 1.6, 0.18);
+      level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.8F, 0.62F);
+      level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.7F, 1.25F);
    }
 
    private static LivingEntity findLookTarget(ServerPlayer player, double range, double inflate) {

@@ -14,19 +14,23 @@ public class MedeaCraftSelectScreen extends Screen {
    private static final int MAX_DRAGONFANG = 50;
    private static final int MAX_MANA_CHARM = 10;
    private static final int MAX_HEAL_CHARM = 10;
+   private static final int CHOICE_COUNT = 4;
    private static final ResourceLocation DRAGONFANG_ICON = ResourceLocation.withDefaultNamespace("textures/item/bone.png");
    private static final ResourceLocation MANA_CHARM_ICON = ResourceLocation.withDefaultNamespace("textures/item/amethyst_shard.png");
    private static final ResourceLocation HEAL_CHARM_ICON = ResourceLocation.withDefaultNamespace("textures/item/golden_apple.png");
+   private static final ResourceLocation LEYLINE_MAP_ICON = ResourceLocation.withDefaultNamespace("textures/item/map.png");
    private final int dragonfangStock;
    private final int manaCharmStock;
    private final int healCharmStock;
+   private final int leylineMapStock;
    private int selectedIndex = 0;
 
-   public MedeaCraftSelectScreen(int dragonfangStock, int manaCharmStock, int healCharmStock) {
+   public MedeaCraftSelectScreen(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock) {
       super(Component.translatable("gui.typemoonworld.medea_craft.title"));
       this.dragonfangStock = Math.max(0, dragonfangStock);
       this.manaCharmStock = Math.max(0, manaCharmStock);
       this.healCharmStock = Math.max(0, healCharmStock);
+      this.leylineMapStock = Math.max(0, leylineMapStock);
    }
 
    @Override
@@ -49,9 +53,9 @@ public class MedeaCraftSelectScreen extends Screen {
    @Override
    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
       if (scrollY > 0.0) {
-         this.selectedIndex = (this.selectedIndex + 2) % 3;
+         this.selectedIndex = (this.selectedIndex + CHOICE_COUNT - 1) % CHOICE_COUNT;
       } else if (scrollY < 0.0) {
-         this.selectedIndex = (this.selectedIndex + 1) % 3;
+         this.selectedIndex = (this.selectedIndex + 1) % CHOICE_COUNT;
       }
       return true;
    }
@@ -74,10 +78,10 @@ public class MedeaCraftSelectScreen extends Screen {
 
    @Override
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      int itemWidth = 82;
+      int itemWidth = 78;
       int itemHeight = 58;
-      int gap = 10;
-      int totalWidth = itemWidth * 3 + gap * 2;
+      int gap = 8;
+      int totalWidth = itemWidth * CHOICE_COUNT + gap * (CHOICE_COUNT - 1);
       int startX = (this.width - totalWidth) / 2;
       int startY = this.height / 2 - itemHeight / 2;
       int bgX1 = startX - 12;
@@ -91,7 +95,7 @@ public class MedeaCraftSelectScreen extends Screen {
       guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 8, 0xFFEDE6FF);
       this.updateSelectionAt(mouseX, mouseY);
 
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < CHOICE_COUNT; i++) {
          int x = startX + i * (itemWidth + gap);
          this.renderChoice(guiGraphics, i, x, startY, itemWidth, itemHeight);
       }
@@ -125,13 +129,13 @@ public class MedeaCraftSelectScreen extends Screen {
    }
 
    private boolean updateSelectionAt(double mouseX, double mouseY) {
-      int itemWidth = 82;
+      int itemWidth = 78;
       int itemHeight = 58;
-      int gap = 10;
-      int totalWidth = itemWidth * 3 + gap * 2;
+      int gap = 8;
+      int totalWidth = itemWidth * CHOICE_COUNT + gap * (CHOICE_COUNT - 1);
       int startX = (this.width - totalWidth) / 2;
       int startY = this.height / 2 - itemHeight / 2;
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < CHOICE_COUNT; i++) {
          int x = startX + i * (itemWidth + gap);
          if (mouseX >= x && mouseX < x + itemWidth && mouseY >= startY && mouseY < startY + itemHeight) {
             this.selectedIndex = i;
@@ -150,6 +154,7 @@ public class MedeaCraftSelectScreen extends Screen {
          case 0 -> this.dragonfangStock >= MAX_DRAGONFANG;
          case 1 -> this.manaCharmStock >= MAX_MANA_CHARM;
          case 2 -> this.healCharmStock >= MAX_HEAL_CHARM;
+         case 3 -> false;
          default -> true;
       };
    }
@@ -159,6 +164,7 @@ public class MedeaCraftSelectScreen extends Screen {
          case 0 -> Component.translatable("hud.typemoonworld.servant_card.medea_dragonfang");
          case 1 -> Component.translatable("hud.typemoonworld.servant_card.medea_mana_charm");
          case 2 -> Component.translatable("hud.typemoonworld.servant_card.medea_heal_charm");
+         case 3 -> Component.translatable("item.typemoonworld.leyline_survey_map");
          default -> Component.empty();
       };
    }
@@ -168,6 +174,7 @@ public class MedeaCraftSelectScreen extends Screen {
          case 0 -> Component.literal(this.dragonfangStock + "/" + MAX_DRAGONFANG);
          case 1 -> Component.literal(this.manaCharmStock + "/" + MAX_MANA_CHARM);
          case 2 -> Component.literal(this.healCharmStock + "/" + MAX_HEAL_CHARM);
+         case 3 -> Component.literal(String.valueOf(this.leylineMapStock));
          default -> Component.empty();
       };
    }
@@ -176,6 +183,7 @@ public class MedeaCraftSelectScreen extends Screen {
       return switch (index) {
          case 1 -> MANA_CHARM_ICON;
          case 2 -> HEAL_CHARM_ICON;
+         case 3 -> LEYLINE_MAP_ICON;
          default -> DRAGONFANG_ICON;
       };
    }

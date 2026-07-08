@@ -12,16 +12,29 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
 
    @Override
    public ResourceLocation getModelResource(ServantCardArmorItem animatable) {
-      return EMIYA_MODEL;
+      String servantId = animatable == null ? "" : animatable.servantId();
+      return hasDedicatedArmor(servantId)
+         ? ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "geo/servant_card_" + servantId + ".geo.json")
+         : EMIYA_MODEL;
    }
 
    @Override
    public ResourceLocation getTextureResource(ServantCardArmorItem animatable) {
-      return EMIYA_TEXTURE;
+      String servantId = animatable == null ? "" : animatable.servantId();
+      return hasDedicatedArmor(servantId)
+         ? ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/models/armor/servant_card_" + servantId + ".png")
+         : EMIYA_TEXTURE;
    }
 
    @Override
    public ResourceLocation getAnimationResource(ServantCardArmorItem animatable) {
-      return EMIYA_ANIMATION;
+      String servantId = animatable == null ? "" : animatable.servantId();
+      return hasDedicatedArmor(servantId)
+         ? ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "animations/servant_card_" + servantId + ".animation.json")
+         : EMIYA_ANIMATION;
+   }
+
+   private static boolean hasDedicatedArmor(String servantId) {
+      return "emiya_archer".equals(servantId) || "enkidu".equals(servantId) || "cu_chulainn".equals(servantId) || "medea".equals(servantId);
    }
 }

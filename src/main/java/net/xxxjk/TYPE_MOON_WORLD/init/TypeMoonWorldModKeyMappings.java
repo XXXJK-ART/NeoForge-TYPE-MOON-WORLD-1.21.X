@@ -211,7 +211,9 @@ public class TypeMoonWorldModKeyMappings {
             boolean suppressScreens = ReplayUiSuppressor.shouldSuppressTypeMoonScreens();
             if (vars.master_active) {
                handleMasterControls(suppressScreens);
-               return;
+               if (Minecraft.getInstance().screen != null) {
+                  return;
+               }
             }
             if (vars.servant_card_transformed) {
                handleServantCardControls(vars);

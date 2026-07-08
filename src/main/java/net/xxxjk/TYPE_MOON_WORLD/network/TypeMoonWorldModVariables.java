@@ -251,6 +251,21 @@ public class TypeMoonWorldModVariables {
             clone.master_saved_is_magus = original.master_saved_is_magus;
             clone.master_saved_magic_circuit_open = original.master_saved_magic_circuit_open;
             clone.master_saved_magic_circuit_open_timer = original.master_saved_magic_circuit_open_timer;
+            clone.master_servant_link_partner_uuid = original.master_servant_link_partner_uuid;
+            clone.master_servant_link_partner_hp = original.master_servant_link_partner_hp;
+            clone.master_servant_link_partner_max_hp = original.master_servant_link_partner_max_hp;
+            clone.master_servant_link_partner_mana = original.master_servant_link_partner_mana;
+            clone.master_servant_link_partner_max_mana = original.master_servant_link_partner_max_mana;
+            clone.master_servant_link_state = original.master_servant_link_state;
+            clone.master_servant_link_decay = original.master_servant_link_decay;
+            clone.master_servant_link_drawing_mana = original.master_servant_link_drawing_mana;
+            clone.master_servant_independent_ticks = original.master_servant_independent_ticks;
+            clone.master_servant_backlash_ticks = original.master_servant_backlash_ticks;
+            clone.master_artificial_leyline_dimension = original.master_artificial_leyline_dimension;
+            clone.master_artificial_leyline_x = original.master_artificial_leyline_x;
+            clone.master_artificial_leyline_y = original.master_artificial_leyline_y;
+            clone.master_artificial_leyline_z = original.master_artificial_leyline_z;
+            clone.master_artificial_leyline_bonus_active = original.master_artificial_leyline_bonus_active;
          } else {
             clone.servant_card_death_release = original.servant_card_death_release;
          }
@@ -522,6 +537,21 @@ public class TypeMoonWorldModVariables {
       public boolean master_saved_is_magus = false;
       public boolean master_saved_magic_circuit_open = false;
       public double master_saved_magic_circuit_open_timer = 0.0;
+      public String master_servant_link_partner_uuid = "";
+      public double master_servant_link_partner_hp = 0.0;
+      public double master_servant_link_partner_max_hp = 0.0;
+      public double master_servant_link_partner_mana = 0.0;
+      public double master_servant_link_partner_max_mana = 0.0;
+      public String master_servant_link_state = "none";
+      public double master_servant_link_decay = 0.0;
+      public boolean master_servant_link_drawing_mana = false;
+      public int master_servant_independent_ticks = 0;
+      public int master_servant_backlash_ticks = 0;
+      public String master_artificial_leyline_dimension = "";
+      public int master_artificial_leyline_x = 0;
+      public int master_artificial_leyline_y = 0;
+      public int master_artificial_leyline_z = 0;
+      public boolean master_artificial_leyline_bonus_active = false;
 
       public TypeMoonWorldModVariables.PlayerVariables.SavedStructure getStructureById(String id) {
          if (id != null && !id.isEmpty()) {
@@ -1469,6 +1499,21 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("master_saved_is_magus", this.master_saved_is_magus);
          nbt.putBoolean("master_saved_magic_circuit_open", this.master_saved_magic_circuit_open);
          nbt.putDouble("master_saved_magic_circuit_open_timer", this.master_saved_magic_circuit_open_timer);
+         nbt.putString("master_servant_link_partner_uuid", this.master_servant_link_partner_uuid == null ? "" : this.master_servant_link_partner_uuid);
+         nbt.putDouble("master_servant_link_partner_hp", this.master_servant_link_partner_hp);
+         nbt.putDouble("master_servant_link_partner_max_hp", this.master_servant_link_partner_max_hp);
+         nbt.putDouble("master_servant_link_partner_mana", this.master_servant_link_partner_mana);
+         nbt.putDouble("master_servant_link_partner_max_mana", this.master_servant_link_partner_max_mana);
+         nbt.putString("master_servant_link_state", this.master_servant_link_state == null ? "none" : this.master_servant_link_state);
+         nbt.putDouble("master_servant_link_decay", this.master_servant_link_decay);
+         nbt.putBoolean("master_servant_link_drawing_mana", this.master_servant_link_drawing_mana);
+         nbt.putInt("master_servant_independent_ticks", this.master_servant_independent_ticks);
+         nbt.putInt("master_servant_backlash_ticks", this.master_servant_backlash_ticks);
+         nbt.putString("master_artificial_leyline_dimension", this.master_artificial_leyline_dimension == null ? "" : this.master_artificial_leyline_dimension);
+         nbt.putInt("master_artificial_leyline_x", this.master_artificial_leyline_x);
+         nbt.putInt("master_artificial_leyline_y", this.master_artificial_leyline_y);
+         nbt.putInt("master_artificial_leyline_z", this.master_artificial_leyline_z);
+         nbt.putBoolean("master_artificial_leyline_bonus_active", this.master_artificial_leyline_bonus_active);
          nbt.putInt("magic_system_data_version", this.magic_system_data_version);
          nbt.putInt("active_wheel_index", this.active_wheel_index);
          ListTag wheelList = new ListTag();
@@ -1713,6 +1758,21 @@ public class TypeMoonWorldModVariables {
          this.master_saved_is_magus = nbt.getBoolean("master_saved_is_magus");
          this.master_saved_magic_circuit_open = nbt.getBoolean("master_saved_magic_circuit_open");
          this.master_saved_magic_circuit_open_timer = nbt.contains("master_saved_magic_circuit_open_timer") ? nbt.getDouble("master_saved_magic_circuit_open_timer") : 0.0;
+         this.master_servant_link_partner_uuid = nbt.contains("master_servant_link_partner_uuid") ? nbt.getString("master_servant_link_partner_uuid") : "";
+         this.master_servant_link_partner_hp = nbt.contains("master_servant_link_partner_hp") ? nbt.getDouble("master_servant_link_partner_hp") : 0.0;
+         this.master_servant_link_partner_max_hp = nbt.contains("master_servant_link_partner_max_hp") ? nbt.getDouble("master_servant_link_partner_max_hp") : 0.0;
+         this.master_servant_link_partner_mana = nbt.contains("master_servant_link_partner_mana") ? nbt.getDouble("master_servant_link_partner_mana") : 0.0;
+         this.master_servant_link_partner_max_mana = nbt.contains("master_servant_link_partner_max_mana") ? nbt.getDouble("master_servant_link_partner_max_mana") : 0.0;
+         this.master_servant_link_state = nbt.contains("master_servant_link_state") ? nbt.getString("master_servant_link_state") : "none";
+         this.master_servant_link_decay = nbt.contains("master_servant_link_decay") ? nbt.getDouble("master_servant_link_decay") : 0.0;
+         this.master_servant_link_drawing_mana = nbt.getBoolean("master_servant_link_drawing_mana");
+         this.master_servant_independent_ticks = nbt.contains("master_servant_independent_ticks") ? nbt.getInt("master_servant_independent_ticks") : 0;
+         this.master_servant_backlash_ticks = nbt.contains("master_servant_backlash_ticks") ? nbt.getInt("master_servant_backlash_ticks") : 0;
+         this.master_artificial_leyline_dimension = nbt.contains("master_artificial_leyline_dimension") ? nbt.getString("master_artificial_leyline_dimension") : "";
+         this.master_artificial_leyline_x = nbt.contains("master_artificial_leyline_x") ? nbt.getInt("master_artificial_leyline_x") : 0;
+         this.master_artificial_leyline_y = nbt.contains("master_artificial_leyline_y") ? nbt.getInt("master_artificial_leyline_y") : 0;
+         this.master_artificial_leyline_z = nbt.contains("master_artificial_leyline_z") ? nbt.getInt("master_artificial_leyline_z") : 0;
+         this.master_artificial_leyline_bonus_active = nbt.getBoolean("master_artificial_leyline_bonus_active");
          this.magic_system_data_version = nbt.contains("magic_system_data_version") ? nbt.getInt("magic_system_data_version") : 0;
          this.active_wheel_index = nbt.contains("active_wheel_index") ? nbt.getInt("active_wheel_index") : 0;
          this.magic_wheels.clear();

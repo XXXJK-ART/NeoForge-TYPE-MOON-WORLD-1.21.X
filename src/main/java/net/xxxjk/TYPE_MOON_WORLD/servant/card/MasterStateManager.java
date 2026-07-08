@@ -20,7 +20,6 @@ public final class MasterStateManager {
    public static final int MIN_MASTER_MP = 200;
    public static final int MAX_MASTER_MP = 1000;
    public static final double MASTER_MAX_HEALTH = 100.0;
-   public static final double MANA_LINK_RANGE = 64.0;
    private static final ResourceLocation MASTER_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "master_max_health");
 
    private MasterStateManager() {
@@ -40,32 +39,16 @@ public final class MasterStateManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master.servant_cannot_master"), true);
          return false;
       }
-      vars.master_saved_player_mana = vars.player_mana;
-      vars.master_saved_player_max_mana = vars.player_max_mana;
-      vars.master_saved_player_mana_regen = vars.player_mana_egenerated_every_moment;
-      vars.master_saved_player_restore_magic_moment = vars.player_restore_magic_moment;
-      vars.master_saved_is_magus = vars.is_magus;
-      vars.master_saved_magic_circuit_open = vars.is_magic_circuit_open;
-      vars.master_saved_magic_circuit_open_timer = vars.magic_circuit_open_timer;
-
-      int maxMp = MIN_MASTER_MP + player.getRandom().nextInt(MAX_MASTER_MP - MIN_MASTER_MP + 1);
       vars.master_active = true;
       vars.master_servant_uuid = "";
       vars.master_command_spells = MAX_COMMAND_SPELLS;
       vars.master_command_spell_pose_active = false;
       vars.master_revive_available = true;
-      vars.is_magus = true;
-      vars.is_magic_circuit_open = false;
-      vars.magic_circuit_open_timer = 0.0;
-      vars.player_max_mana = maxMp;
-      vars.player_mana = maxMp;
-      vars.player_restore_magic_moment = 20.0;
-      vars.player_mana_egenerated_every_moment = maxMp / 180.0;
       applyAttributes(player);
       player.setHealth((float)MASTER_MAX_HEALTH);
       vars.syncPlayerVariables(player);
       MasterVisualStateSync.broadcast(player, vars);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.master.activated", maxMp), true);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.master.activated", (int)vars.player_max_mana), true);
       return true;
    }
 
@@ -74,20 +57,20 @@ public final class MasterStateManager {
       if (!vars.master_active) {
          return false;
       }
-      clearBoundServant(player, vars);
+      ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
+      if (boundServant != null) {
+         MasterServantLinkService.breakLink(player, boundServant, true);
+      } else {
+         clearBoundServant(player, vars);
+      }
       removeAttributes(player);
       vars.master_active = false;
       vars.master_servant_uuid = "";
       vars.master_command_spells = 0;
       vars.master_command_spell_pose_active = false;
       vars.master_revive_available = false;
-      vars.player_mana = vars.master_saved_player_mana;
-      vars.player_max_mana = vars.master_saved_player_max_mana;
-      vars.player_mana_egenerated_every_moment = vars.master_saved_player_mana_regen;
-      vars.player_restore_magic_moment = vars.master_saved_player_restore_magic_moment;
-      vars.is_magus = vars.master_saved_is_magus;
-      vars.is_magic_circuit_open = vars.master_saved_magic_circuit_open;
-      vars.magic_circuit_open_timer = vars.master_saved_magic_circuit_open_timer;
+      vars.master_artificial_leyline_bonus_active = false;
+      vars.master_artificial_leyline_dimension = "";
       vars.master_saved_player_mana = 0.0;
       vars.master_saved_player_max_mana = 0.0;
       vars.master_saved_player_mana_regen = 0.0;
@@ -107,13 +90,6 @@ public final class MasterStateManager {
       }
       applyAttributes(player);
       ServantCardTransformManager.normalizeFood(player);
-      if (vars.player_restore_magic_moment != 20.0) {
-         vars.player_restore_magic_moment = 20.0;
-      }
-      double expectedRegen = Math.max(0.0, vars.player_max_mana / 180.0);
-      if (Math.abs(vars.player_mana_egenerated_every_moment - expectedRegen) > 1.0E-6) {
-         vars.player_mana_egenerated_every_moment = expectedRegen;
-      }
    }
 
    public static boolean bindByContract(ServerPlayer actor, ServerPlayer target) {
@@ -197,16 +173,7 @@ public final class MasterStateManager {
    }
 
    public static boolean canDrawMasterMana(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars, ServerPlayer master) {
-      if (master == null) {
-         return false;
-      }
-      if (servant.getPersistentData().getBoolean("IndependentActionActive")) {
-         return true;
-      }
-      if (servant.level().dimension() != master.level().dimension()) {
-         return false;
-      }
-      return servant.distanceToSqr(master) <= MANA_LINK_RANGE * MANA_LINK_RANGE;
+      return MasterServantLinkService.canUseMasterMana(servant, servantVars, master);
    }
 
    public static boolean useCommandSpell(ServerPlayer master, int action) {
@@ -217,7 +184,7 @@ public final class MasterStateManager {
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.no_command_spells"), true);
          return false;
       }
-      ServerPlayer servant = getBoundServant(master, vars);
+      ServerPlayer servant = MasterServantLinkService.getLinkedServant(master, vars);
       if (servant == null) {
          vars.master_command_spell_pose_active = false;
          MasterVisualStateSync.broadcast(master, vars);
@@ -250,8 +217,7 @@ public final class MasterStateManager {
       vars.master_command_spells = Math.max(0, vars.master_command_spells - 1);
       vars.master_command_spell_pose_active = false;
       if (vars.master_command_spells <= 0) {
-         clearBoundServant(master, vars);
-         vars.master_servant_uuid = "";
+         MasterServantLinkService.breakLink(master, servant, true);
       }
       vars.syncPlayerVariables(master);
       MasterVisualStateSync.broadcast(master, vars);

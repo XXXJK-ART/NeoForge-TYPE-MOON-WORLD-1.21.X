@@ -2,11 +2,13 @@ package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import java.util.function.Consumer;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.ItemStack;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantCardArmorRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardRegistry;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +20,7 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -66,8 +69,23 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
    }
 
    private PlayState predicate(AnimationState<ServantCardArmorItem> state) {
-      state.getController().setAnimation(RawAnimation.begin().thenLoop("1"));
+      String animation = "1";
+      if ("medea".equals(this.servantId)) {
+         animation = isMedeaFlying(state) ? "fly" : "standing";
+      } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)) {
+         animation = "animation";
+      }
+      state.getController().setAnimation(RawAnimation.begin().thenLoop(animation));
       return PlayState.CONTINUE;
+   }
+
+   private boolean isMedeaFlying(AnimationState<ServantCardArmorItem> state) {
+      Entity entity = state.getData(DataTickets.ENTITY);
+      if (!(entity instanceof LivingEntity living)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "medea".equals(vars.servant_card_id) && vars.servant_card_flying;
    }
 
    @Override

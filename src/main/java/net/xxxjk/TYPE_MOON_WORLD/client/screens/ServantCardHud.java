@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.screens;
 
-import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -65,18 +64,13 @@ public class ServantCardHud {
       int manaX = 10;
       int manaY = guiHeight - 20;
       if (vars.master_active) {
-         drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.player_mana, vars.player_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
-         Player servant = findServant(minecraft, vars);
-         if (servant != null) {
-            TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            drawBar(gui, minecraft, manaX, manaY - 11, 120, "Servant", servantVars.servant_card_mana, servantVars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
+         if (vars.master_servant_link_partner_max_mana > 0.0) {
+            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF00838F, 0xFF00E5FF);
          }
       } else {
          drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
-         Player master = findMaster(minecraft, vars);
-         if (master != null) {
-            TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            drawBar(gui, minecraft, manaX, manaY - 11, 120, "Master", masterVars.player_mana, masterVars.player_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+         if (vars.master_servant_link_partner_max_mana > 0.0) {
+            drawBar(gui, minecraft, manaX, manaY - 11, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
          }
       }
 
@@ -93,7 +87,7 @@ public class ServantCardHud {
       drawScaledString(
          gui,
          minecraft,
-         Component.translatable("hud.typemoonworld.servant_card.jump_np", vars.servant_card_jump_charges, ticksToSeconds(vars.servant_card_np_cooldown)),
+         Component.translatable("hud.typemoonworld.servant_card.jump_np", vars.servant_card_jump_charges, ticksToSeconds(effectiveNpCooldown(minecraft, vars))),
          x,
          y + 48,
          0xFFE0E0E0,
@@ -112,28 +106,27 @@ public class ServantCardHud {
       return mode == GameType.SURVIVAL || mode == GameType.ADVENTURE;
    }
 
-   private static Player findMaster(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (minecraft.level == null || vars.servant_card_master_uuid == null || vars.servant_card_master_uuid.isBlank()) {
-         return null;
-      }
-      try {
-         UUID uuid = UUID.fromString(vars.servant_card_master_uuid);
-         return minecraft.level.getPlayerByUUID(uuid);
-      } catch (IllegalArgumentException ignored) {
-         return null;
-      }
+   private static String linkLabel(String base, TypeMoonWorldModVariables.PlayerVariables vars) {
+      return switch (vars.master_servant_link_state == null ? "" : vars.master_servant_link_state) {
+         case "normal" -> base + " [G]";
+         case "unstable" -> base + " [Y]";
+         case "broken", "independent_action" -> base + " [R]";
+         default -> base;
+      };
    }
 
-   private static Player findServant(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (minecraft.level == null || vars.master_servant_uuid == null || vars.master_servant_uuid.isBlank()) {
-         return null;
+   private static int effectiveNpCooldown(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (minecraft.player == null) {
+         return vars.servant_card_np_cooldown;
       }
-      try {
-         UUID uuid = UUID.fromString(vars.master_servant_uuid);
-         return minecraft.level.getPlayerByUUID(uuid);
-      } catch (IllegalArgumentException ignored) {
-         return null;
+      int itemCooldown = 0;
+      if (!minecraft.player.getMainHandItem().isEmpty()) {
+         itemCooldown = Math.max(itemCooldown, Math.round(minecraft.player.getCooldowns().getCooldownPercent(minecraft.player.getMainHandItem().getItem(), 0.0F) * 3600.0F));
       }
+      if (!minecraft.player.getOffhandItem().isEmpty()) {
+         itemCooldown = Math.max(itemCooldown, Math.round(minecraft.player.getCooldowns().getCooldownPercent(minecraft.player.getOffhandItem().getItem(), 0.0F) * 3600.0F));
+      }
+      return Math.max(vars.servant_card_np_cooldown, itemCooldown);
    }
 
    private static void drawBar(GuiGraphics gui, Minecraft minecraft, int x, int y, int width, String label, double value, double max, int startColor, int endColor) {
@@ -162,7 +155,7 @@ public class ServantCardHud {
       for (int i = 0; i < 10; i++) {
          int drawX = x;
          int drawY = y + i * 8;
-         int ticks = i == 9 ? vars.servant_card_np_cooldown : cooldowns[i];
+         int ticks = i == 9 ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
          Component label = empty

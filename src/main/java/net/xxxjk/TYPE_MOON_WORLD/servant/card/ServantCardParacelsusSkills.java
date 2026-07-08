@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -41,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ProjectionCircuitEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenParacelsusCraftScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenParacelsusElementScreenMessage;
@@ -146,7 +149,7 @@ public final class ServantCardParacelsusSkills {
       syncParacelsusStocks(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
       PacketDistributor.sendToPlayer(
          player,
-         new OpenParacelsusCraftScreenMessage(getPhilosopherStoneStock(player), getDiamondShieldStock(player)),
+         new OpenParacelsusCraftScreenMessage(getPhilosopherStoneStock(player), getDiamondShieldStock(player), countLeylineMaps(player)),
          new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
       );
       return true;
@@ -181,9 +184,14 @@ public final class ServantCardParacelsusSkills {
       if (choice == 0) {
          setPhilosopherStoneStock(player, getPhilosopherStoneStock(player) + 1);
          made = Component.translatable("hud.typemoonworld.servant_card.paracelsus_stone");
-      } else {
+      } else if (choice == 1) {
          setDiamondShieldStock(player, getDiamondShieldStock(player) + 1);
          made = Component.translatable("hud.typemoonworld.servant_card.paracelsus_diamond_shield");
+      } else if (choice == 2) {
+         giveCraftedItem(player, new ItemStack(ModItems.LEYLINE_SURVEY_MAP.get()));
+         made = Component.translatable("item.typemoonworld.leyline_survey_map");
+      } else {
+         return false;
       }
       syncParacelsusStocks(player, vars);
       if (player.level() instanceof ServerLevel level) {
@@ -193,6 +201,35 @@ public final class ServantCardParacelsusSkills {
       }
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_item_crafted", made), true);
       return true;
+   }
+
+   private static int countLeylineMaps(ServerPlayer player) {
+      int count = 0;
+      if (player.getMainHandItem().is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+         count += player.getMainHandItem().getCount();
+      }
+      if (player.getOffhandItem().is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+         count += player.getOffhandItem().getCount();
+      }
+      for (ItemStack stack : player.getInventory().items) {
+         if (stack.is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+            count += stack.getCount();
+         }
+      }
+      return count;
+   }
+
+   private static void giveCraftedItem(ServerPlayer player, ItemStack stack) {
+      if (stack.isEmpty()) {
+         return;
+      }
+      if (player.getMainHandItem().isEmpty()) {
+         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+      } else if (player.getOffhandItem().isEmpty()) {
+         player.setItemInHand(InteractionHand.OFF_HAND, stack);
+      } else if (!player.getInventory().add(stack)) {
+         player.drop(stack, false);
+      }
    }
 
    public static boolean toggleParacelsusSpirits(ServerPlayer player) {

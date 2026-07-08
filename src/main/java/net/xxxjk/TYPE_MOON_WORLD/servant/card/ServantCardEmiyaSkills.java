@@ -194,6 +194,12 @@ public final class ServantCardEmiyaSkills {
       ItemStack traced = weapon.copy();
       traced.setCount(1);
       PlayerNoblePhantasmHelper.markUbwProjection(traced);
+      if (traced.is(ModItems.BIZEN_NAGAMITSU.get())) {
+         PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, traced);
+      } else if (traced.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
+         PlayerNoblePhantasmHelper.armNineLives(traced);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.emiya_nine_lives_ready"), true);
+      }
       player.setItemInHand(InteractionHand.OFF_HAND, traced);
       int strength = target.getAttributeValue(Attributes.ATTACK_DAMAGE) >= player.getAttributeValue(Attributes.ATTACK_DAMAGE) + 8.0 ? 1 : 0;
       int speed = target.getAttributeValue(Attributes.MOVEMENT_SPEED) > player.getAttributeValue(Attributes.MOVEMENT_SPEED) ? 1 : 0;

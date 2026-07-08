@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.ClientPacketHandler;
 import org.jetbrains.annotations.NotNull;
 
-public record OpenParacelsusCraftScreenMessage(int stoneStock, int diamondShieldStock) implements CustomPacketPayload {
+public record OpenParacelsusCraftScreenMessage(int stoneStock, int diamondShieldStock, int leylineMapStock) implements CustomPacketPayload {
    public static final Type<OpenParacelsusCraftScreenMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "open_paracelsus_craft_screen")
    );
@@ -20,8 +20,9 @@ public record OpenParacelsusCraftScreenMessage(int stoneStock, int diamondShield
       (buffer, message) -> {
          buffer.writeInt(message.stoneStock);
          buffer.writeInt(message.diamondShieldStock);
+         buffer.writeInt(message.leylineMapStock);
       },
-      buffer -> new OpenParacelsusCraftScreenMessage(buffer.readInt(), buffer.readInt())
+      buffer -> new OpenParacelsusCraftScreenMessage(buffer.readInt(), buffer.readInt(), buffer.readInt())
    );
 
    @NotNull
@@ -34,7 +35,7 @@ public record OpenParacelsusCraftScreenMessage(int stoneStock, int diamondShield
       if (context.flow() == PacketFlow.CLIENTBOUND) {
          context.enqueueWork(() -> {
             if (FMLEnvironment.dist == Dist.CLIENT) {
-               ClientPacketHandler.openParacelsusCraftScreen(message.stoneStock, message.diamondShieldStock);
+               ClientPacketHandler.openParacelsusCraftScreen(message.stoneStock, message.diamondShieldStock, message.leylineMapStock);
             }
          });
       }

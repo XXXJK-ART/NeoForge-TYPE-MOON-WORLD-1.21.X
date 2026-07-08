@@ -27,7 +27,7 @@ public class Magic_display_Overlay {
         Player entity = minecraft.player;
         if (entity == null) return;
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        if (vars.servant_card_transformed || vars.master_active) return;
+        if (vars.servant_card_transformed) return;
         if (!vars.is_magus) return;
 
         try {

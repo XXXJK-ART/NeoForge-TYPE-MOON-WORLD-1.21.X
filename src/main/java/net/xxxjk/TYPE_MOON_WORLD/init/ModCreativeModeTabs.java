@@ -24,6 +24,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
                         output.accept(ModItems.COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
+                        output.accept(ModItems.RANDOM_START_ATTRIBUTES);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
@@ -45,8 +46,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_LEGS);
                         output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA_HEAD);
                         output.accept(ModItems.SERVANT_CARD_MEDEA_CHEST);
-                        output.accept(ModItems.SERVANT_CARD_MEDEA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_CHEST);

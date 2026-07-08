@@ -30,7 +30,7 @@ public record ParacelsusCraftSelectionMessage(int choice) implements CustomPacke
    public static void handleData(ParacelsusCraftSelectionMessage message, IPayloadContext context) {
       if (context.flow() == PacketFlow.SERVERBOUND) {
          context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player && message.choice >= 0 && message.choice <= 1) {
+            if (context.player() instanceof ServerPlayer player && message.choice >= 0 && message.choice <= 2) {
                ServantCardParacelsusSkills.craftSelectedParacelsusItem(player, message.choice);
             }
          }).exceptionally(e -> {

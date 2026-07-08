@@ -176,7 +176,7 @@ public final class ServantCardMedeaSkills {
       ensureMedeaStocks(player, vars);
       PacketDistributor.sendToPlayer(
          player,
-         new OpenMedeaCraftScreenMessage(getDragonfangStock(player), getManaCharmStock(player), getHealCharmStock(player)),
+         new OpenMedeaCraftScreenMessage(getDragonfangStock(player), getManaCharmStock(player), getHealCharmStock(player), countLeylineMaps(player)),
          new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
       );
       return true;
@@ -203,9 +203,14 @@ public final class ServantCardMedeaSkills {
       } else if (choice == 1) {
          setManaCharmStock(player, vars, getManaCharmStock(player) + 1);
          made = Component.translatable("hud.typemoonworld.servant_card.medea_mana_charm");
-      } else {
+      } else if (choice == 2) {
          setHealCharmStock(player, vars, getHealCharmStock(player) + 1);
          made = Component.translatable("hud.typemoonworld.servant_card.medea_heal_charm");
+      } else if (choice == 3) {
+         giveCraftedItem(player, new ItemStack(ModItems.LEYLINE_SURVEY_MAP.get()));
+         made = Component.translatable("item.typemoonworld.leyline_survey_map");
+      } else {
+         return false;
       }
       syncMedeaStocks(player, vars);
       if (player.level() instanceof ServerLevel level) {
@@ -214,6 +219,35 @@ public final class ServantCardMedeaSkills {
       }
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.medea_crafted", made), true);
       return true;
+   }
+
+   private static int countLeylineMaps(ServerPlayer player) {
+      int count = 0;
+      if (player.getMainHandItem().is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+         count += player.getMainHandItem().getCount();
+      }
+      if (player.getOffhandItem().is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+         count += player.getOffhandItem().getCount();
+      }
+      for (ItemStack stack : player.getInventory().items) {
+         if (stack.is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+            count += stack.getCount();
+         }
+      }
+      return count;
+   }
+
+   private static void giveCraftedItem(ServerPlayer player, ItemStack stack) {
+      if (stack.isEmpty()) {
+         return;
+      }
+      if (player.getMainHandItem().isEmpty()) {
+         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+      } else if (player.getOffhandItem().isEmpty()) {
+         player.setItemInHand(InteractionHand.OFF_HAND, stack);
+      } else if (!player.getInventory().add(stack)) {
+         player.drop(stack, false);
+      }
    }
 
    public static boolean performMedeaDragonfang(ServerPlayer player) {
@@ -549,6 +583,7 @@ public final class ServantCardMedeaSkills {
          case 0 -> getDragonfangStock(player) < MedeaWorkshopHelper.MAX_DRAGONFANG_STOCK;
          case 1 -> getManaCharmStock(player) < MedeaWorkshopHelper.MAX_MANA_CHARM_STOCK;
          case 2 -> getHealCharmStock(player) < MedeaWorkshopHelper.MAX_HEAL_CHARM_STOCK;
+         case 3 -> true;
          default -> false;
       };
    }
