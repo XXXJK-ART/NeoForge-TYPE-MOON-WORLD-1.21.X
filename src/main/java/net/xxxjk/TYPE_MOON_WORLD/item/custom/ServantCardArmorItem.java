@@ -116,7 +116,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          return "cloak";
       }
       if (living.tickCount <= vars.servant_card_hassan_zabaniya_animation_until) {
-         return "Cursed Arm";
+         return vars.servant_card_hassan_cloak_broken ? "Cursed Arm No Cloak" : "Cursed Arm";
       }
       return vars.servant_card_hassan_cloak_broken ? "cloak out" : "cloak";
    }

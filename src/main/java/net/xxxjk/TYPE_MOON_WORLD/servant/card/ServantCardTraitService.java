@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDamageCalculator;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -111,17 +112,24 @@ public final class ServantCardTraitService {
       );
 
       CompoundTag data = attacker.getPersistentData();
-      if (data.getBoolean("DivinityActive")) {
-         amount += data.getFloat("DivinityFlatDamage");
-      }
       if (data.getBoolean("MadEnhancementActive")) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("MadEnhancementDamageBonus"));
       }
       if (data.getBoolean("IndependentActionActive") && attacker.getRandom().nextFloat() < 0.18F) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("IndependentActionCritDamageBonus"));
       }
+      if (data.getBoolean("CritDamageBoostActive") && attacker.getRandom().nextFloat() < 0.16F) {
+         multiplier *= Math.max(1.0F, data.getFloat("CritDamageMultiplier"));
+      }
+      if (data.getBoolean("ClairvoyanceActive") && attacker.getRandom().nextFloat() < 0.12F) {
+         multiplier *= 1.0 + Math.max(0.0F, data.getFloat("ClairvoyanceCritBonus"));
+      }
 
-      return (float)Math.max(0.0, amount * multiplier);
+      float result = (float)Math.max(0.0, amount * multiplier);
+      if (data.getBoolean("DivinityActive")) {
+         result += Math.max(0.0F, data.getFloat("DivinityFlatDamage"));
+      }
+      return result;
    }
 
    private static void applyPassiveSkillTags(ServerPlayer player, ServantDefinition definition) {
@@ -146,6 +154,16 @@ public final class ServantCardTraitService {
       if (hasSkill(definition, "emiya_style_battle_continuation")) {
          data.putBoolean("EmiyaStyleBattleContinuationActive", true);
       }
+      if (hasSkill(definition, "artoria_instinct_a")) {
+         data.putBoolean("ArtoriaInstinctAActive", true);
+         data.putFloat("ArtoriaInstinctCertainHitNegationChance", 0.95F);
+      }
+      if (hasSkill(definition, "mana_burst_a")) {
+         data.putBoolean("ArtoriaManaBurstAAvailable", true);
+      }
+      if (hasSkill(definition, "charisma_b")) {
+         data.putBoolean("ArtoriaCharismaBAvailable", true);
+      }
       if (hasSkillPrefix(definition, "divinity_") || definition.traits().contains(ServantTraitTag.DIVINE)) {
          data.putBoolean("DivinityActive", true);
          data.putFloat("DivinityFlatDamage", divinityFlatDamage(definition));
@@ -158,6 +176,21 @@ public final class ServantCardTraitService {
       if (hasSkill(definition, "false_mind_eye_b")) {
          data.putBoolean("CritDamageBoostActive", true);
          data.putFloat("CritDamageMultiplier", 2.0F);
+      }
+      if (hasSkill(definition, "true_mind_eye_b")) {
+         data.putBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG, true);
+         data.putFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG, 0.55F);
+         data.putFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG, 0.35F);
+      }
+      if (hasSkill(definition, "projection_magic_c")) {
+         data.putBoolean("ProjectionMagicActive", true);
+         data.putFloat("ProjectionMagicSwordDiscount", 0.5F);
+         data.putInt("ProjectionMagicLifetimeTicks", 100);
+      }
+      if (hasSkill(definition, "clairvoyance_c")) {
+         data.putBoolean("ClairvoyanceActive", true);
+         data.putFloat("ClairvoyanceAccuracyBonus", 0.30F);
+         data.putFloat("ClairvoyanceCritBonus", 0.10F);
       }
       if (hasSkill(definition, "independent_action_b")) {
          data.putBoolean("IndependentActionActive", true);
@@ -187,6 +220,10 @@ public final class ServantCardTraitService {
       data.remove("BattleContinuationRecoveryActive");
       data.remove("BattleContinuationLastHealTick");
       data.remove("EmiyaStyleBattleContinuationActive");
+      data.remove("ArtoriaInstinctAActive");
+      data.remove("ArtoriaInstinctCertainHitNegationChance");
+      data.remove("ArtoriaManaBurstAAvailable");
+      data.remove("ArtoriaCharismaBAvailable");
       data.remove("DivinityActive");
       data.remove("DivinityFlatDamage");
       data.remove("MadEnhancementActive");
@@ -195,6 +232,15 @@ public final class ServantCardTraitService {
       data.remove("CritDamageBoostActive");
       data.remove("CritDamageMultiplier");
       data.remove("CritDamageTicksRemaining");
+      data.remove(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG);
+      data.remove(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG);
+      data.remove(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG);
+      data.remove("ProjectionMagicActive");
+      data.remove("ProjectionMagicSwordDiscount");
+      data.remove("ProjectionMagicLifetimeTicks");
+      data.remove("ClairvoyanceActive");
+      data.remove("ClairvoyanceAccuracyBonus");
+      data.remove("ClairvoyanceCritBonus");
       data.remove("IndependentActionActive");
       data.remove("IndependentActionCritDamageBonus");
       data.remove("RidingAPlusActive");

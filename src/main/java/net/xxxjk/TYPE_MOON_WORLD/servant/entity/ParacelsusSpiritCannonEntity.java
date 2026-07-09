@@ -304,6 +304,9 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       int element = this.currentElement();
       float baseDamage = this.guardianMode ? 9.0F : 8.0F;
       float damage = baseDamage + (owner instanceof ParacelsusEntity paracelsus ? (float)(paracelsus.getCurrentMp() * 0.03) : 0.0F);
+      if (owner instanceof ParacelsusEntity || isParacelsusCardOwner(owner)) {
+         damage *= 0.5F;
+      }
       target.hurt(owner.damageSources().magic(), damage);
       target.invulnerableTime = 0;
       if (element == 0) {
@@ -323,6 +326,14 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       level.sendParticles(ParticleTypes.ENCHANT, start.x, start.y, start.z, 14, 0.24, 0.24, 0.24, 0.03);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, start.x, start.y, start.z, 5, 0.08, 0.08, 0.08, 0.01);
       level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.45F, 1.25F);
+   }
+
+   private static boolean isParacelsusCardOwner(LivingEntity owner) {
+      if (!(owner instanceof net.minecraft.server.level.ServerPlayer player)) {
+         return false;
+      }
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "paracelsus".equals(vars.servant_card_id);
    }
 
    private void spawnElementalBody(ServerLevel level) {

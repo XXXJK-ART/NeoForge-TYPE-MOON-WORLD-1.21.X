@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationSetMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.FirearmPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ImplantMagicCrestMessage;
@@ -91,6 +92,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
@@ -213,11 +215,13 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(MedeaCraftSelectionMessage.TYPE, MedeaCraftSelectionMessage.STREAM_CODEC, MedeaCraftSelectionMessage::handleData);
       registrar.playToServer(ParacelsusCraftSelectionMessage.TYPE, ParacelsusCraftSelectionMessage.STREAM_CODEC, ParacelsusCraftSelectionMessage::handleData);
       registrar.playToServer(ParacelsusElementSelectionMessage.TYPE, ParacelsusElementSelectionMessage.STREAM_CODEC, ParacelsusElementSelectionMessage::handleData);
+      registrar.playToServer(ThompsonContenderUseMessage.TYPE, ThompsonContenderUseMessage.STREAM_CODEC, ThompsonContenderUseMessage::handleData);
       registrar.playToClient(OpenMedeaCraftScreenMessage.TYPE, OpenMedeaCraftScreenMessage.STREAM_CODEC, OpenMedeaCraftScreenMessage::handleData);
       registrar.playToClient(OpenEnkiduTransfigurationScreenMessage.TYPE, OpenEnkiduTransfigurationScreenMessage.STREAM_CODEC, OpenEnkiduTransfigurationScreenMessage::handleData);
       registrar.playToClient(OpenParacelsusCraftScreenMessage.TYPE, OpenParacelsusCraftScreenMessage.STREAM_CODEC, OpenParacelsusCraftScreenMessage::handleData);
       registrar.playToClient(OpenParacelsusElementScreenMessage.TYPE, OpenParacelsusElementScreenMessage.STREAM_CODEC, OpenParacelsusElementScreenMessage::handleData);
       registrar.playToClient(MasterVisualStateMessage.TYPE, MasterVisualStateMessage.STREAM_CODEC, MasterVisualStateMessage::handleData);
+      registrar.playToClient(FirearmPoseMessage.TYPE, FirearmPoseMessage.STREAM_CODEC, FirearmPoseMessage::handleData);
       registrar.playToClient(EnkiduDetectionHighlightMessage.TYPE, EnkiduDetectionHighlightMessage.STREAM_CODEC, EnkiduDetectionHighlightMessage::handleData);
       registrar.playToClient(
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE,

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,6 +25,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClick
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
@@ -69,6 +71,10 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleThompsonContenderRightClick(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
@@ -85,6 +91,10 @@ public class ModPlayerEventHandler {
    public static void onRightClickBlock(RightClickBlock event) {
       if (!event.getLevel().isClientSide()) {
          if (isPetrified(event.getEntity())) {
+            event.setCanceled(true);
+            return;
+         }
+         if (handleThompsonContenderRightClick(event.getEntity(), event.getHand())) {
             event.setCanceled(true);
             return;
          }
@@ -106,6 +116,10 @@ public class ModPlayerEventHandler {
    public static void onEntityInteract(EntityInteract event) {
       if (!event.getLevel().isClientSide()) {
          if (isPetrified(event.getEntity())) {
+            event.setCanceled(true);
+            return;
+         }
+         if (handleThompsonContenderRightClick(event.getEntity(), event.getHand())) {
             event.setCanceled(true);
             return;
          }
@@ -156,6 +170,10 @@ public class ModPlayerEventHandler {
          }
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.triggerHeraclesAttackImpact(player, target);
       }
+   }
+
+   private static boolean handleThompsonContenderRightClick(Player player, InteractionHand hand) {
+      return player instanceof ServerPlayer serverPlayer && ThompsonContenderItem.handleServerRightClick(serverPlayer, hand);
    }
 
    private static void triggerArtoriaManaBurstTerrainBreak(ServerPlayer player, LivingEntity target) {

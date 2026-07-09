@@ -34,6 +34,7 @@ public final class ServantCardHassanSkills {
       if (!"cursed_arm_hassan".equals(vars.servant_card_id)) {
          return;
       }
+      keepRightHandEmpty(player);
       if (!vars.servant_card_hassan_cloak_broken && player.getHealth() <= player.getMaxHealth() * (2.0F / 3.0F)) {
          vars.servant_card_hassan_cloak_broken = true;
          vars.syncPlayerVariables(player);
@@ -45,19 +46,37 @@ public final class ServantCardHassanSkills {
    }
 
    public static void giveDirk(ServerPlayer player) {
-      ItemStack current = player.getMainHandItem();
+      keepRightHandEmpty(player);
+      ItemStack current = player.getOffhandItem();
       if (!current.isEmpty() && !current.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         ItemStack stored = current.copy();
-         if (!player.getInventory().add(stored)) {
-            player.drop(stored, false);
-         }
+         storeOrDrop(player, current.copy());
       }
       ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get(), 16);
-      player.setItemInHand(InteractionHand.MAIN_HAND, dirk);
+      player.setItemInHand(InteractionHand.OFF_HAND, dirk);
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ(), 16, 0.28, 0.35, 0.28, 0.04);
          level.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + player.getBbHeight() * 0.48, player.getZ(), 8, 0.22, 0.25, 0.22, 0.05);
          level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.55F, 1.65F);
+      }
+   }
+
+   private static void keepRightHandEmpty(ServerPlayer player) {
+      ItemStack main = player.getMainHandItem();
+      if (main.isEmpty()) {
+         return;
+      }
+      ItemStack off = player.getOffhandItem();
+      if (off.isEmpty()) {
+         player.setItemInHand(InteractionHand.OFF_HAND, main.copy());
+      } else {
+         storeOrDrop(player, main.copy());
+      }
+      player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+   }
+
+   private static void storeOrDrop(ServerPlayer player, ItemStack stack) {
+      if (!stack.isEmpty() && !player.getInventory().add(stack)) {
+         player.drop(stack, false);
       }
    }
 

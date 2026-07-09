@@ -96,7 +96,12 @@ public final class MagicResistanceHelper {
       if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source)) {
          return amount;
       }
-      return amount * (1.0F - getDamageReduction(entity));
+      MagicResistanceRank rank = getMagicResistanceRank(entity);
+      if (amount <= smallMagicImmunityThreshold(rank)) {
+         return 0.0F;
+      }
+      float adjusted = amount <= smallMagicHalfThreshold(rank) ? amount * 0.5F : amount;
+      return adjusted * (1.0F - getDamageReduction(entity));
    }
 
    public static int applyDebuffResistance(LivingEntity entity, int durationTicks) {
@@ -125,6 +130,27 @@ public final class MagicResistanceHelper {
          case C -> 0.15F;
          case D -> 0.10F;
          case E -> 0.05F;
+         default -> 0.0F;
+      };
+   }
+
+   private static float smallMagicImmunityThreshold(MagicResistanceRank rank) {
+      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
+         case A -> 12.0F;
+         case B -> 8.0F;
+         case C -> 5.0F;
+         case D -> 3.0F;
+         default -> 0.0F;
+      };
+   }
+
+   private static float smallMagicHalfThreshold(MagicResistanceRank rank) {
+      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
+         case A -> 30.0F;
+         case B -> 22.0F;
+         case C -> 16.0F;
+         case D -> 10.0F;
+         case E -> 6.0F;
          default -> 0.0F;
       };
    }

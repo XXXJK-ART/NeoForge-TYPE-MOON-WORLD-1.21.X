@@ -264,9 +264,6 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useDirk(ServerPlayer player, InteractionHand hand) {
-      if (!consumeStrict(player, 16.0)) {
-         return false;
-      }
       DirkProjectileEntity projectile = new DirkProjectileEntity(player.level(), player);
       projectile.setDamage(20.0F);
       projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());

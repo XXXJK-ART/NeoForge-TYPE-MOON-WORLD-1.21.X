@@ -25,6 +25,7 @@ public class ParacelsusEntity extends ServantEntity {
    private static final String TAG_COMBAT_PHASE = "ParacelsusCombatPhase";
    private static final String TAG_DIAMOND_SHIELD_COUNT = "ParacelsusDiamondShieldCount";
    private static final int DIAMOND_SHIELD_STARTING_CHARGES = 2;
+   private static final int DIAMOND_SHIELD_MAX_CHARGES = 3;
 
    public ParacelsusEntity(EntityType<ParacelsusEntity> entityType, Level level) {
       super(entityType, level, SERVANT_KEY);
@@ -45,6 +46,9 @@ public class ParacelsusEntity extends ServantEntity {
          }
          if (this.tickCount == 1 && this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT) <= 0) {
             this.getPersistentData().putInt(TAG_DIAMOND_SHIELD_COUNT, DIAMOND_SHIELD_STARTING_CHARGES);
+         }
+         if (this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT) > DIAMOND_SHIELD_MAX_CHARGES) {
+            this.getPersistentData().putInt(TAG_DIAMOND_SHIELD_COUNT, DIAMOND_SHIELD_MAX_CHARGES);
          }
          int phase = this.computeCombatPhase();
          if (phase != this.getCombatPhase()) {
@@ -87,7 +91,7 @@ public class ParacelsusEntity extends ServantEntity {
    @Override
    public boolean hurt(DamageSource source, float amount) {
       if (!this.level().isClientSide && amount >= 18.0F && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-         int shields = this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT);
+         int shields = Math.min(this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT), DIAMOND_SHIELD_MAX_CHARGES);
          if (shields > 0) {
             this.getPersistentData().putInt(TAG_DIAMOND_SHIELD_COUNT, shields - 1);
             if (this.level() instanceof ServerLevel level) {

@@ -59,6 +59,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -356,6 +357,7 @@ public class CommonEvents {
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
+            handleContenderBulletDamage(event, directEntity);
             if (event.getSource().getEntity() instanceof LivingEntity attacker) {
                event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
                event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
@@ -389,7 +391,10 @@ public class CommonEvents {
                if (vars.servant_card_transformed && player.getHealth() - event.getAmount() <= 0.0F) {
                   MasterServantLinkService.onServantDeath(player, vars);
                }
-               if (vars.servant_card_transformed && vars.servant_card_death_release && player.getHealth() - event.getAmount() <= 0.0F) {
+               if (vars.servant_card_transformed
+                  && vars.servant_card_death_release
+                  && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
+                  && player.getHealth() - event.getAmount() <= 0.0F) {
                   event.setCanceled(true);
                   event.setAmount(0.0F);
                   ServantCardTransformManager.release(player, true);
@@ -1169,6 +1174,39 @@ public class CommonEvents {
          return false;
       }
       return false;
+   }
+
+   private static void handleContenderBulletDamage(LivingIncomingDamageEvent event, Entity directEntity) {
+      if (directEntity == null || !directEntity.getPersistentData().getBoolean(ThompsonContenderItem.CONTENDER_ARROW_TAG)) {
+         return;
+      }
+      LivingEntity target = event.getEntity();
+      boolean origin = directEntity.getPersistentData().getBoolean(ThompsonContenderItem.ORIGIN_ARROW_TAG);
+      event.setAmount(Math.max(event.getAmount(), 20.0F));
+      if (target.level() instanceof ServerLevel level) {
+         level.sendParticles(origin ? ParticleTypes.SOUL : ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), origin ? 22 : 10, 0.2, 0.22, 0.2, 0.05);
+         level.sendParticles(ParticleTypes.SMOKE, target.getX(), target.getY() + target.getBbHeight() * 0.45, target.getZ(), origin ? 12 : 5, 0.16, 0.18, 0.16, 0.035);
+         level.playSound(null, target.getX(), target.getY(), target.getZ(), origin ? SoundEvents.SOUL_ESCAPE.value() : SoundEvents.ARROW_HIT_PLAYER, SoundSource.PLAYERS, origin ? 0.8F : 0.65F, origin ? 0.8F : 1.25F);
+      }
+      if (!origin) {
+         return;
+      }
+      if (target instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.is_magic_circuit_open) {
+            event.setAmount(event.getAmount() + (float)Math.max(0.0, vars.player_max_mana));
+         }
+         OriginBulletHelper.sealPlayerUntilDeath(player);
+      }
+      if (target.isAlive() && !OriginBulletHelper.isNpcSealed(target)) {
+         OriginBulletHelper.sealNpc(target);
+      }
+      if (OriginBulletHelper.isServantTarget(target)) {
+         float bonus = (float)Math.max(0.0, OriginBulletHelper.maxMpOf(target) / 10.0);
+         if (bonus > 0.0F) {
+            event.setAmount(event.getAmount() + bonus);
+         }
+      }
    }
 
    private static boolean isParacelsusIgnoredDamage(DamageSource source) {

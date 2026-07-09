@@ -7,9 +7,11 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.FirearmPoseClient;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -39,7 +41,8 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
          Minecraft minecraft = Minecraft.getInstance();
          boolean localPlayer = minecraft.player != null && minecraft.player.getId() == player.getId();
          boolean commandSpellPose = CommandSpellVisualClient.isCommandSpellPoseActive(player);
-         if (localPlayer || commandSpellPose) {
+         boolean firearmPose = FirearmPoseClient.isPoseActive(player);
+         if (localPlayer || commandSpellPose || firearmPose) {
             boolean ganderCharging = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGanderCharging();
             boolean gandrMachineGunCasting = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGandrMachineGunCasting();
             boolean tapCastPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalTapCastPoseActive();
@@ -50,12 +53,12 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
                tapCastPose = false;
                machineGunFiringPose = false;
             }
-            if (ganderCharging || gandrMachineGunCasting || tapCastPose || machineGunFiringPose || commandSpellPose) {
+            if (ganderCharging || gandrMachineGunCasting || tapCastPose || machineGunFiringPose || commandSpellPose || firearmPose) {
                PlayerModel<?> model = (PlayerModel<?>)(Object)this;
                float pitchRad = Mth.clamp(player.getXRot(), -80.0F, 80.0F) * (float) (Math.PI / 180.0);
                float yawRad = Mth.clamp(model.head.yRot, -1.1F, 1.1F);
-               float raiseRot = commandSpellPose ? -1.55F + pitchRad * 0.9F : -1.35F + pitchRad * 0.85F;
-               HumanoidArm castingArm = commandSpellPose ? HumanoidArm.RIGHT : TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
+               float raiseRot = commandSpellPose || firearmPose ? -1.55F + pitchRad * 0.9F : -1.35F + pitchRad * 0.85F;
+               HumanoidArm castingArm = commandSpellPose || firearmPose ? HumanoidArm.RIGHT : TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
                if (castingArm == HumanoidArm.LEFT) {
                   model.leftArm.xRot = raiseRot;
                   model.leftArm.yRot = yawRad + 0.08F;
@@ -68,6 +71,14 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
                   model.rightSleeve.copyFrom(model.rightArm);
                }
             }
+         }
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "cursed_arm_hassan".equals(vars.servant_card_id) && limbSwingAmount > 0.05F) {
+            PlayerModel<?> model = (PlayerModel<?>)(Object)this;
+            model.rightArm.xRot = 0.0F;
+            model.rightArm.yRot = 0.0F;
+            model.rightArm.zRot = 0.0F;
+            model.rightSleeve.copyFrom(model.rightArm);
          }
       }
    }

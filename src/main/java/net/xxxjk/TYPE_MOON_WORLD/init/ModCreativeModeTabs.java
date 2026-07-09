@@ -51,8 +51,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_MEDEA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_HEAD);
                         output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_CHEST);
-                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_HERACLES_CHEST);
                         output.accept(ModItems.SERVANT_CARD_HERACLES_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_CHEST);

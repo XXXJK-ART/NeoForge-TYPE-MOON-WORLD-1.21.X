@@ -69,7 +69,7 @@ public final class ServantCardParacelsusSkills {
    private static final String LAST_STONE_USE_TAG = "ServantCardParacelsusLastStoneUse";
    private static final String LAST_NP_TAG = "ServantCardParacelsusLastNp";
    private static final double WORKSHOP_RADIUS = 15.0;
-   private static final int PHILOSOPHER_STONE_MAX_CHARGES = 5;
+   private static final int PHILOSOPHER_STONE_MAX_CHARGES = 3;
    private static final int DIAMOND_SHIELD_MAX_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_INVULN_TICKS = 60;
    private static final double SPIRIT_MP_COST = 4.5;
@@ -277,8 +277,6 @@ public final class ServantCardParacelsusSkills {
       BlockPos centerPos = BlockPos.containing(center);
       level.playSound(null, centerPos, SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 1.15F, 0.72F);
       level.playSound(null, centerPos, SoundEvents.LAVA_AMBIENT, SoundSource.PLAYERS, 1.0F, 0.85F);
-      List<BlockBackup> backups = new ArrayList<>();
-      scorchFireTerrain(player, level, centerPos, 8, backups);
       for (int i = 0; i < 100; i += 4) {
          int delay = i;
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
@@ -309,7 +307,6 @@ public final class ServantCardParacelsusSkills {
             target.hurtMarked = true;
          }
       });
-      TYPE_MOON_WORLD.queueServerWork(120, () -> restoreBackups(level, backups));
    }
 
    public static void performParacelsusWaterPressure(ServerPlayer player) {
@@ -318,8 +315,7 @@ public final class ServantCardParacelsusSkills {
       }
       Vec3 center = aimGroundPoint(player, level, 30.0).add(0.0, 2.2, 0.0);
       BlockPos centerPos = BlockPos.containing(center);
-      List<BlockBackup> waterBlocks = placeTemporaryWaterSphere(level, centerPos, 3);
-      level.playSound(null, centerPos, SoundEvents.BUCKET_EMPTY, SoundSource.PLAYERS, 1.1F, 0.75F);
+      level.playSound(null, centerPos, SoundEvents.BREWING_STAND_BREW, SoundSource.PLAYERS, 1.1F, 0.75F);
       level.sendParticles(WATER, center.x, center.y, center.z, 90, 2.5, 2.5, 2.5, 0.03);
       for (int tick = 0; tick <= 120; tick += 10) {
          int delay = tick;
@@ -343,7 +339,6 @@ public final class ServantCardParacelsusSkills {
          });
       }
       TYPE_MOON_WORLD.queueServerWork(120, () -> {
-         restoreBackups(level, waterBlocks);
          level.sendParticles(WATER, center.x, center.y, center.z, 120, 5.8, 0.35, 5.8, 0.13);
          level.sendParticles(ParticleTypes.SPLASH, center.x, center.y, center.z, 90, 5.5, 0.55, 5.5, 0.22);
          level.playSound(null, centerPos, SoundEvents.GENERIC_SPLASH, SoundSource.PLAYERS, 1.3F, 0.7F);
@@ -1071,7 +1066,8 @@ public final class ServantCardParacelsusSkills {
    }
 
    private static double applyWorkshopDamage(ServerPlayer player, double baseDamage) {
-      return isInsideWorkshop(player) ? baseDamage * 1.18 : baseDamage;
+      double halved = baseDamage * 0.5;
+      return isInsideWorkshop(player) ? halved * 1.18 : halved;
    }
 
    private static void spawnWorkshopHighlight(ServerLevel level, Vec3 center, double radius, boolean burst) {

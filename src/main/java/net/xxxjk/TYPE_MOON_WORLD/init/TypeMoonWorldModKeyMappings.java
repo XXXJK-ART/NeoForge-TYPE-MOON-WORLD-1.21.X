@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.lwjgl.glfw.GLFW;
@@ -124,7 +125,16 @@ public class TypeMoonWorldModKeyMappings {
       public static void onInteractionKey(InteractionKeyMappingTriggered event) {
          Minecraft minecraft = Minecraft.getInstance();
          Player player = minecraft.player;
-         if (player == null || minecraft.screen != null || !event.isAttack()) {
+         if (player == null || minecraft.screen != null) {
+            return;
+         }
+         if (event.isUseItem() && player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.THOMPSON_CONTENDER.get())) {
+            PacketDistributor.sendToServer(new ThompsonContenderUseMessage(), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
+            return;
+         }
+         if (!event.isAttack()) {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);

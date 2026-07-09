@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class ContenderBulletEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Boolean> ORIGIN_BULLET = SynchedEntityData.defineId(ContenderBulletEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> VISUAL_ONLY = SynchedEntityData.defineId(ContenderBulletEntity.class, EntityDataSerializers.BOOLEAN);
    private static final int MAX_LIFE = 45;
    public final List<Vec3> tracePos = new LinkedList<>();
 
@@ -38,8 +39,11 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
    }
 
    public ContenderBulletEntity(Level level, LivingEntity owner, boolean originBullet) {
-      super(ModEntities.CONTENDER_BULLET.get(), owner, level);
+      super(ModEntities.CONTENDER_BULLET.get(), level);
       this.setNoGravity(true);
+      if (owner != null) {
+         this.setOwner(owner);
+      }
       this.entityData.set(ORIGIN_BULLET, originBullet);
    }
 
@@ -47,6 +51,7 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(ORIGIN_BULLET, false);
+      builder.define(VISUAL_ONLY, false);
    }
 
    @Override
@@ -58,6 +63,15 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
       return this.entityData.get(ORIGIN_BULLET);
    }
 
+   public ContenderBulletEntity setVisualOnly(boolean visualOnly) {
+      this.entityData.set(VISUAL_ONLY, visualOnly);
+      return this;
+   }
+
+   public boolean isVisualOnly() {
+      return this.entityData.get(VISUAL_ONLY);
+   }
+
    @Override
    public boolean isNoGravity() {
       return true;
@@ -65,6 +79,9 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
 
    @Override
    protected boolean canHitEntity(Entity entity) {
+      if (this.isVisualOnly()) {
+         return false;
+      }
       if (entity == null || entity == this.getOwner() || EntityUtils.isImmunePlayerTarget(entity)) {
          return false;
       }
@@ -84,16 +101,15 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
          this.setXRot((float)(Mth.atan2(motion.y, motion.horizontalDistance()) * Mth.RAD_TO_DEG));
       }
       if (this.level().isClientSide) {
-         Vec3 pos = this.position();
-         if (this.tracePos.isEmpty() || this.tracePos.get(this.tracePos.size() - 1).distanceToSqr(pos) >= 0.04) {
-            this.tracePos.add(pos);
-            while (this.tracePos.size() > 24) {
-               this.tracePos.remove(0);
-            }
-         }
+         captureTrace();
          this.level().addParticle(this.isOriginBullet() ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       } else if (this.tickCount > MAX_LIFE) {
          this.discard();
+      } else if (this.level() instanceof ServerLevel level && this.tickCount % 2 == 0) {
+         Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.12) : Vec3.ZERO;
+         Vec3 pos = this.position().add(back);
+         level.sendParticles(this.isOriginBullet() ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.CRIT, pos.x, pos.y, pos.z, 1, 0.015, 0.015, 0.015, 0.0);
+         level.sendParticles(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.0);
       }
    }
 
@@ -105,7 +121,7 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
          target.hurt(this.damageSources().thrown(this, this.getOwner()), 20.0F);
          target.invulnerableTime = 0;
          if (this.isOriginBullet()) {
-            applyOriginEffect(target);
+            applyOriginEffectTo(target);
          }
          impact(result.getLocation(), true);
       }
@@ -119,7 +135,7 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
       }
    }
 
-   private void applyOriginEffect(LivingEntity target) {
+   public void applyOriginEffectTo(LivingEntity target) {
       if (!target.isAlive()) {
          return;
       }
@@ -156,15 +172,27 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
       this.discard();
    }
 
+   private void captureTrace() {
+      Vec3 pos = this.position();
+      if (this.tracePos.isEmpty() || this.tracePos.get(this.tracePos.size() - 1).distanceToSqr(pos) >= 0.01) {
+         this.tracePos.add(pos);
+         while (this.tracePos.size() > 32) {
+            this.tracePos.remove(0);
+         }
+      }
+   }
+
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
       this.entityData.set(ORIGIN_BULLET, tag.getBoolean("OriginBullet"));
+      this.entityData.set(VISUAL_ONLY, tag.getBoolean("VisualOnly"));
    }
 
    @Override
    public void addAdditionalSaveData(CompoundTag tag) {
       super.addAdditionalSaveData(tag);
       tag.putBoolean("OriginBullet", this.isOriginBullet());
+      tag.putBoolean("VisualOnly", this.isVisualOnly());
    }
 }

@@ -37,6 +37,7 @@ public final class ServantCardTransformManager {
    private static final ResourceLocation KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_knockback_resistance");
    private static final ResourceLocation JUMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_jump");
    private static final int SERVANT_CARD_NEUTRAL_FOOD = 17;
+   private static final String SERVANT_CARD_TAG_PREFIX = "tmw_servant_card";
 
    private ServantCardTransformManager() {
    }
@@ -54,6 +55,7 @@ public final class ServantCardTransformManager {
       saveArmor(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
+      applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
       vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);
       vars.servant_card_mana = vars.servant_card_max_mana;
@@ -120,6 +122,7 @@ public final class ServantCardTransformManager {
          MasterStateManager.clearServantSide(player, vars);
       }
       vars.servant_card_transformed = false;
+      clearServantCardTags(player);
       vars.servant_card_id = "";
       vars.servant_card_master_uuid = "";
       vars.servant_card_mana = 0.0;
@@ -169,8 +172,10 @@ public final class ServantCardTransformManager {
          vars.servant_card_release_cooldown--;
       }
       if (!vars.servant_card_transformed) {
+         clearServantCardTags(player);
          return;
       }
+      ensureServantCardTags(player, vars.servant_card_id);
       normalizeFood(player);
       player.fallDistance = 0.0F;
       if (vars.servant_card_np_cooldown > 0) {
@@ -202,6 +207,34 @@ public final class ServantCardTransformManager {
       player.getFoodData().setFoodLevel(SERVANT_CARD_NEUTRAL_FOOD);
       player.getFoodData().setSaturation(0.0F);
       player.getFoodData().setExhaustion(0.0F);
+   }
+
+   private static void applyServantCardTags(ServerPlayer player, String servantId) {
+      clearServantCardTags(player);
+      player.addTag(SERVANT_CARD_TAG_PREFIX);
+      String servantTag = servantCardTag(servantId);
+      if (servantTag != null) {
+         player.addTag(servantTag);
+      }
+   }
+
+   private static void ensureServantCardTags(ServerPlayer player, String servantId) {
+      String servantTag = servantCardTag(servantId);
+      if (!player.getTags().contains(SERVANT_CARD_TAG_PREFIX) || servantTag == null || !player.getTags().contains(servantTag)) {
+         applyServantCardTags(player, servantId);
+      }
+   }
+
+   private static void clearServantCardTags(ServerPlayer player) {
+      for (String tag : new java.util.ArrayList<>(player.getTags())) {
+         if (tag.equals(SERVANT_CARD_TAG_PREFIX) || tag.startsWith(SERVANT_CARD_TAG_PREFIX + "_")) {
+            player.removeTag(tag);
+         }
+      }
+   }
+
+   private static String servantCardTag(String servantId) {
+      return servantId == null || servantId.isBlank() ? null : SERVANT_CARD_TAG_PREFIX + "_" + servantId.trim().toLowerCase(java.util.Locale.ROOT);
    }
 
    public static boolean triggerAction(ServerPlayer player, int slot) {
@@ -434,9 +467,7 @@ public final class ServantCardTransformManager {
    }
 
    private static double armorToughnessBonus(ServantParams params) {
-      double endurance = Mth.clamp((params.armor() / 15.0), 0.0, 1.2);
-      double strength = Mth.clamp((params.attackDamage() / 25.0), 0.0, 1.2);
-      return 2.0 + endurance * 5.5 + strength * 2.0;
+      return 0.0;
    }
 
    private static double knockbackResistanceBonus(ServantParams params) {

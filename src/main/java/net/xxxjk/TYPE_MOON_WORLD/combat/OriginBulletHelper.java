@@ -5,6 +5,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
@@ -16,8 +17,12 @@ public final class OriginBulletHelper {
 
    public static boolean isOriginBulletDamage(DamageSource source) {
       return source != null
-         && source.getDirectEntity() instanceof ContenderBulletEntity bullet
-         && bullet.isOriginBullet();
+         && (
+            source.getDirectEntity() instanceof ContenderBulletEntity bullet
+               && bullet.isOriginBullet()
+            || source.getDirectEntity() != null
+               && source.getDirectEntity().getPersistentData().getBoolean(ThompsonContenderItem.ORIGIN_ARROW_TAG)
+         );
    }
 
    public static boolean isSealed(Player player) {

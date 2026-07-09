@@ -17,11 +17,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.FirearmPoseClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CommandSpellMarkRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MagicCrestVisualHelper;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -39,6 +41,11 @@ public abstract class PlayerRendererMixin {
    )
    private void applyRightHandCastingPose(PoseStack poseStack, MultiBufferSource buffer, int packedLight, AbstractClientPlayer player, CallbackInfo ci) {
       if (ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+         ci.cancel();
+         return;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed && "cursed_arm_hassan".equals(vars.servant_card_id)) {
          ci.cancel();
          return;
       }
@@ -136,12 +143,13 @@ public abstract class PlayerRendererMixin {
          boolean tapCastPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalTapCastPoseActive();
          boolean machineGunFiringPose = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalMachineGunFiringPoseActive();
          boolean commandSpellPose = CommandSpellVisualClient.isCommandSpellPoseActive(player);
-         if (ganderCharging || gandrMachineGunCasting || tapCastPose || machineGunFiringPose || commandSpellPose) {
-            HumanoidArm castingArm = commandSpellPose ? HumanoidArm.RIGHT : TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
+         boolean firearmPose = FirearmPoseClient.isPoseActive(player);
+         if (ganderCharging || gandrMachineGunCasting || tapCastPose || machineGunFiringPose || commandSpellPose || firearmPose) {
+            HumanoidArm castingArm = commandSpellPose || firearmPose ? HumanoidArm.RIGHT : TypeMoonWorldModKeyMappings.KeyEventListener.getLocalCastingArm();
             if (castingArm == armToRender) {
                PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
                float pitchRad = Mth.clamp(player.getXRot(), -80.0F, 80.0F) * (float) (Math.PI / 180.0);
-               float raiseRot = commandSpellPose ? -1.55F + pitchRad * 0.9F : -1.35F + pitchRad * 0.85F;
+               float raiseRot = commandSpellPose || firearmPose ? -1.55F + pitchRad * 0.9F : -1.35F + pitchRad * 0.85F;
                if (castingArm == HumanoidArm.LEFT) {
                   model.leftArm.xRot = raiseRot;
                   model.leftArm.yRot = 0.08F;

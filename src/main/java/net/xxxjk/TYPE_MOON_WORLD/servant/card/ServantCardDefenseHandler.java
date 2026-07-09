@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 
@@ -98,13 +99,14 @@ public final class ServantCardDefenseHandler {
       CompoundTag data = player.getPersistentData();
       initializeResources(data, params);
       long now = player.level().getGameTime();
+      boolean specialNoblePhantasmDamage = isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount());
       boolean divineDefenseBroken = now < data.getLong(OdaNobunagaCombatHelper.TAG_DIVINE_BREAK_UNTIL);
       if (divineDefenseBroken) {
          player.removeEffect(MobEffects.DAMAGE_RESISTANCE);
          player.removeEffect(MobEffects.ABSORPTION);
          player.setAbsorptionAmount(0.0F);
       }
-      if (!divineDefenseBroken && now < data.getLong(TAG_INVULN_UNTIL)) {
+      if (!divineDefenseBroken && !specialNoblePhantasmDamage && now < data.getLong(TAG_INVULN_UNTIL)) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
@@ -155,7 +157,7 @@ public final class ServantCardDefenseHandler {
          }
       }
 
-      if (!divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+      if (!specialNoblePhantasmDamage && !divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -165,7 +167,7 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
-      Float reduced = divineDefenseBroken ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
+      Float reduced = divineDefenseBroken || specialNoblePhantasmDamage ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
          if (reduced <= 0.0F) {
             event.setCanceled(true);
@@ -175,7 +177,7 @@ public final class ServantCardDefenseHandler {
          event.setAmount(reduced);
       }
       consumePoise(player, params, event.getAmount(), now);
-      if (tryBattleContinuation(player, event, data)) {
+      if (!specialNoblePhantasmDamage && tryBattleContinuation(player, event, data)) {
          return true;
       }
       return false;
@@ -285,8 +287,35 @@ public final class ServantCardDefenseHandler {
       return source != null && source.getDirectEntity() instanceof GaeBulgArmyProjectileEntity;
    }
 
+   public static boolean isSpecialNoblePhantasmDamage(DamageSource source, float originalDamage) {
+      return isArtoriaExcaliburDamage(source)
+         || isGaeBulgArmyDamage(source)
+         || isMajorBrokenPhantasmExplosion(source, originalDamage);
+   }
+
    private static boolean isPoisonOrWitherDamage(DamageSource source) {
       return source != null && (source.is(NeoForgeMod.POISON_DAMAGE) || source.is(DamageTypes.WITHER));
+   }
+
+   private static boolean canReactTo(ServerPlayer player, DamageSource source) {
+      if (source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return false;
+      }
+      if (source.getEntity() == player || source.getDirectEntity() == player) {
+         return false;
+      }
+      if (source.is(DamageTypes.FELL_OUT_OF_WORLD)
+         || source.is(DamageTypes.GENERIC_KILL)
+         || source.is(DamageTypes.FALL)
+         || source.is(DamageTypes.DROWN)
+         || source.is(DamageTypes.FREEZE)
+         || source.is(DamageTypes.IN_FIRE)
+         || source.is(DamageTypes.ON_FIRE)
+         || source.is(DamageTypes.LAVA)
+         || source.is(DamageTypes.IN_WALL)) {
+         return false;
+      }
+      return source.getEntity() != null || source.getDirectEntity() != null;
    }
 
    private static ServantParams paramsFor(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -339,6 +368,9 @@ public final class ServantCardDefenseHandler {
    }
 
    private static boolean tryAutoDodge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingIncomingDamageEvent event, ServantParams params, long now) {
+      if (!canReactTo(player, event.getSource())) {
+         return false;
+      }
       int agility = ServantCombatFormulas.agilityStep(params);
       int cooldown = ServantCombatFormulas.dodgeCooldownTicks(params);
       if ("emiya_archer".equals(vars.servant_card_id) || "li_shuwen".equals(vars.servant_card_id)) {
@@ -359,6 +391,13 @@ public final class ServantCardDefenseHandler {
       if ("emiya_archer".equals(vars.servant_card_id)) {
          chance += 0.12;
       }
+      if (data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)) {
+         chance = Math.max(chance, Math.max(0.0F, data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)));
+      }
+      if (data.getBoolean("ArtoriaInstinctAActive") && event.getSource().getDirectEntity() instanceof Projectile) {
+         chance = Math.max(chance, 0.90);
+      }
+      chance = Math.min(0.92, chance);
       if (player.getRandom().nextDouble() > chance) {
          return false;
       }
@@ -383,6 +422,9 @@ public final class ServantCardDefenseHandler {
    }
 
    private static Float tryAutoGuard(ServerPlayer player, DamageSource source, float amount, ServantParams params, long now) {
+      if (!canReactTo(player, source)) {
+         return null;
+      }
       CompoundTag data = player.getPersistentData();
       if (now < data.getLong(TAG_GUARD_EXHAUST_UNTIL)) {
          return null;
@@ -393,12 +435,10 @@ public final class ServantCardDefenseHandler {
          data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
          return null;
       }
-      int endurance = ServantCombatFormulas.enduranceStep(params);
       boolean shouldGuard = player.isBlocking()
-         || amount >= player.getMaxHealth() * 0.045F
-         || source.getDirectEntity() instanceof Projectile
-         || source.is(DamageTypeTags.IS_EXPLOSION)
-         || endurance >= 3;
+         || amount >= player.getMaxHealth() * 0.04F
+         || (data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)
+            && player.getRandom().nextFloat() < Math.max(0.0F, data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG)));
       if (!shouldGuard) {
          return null;
       }
