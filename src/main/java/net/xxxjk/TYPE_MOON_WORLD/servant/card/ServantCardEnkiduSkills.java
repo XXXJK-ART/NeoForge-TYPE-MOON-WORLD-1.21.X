@@ -86,6 +86,8 @@ public final class ServantCardEnkiduSkills {
    private static final String ENUMA_STAGE = "ServantCardEnkiduEnumaStage";
    private static final String ENUMA_STAGE_START = "ServantCardEnkiduEnumaStageStart";
    private static final String ENUMA_PREV_INVULNERABLE = "ServantCardEnkiduEnumaPrevInvulnerable";
+   private static final String ENUMA_INVISIBLE = "ServantCardEnkiduEnumaInvisible";
+   private static final String ENUMA_PREV_INVISIBLE = "ServantCardEnkiduEnumaPrevInvisible";
    private static final String ENUMA_LAST_FLIGHT_FX = "ServantCardEnkiduEnumaLastFlightFx";
    private static final String ENUMA_START_X = "ServantCardEnkiduEnumaStartX";
    private static final String ENUMA_START_Y = "ServantCardEnkiduEnumaStartY";
@@ -461,6 +463,8 @@ public final class ServantCardEnkiduSkills {
       data.putInt(ENUMA_STAGE, 0);
       data.putLong(ENUMA_STAGE_START, now);
       data.putBoolean(ENUMA_PREV_INVULNERABLE, player.isInvulnerable());
+      data.putBoolean(ENUMA_PREV_INVISIBLE, player.isInvisible());
+      data.remove(ENUMA_INVISIBLE);
       data.putLong(ENUMA_LAST_FLIGHT_FX, 0L);
       data.putDouble(ENUMA_START_X, player.getX());
       data.putDouble(ENUMA_START_Y, player.getY());
@@ -595,6 +599,9 @@ public final class ServantCardEnkiduSkills {
       if (player.isInvulnerable() && data.contains(ENUMA_PREV_INVULNERABLE)) {
          player.setInvulnerable(data.getBoolean(ENUMA_PREV_INVULNERABLE));
       }
+      if (data.getInt(ENUMA_STAGE) <= 1) {
+         activateEnumaInvisibility(player);
+      }
       player.setNoGravity(true);
       player.fallDistance = 0.0F;
       Vec3 dir = player.getLookAngle().lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : player.getLookAngle().normalize();
@@ -607,6 +614,7 @@ public final class ServantCardEnkiduSkills {
       if (player.horizontalCollision || hit != null || timedOut) {
          if (data.getInt(ENUMA_STAGE) <= 1) {
             Vec3 impact = hit == null ? player.position() : hit.position().add(0.0, hit.getBbHeight() * 0.45, 0.0);
+            restoreEnumaInvisibility(player);
             applyEnumaSmallExplosion(player, level, impact, hit);
             data.putInt(ENUMA_STAGE, 2);
             data.putLong(ENUMA_STAGE_START, now);
@@ -615,6 +623,7 @@ public final class ServantCardEnkiduSkills {
             player.hurtMarked = true;
          } else {
             Vec3 impact = hit == null ? player.position() : hit.position().add(0.0, hit.getBbHeight() * 0.45, 0.0);
+            restoreEnumaInvisibility(player);
             applyEnumaGroundExplosion(player, level, impact, hit);
             clearEnumaState(player);
          }
@@ -628,11 +637,16 @@ public final class ServantCardEnkiduSkills {
       return null;
    }
 
+   public static void clearActiveEnumaState(ServerPlayer player) {
+      clearEnumaState(player);
+   }
+
    private static void clearEnumaState(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       if (data.contains(ENUMA_PREV_INVULNERABLE)) {
          player.setInvulnerable(data.getBoolean(ENUMA_PREV_INVULNERABLE));
       }
+      restoreEnumaInvisibility(player);
       player.setNoGravity(false);
       player.fallDistance = 0.0F;
       data.remove(ENUMA_ACTIVE);
@@ -641,10 +655,31 @@ public final class ServantCardEnkiduSkills {
       data.remove(ENUMA_STAGE);
       data.remove(ENUMA_STAGE_START);
       data.remove(ENUMA_PREV_INVULNERABLE);
+      data.remove(ENUMA_INVISIBLE);
+      data.remove(ENUMA_PREV_INVISIBLE);
       data.remove(ENUMA_LAST_FLIGHT_FX);
       data.remove(ENUMA_START_X);
       data.remove(ENUMA_START_Y);
       data.remove(ENUMA_START_Z);
+   }
+
+   private static void activateEnumaInvisibility(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      if (!data.getBoolean(ENUMA_INVISIBLE)) {
+         if (!data.contains(ENUMA_PREV_INVISIBLE)) {
+            data.putBoolean(ENUMA_PREV_INVISIBLE, player.isInvisible());
+         }
+         data.putBoolean(ENUMA_INVISIBLE, true);
+         player.setInvisible(true);
+      }
+   }
+
+   private static void restoreEnumaInvisibility(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      if (data.getBoolean(ENUMA_INVISIBLE)) {
+         player.setInvisible(data.getBoolean(ENUMA_PREV_INVISIBLE));
+         data.remove(ENUMA_INVISIBLE);
+      }
    }
 
    private static void spawnEnumaWindupFx(ServerLevel level, Vec3 origin) {

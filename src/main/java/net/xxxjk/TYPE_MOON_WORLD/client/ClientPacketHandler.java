@@ -78,8 +78,8 @@ public class ClientPacketHandler {
       }
    }
 
-   public static void handleMasterVisualState(UUID playerId, boolean masterActive, int commandSpells, boolean poseActive) {
-      CommandSpellVisualClient.apply(playerId, masterActive, commandSpells, poseActive);
+   public static void handleMasterVisualState(UUID playerId, boolean masterActive, int commandSpells, String style, boolean poseActive) {
+      CommandSpellVisualClient.apply(playerId, masterActive, commandSpells, style, poseActive);
    }
 
    public static void handleEnkiduDetectionHighlight(List<Integer> entityIds, int ticks) {

@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -158,6 +159,9 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                   } else if (stack.getItem() instanceof CarvedGemItem gemItem) {
                      damage *= gemItem.getQuality().getEffectMultiplier();
                   }
+                  if (this.getOwner() instanceof LivingEntity owner) {
+                     damage = MercurySwordMagicAmplifier.amplifyDamage(owner, damage);
+                  }
 
                   target.hurt(this.damageSources().magic(), damage);
                   livingTarget.invulnerableTime = 0;
@@ -237,6 +241,9 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
          }
 
          float radiusx = 5.0F * multiplier;
+         if (this.getOwner() instanceof LivingEntity owner) {
+            radiusx = (float)MercurySwordMagicAmplifier.amplifyRadius(owner, radiusx);
+         }
          if (isRandomMode) {
             int gemType = this.getGemType();
             float manaScale = 1.0F;
@@ -383,6 +390,9 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
             }
 
             float radius = 5.0F * multiplier;
+            if (this.getOwner() instanceof LivingEntity owner) {
+               radius = (float)MercurySwordMagicAmplifier.amplifyRadius(owner, radius);
+            }
             this.explodeWithoutAffectingOwner(radius, true, ExplosionInteraction.TNT);
             if (this.getOwner() instanceof LivingEntity owner) {
                for (LivingEntity t : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius))) {

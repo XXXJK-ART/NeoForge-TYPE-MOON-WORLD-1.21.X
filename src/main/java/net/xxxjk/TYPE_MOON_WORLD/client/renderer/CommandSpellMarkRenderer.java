@@ -12,11 +12,6 @@ import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
 
 public final class CommandSpellMarkRenderer {
    private static final int EMISSIVE_LIGHT = 15728880;
-   private static final ResourceLocation COMMAND_SPELL_3 = texture("command_spell_3");
-   private static final ResourceLocation COMMAND_SPELL_2 = texture("command_spell_2");
-   private static final ResourceLocation COMMAND_SPELL_1 = texture("command_spell_1");
-   private static final ResourceLocation COMMAND_SPELL_0 = texture("command_spell_0");
-
    private static final float HAND_BACK_X = -0.191F;
    private static final float HAND_BACK_Y_MIN = 0.31F;
    private static final float HAND_BACK_Y_MAX = 0.69F;
@@ -36,11 +31,15 @@ public final class CommandSpellMarkRenderer {
       if (count < 0 || player.isInvisible()) {
          return;
       }
-      renderRightHandMark(model, poseStack, buffer, count);
+      renderRightHandMark(model, poseStack, buffer, count, CommandSpellVisualClient.getCommandSpellStyle(player));
    }
 
    public static void renderRightHandMark(PlayerModel<AbstractClientPlayer> model, PoseStack poseStack, MultiBufferSource buffer, int commandSpells) {
-      ResourceLocation texture = textureFor(commandSpells);
+      renderRightHandMark(model, poseStack, buffer, commandSpells, "default");
+   }
+
+   public static void renderRightHandMark(PlayerModel<AbstractClientPlayer> model, PoseStack poseStack, MultiBufferSource buffer, int commandSpells, String style) {
+      ResourceLocation texture = textureFor(commandSpells, style);
       VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(texture));
       poseStack.pushPose();
       model.rightArm.translateAndRotate(poseStack);
@@ -69,20 +68,30 @@ public final class CommandSpellMarkRenderer {
          .setNormal(-1.0F, 0.0F, 0.0F);
    }
 
-   private static ResourceLocation textureFor(int commandSpells) {
+   private static ResourceLocation textureFor(int commandSpells, String style) {
+      String safeStyle = sanitizeStyle(style);
+      String suffix;
       if (commandSpells >= 3) {
-         return COMMAND_SPELL_3;
+         suffix = "3";
+      } else if (commandSpells == 2) {
+         suffix = "2";
+      } else if (commandSpells == 1) {
+         suffix = "1";
+      } else {
+         suffix = "0";
       }
-      if (commandSpells == 2) {
-         return COMMAND_SPELL_2;
-      }
-      if (commandSpells == 1) {
-         return COMMAND_SPELL_1;
-      }
-      return COMMAND_SPELL_0;
+      return texture(safeStyle, suffix);
    }
 
-   private static ResourceLocation texture(String name) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/command_spell/" + name + ".png");
+   private static String sanitizeStyle(String style) {
+      if (style == null || style.isBlank()) {
+         return "default";
+      }
+      String value = style.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "");
+      return value.isBlank() ? "default" : value;
+   }
+
+   private static ResourceLocation texture(String style, String count) {
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/command_spell/" + style + "/command_spell_" + count + ".png");
    }
 }

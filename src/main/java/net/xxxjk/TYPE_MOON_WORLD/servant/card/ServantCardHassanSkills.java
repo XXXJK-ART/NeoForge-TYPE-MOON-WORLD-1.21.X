@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
@@ -27,6 +28,20 @@ public final class ServantCardHassanSkills {
    private static final ResourceLocation HASSAN_ZABANIYA_CURSE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_hassan_zabaniya_curse_armor");
 
    private ServantCardHassanSkills() {
+   }
+
+   public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!"cursed_arm_hassan".equals(vars.servant_card_id)) {
+         return;
+      }
+      if (!vars.servant_card_hassan_cloak_broken && player.getHealth() <= player.getMaxHealth() * (2.0F / 3.0F)) {
+         vars.servant_card_hassan_cloak_broken = true;
+         vars.syncPlayerVariables(player);
+         if (player.level() instanceof ServerLevel level) {
+            level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.72, player.getZ(), 24, 0.45, 0.5, 0.45, 0.045);
+            level.playSound(null, player.blockPosition(), SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 0.7F, 0.75F);
+         }
+      }
    }
 
    public static void giveDirk(ServerPlayer player) {
@@ -58,6 +73,9 @@ public final class ServantCardHassanSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return false;
       }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_hassan_zabaniya_animation_until = player.tickCount + 32;
+      vars.syncPlayerVariables(player);
       Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.7, 0.0);
       Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       for (double t = 0.0; t <= 1.0; t += 0.1) {

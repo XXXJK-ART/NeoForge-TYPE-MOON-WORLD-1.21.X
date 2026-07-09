@@ -205,7 +205,7 @@ public final class MasterServantLinkService {
       if (!servantVars.servant_card_transformed || !masterVars.master_active) {
          return new LinkInfo(false, true, 1.0, STATE_NONE);
       }
-      if (!servant.getUUID().toString().equals(masterVars.master_servant_uuid) || !master.getUUID().toString().equals(servantVars.servant_card_master_uuid)) {
+      if (!isContractedPair(master, masterVars, servant, servantVars)) {
          return new LinkInfo(false, true, 1.0, STATE_NONE);
       }
       if (servant.level().dimension() != master.level().dimension()) {
@@ -217,6 +217,16 @@ public final class MasterServantLinkService {
       }
       double decay = Mth.clamp((distance - NORMAL_RANGE) / (BREAK_RANGE - NORMAL_RANGE), 0.0, 1.0);
       return new LinkInfo(true, false, decay, decay > 0.0 ? STATE_UNSTABLE : STATE_NORMAL);
+   }
+
+   private static boolean isContractedPair(
+      ServerPlayer master,
+      TypeMoonWorldModVariables.PlayerVariables masterVars,
+      ServerPlayer servant,
+      TypeMoonWorldModVariables.PlayerVariables servantVars
+   ) {
+      return servant.getUUID().toString().equals(masterVars.master_servant_uuid)
+         && master.getUUID().toString().equals(servantVars.servant_card_master_uuid);
    }
 
    private static void updateSnapshots(

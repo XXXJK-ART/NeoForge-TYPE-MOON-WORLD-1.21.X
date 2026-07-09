@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -60,6 +61,10 @@ public final class GemGravityFieldMagic {
          int heavyDuration = 120 + (int)Math.round(proficiency * 3.0);
          int particleCount = Math.max(72, 72 + Math.round(30.0F * qualityMultiplier));
          float damagePerPulse = (float)(0.25 + 0.35 * Math.max(0.0, Math.min(1.0, proficiency / 100.0)));
+         radius = (float)MercurySwordMagicAmplifier.amplifyRadius(player, radius);
+         fieldDuration = MercurySwordMagicAmplifier.amplifyDuration(player, fieldDuration);
+         heavyDuration = MercurySwordMagicAmplifier.amplifyDuration(player, heavyDuration);
+         damagePerPulse = MercurySwordMagicAmplifier.amplifyDamage(player, damagePerPulse);
          return throwConfiguredGravityFieldProjectile(
             player, sourceGem, radius, fieldDuration, heavyDuration, particleCount, false, 0, 0, true, damagePerPulse, 5
          );
@@ -80,6 +85,7 @@ public final class GemGravityFieldMagic {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          double proficiency = Math.max(vars.proficiency_gravity_magic, vars.proficiency_jewel_magic_release);
          ItemStack projectileStack = createBlackShardGravityProjectileStack(sourceGem, proficiency, manaAmount, qualityMultiplier);
+         amplifyGravityProjectileStack(player, projectileStack);
          if (projectileStack.isEmpty()) {
             return false;
          } else {
@@ -183,6 +189,32 @@ public final class GemGravityFieldMagic {
 
       projectileStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
       return projectileStack;
+   }
+
+   private static void amplifyGravityProjectileStack(LivingEntity caster, ItemStack projectileStack) {
+      if (caster == null || projectileStack == null || projectileStack.isEmpty() || !MercurySwordMagicAmplifier.isHolding(caster)) {
+         return;
+      }
+      CompoundTag tag = ((CustomData)projectileStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
+      if (!tag.getBoolean(TAG_IS_GRAVITY_FIELD_GEM)) {
+         return;
+      }
+      if (tag.contains(TAG_FIELD_RADIUS)) {
+         tag.putFloat(TAG_FIELD_RADIUS, (float)MercurySwordMagicAmplifier.amplifyRadius(caster, tag.getFloat(TAG_FIELD_RADIUS)));
+      }
+      if (tag.contains(TAG_FIELD_DURATION)) {
+         tag.putInt(TAG_FIELD_DURATION, MercurySwordMagicAmplifier.amplifyDuration(caster, tag.getInt(TAG_FIELD_DURATION)));
+      }
+      if (tag.contains(TAG_HEAVY_DURATION)) {
+         tag.putInt(TAG_HEAVY_DURATION, MercurySwordMagicAmplifier.amplifyDuration(caster, tag.getInt(TAG_HEAVY_DURATION)));
+      }
+      if (tag.contains(TAG_SLOW_DURATION)) {
+         tag.putInt(TAG_SLOW_DURATION, MercurySwordMagicAmplifier.amplifyDuration(caster, tag.getInt(TAG_SLOW_DURATION)));
+      }
+      if (tag.contains(TAG_DAMAGE_PER_PULSE)) {
+         tag.putFloat(TAG_DAMAGE_PER_PULSE, MercurySwordMagicAmplifier.amplifyDamage(caster, tag.getFloat(TAG_DAMAGE_PER_PULSE)));
+      }
+      projectileStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
    }
 
    public static boolean tryHandleProjectileImpact(RubyProjectileEntity projectile, ItemStack stack) {

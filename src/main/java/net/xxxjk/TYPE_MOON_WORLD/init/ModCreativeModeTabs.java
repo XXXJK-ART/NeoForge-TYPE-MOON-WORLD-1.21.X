@@ -25,6 +25,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
+                        output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
@@ -124,6 +125,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);
+                        output.accept(ModItems.MERCURY_SWORD);
+                        output.accept(ModItems.THOMPSON_CONTENDER);
                         output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
@@ -137,6 +140,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.COPPER_MANA_SURVEY_POINTER);
                         output.accept(ModItems.COPPER_MANA_SURVEY_COMPASS);
                         output.accept(ModItems.LEYLINE_SURVEY_MAP);
+                        output.accept(ModItems.BULLET);
+                        output.accept(ModItems.ORIGIN_BULLET);
+                        output.accept(ModItems.KIRITSUGU_BONE_POWDER);
 
                         output.accept(ModItems.RAW_EMERALD);
                         output.accept(ModItems.RAW_RUBY);

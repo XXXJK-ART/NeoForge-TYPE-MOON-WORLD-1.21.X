@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DragonfangSoldierRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaArcherRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EnkiduRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ChainsOfHeavenBindingRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ContenderBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HeraclesRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaBeamEffectRenderer;
@@ -216,6 +217,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.PARACELSUS_SPIRIT_CANNON.get(), ParacelsusSpiritCannonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
+      event.registerEntityRenderer(ModEntities.CONTENDER_BULLET.get(), ContenderBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);
       event.registerEntityRenderer(ModEntities.CHAINS_OF_HEAVEN_BINDING.get(), ChainsOfHeavenBindingRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);

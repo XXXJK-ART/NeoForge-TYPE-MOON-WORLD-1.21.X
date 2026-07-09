@@ -11,6 +11,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -363,6 +364,16 @@ public class ModEntities {
          .clientTrackingRange(32)
          .updateInterval(1)
          .build("oda_matchlock_bullet")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ContenderBulletEntity>> CONTENDER_BULLET = ENTITY_TYPES.register(
+      "contender_bullet",
+      () -> Builder.<ContenderBulletEntity>of(
+            (entityType, level) -> new ContenderBulletEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.16F, 0.16F)
+         .clientTrackingRange(32)
+         .updateInterval(1)
+         .build("contender_bullet")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RedSkeletonHajunEntity>> RED_SKELETON_HAJUN = ENTITY_TYPES.register(
       "red_skeleton_hajun",

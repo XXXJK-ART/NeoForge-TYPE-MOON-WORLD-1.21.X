@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "typemoonworld:bullet"
+    },
+    {
+      "item": "typemoonworld:kiritsugu_bone_powder"
+    }
+  ],
+  "result": {
+    "id": "typemoonworld:origin_bullet",
+    "count": 1
+  }
+}

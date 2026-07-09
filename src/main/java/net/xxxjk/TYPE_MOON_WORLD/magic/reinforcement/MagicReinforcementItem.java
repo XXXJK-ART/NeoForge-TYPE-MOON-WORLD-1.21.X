@@ -35,6 +35,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
@@ -106,7 +107,7 @@ public class MagicReinforcementItem {
                      tag.putBoolean("Reinforced", true);
                      tag.putInt("ReinforcedLevel", level);
                      tag.putLong("ReinforcementTime", player.level().getGameTime());
-                     tag.putInt("ReinforcementExpiry", 600);
+                     tag.putInt("ReinforcementExpiry", MercurySwordMagicAmplifier.amplifyDuration(player, 600));
                      tag.putUUID("CasterUUID", player.getUUID());
                      boolean hadForcedGlint = Boolean.TRUE.equals(heldItem.get(DataComponents.ENCHANTMENT_GLINT_OVERRIDE));
                      if (!hadForcedGlint) {

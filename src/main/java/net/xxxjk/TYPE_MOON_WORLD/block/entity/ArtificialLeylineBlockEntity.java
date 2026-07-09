@@ -21,8 +21,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public class ArtificialLeylineBlockEntity extends BlockEntity {
    public static final int BIND_TICKS = 30 * 20;
+   private static final int BIND_INTERACTION_GRACE_TICKS = 8;
    private UUID ownerUuid;
    private UUID capturedServantUuid;
+   private UUID bindingPlayerUuid;
+   private long lastBindInteractTick;
    private int bindProgress;
 
    public ArtificialLeylineBlockEntity(BlockPos pos, BlockState state) {
@@ -30,6 +33,7 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
    }
 
    public static void tick(ServerLevel level, BlockPos pos, BlockState state, ArtificialLeylineBlockEntity blockEntity) {
+      blockEntity.tickBinding(level);
       blockEntity.validateOwner(level);
       if (blockEntity.shouldShowBeacon() && level.getGameTime() % 10L == 0L) {
          blockEntity.spawnBeaconParticles(level, pos);
@@ -49,12 +53,35 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
    }
 
    public void resetBindingProgress() {
+      this.bindingPlayerUuid = null;
+      this.lastBindInteractTick = 0L;
       this.bindProgress = 0;
       this.setChanged();
    }
 
    public void bindTick(ServerPlayer player) {
       if (this.level == null || this.level.isClientSide() || !this.canBind(player)) {
+         this.resetBindingProgress();
+         return;
+      }
+      if (!player.getUUID().equals(this.bindingPlayerUuid)) {
+         this.bindProgress = 0;
+         this.bindingPlayerUuid = player.getUUID();
+      }
+      this.lastBindInteractTick = this.level.getGameTime();
+      this.setChanged();
+   }
+
+   private void tickBinding(ServerLevel level) {
+      if (this.bindingPlayerUuid == null) {
+         return;
+      }
+      ServerPlayer player = level.getServer().getPlayerList().getPlayer(this.bindingPlayerUuid);
+      if (player == null
+         || !player.isAlive()
+         || player.distanceToSqr(Vec3.atCenterOf(this.worldPosition)) > 36.0
+         || !this.canBind(player)
+         || level.getGameTime() - this.lastBindInteractTick > BIND_INTERACTION_GRACE_TICKS) {
          this.resetBindingProgress();
          return;
       }
@@ -65,6 +92,8 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
       if (this.bindProgress >= BIND_TICKS) {
          this.ownerUuid = player.getUUID();
          this.capturedServantUuid = null;
+         this.bindingPlayerUuid = null;
+         this.lastBindInteractTick = 0L;
          this.bindProgress = 0;
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          vars.master_artificial_leyline_dimension = player.level().dimension().location().toString();
@@ -92,7 +121,7 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
 
    private boolean canBind(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars.master_active && (this.ownerUuid == null || this.ownerUuid.equals(player.getUUID()));
+      return vars.master_active && this.ownerUuid == null && this.capturedServantUuid == null;
    }
 
    private void validateOwner(ServerLevel level) {
@@ -141,7 +170,13 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
       if (this.capturedServantUuid == null) {
          return;
       }
-      if (!(level.getEntity(this.capturedServantUuid) instanceof ServantEntity servant) || !servant.isAlive()) {
+      if (!(level.getEntity(this.capturedServantUuid) instanceof ServantEntity servant)) {
+         this.capturedServantUuid = null;
+         this.setChanged();
+         return;
+      }
+      if (!servant.isAlive()) {
+         clearGuardianClaim(servant);
          this.capturedServantUuid = null;
          this.setChanged();
          return;
@@ -199,9 +234,18 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
       return !data.getBoolean("TypeMoonHelperClone")
          && !data.getBoolean("TypeMoonSummonedFull")
          && !data.getBoolean("magic_summon")
+         && !data.getBoolean("ArtificialLeylineGuardian")
          && !data.contains("ServantMasterUuid")
          && !data.contains("MasterUuid")
          && !data.contains("Owner");
+   }
+
+   private static void clearGuardianClaim(ServantEntity servant) {
+      CompoundTag data = servant.getPersistentData();
+      data.remove("ArtificialLeylineGuardian");
+      data.remove("ArtificialLeylineX");
+      data.remove("ArtificialLeylineY");
+      data.remove("ArtificialLeylineZ");
    }
 
    @Override

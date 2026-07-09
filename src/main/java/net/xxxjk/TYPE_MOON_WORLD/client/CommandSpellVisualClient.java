@@ -15,14 +15,14 @@ public final class CommandSpellVisualClient {
    private CommandSpellVisualClient() {
    }
 
-   public static void apply(UUID playerId, boolean masterActive, int commandSpells, boolean poseActive) {
+   public static void apply(UUID playerId, boolean masterActive, int commandSpells, String style, boolean poseActive) {
       if (playerId == null) {
          return;
       }
       if (!masterActive && !poseActive) {
          STATES.remove(playerId);
       } else {
-         STATES.put(playerId, new State(masterActive, Math.max(0, commandSpells), poseActive));
+         STATES.put(playerId, new State(masterActive, Math.max(0, commandSpells), sanitizeStyle(style), poseActive));
       }
    }
 
@@ -43,6 +43,19 @@ public final class CommandSpellVisualClient {
       return state != null && state.masterActive ? Math.max(0, state.commandSpells) : -1;
    }
 
+   public static String getCommandSpellStyle(AbstractClientPlayer player) {
+      if (player == null) {
+         return "default";
+      }
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.player != null && minecraft.player.getId() == player.getId()) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars != null && vars.master_active ? sanitizeStyle(vars.master_command_spell_style) : "default";
+      }
+      State state = STATES.get(player.getUUID());
+      return state != null && state.masterActive ? sanitizeStyle(state.style) : "default";
+   }
+
    public static void setLocalCommandSpellPoseActive(boolean active) {
       localCommandSpellPoseActive = active;
    }
@@ -59,6 +72,14 @@ public final class CommandSpellVisualClient {
       return state != null && state.poseActive;
    }
 
-   private record State(boolean masterActive, int commandSpells, boolean poseActive) {
+   private static String sanitizeStyle(String style) {
+      if (style == null || style.isBlank()) {
+         return "default";
+      }
+      String value = style.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "");
+      return value.isBlank() ? "default" : value;
+   }
+
+   private record State(boolean masterActive, int commandSpells, String style, boolean poseActive) {
    }
 }

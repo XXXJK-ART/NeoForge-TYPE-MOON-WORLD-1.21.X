@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.sapphire.MagicSapphireThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.sapphire.MagicSapphireWinterFrost;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -108,8 +109,8 @@ public final class GemUseService {
       }
 
       double powerNormalized = normalizeWhiteGemPower(manaAmount);
-      double radius = 6.0 + 8.0 * powerNormalized;
-      float baseDamage = (float)(1.0 + 2.0 * powerNormalized);
+      double radius = MercurySwordMagicAmplifier.amplifyRadius(player, 6.0 + 8.0 * powerNormalized);
+      float baseDamage = MercurySwordMagicAmplifier.amplifyDamage(player, (float)(1.0 + 2.0 * powerNormalized));
       double baseHorizontalKnockback = 1.2 + 2.4 * powerNormalized;
       double baseVerticalKnockback = 0.25 + 0.55 * powerNormalized;
       if (player.level() instanceof ServerLevel serverLevel) {
@@ -266,7 +267,7 @@ public final class GemUseService {
                markLatestCyanProjectileAsTornado(player, avgMultiplier);
                break;
             case WHITE_GEMSTONE:
-               player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 0));
+               player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, MercurySwordMagicAmplifier.amplifyDuration(player, 100), 0));
                if (player.level() instanceof ServerLevel serverLevel) {
                   serverLevel.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1.0, player.getZ(), 24, 0.6, 0.6, 0.6, 0.02);
                }
@@ -346,8 +347,8 @@ public final class GemUseService {
       ItemStack projectileStack = consumedGem.copy();
       projectileStack.setCount(1);
       CompoundTag tag = ((CustomData)projectileStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
-      float radius = (float)(6.0 * avgMultiplier);
-      int duration = (int)(100.0 * (1.0 + 0.5 * avgMultiplier));
+      float radius = (float)MercurySwordMagicAmplifier.amplifyRadius(player, 6.0 * avgMultiplier);
+      int duration = MercurySwordMagicAmplifier.amplifyDuration(player, (int)(100.0 * (1.0 + 0.5 * avgMultiplier)));
       tag.putBoolean("IsCyanTornado", true);
       tag.putFloat("CyanRadius", radius);
       tag.putInt("CyanDuration", duration);
@@ -387,8 +388,8 @@ public final class GemUseService {
                if (tag.getBoolean("IsCyanTornado")) {
                   return false;
                } else {
-                  float radius = (float)(6.0 * avgMultiplier);
-                  int duration = (int)(100.0 * (1.0 + 0.5 * avgMultiplier));
+                  float radius = (float)MercurySwordMagicAmplifier.amplifyRadius(player, 6.0 * avgMultiplier);
+                  int duration = MercurySwordMagicAmplifier.amplifyDuration(player, (int)(100.0 * (1.0 + 0.5 * avgMultiplier)));
                   tag.putBoolean("IsCyanTornado", true);
                   tag.putFloat("CyanRadius", radius);
                   tag.putInt("CyanDuration", duration);

@@ -149,7 +149,9 @@ public final class ServantCardParacelsusSkills {
       syncParacelsusStocks(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
       PacketDistributor.sendToPlayer(
          player,
-         new OpenParacelsusCraftScreenMessage(getPhilosopherStoneStock(player), getDiamondShieldStock(player), countLeylineMaps(player)),
+         new OpenParacelsusCraftScreenMessage(
+            getPhilosopherStoneStock(player), getDiamondShieldStock(player), countLeylineMaps(player)
+         ),
          new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
       );
       return true;

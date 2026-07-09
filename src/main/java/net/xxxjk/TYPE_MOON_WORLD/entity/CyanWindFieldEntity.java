@@ -16,6 +16,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class CyanWindFieldEntity extends Entity {
@@ -182,7 +183,7 @@ public class CyanWindFieldEntity extends Entity {
                   if (entity != ownerEntity) {
                      if (tornado) {
                         if (this.tickCount % 10 == 0) {
-                           entity.hurt(this.damageSources().magic(), 1.5F);
+                           entity.hurt(this.damageSources().magic(), MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, 1.5F));
                         }
 
                         double distSqr = dx * dx + dz * dz;
@@ -206,7 +207,7 @@ public class CyanWindFieldEntity extends Entity {
                         entity.hurtMarked = true;
                      } else {
                         if (this.tickCount % 10 == 0) {
-                           entity.hurt(this.damageSources().magic(), 1.0F);
+                           entity.hurt(this.damageSources().magic(), MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, 1.0F));
                         }
 
                         double centerRadius = currentRadius * 0.5;

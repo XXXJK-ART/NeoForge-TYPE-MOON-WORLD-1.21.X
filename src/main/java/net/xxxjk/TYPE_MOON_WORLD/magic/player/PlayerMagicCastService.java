@@ -2,7 +2,9 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.player;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
@@ -31,6 +33,10 @@ public final class PlayerMagicCastService {
       );
       vars.ensureMagicSystemInitialized();
       vars.rebuildSelectedMagicsFromActiveWheel();
+      if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
+         displayClientMessage(entity, "message.typemoonworld.origin_bullet.sealed");
+         return;
+      }
       if (!vars.is_magic_circuit_open) {
          displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
          return;
@@ -76,7 +82,7 @@ public final class PlayerMagicCastService {
          return;
       }
 
-      applyPostCastState(vars, entry.magicId);
+      applyPostCastState(entity, vars, entry.magicId);
       fullSyncNeeded |= vars.recordCrestCastPractice(entity, entry.magicId);
       if (fullSyncNeeded) {
          vars.syncPlayerVariables(entity);
@@ -86,7 +92,7 @@ public final class PlayerMagicCastService {
       }
    }
 
-   private static void applyPostCastState(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+   private static void applyPostCastState(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       double cooldown = DEFAULT_COOLDOWN;
       if ("jewel_random_shoot".equals(magicId)) {
          cooldown = Math.max(1.0, JEWEL_BASE_COOLDOWN - vars.proficiency_jewel_magic_shoot * 0.2);
@@ -97,6 +103,9 @@ public final class PlayerMagicCastService {
          cooldown = Math.max(1.0, JEWEL_BASE_COOLDOWN - vars.proficiency_jewel_magic_shoot * 0.2);
       }
 
+      if (entity instanceof LivingEntity living) {
+         cooldown = MercurySwordMagicAmplifier.amplifyCooldown(living, cooldown);
+      }
       vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
    }
 

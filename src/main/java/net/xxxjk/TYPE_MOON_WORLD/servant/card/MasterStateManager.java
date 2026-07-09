@@ -20,6 +20,9 @@ public final class MasterStateManager {
    public static final int MIN_MASTER_MP = 200;
    public static final int MAX_MASTER_MP = 1000;
    public static final double MASTER_MAX_HEALTH = 100.0;
+   private static final String[] COMMAND_SPELL_STYLES = new String[]{
+      "default", "illya", "kiritsugu", "shirou", "bazett", "sakura", "rin", "luvia", "kirei"
+   };
    private static final ResourceLocation MASTER_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "master_max_health");
 
    private MasterStateManager() {
@@ -42,6 +45,7 @@ public final class MasterStateManager {
       vars.master_active = true;
       vars.master_servant_uuid = "";
       vars.master_command_spells = MAX_COMMAND_SPELLS;
+      vars.master_command_spell_style = randomCommandSpellStyle(player);
       vars.master_command_spell_pose_active = false;
       vars.master_revive_available = true;
       applyAttributes(player);
@@ -67,6 +71,7 @@ public final class MasterStateManager {
       vars.master_active = false;
       vars.master_servant_uuid = "";
       vars.master_command_spells = 0;
+      vars.master_command_spell_style = "default";
       vars.master_command_spell_pose_active = false;
       vars.master_revive_available = false;
       vars.master_artificial_leyline_bonus_active = false;
@@ -272,5 +277,9 @@ public final class MasterStateManager {
 
    private static boolean isBlank(String value) {
       return value == null || value.isBlank();
+   }
+
+   private static String randomCommandSpellStyle(ServerPlayer player) {
+      return COMMAND_SPELL_STYLES[player.getRandom().nextInt(COMMAND_SPELL_STYLES.length)];
    }
 }

@@ -68,6 +68,7 @@ public final class PlayerNoblePhantasmHelper {
    private static final String GALLATIN_LAST_CHARGE_VFX_TAG = "TypeMoonGallatinLastChargeVfx";
    private static final String GALLATIN_MIN_CHARGE_PAID_TAG = "TypeMoonGallatinMinChargePaid";
    private static final String SERVANT_CARD_NP_CHARGE_VOICE_TAG = "TypeMoonServantCardNpChargeVoice";
+   private static final int ONE_SHOT_PROJECTION_NP_COOLDOWN = 1200;
    private static final int SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS = 60;
    private static final double SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS = 96.0;
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 30;
@@ -155,10 +156,59 @@ public final class PlayerNoblePhantasmHelper {
       clearOneShotNineLives(stack);
       LivingEntity target = findLookTarget(player, 7.0, 1.7);
       performNineLives(player, target);
-      player.getCooldowns().addCooldown(stack.getItem(), 1200);
+      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
-         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 1200);
+         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN);
+         vars.syncPlayerVariables(player);
+      }
+      return true;
+   }
+
+   public static boolean hasOneShotProjectionNoblePhantasm(ServerPlayer player) {
+      return player != null
+         && (hasOneShotTsubame(player.getMainHandItem())
+            || hasOneShotTsubame(player.getOffhandItem())
+            || hasOneShotNineLives(player.getMainHandItem())
+            || hasOneShotNineLives(player.getOffhandItem()));
+   }
+
+   public static boolean useOneShotProjectionNoblePhantasm(ServerPlayer player) {
+      if (player == null) {
+         return false;
+      }
+      ItemStack main = player.getMainHandItem();
+      if (hasOneShotTsubame(main)) {
+         return useOneShotTsubame(player, main);
+      }
+      if (hasOneShotNineLives(main)) {
+         return useOneShotNineLives(player, main);
+      }
+      ItemStack off = player.getOffhandItem();
+      if (hasOneShotTsubame(off)) {
+         return useOneShotTsubame(player, off);
+      }
+      if (hasOneShotNineLives(off)) {
+         return useOneShotNineLives(player, off);
+      }
+      return false;
+   }
+
+   public static boolean useOneShotTsubame(ServerPlayer player, ItemStack stack) {
+      if (!hasOneShotTsubame(stack)) {
+         return false;
+      }
+      LivingEntity target = findLookTarget(player, 5.5, 1.25);
+      if (target == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return true;
+      }
+      clearOneShotTsubame(stack);
+      performTsubame(player, target);
+      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed) {
+         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN);
          vars.syncPlayerVariables(player);
       }
       return true;
@@ -170,9 +220,10 @@ public final class PlayerNoblePhantasmHelper {
       }
       clearOneShotTsubame(stack);
       performTsubame(player, target);
+      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
-         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 1200);
+         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN);
          vars.syncPlayerVariables(player);
       }
       return true;

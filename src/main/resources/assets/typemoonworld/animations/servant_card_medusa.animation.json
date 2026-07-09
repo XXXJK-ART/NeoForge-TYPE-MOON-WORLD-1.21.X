@@ -1,0 +1,30 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation": {
+			"loop": true,
+			"bones": {
+				"armorBody": {
+					"scale": {
+						"vector": [1, 1.1, 0.8]
+					}
+				}
+			}
+		},
+		"eyes_open": {
+			"loop": true,
+			"bones": {
+				"armorBody": {
+					"scale": {
+						"vector": [1, 1.1, 0.8]
+					}
+				},
+				"eye mask": {
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

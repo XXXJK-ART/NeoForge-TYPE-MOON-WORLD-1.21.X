@@ -1347,5 +1347,17 @@
     "message.typemoonworld.servant_card.paracelsus_no_diamond_shield": "Not enough Diamond Shield stock",
     "message.typemoonworld.servant_card.paracelsus_diamond_shield_used": "Diamond Shield deployed. Remaining: %s",
     "message.typemoonworld.servant_card.paracelsus_item_crafted": "Crafted: %s",
-    "skill.typemoonworld.servant_card.paracelsus_elemental_guardian": "Elemental Body Deployment"
+    "skill.typemoonworld.servant_card.paracelsus_elemental_guardian": "Elemental Body Deployment",
+    "item.typemoonworld.mercury_sword": "Mercury Sword",
+    "item.typemoonworld.mercury_sword.desc": "Amplifies normal magecraft while held; right-click releases a short-range elemental beam.",
+    "item.typemoonworld.thompson_contender": "Thompson Contender",
+    "item.typemoonworld.thompson_contender.desc": "Right-click to load or fire. Loaded rounds cannot be unloaded.",
+    "item.typemoonworld.thompson_contender.loaded": "Loaded: %s",
+    "item.typemoonworld.thompson_contender.empty": "Empty",
+    "item.typemoonworld.bullet": "Bullet",
+    "item.typemoonworld.origin_bullet": "Origin Bullet",
+    "item.typemoonworld.kiritsugu_bone_powder": "Kiritsugu's Bone Powder",
+    "message.typemoonworld.thompson_contender.loaded": "Loaded: %s",
+    "message.typemoonworld.thompson_contender.no_ammo": "No compatible ammunition",
+    "message.typemoonworld.origin_bullet.sealed": "The Origin Bullet has sealed your magic circuits"
 }

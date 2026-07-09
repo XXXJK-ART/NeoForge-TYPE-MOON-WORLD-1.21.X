@@ -81,8 +81,13 @@ public final class ServantCardMedusaSkills {
       }
       applyMedusaMonsterStrengthPassive(player);
       CompoundTag data = player.getPersistentData();
+      boolean eyesActive = data.getBoolean(MEDUSA_EYES_ACTIVE_TAG);
+      if (vars.servant_card_medusa_mystic_eyes_active != eyesActive) {
+         vars.servant_card_medusa_mystic_eyes_active = eyesActive;
+         vars.syncPlayerVariables(player);
+      }
       long now = player.level().getGameTime();
-      if (data.getBoolean(MEDUSA_EYES_ACTIVE_TAG)) {
+      if (eyesActive) {
          tickMedusaMysticEyes(player, now);
       }
       tickMedusaBloodfort(player, vars, now);
@@ -539,6 +544,11 @@ public final class ServantCardMedusaSkills {
    private static void clearMedusaEyes(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       data.remove(MEDUSA_EYES_ACTIVE_TAG);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_medusa_mystic_eyes_active) {
+         vars.servant_card_medusa_mystic_eyes_active = false;
+         vars.syncPlayerVariables(player);
+      }
       data.remove(MEDUSA_LAST_CYBELE_TICK_TAG);
    }
 
@@ -917,6 +927,9 @@ public final class ServantCardMedusaSkills {
       CompoundTag data = player.getPersistentData();
       boolean active = !data.getBoolean(MEDUSA_EYES_ACTIVE_TAG);
       data.putBoolean(MEDUSA_EYES_ACTIVE_TAG, active);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_medusa_mystic_eyes_active = active;
+      vars.syncPlayerVariables(player);
       if (player.level() instanceof ServerLevel level) {
          if (active) {
             VFXServerEffects.spawn(level, "servant_medusa_cybele", player, 96.0);
@@ -974,6 +987,9 @@ public final class ServantCardMedusaSkills {
       }
       data.putLong(MEDUSA_BELLEROPHON_LAUNCH_TICK_TAG, level.getGameTime() + MEDUSA_BELLEROPHON_WINDUP_TICKS);
       data.putBoolean(MEDUSA_EYES_ACTIVE_TAG, true);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_medusa_mystic_eyes_active = true;
+      vars.syncPlayerVariables(player);
       VFXServerEffects.spawn(level, "servant_medusa_bellerophon", player, 160.0);
       startMedusaBellerophonSummonFx(level, player);
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 0.85F);

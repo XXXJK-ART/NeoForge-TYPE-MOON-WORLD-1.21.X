@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class TopazProjectileEntity extends ThrowableItemProjectile {
@@ -73,7 +74,14 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
             multiplier = gemItem.getQuality().getEffectMultiplier();
          }
 
+         Entity owner = this.getOwner();
+         if (owner instanceof LivingEntity livingOwner) {
+            radius = MercurySwordMagicAmplifier.amplifyRadius(livingOwner, radius);
+         }
          int duration = Math.round(200.0F * multiplier);
+         if (owner instanceof LivingEntity livingOwner) {
+            duration = MercurySwordMagicAmplifier.amplifyDuration(livingOwner, duration);
+         }
          if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.FIREWORK, this.getX(), this.getY(), this.getZ(), 50, 2.0, 2.0, 2.0, 0.1);
             serverLevel.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(), 5, 1.0, 1.0, 1.0, 0.0);
@@ -81,8 +89,6 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
 
          AABB aabb = this.getBoundingBox().inflate(radius);
          List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
-         Entity owner = this.getOwner();
-
          for (LivingEntity entity : entities) {
             if (entity != owner && !EntityUtils.isImmunePlayerTarget(entity)) {
                entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration, 0));

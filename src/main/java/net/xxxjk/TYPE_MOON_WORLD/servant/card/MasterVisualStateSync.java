@@ -59,7 +59,7 @@ public final class MasterVisualStateSync {
       if (event.getEntity() instanceof ServerPlayer player) {
          PacketDistributor.sendToPlayersTrackingEntity(
             player,
-            new MasterVisualStateMessage(player.getUUID(), false, 0, false),
+            new MasterVisualStateMessage(player.getUUID(), false, 0, "default", false),
             new CustomPacketPayload[0]
          );
       }
@@ -70,6 +70,7 @@ public final class MasterVisualStateSync {
          player.getUUID(),
          vars.master_active,
          Math.max(0, vars.master_command_spells),
+         vars.master_command_spell_style == null || vars.master_command_spell_style.isBlank() ? "default" : vars.master_command_spell_style,
          vars.master_command_spell_pose_active && vars.master_active
       );
    }

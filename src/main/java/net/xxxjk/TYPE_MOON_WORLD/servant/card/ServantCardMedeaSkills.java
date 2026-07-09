@@ -176,7 +176,12 @@ public final class ServantCardMedeaSkills {
       ensureMedeaStocks(player, vars);
       PacketDistributor.sendToPlayer(
          player,
-         new OpenMedeaCraftScreenMessage(getDragonfangStock(player), getManaCharmStock(player), getHealCharmStock(player), countLeylineMaps(player)),
+         new OpenMedeaCraftScreenMessage(
+            getDragonfangStock(player),
+            getManaCharmStock(player),
+            getHealCharmStock(player),
+            countLeylineMaps(player)
+         ),
          new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
       );
       return true;

@@ -71,6 +71,9 @@ public final class ServantCardTransformManager {
       if ("enkidu".equals(servantId)) {
          vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       }
+      vars.servant_card_medusa_mystic_eyes_active = false;
+      vars.servant_card_hassan_cloak_broken = false;
+      vars.servant_card_hassan_zabaniya_animation_until = 0;
       vars.servant_card_flying = false;
       vars.servant_card_flight_forward = 0.0;
       vars.servant_card_flight_strafe = 0.0;
@@ -132,12 +135,16 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_strafe = 0.0;
       vars.servant_card_flight_vertical = 0.0;
       vars.servant_card_release_cooldown = 40;
+      vars.servant_card_medusa_mystic_eyes_active = false;
+      vars.servant_card_hassan_cloak_broken = false;
+      vars.servant_card_hassan_zabaniya_animation_until = 0;
       ServantCardEmiyaSkills.clearEmiyaLayeredProjection(player);
       ServantCardArtoriaSkills.clear(player);
       ServantCardCuChulainnSkills.clear(player);
       ServantCardHeraclesSkills.clear(player);
       ServantCardGawainSkills.clear(player);
       ServantCardMedusaSkills.clear(player);
+      ServantCardEnkiduSkills.clearActiveEnumaState(player);
       ServantCardEnkiduSkills.clearTransfigurationAttributes(player);
       ServantCardTraitService.clear(player);
       vars.is_magus = vars.servant_card_was_magus;
@@ -183,6 +190,7 @@ public final class ServantCardTransformManager {
       ServantCardParacelsusSkills.tick(player, vars);
       ServantCardOdaNobunagaSkills.tick(player, vars);
       ServantCardMedusaSkills.tick(player, vars);
+      ServantCardHassanSkills.tick(player, vars);
       ServantCardLiShuwenSkills.tick(player, vars);
       ServantCardEnkiduSkills.tick(player, vars);
       ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
@@ -207,6 +215,13 @@ public final class ServantCardTransformManager {
          return false;
       }
       boolean np = slot == 9;
+      if (np && "emiya_archer".equals(vars.servant_card_id) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
+         if (vars.servant_card_np_cooldown > 0) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
+            return false;
+         }
+         return PlayerNoblePhantasmHelper.useOneShotProjectionNoblePhantasm(player);
+      }
       if ("ubw".equals(action.effectId())) {
          return ServantCardEmiyaSkills.performUbwAction(player, vars, action);
       }
@@ -480,8 +495,25 @@ public final class ServantCardTransformManager {
          player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
          return;
       }
+      if (servantCardHasHeadArmor(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.HEAD)));
+      } else {
+         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+      }
       player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.CHEST)));
-      player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.LEGS)));
+      if (servantCardHasLegArmor(servantId)) {
+         player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.LEGS)));
+      } else {
+         player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+      }
+   }
+
+   private static boolean servantCardHasHeadArmor(String servantId) {
+      return "medusa".equals(servantId) || "cursed_arm_hassan".equals(servantId);
+   }
+
+   private static boolean servantCardHasLegArmor(String servantId) {
+      return !"medea".equals(servantId) && !"cursed_arm_hassan".equals(servantId);
    }
 
    private static void tickJumpRecovery(TypeMoonWorldModVariables.PlayerVariables vars) {

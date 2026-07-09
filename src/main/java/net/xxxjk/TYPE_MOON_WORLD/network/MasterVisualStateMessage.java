@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.ClientPacketHandler;
 import org.jetbrains.annotations.NotNull;
 
-public record MasterVisualStateMessage(UUID playerId, boolean masterActive, int commandSpells, boolean poseActive) implements CustomPacketPayload {
+public record MasterVisualStateMessage(UUID playerId, boolean masterActive, int commandSpells, String style, boolean poseActive) implements CustomPacketPayload {
    public static final Type<MasterVisualStateMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "master_visual_state")
    );
@@ -31,18 +31,19 @@ public record MasterVisualStateMessage(UUID playerId, boolean masterActive, int 
       buffer.writeUUID(message.playerId);
       buffer.writeBoolean(message.masterActive);
       buffer.writeVarInt(message.commandSpells);
+      buffer.writeUtf(message.style == null || message.style.isBlank() ? "default" : message.style);
       buffer.writeBoolean(message.poseActive);
    }
 
    private static MasterVisualStateMessage read(RegistryFriendlyByteBuf buffer) {
-      return new MasterVisualStateMessage(buffer.readUUID(), buffer.readBoolean(), buffer.readVarInt(), buffer.readBoolean());
+      return new MasterVisualStateMessage(buffer.readUUID(), buffer.readBoolean(), buffer.readVarInt(), buffer.readUtf(64), buffer.readBoolean());
    }
 
    public static void handleData(MasterVisualStateMessage message, IPayloadContext context) {
       if (context.flow() == PacketFlow.CLIENTBOUND) {
          context.enqueueWork(() -> {
             if (FMLEnvironment.dist == Dist.CLIENT) {
-               ClientPacketHandler.handleMasterVisualState(message.playerId, message.masterActive, message.commandSpells, message.poseActive);
+               ClientPacketHandler.handleMasterVisualState(message.playerId, message.masterActive, message.commandSpells, message.style, message.poseActive);
             }
          });
       }

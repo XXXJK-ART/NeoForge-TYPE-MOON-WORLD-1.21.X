@@ -150,6 +150,7 @@ public class TypeMoonWorldModVariables {
          clone.proficiency_gander = original.proficiency_gander;
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
+         clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
          if (!event.isWasDeath()) {
             clone.is_chanting_ubw = original.is_chanting_ubw;
             clone.ubw_chant_progress = original.ubw_chant_progress;
@@ -239,9 +240,13 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_paracelsus_stone_stock = original.servant_card_paracelsus_stone_stock;
             clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
             clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
+            clone.servant_card_medusa_mystic_eyes_active = original.servant_card_medusa_mystic_eyes_active;
+            clone.servant_card_hassan_cloak_broken = original.servant_card_hassan_cloak_broken;
+            clone.servant_card_hassan_zabaniya_animation_until = original.servant_card_hassan_zabaniya_animation_until;
             clone.master_active = original.master_active;
             clone.master_servant_uuid = original.master_servant_uuid;
             clone.master_command_spells = original.master_command_spells;
+            clone.master_command_spell_style = original.master_command_spell_style;
             clone.master_command_spell_pose_active = false;
             clone.master_revive_available = original.master_revive_available;
             clone.master_saved_player_mana = original.master_saved_player_mana;
@@ -525,9 +530,14 @@ public class TypeMoonWorldModVariables {
       public int servant_card_paracelsus_stone_stock = 0;
       public int servant_card_paracelsus_diamond_shield_stock = 0;
       public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
+      public boolean servant_card_medusa_mystic_eyes_active = false;
+      public boolean servant_card_hassan_cloak_broken = false;
+      public int servant_card_hassan_zabaniya_animation_until = 0;
+      public boolean origin_bullet_sealed = false;
       public boolean master_active = false;
       public String master_servant_uuid = "";
       public int master_command_spells = 0;
+      public String master_command_spell_style = "default";
       public boolean master_command_spell_pose_active = false;
       public boolean master_revive_available = false;
       public double master_saved_player_mana = 0.0;
@@ -1487,9 +1497,14 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("servant_card_paracelsus_stone_stock", this.servant_card_paracelsus_stone_stock);
          nbt.putInt("servant_card_paracelsus_diamond_shield_stock", this.servant_card_paracelsus_diamond_shield_stock);
          nbt.putString("servant_card_enkidu_transfiguration_points", this.servant_card_enkidu_transfiguration_points == null ? "6,6,6,6,6" : this.servant_card_enkidu_transfiguration_points);
+         nbt.putBoolean("servant_card_medusa_mystic_eyes_active", this.servant_card_medusa_mystic_eyes_active);
+         nbt.putBoolean("servant_card_hassan_cloak_broken", this.servant_card_hassan_cloak_broken);
+         nbt.putInt("servant_card_hassan_zabaniya_animation_until", this.servant_card_hassan_zabaniya_animation_until);
+         nbt.putBoolean("origin_bullet_sealed", this.origin_bullet_sealed);
          nbt.putBoolean("master_active", this.master_active);
          nbt.putString("master_servant_uuid", this.master_servant_uuid == null ? "" : this.master_servant_uuid);
          nbt.putInt("master_command_spells", this.master_command_spells);
+         nbt.putString("master_command_spell_style", this.master_command_spell_style == null || this.master_command_spell_style.isBlank() ? "default" : this.master_command_spell_style);
          nbt.putBoolean("master_command_spell_pose_active", this.master_command_spell_pose_active);
          nbt.putBoolean("master_revive_available", this.master_revive_available);
          nbt.putDouble("master_saved_player_mana", this.master_saved_player_mana);
@@ -1746,9 +1761,17 @@ public class TypeMoonWorldModVariables {
          this.servant_card_paracelsus_stone_stock = nbt.contains("servant_card_paracelsus_stone_stock") ? nbt.getInt("servant_card_paracelsus_stone_stock") : 0;
          this.servant_card_paracelsus_diamond_shield_stock = nbt.contains("servant_card_paracelsus_diamond_shield_stock") ? nbt.getInt("servant_card_paracelsus_diamond_shield_stock") : 0;
          this.servant_card_enkidu_transfiguration_points = nbt.contains("servant_card_enkidu_transfiguration_points") ? nbt.getString("servant_card_enkidu_transfiguration_points") : "6,6,6,6,6";
+         this.servant_card_medusa_mystic_eyes_active = nbt.getBoolean("servant_card_medusa_mystic_eyes_active");
+         this.servant_card_hassan_cloak_broken = nbt.getBoolean("servant_card_hassan_cloak_broken");
+         this.servant_card_hassan_zabaniya_animation_until = nbt.contains("servant_card_hassan_zabaniya_animation_until") ? nbt.getInt("servant_card_hassan_zabaniya_animation_until") : 0;
+         this.origin_bullet_sealed = nbt.getBoolean("origin_bullet_sealed");
          this.master_active = nbt.getBoolean("master_active");
          this.master_servant_uuid = nbt.contains("master_servant_uuid") ? nbt.getString("master_servant_uuid") : "";
          this.master_command_spells = nbt.contains("master_command_spells") ? nbt.getInt("master_command_spells") : 0;
+         this.master_command_spell_style = nbt.contains("master_command_spell_style") ? nbt.getString("master_command_spell_style") : "default";
+         if (this.master_command_spell_style == null || this.master_command_spell_style.isBlank()) {
+            this.master_command_spell_style = "default";
+         }
          this.master_command_spell_pose_active = nbt.getBoolean("master_command_spell_pose_active");
          this.master_revive_available = nbt.getBoolean("master_revive_available");
          this.master_saved_player_mana = nbt.contains("master_saved_player_mana") ? nbt.getDouble("master_saved_player_mana") : 0.0;

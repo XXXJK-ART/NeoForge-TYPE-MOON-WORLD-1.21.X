@@ -39,7 +39,10 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
 
    public boolean hasRealArmorModel() {
       ServantCardRegistry.Entry entry = ServantCardRegistry.byId(this.servantId);
-      return entry != null && entry.hasRealArmor();
+      return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
+         case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles" -> true;
+         default -> false;
+      };
    }
 
    @Override
@@ -72,7 +75,13 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       String animation = "1";
       if ("medea".equals(this.servantId)) {
          animation = isMedeaFlying(state) ? "fly" : "standing";
-      } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)) {
+      } else if ("medusa".equals(this.servantId)) {
+         animation = isMedusaMysticEyesActive(state) ? "eyes_open" : "animation";
+      } else if ("cursed_arm_hassan".equals(this.servantId)) {
+         animation = hassanArmorAnimation(state);
+      } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
+         || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
+         || "heracles".equals(this.servantId)) {
          animation = "animation";
       }
       state.getController().setAnimation(RawAnimation.begin().thenLoop(animation));
@@ -86,6 +95,30 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       }
       TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "medea".equals(vars.servant_card_id) && vars.servant_card_flying;
+   }
+
+   private boolean isMedusaMysticEyesActive(AnimationState<ServantCardArmorItem> state) {
+      Entity entity = state.getData(DataTickets.ENTITY);
+      if (!(entity instanceof LivingEntity living)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "medusa".equals(vars.servant_card_id) && vars.servant_card_medusa_mystic_eyes_active;
+   }
+
+   private String hassanArmorAnimation(AnimationState<ServantCardArmorItem> state) {
+      Entity entity = state.getData(DataTickets.ENTITY);
+      if (!(entity instanceof LivingEntity living)) {
+         return "cloak";
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.servant_card_transformed || !"cursed_arm_hassan".equals(vars.servant_card_id)) {
+         return "cloak";
+      }
+      if (living.tickCount <= vars.servant_card_hassan_zabaniya_animation_until) {
+         return "Cursed Arm";
+      }
+      return vars.servant_card_hassan_cloak_broken ? "cloak out" : "cloak";
    }
 
    @Override

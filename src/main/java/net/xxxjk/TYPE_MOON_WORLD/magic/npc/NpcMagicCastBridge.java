@@ -45,6 +45,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
@@ -238,6 +239,14 @@ public final class NpcMagicCastBridge {
       if (npc != null && !npc.level().isClientSide()) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          initializeIfNeeded(npc, vars);
+         if (OriginBulletHelper.isNpcSealed(npc)) {
+            vars.is_magic_circuit_open = false;
+            vars.magic_circuit_open_timer = 0.0;
+            vars.player_mana = 0.0;
+            tickLocalCooldown(vars);
+            clearPendingMachineGun(npc);
+            return;
+         }
          long gameTime = npc.level().getGameTime();
          handleOnFireEmergency(npc, gameTime);
          tickProjectedHandItemExpiry(npc, gameTime);

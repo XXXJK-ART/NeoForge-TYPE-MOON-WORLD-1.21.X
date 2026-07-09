@@ -28,12 +28,14 @@ import net.xxxjk.TYPE_MOON_WORLD.client.particle.RuneSigilParticle;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HecatesStaffRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MercurySwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessChainDaggerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessBowRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ThompsonContenderRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariMuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UBWWeaponBlockEntityRenderer;
@@ -136,6 +138,28 @@ public class ClientModEventSubscriber {
             return this.renderer;
          }
       }, new Item[]{ModItems.HECATES_STAFF.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private MercurySwordRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new MercurySwordRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.MERCURY_SWORD.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private ThompsonContenderRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new ThompsonContenderRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.THOMPSON_CONTENDER.get()});
       event.registerItem(new IClientItemExtensions() {
          private NamelessChainDaggerRenderer renderer;
 

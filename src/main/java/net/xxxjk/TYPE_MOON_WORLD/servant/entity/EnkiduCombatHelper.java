@@ -90,6 +90,8 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_FINISH = "EnkiduEnumaFinish";
    private static final String TAG_ENUMA_TARGET = "EnkiduEnumaTarget";
    private static final String TAG_ENUMA_DAMAGE_DONE = "EnkiduEnumaDamageDone";
+   private static final String TAG_ENUMA_INVISIBLE = "EnkiduEnumaInvisible";
+   private static final String TAG_ENUMA_PREV_INVISIBLE = "EnkiduEnumaPrevInvisible";
    private static final String TAG_ENUMA_START_X = "EnkiduEnumaStartX";
    private static final String TAG_ENUMA_START_Y = "EnkiduEnumaStartY";
    private static final String TAG_ENUMA_START_Z = "EnkiduEnumaStartZ";
@@ -1977,6 +1979,8 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_ENUMA_RELEASE, now + ENUMA_WINDUP);
       data.putLong(TAG_ENUMA_FINISH, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL);
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
+      data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
+      data.remove(TAG_ENUMA_INVISIBLE);
       data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
       data.putDouble(TAG_ENUMA_START_X, entity.getX());
       data.putDouble(TAG_ENUMA_START_Y, entity.getY());
@@ -2035,6 +2039,7 @@ public final class EnkiduCombatHelper {
                data.putDouble(TAG_ENUMA_IMPACT_Z, groundImpact.z);
                entity.setPos(groundImpact.x, groundImpact.y, groundImpact.z);
                entity.setDeltaMovement(Vec3.ZERO);
+               restoreEnumaInvisibility(entity);
                applyEnumaGroundExplosion(entity, level, groundImpact, null);
                return;
             }
@@ -2079,8 +2084,11 @@ public final class EnkiduCombatHelper {
          }
          return;
       }
-      maybeSpawnEnumaFlightFx(entity, level, now);
       int stage = data.getInt(TAG_ENUMA_STAGE);
+      if (stage <= 0) {
+         activateEnumaInvisibility(entity);
+      }
+      maybeSpawnEnumaFlightFx(entity, level, now);
       Vec3 impact = stage == 1
          ? new Vec3(data.getDouble(TAG_ENUMA_GROUND_X), data.getDouble(TAG_ENUMA_GROUND_Y), data.getDouble(TAG_ENUMA_GROUND_Z))
          : targetPoint;
@@ -2114,6 +2122,7 @@ public final class EnkiduCombatHelper {
          entity.setPos(impact.x, Math.max(target.getY(), impact.y - entity.getBbHeight() * 0.45), impact.z);
          entity.setDeltaMovement(Vec3.ZERO);
          applyNoDefenseDamageOverTicks(entity, target, 4000.0F, 20);
+         restoreEnumaInvisibility(entity);
          applyEnumaSmallExplosion(entity, level, impact, target);
          if (impact.distanceTo(groundImpact) > 1.8 && impact.distanceTo(groundImpact) <= 28.0 && now < release + ENUMA_RELEASE_VISUAL - 10L) {
             return;
@@ -2126,6 +2135,7 @@ public final class EnkiduCombatHelper {
       data.putDouble(TAG_ENUMA_IMPACT_Z, impact.z);
       entity.setPos(impact.x, Math.max(impact.y, impact.y - entity.getBbHeight() * 0.45), impact.z);
       entity.setDeltaMovement(Vec3.ZERO);
+      restoreEnumaInvisibility(entity);
       applyEnumaGroundExplosion(entity, level, impact, target);
    }
 
@@ -2158,10 +2168,13 @@ public final class EnkiduCombatHelper {
 
    private static void clearEnumaState(EnkiduEntity entity) {
       CompoundTag data = entity.getPersistentData();
+      restoreEnumaInvisibility(entity);
       data.remove(TAG_ENUMA_RELEASE);
       data.remove(TAG_ENUMA_FINISH);
       data.remove(TAG_ENUMA_TARGET);
       data.remove(TAG_ENUMA_DAMAGE_DONE);
+      data.remove(TAG_ENUMA_INVISIBLE);
+      data.remove(TAG_ENUMA_PREV_INVISIBLE);
       data.remove(TAG_ENUMA_START_X);
       data.remove(TAG_ENUMA_START_Y);
       data.remove(TAG_ENUMA_START_Z);
@@ -2178,6 +2191,25 @@ public final class EnkiduCombatHelper {
       data.remove(TAG_ENUMA_DIR_X);
       data.remove(TAG_ENUMA_DIR_Y);
       data.remove(TAG_ENUMA_DIR_Z);
+   }
+
+   private static void activateEnumaInvisibility(EnkiduEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      if (!data.getBoolean(TAG_ENUMA_INVISIBLE)) {
+         if (!data.contains(TAG_ENUMA_PREV_INVISIBLE)) {
+            data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
+         }
+         data.putBoolean(TAG_ENUMA_INVISIBLE, true);
+         entity.setInvisible(true);
+      }
+   }
+
+   private static void restoreEnumaInvisibility(EnkiduEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      if (data.getBoolean(TAG_ENUMA_INVISIBLE)) {
+         entity.setInvisible(data.getBoolean(TAG_ENUMA_PREV_INVISIBLE));
+         data.remove(TAG_ENUMA_INVISIBLE);
+      }
    }
 
    private static boolean isEnumaActive(EnkiduEntity entity, long now) {

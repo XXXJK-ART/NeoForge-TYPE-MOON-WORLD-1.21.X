@@ -7,6 +7,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Witch;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
@@ -89,6 +90,9 @@ public final class MagicResistanceHelper {
    }
 
    public static float applyMagicDamageReduction(LivingEntity entity, DamageSource source, float amount) {
+      if (OriginBulletHelper.isOriginBulletDamage(source)) {
+         return amount;
+      }
       if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source)) {
          return amount;
       }

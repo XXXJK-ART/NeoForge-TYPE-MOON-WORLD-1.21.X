@@ -21,6 +21,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEven
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -53,6 +54,14 @@ public class Restore_mana {
    private static void execute(@Nullable Event event, LevelAccessor world, Entity entity) {
       if (entity != null && entity.isAlive()) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
+            vars.player_mana = 0.0;
+            vars.is_magic_circuit_open = false;
+            vars.magic_circuit_open_timer = 0.0;
+            vars.syncMana(entity);
+            TYPE_MOON_WORLD.queueServerWork(100, () -> execute(world, entity));
+            return;
+         }
          if (vars.servant_card_transformed) {
             TYPE_MOON_WORLD.queueServerWork(100, () -> execute(world, entity));
             return;

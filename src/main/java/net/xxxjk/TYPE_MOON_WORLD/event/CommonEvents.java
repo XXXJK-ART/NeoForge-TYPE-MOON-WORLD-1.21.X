@@ -44,6 +44,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
@@ -408,7 +409,7 @@ public class CommonEvents {
                }
             }
             if (event.getEntity() instanceof LivingEntity living) {
-                  if (tryRedirectRhoAiasDamage(living, event)) {
+                  if (!OriginBulletHelper.isOriginBulletDamage(event.getSource()) && tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }
                   if (living instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)) {
@@ -650,6 +651,7 @@ public class CommonEvents {
       boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), originalDamage);
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
       boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
+      boolean originBullet = OriginBulletHelper.isOriginBulletDamage(event.getSource());
       boolean antiHeraclesNoblePhantasm = HeraclesGodHandHelper.hasGodHand(servant) && (majorBrokenPhantasmExplosion || gaeBulgArmy);
       boolean heraclesPoisonOrWitherSpecialAttack = isHeraclesPoisonOrWitherSpecialAttack(servant, event.getSource());
       boolean enkiduWitherUndefendable = servant instanceof EnkiduEntity && EnkiduCombatHelper.isPerfectFormUndefendableDamage(event.getSource());
@@ -675,12 +677,12 @@ public class CommonEvents {
       if (invisibleAirBypass) {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
-      if (!enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
+      if (!originBullet && !enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
          event.setCanceled(true);
          return;
       }
 
-      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
+      if (!originBullet && !artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
@@ -718,7 +720,7 @@ public class CommonEvents {
          }
 
          float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
-         if (shield > 0.0F) {
+         if (!originBullet && shield > 0.0F) {
             if (majorBrokenPhantasmExplosion) {
                float minimumDamage = originalDamage * 0.5F;
                float absorbable = Math.max(0.0F, damage - minimumDamage);
@@ -935,6 +937,10 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getEntity() instanceof Player player) {
+            OriginBulletHelper.clearPlayerSeal(player);
+         }
+
          if (event.getEntity() instanceof ServantEntity servant) {
             CompoundTag data = servant.getPersistentData();
             boolean causalSevered = data.getBoolean("CausalSevered");
