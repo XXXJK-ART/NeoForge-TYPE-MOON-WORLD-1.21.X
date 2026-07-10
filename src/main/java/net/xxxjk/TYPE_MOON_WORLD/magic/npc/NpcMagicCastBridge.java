@@ -3174,7 +3174,7 @@ public final class NpcMagicCastBridge {
                   && gameTime >= getMagicCooldownUntil(npc, entry.magicId)
                   && isResourceMagicAvailable(npc, entry.magicId, gameTime)
                   && (!forceMeleeEngage || !isPureRangedMagic(entry.magicId))) {
-                  double weight = computeMagicWeight(style, entry.magicId, entry.presetPayload, distance, manaRatio);
+                  double weight = computeMagicWeight(style, entry.magicId, entry.presetPayload, target, distance, manaRatio);
                   if (!(weight <= 0.0)) {
                      choices.add(new NpcMagicCastBridge.Choice(entry, slot, weight));
                   }
@@ -3288,7 +3288,9 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static double computeMagicWeight(NpcCombatStyle style, String magicId, CompoundTag payload, double distance, double manaRatio) {
+   private static double computeMagicWeight(
+      NpcCombatStyle style, String magicId, CompoundTag payload, LivingEntity target, double distance, double manaRatio
+   ) {
       double weight = 1.0;
       switch (style) {
          case CLOSE_PRESSURE:
@@ -3432,7 +3434,7 @@ public final class NpcMagicCastBridge {
       if ("healing_magic".equals(magicId)) {
          weight += manaRatio >= 0.25 ? 0.6 : -0.8;
       } else if ("spiritual_healing".equals(magicId)) {
-         weight += target instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity || target.getMobType() == net.minecraft.world.entity.MobType.UNDEAD ? 1.8 : 0.35;
+         weight += isSpiritLikeTarget(target) ? 1.8 : 0.35;
       } else if ("binding_magic".equals(magicId) && distance <= 8.0) {
          weight += 1.6;
       } else if ("suggestion_magic".equals(magicId) && distance >= 4.0 && distance <= 12.0) {
@@ -3462,6 +3464,21 @@ public final class NpcMagicCastBridge {
       }
 
       return weight;
+   }
+
+   private static boolean isSpiritLikeTarget(LivingEntity target) {
+      if (target == null) {
+         return false;
+      }
+      return target instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity
+         || target instanceof net.minecraft.world.entity.monster.Zombie
+         || target instanceof net.minecraft.world.entity.monster.Skeleton
+         || target instanceof net.minecraft.world.entity.monster.Stray
+         || target instanceof net.minecraft.world.entity.monster.Husk
+         || target instanceof net.minecraft.world.entity.monster.Drowned
+         || target instanceof net.minecraft.world.entity.monster.WitherSkeleton
+         || target instanceof net.minecraft.world.entity.boss.wither.WitherBoss
+         || target instanceof net.minecraft.world.entity.monster.ZombifiedPiglin;
    }
 
    private static boolean shouldForceMeleeEngage(NpcMagicCastBridge.MagicCapabilityProfile capabilities, double distance) {
