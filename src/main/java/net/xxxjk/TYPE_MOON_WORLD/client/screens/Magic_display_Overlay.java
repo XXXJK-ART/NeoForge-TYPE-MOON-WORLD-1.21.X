@@ -131,6 +131,47 @@ public class Magic_display_Overlay {
                                 Component.translatable(targetKey),
                                 Component.translatable(modeKey)
                         );
+                    } else if ("healing_magic".equals(magicId)) {
+                        magicColor = 0xFFCCFFCC;
+                        String targetKey = vars.healing_magic_target == 0
+                                ? "gui.typemoonworld.overlay.healing.target.self.short"
+                                : "gui.typemoonworld.overlay.healing.target.other.short";
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.healing.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(targetKey)
+                        );
+                    } else if ("magic_bullet".equals(magicId)) {
+                        magicColor = 0xFFCCAAFF;
+                    } else if ("suggestion_magic".equals(magicId)) {
+                        magicColor = 0xFFFFAAFF;
+                    } else if ("binding_magic".equals(magicId)) {
+                        magicColor = 0xFFFFDD66;
+                    } else if ("fire_magic".equals(magicId)
+                            || "water_magic".equals(magicId)
+                            || "wind_magic".equals(magicId)
+                            || "earth_magic".equals(magicId)) {
+                        int mode = switch (magicId) {
+                            case "fire_magic" -> vars.fire_magic_mode;
+                            case "water_magic" -> vars.water_magic_mode;
+                            case "wind_magic" -> vars.wind_magic_mode;
+                            case "earth_magic" -> vars.earth_magic_mode;
+                            default -> 0;
+                        };
+                        magicColor = switch (magicId) {
+                            case "fire_magic" -> 0xFFFF6633;
+                            case "water_magic" -> 0xFF66CCFF;
+                            case "wind_magic" -> 0xFF99FFCC;
+                            case "earth_magic" -> 0xFFCCAA66;
+                            default -> 0xFFFFFFFF;
+                        };
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.element.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(mode == 1
+                                        ? "gui.typemoonworld.overlay.element.mode.utility.short"
+                                        : "gui.typemoonworld.overlay.element.mode.attack.short")
+                        );
                     } else if ("jewel_random_shoot".equals(magicId)) {
                         magicColor = 0xFFEAEAEA;
                     } else if ("jewel_machine_gun".equals(magicId)) {

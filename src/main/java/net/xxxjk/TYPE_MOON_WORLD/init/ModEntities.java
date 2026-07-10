@@ -20,12 +20,15 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
@@ -149,6 +152,34 @@ public class ModEntities {
          .clientTrackingRange(8)
          .updateInterval(1)
          .build("gander_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MagicBulletProjectileEntity>> MAGIC_BULLET_PROJECTILE = ENTITY_TYPES.register(
+      "magic_bullet_projectile",
+      () -> Builder.<MagicBulletProjectileEntity>of(
+            (entityType, level) -> new MagicBulletProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.18F, 0.18F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("magic_bullet_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ElementalMagicProjectileEntity>> ELEMENTAL_MAGIC_PROJECTILE = ENTITY_TYPES.register(
+      "elemental_magic_projectile",
+      () -> Builder.<ElementalMagicProjectileEntity>of(
+            (entityType, level) -> new ElementalMagicProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.22F, 0.22F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("elemental_magic_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ElementalMagicFieldEntity>> ELEMENTAL_MAGIC_FIELD = ENTITY_TYPES.register(
+      "elemental_magic_field",
+      () -> Builder.<ElementalMagicFieldEntity>of(ElementalMagicFieldEntity::new, MobCategory.MISC)
+         .sized(0.2F, 0.2F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("elemental_magic_field")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedeaMagicBoltEntity>> MEDEA_MAGIC_BOLT = ENTITY_TYPES.register(
       "medea_magic_bolt",

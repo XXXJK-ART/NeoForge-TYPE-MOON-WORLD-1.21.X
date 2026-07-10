@@ -256,6 +256,12 @@ public class TypeMoonWorldModKeyMappings {
                         } else if ("gandr_machine_gun".equals(currentMagic)) {
                            PacketDistributor.sendToServer(new MagicModeSwitchMessage(1, 1), new CustomPacketPayload[0]);
                            isModeSwitchDown = true;
+                        } else if ("healing_magic".equals(currentMagic)) {
+                           PacketDistributor.sendToServer(new MagicModeSwitchMessage(8, -1), new CustomPacketPayload[0]);
+                           isModeSwitchDown = true;
+                        } else if (net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService.isElementalMagic(currentMagic)) {
+                           PacketDistributor.sendToServer(new MagicModeSwitchMessage(9, -1), new CustomPacketPayload[0]);
+                           isModeSwitchDown = true;
                         }
                      } else if (!suppressScreens && Minecraft.getInstance().screen == null) {
                         Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));

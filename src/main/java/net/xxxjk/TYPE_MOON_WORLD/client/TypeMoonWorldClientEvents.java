@@ -40,6 +40,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ContenderBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HeraclesRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaBeamEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ElementalMagicProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MagicBulletProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaMagicBoltRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
@@ -229,6 +231,9 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.SAPPHIRE_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 0.0F, 0.0F, 1.0F));
       event.registerEntityRenderer(ModEntities.TOPAZ_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 1.0F, 0.0F));
       event.registerEntityRenderer(ModEntities.GANDER_PROJECTILE.get(), GanderProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.MAGIC_BULLET_PROJECTILE.get(), MagicBulletProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.ELEMENTAL_MAGIC_PROJECTILE.get(), ElementalMagicProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.ELEMENTAL_MAGIC_FIELD.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);

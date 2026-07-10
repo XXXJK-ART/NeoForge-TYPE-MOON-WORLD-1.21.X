@@ -18,6 +18,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -46,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.SuggestionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
@@ -70,6 +72,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -177,6 +180,9 @@ public class CommonEvents {
                   e -> e.isAlive() && e.hasEffect(MobEffects.INVISIBILITY))) {
                   CursedArmHassanCombatHelper.clearNonServantTargeting(hassan);
                }
+            }
+            if (serverLevel.getGameTime() % 10L == 0L) {
+               tickSuggestedMobs(serverLevel);
             }
             if (serverLevel.getGameTime() % 200L == 0L) {
                List<ServerPlayer> players = serverLevel.players();
@@ -346,8 +352,18 @@ public class CommonEvents {
                event.setCanceled(true);
                return;
             }
+            if (event.getSource().getEntity() instanceof LivingEntity attackerWithBinding
+               && blocksAttacks(attackerWithBinding)) {
+               event.setCanceled(true);
+               return;
+            }
             if (event.getSource().getDirectEntity() instanceof LivingEntity directWithPetrify
                && directWithPetrify.hasEffect(ModMobEffects.PETRIFIED)) {
+               event.setCanceled(true);
+               return;
+            }
+            if (event.getSource().getDirectEntity() instanceof LivingEntity directWithBinding
+               && blocksAttacks(directWithBinding)) {
                event.setCanceled(true);
                return;
             }
@@ -609,12 +625,14 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onMobEffectRemoved(Remove event) {
       restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
+      clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
    }
 
    @SubscribeEvent
    public static void onMobEffectExpired(Expired event) {
       if (event.getEffectInstance() != null) {
          restorePetrifiedMobState(event.getEntity(), event.getEffectInstance().getEffect().value());
+         clearBasicMagecraftEffectTags(event.getEntity(), event.getEffectInstance().getEffect().value());
       }
    }
 
@@ -1122,6 +1140,65 @@ public class CommonEvents {
          mob.getPersistentData().remove(PetrifiedEffect.TAG_PREV_NO_AI);
          mob.getNavigation().stop();
          mob.setTarget(null);
+      }
+   }
+
+   private static boolean blocksAttacks(LivingEntity entity) {
+      if (entity == null) {
+         return false;
+      }
+      MobEffectInstance binding = entity.getEffect(ModMobEffects.BINDING);
+      if (binding != null && (binding.getAmplifier() > 0 || entity.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect.TAG_FULL_BIND))) {
+         return true;
+      }
+      MobEffectInstance suggestion = entity.getEffect(ModMobEffects.SUGGESTION);
+      return suggestion != null && suggestion.getAmplifier() >= 3;
+   }
+
+   private static void tickSuggestedMobs(ServerLevel level) {
+      AABB worldBox = new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000);
+      for (Mob mob : level.getEntitiesOfClass(Mob.class, worldBox, e -> e.isAlive() && e.hasEffect(ModMobEffects.SUGGESTION))) {
+         int command = mob.getPersistentData().getInt(SuggestionEffect.TAG_COMMAND);
+         if (command == MagicSuggestion.COMMAND_STOP) {
+            mob.getNavigation().stop();
+            mob.setTarget(null);
+         } else if (command == MagicSuggestion.COMMAND_FOLLOW && mob.getPersistentData().hasUUID(SuggestionEffect.TAG_CASTER)) {
+            Entity caster = level.getEntity(mob.getPersistentData().getUUID(SuggestionEffect.TAG_CASTER));
+            if (caster instanceof LivingEntity living && living.isAlive()) {
+               mob.setTarget(null);
+               if (mob.distanceToSqr(living) > 9.0) {
+                  mob.getNavigation().moveTo(living, 1.0);
+               }
+            }
+         } else if (command == MagicSuggestion.COMMAND_AWAY && mob.getPersistentData().hasUUID(SuggestionEffect.TAG_CASTER)) {
+            Entity caster = level.getEntity(mob.getPersistentData().getUUID(SuggestionEffect.TAG_CASTER));
+            if (caster != null) {
+               Vec3 away = mob.position().subtract(caster.position());
+               if (away.lengthSqr() < 1.0E-6) {
+                  away = mob.getLookAngle();
+               }
+               Vec3 pos = mob.position().add(away.normalize().scale(8.0));
+               mob.setTarget(null);
+               mob.getNavigation().moveTo(pos.x, pos.y, pos.z, 1.15);
+            }
+         } else if (command == MagicSuggestion.COMMAND_CONFUSE) {
+            Vec3 pos = mob.position().add((mob.getRandom().nextDouble() - 0.5) * 6.0, 0.0, (mob.getRandom().nextDouble() - 0.5) * 6.0);
+            mob.setTarget(null);
+            mob.getNavigation().moveTo(pos.x, pos.y, pos.z, 0.85);
+         }
+      }
+   }
+
+   private static void clearBasicMagecraftEffectTags(LivingEntity entity, net.minecraft.world.effect.MobEffect effect) {
+      if (entity == null || effect == null) {
+         return;
+      }
+      if (effect == ModMobEffects.BINDING.get()) {
+         entity.getPersistentData().remove(net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect.TAG_FULL_BIND);
+      } else if (effect == ModMobEffects.SUGGESTION.get()) {
+         entity.getPersistentData().remove(SuggestionEffect.TAG_COMMAND);
+         entity.getPersistentData().remove(SuggestionEffect.TAG_CASTER);
+         entity.getPersistentData().remove(SuggestionEffect.TAG_ATTACK_TARGET);
       }
    }
 

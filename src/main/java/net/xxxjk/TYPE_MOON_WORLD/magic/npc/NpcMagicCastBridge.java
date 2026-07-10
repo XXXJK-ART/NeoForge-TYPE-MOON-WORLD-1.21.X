@@ -56,6 +56,14 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicFireElement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicMagicBullet;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWaterElement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWindElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -165,6 +173,14 @@ public final class NpcMagicCastBridge {
       "reinforcement",
       "jewel_random_shoot",
       "jewel_machine_gun",
+      "healing_magic",
+      "magic_bullet",
+      "suggestion_magic",
+      "binding_magic",
+      "fire_magic",
+      "water_magic",
+      "wind_magic",
+      "earth_magic",
       "ruby_flame_sword",
       "sapphire_winter_frost",
       "emerald_winter_river",
@@ -311,7 +327,7 @@ public final class NpcMagicCastBridge {
                         npc.getPersistentData().putLong(TAG_LAST_DECISION_TICK, gameTime);
                         if (gameTime >= npc.getPersistentData().getLong(TAG_NEXT_GLOBAL_CAST_TICK)) {
                            if (!(vars.player_mana <= 1.0)) {
-                              if (!tryUseJewelItemSkill(npc, target, vars, gameTime, threat)) {
+                              if (!tryEmergencyHealingMagic(npc, vars, gameTime) && !tryUseJewelItemSkill(npc, target, vars, gameTime, threat)) {
                                  TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slot = chooseNextMagic(npc, vars, target, gameTime, capabilities);
                                  if (slot == null || slot.magicId == null || slot.magicId.isEmpty()) {
                                     handleNoMagicFallback(npc, target, vars, gameTime, threat, capabilities);
@@ -773,6 +789,30 @@ public final class NpcMagicCastBridge {
          case "jewel_random_shoot":
             vars.proficiency_jewel_magic_shoot = Math.max(vars.proficiency_jewel_magic_shoot, p);
             break;
+         case "healing_magic":
+            vars.proficiency_healing_magic = Math.max(vars.proficiency_healing_magic, p);
+            break;
+         case "magic_bullet":
+            vars.proficiency_magic_bullet = Math.max(vars.proficiency_magic_bullet, p);
+            break;
+         case "suggestion_magic":
+            vars.proficiency_suggestion_magic = Math.max(vars.proficiency_suggestion_magic, p);
+            break;
+         case "binding_magic":
+            vars.proficiency_binding_magic = Math.max(vars.proficiency_binding_magic, p);
+            break;
+         case "fire_magic":
+            vars.proficiency_fire_magic = Math.max(vars.proficiency_fire_magic, p);
+            break;
+         case "water_magic":
+            vars.proficiency_water_magic = Math.max(vars.proficiency_water_magic, p);
+            break;
+         case "wind_magic":
+            vars.proficiency_wind_magic = Math.max(vars.proficiency_wind_magic, p);
+            break;
+         case "earth_magic":
+            vars.proficiency_earth_magic = Math.max(vars.proficiency_earth_magic, p);
+            break;
          case "jewel_machine_gun":
          case "ruby_flame_sword":
          case "sapphire_winter_frost":
@@ -1027,17 +1067,25 @@ public final class NpcMagicCastBridge {
                String var8 = entry.magicId;
                switch (var8) {
                   case "reinforcement":
+                  case "healing_magic":
                   case "topaz_reinforcement":
                      hasBuff = true;
                      hasMeleeBurst = true;
                      break;
                   case "gravity_magic":
+                  case "binding_magic":
+                  case "suggestion_magic":
+                  case "water_magic":
+                  case "wind_magic":
+                  case "earth_magic":
                   case "sapphire_winter_frost":
                   case "emerald_winter_river":
                      hasControl = true;
                      hasRanged = true;
                      break;
                   case "gander":
+                  case "magic_bullet":
+                  case "fire_magic":
                   case "gandr_machine_gun":
                   case "jewel_random_shoot":
                   case "jewel_machine_gun":
@@ -1350,6 +1398,11 @@ public final class NpcMagicCastBridge {
          if (!hasGenericClearRangedPath(npc, target)) {
             repositionForClearShot(npc, target, 9.0, highThreat ? 1.16 : 1.08);
             return false;
+         } else if (NpcMagicExecutionService.hasCastableMagic(vars, "magic_bullet")
+            && gameTime >= getMagicCooldownUntil(npc, "magic_bullet")
+            && castMagicBullet(npc, target, vars, Math.max(highThreat ? 65.0 : 45.0, vars.proficiency_magic_bullet))) {
+            applyPostCastCooldown(npc, vars, "magic_bullet", new CompoundTag(), gameTime, highThreat ? 8 : 6);
+            return true;
          } else if (NpcMagicExecutionService.hasCastableMagic(vars, "gander")
             && gameTime >= getMagicCooldownUntil(npc, "gander")
             && castGander(npc, target, vars, new CompoundTag(), Math.max(highThreat ? 70.0 : 50.0, vars.proficiency_gander))) {
@@ -2760,9 +2813,23 @@ public final class NpcMagicCastBridge {
    ) {
       if (target == null || !target.isAlive() || npc.distanceToSqr(target) > 196.0) {
          return false;
-      } else if (gameTime < getMagicCooldownUntil(npc, "gravity_magic")) {
-         return false;
       } else {
+         if (NpcMagicExecutionService.hasCastableMagic(vars, "binding_magic")
+            && gameTime >= getMagicCooldownUntil(npc, "binding_magic")
+            && castBindingMagic(npc, target, vars, Math.max(threat.enemyCount() >= 2 ? 75.0 : 55.0, vars.proficiency_binding_magic))) {
+            applyPostCastCooldown(npc, vars, "binding_magic", new CompoundTag(), gameTime, 10);
+            return true;
+         }
+         if (NpcMagicExecutionService.hasCastableMagic(vars, "suggestion_magic")
+            && gameTime >= getMagicCooldownUntil(npc, "suggestion_magic")
+            && !MagicSuggestion.isServantTarget(target)
+            && castSuggestionMagic(npc, target, vars, Math.max(50.0, vars.proficiency_suggestion_magic))) {
+            applyPostCastCooldown(npc, vars, "suggestion_magic", new CompoundTag(), gameTime, 10);
+            return true;
+         }
+         if (gameTime < getMagicCooldownUntil(npc, "gravity_magic")) {
+            return false;
+         }
          CompoundTag gravityPayload = new CompoundTag();
          gravityPayload.putInt("gravity_target", 1);
          gravityPayload.putInt("gravity_mode", threat.strongTarget() ? 2 : 1);
@@ -3148,11 +3215,15 @@ public final class NpcMagicCastBridge {
                weight += 2.8;
             }
 
-            if ("gravity_magic".equals(magicId)) {
+            if ("gravity_magic".equals(magicId) || "binding_magic".equals(magicId)) {
                weight += 1.5;
             }
 
-            if ("gander".equals(magicId) || "emerald_winter_river".equals(magicId)) {
+            if ("gander".equals(magicId)
+               || "magic_bullet".equals(magicId)
+               || "fire_magic".equals(magicId)
+               || "earth_magic".equals(magicId)
+               || "emerald_winter_river".equals(magicId)) {
                weight++;
             }
             break;
@@ -3161,20 +3232,25 @@ public final class NpcMagicCastBridge {
                weight += 3.0;
             }
 
-            if ("jewel_random_shoot".equals(magicId)) {
+            if ("jewel_random_shoot".equals(magicId) || "magic_bullet".equals(magicId) || "fire_magic".equals(magicId)) {
                weight++;
             }
 
-            if ("gander".equals(magicId) || "ruby_flame_sword".equals(magicId) || "cyan_wind".equals(magicId)) {
+            if ("gander".equals(magicId) || "water_magic".equals(magicId) || "wind_magic".equals(magicId) || "ruby_flame_sword".equals(magicId) || "cyan_wind".equals(magicId)) {
                weight++;
             }
             break;
          case CONTROL_DRAIN:
-            if ("gravity_magic".equals(magicId)) {
+            if ("gravity_magic".equals(magicId) || "binding_magic".equals(magicId)) {
                weight += 3.2;
             }
 
-            if ("sapphire_winter_frost".equals(magicId) || "emerald_winter_river".equals(magicId)) {
+            if ("suggestion_magic".equals(magicId)
+               || "water_magic".equals(magicId)
+               || "wind_magic".equals(magicId)
+               || "earth_magic".equals(magicId)
+               || "sapphire_winter_frost".equals(magicId)
+               || "emerald_winter_river".equals(magicId)) {
                weight += 1.4;
             }
 
@@ -3188,6 +3264,12 @@ public final class NpcMagicCastBridge {
             break;
          case BALANCED:
             if ("gravity_magic".equals(magicId)
+               || "binding_magic".equals(magicId)
+               || "magic_bullet".equals(magicId)
+               || "fire_magic".equals(magicId)
+               || "water_magic".equals(magicId)
+               || "wind_magic".equals(magicId)
+               || "earth_magic".equals(magicId)
                || "gander".equals(magicId)
                || "ruby_flame_sword".equals(magicId)
                || "sapphire_winter_frost".equals(magicId)
@@ -3202,7 +3284,14 @@ public final class NpcMagicCastBridge {
       }
 
       if (distance < 5.0) {
-         if ("reinforcement".equals(magicId) || "gravity_magic".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
+         if ("reinforcement".equals(magicId)
+            || "healing_magic".equals(magicId)
+            || "gravity_magic".equals(magicId)
+            || "binding_magic".equals(magicId)
+            || "water_magic".equals(magicId)
+            || "wind_magic".equals(magicId)
+            || "earth_magic".equals(magicId)
+            || "topaz_reinforcement".equals(magicId)) {
             weight++;
          }
 
@@ -3213,13 +3302,17 @@ public final class NpcMagicCastBridge {
             weight *= 0.65;
          }
       } else if (distance > 14.0) {
-         if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
+         if ("reinforcement".equals(magicId) || "healing_magic".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
             weight *= 0.45;
          }
 
          if ("gandr_machine_gun".equals(magicId)
             || "jewel_machine_gun".equals(magicId)
             || "gander".equals(magicId)
+            || "magic_bullet".equals(magicId)
+            || "fire_magic".equals(magicId)
+            || "water_magic".equals(magicId)
+            || "wind_magic".equals(magicId)
             || "ruby_flame_sword".equals(magicId)
             || "cyan_wind".equals(magicId)) {
             weight += 0.8;
@@ -3254,6 +3347,23 @@ public final class NpcMagicCastBridge {
          weight *= 1.32;
       }
 
+      if ("healing_magic".equals(magicId)) {
+         weight += manaRatio >= 0.25 ? 0.6 : -0.8;
+      } else if ("binding_magic".equals(magicId) && distance <= 8.0) {
+         weight += 1.6;
+      } else if ("suggestion_magic".equals(magicId) && distance >= 4.0 && distance <= 12.0) {
+         weight += 0.8;
+      }
+
+      if (isElementalMagic(magicId)) {
+         if (distance >= 7.0 && distance <= 24.0) {
+            weight += "fire_magic".equals(magicId) ? 1.1 : 0.7;
+         }
+         if (payload != null && payload.contains("element_mode") && payload.getInt("element_mode") == 1) {
+            weight += distance <= 8.0 ? 1.2 : -0.25;
+         }
+      }
+
       if ("gravity_magic".equals(magicId) && payload.contains("gravity_target") && payload.getInt("gravity_target") == 0 && distance < 6.0) {
          weight += 0.5;
       }
@@ -3285,6 +3395,11 @@ public final class NpcMagicCastBridge {
                "gandr_machine_gun",
                "jewel_random_shoot",
                "jewel_machine_gun",
+               "magic_bullet",
+               "suggestion_magic",
+               "fire_magic",
+               "water_magic",
+               "wind_magic",
                "ruby_flame_sword",
                "sapphire_winter_frost",
                "emerald_winter_river",
@@ -3309,6 +3424,13 @@ public final class NpcMagicCastBridge {
          case "gravity_magic" -> 20.0;
          case "reinforcement" -> 20.0 * Mth.clamp(payload.getInt("reinforcement_level"), 1, 5);
          case "jewel_random_shoot" -> 30.0;
+         case "healing_magic" -> 12.0 + proficiency * 0.08;
+         case "magic_bullet" -> 8.0 + proficiency * 0.06;
+         case "suggestion_magic" -> 10.0 + proficiency * 0.08;
+         case "binding_magic" -> 12.0 + proficiency * 0.08;
+         case "fire_magic" -> 10.0 + proficiency * 0.12;
+         case "water_magic", "earth_magic" -> 9.0 + proficiency * 0.10;
+         case "wind_magic" -> 8.0 + proficiency * 0.09;
          case "jewel_machine_gun" -> {
             boolean defensive = payload != null && payload.contains("jewel_machine_gun_mode") && Mth.clamp(payload.getInt("jewel_machine_gun_mode"), 0, 1) == 1;
             int waves = getJewelMachineGunWaveCount(proficiency, defensive);
@@ -3340,6 +3462,153 @@ public final class NpcMagicCastBridge {
 
    private static int getPerMagicCooldown(String magicId, CompoundTag payload) {
       return NpcMagicExecutionService.getPerMagicCooldown(magicId, payload);
+   }
+
+   private static boolean tryEmergencyHealingMagic(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime) {
+      if (npc == null || vars == null || !NpcMagicExecutionService.hasCastableMagic(vars, "healing_magic")) {
+         return false;
+      }
+      double ratio = npc.getHealth() / Math.max(1.0F, npc.getMaxHealth());
+      if (ratio > 0.55 || gameTime < getMagicCooldownUntil(npc, "healing_magic")) {
+         return false;
+      }
+      if (!castHealingMagic(npc, npc, vars, Math.max(45.0, vars.proficiency_healing_magic))) {
+         return false;
+      }
+      applyPostCastCooldown(npc, vars, "healing_magic", new CompoundTag(), gameTime, 10);
+      return true;
+   }
+
+   static boolean castHealingMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      }
+      LivingEntity healTarget = caster;
+      double cost = estimateManaCost("healing_magic", new CompoundTag(), proficiency);
+      if (!consumeMana(vars, cost)) {
+         return false;
+      }
+      markCastingPose(caster, 12);
+      return MagicHealing.healDirect(caster, healTarget, vars, proficiency);
+   }
+
+   static boolean castMagicBullet(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!hasProjectilePath(caster, target, MagicMagicBullet.speed(proficiency), 0.02)) {
+         repositionForClearShot(caster, target, 9.0, 1.08);
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("magic_bullet", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, 8);
+      return MagicMagicBullet.castDirect(caster, target, vars, proficiency);
+   }
+
+   static boolean castSuggestionMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null || caster.distanceToSqr(target) > 256.0) {
+         return false;
+      } else if (MagicSuggestion.isServantTarget(target)) {
+         return false;
+      } else if (!MagicSuggestion.canControlTarget(target)) {
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("suggestion_magic", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, 12);
+      caster.lookAt(target, 38.0F, 38.0F);
+      return MagicSuggestion.castDirect(caster, target, vars, proficiency);
+   }
+
+   static boolean castBindingMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null || caster.distanceToSqr(target) > 256.0) {
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("binding_magic", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, proficiency >= 75.0 ? 14 : 10);
+      caster.lookAt(target, 38.0F, 38.0F);
+      return MagicBinding.castDirect(caster, target, vars, proficiency);
+   }
+
+   static boolean castFireMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
+   ) {
+      return castElementalMagic(caster, target, vars, payload, proficiency, "fire_magic");
+   }
+
+   static boolean castWaterMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
+   ) {
+      return castElementalMagic(caster, target, vars, payload, proficiency, "water_magic");
+   }
+
+   static boolean castWindMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
+   ) {
+      return castElementalMagic(caster, target, vars, payload, proficiency, "wind_magic");
+   }
+
+   static boolean castEarthMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
+   ) {
+      return castElementalMagic(caster, target, vars, payload, proficiency, "earth_magic");
+   }
+
+   private static boolean castElementalMagic(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency, String magicId
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      }
+      boolean utility = shouldUseElementUtility(caster, target, payload, proficiency, magicId);
+      if (!utility && !hasProjectilePath(caster, target, elementalProjectileSpeed(magicId, proficiency), 0.0)) {
+         repositionForClearShot(caster, target, 9.0, 1.08);
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost(magicId, payload == null ? new CompoundTag() : payload, proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, utility ? 14 : 10);
+      caster.lookAt(target, 38.0F, 38.0F);
+      return switch (magicId) {
+         case "fire_magic" -> MagicFireElement.castDirect(caster, target, vars, proficiency, utility);
+         case "water_magic" -> MagicWaterElement.castDirect(caster, target, vars, proficiency, utility);
+         case "wind_magic" -> MagicWindElement.castDirect(caster, target, vars, proficiency, utility);
+         case "earth_magic" -> MagicEarthElement.castDirect(caster, target, vars, proficiency, utility);
+         default -> false;
+      };
+   }
+
+   private static boolean shouldUseElementUtility(MysticMagicianEntity caster, LivingEntity target, CompoundTag payload, double proficiency, String magicId) {
+      if (proficiency < ("fire_magic".equals(magicId) ? 50.0 : 25.0)) {
+         return false;
+      }
+      double distance = caster.distanceTo(target);
+      boolean presetUtility = payload != null && payload.contains("element_mode") && Mth.clamp(payload.getInt("element_mode"), 0, 1) == 1;
+      if (presetUtility && distance <= 12.0) {
+         return true;
+      }
+      return distance <= 7.0 && caster.getRandom().nextFloat() < 0.35F;
+   }
+
+   private static double elementalProjectileSpeed(String magicId, double proficiency) {
+      double p = Mth.clamp(proficiency, 0.0, 100.0);
+      if ("fire_magic".equals(magicId)) {
+         return p >= 75.0 ? 4.2 : p >= 50.0 ? 3.2 : p >= 25.0 ? 2.5 : 1.5;
+      } else if ("water_magic".equals(magicId)) {
+         return p >= 75.0 ? 4.4 : p >= 25.0 ? 2.6 : 1.4;
+      } else if ("wind_magic".equals(magicId)) {
+         return p >= 75.0 ? 4.8 : p >= 25.0 ? 3.0 : 1.2;
+      }
+      return p >= 50.0 ? 2.5 : p >= 25.0 ? 2.0 : 1.4;
    }
 
    static boolean castGander(
@@ -3539,6 +3808,10 @@ public final class NpcMagicCastBridge {
       } else {
          return false;
       }
+   }
+
+   private static boolean isElementalMagic(String magicId) {
+      return "fire_magic".equals(magicId) || "water_magic".equals(magicId) || "wind_magic".equals(magicId) || "earth_magic".equals(magicId);
    }
 
    static boolean castGravity(
@@ -4019,6 +4292,14 @@ public final class NpcMagicCastBridge {
             case "gander", "gandr_machine_gun" -> vars.proficiency_gander;
             case "gravity_magic" -> vars.proficiency_gravity_magic;
             case "reinforcement" -> vars.proficiency_reinforcement;
+            case "healing_magic" -> vars.proficiency_healing_magic;
+            case "magic_bullet" -> vars.proficiency_magic_bullet;
+            case "suggestion_magic" -> vars.proficiency_suggestion_magic;
+            case "binding_magic" -> vars.proficiency_binding_magic;
+            case "fire_magic" -> vars.proficiency_fire_magic;
+            case "water_magic" -> vars.proficiency_water_magic;
+            case "wind_magic" -> vars.proficiency_wind_magic;
+            case "earth_magic" -> vars.proficiency_earth_magic;
             case "jewel_random_shoot" -> vars.proficiency_jewel_magic_shoot;
             case "jewel_machine_gun",
                "ruby_flame_sword",

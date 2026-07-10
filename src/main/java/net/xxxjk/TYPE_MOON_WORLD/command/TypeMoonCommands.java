@@ -35,6 +35,14 @@ public class TypeMoonCommands {
    private static final String MACHINE_GUN_MAGIC_ID = "jewel_machine_gun";
    private static final String GANDER_MAGIC_ID = "gander";
    private static final String GANDR_MACHINE_GUN_MAGIC_ID = "gandr_machine_gun";
+   private static final String HEALING_MAGIC_ID = "healing_magic";
+   private static final String MAGIC_BULLET_MAGIC_ID = "magic_bullet";
+   private static final String SUGGESTION_MAGIC_ID = "suggestion_magic";
+   private static final String BINDING_MAGIC_ID = "binding_magic";
+   private static final String FIRE_MAGIC_ID = "fire_magic";
+   private static final String WATER_MAGIC_ID = "water_magic";
+   private static final String WIND_MAGIC_ID = "wind_magic";
+   private static final String EARTH_MAGIC_ID = "earth_magic";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
    private static final int SAMPLE_COORD_RANGE = 2000000;
    private static final double ACCEPT_MEAN_MIN = 9.0;
@@ -53,7 +61,15 @@ public class TypeMoonCommands {
       "sword_barrel_full_open",
       "reinforcement",
       "gravity_magic",
-      "gander"
+      "gander",
+      HEALING_MAGIC_ID,
+      MAGIC_BULLET_MAGIC_ID,
+      SUGGESTION_MAGIC_ID,
+      BINDING_MAGIC_ID,
+      FIRE_MAGIC_ID,
+      WATER_MAGIC_ID,
+      WIND_MAGIC_ID,
+      EARTH_MAGIC_ID
    };
    private static final String[] ALL_MAGICS = new String[]{
       BASIC_JEWEL_MAGIC_ID,
@@ -71,7 +87,15 @@ public class TypeMoonCommands {
       "reinforcement_other",
       "reinforcement_item",
       "gravity_magic",
-      GANDER_MAGIC_ID
+      GANDER_MAGIC_ID,
+      HEALING_MAGIC_ID,
+      MAGIC_BULLET_MAGIC_ID,
+      SUGGESTION_MAGIC_ID,
+      BINDING_MAGIC_ID,
+      FIRE_MAGIC_ID,
+      WATER_MAGIC_ID,
+      WIND_MAGIC_ID,
+      EARTH_MAGIC_ID
    };
 
    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -372,6 +396,14 @@ public class TypeMoonCommands {
          vars.proficiency_gravity_magic = 0.0;
          vars.proficiency_reinforcement = 0.0;
          vars.proficiency_gander = 0.0;
+         vars.proficiency_healing_magic = 0.0;
+         vars.proficiency_magic_bullet = 0.0;
+         vars.proficiency_suggestion_magic = 0.0;
+         vars.proficiency_binding_magic = 0.0;
+         vars.proficiency_fire_magic = 0.0;
+         vars.proficiency_water_magic = 0.0;
+         vars.proficiency_wind_magic = 0.0;
+         vars.proficiency_earth_magic = 0.0;
          vars.learned_magics.clear();
          vars.has_unlimited_blade_works = false;
          player.getPersistentData().putBoolean("TypeMoonNoCooldown", false);
@@ -456,6 +488,14 @@ public class TypeMoonCommands {
          vars.proficiency_gravity_magic = 100.0;
          vars.proficiency_reinforcement = 100.0;
          vars.proficiency_gander = 100.0;
+         vars.proficiency_healing_magic = 100.0;
+         vars.proficiency_magic_bullet = 100.0;
+         vars.proficiency_suggestion_magic = 100.0;
+         vars.proficiency_binding_magic = 100.0;
+         vars.proficiency_fire_magic = 100.0;
+         vars.proficiency_water_magic = 100.0;
+         vars.proficiency_wind_magic = 100.0;
+         vars.proficiency_earth_magic = 100.0;
 
          for (String m : ALL_MAGICS) {
             if (!vars.learned_magics.contains(m)) {
@@ -825,6 +865,30 @@ public class TypeMoonCommands {
                break;
             case "gander":
                vars.proficiency_gander = value;
+               break;
+            case "healing_magic":
+               vars.proficiency_healing_magic = value;
+               break;
+            case "magic_bullet":
+               vars.proficiency_magic_bullet = value;
+               break;
+            case "suggestion_magic":
+               vars.proficiency_suggestion_magic = value;
+               break;
+            case "binding_magic":
+               vars.proficiency_binding_magic = value;
+               break;
+            case "fire_magic":
+               vars.proficiency_fire_magic = value;
+               break;
+            case "water_magic":
+               vars.proficiency_water_magic = value;
+               break;
+            case "wind_magic":
+               vars.proficiency_wind_magic = value;
+               break;
+            case "earth_magic":
+               vars.proficiency_earth_magic = value;
                break;
             default:
                validType = false;

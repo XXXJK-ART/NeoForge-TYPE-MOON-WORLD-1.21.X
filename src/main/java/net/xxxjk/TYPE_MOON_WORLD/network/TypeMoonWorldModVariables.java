@@ -148,6 +148,14 @@ public class TypeMoonWorldModVariables {
          clone.proficiency_sword_barrel_full_open = original.proficiency_sword_barrel_full_open;
          clone.proficiency_gravity_magic = original.proficiency_gravity_magic;
          clone.proficiency_gander = original.proficiency_gander;
+         clone.proficiency_healing_magic = original.proficiency_healing_magic;
+         clone.proficiency_magic_bullet = original.proficiency_magic_bullet;
+         clone.proficiency_suggestion_magic = original.proficiency_suggestion_magic;
+         clone.proficiency_binding_magic = original.proficiency_binding_magic;
+         clone.proficiency_fire_magic = original.proficiency_fire_magic;
+         clone.proficiency_water_magic = original.proficiency_water_magic;
+         clone.proficiency_wind_magic = original.proficiency_wind_magic;
+         clone.proficiency_earth_magic = original.proficiency_earth_magic;
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
          clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
@@ -165,6 +173,11 @@ public class TypeMoonWorldModVariables {
             clone.jewel_magic_mode = original.jewel_magic_mode;
             clone.gravity_magic_target = original.gravity_magic_target;
             clone.gravity_magic_mode = original.gravity_magic_mode;
+            clone.healing_magic_target = original.healing_magic_target;
+            clone.fire_magic_mode = original.fire_magic_mode;
+            clone.water_magic_mode = original.water_magic_mode;
+            clone.wind_magic_mode = original.wind_magic_mode;
+            clone.earth_magic_mode = original.earth_magic_mode;
             clone.is_sword_barrel_active = false;
          } else {
             clone.is_chanting_ubw = false;
@@ -347,7 +360,12 @@ public class TypeMoonWorldModVariables {
       int reinforcement_mode,
       int reinforcement_target,
       int reinforcement_level,
-      int gandr_machine_gun_mode
+      int gandr_machine_gun_mode,
+      int healing_magic_target,
+      int fire_magic_mode,
+      int water_magic_mode,
+      int wind_magic_mode,
+      int earth_magic_mode
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ModeStateSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mode_state_sync")
@@ -363,10 +381,20 @@ public class TypeMoonWorldModVariables {
             buffer.writeInt(message.reinforcement_target);
             buffer.writeInt(message.reinforcement_level);
             buffer.writeInt(message.gandr_machine_gun_mode);
+            buffer.writeInt(message.healing_magic_target);
+            buffer.writeInt(message.fire_magic_mode);
+            buffer.writeInt(message.water_magic_mode);
+            buffer.writeInt(message.wind_magic_mode);
+            buffer.writeInt(message.earth_magic_mode);
          },
          buffer -> new TypeMoonWorldModVariables.ModeStateSyncMessage(
             buffer.readInt(),
             buffer.readBoolean(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
             buffer.readInt(),
             buffer.readInt(),
             buffer.readInt(),
@@ -387,7 +415,12 @@ public class TypeMoonWorldModVariables {
             vars.reinforcement_mode,
             vars.reinforcement_target,
             vars.reinforcement_level,
-            vars.gandr_machine_gun_mode
+            vars.gandr_machine_gun_mode,
+            vars.healing_magic_target,
+            vars.fire_magic_mode,
+            vars.water_magic_mode,
+            vars.wind_magic_mode,
+            vars.earth_magic_mode
          );
       }
 
@@ -411,6 +444,11 @@ public class TypeMoonWorldModVariables {
                      vars.reinforcement_target = Mth.clamp(message.reinforcement_target, 0, 3);
                      vars.reinforcement_level = Mth.clamp(message.reinforcement_level, 1, 5);
                      vars.gandr_machine_gun_mode = Mth.clamp(message.gandr_machine_gun_mode, 0, 1);
+                     vars.healing_magic_target = Mth.clamp(message.healing_magic_target, 0, 1);
+                     vars.fire_magic_mode = Mth.clamp(message.fire_magic_mode, 0, 1);
+                     vars.water_magic_mode = Mth.clamp(message.water_magic_mode, 0, 1);
+                     vars.wind_magic_mode = Mth.clamp(message.wind_magic_mode, 0, 1);
+                     vars.earth_magic_mode = Mth.clamp(message.earth_magic_mode, 0, 1);
                   }
                )
                .exceptionally(e -> {
@@ -469,6 +507,14 @@ public class TypeMoonWorldModVariables {
       public double proficiency_sword_barrel_full_open = 0.0;
       public double proficiency_gravity_magic = 0.0;
       public double proficiency_gander = 0.0;
+      public double proficiency_healing_magic = 0.0;
+      public double proficiency_magic_bullet = 0.0;
+      public double proficiency_suggestion_magic = 0.0;
+      public double proficiency_binding_magic = 0.0;
+      public double proficiency_fire_magic = 0.0;
+      public double proficiency_water_magic = 0.0;
+      public double proficiency_wind_magic = 0.0;
+      public double proficiency_earth_magic = 0.0;
       public List<ItemStack> analyzed_items = new ArrayList<>();
       public ItemStack projection_selected_item = ItemStack.EMPTY;
       public List<TypeMoonWorldModVariables.PlayerVariables.SavedStructure> analyzed_structures = new ArrayList<>();
@@ -494,6 +540,11 @@ public class TypeMoonWorldModVariables {
       public int jewel_magic_mode = 0;
       public int gravity_magic_target = 0;
       public int gravity_magic_mode = 0;
+      public int healing_magic_target = 0;
+      public int fire_magic_mode = 0;
+      public int water_magic_mode = 0;
+      public int wind_magic_mode = 0;
+      public int earth_magic_mode = 0;
       public int reinforcement_mode = 0;
       public int reinforcement_target = 0;
       public boolean is_sword_barrel_active = false;
@@ -668,7 +719,11 @@ public class TypeMoonWorldModVariables {
       }
 
       private static boolean isPresetOptionMagic(String magicId) {
-         return "reinforcement".equals(magicId) || "gravity_magic".equals(magicId) || "gandr_machine_gun".equals(magicId) || "projection".equals(magicId);
+         return "reinforcement".equals(magicId)
+            || "gravity_magic".equals(magicId)
+            || "gandr_machine_gun".equals(magicId)
+            || "projection".equals(magicId)
+            || "healing_magic".equals(magicId);
       }
 
       private static String canonicalSelfKnowledgeMagicId(String magicId) {
@@ -704,6 +759,8 @@ public class TypeMoonWorldModVariables {
             payload.putInt("gravity_mode", mode);
          } else if ("gandr_machine_gun".equals(crestEntry.magicId)) {
             payload.putInt("gandr_machine_gun_mode", Math.floorMod(seed, 2));
+         } else if ("healing_magic".equals(crestEntry.magicId)) {
+            payload.putInt("healing_target", Math.floorMod(seed, 2));
          } else if ("projection".equals(crestEntry.magicId)) {
             payload.putBoolean("projection_lock_empty", true);
          }
@@ -1445,6 +1502,14 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("proficiency_sword_barrel_full_open", this.proficiency_sword_barrel_full_open);
          nbt.putDouble("proficiency_gravity_magic", this.proficiency_gravity_magic);
          nbt.putDouble("proficiency_gander", this.proficiency_gander);
+         nbt.putDouble("proficiency_healing_magic", this.proficiency_healing_magic);
+         nbt.putDouble("proficiency_magic_bullet", this.proficiency_magic_bullet);
+         nbt.putDouble("proficiency_suggestion_magic", this.proficiency_suggestion_magic);
+         nbt.putDouble("proficiency_binding_magic", this.proficiency_binding_magic);
+         nbt.putDouble("proficiency_fire_magic", this.proficiency_fire_magic);
+         nbt.putDouble("proficiency_water_magic", this.proficiency_water_magic);
+         nbt.putDouble("proficiency_wind_magic", this.proficiency_wind_magic);
+         nbt.putDouble("proficiency_earth_magic", this.proficiency_earth_magic);
          nbt.putDouble("proficiency_reinforcement", this.proficiency_reinforcement);
          nbt.putBoolean("is_chanting_ubw", this.is_chanting_ubw);
          nbt.putInt("ubw_chant_progress", this.ubw_chant_progress);
@@ -1461,6 +1526,11 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("jewel_magic_mode", this.jewel_magic_mode);
          nbt.putInt("gravity_magic_target", this.gravity_magic_target);
          nbt.putInt("gravity_magic_mode", this.gravity_magic_mode);
+         nbt.putInt("healing_magic_target", this.healing_magic_target);
+         nbt.putInt("fire_magic_mode", this.fire_magic_mode);
+         nbt.putInt("water_magic_mode", this.water_magic_mode);
+         nbt.putInt("wind_magic_mode", this.wind_magic_mode);
+         nbt.putInt("earth_magic_mode", this.earth_magic_mode);
          nbt.putInt("reinforcement_mode", this.reinforcement_mode);
          nbt.putInt("reinforcement_target", this.reinforcement_target);
          nbt.putInt("reinforcement_level", this.reinforcement_level);
@@ -1647,6 +1717,14 @@ public class TypeMoonWorldModVariables {
          this.proficiency_sword_barrel_full_open = nbt.getDouble("proficiency_sword_barrel_full_open");
          this.proficiency_gravity_magic = nbt.getDouble("proficiency_gravity_magic");
          this.proficiency_gander = nbt.getDouble("proficiency_gander");
+         this.proficiency_healing_magic = nbt.getDouble("proficiency_healing_magic");
+         this.proficiency_magic_bullet = nbt.getDouble("proficiency_magic_bullet");
+         this.proficiency_suggestion_magic = nbt.getDouble("proficiency_suggestion_magic");
+         this.proficiency_binding_magic = nbt.getDouble("proficiency_binding_magic");
+         this.proficiency_fire_magic = nbt.getDouble("proficiency_fire_magic");
+         this.proficiency_water_magic = nbt.getDouble("proficiency_water_magic");
+         this.proficiency_wind_magic = nbt.getDouble("proficiency_wind_magic");
+         this.proficiency_earth_magic = nbt.getDouble("proficiency_earth_magic");
          this.proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
          this.is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
          this.ubw_chant_progress = nbt.getInt("ubw_chant_progress");
@@ -1695,6 +1773,27 @@ public class TypeMoonWorldModVariables {
          }
 
          this.gravity_magic_mode = Math.max(-2, Math.min(2, this.gravity_magic_mode));
+         if (nbt.contains("healing_magic_target")) {
+            this.healing_magic_target = nbt.getInt("healing_magic_target");
+         }
+
+         this.healing_magic_target = Math.max(0, Math.min(1, this.healing_magic_target));
+         if (nbt.contains("fire_magic_mode")) {
+            this.fire_magic_mode = nbt.getInt("fire_magic_mode");
+         }
+         if (nbt.contains("water_magic_mode")) {
+            this.water_magic_mode = nbt.getInt("water_magic_mode");
+         }
+         if (nbt.contains("wind_magic_mode")) {
+            this.wind_magic_mode = nbt.getInt("wind_magic_mode");
+         }
+         if (nbt.contains("earth_magic_mode")) {
+            this.earth_magic_mode = nbt.getInt("earth_magic_mode");
+         }
+         this.fire_magic_mode = Math.max(0, Math.min(1, this.fire_magic_mode));
+         this.water_magic_mode = Math.max(0, Math.min(1, this.water_magic_mode));
+         this.wind_magic_mode = Math.max(0, Math.min(1, this.wind_magic_mode));
+         this.earth_magic_mode = Math.max(0, Math.min(1, this.earth_magic_mode));
          if (nbt.contains("reinforcement_mode")) {
             this.reinforcement_mode = nbt.getInt("reinforcement_mode");
          }
@@ -2437,7 +2536,15 @@ public class TypeMoonWorldModVariables {
       double sword_barrel_full_open,
       double gravity_magic,
       double gander,
-      double reinforcement
+      double reinforcement,
+      double healing_magic,
+      double magic_bullet,
+      double suggestion_magic,
+      double binding_magic,
+      double fire_magic,
+      double water_magic,
+      double wind_magic,
+      double earth_magic
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ProficiencySyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "proficiency_sync")
@@ -2453,8 +2560,24 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.gravity_magic);
             buffer.writeDouble(message.gander);
             buffer.writeDouble(message.reinforcement);
+            buffer.writeDouble(message.healing_magic);
+            buffer.writeDouble(message.magic_bullet);
+            buffer.writeDouble(message.suggestion_magic);
+            buffer.writeDouble(message.binding_magic);
+            buffer.writeDouble(message.fire_magic);
+            buffer.writeDouble(message.water_magic);
+            buffer.writeDouble(message.wind_magic);
+            buffer.writeDouble(message.earth_magic);
          },
          buffer -> new TypeMoonWorldModVariables.ProficiencySyncMessage(
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
@@ -2477,7 +2600,15 @@ public class TypeMoonWorldModVariables {
             vars.proficiency_sword_barrel_full_open,
             vars.proficiency_gravity_magic,
             vars.proficiency_gander,
-            vars.proficiency_reinforcement
+            vars.proficiency_reinforcement,
+            vars.proficiency_healing_magic,
+            vars.proficiency_magic_bullet,
+            vars.proficiency_suggestion_magic,
+            vars.proficiency_binding_magic,
+            vars.proficiency_fire_magic,
+            vars.proficiency_water_magic,
+            vars.proficiency_wind_magic,
+            vars.proficiency_earth_magic
          );
       }
 
@@ -2501,6 +2632,14 @@ public class TypeMoonWorldModVariables {
                   vars.proficiency_gravity_magic = message.gravity_magic;
                   vars.proficiency_gander = message.gander;
                   vars.proficiency_reinforcement = message.reinforcement;
+                  vars.proficiency_healing_magic = message.healing_magic;
+                  vars.proficiency_magic_bullet = message.magic_bullet;
+                  vars.proficiency_suggestion_magic = message.suggestion_magic;
+                  vars.proficiency_binding_magic = message.binding_magic;
+                  vars.proficiency_fire_magic = message.fire_magic;
+                  vars.proficiency_water_magic = message.water_magic;
+                  vars.proficiency_wind_magic = message.wind_magic;
+                  vars.proficiency_earth_magic = message.earth_magic;
                }
             );
          }

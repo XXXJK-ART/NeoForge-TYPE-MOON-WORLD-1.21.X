@@ -45,6 +45,8 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 4: Set Reinforcement Level - value is level
                 // 6: Set Gravity Target - value is target index (0 self / 1 other; <0 toggles for compatibility)
                 // 7: Set Gravity Mode - value is -2..2 (ultra light -> ultra heavy)
+                // 8: Set Healing Target - value is target index (0 self / 1 other; <0 toggles)
+                // 9: Set Elemental Mode - value is 0 attack / 1 utility; <0 toggles
                 
                 if (message.actionType == 2) {
                     if (!isReinforcementMagic(currentMagic)) {
@@ -173,6 +175,53 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             Component.translatable("message.typemoonworld.magic.gravity.mode_changed", Component.translatable(modeKey)),
                             true
                     );
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    return;
+                } else if (message.actionType == 8) {
+                    if (!"healing_magic".equals(currentMagic)) {
+                        return;
+                    }
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+
+                    if (message.value < 0) {
+                        vars.healing_magic_target = vars.healing_magic_target == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        vars.healing_magic_target = message.value;
+                    } else {
+                        return;
+                    }
+
+                    Component targetComp = Component.translatable(
+                            vars.healing_magic_target == 0
+                                    ? "gui.typemoonworld.mode.self"
+                                    : "gui.typemoonworld.mode.other"
+                    );
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.healing.target_changed", targetComp), true);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    return;
+                } else if (message.actionType == 9) {
+                    if (!PlayerMagicSelectionService.isElementalMagic(currentMagic)) {
+                        return;
+                    }
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+
+                    int nextMode;
+                    if (message.value < 0) {
+                        nextMode = PlayerMagicSelectionService.getElementMode(vars, currentMagic) == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        nextMode = message.value;
+                    } else {
+                        return;
+                    }
+                    PlayerMagicSelectionService.setElementMode(vars, currentMagic, nextMode);
+                    Component modeComp = Component.translatable(nextMode == 0
+                            ? "gui.typemoonworld.overlay.element.mode.attack.short"
+                            : "gui.typemoonworld.overlay.element.mode.utility.short");
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.element.mode_changed", modeComp), true);
                     PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 }

@@ -96,10 +96,28 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY_BROKEN);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDER);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDER_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_PAGE_REINFORCEMENT);
+                        output.accept(ModItems.MAGIC_BOOK_HEALING);
+                        output.accept(ModItems.MAGIC_PAGE_HEALING);
+                        output.accept(ModItems.MAGIC_BOOK_MAGIC_BULLET);
+                        output.accept(ModItems.MAGIC_PAGE_MAGIC_BULLET);
+                        output.accept(ModItems.MAGIC_BOOK_SUGGESTION);
+                        output.accept(ModItems.MAGIC_PAGE_SUGGESTION);
+                        output.accept(ModItems.MAGIC_BOOK_BINDING);
+                        output.accept(ModItems.MAGIC_PAGE_BINDING);
+                        output.accept(ModItems.MAGIC_BOOK_FIRE);
+                        output.accept(ModItems.MAGIC_PAGE_FIRE);
+                        output.accept(ModItems.MAGIC_BOOK_WATER);
+                        output.accept(ModItems.MAGIC_PAGE_WATER);
+                        output.accept(ModItems.MAGIC_BOOK_WIND);
+                        output.accept(ModItems.MAGIC_PAGE_WIND);
+                        output.accept(ModItems.MAGIC_BOOK_EARTH);
+                        output.accept(ModItems.MAGIC_PAGE_EARTH);
                         
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
