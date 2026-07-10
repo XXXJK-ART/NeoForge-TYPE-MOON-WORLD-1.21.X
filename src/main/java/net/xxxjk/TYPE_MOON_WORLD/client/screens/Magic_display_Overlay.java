@@ -17,6 +17,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 @EventBusSubscriber({Dist.CLIENT})
 @SuppressWarnings("null")
 public class Magic_display_Overlay {
+    private static final ResourceLocation MANA_ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/screens/mana.png");
+
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void eventHandler(RenderGuiEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -81,7 +83,7 @@ public class Magic_display_Overlay {
 
             int iconX = barX - 4;
             int iconY = barY - 3;
-            event.getGuiGraphics().blit(ResourceLocation.parse("typemoonworld:textures/screens/mana.png"), iconX, iconY, 0, 0, 16, 16, 16, 16);
+            event.getGuiGraphics().blit(MANA_ICON, iconX, iconY, 0, 0, 16, 16, 16, 16);
 
             if (vars.is_magic_circuit_open) {
                 net.minecraft.network.chat.MutableComponent magicName = Component.translatable("gui.typemoonworld.mode.none");

@@ -264,7 +264,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                                 } else {
                                     player.displayClientMessage(Component.literal("Broken Phantasm Mode: OFF"), true);
                                 }
-                                vars.syncPlayerVariables(player);
+                                vars.syncModeState(player);
                             } else {
                                 vars.sword_barrel_mode = message.value;
                                 
@@ -276,7 +276,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                                 else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
 
                                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
-                                vars.syncPlayerVariables(player);
+                                vars.syncModeState(player);
                             }
                         } else if (message.actionType == 1) {
                             if (message.value > 0) {
@@ -294,7 +294,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
 
                             player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
-                            vars.syncPlayerVariables(player);
+                            vars.syncModeState(player);
                         }
                     } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
                         // Switch between 6 modes (0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random)
@@ -349,7 +349,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         }
                         
                         player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_JEWEL_MODE_CHANGE, modeStr), true);
-                        vars.syncPlayerVariables(player);
+                        vars.syncModeState(player);
                     } else if ("gandr_machine_gun".equals(currentMagic)) {
                         if (isRuntimePresetLocked(player, vars, currentMagic)) {
                             return;

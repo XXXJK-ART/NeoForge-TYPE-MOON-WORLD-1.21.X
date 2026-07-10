@@ -46,7 +46,7 @@ public final class ServantCardManaService {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
       }
       if (player.tickCount % 20 == 0) {
-         vars.syncPlayerVariables(player);
+         vars.syncMana(player);
       }
    }
 
@@ -61,14 +61,18 @@ public final class ServantCardManaService {
    }
 
    public static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
-      return consume(player, vars, amount, false);
+      return consume(player, vars, amount, false, true);
+   }
+
+   public static boolean consumeSilently(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      return consume(player, vars, amount, false, false);
    }
 
    public static boolean consumeNoblePhantasm(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
-      return consume(player, vars, amount, true);
+      return consume(player, vars, amount, true, true);
    }
 
-   public static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount, boolean noblePhantasm) {
+   private static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount, boolean noblePhantasm, boolean sync) {
       if (amount <= 0.0) {
          return true;
       }
@@ -95,9 +99,13 @@ public final class ServantCardManaService {
       if (remaining > 0.0 && masterVars != null) {
          masterVars.player_mana -= remaining;
          MasterServantLinkService.markDrawingMasterMana(master, player);
-         masterVars.syncPlayerVariables(master);
+         if (sync) {
+            masterVars.syncMana(master);
+         }
       }
-      vars.syncPlayerVariables(player);
+      if (sync) {
+         vars.syncMana(player);
+      }
       return true;
    }
 

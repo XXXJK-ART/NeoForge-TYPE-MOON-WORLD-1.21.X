@@ -37,6 +37,12 @@ public final class VFXEnvironmentManager {
 
    @SubscribeEvent
    public static void onClientTick(ClientTickEvent.Post event) {
+      if (ACTIVE.isEmpty()) {
+         if (forcedRainApplied) {
+            clearForcedRain();
+         }
+         return;
+      }
       Iterator<ActiveEnvironment> iterator = ACTIVE.iterator();
       while (iterator.hasNext()) {
          if (!iterator.next().tick()) {

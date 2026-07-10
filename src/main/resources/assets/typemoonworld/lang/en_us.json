@@ -1305,7 +1305,6 @@
     "skill.typemoonworld.servant_card.paracelsus_earth_roar": "Roar of the Mountains",
     "skill.typemoonworld.servant_card.paracelsus_wind_cut": "Cutting of the Firmament",
     "item.typemoonworld.command_spell": "Command Spell",
-    "key.typemoonworld.enkidu_transfiguration_wheel": "Enkidu Transfiguration Wheel",
     "message.typemoonworld.master.activated": "You became a Master. MP max: %s",
     "message.typemoonworld.master.already_active": "You are already a Master.",
     "message.typemoonworld.master.command_spells_added": "Added three Command Spells. Current: %s",

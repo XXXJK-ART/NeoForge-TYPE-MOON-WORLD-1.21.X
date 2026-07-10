@@ -1348,7 +1348,6 @@
     "skill.typemoonworld.servant_card.paracelsus_earth_roar": "群山的咆哮",
     "skill.typemoonworld.servant_card.paracelsus_wind_cut": "苍穹的切割",
     "item.typemoonworld.command_spell": "令咒",
-    "key.typemoonworld.enkidu_transfiguration_wheel": "恩奇都变容轮盘",
     "message.typemoonworld.master.activated": "你成为了御主，MP上限：%s",
     "message.typemoonworld.master.already_active": "你已经是御主",
     "message.typemoonworld.master.command_spells_added": "令咒增加三划，当前：%s",

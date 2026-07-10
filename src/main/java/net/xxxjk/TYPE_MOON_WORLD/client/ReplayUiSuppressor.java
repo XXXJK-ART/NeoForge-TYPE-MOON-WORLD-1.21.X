@@ -17,6 +17,7 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
    value = {Dist.CLIENT}
 )
 public final class ReplayUiSuppressor {
+   private static Boolean replayModLoaded = null;
    private static boolean replayReflectionInitialized = false;
    private static Field replayModuleInstanceField = null;
    private static Method getReplayHandlerMethod = null;
@@ -56,8 +57,12 @@ public final class ReplayUiSuppressor {
    }
 
    private static boolean isReForgedPlayLoaded() {
+      if (replayModLoaded != null) {
+         return replayModLoaded;
+      }
       ModList modList = ModList.get();
-      return modList != null && (modList.isLoaded("reforgedplaymod") || modList.isLoaded("replaymod"));
+      replayModLoaded = modList != null && (modList.isLoaded("reforgedplaymod") || modList.isLoaded("replaymod"));
+      return replayModLoaded;
    }
 
    private static void initReplayReflection() {

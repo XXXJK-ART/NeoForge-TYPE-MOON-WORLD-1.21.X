@@ -76,7 +76,7 @@ public class ModEntities {
       () -> Builder.<VFXTriggerEntity>of(VFXTriggerEntity::new, MobCategory.MISC)
          .sized(0.1F, 0.1F)
          .clientTrackingRange(192)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("vfx_trigger")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH = ENTITY_TYPES.register(
@@ -258,7 +258,7 @@ public class ModEntities {
       () -> Builder.<ExpandingRingEffectEntity>of((entityType, level) -> new ExpandingRingEffectEntity(entityType, level), MobCategory.MISC)
          .sized(16.0F, 1.0F)
          .clientTrackingRange(16)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("expanding_ring_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ProjectionCircuitEffectEntity>> PROJECTION_CIRCUIT_EFFECT = ENTITY_TYPES.register(
@@ -266,7 +266,7 @@ public class ModEntities {
       () -> Builder.<ProjectionCircuitEffectEntity>of((entityType, level) -> new ProjectionCircuitEffectEntity(entityType, level), MobCategory.MISC)
          .sized(8.0F, 1.0F)
          .clientTrackingRange(12)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("projection_circuit_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<UbwChantRippleEntity>> UBW_CHANT_RIPPLE = ENTITY_TYPES.register(
@@ -292,7 +292,7 @@ public class ModEntities {
       () -> Builder.<TsumukariLightColumnEffectEntity>of((entityType, level) -> new TsumukariLightColumnEffectEntity(entityType, level), MobCategory.MISC)
          .sized(2.5F, 8.0F)
          .clientTrackingRange(16)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("tsumukari_light_column_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<HeraclesEntity>> HERACLES = ENTITY_TYPES.register(

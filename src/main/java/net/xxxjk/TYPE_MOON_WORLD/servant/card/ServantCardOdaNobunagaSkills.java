@@ -610,9 +610,12 @@ public final class ServantCardOdaNobunagaSkills {
          stopMountFlight(player, vars, true);
          return true;
       }
-      if (!ServantCardManaService.consume(player, vars, FLIGHT_MP_PER_TICK)) {
+      if (!ServantCardManaService.consumeSilently(player, vars, FLIGHT_MP_PER_TICK)) {
          stopMountFlight(player, vars, true);
          return true;
+      }
+      if (player.tickCount % 10 == 0) {
+         vars.syncMana(player);
       }
       mount.setMountInput(vars.servant_card_flight_forward, vars.servant_card_flight_strafe, vars.servant_card_flight_vertical);
       player.fallDistance = 0.0F;

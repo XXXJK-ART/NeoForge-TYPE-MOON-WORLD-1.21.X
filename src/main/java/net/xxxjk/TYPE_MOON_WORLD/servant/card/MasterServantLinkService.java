@@ -252,8 +252,8 @@ public final class MasterServantLinkService {
       servantVars.master_servant_link_state = info.state();
       servantVars.master_servant_link_decay = info.decay();
       if (master.tickCount % 20 == 0) {
-         masterVars.syncPlayerVariables(master);
-         servantVars.syncPlayerVariables(servant);
+         masterVars.syncMana(master);
+         servantVars.syncMana(servant);
       }
    }
 

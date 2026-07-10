@@ -19,6 +19,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
 @EventBusSubscriber({Dist.CLIENT})
 public class ServantCardHud {
+   private static String cachedCooldownRaw = null;
+   private static int[] cachedCooldowns = new int[9];
+
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
       Minecraft minecraft = Minecraft.getInstance();
@@ -241,10 +244,15 @@ public class ServantCardHud {
    }
 
    private static int[] parseCooldowns(String raw) {
-      int[] result = new int[9];
       if (raw == null || raw.isBlank()) {
-         return result;
+         cachedCooldownRaw = raw;
+         cachedCooldowns = new int[9];
+         return cachedCooldowns;
       }
+      if (raw.equals(cachedCooldownRaw)) {
+         return cachedCooldowns;
+      }
+      int[] result = new int[9];
       String[] parts = raw.split(",");
       for (int i = 0; i < result.length && i < parts.length; i++) {
          try {
@@ -253,6 +261,8 @@ public class ServantCardHud {
             result[i] = 0;
          }
       }
+      cachedCooldownRaw = raw;
+      cachedCooldowns = result;
       return result;
    }
 }

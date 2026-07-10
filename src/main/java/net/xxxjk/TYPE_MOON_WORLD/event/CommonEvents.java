@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
@@ -110,6 +111,7 @@ public class CommonEvents {
    private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
    private static final Map<String, Set<UUID>> SUGGESTED_MOB_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
+   private static final Map<String, Set<UUID>> SERVANT_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
 
    @SubscribeEvent
    public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
@@ -130,6 +132,9 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
+         if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
+            trackServant(servant, serverLevel);
+         }
          // Pass servantId from spawn eggs after entity creation.
          if (event.getEntity() instanceof Monster monster) {
             try {
@@ -168,9 +173,10 @@ public class CommonEvents {
          if (event.getLevel() instanceof ServerLevel serverLevel) {
             // Sasaki Kojiro Presence Concealment D check.
             if (serverLevel.getGameTime() % 40L == 0L) {
-               for (ServantEntity servant : serverLevel.getEntitiesOfClass(ServantEntity.class,
-                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
-                  e -> e.isAlive() && e.getPersistentData().getBoolean("StealthPassiveActive"))) {
+               forEachTrackedServant(serverLevel, servant -> {
+                  if (!servant.getPersistentData().getBoolean("StealthPassiveActive")) {
+                     return;
+                  }
                   CompoundTag data = servant.getPersistentData();
                   long currentTick = serverLevel.getGameTime();
                   long lastHurtTick = data.getLong("LastHurtTick");
@@ -178,14 +184,14 @@ public class CommonEvents {
                   if (servant.hasEffect(MobEffects.INVISIBILITY) && !wasRecentlyHurt) {
                      servant.removeEffect(MobEffects.INVISIBILITY);
                   }
-               }
+               });
             }
             if (serverLevel.getGameTime() % 20L == 0L) {
-               for (CursedArmHassanEntity hassan : serverLevel.getEntitiesOfClass(CursedArmHassanEntity.class,
-                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
-                  e -> e.isAlive() && e.hasEffect(MobEffects.INVISIBILITY))) {
-                  CursedArmHassanCombatHelper.clearNonServantTargeting(hassan);
-               }
+               forEachTrackedServant(serverLevel, servant -> {
+                  if (servant instanceof CursedArmHassanEntity hassan && hassan.hasEffect(MobEffects.INVISIBILITY)) {
+                     CursedArmHassanCombatHelper.clearNonServantTargeting(hassan);
+                  }
+               });
             }
             if (serverLevel.getGameTime() % 10L == 0L) {
                tickSuggestedMobs(serverLevel);
@@ -921,8 +927,7 @@ public class CommonEvents {
          if (gameTime % 5L != 0L) {
             return;
          }
-         AABB worldBox = new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000);
-         for (ServantEntity servant : sl.getEntitiesOfClass(ServantEntity.class, worldBox, Entity::isAlive)) {
+         forEachTrackedServant(sl, servant -> {
             CompoundTag data = servant.getPersistentData();
             SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
             CuChulainnCombatHelper.tickStatus(servant);
@@ -930,7 +935,7 @@ public class CommonEvents {
                data.putInt("BattleContinuationCooldown", Math.max(0, data.getInt("BattleContinuationCooldown") - 5));
             }
             tickBattleContinuationRecovery(servant, data, sl);
-         }
+         });
       }
    }
 
@@ -1022,6 +1027,9 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
       Entity e = event.getEntity();
+      if (e instanceof ServantEntity && event.getLevel() instanceof ServerLevel serverLevel) {
+         untrackServant(e, serverLevel);
+      }
       if (e instanceof RyougiShikiEntity) {
          RemovalReason reason = e.getRemovalReason();
          if (reason != null) {
@@ -1163,9 +1171,45 @@ public class CommonEvents {
       return suggestion != null && suggestion.getAmplifier() >= 3;
    }
 
+   private static String dimensionKey(ServerLevel level) {
+      return level.dimension().location().toString();
+   }
+
+   private static void trackServant(ServantEntity servant, ServerLevel level) {
+      if (servant != null && level != null) {
+         SERVANT_IDS_BY_DIMENSION.computeIfAbsent(dimensionKey(level), unused -> ConcurrentHashMap.newKeySet()).add(servant.getUUID());
+      }
+   }
+
+   private static void untrackServant(Entity entity, ServerLevel level) {
+      if (entity == null || level == null) {
+         return;
+      }
+      Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(level));
+      if (ids != null) {
+         ids.remove(entity.getUUID());
+      }
+   }
+
+   private static void forEachTrackedServant(ServerLevel level, Consumer<ServantEntity> consumer) {
+      Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(level));
+      if (ids == null || ids.isEmpty()) {
+         return;
+      }
+      Iterator<UUID> iterator = ids.iterator();
+      while (iterator.hasNext()) {
+         Entity entity = level.getEntity(iterator.next());
+         if (!(entity instanceof ServantEntity servant) || !servant.isAlive()) {
+            iterator.remove();
+            continue;
+         }
+         consumer.accept(servant);
+      }
+   }
+
    private static void trackSuggestedMob(LivingEntity entity) {
       if (entity != null && entity.level() instanceof ServerLevel level) {
-         String key = level.dimension().location().toString();
+         String key = dimensionKey(level);
          SUGGESTED_MOB_IDS_BY_DIMENSION.computeIfAbsent(key, unused -> ConcurrentHashMap.newKeySet()).add(entity.getUUID());
       }
    }
@@ -1175,7 +1219,7 @@ public class CommonEvents {
          return;
       }
       if (entity.level() instanceof ServerLevel level) {
-         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(level.dimension().location().toString());
+         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(dimensionKey(level));
          if (ids != null) {
             ids.remove(entity.getUUID());
          }
@@ -1187,7 +1231,7 @@ public class CommonEvents {
    }
 
    private static void tickSuggestedMobs(ServerLevel level) {
-      Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(level.dimension().location().toString());
+      Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(dimensionKey(level));
       if (ids == null || ids.isEmpty()) {
          return;
       }

@@ -27,6 +27,9 @@ public class MagicReinforcementEventHandler {
    public static void onPlayerTick(Post event) {
       Player player = event.getEntity();
       if (!player.level().isClientSide()) {
+         if (player.tickCount % 20 != 0) {
+            return;
+         }
          for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.has(DataComponents.CUSTOM_DATA)) {

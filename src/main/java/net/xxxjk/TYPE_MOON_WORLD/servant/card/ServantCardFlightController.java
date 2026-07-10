@@ -24,11 +24,19 @@ public final class ServantCardFlightController {
       }
       if (toggle) {
          toggleFlight(player, vars);
+         vars.syncPlayerVariables(player);
+         return;
       }
-      vars.servant_card_flight_forward = Mth.clamp(forward, -1.0, 1.0);
-      vars.servant_card_flight_strafe = Mth.clamp(strafe, -1.0, 1.0);
-      vars.servant_card_flight_vertical = Mth.clamp(vertical, -1.0, 1.0);
-      vars.syncPlayerVariables(player);
+      double clampedForward = Mth.clamp(forward, -1.0, 1.0);
+      double clampedStrafe = Mth.clamp(strafe, -1.0, 1.0);
+      double clampedVertical = Mth.clamp(vertical, -1.0, 1.0);
+      if (Math.abs(vars.servant_card_flight_forward - clampedForward) > 1.0E-4
+         || Math.abs(vars.servant_card_flight_strafe - clampedStrafe) > 1.0E-4
+         || Math.abs(vars.servant_card_flight_vertical - clampedVertical) > 1.0E-4) {
+         vars.servant_card_flight_forward = clampedForward;
+         vars.servant_card_flight_strafe = clampedStrafe;
+         vars.servant_card_flight_vertical = clampedVertical;
+      }
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -44,9 +52,12 @@ public final class ServantCardFlightController {
       if ("oda_nobunaga".equals(vars.servant_card_id) && ServantCardOdaNobunagaSkills.tickMountFlight(player, vars)) {
          return;
       }
-      if (!canFly(vars.servant_card_id) || !ServantCardManaService.consume(player, vars, MP_PER_TICK)) {
+      if (!canFly(vars.servant_card_id) || !ServantCardManaService.consumeSilently(player, vars, MP_PER_TICK)) {
          stop(player, vars, true);
          return;
+      }
+      if (player.tickCount % 10 == 0) {
+         vars.syncMana(player);
       }
       player.setNoGravity(true);
       player.fallDistance = 0.0F;

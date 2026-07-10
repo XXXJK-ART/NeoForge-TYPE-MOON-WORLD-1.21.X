@@ -313,7 +313,12 @@ public class TypeMoonWorldModVariables {
       double magic_cooldown,
       double magic_circuit_open_timer,
       boolean is_magic_circuit_open,
-      double current_mana_regen_multiplier
+      double current_mana_regen_multiplier,
+      double servant_card_mana,
+      double servant_card_max_mana,
+      double servant_card_mana_regen,
+      double master_servant_link_partner_mana,
+      double master_servant_link_partner_max_mana
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ManaSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_sync")
@@ -326,9 +331,24 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.magic_circuit_open_timer);
             buffer.writeBoolean(message.is_magic_circuit_open);
             buffer.writeDouble(message.current_mana_regen_multiplier);
+            buffer.writeDouble(message.servant_card_mana);
+            buffer.writeDouble(message.servant_card_max_mana);
+            buffer.writeDouble(message.servant_card_mana_regen);
+            buffer.writeDouble(message.master_servant_link_partner_mana);
+            buffer.writeDouble(message.master_servant_link_partner_max_mana);
          },
          buffer -> new TypeMoonWorldModVariables.ManaSyncMessage(
-            buffer.readDouble(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(), buffer.readBoolean(), buffer.readDouble()
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readBoolean(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble()
          )
       );
 
@@ -339,7 +359,12 @@ public class TypeMoonWorldModVariables {
             vars.magic_cooldown,
             vars.magic_circuit_open_timer,
             vars.is_magic_circuit_open,
-            vars.current_mana_regen_multiplier
+            vars.current_mana_regen_multiplier,
+            vars.servant_card_mana,
+            vars.servant_card_max_mana,
+            vars.servant_card_mana_regen,
+            vars.master_servant_link_partner_mana,
+            vars.master_servant_link_partner_max_mana
          );
       }
 
@@ -360,6 +385,11 @@ public class TypeMoonWorldModVariables {
                   vars.magic_circuit_open_timer = message.magic_circuit_open_timer;
                   vars.is_magic_circuit_open = message.is_magic_circuit_open;
                   vars.current_mana_regen_multiplier = message.current_mana_regen_multiplier;
+                  vars.servant_card_mana = message.servant_card_mana;
+                  vars.servant_card_max_mana = message.servant_card_max_mana;
+                  vars.servant_card_mana_regen = message.servant_card_mana_regen;
+                  vars.master_servant_link_partner_mana = message.master_servant_link_partner_mana;
+                  vars.master_servant_link_partner_max_mana = message.master_servant_link_partner_max_mana;
                }
             );
          }
