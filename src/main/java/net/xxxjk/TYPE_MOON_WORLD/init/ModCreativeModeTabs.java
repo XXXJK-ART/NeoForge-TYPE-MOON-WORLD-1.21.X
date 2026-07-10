@@ -26,6 +26,14 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
                         output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
+                        output.accept(ModItems.MASTER_CARD_TOHSAKA_RIN);
+                        output.accept(ModItems.MASTER_CARD_EMIYA_KIRITSUGU);
+                        output.accept(ModItems.MASTER_CARD_EMIYA_SHIROU);
+                        output.accept(ModItems.MASTER_CARD_KOTOMINE_KIREI);
+                        output.accept(ModItems.MASTER_CARD_LUVIA);
+                        output.accept(ModItems.MASTER_CARD_ELSA_SAIJO);
+                        output.accept(ModItems.MASTER_CARD_WAVER);
+                        output.accept(ModItems.MASTER_CARD_TOHSAKA_TOKIOMI);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);

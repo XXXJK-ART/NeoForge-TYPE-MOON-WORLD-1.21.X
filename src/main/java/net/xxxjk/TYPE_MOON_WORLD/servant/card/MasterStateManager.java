@@ -56,10 +56,32 @@ public final class MasterStateManager {
       return true;
    }
 
+   public static boolean activateProfile(ServerPlayer player, String commandSpellStyle) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.servant_cannot_master"), true);
+         return false;
+      }
+      vars.master_active = true;
+      vars.master_servant_uuid = vars.master_servant_uuid == null ? "" : vars.master_servant_uuid;
+      vars.master_command_spells = Math.max(vars.master_command_spells, MAX_COMMAND_SPELLS);
+      vars.master_command_spell_style = sanitizeCommandSpellStyle(commandSpellStyle);
+      vars.master_command_spell_pose_active = false;
+      vars.master_revive_available = true;
+      applyAttributes(player);
+      player.setHealth((float)MASTER_MAX_HEALTH);
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
+      return true;
+   }
+
    public static boolean release(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.master_active) {
          return false;
+      }
+      if (vars.master_card_active) {
+         return releaseMasterCardProfile(player, vars);
       }
       ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
       if (boundServant != null) {
@@ -86,6 +108,27 @@ public final class MasterStateManager {
       vars.syncPlayerVariables(player);
       MasterVisualStateSync.broadcast(player, vars);
       player.displayClientMessage(Component.translatable("message.typemoonworld.master.released"), true);
+      return true;
+   }
+
+   private static boolean releaseMasterCardProfile(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
+      if (boundServant != null) {
+         MasterServantLinkService.breakLink(player, boundServant, true);
+      } else {
+         clearBoundServant(player, vars);
+      }
+      removeAttributes(player);
+      MasterCardProfile.restoreOriginalState(player, vars);
+      if (vars.master_active) {
+         applyAttributes(player);
+      }
+      if (player.getHealth() > player.getMaxHealth()) {
+         player.setHealth(player.getMaxHealth());
+      }
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.master_card.released"), true);
       return true;
    }
 
@@ -281,5 +324,17 @@ public final class MasterStateManager {
 
    private static String randomCommandSpellStyle(ServerPlayer player) {
       return COMMAND_SPELL_STYLES[player.getRandom().nextInt(COMMAND_SPELL_STYLES.length)];
+   }
+
+   private static String sanitizeCommandSpellStyle(String style) {
+      if (style == null || style.isBlank()) {
+         return "default";
+      }
+      for (String known : COMMAND_SPELL_STYLES) {
+         if (known.equals(style)) {
+            return known;
+         }
+      }
+      return "default";
    }
 }

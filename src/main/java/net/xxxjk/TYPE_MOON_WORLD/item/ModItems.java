@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MercurySwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessChainDaggerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RuleBreakerItem;
@@ -175,6 +176,15 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_RELEASE = ITEMS.register("servant_card_release",
             () -> new ServantCardReleaseItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
 
+    public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_RIN = registerMasterCard("tohsaka_rin");
+    public static final DeferredItem<Item> MASTER_CARD_EMIYA_KIRITSUGU = registerMasterCard("emiya_kiritsugu");
+    public static final DeferredItem<Item> MASTER_CARD_EMIYA_SHIROU = registerMasterCard("emiya_shirou");
+    public static final DeferredItem<Item> MASTER_CARD_KOTOMINE_KIREI = registerMasterCard("kotomine_kirei");
+    public static final DeferredItem<Item> MASTER_CARD_LUVIA = registerMasterCard("luvia");
+    public static final DeferredItem<Item> MASTER_CARD_ELSA_SAIJO = registerMasterCard("elsa_saijo");
+    public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
+    public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
+
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO = registerServantCard("sasaki_kojiro");
@@ -222,6 +232,11 @@ public class ModItems {
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
                 () -> new ServantCardItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(), servantId));
+    }
+
+    private static DeferredItem<Item> registerMasterCard(String masterId) {
+        return ITEMS.register("master_card_" + masterId,
+                () -> new MasterCardItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(), masterId));
     }
 
     private static DeferredItem<Item> registerServantArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {

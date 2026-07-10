@@ -288,8 +288,19 @@ public class TypeMoonWorldModVariables {
             clone.master_artificial_leyline_y = original.master_artificial_leyline_y;
             clone.master_artificial_leyline_z = original.master_artificial_leyline_z;
             clone.master_artificial_leyline_bonus_active = original.master_artificial_leyline_bonus_active;
+            clone.master_card_active = original.master_card_active;
+            clone.master_card_id = original.master_card_id;
+            clone.master_card_saved_variables = original.master_card_saved_variables.copy();
+            clone.master_card_saved_inventory = original.master_card_saved_inventory.copy();
          } else {
             clone.servant_card_death_release = original.servant_card_death_release;
+         }
+
+         if (original.master_card_active) {
+            clone.master_card_active = original.master_card_active;
+            clone.master_card_id = original.master_card_id;
+            clone.master_card_saved_variables = original.master_card_saved_variables.copy();
+            clone.master_card_saved_inventory = original.master_card_saved_inventory.copy();
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
@@ -626,6 +637,10 @@ public class TypeMoonWorldModVariables {
       public int master_artificial_leyline_y = 0;
       public int master_artificial_leyline_z = 0;
       public boolean master_artificial_leyline_bonus_active = false;
+      public boolean master_card_active = false;
+      public String master_card_id = "";
+      public CompoundTag master_card_saved_variables = new CompoundTag();
+      public CompoundTag master_card_saved_inventory = new CompoundTag();
 
       public TypeMoonWorldModVariables.PlayerVariables.SavedStructure getStructureById(String id) {
          if (id != null && !id.isEmpty()) {
@@ -1620,6 +1635,10 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("master_artificial_leyline_y", this.master_artificial_leyline_y);
          nbt.putInt("master_artificial_leyline_z", this.master_artificial_leyline_z);
          nbt.putBoolean("master_artificial_leyline_bonus_active", this.master_artificial_leyline_bonus_active);
+         nbt.putBoolean("master_card_active", this.master_card_active);
+         nbt.putString("master_card_id", this.master_card_id == null ? "" : this.master_card_id);
+         nbt.put("master_card_saved_variables", this.master_card_saved_variables == null ? new CompoundTag() : this.master_card_saved_variables.copy());
+         nbt.put("master_card_saved_inventory", this.master_card_saved_inventory == null ? new CompoundTag() : this.master_card_saved_inventory.copy());
          nbt.putInt("magic_system_data_version", this.magic_system_data_version);
          nbt.putInt("active_wheel_index", this.active_wheel_index);
          ListTag wheelList = new ListTag();
@@ -1923,6 +1942,14 @@ public class TypeMoonWorldModVariables {
          this.master_artificial_leyline_y = nbt.contains("master_artificial_leyline_y") ? nbt.getInt("master_artificial_leyline_y") : 0;
          this.master_artificial_leyline_z = nbt.contains("master_artificial_leyline_z") ? nbt.getInt("master_artificial_leyline_z") : 0;
          this.master_artificial_leyline_bonus_active = nbt.getBoolean("master_artificial_leyline_bonus_active");
+         this.master_card_active = nbt.getBoolean("master_card_active");
+         this.master_card_id = nbt.contains("master_card_id") ? nbt.getString("master_card_id") : "";
+         this.master_card_saved_variables = nbt.contains("master_card_saved_variables", 10)
+            ? nbt.getCompound("master_card_saved_variables").copy()
+            : new CompoundTag();
+         this.master_card_saved_inventory = nbt.contains("master_card_saved_inventory", 10)
+            ? nbt.getCompound("master_card_saved_inventory").copy()
+            : new CompoundTag();
          this.magic_system_data_version = nbt.contains("magic_system_data_version") ? nbt.getInt("magic_system_data_version") : 0;
          this.active_wheel_index = nbt.contains("active_wheel_index") ? nbt.getInt("active_wheel_index") : 0;
          this.magic_wheels.clear();
