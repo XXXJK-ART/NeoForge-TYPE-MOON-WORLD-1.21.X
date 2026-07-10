@@ -33,6 +33,7 @@ public final class NpcMagicFilterService {
       "jewel_random_shoot",
       "jewel_machine_gun",
       "healing_magic",
+      "spiritual_healing",
       "magic_bullet",
       "suggestion_magic",
       "binding_magic",
@@ -101,6 +102,8 @@ public final class NpcMagicFilterService {
             case "healing_magic":
                payload.putInt("healing_target", 0);
                return payload;
+            case "spiritual_healing":
+               return payload;
             case "fire_magic":
             case "water_magic":
             case "wind_magic":
@@ -152,6 +155,8 @@ public final class NpcMagicFilterService {
                CompoundTag outh = new CompoundTag();
                outh.putInt("healing_target", 0);
                return outh;
+            case "spiritual_healing":
+               return source;
             case "fire_magic":
             case "water_magic":
             case "wind_magic":
@@ -182,6 +187,8 @@ public final class NpcMagicFilterService {
             case "healing_magic":
                int healingTarget = source.contains("healing_target") ? source.getInt("healing_target") : 0;
                return healingTarget == 0;
+            case "spiritual_healing":
+               return true;
             case "fire_magic":
             case "water_magic":
             case "wind_magic":

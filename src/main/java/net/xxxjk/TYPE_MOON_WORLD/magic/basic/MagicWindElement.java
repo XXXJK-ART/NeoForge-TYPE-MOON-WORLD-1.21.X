@@ -23,10 +23,14 @@ public final class MagicWindElement {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       double p = ElementalMagicHelper.proficiency(vars, "wind_magic");
       boolean utility = vars.wind_magic_mode == 1;
-      if (!ManaHelper.consumeOneTimeMagicCost(player, 8.0 + p * 0.09)) {
+      if (utility && !ElementalMagicHelper.hasUtilityUnlocked("wind_magic", p)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.element.utility_locked"), true);
          return false;
       }
-      boolean ok = utility ? castUtility(player, p) : castAttack(player, null, p);
+      if (!ManaHelper.consumeOneTimeMagicCost(player, ElementalMagicHelper.applyManaAffinity(vars, "wind_magic", 8.0 + p * 0.09))) {
+         return false;
+      }
+      boolean ok = utility ? castUtility(player, vars, p) : castAttack(player, null, vars, p);
       if (ok) {
          ElementalMagicHelper.addPractice(vars, "wind_magic", utility ? 0.22 : 0.18);
       }
@@ -35,25 +39,25 @@ public final class MagicWindElement {
 
    public static boolean castDirect(LivingEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency, boolean utility) {
       if (utility && ElementalMagicHelper.hasUtilityUnlocked("wind_magic", proficiency)) {
-         return castUtility(caster, proficiency);
+         return castUtility(caster, vars, proficiency);
       }
-      return castAttack(caster, target, proficiency);
+      return castAttack(caster, target, vars, proficiency);
    }
 
-   private static boolean castAttack(LivingEntity caster, LivingEntity target, double p) {
+   private static boolean castAttack(LivingEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double p) {
       int tier = ElementalMagicHelper.tier(p);
       if (tier >= 3) {
-         return ElementalMagicHelper.spawnProjectile(caster, ElementalMagicHelper.aimDirection(caster, target, 4.8), ElementalMagicProjectileEntity.ELEMENT_WIND, ElementalMagicProjectileEntity.FORM_ULTIMATE, ElementalMagicHelper.lerpDamage(p, 30.0F, 40.0F), 0.0F, 5.0F, 0, 0, 0.0F, 40.0, 4.8F, true, false, 0.35F) != null;
+         return ElementalMagicHelper.spawnProjectile(vars, "wind_magic", caster, ElementalMagicHelper.aimDirection(caster, target, 4.8), ElementalMagicProjectileEntity.ELEMENT_WIND, ElementalMagicProjectileEntity.FORM_ULTIMATE, ElementalMagicHelper.lerpDamage(p, 30.0F, 40.0F), 0.0F, 5.0F, 0, 0, 0.0F, 40.0, 4.8F, true, false, 0.35F) != null;
       } else if (tier >= 2) {
          BlockPos pos = target == null ? ElementalMagicHelper.targetBlock(caster, 16.0) : target.blockPosition();
-         return ElementalMagicHelper.spawnField(caster, pos, ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_TORNADO, 3.0F, 3.0F, 100, ElementalMagicHelper.lerpDamage(p, 15.0F, 20.0F)) != null;
+         return ElementalMagicHelper.spawnField(vars, "wind_magic", caster, pos, ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_TORNADO, 3.0F, 3.0F, 100, ElementalMagicHelper.lerpDamage(p, 15.0F, 20.0F)) != null;
       } else if (tier >= 1) {
-         return ElementalMagicHelper.spawnProjectile(caster, ElementalMagicHelper.aimDirection(caster, target, 3.0), ElementalMagicProjectileEntity.ELEMENT_WIND, ElementalMagicProjectileEntity.FORM_HIGH, ElementalMagicHelper.lerpDamage(p, 8.0F, 12.0F), 0.0F, 2.0F, 0, 0, 0.0F, 20.0, 3.0F, false, false, 0.45F) != null;
+         return ElementalMagicHelper.spawnProjectile(vars, "wind_magic", caster, ElementalMagicHelper.aimDirection(caster, target, 3.0), ElementalMagicProjectileEntity.ELEMENT_WIND, ElementalMagicProjectileEntity.FORM_HIGH, ElementalMagicHelper.lerpDamage(p, 8.0F, 12.0F), 0.0F, 2.0F, 0, 0, 0.0F, 20.0, 3.0F, false, false, 0.45F) != null;
       }
-      return ElementalMagicHelper.spawnField(caster, caster.blockPosition().relative(caster.getDirection(), 3), ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_TORNADO, 5.0F, 3.0F, 40, 0.0F) != null;
+      return ElementalMagicHelper.spawnField(vars, "wind_magic", caster, caster.blockPosition().relative(caster.getDirection(), 3), ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_TORNADO, 5.0F, 3.0F, 40, 0.0F) != null;
    }
 
-   private static boolean castUtility(LivingEntity caster, double p) {
+   private static boolean castUtility(LivingEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, double p) {
       if (!ElementalMagicHelper.hasUtilityUnlocked("wind_magic", p)) {
          if (caster instanceof ServerPlayer player) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.element.utility_locked"), true);
@@ -65,6 +69,6 @@ public final class MagicWindElement {
          return true;
       }
       BlockPos pos = ElementalMagicHelper.targetBlock(caster, 10.0);
-      return ElementalMagicHelper.spawnField(caster, pos, ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_WALL, 3.0F, 5.0F, 100, 0.0F) != null;
+      return ElementalMagicHelper.spawnField(vars, "wind_magic", caster, pos, ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_WALL, 3.0F, 5.0F, 100, 0.0F) != null;
    }
 }

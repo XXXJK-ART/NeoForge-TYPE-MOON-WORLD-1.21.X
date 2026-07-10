@@ -153,6 +153,8 @@ public final class PlayerMagicSelectionService {
          normalized.putInt("gandr_machine_gun_mode", clamp(normalized.getInt("gandr_machine_gun_mode"), 0, 1));
       } else if ("healing_magic".equals(magicId) && normalized.contains("healing_target")) {
          normalized.putInt("healing_target", clamp(normalized.getInt("healing_target"), 0, 1));
+      } else if ("time_alter".equals(magicId) && normalized.contains("time_alter_mode")) {
+         normalized.putInt("time_alter_mode", clamp(normalized.getInt("time_alter_mode"), 0, 1));
       } else if (isElementalMagic(magicId) && normalized.contains("element_mode")) {
          normalized.putInt("element_mode", clamp(normalized.getInt("element_mode"), 0, 1));
       }
@@ -166,6 +168,7 @@ public final class PlayerMagicSelectionService {
          || "gandr_machine_gun".equals(magicId)
          || "projection".equals(magicId)
          || "healing_magic".equals(magicId)
+         || "time_alter".equals(magicId)
          || isElementalMagic(magicId);
    }
 
@@ -182,6 +185,8 @@ public final class PlayerMagicSelectionService {
          payload.putInt("gandr_machine_gun_mode", clamp(vars.gandr_machine_gun_mode, 0, 1));
       } else if ("healing_magic".equals(magicId)) {
          payload.putInt("healing_target", clamp(vars.healing_magic_target, 0, 1));
+      } else if ("time_alter".equals(magicId)) {
+         payload.putInt("time_alter_mode", clamp(vars.time_alter_mode, 0, 1));
       } else if (isElementalMagic(magicId)) {
          payload.putInt("element_mode", clamp(getElementMode(vars, magicId), 0, 1));
       } else if ("projection".equals(magicId)) {
@@ -225,6 +230,10 @@ public final class PlayerMagicSelectionService {
       } else if ("healing_magic".equals(magicId)) {
          if (payload.contains("healing_target")) {
             vars.healing_magic_target = clamp(payload.getInt("healing_target"), 0, 1);
+         }
+      } else if ("time_alter".equals(magicId)) {
+         if (payload.contains("time_alter_mode")) {
+            vars.time_alter_mode = clamp(payload.getInt("time_alter_mode"), 0, 1);
          }
       } else if (isElementalMagic(magicId)) {
          if (payload.contains("element_mode")) {

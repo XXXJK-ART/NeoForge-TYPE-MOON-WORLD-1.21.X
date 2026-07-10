@@ -121,7 +121,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
 
                if (addPos) {
                   this.tracePos.add(pos);
-                  if (this.tracePos.size() > 560) {
+                  if (this.tracePos.size() > 48) {
                      this.tracePos.remove(0);
                   }
                }

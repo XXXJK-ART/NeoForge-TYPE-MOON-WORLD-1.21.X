@@ -92,6 +92,19 @@ public final class NpcMagicCastBridge {
    private static final String TAG_CAP_HAS_RANGED = "TypeMoonNpcCapHasRanged";
    private static final String TAG_CAP_HAS_MELEE_BURST = "TypeMoonNpcCapHasMeleeBurst";
    private static final String TAG_CAP_ONLY_MELEE = "TypeMoonNpcCapOnlyMelee";
+   private static final String TAG_CAP_HAS_BUFF = "TypeMoonNpcCapHasBuff";
+   private static final String TAG_CAP_HAS_CONTROL = "TypeMoonNpcCapHasControl";
+   private static final String TAG_CAP_HAS_ANY = "TypeMoonNpcCapHasAny";
+   private static final String TAG_CAP_CACHE_TICK = "TypeMoonNpcCapCacheTick";
+   private static final String TAG_ENV_CACHE_TICK = "TypeMoonNpcEnvCacheTick";
+   private static final String TAG_ENV_CACHE_ANY = "TypeMoonNpcEnvCacheAny";
+   private static final String TAG_ENV_CACHE_SEVERE = "TypeMoonNpcEnvCacheSevere";
+   private static final String TAG_ENV_CACHE_SCORE = "TypeMoonNpcEnvCacheScore";
+   private static final String TAG_THREAT_CACHE_TICK = "TypeMoonNpcThreatCacheTick";
+   private static final String TAG_THREAT_CACHE_TARGET = "TypeMoonNpcThreatCacheTarget";
+   private static final String TAG_THREAT_CACHE_COUNT = "TypeMoonNpcThreatCacheCount";
+   private static final String TAG_THREAT_CACHE_STRONG = "TypeMoonNpcThreatCacheStrong";
+   private static final String TAG_THREAT_CACHE_LOW = "TypeMoonNpcThreatCacheLow";
    private static final String TAG_MIGRATION_CLEANED_V3 = "TypeMoonNpcMigrationCleanedV3";
    private static final String TAG_FIXED_LEVEL = "TypeMoonNpcFixedLevel";
    private static final String TAG_COMBAT_LEVEL_BONUS = "TypeMoonNpcCombatLevelBonus";
@@ -268,9 +281,9 @@ public final class NpcMagicCastBridge {
          tickProjectedHandItemExpiry(npc, gameTime);
          tickManaRecovery(npc, vars);
          tickLocalCooldown(vars);
-         NpcMagicCastBridge.MagicCapabilityProfile capabilities = analyzeMagicCapabilities(vars);
+         NpcMagicCastBridge.MagicCapabilityProfile capabilities = getCachedMagicCapabilities(npc, vars, gameTime);
          syncCapabilityFlags(npc, capabilities);
-         NpcMagicCastBridge.EnvironmentHazardProfile environment = analyzeEnvironmentalHazard(npc);
+         NpcMagicCastBridge.EnvironmentHazardProfile environment = getCachedEnvironmentalHazard(npc, gameTime);
          if (environment.anyHazard()) {
             boolean envConsumed = handleEnvironmentalHazard(npc, vars, gameTime, environment, capabilities);
             if (envConsumed) {
@@ -287,7 +300,7 @@ public final class NpcMagicCastBridge {
             npc.getPersistentData().putLong(TAG_LAST_COMBAT_TICK, gameTime);
             vars.is_magic_circuit_open = true;
             vars.magic_circuit_open_timer = 0.0;
-            NpcMagicCastBridge.ThreatProfile threat = analyzeThreat(npc, target);
+            NpcMagicCastBridge.ThreatProfile threat = getCachedThreat(npc, target, gameTime);
             NpcMagicCastBridge.BehaviorProfile behavior = buildBehaviorProfile(npc.getCombatPersonality(), npc.getCombatTemperament());
             updateCombatLevelBonus(npc, target, threat);
             maintainPreferredCombatDistance(npc, target, capabilities, threat, behavior);
@@ -1014,6 +1027,30 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   private static NpcMagicCastBridge.ThreatProfile getCachedThreat(MysticMagicianEntity npc, LivingEntity target, long gameTime) {
+      if (npc == null || target == null || !target.isAlive()) {
+         return NpcMagicCastBridge.ThreatProfile.NONE;
+      }
+      CompoundTag data = npc.getPersistentData();
+      String targetId = target.getUUID().toString();
+      if (data.contains(TAG_THREAT_CACHE_TICK)
+         && gameTime - data.getLong(TAG_THREAT_CACHE_TICK) < 5L
+         && targetId.equals(data.getString(TAG_THREAT_CACHE_TARGET))) {
+         return new NpcMagicCastBridge.ThreatProfile(
+            data.getInt(TAG_THREAT_CACHE_COUNT),
+            data.getBoolean(TAG_THREAT_CACHE_STRONG),
+            data.getBoolean(TAG_THREAT_CACHE_LOW)
+         );
+      }
+      NpcMagicCastBridge.ThreatProfile profile = analyzeThreat(npc, target);
+      data.putLong(TAG_THREAT_CACHE_TICK, gameTime);
+      data.putString(TAG_THREAT_CACHE_TARGET, targetId);
+      data.putInt(TAG_THREAT_CACHE_COUNT, profile.enemyCount());
+      data.putBoolean(TAG_THREAT_CACHE_STRONG, profile.strongTarget());
+      data.putBoolean(TAG_THREAT_CACHE_LOW, profile.lowWhilePressured());
+      return profile;
+   }
+
    private static int countThreatEnemies(MysticMagicianEntity npc, LivingEntity currentTarget) {
       int count = 0;
       Set<UUID> seen = new HashSet<>();
@@ -1101,6 +1138,27 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   private static NpcMagicCastBridge.MagicCapabilityProfile getCachedMagicCapabilities(
+      MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime
+   ) {
+      if (npc == null || vars == null) {
+         return NpcMagicCastBridge.MagicCapabilityProfile.NONE;
+      }
+      CompoundTag data = npc.getPersistentData();
+      if (data.contains(TAG_CAP_CACHE_TICK) && gameTime - data.getLong(TAG_CAP_CACHE_TICK) < 20L) {
+         return new NpcMagicCastBridge.MagicCapabilityProfile(
+            data.getBoolean(TAG_CAP_HAS_BUFF),
+            data.getBoolean(TAG_CAP_HAS_CONTROL),
+            data.getBoolean(TAG_CAP_HAS_RANGED),
+            data.getBoolean(TAG_CAP_HAS_MELEE_BURST),
+            data.getBoolean(TAG_CAP_HAS_ANY)
+         );
+      }
+      NpcMagicCastBridge.MagicCapabilityProfile profile = analyzeMagicCapabilities(vars);
+      data.putLong(TAG_CAP_CACHE_TICK, gameTime);
+      return profile;
+   }
+
    private static void syncCapabilityFlags(MysticMagicianEntity npc, NpcMagicCastBridge.MagicCapabilityProfile profile) {
       if (npc != null && profile != null) {
          CompoundTag data = npc.getPersistentData();
@@ -1108,6 +1166,9 @@ public final class NpcMagicCastBridge {
          data.putBoolean(TAG_CAP_HAS_RANGED, profile.hasRanged());
          data.putBoolean(TAG_CAP_HAS_MELEE_BURST, profile.hasMeleeBurst());
          data.putBoolean(TAG_CAP_ONLY_MELEE, onlyMelee);
+         data.putBoolean(TAG_CAP_HAS_BUFF, profile.hasBuff());
+         data.putBoolean(TAG_CAP_HAS_CONTROL, profile.hasControl());
+         data.putBoolean(TAG_CAP_HAS_ANY, profile.hasAnyCastable());
       }
    }
 
@@ -1191,6 +1252,26 @@ public final class NpcMagicCastBridge {
 
          return new NpcMagicCastBridge.EnvironmentHazardProfile(hazardScore > 0, severe, hazardScore);
       }
+   }
+
+   private static NpcMagicCastBridge.EnvironmentHazardProfile getCachedEnvironmentalHazard(MysticMagicianEntity npc, long gameTime) {
+      if (npc == null) {
+         return NpcMagicCastBridge.EnvironmentHazardProfile.NONE;
+      }
+      CompoundTag data = npc.getPersistentData();
+      if (data.contains(TAG_ENV_CACHE_TICK) && gameTime - data.getLong(TAG_ENV_CACHE_TICK) < 10L) {
+         return new NpcMagicCastBridge.EnvironmentHazardProfile(
+            data.getBoolean(TAG_ENV_CACHE_ANY),
+            data.getBoolean(TAG_ENV_CACHE_SEVERE),
+            data.getInt(TAG_ENV_CACHE_SCORE)
+         );
+      }
+      NpcMagicCastBridge.EnvironmentHazardProfile profile = analyzeEnvironmentalHazard(npc);
+      data.putLong(TAG_ENV_CACHE_TICK, gameTime);
+      data.putBoolean(TAG_ENV_CACHE_ANY, profile.anyHazard());
+      data.putBoolean(TAG_ENV_CACHE_SEVERE, profile.severe());
+      data.putInt(TAG_ENV_CACHE_SCORE, profile.hazardScore());
+      return profile;
    }
 
    private static boolean handleEnvironmentalHazard(
@@ -3222,6 +3303,7 @@ public final class NpcMagicCastBridge {
             if ("gander".equals(magicId)
                || "magic_bullet".equals(magicId)
                || "fire_magic".equals(magicId)
+               || "spiritual_healing".equals(magicId)
                || "earth_magic".equals(magicId)
                || "emerald_winter_river".equals(magicId)) {
                weight++;
@@ -3349,6 +3431,8 @@ public final class NpcMagicCastBridge {
 
       if ("healing_magic".equals(magicId)) {
          weight += manaRatio >= 0.25 ? 0.6 : -0.8;
+      } else if ("spiritual_healing".equals(magicId)) {
+         weight += target instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity || target.getMobType() == net.minecraft.world.entity.MobType.UNDEAD ? 1.8 : 0.35;
       } else if ("binding_magic".equals(magicId) && distance <= 8.0) {
          weight += 1.6;
       } else if ("suggestion_magic".equals(magicId) && distance >= 4.0 && distance <= 12.0) {
@@ -3425,6 +3509,7 @@ public final class NpcMagicCastBridge {
          case "reinforcement" -> 20.0 * Mth.clamp(payload.getInt("reinforcement_level"), 1, 5);
          case "jewel_random_shoot" -> 30.0;
          case "healing_magic" -> 12.0 + proficiency * 0.08;
+         case "spiritual_healing" -> 15.0;
          case "magic_bullet" -> 8.0 + proficiency * 0.06;
          case "suggestion_magic" -> 10.0 + proficiency * 0.08;
          case "binding_magic" -> 12.0 + proficiency * 0.08;
@@ -3465,17 +3550,26 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean tryEmergencyHealingMagic(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime) {
-      if (npc == null || vars == null || !NpcMagicExecutionService.hasCastableMagic(vars, "healing_magic")) {
+      if (npc == null || vars == null) {
          return false;
       }
       double ratio = npc.getHealth() / Math.max(1.0F, npc.getMaxHealth());
-      if (ratio > 0.55 || gameTime < getMagicCooldownUntil(npc, "healing_magic")) {
+      if (ratio > 0.55) {
          return false;
       }
-      if (!castHealingMagic(npc, npc, vars, Math.max(45.0, vars.proficiency_healing_magic))) {
+      boolean casted = false;
+      String cooldownMagicId = "healing_magic";
+      if (NpcMagicExecutionService.hasCastableMagic(vars, "healing_magic") && gameTime >= getMagicCooldownUntil(npc, "healing_magic")) {
+         casted = castHealingMagic(npc, npc, vars, Math.max(45.0, vars.proficiency_healing_magic));
+      }
+      if (!casted && NpcMagicExecutionService.hasCastableMagic(vars, "spiritual_healing") && gameTime >= getMagicCooldownUntil(npc, "spiritual_healing")) {
+         casted = castSpiritualHealing(npc, npc, vars, Math.max(45.0, vars.proficiency_spiritual_healing));
+         cooldownMagicId = "spiritual_healing";
+      }
+      if (!casted) {
          return false;
       }
-      applyPostCastCooldown(npc, vars, "healing_magic", new CompoundTag(), gameTime, 10);
+      applyPostCastCooldown(npc, vars, cooldownMagicId, new CompoundTag(), gameTime, 10);
       return true;
    }
 
@@ -3492,6 +3586,21 @@ public final class NpcMagicCastBridge {
       }
       markCastingPose(caster, 12);
       return MagicHealing.healDirect(caster, healTarget, vars, proficiency);
+   }
+
+   static boolean castSpiritualHealing(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      }
+      LivingEntity healTarget = target == null ? caster : target;
+      double cost = estimateManaCost("spiritual_healing", new CompoundTag(), proficiency);
+      if (!consumeMana(vars, cost)) {
+         return false;
+      }
+      markCastingPose(caster, 12);
+      return net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing.healDirect(caster, healTarget, vars, proficiency);
    }
 
    static boolean castMagicBullet(

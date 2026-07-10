@@ -147,6 +147,19 @@ public class Magic_display_Overlay {
                         magicColor = 0xFFFFAAFF;
                     } else if ("binding_magic".equals(magicId)) {
                         magicColor = 0xFFFFDD66;
+                    } else if ("time_alter".equals(magicId)) {
+                        magicColor = 0xFF66CCFF;
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.time_alter.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(vars.time_alter_mode == 0
+                                        ? "gui.typemoonworld.overlay.time_alter.mode.accel.short"
+                                        : "gui.typemoonworld.overlay.time_alter.mode.stagnate.short")
+                        );
+                    } else if ("spiritual_healing".equals(magicId)) {
+                        magicColor = 0xFFF8F3E7;
+                    } else if ("baptism_rite".equals(magicId)) {
+                        magicColor = 0xFFFFD24A;
                     } else if ("fire_magic".equals(magicId)
                             || "water_magic".equals(magicId)
                             || "wind_magic".equals(magicId)

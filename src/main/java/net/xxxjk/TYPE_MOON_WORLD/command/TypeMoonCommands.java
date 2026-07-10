@@ -43,6 +43,9 @@ public class TypeMoonCommands {
    private static final String WATER_MAGIC_ID = "water_magic";
    private static final String WIND_MAGIC_ID = "wind_magic";
    private static final String EARTH_MAGIC_ID = "earth_magic";
+   private static final String TIME_ALTER_MAGIC_ID = "time_alter";
+   private static final String SPIRITUAL_HEALING_MAGIC_ID = "spiritual_healing";
+   private static final String BAPTISM_RITE_MAGIC_ID = "baptism_rite";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
    private static final int SAMPLE_COORD_RANGE = 2000000;
    private static final double ACCEPT_MEAN_MIN = 9.0;
@@ -69,7 +72,10 @@ public class TypeMoonCommands {
       FIRE_MAGIC_ID,
       WATER_MAGIC_ID,
       WIND_MAGIC_ID,
-      EARTH_MAGIC_ID
+      EARTH_MAGIC_ID,
+      TIME_ALTER_MAGIC_ID,
+      SPIRITUAL_HEALING_MAGIC_ID,
+      BAPTISM_RITE_MAGIC_ID
    };
    private static final String[] ALL_MAGICS = new String[]{
       BASIC_JEWEL_MAGIC_ID,
@@ -95,7 +101,10 @@ public class TypeMoonCommands {
       FIRE_MAGIC_ID,
       WATER_MAGIC_ID,
       WIND_MAGIC_ID,
-      EARTH_MAGIC_ID
+      EARTH_MAGIC_ID,
+      TIME_ALTER_MAGIC_ID,
+      SPIRITUAL_HEALING_MAGIC_ID,
+      BAPTISM_RITE_MAGIC_ID
    };
 
    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -404,6 +413,9 @@ public class TypeMoonCommands {
          vars.proficiency_water_magic = 0.0;
          vars.proficiency_wind_magic = 0.0;
          vars.proficiency_earth_magic = 0.0;
+         vars.proficiency_time_alter = 0.0;
+         vars.proficiency_spiritual_healing = 0.0;
+         vars.proficiency_baptism_rite = 0.0;
          vars.learned_magics.clear();
          vars.has_unlimited_blade_works = false;
          player.getPersistentData().putBoolean("TypeMoonNoCooldown", false);
@@ -496,6 +508,9 @@ public class TypeMoonCommands {
          vars.proficiency_water_magic = 100.0;
          vars.proficiency_wind_magic = 100.0;
          vars.proficiency_earth_magic = 100.0;
+         vars.proficiency_time_alter = 100.0;
+         vars.proficiency_spiritual_healing = 100.0;
+         vars.proficiency_baptism_rite = 100.0;
 
          for (String m : ALL_MAGICS) {
             if (!vars.learned_magics.contains(m)) {
@@ -889,6 +904,15 @@ public class TypeMoonCommands {
                break;
             case "earth_magic":
                vars.proficiency_earth_magic = value;
+               break;
+            case "time_alter":
+               vars.proficiency_time_alter = value;
+               break;
+            case "spiritual_healing":
+               vars.proficiency_spiritual_healing = value;
+               break;
+            case "baptism_rite":
+               vars.proficiency_baptism_rite = value;
                break;
             default:
                validType = false;

@@ -118,7 +118,13 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_WIND);
                         output.accept(ModItems.MAGIC_BOOK_EARTH);
                         output.accept(ModItems.MAGIC_PAGE_EARTH);
-                        
+                        output.accept(ModItems.MAGIC_BOOK_TIME_ALTER);
+                        output.accept(ModItems.MAGIC_PAGE_TIME_ALTER);
+                        output.accept(ModItems.MAGIC_BOOK_SPIRITUAL_HEALING);
+                        output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
+                        output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
+                        output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
+
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
                         

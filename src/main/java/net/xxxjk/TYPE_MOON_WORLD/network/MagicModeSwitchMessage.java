@@ -47,6 +47,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 7: Set Gravity Mode - value is -2..2 (ultra light -> ultra heavy)
                 // 8: Set Healing Target - value is target index (0 self / 1 other; <0 toggles)
                 // 9: Set Elemental Mode - value is 0 attack / 1 utility; <0 toggles
+                // 10: Set Time Alter Mode - value is 0 accel / 1 stagnate; <0 toggles
                 
                 if (message.actionType == 2) {
                     if (!isReinforcementMagic(currentMagic)) {
@@ -222,6 +223,27 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             ? "gui.typemoonworld.overlay.element.mode.attack.short"
                             : "gui.typemoonworld.overlay.element.mode.utility.short");
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.element.mode_changed", modeComp), true);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    return;
+                } else if (message.actionType == 10) {
+                    if (!"time_alter".equals(currentMagic)) {
+                        return;
+                    }
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+
+                    if (message.value < 0) {
+                        vars.time_alter_mode = vars.time_alter_mode == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        vars.time_alter_mode = message.value;
+                    } else {
+                        return;
+                    }
+                    Component modeComp = Component.translatable(vars.time_alter_mode == 0
+                            ? "gui.typemoonworld.overlay.time_alter.mode.accel.short"
+                            : "gui.typemoonworld.overlay.time_alter.mode.stagnate.short");
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.mode_changed", modeComp), true);
                     PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 }

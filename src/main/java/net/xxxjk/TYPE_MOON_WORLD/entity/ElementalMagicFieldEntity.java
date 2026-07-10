@@ -125,7 +125,9 @@ public class ElementalMagicFieldEntity extends Entity {
          placeTemporaryBlocks();
       }
       if (this.level().isClientSide) {
-         spawnClientParticles();
+         if (this.tickCount % 2 == 0) {
+            spawnClientParticles();
+         }
          return;
       }
       if (this.tickCount >= this.duration) {
@@ -133,7 +135,9 @@ public class ElementalMagicFieldEntity extends Entity {
          this.discard();
          return;
       }
-      applyServerEffects();
+      if (this.tickCount % 5 == 0) {
+         applyServerEffects();
+      }
    }
 
    @Override
@@ -166,6 +170,9 @@ public class ElementalMagicFieldEntity extends Entity {
             item.hurtMarked = true;
          }
       }
+      if (!affectsLivingEntities(form)) {
+         return;
+      }
       for (LivingEntity living : this.level().getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != ownerEntity && !EntityUtils.isImmunePlayerTarget(e))) {
          if (!isInsideField(living, form, radius)) {
             continue;
@@ -195,6 +202,14 @@ public class ElementalMagicFieldEntity extends Entity {
             }
          }
       }
+   }
+
+   private static boolean affectsLivingEntities(int form) {
+      return form == FORM_FIRE_WALL
+         || form == FORM_WATER_PRISON
+         || form == FORM_WIND_TORNADO
+         || form == FORM_EARTH_PRISON
+         || form == FORM_EARTH_QUAKE;
    }
 
    private void hurtEverySecond(LivingEntity ownerEntity, LivingEntity target, float amount) {
@@ -288,7 +303,7 @@ public class ElementalMagicFieldEntity extends Entity {
          default -> ParticleTypes.FLAME;
       };
       float radius = this.entityData.get(RADIUS);
-      int count = form == FORM_WIND_TORNADO ? 18 : 8;
+      int count = form == FORM_WIND_TORNADO ? 10 : 5;
       for (int i = 0; i < count; i++) {
          double angle = this.random.nextDouble() * Math.PI * 2.0;
          double r = form == FORM_FIRE_WALL || form == FORM_WATER_SCREEN || form == FORM_WIND_WALL || form == FORM_EARTH_WALL

@@ -41,6 +41,7 @@ public final class ElementalMagicHelper {
       if (vars == null || vars.isCurrentSelectionFromCrest(magicId)) {
          return;
       }
+      amount *= matchingAttribute(vars, magicId) ? 1.5 : 1.0;
       switch (magicId) {
          case "fire_magic" -> vars.proficiency_fire_magic = Math.min(100.0, vars.proficiency_fire_magic + amount);
          case "water_magic" -> vars.proficiency_water_magic = Math.min(100.0, vars.proficiency_water_magic + amount);
@@ -86,6 +87,31 @@ public final class ElementalMagicHelper {
       };
    }
 
+   public static boolean matchingAttribute(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      if (vars == null) {
+         return false;
+      }
+      return switch (magicId) {
+         case "fire_magic" -> vars.player_magic_attributes_fire;
+         case "water_magic" -> vars.player_magic_attributes_water;
+         case "wind_magic" -> vars.player_magic_attributes_wind;
+         case "earth_magic" -> vars.player_magic_attributes_earth;
+         default -> false;
+      };
+   }
+
+   public static double applyManaAffinity(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, double cost) {
+      return cost * (matchingAttribute(vars, magicId) ? 0.85 : 1.0);
+   }
+
+   public static float applyPowerAffinity(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, float value) {
+      return value * (matchingAttribute(vars, magicId) ? 1.15F : 1.0F);
+   }
+
+   public static float applyVisualAffinity(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, float value) {
+      return value * (matchingAttribute(vars, magicId) ? 1.25F : 1.0F);
+   }
+
    public static Vec3 aimDirection(LivingEntity caster, LivingEntity target, double speed) {
       if (target != null && target.isAlive()) {
          return target.getEyePosition().subtract(EntityUtils.getRightHandCastAnchor(caster)).normalize();
@@ -120,6 +146,26 @@ public final class ElementalMagicHelper {
       return projectile;
    }
 
+   public static ElementalMagicProjectileEntity spawnProjectile(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, LivingEntity caster, Vec3 direction, int element, int form, float damage, float radius, float knockback, int igniteSeconds, int slowTicks, float slowPercent, double range, float speed, boolean pierceArmor, boolean cutBlocks, float visualScale) {
+      return spawnProjectile(
+         caster,
+         direction,
+         element,
+         form,
+         applyPowerAffinity(vars, magicId, damage),
+         applyPowerAffinity(vars, magicId, radius),
+         knockback,
+         igniteSeconds,
+         slowTicks,
+         slowPercent,
+         range,
+         speed,
+         pierceArmor,
+         cutBlocks,
+         applyVisualAffinity(vars, magicId, visualScale)
+      );
+   }
+
    public static ElementalMagicFieldEntity spawnField(LivingEntity caster, BlockPos pos, int element, int form, float radius, float width, int duration, float damagePerSecond) {
       if (caster == null || caster.level().isClientSide) {
          return null;
@@ -130,6 +176,20 @@ public final class ElementalMagicHelper {
       level.addFreshEntity(field);
       level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.7F, 1.0F);
       return field;
+   }
+
+   public static ElementalMagicFieldEntity spawnField(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, LivingEntity caster, BlockPos pos, int element, int form, float radius, float width, int duration, float damagePerSecond) {
+      float visualScale = matchingAttribute(vars, magicId) ? 1.15F : 1.0F;
+      return spawnField(
+         caster,
+         pos,
+         element,
+         form,
+         radius * visualScale,
+         width * visualScale,
+         duration,
+         applyPowerAffinity(vars, magicId, damagePerSecond)
+      );
    }
 
    public static void changeGroundToMudOrFarmland(LivingEntity caster, double range) {

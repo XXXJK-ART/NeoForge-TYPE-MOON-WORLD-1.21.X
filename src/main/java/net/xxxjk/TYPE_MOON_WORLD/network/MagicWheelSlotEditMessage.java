@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public record MagicWheelSlotEditMessage(
@@ -127,6 +128,10 @@ public record MagicWheelSlotEditMessage(
 
             entry.displayNameCache = message.displayName == null ? "" : message.displayName;
             if ("crest".equals(sourceType)) {
+               if (!MagicDisplayMetadata.canEnterMagicCrest(magicId)) {
+                  player.displayClientMessage(Component.translatable("message.typemoonworld.magic.crest_forbidden"), true);
+                  return;
+               }
                if (!vars.hasValidImplantedCrest()) {
                   return;
                }

@@ -1,6 +1,11 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
 import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
@@ -104,6 +109,7 @@ public class CommonEvents {
    private static final float BATTLE_CONTINUATION_HEAL_AMOUNT = 10.0F;
    private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
+   private static final Map<String, Set<UUID>> SUGGESTED_MOB_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
 
    @SubscribeEvent
    public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
@@ -911,18 +917,20 @@ public class CommonEvents {
    public static void onServantLevelTick(net.neoforged.neoforge.event.tick.LevelTickEvent.Post event) {
       if (event.getLevel().isClientSide()) return;
       if (event.getLevel() instanceof ServerLevel sl) {
-         sl.getEntities().getAll().forEach(entity -> {
-            if (entity instanceof ServantEntity servant) {
-               CompoundTag data = servant.getPersistentData();
-               SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
-               CuChulainnCombatHelper.tickStatus(servant);
-               if (data.getInt("BattleContinuationCooldown") > 0) {
-                  data.putInt("BattleContinuationCooldown",
-                     data.getInt("BattleContinuationCooldown") - 1);
-               }
-               tickBattleContinuationRecovery(servant, data, sl);
-             }
-         });
+         long gameTime = sl.getGameTime();
+         if (gameTime % 5L != 0L) {
+            return;
+         }
+         AABB worldBox = new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000);
+         for (ServantEntity servant : sl.getEntitiesOfClass(ServantEntity.class, worldBox, Entity::isAlive)) {
+            CompoundTag data = servant.getPersistentData();
+            SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
+            CuChulainnCombatHelper.tickStatus(servant);
+            if (data.getInt("BattleContinuationCooldown") > 0) {
+               data.putInt("BattleContinuationCooldown", Math.max(0, data.getInt("BattleContinuationCooldown") - 5));
+            }
+            tickBattleContinuationRecovery(servant, data, sl);
+         }
       }
    }
 
@@ -1155,9 +1163,41 @@ public class CommonEvents {
       return suggestion != null && suggestion.getAmplifier() >= 3;
    }
 
+   private static void trackSuggestedMob(LivingEntity entity) {
+      if (entity != null && entity.level() instanceof ServerLevel level) {
+         String key = level.dimension().location().toString();
+         SUGGESTED_MOB_IDS_BY_DIMENSION.computeIfAbsent(key, unused -> ConcurrentHashMap.newKeySet()).add(entity.getUUID());
+      }
+   }
+
+   private static void untrackSuggestedMob(LivingEntity entity) {
+      if (entity == null) {
+         return;
+      }
+      if (entity.level() instanceof ServerLevel level) {
+         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(level.dimension().location().toString());
+         if (ids != null) {
+            ids.remove(entity.getUUID());
+         }
+      } else {
+         for (Set<UUID> ids : SUGGESTED_MOB_IDS_BY_DIMENSION.values()) {
+            ids.remove(entity.getUUID());
+         }
+      }
+   }
+
    private static void tickSuggestedMobs(ServerLevel level) {
-      AABB worldBox = new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000);
-      for (Mob mob : level.getEntitiesOfClass(Mob.class, worldBox, e -> e.isAlive() && e.hasEffect(ModMobEffects.SUGGESTION))) {
+      Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(level.dimension().location().toString());
+      if (ids == null || ids.isEmpty()) {
+         return;
+      }
+      Iterator<UUID> iterator = ids.iterator();
+      while (iterator.hasNext()) {
+         Entity entity = level.getEntity(iterator.next());
+         if (!(entity instanceof Mob mob) || !mob.isAlive() || !mob.hasEffect(ModMobEffects.SUGGESTION)) {
+            iterator.remove();
+            continue;
+         }
          int command = mob.getPersistentData().getInt(SuggestionEffect.TAG_COMMAND);
          if (command == MagicSuggestion.COMMAND_STOP) {
             mob.getNavigation().stop();
@@ -1196,6 +1236,7 @@ public class CommonEvents {
       if (effect == ModMobEffects.BINDING.get()) {
          entity.getPersistentData().remove(net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect.TAG_FULL_BIND);
       } else if (effect == ModMobEffects.SUGGESTION.get()) {
+         untrackSuggestedMob(entity);
          entity.getPersistentData().remove(SuggestionEffect.TAG_COMMAND);
          entity.getPersistentData().remove(SuggestionEffect.TAG_CASTER);
          entity.getPersistentData().remove(SuggestionEffect.TAG_ATTACK_TARGET);
@@ -1312,6 +1353,9 @@ public class CommonEvents {
       } else {
          LivingEntity living = event.getEntity();
          MobEffectInstance effectInstance = event.getEffectInstance();
+         if (living instanceof Mob && effectInstance != null && effectInstance.getEffect() == ModMobEffects.SUGGESTION) {
+            trackSuggestedMob(living);
+         }
          if (living != null && effectInstance != null && tryRedirectRhoAiasEffect(living, effectInstance)) {
             return;
          }

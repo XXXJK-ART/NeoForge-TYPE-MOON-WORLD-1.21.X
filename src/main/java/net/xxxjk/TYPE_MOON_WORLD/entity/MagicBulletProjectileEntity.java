@@ -90,7 +90,9 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
 
    public void tick() {
       super.tick();
-      spawnTrailParticles();
+      if (this.level().isClientSide || this.tickCount % 2 == 0) {
+         spawnTrailParticles();
+      }
       if (!this.level().isClientSide && (this.tickCount > 80 || this.position().distanceToSqr(this.originPos) > this.maxRange * this.maxRange)) {
          this.discard();
       }
@@ -99,7 +101,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
          Vec3 pos = this.position();
          if (this.tracePos.isEmpty() || pos.distanceToSqr(this.tracePos.get(this.tracePos.size() - 1)) >= 0.01) {
             this.tracePos.add(pos);
-            if (this.tracePos.size() > 80) {
+            if (this.tracePos.size() > 32) {
                this.tracePos.remove(0);
             }
          }

@@ -156,6 +156,9 @@ public class TypeMoonWorldModVariables {
          clone.proficiency_water_magic = original.proficiency_water_magic;
          clone.proficiency_wind_magic = original.proficiency_wind_magic;
          clone.proficiency_earth_magic = original.proficiency_earth_magic;
+         clone.proficiency_time_alter = original.proficiency_time_alter;
+         clone.proficiency_spiritual_healing = original.proficiency_spiritual_healing;
+         clone.proficiency_baptism_rite = original.proficiency_baptism_rite;
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
          clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
@@ -178,6 +181,7 @@ public class TypeMoonWorldModVariables {
             clone.water_magic_mode = original.water_magic_mode;
             clone.wind_magic_mode = original.wind_magic_mode;
             clone.earth_magic_mode = original.earth_magic_mode;
+            clone.time_alter_mode = original.time_alter_mode;
             clone.is_sword_barrel_active = false;
          } else {
             clone.is_chanting_ubw = false;
@@ -365,7 +369,8 @@ public class TypeMoonWorldModVariables {
       int fire_magic_mode,
       int water_magic_mode,
       int wind_magic_mode,
-      int earth_magic_mode
+      int earth_magic_mode,
+      int time_alter_mode
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ModeStateSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mode_state_sync")
@@ -386,10 +391,12 @@ public class TypeMoonWorldModVariables {
             buffer.writeInt(message.water_magic_mode);
             buffer.writeInt(message.wind_magic_mode);
             buffer.writeInt(message.earth_magic_mode);
+            buffer.writeInt(message.time_alter_mode);
          },
          buffer -> new TypeMoonWorldModVariables.ModeStateSyncMessage(
             buffer.readInt(),
             buffer.readBoolean(),
+            buffer.readInt(),
             buffer.readInt(),
             buffer.readInt(),
             buffer.readInt(),
@@ -420,7 +427,8 @@ public class TypeMoonWorldModVariables {
             vars.fire_magic_mode,
             vars.water_magic_mode,
             vars.wind_magic_mode,
-            vars.earth_magic_mode
+            vars.earth_magic_mode,
+            vars.time_alter_mode
          );
       }
 
@@ -449,6 +457,7 @@ public class TypeMoonWorldModVariables {
                      vars.water_magic_mode = Mth.clamp(message.water_magic_mode, 0, 1);
                      vars.wind_magic_mode = Mth.clamp(message.wind_magic_mode, 0, 1);
                      vars.earth_magic_mode = Mth.clamp(message.earth_magic_mode, 0, 1);
+                     vars.time_alter_mode = Mth.clamp(message.time_alter_mode, 0, 1);
                   }
                )
                .exceptionally(e -> {
@@ -472,7 +481,7 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite");
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -515,6 +524,9 @@ public class TypeMoonWorldModVariables {
       public double proficiency_water_magic = 0.0;
       public double proficiency_wind_magic = 0.0;
       public double proficiency_earth_magic = 0.0;
+      public double proficiency_time_alter = 0.0;
+      public double proficiency_spiritual_healing = 0.0;
+      public double proficiency_baptism_rite = 0.0;
       public List<ItemStack> analyzed_items = new ArrayList<>();
       public ItemStack projection_selected_item = ItemStack.EMPTY;
       public List<TypeMoonWorldModVariables.PlayerVariables.SavedStructure> analyzed_structures = new ArrayList<>();
@@ -545,6 +557,7 @@ public class TypeMoonWorldModVariables {
       public int water_magic_mode = 0;
       public int wind_magic_mode = 0;
       public int earth_magic_mode = 0;
+      public int time_alter_mode = 0;
       public int reinforcement_mode = 0;
       public int reinforcement_target = 0;
       public boolean is_sword_barrel_active = false;
@@ -817,6 +830,10 @@ public class TypeMoonWorldModVariables {
          if (crestEntry != null) {
             crestEntry.entryId = ensureCrestEntryId(crestEntry.entryId);
             crestEntry.sourceKind = sanitizeCrestSourceKind(crestEntry.sourceKind);
+            if (!net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(crestEntry.magicId)) {
+               crestEntry.magicId = "";
+               crestEntry.active = false;
+            }
             if (crestEntry.presetPayload == null) {
                crestEntry.presetPayload = new CompoundTag();
             }
@@ -1157,7 +1174,7 @@ public class TypeMoonWorldModVariables {
 
       public boolean addPlunderCrestEntry(String magicId, CompoundTag presetPayload, UUID originOwnerUuid, String originOwnerType, String originOwnerName) {
          this.ensureMagicSystemInitialized();
-         if (!isKnownMagicId(magicId)) {
+         if (!isKnownMagicId(magicId) || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(magicId)) {
             return false;
          } else {
             TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
@@ -1510,6 +1527,9 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("proficiency_water_magic", this.proficiency_water_magic);
          nbt.putDouble("proficiency_wind_magic", this.proficiency_wind_magic);
          nbt.putDouble("proficiency_earth_magic", this.proficiency_earth_magic);
+         nbt.putDouble("proficiency_time_alter", this.proficiency_time_alter);
+         nbt.putDouble("proficiency_spiritual_healing", this.proficiency_spiritual_healing);
+         nbt.putDouble("proficiency_baptism_rite", this.proficiency_baptism_rite);
          nbt.putDouble("proficiency_reinforcement", this.proficiency_reinforcement);
          nbt.putBoolean("is_chanting_ubw", this.is_chanting_ubw);
          nbt.putInt("ubw_chant_progress", this.ubw_chant_progress);
@@ -1531,6 +1551,7 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("water_magic_mode", this.water_magic_mode);
          nbt.putInt("wind_magic_mode", this.wind_magic_mode);
          nbt.putInt("earth_magic_mode", this.earth_magic_mode);
+         nbt.putInt("time_alter_mode", this.time_alter_mode);
          nbt.putInt("reinforcement_mode", this.reinforcement_mode);
          nbt.putInt("reinforcement_target", this.reinforcement_target);
          nbt.putInt("reinforcement_level", this.reinforcement_level);
@@ -1725,6 +1746,9 @@ public class TypeMoonWorldModVariables {
          this.proficiency_water_magic = nbt.getDouble("proficiency_water_magic");
          this.proficiency_wind_magic = nbt.getDouble("proficiency_wind_magic");
          this.proficiency_earth_magic = nbt.getDouble("proficiency_earth_magic");
+         this.proficiency_time_alter = nbt.getDouble("proficiency_time_alter");
+         this.proficiency_spiritual_healing = nbt.getDouble("proficiency_spiritual_healing");
+         this.proficiency_baptism_rite = nbt.getDouble("proficiency_baptism_rite");
          this.proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
          this.is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
          this.ubw_chant_progress = nbt.getInt("ubw_chant_progress");
@@ -1790,10 +1814,14 @@ public class TypeMoonWorldModVariables {
          if (nbt.contains("earth_magic_mode")) {
             this.earth_magic_mode = nbt.getInt("earth_magic_mode");
          }
+         if (nbt.contains("time_alter_mode")) {
+            this.time_alter_mode = nbt.getInt("time_alter_mode");
+         }
          this.fire_magic_mode = Math.max(0, Math.min(1, this.fire_magic_mode));
          this.water_magic_mode = Math.max(0, Math.min(1, this.water_magic_mode));
          this.wind_magic_mode = Math.max(0, Math.min(1, this.wind_magic_mode));
          this.earth_magic_mode = Math.max(0, Math.min(1, this.earth_magic_mode));
+         this.time_alter_mode = Math.max(0, Math.min(1, this.time_alter_mode));
          if (nbt.contains("reinforcement_mode")) {
             this.reinforcement_mode = nbt.getInt("reinforcement_mode");
          }
@@ -2544,7 +2572,10 @@ public class TypeMoonWorldModVariables {
       double fire_magic,
       double water_magic,
       double wind_magic,
-      double earth_magic
+      double earth_magic,
+      double time_alter,
+      double spiritual_healing,
+      double baptism_rite
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ProficiencySyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "proficiency_sync")
@@ -2568,8 +2599,14 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.water_magic);
             buffer.writeDouble(message.wind_magic);
             buffer.writeDouble(message.earth_magic);
+            buffer.writeDouble(message.time_alter);
+            buffer.writeDouble(message.spiritual_healing);
+            buffer.writeDouble(message.baptism_rite);
          },
          buffer -> new TypeMoonWorldModVariables.ProficiencySyncMessage(
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
@@ -2608,7 +2645,10 @@ public class TypeMoonWorldModVariables {
             vars.proficiency_fire_magic,
             vars.proficiency_water_magic,
             vars.proficiency_wind_magic,
-            vars.proficiency_earth_magic
+            vars.proficiency_earth_magic,
+            vars.proficiency_time_alter,
+            vars.proficiency_spiritual_healing,
+            vars.proficiency_baptism_rite
          );
       }
 
@@ -2640,6 +2680,9 @@ public class TypeMoonWorldModVariables {
                   vars.proficiency_water_magic = message.water_magic;
                   vars.proficiency_wind_magic = message.wind_magic;
                   vars.proficiency_earth_magic = message.earth_magic;
+                  vars.proficiency_time_alter = message.time_alter;
+                  vars.proficiency_spiritual_healing = message.spiritual_healing;
+                  vars.proficiency_baptism_rite = message.baptism_rite;
                }
             );
          }

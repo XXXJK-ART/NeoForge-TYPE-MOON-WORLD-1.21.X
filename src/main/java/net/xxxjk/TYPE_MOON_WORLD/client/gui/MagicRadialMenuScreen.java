@@ -19,6 +19,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
@@ -102,12 +103,13 @@ public class MagicRadialMenuScreen extends Screen {
          this.drawCircleStroke(bufferbuilder, matrix, centerX, centerY, innerRadius, 0.0F, 360.0F, 200, 200, 200, 150, 2.0F);
 
          for (int i = 0; i < count; i++) {
-            if (i != this.selectedIndex) {
+           if (i != this.selectedIndex) {
                boolean crest = this.isCrestMagic(i);
-               int baseR = crest ? 185 : 46;
-               int baseG = crest ? 58 : 116;
-               int baseB = crest ? 70 : 210;
-               int baseA = crest ? 110 : 115;
+               boolean church = this.isChurchMagic(i);
+               int baseR = crest ? 185 : church ? 200 : 46;
+               int baseG = crest ? 58 : church ? 162 : 116;
+               int baseB = crest ? 70 : church ? 46 : 210;
+               int baseA = crest ? 110 : church ? 118 : 115;
                float startAngle = i * angleStep - 90.0F;
                float endAngle = (i + 1) * angleStep - 90.0F;
                this.drawSector(bufferbuilder, matrix, centerX, centerY, innerRadius, radius, startAngle, endAngle, baseR, baseG, baseB, baseA);
@@ -120,9 +122,12 @@ public class MagicRadialMenuScreen extends Screen {
             float startAngle = this.selectedIndex * angleStep - 90.0F;
             float endAngle = (this.selectedIndex + 1) * angleStep - 90.0F;
             boolean crest = this.isCrestMagic(this.selectedIndex);
+            boolean church = this.isChurchMagic(this.selectedIndex);
             double popRadius = radius + 15.0;
             if (crest) {
                this.drawSector(bufferbuilder, matrix, centerX, centerY, innerRadius, popRadius, startAngle, endAngle, 232, 80, 92, 225);
+            } else if (church) {
+               this.drawSector(bufferbuilder, matrix, centerX, centerY, innerRadius, popRadius, startAngle, endAngle, 240, 198, 60, 225);
             } else {
                this.drawSector(bufferbuilder, matrix, centerX, centerY, innerRadius, popRadius, startAngle, endAngle, 0, 200, 255, 220);
             }
@@ -140,7 +145,7 @@ public class MagicRadialMenuScreen extends Screen {
             int textY = centerY + (int)(Math.sin(midAngleRad) * textRadius);
             String fullText = this.getDisplayNameComponent(ix).getString();
             boolean isSelected = ix == this.selectedIndex;
-            int textColor = isSelected ? -1 : (this.isCrestMagic(ix) ? -19790 : -5056001);
+            int textColor = isSelected ? -1 : (this.isCrestMagic(ix) ? -19790 : this.isChurchMagic(ix) ? -8355840 : -5056001);
             int approxArcWidth = Math.max(36, (int)((Math.PI * 2) * textRadius / Math.max(1, count) * 0.78));
             List<FormattedCharSequence> lines = this.wrapText(fullText, approxArcWidth, 3);
             int lineHeight = 9 + 1;
@@ -156,7 +161,7 @@ public class MagicRadialMenuScreen extends Screen {
 
          if (this.selectedIndex >= 0 && this.selectedIndex < this.availableMagics.size()) {
             String centerText = this.getDisplayNameComponent(this.selectedIndex).getString();
-            int centerColor = this.isCrestMagic(this.selectedIndex) ? -32640 : -16711681;
+            int centerColor = this.isCrestMagic(this.selectedIndex) ? -32640 : this.isChurchMagic(this.selectedIndex) ? -14336 : -16711681;
             int centerMaxWidth = Math.max(60, (int)(innerRadius * 1.7));
             List<FormattedCharSequence> centerLines = this.wrapText(centerText, centerMaxWidth, 4);
             int lineHeight = 9 + 1;
@@ -239,6 +244,10 @@ public class MagicRadialMenuScreen extends Screen {
 
    private boolean isCrestMagic(int index) {
       return index >= 0 && index < this.crestSourceFlags.size() && Boolean.TRUE.equals(this.crestSourceFlags.get(index));
+   }
+
+   private boolean isChurchMagic(int index) {
+      return index >= 0 && index < this.availableMagics.size() && MagicDisplayMetadata.isChurchMagic(this.getMagicId(index));
    }
 
    private String getCrestPresetHint(int index) {

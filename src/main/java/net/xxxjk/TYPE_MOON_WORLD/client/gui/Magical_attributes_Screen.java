@@ -29,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
@@ -151,13 +152,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("sword_barrel_full_open", "key.typemoonworld.magic.sword_barrel_full_open.short", "unlimited_blade_works", -3125939);
       this.addMagic("reinforcement", "key.typemoonworld.magic.reinforcement.short", "basic,reinforcement", -12602534);
       this.addMagic("healing_magic", "key.typemoonworld.magic.healing_magic.short", "basic", -3342388);
+      this.addMagic("spiritual_healing", "key.typemoonworld.magic.spiritual_healing.short", "basic", -274950);
       this.addMagic("magic_bullet", "key.typemoonworld.magic.magic_bullet.short", "basic", -3381556);
       this.addMagic("suggestion_magic", "key.typemoonworld.magic.suggestion_magic.short", "basic", -6737152);
       this.addMagic("binding_magic", "key.typemoonworld.magic.binding_magic.short", "basic", -1058372);
-      this.addMagic("fire_magic", "key.typemoonworld.magic.fire_magic.short", "basic", -3386880);
-      this.addMagic("water_magic", "key.typemoonworld.magic.water_magic.short", "basic", -10040065);
-      this.addMagic("wind_magic", "key.typemoonworld.magic.wind_magic.short", "basic", -6684775);
-      this.addMagic("earth_magic", "key.typemoonworld.magic.earth_magic.short", "basic", -7119279);
+      this.addMagic("fire_magic", "key.typemoonworld.magic.fire_magic.short", "elemental", -3386880);
+      this.addMagic("water_magic", "key.typemoonworld.magic.water_magic.short", "elemental", -10040065);
+      this.addMagic("wind_magic", "key.typemoonworld.magic.wind_magic.short", "elemental", -6684775);
+      this.addMagic("earth_magic", "key.typemoonworld.magic.earth_magic.short", "elemental", -7119279);
+      this.addMagic("time_alter", "key.typemoonworld.magic.time_alter.short", "special", -11096625);
+      this.addMagic("baptism_rite", "key.typemoonworld.magic.baptism_rite.short", "church", -23296);
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
@@ -276,6 +280,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.jewel";
       } else if ("basic".equals(category)) {
          return "gui.typemoonworld.category.basic";
+      } else if ("elemental".equals(category)) {
+         return "gui.typemoonworld.category.elemental";
+      } else if ("church".equals(category)) {
+         return "gui.typemoonworld.category.church";
+      } else if ("special".equals(category)) {
+         return "gui.typemoonworld.category.special";
       } else if ("unlimited_blade_works".equals(category)) {
          return "gui.typemoonworld.category.ubw";
       } else if ("other".equals(category)) {
@@ -290,7 +300,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.all",
          "gui.typemoonworld.category.jewel",
          "gui.typemoonworld.category.basic",
+         "gui.typemoonworld.category.elemental",
+         "gui.typemoonworld.category.church",
          "gui.typemoonworld.category.ubw",
+         "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
          "gui.typemoonworld.category.nordic"
       };
@@ -351,8 +364,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("jewel".equals(current)) {
          return "basic";
       } else if ("basic".equals(current)) {
+         return "elemental";
+      } else if ("elemental".equals(current)) {
+         return "church";
+      } else if ("church".equals(current)) {
          return "unlimited_blade_works";
       } else if ("unlimited_blade_works".equals(current)) {
+         return "special";
+      } else if ("special".equals(current)) {
          return "other";
       } else {
          return "other".equals(current) ? "nordic" : "all";
@@ -1130,6 +1149,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "water_magic" -> vars.proficiency_water_magic;
          case "wind_magic" -> vars.proficiency_wind_magic;
          case "earth_magic" -> vars.proficiency_earth_magic;
+         case "time_alter" -> vars.proficiency_time_alter;
          default -> -1.0;
       };
    }
@@ -1445,15 +1465,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private String resolveFallbackCategory(String magicId) {
-      if (magicId != null && !magicId.isEmpty()) {
-         if (MagicClassification.getSchoolType(magicId) == MagicClassification.MagicSchoolType.NORDIC) {
-            return "nordic";
-         } else {
-            return magicId.startsWith("jewel_") ? "jewel" : "other";
-         }
-      } else {
-         return "other";
-      }
+      return MagicDisplayMetadata.categoryOf(magicId);
    }
 
    private boolean canPlaceDraggingEntry(TypeMoonWorldModVariables.PlayerVariables vars, Magical_attributes_Screen.MagicEntry entry) {

@@ -262,6 +262,9 @@ public class TypeMoonWorldModKeyMappings {
                         } else if (net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService.isElementalMagic(currentMagic)) {
                            PacketDistributor.sendToServer(new MagicModeSwitchMessage(9, -1), new CustomPacketPayload[0]);
                            isModeSwitchDown = true;
+                        } else if ("time_alter".equals(currentMagic)) {
+                           PacketDistributor.sendToServer(new MagicModeSwitchMessage(10, -1), new CustomPacketPayload[0]);
+                           isModeSwitchDown = true;
                         }
                      } else if (!suppressScreens && Minecraft.getInstance().screen == null) {
                         Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));

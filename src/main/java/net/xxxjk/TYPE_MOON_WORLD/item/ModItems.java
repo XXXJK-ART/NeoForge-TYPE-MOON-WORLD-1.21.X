@@ -452,6 +452,24 @@ public class ModItems {
     public static final DeferredItem<Item> MAGIC_PAGE_EARTH = ITEMS.register("magic_page_earth",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "earth_magic"));
 
+    public static final DeferredItem<Item> MAGIC_BOOK_TIME_ALTER = ITEMS.register("magic_book_time_alter",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "time_alter"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_TIME_ALTER = ITEMS.register("magic_page_time_alter",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "time_alter"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_SPIRITUAL_HEALING = ITEMS.register("magic_book_spiritual_healing",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "spiritual_healing"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_SPIRITUAL_HEALING = ITEMS.register("magic_page_spiritual_healing",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "spiritual_healing"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_BAPTISM_RITE = ITEMS.register("magic_book_baptism_rite",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "baptism_rite"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "baptism_rite"));
+
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
 

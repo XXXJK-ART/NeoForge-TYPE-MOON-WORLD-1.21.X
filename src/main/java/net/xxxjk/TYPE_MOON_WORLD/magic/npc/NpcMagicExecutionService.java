@@ -42,6 +42,7 @@ public final class NpcMagicExecutionService {
          case "jewel_random_shoot" -> NpcMagicCastBridge.castJewelRandomShoot(caster, target, vars, effectiveProficiency);
          case "jewel_machine_gun" -> NpcMagicCastBridge.castJewelMachineGun(caster, target, vars, payload, effectiveProficiency);
          case "healing_magic" -> NpcMagicCastBridge.castHealingMagic(caster, target, vars, effectiveProficiency);
+         case "spiritual_healing" -> NpcMagicCastBridge.castSpiritualHealing(caster, target, vars, effectiveProficiency);
          case "magic_bullet" -> NpcMagicCastBridge.castMagicBullet(caster, target, vars, effectiveProficiency);
          case "suggestion_magic" -> NpcMagicCastBridge.castSuggestionMagic(caster, target, vars, effectiveProficiency);
          case "binding_magic" -> NpcMagicCastBridge.castBindingMagic(caster, target, vars, effectiveProficiency);
@@ -67,6 +68,7 @@ public final class NpcMagicExecutionService {
          case "jewel_random_shoot" -> 10;
          case "jewel_machine_gun" -> 14;
          case "healing_magic" -> 18;
+         case "spiritual_healing" -> 26;
          case "magic_bullet" -> 8;
          case "suggestion_magic" -> 16;
          case "binding_magic" -> 14;
@@ -88,6 +90,7 @@ public final class NpcMagicExecutionService {
          case "jewel_random_shoot" -> 10;
          case "jewel_machine_gun" -> 100;
          case "healing_magic" -> 90;
+         case "spiritual_healing" -> 110;
          case "magic_bullet" -> 22;
          case "suggestion_magic" -> 90;
          case "binding_magic" -> 70;

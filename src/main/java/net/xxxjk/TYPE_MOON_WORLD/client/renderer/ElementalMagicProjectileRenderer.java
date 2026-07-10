@@ -4,33 +4,33 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
-import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicProjectileEntity;
 
 public class ElementalMagicProjectileRenderer extends EntityRenderer<ElementalMagicProjectileEntity> {
-   private final ItemRenderer itemRenderer;
-
    public ElementalMagicProjectileRenderer(Context context) {
       super(context);
-      this.itemRenderer = context.getItemRenderer();
    }
 
    @Override
    public void render(ElementalMagicProjectileEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-      poseStack.pushPose();
-      float scale = entity.getVisualScale();
-      poseStack.scale(scale, scale, scale);
-      poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
-      this.itemRenderer.renderStatic(entity.getItem(), ItemDisplayContext.GROUND, 15728880, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
-      poseStack.popPose();
+      float[] color = colorForElement(entity.getElement());
+      MagicOrbProjectileRenderHelper.renderOrb(this, entity, partialTicks, poseStack, buffer, this.entityRenderDispatcher.cameraOrientation(), entity.getVisualScale(), color[0], color[1], color[2]);
+      MagicOrbProjectileRenderHelper.renderTrail(this, entity, partialTicks, poseStack, buffer, this.entityRenderDispatcher.camera.getPosition(), entity.tracePos, color[0], color[1], color[2]);
       super.render(entity, yaw, partialTicks, poseStack, buffer, packedLight);
    }
 
    @Override
    public ResourceLocation getTextureLocation(ElementalMagicProjectileEntity entity) {
       return net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS;
+   }
+
+   private static float[] colorForElement(int element) {
+      return switch (element) {
+         case ElementalMagicProjectileEntity.ELEMENT_WATER -> new float[]{0.16F, 0.66F, 1.0F};
+         case ElementalMagicProjectileEntity.ELEMENT_WIND -> new float[]{0.58F, 1.0F, 0.78F};
+         case ElementalMagicProjectileEntity.ELEMENT_EARTH -> new float[]{0.76F, 0.52F, 0.22F};
+         default -> new float[]{1.0F, 0.28F, 0.08F};
+      };
    }
 }
