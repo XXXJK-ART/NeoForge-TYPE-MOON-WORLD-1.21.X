@@ -65,10 +65,12 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 import org.jetbrains.annotations.Nullable;
@@ -101,6 +103,10 @@ public class ChantHandler {
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
       UUID uuid = event.getEntity().getUUID();
       MinecraftServer server = event.getEntity().getServer();
+      if (event.getEntity().level() instanceof ServerLevel level) {
+         Vec3 center = UBW_LOCATIONS.getOrDefault(uuid, event.getEntity().position());
+         clearServantCardUbwGears(level, uuid, center);
+      }
       if (WAS_CHANTING.getOrDefault(uuid, false) && event.getEntity() instanceof ServerPlayer serverPlayer) {
          restoreTerrainInstantly(serverPlayer);
       }
@@ -317,7 +323,11 @@ public class ChantHandler {
 
             if (isOwner && player.tickCount % 20 == 0) {
                double cost = 10.0;
-               if (vars.player_mana >= cost) {
+               if (vars.servant_card_transformed && ServantCardManaService.consume(player, vars, cost)) {
+                  if (player.tickCount % 100 == 0) {
+                     checkAndRefillSwords(player, vars);
+                  }
+               } else if (!vars.servant_card_transformed && vars.player_mana >= cost) {
                   vars.player_mana -= cost;
                   vars.syncMana(player);
                   if (player.tickCount % 100 == 0) {
@@ -823,22 +833,22 @@ public class ChantHandler {
          UBWInstanceManager.keepInstanceTicking(player.getUUID(), ubwLevel, targetPos);
          PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(offsetX, 0.0, offsetZ));
       } else if (progress == 2) {
-         chantText = "§bSteel is my body, and fire is my blood.";
+         chantText = "\u00A7bSteel is my body, and fire is my blood.";
       } else if (progress == 3) {
-         chantText = "§bI have created over a thousand blades.";
+         chantText = "\u00A7bI have created over a thousand blades.";
          spawnVisualSwords(player, vars, 10, 10.0);
       } else if (progress == 4) {
-         chantText = "§bUnaware of loss.";
+         chantText = "\u00A7bUnaware of loss.";
       } else if (progress == 5) {
-         chantText = "§bNor aware of gain.";
+         chantText = "\u00A7bNor aware of gain.";
       } else if (progress == 6) {
-         chantText = "§bWithstood pain to create weapons,waiting for one's arrival.";
+         chantText = "\u00A7bWithstood pain to create weapons, waiting for one's arrival.";
       } else if (progress == 7) {
-         chantText = "§bI have no regrets.";
+         chantText = "\u00A7bI have no regrets.";
       } else if (progress == 8) {
-         chantText = "§bThis is the only path.";
+         chantText = "\u00A7bThis is the only path.";
       } else if (progress == 9) {
-         chantText = "§bMy whole life was,";
+         chantText = "\u00A7bMy whole life was,";
       } else if (progress > 9) {
          if (UBWInstanceManager.ensureRegisteredPlayerInstance(player) == null) {
             int attempts = PENDING_UBW_ACTIVATION_ATTEMPTS.merge(player.getUUID(), 1, Integer::sum);
@@ -850,10 +860,13 @@ public class ChantHandler {
                vars.ubw_chant_timer = 0;
                vars.syncPlayerVariables(player);
             }
-         } else if (ManaHelper.consumeManaOrHealth(player, cost)) {
+         } else if (consumeUbwMana(player, vars, cost)) {
             PENDING_UBW_ACTIVATION_ATTEMPTS.remove(player.getUUID());
             if (!activateUBW(player, vars)) {
                vars.ubw_chant_timer = 0;
+               vars.syncPlayerVariables(player);
+            } else if (vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id)) {
+               vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 2400);
                vars.syncPlayerVariables(player);
             }
          } else {
@@ -863,12 +876,19 @@ public class ChantHandler {
          return;
       }
 
-      if (ManaHelper.consumeManaOrHealth(player, cost)) {
+      if (consumeUbwMana(player, vars, cost)) {
          player.displayClientMessage(Component.literal(chantText), true);
          vars.syncPlayerVariables(player);
       } else {
          interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.mana_depleted");
       }
+   }
+
+   private static boolean consumeUbwMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double cost) {
+      if (vars.servant_card_transformed) {
+         return ServantCardManaService.consume(player, vars, cost);
+      }
+      return ManaHelper.consumeManaOrHealth(player, cost);
    }
 
    private static void spawnVisualSwords(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int count, double maxRadius) {
@@ -1039,10 +1059,42 @@ public class ChantHandler {
 
       if (entrySwordCenter != null) {
          spawnEntrySwords(player, entrySwordCenter);
+         if (vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id) && player.level() instanceof ServerLevel activeLevel) {
+            spawnServantCardUbwGears(player, activeLevel, entrySwordCenter);
+         }
       }
 
       player.level().playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.0F, 1.0F);
       return true;
+   }
+
+   private static void spawnServantCardUbwGears(ServerPlayer player, ServerLevel level, Vec3 center) {
+      int gearCount = 9;
+      for (int i = 0; i < gearCount; i++) {
+         int variant = player.getRandom().nextInt(3);
+         float scale = 8.0F + player.getRandom().nextFloat() * 8.0F;
+         double angle = Math.PI * 2.0 * i / gearCount + (player.getRandom().nextDouble() - 0.5) * 0.18;
+         double distance = 50.0 + player.getRandom().nextDouble() * 45.0;
+         double x = center.x + Math.cos(angle) * distance;
+         double z = center.z + Math.sin(angle) * distance;
+         double cloudY = Math.max(level.getMinBuildHeight() + 42.0, Math.min(158.0, level.getMaxBuildHeight() - 32.0));
+         double y = cloudY + (player.getRandom().nextDouble() - 0.5) * 10.0;
+         level.addFreshEntity(new UbwSkyGearEntity(level, x, y, z, variant, scale, 0, player.getUUID()));
+      }
+   }
+
+   private static void clearServantCardUbwGears(ServerLevel level, UUID ownerUUID, Vec3 center) {
+      AABB scanBox = new AABB(
+         center.x - 192.0,
+         level.getMinBuildHeight(),
+         center.z - 192.0,
+         center.x + 192.0,
+         level.getMaxBuildHeight(),
+         center.z + 192.0
+      );
+      for (UbwSkyGearEntity gear : level.getEntitiesOfClass(UbwSkyGearEntity.class, scanBox, gear -> gear.isOwnedBy(ownerUUID))) {
+         gear.discard();
+      }
    }
 
    private static void initialUBWFill(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, List<Entity> targets) {
@@ -1114,6 +1166,7 @@ public class ChantHandler {
                }
 
                clearVisualSwords(player);
+               clearServantCardUbwGears(sourceLevel, player.getUUID(), center);
                returnEntitiesOnly(player, vars, sourceLevel, targetLevel, center);
             }
 
@@ -1134,8 +1187,9 @@ public class ChantHandler {
 
       if (player.level() instanceof ServerLevel sourceLevel && UBWInstanceManager.isUbwDimension(sourceLevel)) {
          clearVisualSwords(player);
-         Vec3 center = player.position();
-         returnEntitiesOnly(player, vars, sourceLevel, returnLevel, center);
+         Vec3 center = UBW_LOCATIONS.getOrDefault(player.getUUID(), player.position());
+         clearServantCardUbwGears(sourceLevel, player.getUUID(), center);
+         returnEntitiesOnly(player, vars, sourceLevel, returnLevel, player.position());
       }
 
       vars.is_in_ubw = false;
@@ -1145,6 +1199,28 @@ public class ChantHandler {
       ACTIVE_ENTITY_POSITIONS.remove(player.getUUID());
       player.teleportTo(returnLevel, vars.ubw_return_x, vars.ubw_return_y, vars.ubw_return_z, player.getYRot(), player.getXRot());
       UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
+   }
+
+   public static boolean activateServantCardUbwNow(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null) {
+         return false;
+      }
+      if (UBWInstanceManager.ensureRegisteredPlayerInstance(player) == null) {
+         ServerLevel ubwLevel = UBWInstanceManager.getOrCreateFreshPlayerInstance(player);
+         if (ubwLevel == null) {
+            return false;
+         }
+         Vec3 entryPos = UBWInstanceManager.randomEntryPosition(player.getRandom());
+         BlockPos targetPos = new BlockPos((int)entryPos.x, 100, (int)entryPos.z);
+         UBWInstanceManager.keepInstanceTicking(player.getUUID(), ubwLevel, targetPos);
+         PENDING_UBW_LOCATIONS.put(player.getUUID(), new Vec3(entryPos.x, 0.0, entryPos.z));
+      }
+      vars.has_unlimited_blade_works = true;
+      vars.is_chanting_ubw = true;
+      vars.ubw_chant_progress = 10;
+      vars.ubw_chant_timer = 0;
+      vars.syncPlayerVariables(player);
+      return activateUBW(player, vars);
    }
 
    private static void returnEntitiesOnly(
@@ -1373,3 +1449,4 @@ public class ChantHandler {
       }
    }
 }
+

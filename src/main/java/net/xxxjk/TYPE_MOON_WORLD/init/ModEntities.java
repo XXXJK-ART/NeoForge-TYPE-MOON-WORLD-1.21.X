@@ -11,6 +11,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -19,12 +20,15 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
@@ -72,7 +76,7 @@ public class ModEntities {
       () -> Builder.<VFXTriggerEntity>of(VFXTriggerEntity::new, MobCategory.MISC)
          .sized(0.1F, 0.1F)
          .clientTrackingRange(192)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("vfx_trigger")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH = ENTITY_TYPES.register(
@@ -148,6 +152,34 @@ public class ModEntities {
          .clientTrackingRange(8)
          .updateInterval(1)
          .build("gander_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MagicBulletProjectileEntity>> MAGIC_BULLET_PROJECTILE = ENTITY_TYPES.register(
+      "magic_bullet_projectile",
+      () -> Builder.<MagicBulletProjectileEntity>of(
+            (entityType, level) -> new MagicBulletProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.18F, 0.18F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("magic_bullet_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ElementalMagicProjectileEntity>> ELEMENTAL_MAGIC_PROJECTILE = ENTITY_TYPES.register(
+      "elemental_magic_projectile",
+      () -> Builder.<ElementalMagicProjectileEntity>of(
+            (entityType, level) -> new ElementalMagicProjectileEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.22F, 0.22F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("elemental_magic_projectile")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ElementalMagicFieldEntity>> ELEMENTAL_MAGIC_FIELD = ENTITY_TYPES.register(
+      "elemental_magic_field",
+      () -> Builder.<ElementalMagicFieldEntity>of(ElementalMagicFieldEntity::new, MobCategory.MISC)
+         .sized(0.2F, 0.2F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("elemental_magic_field")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedeaMagicBoltEntity>> MEDEA_MAGIC_BOLT = ENTITY_TYPES.register(
       "medea_magic_bolt",
@@ -226,7 +258,7 @@ public class ModEntities {
       () -> Builder.<ExpandingRingEffectEntity>of((entityType, level) -> new ExpandingRingEffectEntity(entityType, level), MobCategory.MISC)
          .sized(16.0F, 1.0F)
          .clientTrackingRange(16)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("expanding_ring_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ProjectionCircuitEffectEntity>> PROJECTION_CIRCUIT_EFFECT = ENTITY_TYPES.register(
@@ -234,7 +266,7 @@ public class ModEntities {
       () -> Builder.<ProjectionCircuitEffectEntity>of((entityType, level) -> new ProjectionCircuitEffectEntity(entityType, level), MobCategory.MISC)
          .sized(8.0F, 1.0F)
          .clientTrackingRange(12)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("projection_circuit_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<UbwChantRippleEntity>> UBW_CHANT_RIPPLE = ENTITY_TYPES.register(
@@ -260,7 +292,7 @@ public class ModEntities {
       () -> Builder.<TsumukariLightColumnEffectEntity>of((entityType, level) -> new TsumukariLightColumnEffectEntity(entityType, level), MobCategory.MISC)
          .sized(2.5F, 8.0F)
          .clientTrackingRange(16)
-         .updateInterval(1)
+         .updateInterval(20)
          .build("tsumukari_light_column_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<HeraclesEntity>> HERACLES = ENTITY_TYPES.register(
@@ -363,6 +395,16 @@ public class ModEntities {
          .clientTrackingRange(32)
          .updateInterval(1)
          .build("oda_matchlock_bullet")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ContenderBulletEntity>> CONTENDER_BULLET = ENTITY_TYPES.register(
+      "contender_bullet",
+      () -> Builder.<ContenderBulletEntity>of(
+            (entityType, level) -> new ContenderBulletEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.16F, 0.16F)
+         .clientTrackingRange(32)
+         .updateInterval(1)
+         .build("contender_bullet")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RedSkeletonHajunEntity>> RED_SKELETON_HAJUN = ENTITY_TYPES.register(
       "red_skeleton_hajun",

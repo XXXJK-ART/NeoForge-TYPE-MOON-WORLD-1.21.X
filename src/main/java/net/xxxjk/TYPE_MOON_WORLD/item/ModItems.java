@@ -7,9 +7,11 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChiselItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.CommandSpellItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DirkSmallKnifeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomStartAttributesItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
@@ -29,8 +31,15 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MercurySwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessChainDaggerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RuleBreakerItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardReleaseItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantMasterContractItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -105,6 +114,8 @@ public class ModItems {
 
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));
+    public static final DeferredItem<Item> RANDOM_START_ATTRIBUTES = ITEMS.register("random_start_attributes",
+            () -> new RandomStartAttributesItem(new Item.Properties().rarity(Rarity.RARE)));
 
     public static final DeferredItem<Item> CLAW_OF_CHAOS = registerSimpleItem("claw_of_chaos");
     public static final DeferredItem<Item> DRAGON_FANG = registerSimpleItem("dragon_fang");
@@ -120,6 +131,12 @@ public class ModItems {
     public static final DeferredItem<Item> VOIDS_DUST = registerSimpleItem("voids_dust");
 
     public static final DeferredItem<Item> HOLY_SHROUD = ITEMS.register("holy_shroud",
+            () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> BULLET = ITEMS.register("bullet",
+            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> ORIGIN_BULLET = ITEMS.register("origin_bullet",
+            () -> new Item(new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> KIRITSUGU_BONE_POWDER = ITEMS.register("kiritsugu_bone_powder",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
     public static final DeferredItem<Item> CHISEL = ITEMS.register("chisel",
@@ -151,6 +168,81 @@ public class ModItems {
 
     public static final DeferredItem<Item> GANDER = ITEMS.register("gander",
             () -> new Item(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<Item> SERVANT_MASTER_CONTRACT = ITEMS.register("servant_master_contract",
+            () -> new ServantMasterContractItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> COMMAND_SPELL = ITEMS.register("command_spell",
+            () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    public static final DeferredItem<Item> SERVANT_CARD_RELEASE = ITEMS.register("servant_card_release",
+            () -> new ServantCardReleaseItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+
+    public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_RIN = registerMasterCard("tohsaka_rin");
+    public static final DeferredItem<Item> MASTER_CARD_EMIYA_KIRITSUGU = registerMasterCard("emiya_kiritsugu");
+    public static final DeferredItem<Item> MASTER_CARD_EMIYA_SHIROU = registerMasterCard("emiya_shirou");
+    public static final DeferredItem<Item> MASTER_CARD_KOTOMINE_KIREI = registerMasterCard("kotomine_kirei");
+    public static final DeferredItem<Item> MASTER_CARD_LUVIA = registerMasterCard("luvia");
+    public static final DeferredItem<Item> MASTER_CARD_ELSA_SAIJO = registerMasterCard("elsa_saijo");
+    public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
+    public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
+
+    public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
+    public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
+    public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO = registerServantCard("sasaki_kojiro");
+    public static final DeferredItem<Item> SERVANT_CARD_CU_CHULAINN = registerServantCard("cu_chulainn");
+    public static final DeferredItem<Item> SERVANT_CARD_MEDEA = registerServantCard("medea");
+    public static final DeferredItem<Item> SERVANT_CARD_MEDUSA = registerServantCard("medusa");
+    public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN = registerServantCard("cursed_arm_hassan");
+    public static final DeferredItem<Item> SERVANT_CARD_HERACLES = registerServantCard("heracles");
+    public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA = registerServantCard("oda_nobunaga");
+    public static final DeferredItem<Item> SERVANT_CARD_ENKIDU = registerServantCard("enkidu");
+    public static final DeferredItem<Item> SERVANT_CARD_GAWAIN = registerServantCard("gawain");
+    public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS = registerServantCard("paracelsus");
+    public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
+
+    public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_CHEST = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_LEGS = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_CHEST = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_LEGS = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_CU_CHULAINN_CHEST = registerServantArmor("cu_chulainn", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_CU_CHULAINN_LEGS = registerServantArmor("cu_chulainn", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDEA_HEAD = registerServantArmor("medea", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDEA_CHEST = registerServantArmor("medea", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDEA_LEGS = registerServantArmor("medea", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_HEAD = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_CHEST = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_LEGS = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_HEAD = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_CHEST = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_LEGS = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_HERACLES_CHEST = registerServantArmor("heracles", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_HERACLES_LEGS = registerServantArmor("heracles", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA_CHEST = registerServantArmor("oda_nobunaga", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA_LEGS = registerServantArmor("oda_nobunaga", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_CHEST = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_LEGS = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_GAWAIN_CHEST = registerServantArmor("gawain", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_GAWAIN_LEGS = registerServantArmor("gawain", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS_CHEST = registerServantArmor("paracelsus", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS_LEGS = registerServantArmor("paracelsus", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN_CHEST = registerServantArmor("li_shuwen", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN_LEGS = registerServantArmor("li_shuwen", net.minecraft.world.entity.EquipmentSlot.LEGS);
+
+    private static DeferredItem<Item> registerServantCard(String servantId) {
+        return ITEMS.register("servant_card_" + servantId,
+                () -> new ServantCardItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(), servantId));
+    }
+
+    private static DeferredItem<Item> registerMasterCard(String masterId) {
+        return ITEMS.register("master_card_" + masterId,
+                () -> new MasterCardItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(), masterId));
+    }
+
+    private static DeferredItem<Item> registerServantArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {
+        return ITEMS.register("servant_card_" + servantId + "_" + slot.getName(),
+                () -> new ServantCardArmorItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE).fireResistant(), servantId, slot));
+    }
 
     // EMERALD (Green)
     public static final DeferredItem<Item> CARVED_EMERALD = ITEMS.register("carved_emerald",
@@ -311,6 +403,14 @@ public class ModItems {
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.3, (String)null, 
                     "gravity_magic"));
 
+    public static final DeferredItem<Item> MAGIC_SCROLL_GANDER = ITEMS.register("magic_scroll_gander",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null,
+                    "gander"));
+
+    public static final DeferredItem<Item> MAGIC_SCROLL_GANDER_BROKEN = ITEMS.register("magic_scroll_gander_broken",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null,
+                    "gander"));
+
     public static final DeferredItem<Item> MAGIC_BOOK_REINFORCEMENT = ITEMS.register("magic_book_reinforcement",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, // learnAll=false (default), no req
                     (String)null, "reinforcement"));
@@ -318,6 +418,72 @@ public class ModItems {
     public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, // no req
                     (String)null, "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_HEALING = ITEMS.register("magic_book_healing",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "healing_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_HEALING = ITEMS.register("magic_page_healing",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "healing_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_MAGIC_BULLET = ITEMS.register("magic_book_magic_bullet",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "magic_bullet"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_MAGIC_BULLET = ITEMS.register("magic_page_magic_bullet",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "magic_bullet"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_SUGGESTION = ITEMS.register("magic_book_suggestion",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "suggestion_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_SUGGESTION = ITEMS.register("magic_page_suggestion",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "suggestion_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_BINDING = ITEMS.register("magic_book_binding",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "binding_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_BINDING = ITEMS.register("magic_page_binding",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "binding_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_FIRE = ITEMS.register("magic_book_fire",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "fire_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_FIRE = ITEMS.register("magic_page_fire",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "fire_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_WATER = ITEMS.register("magic_book_water",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "water_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_WATER = ITEMS.register("magic_page_water",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "water_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_WIND = ITEMS.register("magic_book_wind",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "wind_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_WIND = ITEMS.register("magic_page_wind",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "wind_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_EARTH = ITEMS.register("magic_book_earth",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "earth_magic"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_EARTH = ITEMS.register("magic_page_earth",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "earth_magic"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_TIME_ALTER = ITEMS.register("magic_book_time_alter",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "time_alter"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_TIME_ALTER = ITEMS.register("magic_page_time_alter",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "time_alter"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_SPIRITUAL_HEALING = ITEMS.register("magic_book_spiritual_healing",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "spiritual_healing"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_SPIRITUAL_HEALING = ITEMS.register("magic_page_spiritual_healing",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "spiritual_healing"));
+
+    public static final DeferredItem<Item> MAGIC_BOOK_BAPTISM_RITE = ITEMS.register("magic_book_baptism_rite",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "baptism_rite"));
+
+    public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "baptism_rite"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
@@ -528,6 +694,22 @@ public class ModItems {
                                             1.2, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build()), "paracelsus_sword"));
+    public static final DeferredItem<Item> MERCURY_SWORD = ITEMS.register("mercury_sword",
+            () -> new MercurySwordItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "mercury_sword_damage"),
+                                            12.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "mercury_sword_speed"),
+                                            1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> THOMPSON_CONTENDER = ITEMS.register("thompson_contender",
+            () -> new ThompsonContenderItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -615,6 +797,27 @@ public class ModItems {
             case WHITE_GEMSTONE -> CARVED_WHITE_GEMSTONE_FULL.get();
             case CYAN -> CARVED_CYAN_GEMSTONE_FULL.get();
             case BLACK_SHARD -> CARVED_BLACK_SHARD_FULL.get();
+        };
+    }
+
+    public static Item getServantCardArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {
+        boolean head = slot == net.minecraft.world.entity.EquipmentSlot.HEAD;
+        boolean legs = slot == net.minecraft.world.entity.EquipmentSlot.LEGS;
+        return switch (servantId == null ? "" : servantId) {
+            case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
+            case "artoria_pendragon" -> (legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
+            case "sasaki_kojiro" -> (legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();
+            case "cu_chulainn" -> (legs ? SERVANT_CARD_CU_CHULAINN_LEGS : SERVANT_CARD_CU_CHULAINN_CHEST).get();
+            case "medea" -> (head ? SERVANT_CARD_MEDEA_HEAD : legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();
+            case "medusa" -> (head ? SERVANT_CARD_MEDUSA_HEAD : legs ? SERVANT_CARD_MEDUSA_LEGS : SERVANT_CARD_MEDUSA_CHEST).get();
+            case "cursed_arm_hassan" -> (head ? SERVANT_CARD_CURSED_ARM_HASSAN_HEAD : SERVANT_CARD_CURSED_ARM_HASSAN_CHEST).get();
+            case "heracles" -> (legs ? SERVANT_CARD_HERACLES_LEGS : SERVANT_CARD_HERACLES_CHEST).get();
+            case "oda_nobunaga" -> (legs ? SERVANT_CARD_ODA_NOBUNAGA_LEGS : SERVANT_CARD_ODA_NOBUNAGA_CHEST).get();
+            case "enkidu" -> (legs ? SERVANT_CARD_ENKIDU_LEGS : SERVANT_CARD_ENKIDU_CHEST).get();
+            case "gawain" -> (legs ? SERVANT_CARD_GAWAIN_LEGS : SERVANT_CARD_GAWAIN_CHEST).get();
+            case "paracelsus" -> (legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
+            case "li_shuwen" -> (legs ? SERVANT_CARD_LI_SHUWEN_LEGS : SERVANT_CARD_LI_SHUWEN_CHEST).get();
+            default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }
 

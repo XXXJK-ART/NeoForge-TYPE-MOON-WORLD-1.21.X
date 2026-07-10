@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class SapphireProjectileEntity extends ThrowableItemProjectile {
@@ -94,10 +95,13 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
             multiplier = gemItem.getQuality().getEffectMultiplier();
          }
 
+         Entity owner = this.getOwner();
          int radius = Math.round(3.0F * multiplier);
+         if (owner instanceof LivingEntity livingOwner) {
+            radius = Math.max(1, Math.round((float)MercurySwordMagicAmplifier.amplifyRadius(livingOwner, radius)));
+         }
          List<BlockPos> placedBlocks = new ArrayList<>();
          RandomSource random = level.getRandom();
-         Entity owner = this.getOwner();
 
          for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -132,7 +136,8 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
 
          for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
             if (entity != owner && !EntityUtils.isImmunePlayerTarget(entity)) {
-               entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 1));
+               int slowDuration = owner instanceof LivingEntity livingOwner ? MercurySwordMagicAmplifier.amplifyDuration(livingOwner, 100) : 100;
+               entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, slowDuration, 1));
                if (owner instanceof LivingEntity livingOwner) {
                   EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
                   if (!(livingOwner instanceof Player ownerPlayer && ownerPlayer.isCreative()) && entity instanceof Mob mob) {

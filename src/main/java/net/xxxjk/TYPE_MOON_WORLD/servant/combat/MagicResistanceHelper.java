@@ -7,6 +7,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Witch;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
@@ -15,7 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 
 public final class MagicResistanceHelper {
@@ -46,12 +47,13 @@ public final class MagicResistanceHelper {
          return MagicResistanceRank.fromLevel(entity.getPersistentData().getInt(MAGIC_RESISTANCE_LEVEL_TAG));
       }
 
-      if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
-         MagicResistanceRank definitionRank = getDefinitionMagicResistanceRank(servant);
+      ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
+      if (definition != null) {
+         MagicResistanceRank definitionRank = getDefinitionMagicResistanceRank(definition);
          if (definitionRank != MagicResistanceRank.NONE) {
             return definitionRank;
          }
-         if (servant.getDefinition().traits().contains(ServantTraitTag.MALE) && entity.getPersistentData().contains(MAGIC_RESISTANCE_LEVEL_TAG)) {
+         if (definition.traits().contains(ServantTraitTag.MALE) && entity.getPersistentData().contains(MAGIC_RESISTANCE_LEVEL_TAG)) {
             return MagicResistanceRank.fromLevel(entity.getPersistentData().getInt(MAGIC_RESISTANCE_LEVEL_TAG));
          }
       }
@@ -71,9 +73,9 @@ public final class MagicResistanceHelper {
       if (stored > 0.0F) {
          return stored;
       }
-      if (entity instanceof ServantEntity servant
-         && servant.getDefinition() != null
-         && "enkidu".equals(servant.getDefinition().id())
+      ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
+      if (definition != null
+         && "enkidu".equals(definition.id())
          && getMagicResistanceRank(entity) == MagicResistanceRank.A) {
          return 0.55F;
       }
@@ -88,10 +90,18 @@ public final class MagicResistanceHelper {
    }
 
    public static float applyMagicDamageReduction(LivingEntity entity, DamageSource source, float amount) {
+      if (OriginBulletHelper.isOriginBulletDamage(source)) {
+         return amount;
+      }
       if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source)) {
          return amount;
       }
-      return amount * (1.0F - getDamageReduction(entity));
+      MagicResistanceRank rank = getMagicResistanceRank(entity);
+      if (amount <= smallMagicImmunityThreshold(rank)) {
+         return 0.0F;
+      }
+      float adjusted = amount <= smallMagicHalfThreshold(rank) ? amount * 0.5F : amount;
+      return adjusted * (1.0F - getDamageReduction(entity));
    }
 
    public static int applyDebuffResistance(LivingEntity entity, int durationTicks) {
@@ -124,12 +134,33 @@ public final class MagicResistanceHelper {
       };
    }
 
-   private static MagicResistanceRank getDefinitionMagicResistanceRank(ServantEntity servant) {
-      if (servant == null || servant.getDefinition() == null || servant.getDefinition().skillIds() == null) {
+   private static float smallMagicImmunityThreshold(MagicResistanceRank rank) {
+      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
+         case A -> 12.0F;
+         case B -> 8.0F;
+         case C -> 5.0F;
+         case D -> 3.0F;
+         default -> 0.0F;
+      };
+   }
+
+   private static float smallMagicHalfThreshold(MagicResistanceRank rank) {
+      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
+         case A -> 30.0F;
+         case B -> 22.0F;
+         case C -> 16.0F;
+         case D -> 10.0F;
+         case E -> 6.0F;
+         default -> 0.0F;
+      };
+   }
+
+   private static MagicResistanceRank getDefinitionMagicResistanceRank(ServantDefinition definition) {
+      if (definition == null || definition.skillIds() == null) {
          return MagicResistanceRank.NONE;
       }
       MagicResistanceRank best = MagicResistanceRank.NONE;
-      for (String skillId : servant.getDefinition().skillIds()) {
+      for (String skillId : definition.skillIds()) {
          MagicResistanceRank rank = rankFromSkillId(skillId);
          if (rank.isAtLeast(best)) {
             best = rank;

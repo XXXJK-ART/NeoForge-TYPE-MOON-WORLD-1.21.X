@@ -28,8 +28,9 @@ public class OdaMatchlockBulletRenderer extends EntityRenderer<OdaMatchlockBulle
       poseStack.mulPose(Axis.ZP.rotationDegrees(time * 18.0F));
       VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(ORB_TEXTURE));
       float pulse = 1.0F + 0.12F * (float)Math.sin(time * 0.75F);
-      drawQuad(poseStack.last(), consumer, 0.16F * pulse, 1.0F, 0.78F, 0.24F, 0.95F);
-      drawQuad(poseStack.last(), consumer, 0.09F, 1.0F, 0.98F, 0.82F, 1.0F);
+      float scale = entity.getVisualScale();
+      drawQuad(poseStack.last(), consumer, 0.16F * pulse * scale, 1.0F, 0.78F, 0.24F, 0.95F);
+      drawQuad(poseStack.last(), consumer, 0.09F * scale, 1.0F, 0.98F, 0.82F, 1.0F);
       poseStack.popPose();
 
       ProjectileVisualEffectHelper.renderRibbonTrail(
@@ -39,7 +40,7 @@ public class OdaMatchlockBulletRenderer extends EntityRenderer<OdaMatchlockBulle
          poseStack,
          buffer,
          TRAIL_TEXTURE,
-         0.11F,
+         0.11F * entity.getVisualScale(),
          0xFFE06A,
          0.72F
       );

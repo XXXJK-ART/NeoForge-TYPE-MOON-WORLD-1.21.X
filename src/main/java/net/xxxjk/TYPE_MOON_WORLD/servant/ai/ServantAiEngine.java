@@ -6,11 +6,9 @@ import javax.annotation.Nullable;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.CombatModule;
-import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.CommandModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.EnvironmentModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.HostileTargetingModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.MovementModule;
-import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.SocialModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.BehaviorProfileMatrix;
@@ -21,11 +19,9 @@ public final class ServantAiEngine {
 
    public ServantAiEngine() {
       this.modules.add(new EnvironmentModule());
-      this.modules.add(new CommandModule());
       this.modules.add(new HostileTargetingModule());
       this.modules.add(new CombatModule());
       this.modules.add(new MovementModule());
-      this.modules.add(new SocialModule());
    }
 
    public void tick(ServantEntity entity) {

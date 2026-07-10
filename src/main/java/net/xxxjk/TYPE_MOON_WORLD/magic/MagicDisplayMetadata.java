@@ -1,0 +1,56 @@
+package net.xxxjk.TYPE_MOON_WORLD.magic;
+
+import java.util.Set;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+
+public final class MagicDisplayMetadata {
+   public static final String CATEGORY_ALL = "all";
+   public static final String CATEGORY_BASIC = "basic";
+   public static final String CATEGORY_ELEMENTAL = "elemental";
+   public static final String CATEGORY_CHURCH = "church";
+   public static final String CATEGORY_SPECIAL = "special";
+   public static final String CATEGORY_JEWEL = "jewel";
+   public static final String CATEGORY_UBW = "unlimited_blade_works";
+   public static final String CATEGORY_OTHER = "other";
+   public static final String CATEGORY_NORDIC = "nordic";
+   private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite");
+   private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of("baptism_rite");
+
+   private MagicDisplayMetadata() {
+   }
+
+   public static boolean isChurchMagic(String magicId) {
+      return magicId != null && CHURCH_MAGICS.contains(magicId);
+   }
+
+   public static boolean canEnterMagicCrest(String magicId) {
+      return magicId != null && !CREST_FORBIDDEN_MAGICS.contains(magicId);
+   }
+
+   public static boolean isSpecialMagic(String magicId) {
+      return "time_alter".equals(magicId) || "baptism_rite".equals(magicId);
+   }
+
+   public static String categoryOf(String magicId) {
+      if (magicId == null || magicId.isEmpty()) {
+         return CATEGORY_OTHER;
+      } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
+         || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
+         return CATEGORY_JEWEL;
+      } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "broken_phantasm".equals(magicId)) {
+         return CATEGORY_UBW;
+      } else if ("gander".equals(magicId) || "gandr_machine_gun".equals(magicId)) {
+         return CATEGORY_NORDIC;
+      } else if ("fire_magic".equals(magicId) || "water_magic".equals(magicId) || "wind_magic".equals(magicId) || "earth_magic".equals(magicId)) {
+         return CATEGORY_ELEMENTAL;
+      } else if ("baptism_rite".equals(magicId)) {
+         return CATEGORY_CHURCH;
+      } else if ("time_alter".equals(magicId)) {
+         return CATEGORY_SPECIAL;
+      } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
+         return CATEGORY_ELEMENTAL;
+      } else {
+         return CATEGORY_BASIC;
+      }
+   }
+}

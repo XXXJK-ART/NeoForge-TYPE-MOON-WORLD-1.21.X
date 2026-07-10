@@ -430,5 +430,49 @@
                                "sounds":  [
                                               "typemoonworld:voice/li_shuwen/np"
                                           ]
+                           },
+    "artoria_voice_excalibur_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/excalibur_short" ]
+                           },
+    "gawain_voice_gallatin_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/gallatin_short" ]
+                           },
+    "medea_voice_rule_breaker_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/rule_breaker_short" ]
+                           },
+    "cursed_arm_hassan_voice_zabaniya_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/zabaniya_short" ]
+                           },
+    "li_shuwen_voice_wu_er_da_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/wu_er_da_short" ]
+                           },
+    "paracelsus_voice_np_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/paracelsus_np_short" ]
+                           },
+    "gilgamesh_voice_ea_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/ea_short" ]
+                           },
+    "iskandar_voice_ionioi_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/ionioi_hetairoi_short" ]
+                           },
+    "okita_voice_np_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/okita_np_short" ]
+                           },
+    "emiya_archer_voice_ubw_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/ubw_short" ]
+                           },
+    "oda_nobunaga_voice_hajun_short": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/short_np/hajun_short" ]
                            }
 }

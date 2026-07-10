@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> DIRECT_DAMAGE = SynchedEntityData.defineId(OdaMatchlockBulletEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> SOURCE_GUN_ID = SynchedEntityData.defineId(OdaMatchlockBulletEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> BULLET_KIND = SynchedEntityData.defineId(OdaMatchlockBulletEntity.class, EntityDataSerializers.INT);
    private static final int MAX_LIFE = 60;
    private static final int BREAK_BLOCK_COUNT = 4;
    public final List<Vec3> tracePos = new LinkedList<>();
@@ -53,11 +54,25 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       this.entityData.set(SOURCE_GUN_ID, sourceGun == null ? -1 : sourceGun.getId());
    }
 
+   public OdaMatchlockBulletEntity setBulletKind(int kind) {
+      this.entityData.set(BULLET_KIND, Math.max(0, kind));
+      return this;
+   }
+
+   public float getVisualScale() {
+      return switch (this.entityData.get(BULLET_KIND)) {
+         case 2 -> 1.8F;
+         case 3 -> 1.35F;
+         default -> 1.0F;
+      };
+   }
+
    @Override
    protected void defineSynchedData(Builder builder) {
       super.defineSynchedData(builder);
       builder.define(DIRECT_DAMAGE, 10.0F);
       builder.define(SOURCE_GUN_ID, -1);
+      builder.define(BULLET_KIND, 0);
    }
 
    @Override
@@ -138,11 +153,13 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
 
    private void impact(Vec3 pos, boolean blockImpact) {
       if (this.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
-         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 12, 0.12, 0.12, 0.12, 0.04);
-         level.sendParticles(blockImpact ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 10, 0.18, 0.16, 0.18, 0.02);
-         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 5, 0.1, 0.1, 0.1, 0.02);
-         level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 0.55F, 1.75F);
+         int kind = this.entityData.get(BULLET_KIND);
+         int intensity = kind == 2 ? 3 : kind == 3 ? 2 : 1;
+         level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, intensity, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 10 + intensity * 6, 0.12 * intensity, 0.12 * intensity, 0.12 * intensity, 0.04);
+         level.sendParticles(blockImpact ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 8 + intensity * 8, 0.18 * intensity, 0.16 * intensity, 0.18 * intensity, 0.02);
+         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 4 + intensity * 5, 0.1 * intensity, 0.1 * intensity, 0.1 * intensity, 0.02);
+         level.playSound(null, pos.x, pos.y, pos.z, kind == 2 ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, kind == 2 ? 0.8F : 0.55F, kind == 2 ? 1.2F : 1.75F);
       }
       this.discard();
    }
@@ -152,7 +169,8 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       Direction forward = motion.lengthSqr() > 1.0E-6 ? Direction.getNearest(motion.x, motion.y, motion.z) : hitResult.getDirection().getOpposite();
       Entity breaker = this.getOwner() != null ? this.getOwner() : this;
       BlockPos start = hitResult.getBlockPos();
-      for (int i = 0; i < BREAK_BLOCK_COUNT; i++) {
+      int breakCount = this.entityData.get(BULLET_KIND) == 2 ? 8 : BREAK_BLOCK_COUNT;
+      for (int i = 0; i < breakCount; i++) {
          BlockPos target = start.relative(forward, i);
          BlockState state = this.level().getBlockState(target);
          if (canBreak(state, target)) {
@@ -185,6 +203,7 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       super.readAdditionalSaveData(tag);
       this.entityData.set(DIRECT_DAMAGE, tag.contains("DirectDamage") ? tag.getFloat("DirectDamage") : 10.0F);
       this.entityData.set(SOURCE_GUN_ID, tag.getInt("SourceGunId"));
+      this.entityData.set(BULLET_KIND, tag.getInt("BulletKind"));
    }
 
    @Override
@@ -192,5 +211,6 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       super.addAdditionalSaveData(tag);
       tag.putFloat("DirectDamage", this.entityData.get(DIRECT_DAMAGE));
       tag.putInt("SourceGunId", this.entityData.get(SOURCE_GUN_ID));
+      tag.putInt("BulletKind", this.entityData.get(BULLET_KIND));
    }
 }

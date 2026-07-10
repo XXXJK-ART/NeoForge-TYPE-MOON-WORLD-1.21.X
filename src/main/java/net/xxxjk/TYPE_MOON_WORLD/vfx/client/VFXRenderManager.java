@@ -101,9 +101,12 @@ public final class VFXRenderManager {
    @SubscribeEvent
    public static void onClientTick(ClientTickEvent.Post event) {
       clientTick++;
+      if (EMITTERS.isEmpty() && BEAMS.isEmpty() && RINGS.isEmpty()) {
+         return;
+      }
       float delta = 1.0F / 20.0F;
       Iterator<VFXEmitter> iterator = EMITTERS.iterator();
-      List<VFXEmitter> spawnedByHooks = new ArrayList<>();
+      List<VFXEmitter> spawnedByHooks = null;
       while (iterator.hasNext()) {
          VFXEmitter emitter = iterator.next();
          if (!emitter.tick(delta)) {
@@ -113,6 +116,9 @@ public final class VFXRenderManager {
             for (String subEffect : emitter.drainTriggeredSubEffects()) {
                var definition = net.xxxjk.TYPE_MOON_WORLD.vfx.data.EffectLibrary.INSTANCE.get(subEffect);
                if (definition != null) {
+                  if (spawnedByHooks == null) {
+                     spawnedByHooks = new ArrayList<>();
+                  }
                   spawnedByHooks.addAll(definition.createEmitters(emitter.origin().x, emitter.origin().y, emitter.origin().z, clientTick));
                }
             }
@@ -132,7 +138,9 @@ public final class VFXRenderManager {
             }
          }
       }
-      EMITTERS.addAll(spawnedByHooks);
+      if (spawnedByHooks != null) {
+         EMITTERS.addAll(spawnedByHooks);
+      }
       Iterator<VFXBeam> beamIterator = BEAMS.iterator();
       while (beamIterator.hasNext()) {
          if (!beamIterator.next().tick(delta)) {
@@ -149,7 +157,7 @@ public final class VFXRenderManager {
 
    @SubscribeEvent
    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-      if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || EMITTERS.isEmpty()) {
+      if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || (EMITTERS.isEmpty() && BEAMS.isEmpty() && RINGS.isEmpty())) {
          return;
       }
       Minecraft mc = Minecraft.getInstance();

@@ -11,6 +11,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent.AddLayers;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PetrifiedLivingLayer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CommandSpellMarkLayer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementLayer;
 
 @EventBusSubscriber(
@@ -24,6 +25,7 @@ public class ModClientEvents {
       for (Model skinType : event.getSkins()) {
          if (event.getSkin(skinType) instanceof PlayerRenderer playerRenderer) {
             playerRenderer.addLayer(new ReinforcementLayer(playerRenderer));
+            playerRenderer.addLayer(new CommandSpellMarkLayer(playerRenderer));
             playerRenderer.addLayer(new PetrifiedLivingLayer<>(playerRenderer));
          }
       }

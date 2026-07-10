@@ -50,10 +50,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public final class EnkiduCombatHelper {
    private static final String TAG_MODE = "EnkiduMode";
@@ -88,6 +90,8 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_FINISH = "EnkiduEnumaFinish";
    private static final String TAG_ENUMA_TARGET = "EnkiduEnumaTarget";
    private static final String TAG_ENUMA_DAMAGE_DONE = "EnkiduEnumaDamageDone";
+   private static final String TAG_ENUMA_INVISIBLE = "EnkiduEnumaInvisible";
+   private static final String TAG_ENUMA_PREV_INVISIBLE = "EnkiduEnumaPrevInvisible";
    private static final String TAG_ENUMA_START_X = "EnkiduEnumaStartX";
    private static final String TAG_ENUMA_START_Y = "EnkiduEnumaStartY";
    private static final String TAG_ENUMA_START_Z = "EnkiduEnumaStartZ";
@@ -1975,6 +1979,8 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_ENUMA_RELEASE, now + ENUMA_WINDUP);
       data.putLong(TAG_ENUMA_FINISH, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL);
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
+      data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
+      data.remove(TAG_ENUMA_INVISIBLE);
       data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
       data.putDouble(TAG_ENUMA_START_X, entity.getX());
       data.putDouble(TAG_ENUMA_START_Y, entity.getY());
@@ -2033,6 +2039,7 @@ public final class EnkiduCombatHelper {
                data.putDouble(TAG_ENUMA_IMPACT_Z, groundImpact.z);
                entity.setPos(groundImpact.x, groundImpact.y, groundImpact.z);
                entity.setDeltaMovement(Vec3.ZERO);
+               restoreEnumaInvisibility(entity);
                applyEnumaGroundExplosion(entity, level, groundImpact, null);
                return;
             }
@@ -2077,8 +2084,11 @@ public final class EnkiduCombatHelper {
          }
          return;
       }
-      maybeSpawnEnumaFlightFx(entity, level, now);
       int stage = data.getInt(TAG_ENUMA_STAGE);
+      if (stage <= 0) {
+         activateEnumaInvisibility(entity);
+      }
+      maybeSpawnEnumaFlightFx(entity, level, now);
       Vec3 impact = stage == 1
          ? new Vec3(data.getDouble(TAG_ENUMA_GROUND_X), data.getDouble(TAG_ENUMA_GROUND_Y), data.getDouble(TAG_ENUMA_GROUND_Z))
          : targetPoint;
@@ -2112,6 +2122,7 @@ public final class EnkiduCombatHelper {
          entity.setPos(impact.x, Math.max(target.getY(), impact.y - entity.getBbHeight() * 0.45), impact.z);
          entity.setDeltaMovement(Vec3.ZERO);
          applyNoDefenseDamageOverTicks(entity, target, 4000.0F, 20);
+         restoreEnumaInvisibility(entity);
          applyEnumaSmallExplosion(entity, level, impact, target);
          if (impact.distanceTo(groundImpact) > 1.8 && impact.distanceTo(groundImpact) <= 28.0 && now < release + ENUMA_RELEASE_VISUAL - 10L) {
             return;
@@ -2124,6 +2135,7 @@ public final class EnkiduCombatHelper {
       data.putDouble(TAG_ENUMA_IMPACT_Z, impact.z);
       entity.setPos(impact.x, Math.max(impact.y, impact.y - entity.getBbHeight() * 0.45), impact.z);
       entity.setDeltaMovement(Vec3.ZERO);
+      restoreEnumaInvisibility(entity);
       applyEnumaGroundExplosion(entity, level, impact, target);
    }
 
@@ -2156,10 +2168,13 @@ public final class EnkiduCombatHelper {
 
    private static void clearEnumaState(EnkiduEntity entity) {
       CompoundTag data = entity.getPersistentData();
+      restoreEnumaInvisibility(entity);
       data.remove(TAG_ENUMA_RELEASE);
       data.remove(TAG_ENUMA_FINISH);
       data.remove(TAG_ENUMA_TARGET);
       data.remove(TAG_ENUMA_DAMAGE_DONE);
+      data.remove(TAG_ENUMA_INVISIBLE);
+      data.remove(TAG_ENUMA_PREV_INVISIBLE);
       data.remove(TAG_ENUMA_START_X);
       data.remove(TAG_ENUMA_START_Y);
       data.remove(TAG_ENUMA_START_Z);
@@ -2176,6 +2191,25 @@ public final class EnkiduCombatHelper {
       data.remove(TAG_ENUMA_DIR_X);
       data.remove(TAG_ENUMA_DIR_Y);
       data.remove(TAG_ENUMA_DIR_Z);
+   }
+
+   private static void activateEnumaInvisibility(EnkiduEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      if (!data.getBoolean(TAG_ENUMA_INVISIBLE)) {
+         if (!data.contains(TAG_ENUMA_PREV_INVISIBLE)) {
+            data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
+         }
+         data.putBoolean(TAG_ENUMA_INVISIBLE, true);
+         entity.setInvisible(true);
+      }
+   }
+
+   private static void restoreEnumaInvisibility(EnkiduEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      if (data.getBoolean(TAG_ENUMA_INVISIBLE)) {
+         entity.setInvisible(data.getBoolean(TAG_ENUMA_PREV_INVISIBLE));
+         data.remove(TAG_ENUMA_INVISIBLE);
+      }
    }
 
    private static boolean isEnumaActive(EnkiduEntity entity, long now) {
@@ -2274,45 +2308,26 @@ public final class EnkiduCombatHelper {
 
    private static void breakEnumaImpactTerrain(ServerLevel level, Vec3 impact, double radius, int maxBroken) {
       BlockPos center = BlockPos.containing(impact);
-      int r = Mth.ceil(radius);
-      int broken = 0;
       double radiusSqr = radius * radius;
       double guaranteedCore = Math.min(radius * 0.34, 18.0);
       double guaranteedCoreSqr = guaranteedCore * guaranteedCore;
-      for (int shell = 0; shell <= r && broken < maxBroken; shell++) {
-         for (int x = -shell; x <= shell && broken < maxBroken; x++) {
-            for (int y = -shell; y <= shell && broken < maxBroken; y++) {
-               for (int z = -shell; z <= shell && broken < maxBroken; z++) {
-                  if (Math.max(Math.max(Math.abs(x), Math.abs(y)), Math.abs(z)) != shell) {
-                     continue;
-                  }
-                  double dx = x + 0.5 - (impact.x - center.getX());
-                  double dy = y + 0.5 - (impact.y - center.getY());
-                  double dz = z + 0.5 - (impact.z - center.getZ());
-                  double distSqr = dx * dx + dy * dy + dz * dz;
-                  if (distSqr > radiusSqr) {
-                     continue;
-                  }
-                  BlockPos pos = center.offset(x, y, z);
-                  double edge = Math.sqrt(distSqr) / Math.max(1.0, radius);
-                  boolean innerCore = distSqr <= guaranteedCoreSqr;
-                  double noiseThreshold = radius > 40.0 ? 0.24 + edge * 0.18 : 0.1;
-                  if (!innerCore && blockNoise(level, pos) < noiseThreshold) {
-                     continue;
-                  }
-                  if (!canEnumaBreakBlock(level, pos)) {
-                     continue;
-                  }
-                  if (level.removeBlock(pos, false)) {
-                     broken++;
-                     if ((broken & 63) == 0) {
-                        level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
-                     }
-                  }
-               }
-            }
+      DeferredTerrainDestruction.queueSphere(level, impact, radius, 24, (serverLevel, pos, ignoredDistanceSqr, currentRadius, origin) -> {
+         double dx = pos.getX() - center.getX() + 0.5 - (impact.x - center.getX());
+         double dy = pos.getY() - center.getY() + 0.5 - (impact.y - center.getY());
+         double dz = pos.getZ() - center.getZ() + 0.5 - (impact.z - center.getZ());
+         double distSqr = dx * dx + dy * dy + dz * dz;
+         if (distSqr > radiusSqr) {
+            return false;
          }
-      }
+         double edge = Math.sqrt(distSqr) / Math.max(1.0, radius);
+         boolean innerCore = distSqr <= guaranteedCoreSqr;
+         double noiseThreshold = radius > 40.0 ? 0.24 + edge * 0.18 : 0.1;
+         return (innerCore || blockNoise(serverLevel, pos) >= noiseThreshold) && canEnumaBreakBlock(serverLevel, pos);
+      }, (serverLevel, pos, removed) -> {
+         if ((removed & 63) == 0) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
+         }
+      });
    }
 
    private static void breakEnumaImpactTerrainInWaves(ServerLevel level, Vec3 impact, double radius) {
@@ -2332,29 +2347,13 @@ public final class EnkiduCombatHelper {
    }
 
    private static void breakEnumaImpactTerrainShell(ServerLevel level, Vec3 impact, double currentRadius, double previousRadius) {
-      int r = Mth.ceil(currentRadius);
-      double currentSqr = currentRadius * currentRadius;
-      double previousSqr = previousRadius * previousRadius;
-      int broken = 0;
-      for (int x = -r; x <= r; x++) {
-         for (int y = -r; y <= r; y++) {
-            for (int z = -r; z <= r; z++) {
-               double distSqr = x * x + y * y + z * z;
-               if (distSqr > currentSqr || distSqr <= previousSqr) {
-                  continue;
-               }
-               BlockPos pos = BlockPos.containing(impact.x + x, impact.y + y, impact.z + z);
-               if (!canEnumaBreakBlock(level, pos)) {
-                  continue;
-               }
-               level.removeBlock(pos, false);
-               broken++;
-               if ((broken & 127) == 0) {
-                  level.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.24, 0.24, 0.24, 0.0);
-               }
+      DeferredTerrainDestruction.queueShell(level, impact, currentRadius, previousRadius, 48,
+         (serverLevel, pos, distanceSqr, radius, origin) -> canEnumaBreakBlock(serverLevel, pos),
+         (serverLevel, pos, removed) -> {
+            if ((removed & 127) == 0) {
+               serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.24, 0.24, 0.24, 0.0);
             }
-         }
-      }
+         });
    }
 
    private static boolean canEnumaBreakBlock(ServerLevel level, BlockPos pos) {
@@ -2407,16 +2406,16 @@ public final class EnkiduCombatHelper {
    }
 
    private static boolean hasTrait(LivingEntity entity, ServantTraitTag trait) {
-      if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
-         return servant.getDefinition().traits().contains(trait);
+      if (ServantIdentityHelper.hasTrait(entity, trait)) {
+         return true;
       }
       return trait == ServantTraitTag.BEAST && entity instanceof Enemy && entity.getMaxHealth() >= 200.0F;
    }
 
    private static int divinityLevel(LivingEntity entity) {
-      if (entity instanceof ServantEntity servant && servant.getDefinition() != null) {
-         List<String> skills = servant.getDefinition().skillIds();
-         if (hasAnySkill(skills, "divinity_a", "god_hand_a")) {
+      List<String> skills = ServantIdentityHelper.skillIdsOf(entity);
+      if (!skills.isEmpty()) {
+         if (hasAnySkill(skills, "divinity_a", "god_hand_a", "god_hand_passive")) {
             return 5;
          }
          if (hasAnySkill(skills, "divinity_b_plus")) {

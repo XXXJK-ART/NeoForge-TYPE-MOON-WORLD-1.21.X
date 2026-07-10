@@ -1,7 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai.module;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Mob;
@@ -66,6 +68,9 @@ public final class HostileTargetingModule implements ServantAiModule {
 
       long gameTick = context.gameTick();
       long lastScanTick = entity.getPersistentData().getLong(LAST_TARGET_SCAN_TICK);
+      if (lastScanTick <= 0L && !isEntityScanSlot(entity, gameTick)) {
+         return;
+      }
       if (gameTick - lastScanTick < TARGET_SCAN_INTERVAL_TICKS) {
          return;
       }
@@ -178,7 +183,7 @@ public final class HostileTargetingModule implements ServantAiModule {
 
       if (isImmediateThreat(entity, target)) score += 220.0;
       if (hasAttackedProtectedEntity(entity, target, morality, scan)) score += 180.0;
-      if (entity.getSensing().hasLineOfSight(target)) {
+      if (scan.hasLineOfSight(entity, target)) {
          score += 40.0;
       }
       if (isVanillaHostile(target)) {
@@ -351,10 +356,18 @@ public final class HostileTargetingModule implements ServantAiModule {
             nearbyServants.add(servant);
          }
       }
-      return new TargetScan(nearbyLiving, nearbyServants);
+      return new TargetScan(nearbyLiving, nearbyServants, new HashMap<>());
    }
 
-   private record TargetScan(List<LivingEntity> nearbyLiving, List<ServantEntity> nearbyServants) {
+   private static boolean isEntityScanSlot(ServantEntity entity, long gameTick) {
+      long slot = Math.floorMod(entity.getUUID().getLeastSignificantBits(), TARGET_SCAN_INTERVAL_TICKS);
+      return Math.floorMod(gameTick, TARGET_SCAN_INTERVAL_TICKS) == slot;
+   }
+
+   private record TargetScan(List<LivingEntity> nearbyLiving, List<ServantEntity> nearbyServants, Map<Integer, Boolean> lineOfSightCache) {
+      private boolean hasLineOfSight(ServantEntity self, LivingEntity target) {
+         return this.lineOfSightCache.computeIfAbsent(target.getId(), ignored -> self.getSensing().hasLineOfSight(target));
+      }
    }
 
    private static boolean isFriendlyCreature(LivingEntity other) {

@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 
 public class MagicTopazReinforcement {
@@ -67,7 +68,7 @@ public class MagicTopazReinforcement {
    }
 
    private static void applyReinforcement(Player player, float multiplier) {
-      int duration = Math.round(1200.0F * multiplier);
+      int duration = MercurySwordMagicAmplifier.amplifyDuration(player, Math.round(1200.0F * multiplier));
       if (player instanceof LivingEntity) {
          player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, 1));
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, duration, 1));

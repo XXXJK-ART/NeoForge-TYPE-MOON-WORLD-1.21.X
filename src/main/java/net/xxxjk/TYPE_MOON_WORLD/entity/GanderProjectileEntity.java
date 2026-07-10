@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 
@@ -120,7 +121,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
 
                if (addPos) {
                   this.tracePos.add(pos);
-                  if (this.tracePos.size() > 560) {
+                  if (this.tracePos.size() > 48) {
                      this.tracePos.remove(0);
                   }
                }
@@ -154,6 +155,10 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                      int amplifier = Math.max(0, this.chargeSeconds - 1);
                      int duration = 80 + this.chargeSeconds * 40;
                      float curseDamage = 2.0F + this.chargeSeconds;
+                     if (this.getOwner() instanceof LivingEntity owner) {
+                        duration = MercurySwordMagicAmplifier.amplifyDuration(owner, duration);
+                        curseDamage = MercurySwordMagicAmplifier.amplifyDamage(owner, curseDamage);
+                     }
                      livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
                      livingTarget.hurt(this.damageSources().magic(), curseDamage);
                      livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, amplifier, false, true, true));

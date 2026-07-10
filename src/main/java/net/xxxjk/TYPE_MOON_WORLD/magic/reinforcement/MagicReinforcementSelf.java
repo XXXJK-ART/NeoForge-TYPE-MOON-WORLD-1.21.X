@@ -6,6 +6,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
@@ -18,6 +19,7 @@ public class MagicReinforcementSelf {
          int level = Math.min(requestLevel, maxLevel);
          double cost = 20.0 * level;
          int duration = (600 + (int)(vars.proficiency_reinforcement * 10.0)) * level;
+         duration = MercurySwordMagicAmplifier.amplifyDuration(player, duration);
          int amplifier = level - 1;
          MobEffectInstance effect = null;
          MobEffectInstance extraEffect = null;

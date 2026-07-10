@@ -45,6 +45,9 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 4: Set Reinforcement Level - value is level
                 // 6: Set Gravity Target - value is target index (0 self / 1 other; <0 toggles for compatibility)
                 // 7: Set Gravity Mode - value is -2..2 (ultra light -> ultra heavy)
+                // 8: Set Healing Target - value is target index (0 self / 1 other; <0 toggles)
+                // 9: Set Elemental Mode - value is 0 attack / 1 utility; <0 toggles
+                // 10: Set Time Alter Mode - value is 0 accel / 1 stagnate; <0 toggles
                 
                 if (message.actionType == 2) {
                     if (!isReinforcementMagic(currentMagic)) {
@@ -175,6 +178,74 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                     );
                     PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
+                } else if (message.actionType == 8) {
+                    if (!"healing_magic".equals(currentMagic)) {
+                        return;
+                    }
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+
+                    if (message.value < 0) {
+                        vars.healing_magic_target = vars.healing_magic_target == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        vars.healing_magic_target = message.value;
+                    } else {
+                        return;
+                    }
+
+                    Component targetComp = Component.translatable(
+                            vars.healing_magic_target == 0
+                                    ? "gui.typemoonworld.mode.self"
+                                    : "gui.typemoonworld.mode.other"
+                    );
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.healing.target_changed", targetComp), true);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    return;
+                } else if (message.actionType == 9) {
+                    if (!PlayerMagicSelectionService.isElementalMagic(currentMagic)) {
+                        return;
+                    }
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+
+                    int nextMode;
+                    if (message.value < 0) {
+                        nextMode = PlayerMagicSelectionService.getElementMode(vars, currentMagic) == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        nextMode = message.value;
+                    } else {
+                        return;
+                    }
+                    PlayerMagicSelectionService.setElementMode(vars, currentMagic, nextMode);
+                    Component modeComp = Component.translatable(nextMode == 0
+                            ? "gui.typemoonworld.overlay.element.mode.attack.short"
+                            : "gui.typemoonworld.overlay.element.mode.utility.short");
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.element.mode_changed", modeComp), true);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    return;
+                } else if (message.actionType == 10) {
+                    if (!"time_alter".equals(currentMagic)) {
+                        return;
+                    }
+                    if (isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+
+                    if (message.value < 0) {
+                        vars.time_alter_mode = vars.time_alter_mode == 0 ? 1 : 0;
+                    } else if (message.value == 0 || message.value == 1) {
+                        vars.time_alter_mode = message.value;
+                    } else {
+                        return;
+                    }
+                    Component modeComp = Component.translatable(vars.time_alter_mode == 0
+                            ? "gui.typemoonworld.overlay.time_alter.mode.accel.short"
+                            : "gui.typemoonworld.overlay.time_alter.mode.stagnate.short");
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.mode_changed", modeComp), true);
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
+                    return;
                 }
 
                 if (!currentMagic.isEmpty()) {
@@ -193,7 +264,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                                 } else {
                                     player.displayClientMessage(Component.literal("Broken Phantasm Mode: OFF"), true);
                                 }
-                                vars.syncPlayerVariables(player);
+                                vars.syncModeState(player);
                             } else {
                                 vars.sword_barrel_mode = message.value;
                                 
@@ -205,7 +276,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                                 else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
 
                                 player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
-                                vars.syncPlayerVariables(player);
+                                vars.syncModeState(player);
                             }
                         } else if (message.actionType == 1) {
                             if (message.value > 0) {
@@ -223,7 +294,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                             else if (vars.sword_barrel_mode == 4) modeStr = "4 (Clear)";
 
                             player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_SWORD_BARREL_MODE_CHANGE, modeStr), true);
-                            vars.syncPlayerVariables(player);
+                            vars.syncModeState(player);
                         }
                     } else if ("jewel_magic_shoot".equals(currentMagic) || "jewel_magic_release".equals(currentMagic)) {
                         // Switch between 6 modes (0: Ruby, 1: Sapphire, 2: Emerald, 3: Topaz, 4: Cyan, 5: Random)
@@ -278,7 +349,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         }
                         
                         player.displayClientMessage(Component.translatable(MagicConstants.MSG_MAGIC_JEWEL_MODE_CHANGE, modeStr), true);
-                        vars.syncPlayerVariables(player);
+                        vars.syncModeState(player);
                     } else if ("gandr_machine_gun".equals(currentMagic)) {
                         if (isRuntimePresetLocked(player, vars, currentMagic)) {
                             return;

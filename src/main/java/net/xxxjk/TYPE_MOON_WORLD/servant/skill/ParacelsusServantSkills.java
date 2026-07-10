@@ -73,7 +73,7 @@ public final class ParacelsusServantSkills {
    private static final int ELEMENTAL_MAGIC_COOLDOWN = 90;
    private static final int TARGET_CANNON_COOLDOWN = 80;
    private static final int PHILOSOPHER_STONE_STARTING_CHARGES = 3;
-   private static final int PHILOSOPHER_STONE_MAX_CHARGES = 5;
+   private static final int PHILOSOPHER_STONE_MAX_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_INVULN_TICKS = 60;
    private static final int ELEMENTAL_SPIRIT_DURATION = 220;
    private static final int HIGH_SPEED_DURATION = 160;
@@ -207,13 +207,13 @@ public final class ParacelsusServantSkills {
       if (entity.level() instanceof ServerLevel level) {
          Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
          switch (element) {
-            case "fire_a" -> castFireBurst(level, entity, target, center, now);
+            case "fire_a" -> castFireFurnace(level, entity, target, center, now);
             case "fire_b" -> castFireRing(level, entity, target, center, now);
-            case "water_a" -> castWaterBurst(level, entity, target, center, now);
+            case "water_a" -> castDeepSeaPressure(level, entity, target, center, now);
             case "water_b" -> castWaterGeyser(level, entity, target, center, now);
-            case "earth_a" -> castEarthBurst(level, entity, target, center, now);
+            case "earth_a" -> castMountainRoar(level, entity, target, center, now);
             case "earth_b" -> castEarthPrison(level, entity, target, center, now);
-            case "wind_a" -> castWindBurst(level, entity, target, center, now);
+            case "wind_a" -> castFirmamentCut(level, entity, target, center, now);
             default -> castWindCut(level, entity, target, center, now);
          }
       }
@@ -383,7 +383,7 @@ public final class ParacelsusServantSkills {
             continue;
          }
          living.invulnerableTime = 0;
-         living.hurt(entity.damageSources().magic(), damage);
+         living.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
          living.invulnerableTime = 0;
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 300, 0, false, true, true));
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 300, 0, false, true, true));
@@ -536,8 +536,119 @@ public final class ParacelsusServantSkills {
          level.playSound(null, entity.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.HOSTILE, 1.0F, 1.25F);
          ParacelsusSpiritCannonEntity cannon = ParacelsusSpiritCannonEntity.summon(level, entity, target, ELEMENTAL_SPIRIT_DURATION);
          level.addFreshEntity(cannon);
+         Vec3 guardianPos = target.position().add(0.0, target.getBbHeight() + 1.2, 0.0);
+         ParacelsusSpiritCannonEntity guardian = ParacelsusSpiritCannonEntity.summonGuardian(level, entity, guardianPos, entity.getRandom().nextInt(4), 120 * 20);
+         level.addFreshEntity(guardian);
       }
       return ServantExecutionResult.SUCCESS.withMpCost(18.0);
+   }
+
+   private static void castFireFurnace(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
+      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.35, center.z, 120, 3.6, 0.35, 3.6, 0.08);
+      level.sendParticles(ParticleTypes.LAVA, center.x, center.y + 0.25, center.z, 34, 2.8, 0.18, 2.8, 0.02);
+      level.sendParticles(FIRE, center.x, center.y + 0.5, center.z, 70, 2.6, 0.45, 2.6, 0.02);
+      breakElementalTerrain(level, entity, center, 8.0, 4, 48, 0.72F, 0.52F);
+
+      int pillars = 3 + (int)(Math.abs(now) % 3L);
+      for (int i = 0; i < pillars; i++) {
+         double angle = entity.getRandom().nextDouble() * Math.PI * 2.0;
+         double distance = 1.0 + entity.getRandom().nextDouble() * 7.0;
+         Vec3 pos = center.add(Math.cos(angle) * distance, 0.2, Math.sin(angle) * distance);
+         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y + 1.5, pos.z, 54, 0.38, 1.45, 0.38, 0.08);
+         level.sendParticles(ParticleTypes.LAVA, pos.x, pos.y + 0.35, pos.z, 18, 0.25, 0.16, 0.25, 0.0);
+         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(2.2, 3.4, 2.2), e -> isHostileElementTarget(entity, e))) {
+            applyElementalMagicHit(entity, living, 80.0F, 100, false, false, true, level);
+            scheduleMagicBurn(entity, living, level, 15.0F, 5);
+         }
+      }
+      level.playSound(null, target.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.2F, 0.78F);
+   }
+
+   private static void castDeepSeaPressure(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
+      level.sendParticles(ParticleTypes.SPLASH, center.x, center.y + 0.8, center.z, 160, 3.0, 2.1, 3.0, 0.10);
+      level.sendParticles(ParticleTypes.BUBBLE, center.x, center.y + 1.0, center.z, 120, 2.4, 1.7, 2.4, 0.08);
+      level.sendParticles(WATER, center.x, center.y + 0.7, center.z, 76, 2.1, 1.1, 2.1, 0.02);
+      breakElementalTerrain(level, entity, center, 7.5, 4, 38, 0.58F, 0.42F);
+      AABB prison = new AABB(center, center).inflate(3.2, 3.2, 3.2);
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, prison, e -> isHostileElementTarget(entity, e))) {
+         applyElementalMagicHit(entity, living, 30.0F, 0, true, false, false, level);
+         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 2, false, true, true));
+         living.addEffect(new MobEffectInstance(MobEffects.JUMP, 120, 128, false, true, true));
+         Vec3 pull = center.subtract(living.position()).multiply(0.13, 0.04, 0.13);
+         living.setDeltaMovement(living.getDeltaMovement().scale(0.35).add(pull.x, pull.y, pull.z));
+         living.hurtMarked = true;
+      }
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(7.0, 3.5, 7.0), e -> isHostileElementTarget(entity, e))) {
+         Vec3 away = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
+         if (away.lengthSqr() > 1.0E-4) {
+            away = away.normalize();
+            living.push(away.x * 1.0, 0.22, away.z * 1.0);
+         }
+         applyElementalMagicHit(entity, living, 50.0F, 0, false, false, false, level);
+      }
+      level.playSound(null, target.blockPosition(), SoundEvents.GENERIC_SPLASH, SoundSource.HOSTILE, 1.25F, 0.72F);
+   }
+
+   private static void castMountainRoar(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
+      level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.25, center.z, 22, 3.0, 0.35, 3.0, 0.02);
+      level.sendParticles(EARTH, center.x, center.y + 0.65, center.z, 90, 3.2, 0.65, 3.2, 0.03);
+      breakElementalTerrain(level, entity, center, 10.0, 5, 72, 0.84F, 0.62F);
+      int pillars = 3 + (int)(Math.abs(now) % 4L);
+      for (int i = 0; i < pillars; i++) {
+         double angle = entity.getRandom().nextDouble() * Math.PI * 2.0;
+         double distance = 1.5 + entity.getRandom().nextDouble() * 8.5;
+         Vec3 pos = center.add(Math.cos(angle) * distance, 0.1, Math.sin(angle) * distance);
+         level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()), pos.x, pos.y + 0.9, pos.z, 34, 0.6, 0.9, 0.6, 0.06);
+         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(1.8, 3.0, 1.8), e -> isHostileElementTarget(entity, e))) {
+            applyElementalMagicHit(entity, living, 60.0F, 0, false, true, false, level);
+            living.push(0.0, 0.72, 0.0);
+         }
+      }
+      for (int i = 0; i < 8; i++) {
+         Vec3 impact = center.add((entity.getRandom().nextDouble() - 0.5) * 14.0, 0.4, (entity.getRandom().nextDouble() - 0.5) * 14.0);
+         level.sendParticles(ParticleTypes.POOF, impact.x, impact.y, impact.z, 20, 0.55, 0.22, 0.55, 0.08);
+         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(impact, impact).inflate(2.5, 2.8, 2.5), e -> isHostileElementTarget(entity, e))) {
+            applyElementalMagicHit(entity, living, 40.0F, 0, false, false, false, level);
+         }
+      }
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(8.0, 3.0, 8.0), e -> isHostileElementTarget(entity, e))) {
+         applyElementalMagicHit(entity, living, 80.0F, 0, true, false, false, level);
+         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 9, false, true, true));
+      }
+      level.playSound(null, target.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.25F, 0.62F);
+   }
+
+   private static void castFirmamentCut(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
+      Vec3 forward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(0.0, 0.0, 1.0);
+      }
+      forward = forward.normalize();
+      Vec3 side = new Vec3(-forward.z, 0.0, forward.x).normalize();
+      int blades = 3 + (int)(Math.abs(now) % 3L);
+      for (int blade = 0; blade < blades; blade++) {
+         double offset = (blade - (blades - 1) * 0.5) * 0.85;
+         java.util.Set<Integer> damaged = new java.util.HashSet<>();
+         for (int step = 1; step <= 20; step++) {
+            Vec3 p = entity.position().add(0.0, entity.getBbHeight() * 0.65, 0.0).add(forward.scale(step)).add(side.scale(offset));
+            level.sendParticles(WIND, p.x, p.y, p.z, 7, 0.16, 0.1, 0.16, 0.01);
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
+            AABB hit = new AABB(p, p).inflate(1.7, 1.5, 1.7);
+            for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, hit, e -> isHostileElementTarget(entity, e))) {
+               if (damaged.add(living.getId())) {
+                  applyElementalMagicHit(entity, living, 70.0F, 0, true, false, false, level);
+                  Vec3 pull = p.subtract(living.position()).multiply(0.08, 0.0, 0.08);
+                  living.setDeltaMovement(living.getDeltaMovement().scale(0.45).add(pull.x, 0.03, pull.z));
+                  living.hurtMarked = true;
+               }
+            }
+         }
+      }
+      breakElementalTerrain(level, entity, entity.position().add(forward.scale(10.0)), 8.0, 3, 36, 0.50F, 0.34F);
+      level.playSound(null, target.blockPosition(), SoundEvents.BREEZE_WIND_CHARGE_BURST.value(), SoundSource.HOSTILE, 1.15F, 1.2F);
    }
 
    private static void castFireBurst(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
@@ -716,7 +827,7 @@ public final class ParacelsusServantSkills {
          return;
       }
       living.invulnerableTime = 0;
-      living.hurt(entity.damageSources().magic(), damage);
+      living.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
       if (fireTicks > 0) {
          living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), fireTicks));
       }
@@ -736,6 +847,17 @@ public final class ParacelsusServantSkills {
       }
       Vec3 impact = living.position().add(0.0, living.getBbHeight() * 0.45, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 14, 0.25, 0.25, 0.25, 0.03);
+   }
+
+   private static void scheduleMagicBurn(ParacelsusEntity entity, LivingEntity target, ServerLevel level, float damage, int seconds) {
+      for (int tick = 20; tick <= seconds * 20; tick += 20) {
+         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(tick, () -> {
+            if (target.isAlive() && target.level() == level && entity.isAlive() && target.getRemainingFireTicks() > 0) {
+               target.invulnerableTime = 0;
+               target.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
+            }
+         });
+      }
    }
 
    private static boolean isHostileElementTarget(ParacelsusEntity entity, LivingEntity living) {
@@ -877,7 +999,7 @@ public final class ParacelsusServantSkills {
          return;
       }
       target.invulnerableTime = 0;
-      target.hurt(entity.damageSources().magic(), (float)(6.0 + entity.getCurrentMp() * 0.02));
+      target.hurt(entity.damageSources().magic(), paracelsusSkillDamage((float)(6.0 + entity.getCurrentMp() * 0.02)));
       if (variant == 0) {
          target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 80));
       } else if (variant == 1) {
@@ -893,6 +1015,10 @@ public final class ParacelsusServantSkills {
          }
       }
       level.playSound(null, target.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.8F, 1.05F + variant * 0.08F);
+   }
+
+   private static float paracelsusSkillDamage(float baseDamage) {
+      return baseDamage * 0.5F;
    }
 
 }

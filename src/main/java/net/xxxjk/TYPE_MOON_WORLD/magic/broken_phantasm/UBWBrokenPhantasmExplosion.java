@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class UBWBrokenPhantasmExplosion {
    public static void explode(Level level, Entity source, Entity owner, ItemStack stack, Vec3 pos) {
@@ -46,11 +47,12 @@ public class UBWBrokenPhantasmExplosion {
          if (level instanceof ServerLevel serverLevel) {
             float clampedScale = Mth.clamp(scale, 0.35F, 2.0F);
             double damageRadius = Mth.clamp(radiusPower * 4.2 * clampedScale, 8.0, 25.0);
-            float totalDamage = Mth.clamp(400.0F + damagePower * 18.0F * clampedScale, 400.0F, 600.0F);
+            float totalDamage = Mth.clamp(80.0F + damagePower * 14.0F * clampedScale, 40.0F, 600.0F);
             DamageSource explosionSource = level.damageSources().explosion(source, owner);
             Set<Integer> damagedEntities = new HashSet<>();
             VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", pos, 128.0);
             spawnShellEffects(serverLevel, pos, damageRadius);
+            queueTerrainFromCenter(serverLevel, pos, damageRadius, 32.0F, damageRadius >= 22.0 ? 80 : 45);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 5, 0.35, 0.35, 0.35, 0.0);
             serverLevel.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 7, 0.14, 0.14, 0.14, 0.0);
             serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y + 0.25, pos.z, 72, 1.45, 0.55, 1.45, 0.07);
@@ -72,6 +74,38 @@ public class UBWBrokenPhantasmExplosion {
       }
    }
 
+   public static void explodePlainNoTerrain(Level level, Entity source, Entity owner, Vec3 pos) {
+      if (!(level instanceof ServerLevel serverLevel)) {
+         return;
+      }
+
+      double radius = 4.0;
+      DamageSource explosionSource = level.damageSources().explosion(source, owner);
+      serverLevel.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.2F, 1.0F);
+      serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 2, 0.35, 0.18, 0.35, 0.0);
+
+      for (LivingEntity living : serverLevel.getEntitiesOfClass(
+         LivingEntity.class,
+         new AABB(pos, pos).inflate(radius),
+         e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         double distance = Math.sqrt(living.distanceToSqr(pos.x, pos.y, pos.z));
+         if (distance > radius) {
+            continue;
+         }
+         float damage = 5.0F + serverLevel.random.nextFloat() * 15.0F;
+         living.invulnerableTime = 0;
+         living.hurt(explosionSource, damage);
+         living.invulnerableTime = 0;
+         Vec3 push = living.position().subtract(pos).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize();
+            living.push(push.x * 0.35, 0.12, push.z * 0.35);
+            living.hurtMarked = true;
+         }
+      }
+   }
+
    private static void spawnShellEffects(ServerLevel level, Vec3 center, double radius) {
       float outerRadius = (float)radius;
       int ironWhite = 0xF1F4F6;
@@ -80,6 +114,27 @@ public class UBWBrokenPhantasmExplosion {
       level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y + 0.16, center.z, 0.16F, outerRadius * 0.72F, 0.22F, 18, emberRed, 0.72F, 0.01F));
       level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y + 0.1, center.z, 0.18F, outerRadius, 0.18F, 18, emberRed, 0.48F, 0.0F, 90.0F, 0.0F));
       level.addFreshEntity(new ExpandingRingEffectEntity(level, center.x, center.y + 0.1, center.z, 0.18F, outerRadius, 0.18F, 18, ironWhite, 0.42F, 0.0F, 90.0F, 90.0F));
+   }
+
+   private static void queueTerrainFromCenter(ServerLevel level, Vec3 center, double radius, float maxHardness, int targetTicks) {
+      int waveCount = Mth.clamp((int)Math.ceil(radius), 6, 28);
+      double waveStep = radius / waveCount;
+      for (int wave = 1; wave <= waveCount; wave++) {
+         final int waveIndex = wave;
+         TYPE_MOON_WORLD.queueServerWork(waveIndex, () -> {
+            double previousRadius = Math.max(0.0, (waveIndex - 1) * waveStep);
+            double currentRadius = waveIndex * waveStep;
+            DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, Math.max(8, targetTicks / waveCount), (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
+               BlockState state = serverLevel.getBlockState(pos);
+               float hardness = state.getDestroySpeed(serverLevel, pos);
+               return !state.isAir()
+                  && hardness >= 0.0F
+                  && hardness <= maxHardness
+                  && !state.is(Blocks.BEDROCK)
+                  && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
+            }, null);
+         });
+      }
    }
 
    private static void processWave(
@@ -105,7 +160,6 @@ public class UBWBrokenPhantasmExplosion {
       if (Math.ceil(currentRadius) % 3 == 0) {
          level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.35F, 0.68F);
       }
-      breakLowHardnessTerrain(level, center, currentRadius, previousRadius);
       AABB damageBox = new AABB(center, center).inflate(currentRadius);
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
@@ -130,34 +184,4 @@ public class UBWBrokenPhantasmExplosion {
       }
    }
 
-   private static void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
-      int rInt = (int)Math.ceil(currentRadius);
-      int broken = 0;
-      int maxBroken = 20000;
-      for (int x = -rInt; x <= rInt; x++) {
-         for (int y = -rInt; y <= rInt; y++) {
-            for (int z = -rInt; z <= rInt; z++) {
-               double distSqr = x * x + y * y + z * z;
-               if (distSqr > currentRadius * currentRadius || distSqr <= previousRadius * previousRadius) {
-                  continue;
-               }
-               BlockPos blockPos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
-               BlockState state = level.getBlockState(blockPos);
-               float hardness = state.getDestroySpeed(level, blockPos);
-               if (state.isAir()
-                  || state.is(Blocks.BEDROCK)
-                  || hardness < 0.0F
-                  || hardness > 32.0F
-                  || state.getExplosionResistance(level, blockPos, null) >= 1200.0F) {
-                  continue;
-               }
-               level.removeBlock(blockPos, false);
-               broken++;
-               if (broken >= maxBroken) {
-                  return;
-               }
-            }
-         }
-      }
-   }
 }

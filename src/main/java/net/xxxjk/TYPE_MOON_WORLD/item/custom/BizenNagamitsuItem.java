@@ -7,6 +7,9 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
@@ -26,6 +29,7 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BizenNagamitsuItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+   private static final int TSUBAME_COOLDOWN = 700;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public BizenNagamitsuItem(Properties properties) {
@@ -64,9 +68,20 @@ public class BizenNagamitsuItem extends SwordItem implements GeoItem, NoblePhant
    }
 
    @Override
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && PlayerNoblePhantasmHelper.useOneShotTsubame(serverPlayer, stack)) {
+         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+      }
+      return super.use(level, player, hand);
+   }
+
+   @Override
    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
       if (!attacker.level().isClientSide() && attacker instanceof ServerPlayer player) {
-         PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target);
+         if (PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target)) {
+            player.getCooldowns().addCooldown(this, TSUBAME_COOLDOWN);
+         }
       }
       return super.hurtEnemy(stack, target, attacker);
    }

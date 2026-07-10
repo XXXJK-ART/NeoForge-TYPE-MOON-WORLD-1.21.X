@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 
 public class MagicCyanWind {
@@ -55,9 +56,9 @@ public class MagicCyanWind {
 
                float avgMultiplier = (multiplier1 + multiplier2 + multiplier3) / 3.0F;
                float baseRadius = 4.0F;
-               float radius = baseRadius * 1.5F * avgMultiplier;
+               float radius = (float)MercurySwordMagicAmplifier.amplifyRadius(player, baseRadius * 1.5F * avgMultiplier);
                int baseDuration = 100;
-               int duration = (int)(baseDuration * (1.0F + 0.5F * avgMultiplier));
+               int duration = MercurySwordMagicAmplifier.amplifyDuration(player, (int)(baseDuration * (1.0F + 0.5F * avgMultiplier)));
                ItemStack projectileStack = gem1.copy();
                projectileStack.setCount(1);
                CompoundTag tag = new CompoundTag();

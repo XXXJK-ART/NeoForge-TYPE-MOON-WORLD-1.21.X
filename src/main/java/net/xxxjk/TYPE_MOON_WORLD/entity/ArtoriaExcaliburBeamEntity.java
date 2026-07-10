@@ -1,7 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,11 +19,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class ArtoriaExcaliburBeamEntity extends Entity {
    private static final EntityDataAccessor<Float> END_X = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
@@ -33,6 +31,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    private static final EntityDataAccessor<Float> END_Z = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> DAMAGE_START_TICK = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> POWER_SCALE = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final double LENGTH = 150.0;
    private static final double HALF_WIDTH = 12.0;
    private static final double HALF_HEIGHT = 7.0;
@@ -55,11 +54,16 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    }
 
    public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick) {
+      this(level, owner, start, duration, damageStartTick, 1.0F);
+   }
+
+   public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick, float powerScale) {
       this(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), level);
       this.ownerUuid = owner.getUUID();
       this.setPos(start);
       this.entityData.set(DURATION, duration);
       this.entityData.set(DAMAGE_START_TICK, Math.max(0, Math.min(duration, damageStartTick)));
+      this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, powerScale)));
       this.updateEndFromOwner(owner);
    }
 
@@ -70,6 +74,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       builder.define(END_Z, 0.0F);
       builder.define(DURATION, 150);
       builder.define(DAMAGE_START_TICK, 0);
+      builder.define(POWER_SCALE, 1.0F);
    }
 
    public Vec3 getEndPos() {
@@ -121,6 +126,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       this.entityData.set(END_Z, tag.getFloat("EndZ"));
       this.entityData.set(DURATION, tag.getInt("Duration"));
       this.entityData.set(DAMAGE_START_TICK, tag.getInt("DamageStartTick"));
+      this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, tag.contains("PowerScale") ? tag.getFloat("PowerScale") : 1.0F)));
       this.craterQueued = tag.getBoolean("CraterQueued");
       if (tag.hasUUID("Owner")) {
          this.ownerUuid = tag.getUUID("Owner");
@@ -134,6 +140,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       tag.putFloat("EndZ", this.entityData.get(END_Z));
       tag.putInt("Duration", this.entityData.get(DURATION));
       tag.putInt("DamageStartTick", this.entityData.get(DAMAGE_START_TICK));
+      tag.putFloat("PowerScale", this.entityData.get(POWER_SCALE));
       tag.putBoolean("CraterQueued", this.craterQueued);
       if (this.ownerUuid != null) {
          tag.putUUID("Owner", this.ownerUuid);
@@ -151,7 +158,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       Vec3 end = this.getEndPos();
       AABB box = new AABB(start, start).minmax(new AABB(end, end));
       if (this.getDamageStartTick() > 0 && this.tickCount < this.getDamageStartTick()) {
-         box = box.minmax(new AABB(start.add(0.0, LENGTH, 0.0), start.add(0.0, LENGTH, 0.0)));
+         box = box.minmax(new AABB(start.add(0.0, this.beamLength(), 0.0), start.add(0.0, this.beamLength(), 0.0)));
       }
       return box.inflate(16.0);
    }
@@ -165,10 +172,26 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    }
 
    private void updateEndFromOwner(LivingEntity owner) {
-      Vec3 end = this.position().add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(LENGTH));
+      Vec3 end = this.position().add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(this.beamLength()));
       this.entityData.set(END_X, (float)end.x);
       this.entityData.set(END_Y, (float)end.y);
       this.entityData.set(END_Z, (float)end.z);
+   }
+
+   private float powerScale() {
+      return Math.max(0.2F, Math.min(1.0F, this.entityData.get(POWER_SCALE)));
+   }
+
+   private double beamLength() {
+      return LENGTH * (0.35 + this.powerScale() * 0.65);
+   }
+
+   private double beamHalfWidth() {
+      return HALF_WIDTH * (0.28 + this.powerScale() * 0.72);
+   }
+
+   private double beamHalfHeight() {
+      return HALF_HEIGHT * (0.35 + this.powerScale() * 0.65);
    }
 
    private boolean isBeamActive() {
@@ -191,21 +214,22 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       Vec3 up = right.cross(forward).normalize();
       AABB search = new AABB(owner.position(), owner.position())
          .minmax(new AABB(this.getEndPos(), this.getEndPos()))
-         .inflate(HALF_WIDTH + 2.0, HALF_HEIGHT + 2.0, HALF_WIDTH + 2.0);
+         .inflate(this.beamHalfWidth() + 2.0, this.beamHalfHeight() + 2.0, this.beamHalfWidth() + 2.0);
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 rel = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(start);
          double along = rel.dot(forward);
-         if (along < -POINT_BLANK_DAMAGE_LENGTH || along > LENGTH) {
+         double length = this.beamLength();
+         if (along < -POINT_BLANK_DAMAGE_LENGTH || along > length) {
             continue;
          }
          double side = Math.abs(rel.dot(right));
          double vertical = Math.abs(rel.dot(up));
          double beamAlong = Math.max(0.0, along);
-         double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / LENGTH));
-         double allowedWidth = along < 0.0 ? 2.8 : HALF_WIDTH * Math.pow(widthScale, 0.35);
-         if (side <= allowedWidth && vertical <= HALF_HEIGHT) {
-            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE);
+         double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / length));
+         double allowedWidth = along < 0.0 ? 2.8 : this.beamHalfWidth() * Math.pow(widthScale, 0.35);
+         if (side <= allowedWidth && vertical <= this.beamHalfHeight()) {
+            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE * this.powerScale());
             living.push(forward.x * 0.15, 0.0, forward.z * 0.15);
             living.hurtMarked = true;
          }
@@ -224,12 +248,13 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       Vec3 up = right.cross(forward).normalize();
       int phase = this.tickCount % BLOCK_DESTROY_PHASE_TICKS;
       int broken = 0;
-      int maxBroken = 260;
-      for (double along = phase + 0.75; along <= LENGTH && broken < maxBroken; along += BLOCK_DESTROY_PHASE_TICKS) {
-         double widthScale = Math.max(0.25, Math.sin(Math.PI * along / LENGTH));
-         double allowedWidth = HALF_WIDTH * Math.pow(widthScale, 0.35);
+      int maxBroken = Math.max(36, (int)Math.floor(260.0F * this.powerScale()));
+      double length = this.beamLength();
+      for (double along = phase + 0.75; along <= length && broken < maxBroken; along += BLOCK_DESTROY_PHASE_TICKS) {
+         double widthScale = Math.max(0.25, Math.sin(Math.PI * along / length));
+         double allowedWidth = this.beamHalfWidth() * Math.pow(widthScale, 0.35);
          for (double side = -allowedWidth; side <= allowedWidth && broken < maxBroken; side += 0.85) {
-            for (double y = -2.4; y <= 4.2 && broken < maxBroken; y += 0.85) {
+            for (double y = -this.beamHalfHeight() * 0.34; y <= this.beamHalfHeight() * 0.6 && broken < maxBroken; y += 0.85) {
                Vec3 sample = start.add(forward.scale(along)).add(right.scale(side)).add(up.scale(y));
                if (owner.position().distanceToSqr(sample) <= 2.25) {
                   continue;
@@ -262,44 +287,21 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 10, 1.0, 0.8, 1.0, 0.0);
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.35, 0.35, 0.35, 0.0);
       VFXServerEffects.spawn(level, "artoria_excalibur_impact", center, 192.0);
-      int radius = 28;
-      int halfHeight = 112;
+      float powerScale = this.powerScale();
+      int radius = Math.max(6, (int)Math.floor(28.0F * (0.25F + powerScale * 0.75F)));
+      int halfHeight = Math.max(18, (int)Math.floor(112.0F * (0.22F + powerScale * 0.78F)));
       int batchHeight = 3;
-      Set<BlockPos> visited = new HashSet<>();
+      DeferredTerrainDestruction.queueEllipsoid(level, center, radius, halfHeight, 120.0F, 80);
       for (int yStart = -halfHeight; yStart <= halfHeight; yStart += batchHeight) {
          final int fromY = yStart;
-         TYPE_MOON_WORLD.queueServerWork((yStart + halfHeight) / batchHeight, () -> {
-            int broken = 0;
-            int maxBroken = 24000;
-            for (int x = -radius; x <= radius && broken < maxBroken; x++) {
-               for (int y = fromY; y < fromY + batchHeight && y <= halfHeight && broken < maxBroken; y++) {
-                  for (int z = -radius; z <= radius && broken < maxBroken; z++) {
-                     double normalized = (x * x + z * z) / (double)(radius * radius) + (y * y) / (double)(halfHeight * halfHeight);
-                     if (normalized > 1.0) {
-                        continue;
-                     }
-                     BlockPos pos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
-                     if (!visited.add(pos.immutable())) {
-                        continue;
-                     }
-                     BlockState state = level.getBlockState(pos);
-                     float hardness = state.getDestroySpeed(level, pos);
-                     if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 120.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
-                        continue;
-                     }
-                     if (level.removeBlock(pos, false)) {
-                        broken++;
-                     }
-                  }
-               }
-            }
-            damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight);
-            spawnCraterSliceFx(level, center, radius, fromY, broken);
+         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork((yStart + halfHeight) / batchHeight, () -> {
+            damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight, powerScale);
+            spawnCraterSliceFx(level, center, radius, fromY);
          });
       }
    }
 
-   private static void damageCraterSlice(ArtoriaExcaliburBeamEntity beam, ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight) {
+   private static void damageCraterSlice(ArtoriaExcaliburBeamEntity beam, ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight, float powerScale) {
       double yMin = center.y + fromY - 1.5;
       double yMax = center.y + Math.min(halfHeight, fromY + batchHeight) + 1.5;
       AABB box = new AABB(center.x - radius, yMin, center.z - radius, center.x + radius, yMax, center.z + radius);
@@ -310,7 +312,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
          if (normalized > 1.18) {
             continue;
          }
-         float scaledDamage = (float)(CRATER_DAMAGE * Math.max(0.35, 1.15 - normalized));
+         float scaledDamage = (float)(CRATER_DAMAGE * powerScale * Math.max(0.35, 1.15 - normalized));
          hurtWithoutIFrames(living, source, scaledDamage);
          Vec3 horizontal = new Vec3(rel.x, 0.0, rel.z);
          Vec3 push = horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 0.0) : horizontal.normalize().scale(0.42);
@@ -319,16 +321,14 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       }
    }
 
-   private static void spawnCraterSliceFx(ServerLevel level, Vec3 center, int radius, int fromY, int broken) {
+   private static void spawnCraterSliceFx(ServerLevel level, Vec3 center, int radius, int fromY) {
       double y = center.y + fromY;
       level.sendParticles(ParticleTypes.EXPLOSION, center.x, y, center.z, 4, radius * 0.22, 0.9, radius * 0.22, 0.0);
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, y, center.z, 95, radius * 0.55, 1.9, radius * 0.55, 0.055);
       level.sendParticles(ParticleTypes.CLOUD, center.x, y + 0.4, center.z, 80, radius * 0.48, 1.2, radius * 0.48, 0.11);
       level.sendParticles(ParticleTypes.END_ROD, center.x, y + 0.5, center.z, 70, radius * 0.38, 1.6, radius * 0.38, 0.08);
       level.sendParticles(ParticleTypes.FLASH, center.x, y + 0.6, center.z, 2, radius * 0.08, 0.4, radius * 0.08, 0.0);
-      if (broken > 0) {
-         level.levelEvent(2008, BlockPos.containing(center.x, y, center.z), 0);
-      }
+      level.levelEvent(2008, BlockPos.containing(center.x, y, center.z), 0);
       if (fromY % 9 == 0) {
          level.playSound(null, BlockPos.containing(center.x, y, center.z), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.8F, 0.72F + (fromY + 25) * 0.006F);
       }

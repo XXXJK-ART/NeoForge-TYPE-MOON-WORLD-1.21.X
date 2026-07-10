@@ -8,6 +8,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 
 public final class HeraclesGodHandHelper {
    private static final String CYBELE_ADAPTED_TAG = "GodHandAdaptedMedusaCybele";
@@ -18,7 +20,14 @@ public final class HeraclesGodHandHelper {
    }
 
    public static boolean hasGodHand(LivingEntity target) {
-      return target instanceof HeraclesEntity && target.getPersistentData().getBoolean("GodHandActive");
+      if (!target.getPersistentData().getBoolean("GodHandActive")) {
+         return false;
+      }
+      if (target instanceof HeraclesEntity) {
+         return true;
+      }
+      ServantDefinition definition = ServantIdentityHelper.definitionOf(target);
+      return definition != null && "heracles".equals(definition.id());
    }
 
    public static float applyAntiHeraclesNoblePhantasmSpecialAttack(LivingEntity target, float damage) {

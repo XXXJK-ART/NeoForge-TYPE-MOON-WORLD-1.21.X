@@ -1,6 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
 import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
@@ -18,6 +24,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -44,7 +51,9 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.SuggestionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
@@ -58,6 +67,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -68,9 +78,15 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
@@ -94,6 +110,19 @@ public class CommonEvents {
    private static final float BATTLE_CONTINUATION_HEAL_AMOUNT = 10.0F;
    private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
+   private static final Map<String, Set<UUID>> SUGGESTED_MOB_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
+   private static final Map<String, Set<UUID>> SERVANT_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
+
+   @SubscribeEvent
+   public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
+      if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer serverPlayer)) {
+         return;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed || vars.master_active) {
+         ServantCardTransformManager.normalizeFood(serverPlayer);
+      }
+   }
 
    @SubscribeEvent
    public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -103,6 +132,9 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
+         if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
+            trackServant(servant, serverLevel);
+         }
          // Pass servantId from spawn eggs after entity creation.
          if (event.getEntity() instanceof Monster monster) {
             try {
@@ -141,9 +173,10 @@ public class CommonEvents {
          if (event.getLevel() instanceof ServerLevel serverLevel) {
             // Sasaki Kojiro Presence Concealment D check.
             if (serverLevel.getGameTime() % 40L == 0L) {
-               for (ServantEntity servant : serverLevel.getEntitiesOfClass(ServantEntity.class,
-                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
-                  e -> e.isAlive() && e.getPersistentData().getBoolean("StealthPassiveActive"))) {
+               forEachTrackedServant(serverLevel, servant -> {
+                  if (!servant.getPersistentData().getBoolean("StealthPassiveActive")) {
+                     return;
+                  }
                   CompoundTag data = servant.getPersistentData();
                   long currentTick = serverLevel.getGameTime();
                   long lastHurtTick = data.getLong("LastHurtTick");
@@ -151,14 +184,17 @@ public class CommonEvents {
                   if (servant.hasEffect(MobEffects.INVISIBILITY) && !wasRecentlyHurt) {
                      servant.removeEffect(MobEffects.INVISIBILITY);
                   }
-               }
+               });
             }
             if (serverLevel.getGameTime() % 20L == 0L) {
-               for (CursedArmHassanEntity hassan : serverLevel.getEntitiesOfClass(CursedArmHassanEntity.class,
-                  new AABB(-30000000, -64, -30000000, 30000000, 320, 30000000),
-                  e -> e.isAlive() && e.hasEffect(MobEffects.INVISIBILITY))) {
-                  CursedArmHassanCombatHelper.clearNonServantTargeting(hassan);
-               }
+               forEachTrackedServant(serverLevel, servant -> {
+                  if (servant instanceof CursedArmHassanEntity hassan && hassan.hasEffect(MobEffects.INVISIBILITY)) {
+                     CursedArmHassanCombatHelper.clearNonServantTargeting(hassan);
+                  }
+               });
+            }
+            if (serverLevel.getGameTime() % 10L == 0L) {
+               tickSuggestedMobs(serverLevel);
             }
             if (serverLevel.getGameTime() % 200L == 0L) {
                List<ServerPlayer> players = serverLevel.players();
@@ -228,6 +264,12 @@ public class CommonEvents {
                );
                TypeMoonAdvancementHelper.syncPassive(serverPlayer, vars);
             }
+            TypeMoonWorldModVariables.PlayerVariables cardVars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
+               TypeMoonWorldModVariables.PLAYER_VARIABLES
+            );
+            ServantCardTransformManager.tick(serverPlayer, cardVars);
+            MasterStateManager.tick(serverPlayer, cardVars);
+            MasterServantLinkService.tick(serverPlayer, cardVars);
          }
 
          if (player.isSpectator()) {
@@ -240,6 +282,10 @@ public class CommonEvents {
                boolean skipDebuff = player instanceof LivingEntity le
                   && le.level().getEntity(le.getId()) instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant
                   && servant.isExemptFromStoneAxeDebuff();
+               if (!skipDebuff && player instanceof ServerPlayer serverPlayer) {
+                  TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                  skipDebuff = vars.servant_card_transformed && "heracles".equals(vars.servant_card_id);
+               }
                if (!skipDebuff) {
                   boolean hasStrength = player.hasEffect(MobEffects.DAMAGE_BOOST);
                   if (hasStrength) {
@@ -318,8 +364,18 @@ public class CommonEvents {
                event.setCanceled(true);
                return;
             }
+            if (event.getSource().getEntity() instanceof LivingEntity attackerWithBinding
+               && blocksAttacks(attackerWithBinding)) {
+               event.setCanceled(true);
+               return;
+            }
             if (event.getSource().getDirectEntity() instanceof LivingEntity directWithPetrify
                && directWithPetrify.hasEffect(ModMobEffects.PETRIFIED)) {
+               event.setCanceled(true);
+               return;
+            }
+            if (event.getSource().getDirectEntity() instanceof LivingEntity directWithBinding
+               && blocksAttacks(directWithBinding)) {
                event.setCanceled(true);
                return;
             }
@@ -329,11 +385,64 @@ public class CommonEvents {
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
-               if (event.getSource().getEntity() instanceof LivingEntity attacker) {
-                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+            handleContenderBulletDamage(event, directEntity);
+            if (event.getSource().getEntity() instanceof LivingEntity attacker) {
+               event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+               event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+            }
+            if (event.getEntity() instanceof ServerPlayer player) {
+               TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
+                  TypeMoonWorldModVariables.PLAYER_VARIABLES
+               );
+               if (vars.servant_card_transformed
+                  && "paracelsus".equals(vars.servant_card_id)
+                  && isParacelsusIgnoredDamage(event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  player.clearFire();
+                  return;
                }
-               if (event.getEntity() instanceof LivingEntity living) {
-                  if (tryRedirectRhoAiasDamage(living, event)) {
+               if (vars.servant_card_transformed
+                  && "oda_nobunaga".equals(vars.servant_card_id)
+                  && isOdaNobunagaIgnoredDamage(event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  player.clearFire();
+                  return;
+               }
+               if (ServantCardDefenseHandler.handleIncomingDamage(player, vars, event)) {
+                  return;
+               }
+               if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
+                  return;
+               }
+               if (vars.servant_card_transformed && player.getHealth() - event.getAmount() <= 0.0F) {
+                  MasterServantLinkService.onServantDeath(player, vars);
+               }
+               if (vars.servant_card_transformed
+                  && vars.servant_card_death_release
+                  && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
+                  && player.getHealth() - event.getAmount() <= 0.0F) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  ServantCardTransformManager.release(player, true);
+                  return;
+               }
+               if (vars.master_active && vars.master_revive_available && player.getHealth() - event.getAmount() <= 0.0F) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  MasterStateManager.tryRevive(player, vars);
+                  return;
+               }
+               if (vars.master_active && player.getHealth() - event.getAmount() <= 0.0F) {
+                  ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
+                  if (servant != null) {
+                     MasterServantLinkService.breakLink(player, servant, true);
+                  }
+               }
+            }
+            if (event.getEntity() instanceof LivingEntity living) {
+                  if (!OriginBulletHelper.isOriginBulletDamage(event.getSource()) && tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }
                   if (living instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)) {
@@ -528,12 +637,14 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onMobEffectRemoved(Remove event) {
       restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
+      clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
    }
 
    @SubscribeEvent
    public static void onMobEffectExpired(Expired event) {
       if (event.getEffectInstance() != null) {
          restorePetrifiedMobState(event.getEntity(), event.getEffectInstance().getEffect().value());
+         clearBasicMagecraftEffectTags(event.getEntity(), event.getEffectInstance().getEffect().value());
       }
    }
 
@@ -575,6 +686,7 @@ public class CommonEvents {
       boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), originalDamage);
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
       boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
+      boolean originBullet = OriginBulletHelper.isOriginBulletDamage(event.getSource());
       boolean antiHeraclesNoblePhantasm = HeraclesGodHandHelper.hasGodHand(servant) && (majorBrokenPhantasmExplosion || gaeBulgArmy);
       boolean heraclesPoisonOrWitherSpecialAttack = isHeraclesPoisonOrWitherSpecialAttack(servant, event.getSource());
       boolean enkiduWitherUndefendable = servant instanceof EnkiduEntity && EnkiduCombatHelper.isPerfectFormUndefendableDamage(event.getSource());
@@ -600,12 +712,12 @@ public class CommonEvents {
       if (invisibleAirBypass) {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
-      if (!enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
+      if (!originBullet && !enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
          event.setCanceled(true);
          return;
       }
 
-      if (!artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
+      if (!originBullet && !artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
@@ -643,7 +755,7 @@ public class CommonEvents {
          }
 
          float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
-         if (shield > 0.0F) {
+         if (!originBullet && shield > 0.0F) {
             if (majorBrokenPhantasmExplosion) {
                float minimumDamage = originalDamage * 0.5F;
                float absorbable = Math.max(0.0F, damage - minimumDamage);
@@ -811,17 +923,18 @@ public class CommonEvents {
    public static void onServantLevelTick(net.neoforged.neoforge.event.tick.LevelTickEvent.Post event) {
       if (event.getLevel().isClientSide()) return;
       if (event.getLevel() instanceof ServerLevel sl) {
-         sl.getEntities().getAll().forEach(entity -> {
-            if (entity instanceof ServantEntity servant) {
-               CompoundTag data = servant.getPersistentData();
-               SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
-               CuChulainnCombatHelper.tickStatus(servant);
-               if (data.getInt("BattleContinuationCooldown") > 0) {
-                  data.putInt("BattleContinuationCooldown",
-                     data.getInt("BattleContinuationCooldown") - 1);
-               }
-               tickBattleContinuationRecovery(servant, data, sl);
-             }
+         long gameTime = sl.getGameTime();
+         if (gameTime % 5L != 0L) {
+            return;
+         }
+         forEachTrackedServant(sl, servant -> {
+            CompoundTag data = servant.getPersistentData();
+            SasakiKojiroCombatHelper.repairBladeOutOfCombat(servant);
+            CuChulainnCombatHelper.tickStatus(servant);
+            if (data.getInt("BattleContinuationCooldown") > 0) {
+               data.putInt("BattleContinuationCooldown", Math.max(0, data.getInt("BattleContinuationCooldown") - 5));
+            }
+            tickBattleContinuationRecovery(servant, data, sl);
          });
       }
    }
@@ -860,6 +973,10 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getEntity() instanceof Player player) {
+            OriginBulletHelper.clearPlayerSeal(player);
+         }
+
          if (event.getEntity() instanceof ServantEntity servant) {
             CompoundTag data = servant.getPersistentData();
             boolean causalSevered = data.getBoolean("CausalSevered");
@@ -910,6 +1027,9 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
       Entity e = event.getEntity();
+      if (e instanceof ServantEntity && event.getLevel() instanceof ServerLevel serverLevel) {
+         untrackServant(e, serverLevel);
+      }
       if (e instanceof RyougiShikiEntity) {
          RemovalReason reason = e.getRemovalReason();
          if (reason != null) {
@@ -1039,6 +1159,134 @@ public class CommonEvents {
       }
    }
 
+   private static boolean blocksAttacks(LivingEntity entity) {
+      if (entity == null) {
+         return false;
+      }
+      MobEffectInstance binding = entity.getEffect(ModMobEffects.BINDING);
+      if (binding != null && (binding.getAmplifier() > 0 || entity.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect.TAG_FULL_BIND))) {
+         return true;
+      }
+      MobEffectInstance suggestion = entity.getEffect(ModMobEffects.SUGGESTION);
+      return suggestion != null && suggestion.getAmplifier() >= 3;
+   }
+
+   private static String dimensionKey(ServerLevel level) {
+      return level.dimension().location().toString();
+   }
+
+   private static void trackServant(ServantEntity servant, ServerLevel level) {
+      if (servant != null && level != null) {
+         SERVANT_IDS_BY_DIMENSION.computeIfAbsent(dimensionKey(level), unused -> ConcurrentHashMap.newKeySet()).add(servant.getUUID());
+      }
+   }
+
+   private static void untrackServant(Entity entity, ServerLevel level) {
+      if (entity == null || level == null) {
+         return;
+      }
+      Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(level));
+      if (ids != null) {
+         ids.remove(entity.getUUID());
+      }
+   }
+
+   private static void forEachTrackedServant(ServerLevel level, Consumer<ServantEntity> consumer) {
+      Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(level));
+      if (ids == null || ids.isEmpty()) {
+         return;
+      }
+      Iterator<UUID> iterator = ids.iterator();
+      while (iterator.hasNext()) {
+         Entity entity = level.getEntity(iterator.next());
+         if (!(entity instanceof ServantEntity servant) || !servant.isAlive()) {
+            iterator.remove();
+            continue;
+         }
+         consumer.accept(servant);
+      }
+   }
+
+   private static void trackSuggestedMob(LivingEntity entity) {
+      if (entity != null && entity.level() instanceof ServerLevel level) {
+         String key = dimensionKey(level);
+         SUGGESTED_MOB_IDS_BY_DIMENSION.computeIfAbsent(key, unused -> ConcurrentHashMap.newKeySet()).add(entity.getUUID());
+      }
+   }
+
+   private static void untrackSuggestedMob(LivingEntity entity) {
+      if (entity == null) {
+         return;
+      }
+      if (entity.level() instanceof ServerLevel level) {
+         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(dimensionKey(level));
+         if (ids != null) {
+            ids.remove(entity.getUUID());
+         }
+      } else {
+         for (Set<UUID> ids : SUGGESTED_MOB_IDS_BY_DIMENSION.values()) {
+            ids.remove(entity.getUUID());
+         }
+      }
+   }
+
+   private static void tickSuggestedMobs(ServerLevel level) {
+      Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(dimensionKey(level));
+      if (ids == null || ids.isEmpty()) {
+         return;
+      }
+      Iterator<UUID> iterator = ids.iterator();
+      while (iterator.hasNext()) {
+         Entity entity = level.getEntity(iterator.next());
+         if (!(entity instanceof Mob mob) || !mob.isAlive() || !mob.hasEffect(ModMobEffects.SUGGESTION)) {
+            iterator.remove();
+            continue;
+         }
+         int command = mob.getPersistentData().getInt(SuggestionEffect.TAG_COMMAND);
+         if (command == MagicSuggestion.COMMAND_STOP) {
+            mob.getNavigation().stop();
+            mob.setTarget(null);
+         } else if (command == MagicSuggestion.COMMAND_FOLLOW && mob.getPersistentData().hasUUID(SuggestionEffect.TAG_CASTER)) {
+            Entity caster = level.getEntity(mob.getPersistentData().getUUID(SuggestionEffect.TAG_CASTER));
+            if (caster instanceof LivingEntity living && living.isAlive()) {
+               mob.setTarget(null);
+               if (mob.distanceToSqr(living) > 9.0) {
+                  mob.getNavigation().moveTo(living, 1.0);
+               }
+            }
+         } else if (command == MagicSuggestion.COMMAND_AWAY && mob.getPersistentData().hasUUID(SuggestionEffect.TAG_CASTER)) {
+            Entity caster = level.getEntity(mob.getPersistentData().getUUID(SuggestionEffect.TAG_CASTER));
+            if (caster != null) {
+               Vec3 away = mob.position().subtract(caster.position());
+               if (away.lengthSqr() < 1.0E-6) {
+                  away = mob.getLookAngle();
+               }
+               Vec3 pos = mob.position().add(away.normalize().scale(8.0));
+               mob.setTarget(null);
+               mob.getNavigation().moveTo(pos.x, pos.y, pos.z, 1.15);
+            }
+         } else if (command == MagicSuggestion.COMMAND_CONFUSE) {
+            Vec3 pos = mob.position().add((mob.getRandom().nextDouble() - 0.5) * 6.0, 0.0, (mob.getRandom().nextDouble() - 0.5) * 6.0);
+            mob.setTarget(null);
+            mob.getNavigation().moveTo(pos.x, pos.y, pos.z, 0.85);
+         }
+      }
+   }
+
+   private static void clearBasicMagecraftEffectTags(LivingEntity entity, net.minecraft.world.effect.MobEffect effect) {
+      if (entity == null || effect == null) {
+         return;
+      }
+      if (effect == ModMobEffects.BINDING.get()) {
+         entity.getPersistentData().remove(net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect.TAG_FULL_BIND);
+      } else if (effect == ModMobEffects.SUGGESTION.get()) {
+         untrackSuggestedMob(entity);
+         entity.getPersistentData().remove(SuggestionEffect.TAG_COMMAND);
+         entity.getPersistentData().remove(SuggestionEffect.TAG_CASTER);
+         entity.getPersistentData().remove(SuggestionEffect.TAG_ATTACK_TARGET);
+      }
+   }
+
    private static void speakNearby(ServerLevel level, Entity center, String key, double radius) {
       for (ServerPlayer p : level.getEntitiesOfClass(ServerPlayer.class, center.getBoundingBox().inflate(radius))) {
          p.displayClientMessage(Component.translatable(key), false);
@@ -1090,6 +1338,58 @@ public class CommonEvents {
       return false;
    }
 
+   private static void handleContenderBulletDamage(LivingIncomingDamageEvent event, Entity directEntity) {
+      if (directEntity == null || !directEntity.getPersistentData().getBoolean(ThompsonContenderItem.CONTENDER_ARROW_TAG)) {
+         return;
+      }
+      LivingEntity target = event.getEntity();
+      boolean origin = directEntity.getPersistentData().getBoolean(ThompsonContenderItem.ORIGIN_ARROW_TAG);
+      event.setAmount(Math.max(event.getAmount(), 20.0F));
+      if (target.level() instanceof ServerLevel level) {
+         level.sendParticles(origin ? ParticleTypes.SOUL : ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), origin ? 22 : 10, 0.2, 0.22, 0.2, 0.05);
+         level.sendParticles(ParticleTypes.SMOKE, target.getX(), target.getY() + target.getBbHeight() * 0.45, target.getZ(), origin ? 12 : 5, 0.16, 0.18, 0.16, 0.035);
+         level.playSound(null, target.getX(), target.getY(), target.getZ(), origin ? SoundEvents.SOUL_ESCAPE.value() : SoundEvents.ARROW_HIT_PLAYER, SoundSource.PLAYERS, origin ? 0.8F : 0.65F, origin ? 0.8F : 1.25F);
+      }
+      if (!origin) {
+         return;
+      }
+      if (target instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.is_magic_circuit_open) {
+            event.setAmount(event.getAmount() + (float)Math.max(0.0, vars.player_max_mana));
+         }
+         OriginBulletHelper.sealPlayerUntilDeath(player);
+      }
+      if (target.isAlive() && !OriginBulletHelper.isNpcSealed(target)) {
+         OriginBulletHelper.sealNpc(target);
+      }
+      if (OriginBulletHelper.isServantTarget(target)) {
+         float bonus = (float)Math.max(0.0, OriginBulletHelper.maxMpOf(target) / 10.0);
+         if (bonus > 0.0F) {
+            event.setAmount(event.getAmount() + bonus);
+         }
+      }
+   }
+
+   private static boolean isParacelsusIgnoredDamage(DamageSource source) {
+      return source != null
+         && (source.is(DamageTypeTags.IS_FIRE)
+            || source.is(DamageTypes.LAVA)
+            || source.is(DamageTypes.HOT_FLOOR)
+            || source.is(DamageTypes.IN_FIRE)
+            || source.is(DamageTypes.ON_FIRE)
+            || source.is(DamageTypes.IN_WALL));
+   }
+
+   private static boolean isOdaNobunagaIgnoredDamage(DamageSource source) {
+      return source != null
+         && (source.is(DamageTypeTags.IS_FIRE)
+            || source.is(DamageTypes.LAVA)
+            || source.is(DamageTypes.HOT_FLOOR)
+            || source.is(DamageTypes.IN_FIRE)
+            || source.is(DamageTypes.ON_FIRE));
+   }
+
    @SubscribeEvent
    public static void onEffectAdded(Added event) {
       if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
@@ -1097,6 +1397,9 @@ public class CommonEvents {
       } else {
          LivingEntity living = event.getEntity();
          MobEffectInstance effectInstance = event.getEffectInstance();
+         if (living instanceof Mob && effectInstance != null && effectInstance.getEffect() == ModMobEffects.SUGGESTION) {
+            trackSuggestedMob(living);
+         }
          if (living != null && effectInstance != null && tryRedirectRhoAiasEffect(living, effectInstance)) {
             return;
          }

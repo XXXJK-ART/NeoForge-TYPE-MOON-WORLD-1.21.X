@@ -1,7 +1,11 @@
 package net.xxxjk.TYPE_MOON_WORLD.procedures;
 
 import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -17,12 +21,16 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 @EventBusSubscriber
@@ -32,15 +40,24 @@ public class Restore_mana {
    private static final double SPIRIT_VEIN_BLOCK_MANA = 90.0;
    private static final double HEALTH_CONVERT_MANA = 20.0;
    private static final float HEALTH_CONVERT_COST = 2.0F;
+   private static final String KEY_LAST_MANA_SYNC_TICK = "TypeMoonLastManaSyncTick";
+   private static final Map<UUID, UUID> ACTIVE_MANA_LOOPS = new ConcurrentHashMap<>();
 
    @SubscribeEvent
    public static void onPlayerLoggedIn(PlayerLoggedInEvent event) {
+      ACTIVE_MANA_LOOPS.remove(event.getEntity().getUUID());
       execute(event, event.getEntity().level(), event.getEntity());
    }
 
    @SubscribeEvent
    public static void onPlayerRespawn(PlayerRespawnEvent event) {
+      ACTIVE_MANA_LOOPS.remove(event.getEntity().getUUID());
       TYPE_MOON_WORLD.queueServerWork(20, () -> execute(event, event.getEntity().level(), event.getEntity()));
+   }
+
+   @SubscribeEvent
+   public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
+      ACTIVE_MANA_LOOPS.remove(event.getEntity().getUUID());
    }
 
    public static void execute(LevelAccessor world, Entity entity) {
@@ -48,16 +65,50 @@ public class Restore_mana {
    }
 
    private static void execute(@Nullable Event event, LevelAccessor world, Entity entity) {
+      UUID loopId = UUID.randomUUID();
+      if (entity instanceof Player player) {
+         UUID playerId = player.getUUID();
+         if (ACTIVE_MANA_LOOPS.putIfAbsent(playerId, loopId) != null) {
+            return;
+         }
+      }
+      runManaLoop(event, world, entity, loopId);
+   }
+
+   private static void runManaLoop(LevelAccessor world, Entity entity) {
+      runManaLoop(null, world, entity, null);
+   }
+
+   private static void runManaLoop(@Nullable Event event, LevelAccessor world, Entity entity, UUID loopId) {
+      if (entity instanceof Player player && loopId != null && !loopId.equals(ACTIVE_MANA_LOOPS.get(player.getUUID()))) {
+         return;
+      }
       if (entity != null && entity.isAlive()) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
+            vars.player_mana = 0.0;
+            vars.is_magic_circuit_open = false;
+            vars.magic_circuit_open_timer = 0.0;
+            syncManaIfDue(entity, vars, 20L);
+            TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
+            return;
+         }
+         if (vars.servant_card_transformed) {
+            TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
+            return;
+         }
          if (!vars.is_magus) {
-            TYPE_MOON_WORLD.queueServerWork(100, () -> execute(world, entity));
+            TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
          } else {
             double manaRegen = vars.player_mana_egenerated_every_moment;
             double regenInterval = vars.player_restore_magic_moment;
             double regenMultiplier = 1.0;
-            if (entity.level() instanceof ServerLevel serverLevel) {
-               regenMultiplier = LeylineService.getRegenMultiplier(serverLevel, entity.blockPosition());
+            boolean syncImmediately = false;
+            if (vars.master_artificial_leyline_bonus_active) {
+               regenMultiplier = LeylineNoise.regenMultiplier(80);
+            }
+            if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer && vars.master_active) {
+               regenMultiplier = Math.max(regenMultiplier, linkedCasterWorkshopLeylineMultiplier(serverPlayer, vars));
             }
 
             vars.current_mana_regen_multiplier = regenMultiplier;
@@ -71,6 +122,7 @@ public class Restore_mana {
                if (vars.magic_circuit_open_timer >= 72000.0) {
                   vars.is_magic_circuit_open = false;
                   vars.magic_circuit_open_timer = 0.0;
+                  syncImmediately = true;
                   if (entity instanceof LivingEntity living) {
                      living.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 600, 1));
                      living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 1200, 1));
@@ -123,17 +175,30 @@ public class Restore_mana {
                }
 
                if (!restoredByItem) {
-                  tryRestoreManaByHealth(entity, vars);
+                  syncImmediately = tryRestoreManaByHealth(entity, vars);
+               } else {
+                  syncImmediately = true;
                }
             }
 
-            vars.syncMana(entity);
+            if (syncImmediately) {
+               vars.syncMana(entity);
+               rememberManaSyncTick(entity);
+            } else {
+               syncManaIfDue(entity, vars, 5L);
+            }
             int delay = (int)regenInterval;
             if (delay < 1) {
                delay = 1;
             }
 
-            TYPE_MOON_WORLD.queueServerWork(delay, () -> execute(world, entity));
+            TYPE_MOON_WORLD.queueServerWork(delay, () -> runManaLoop(null, world, entity, loopId));
+         }
+      } else if (entity instanceof Player player) {
+         if (loopId == null) {
+            ACTIVE_MANA_LOOPS.remove(player.getUUID());
+         } else {
+            ACTIVE_MANA_LOOPS.remove(player.getUUID(), loopId);
          }
       }
    }
@@ -215,13 +280,56 @@ public class Restore_mana {
       }
    }
 
-   private static void tryRestoreManaByHealth(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars) {
+   private static boolean tryRestoreManaByHealth(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (entity instanceof LivingEntity living) {
          if (!(living.getHealth() <= 2.0F)) {
             vars.player_mana = Math.min(vars.player_mana + 20.0, vars.player_max_mana);
             living.setHealth(living.getHealth() - 2.0F);
+            return true;
          }
       }
+      return false;
+   }
+
+   private static void syncManaIfDue(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, long minIntervalTicks) {
+      if (entity == null || entity.level() == null || entity.level().isClientSide()) {
+         return;
+      }
+      long now = entity.level().getGameTime();
+      long last = entity.getPersistentData().getLong(KEY_LAST_MANA_SYNC_TICK);
+      if (last + Math.max(1L, minIntervalTicks) <= now) {
+         vars.syncMana(entity);
+         entity.getPersistentData().putLong(KEY_LAST_MANA_SYNC_TICK, now);
+      }
+   }
+
+   private static void rememberManaSyncTick(Entity entity) {
+      if (entity != null && entity.level() != null && !entity.level().isClientSide()) {
+         entity.getPersistentData().putLong(KEY_LAST_MANA_SYNC_TICK, entity.level().getGameTime());
+      }
+   }
+
+   private static double linkedCasterWorkshopLeylineMultiplier(net.minecraft.server.level.ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars) {
+      net.minecraft.server.level.ServerPlayer servant = MasterServantLinkService.getLinkedServant(master, masterVars);
+      if (servant == null || !(servant.level() instanceof ServerLevel level)) {
+         return 1.0;
+      }
+      TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!servantVars.servant_card_transformed) {
+         return 1.0;
+      }
+      net.minecraft.nbt.CompoundTag data = servant.getPersistentData();
+      String id = servantVars.servant_card_id == null ? "" : servantVars.servant_card_id;
+      String prefix = switch (id) {
+         case "medea" -> "ServantCardMedeaWorkshop";
+         case "paracelsus" -> "ServantCardParacelsusWorkshop";
+         default -> "";
+      };
+      if (prefix.isEmpty() || !data.getBoolean(prefix + "Active")) {
+         return 1.0;
+      }
+      BlockPos workshop = BlockPos.containing(data.getDouble(prefix + "X"), data.getDouble(prefix + "Y"), data.getDouble(prefix + "Z"));
+      return LeylineService.getRegenMultiplier(level, workshop);
    }
 
    private record SourceCandidate(int slot, double mana, ItemStack remainder) {

@@ -12,6 +12,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.effect.NineLivesEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PetrifiedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.ReinforcementEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.SuggestionEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.ReverseMovementEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
@@ -20,6 +23,15 @@ public class ModMobEffects {
    );
    public static final DeferredHolder<MobEffect, MobEffect> PETRIFIED = MOB_EFFECTS.register(
       "petrified", () -> new PetrifiedEffect(MobEffectCategory.HARMFUL, 0x8E8E8E)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> BINDING = MOB_EFFECTS.register(
+      "binding", () -> new BindingEffect(MobEffectCategory.HARMFUL, 0xFFD45A)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> SUGGESTION = MOB_EFFECTS.register(
+      "suggestion", () -> new SuggestionEffect(MobEffectCategory.HARMFUL, 0xB65CFF)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> REVERSE_MOVEMENT = MOB_EFFECTS.register(
+      "reverse_movement", () -> new ReverseMovementEffect(MobEffectCategory.HARMFUL, 0x7D5CFF)
    );
    public static final DeferredHolder<MobEffect, MobEffect> REINFORCEMENT_SELF_STRENGTH = MOB_EFFECTS.register(
       "reinforcement_self_strength",

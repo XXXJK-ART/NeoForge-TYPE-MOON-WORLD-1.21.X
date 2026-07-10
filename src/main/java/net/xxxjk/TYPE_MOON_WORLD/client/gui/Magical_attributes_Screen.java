@@ -29,6 +29,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
@@ -149,6 +151,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("unlimited_blade_works", "key.typemoonworld.magic.unlimited_blade_works.short", "unlimited_blade_works", -3125939);
       this.addMagic("sword_barrel_full_open", "key.typemoonworld.magic.sword_barrel_full_open.short", "unlimited_blade_works", -3125939);
       this.addMagic("reinforcement", "key.typemoonworld.magic.reinforcement.short", "basic,reinforcement", -12602534);
+      this.addMagic("healing_magic", "magic.typemoonworld.healing_magic.name", "basic", -3342388);
+      this.addMagic("spiritual_healing", "magic.typemoonworld.spiritual_healing.name", "basic", -274950);
+      this.addMagic("magic_bullet", "magic.typemoonworld.magic_bullet.name", "basic", -3381556);
+      this.addMagic("suggestion_magic", "magic.typemoonworld.suggestion_magic.name", "basic", -6737152);
+      this.addMagic("binding_magic", "magic.typemoonworld.binding_magic.name", "basic", -1058372);
+      this.addMagic("fire_magic", "magic.typemoonworld.fire_magic.name", "elemental", -3386880);
+      this.addMagic("water_magic", "magic.typemoonworld.water_magic.name", "elemental", -10040065);
+      this.addMagic("wind_magic", "magic.typemoonworld.wind_magic.name", "elemental", -6684775);
+      this.addMagic("earth_magic", "magic.typemoonworld.earth_magic.name", "elemental", -7119279);
+      this.addMagic("time_alter", "magic.typemoonworld.time_alter.name", "special", -11096625);
+      this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
@@ -267,6 +280,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.jewel";
       } else if ("basic".equals(category)) {
          return "gui.typemoonworld.category.basic";
+      } else if ("elemental".equals(category)) {
+         return "gui.typemoonworld.category.elemental";
+      } else if ("church".equals(category)) {
+         return "gui.typemoonworld.category.church";
+      } else if ("special".equals(category)) {
+         return "gui.typemoonworld.category.special";
       } else if ("unlimited_blade_works".equals(category)) {
          return "gui.typemoonworld.category.ubw";
       } else if ("other".equals(category)) {
@@ -281,7 +300,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.all",
          "gui.typemoonworld.category.jewel",
          "gui.typemoonworld.category.basic",
+         "gui.typemoonworld.category.elemental",
+         "gui.typemoonworld.category.church",
          "gui.typemoonworld.category.ubw",
+         "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
          "gui.typemoonworld.category.nordic"
       };
@@ -342,8 +364,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("jewel".equals(current)) {
          return "basic";
       } else if ("basic".equals(current)) {
+         return "elemental";
+      } else if ("elemental".equals(current)) {
+         return "church";
+      } else if ("church".equals(current)) {
          return "unlimited_blade_works";
       } else if ("unlimited_blade_works".equals(current)) {
+         return "special";
+      } else if ("special".equals(current)) {
          return "other";
       } else {
          return "other".equals(current) ? "nordic" : "all";
@@ -1040,6 +1068,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                ? Component.translatable("gui.typemoonworld.mode.gandr_barrage").getString()
                : Component.translatable("gui.typemoonworld.mode.gandr_rapid").getString();
             lines.add(Component.literal(" - " + modeName).withStyle(ChatFormatting.YELLOW));
+         } else if ("healing_magic".equals(magicId)) {
+            int target = payload.contains("healing_target") ? payload.getInt("healing_target") : 0;
+            String targetName = target == 1
+               ? Component.translatable("gui.typemoonworld.mode.other").getString()
+               : Component.translatable("gui.typemoonworld.mode.self").getString();
+            lines.add(Component.literal(" - " + targetName).withStyle(ChatFormatting.YELLOW));
          } else {
             if ("projection".equals(magicId)) {
                if (payload.getBoolean("projection_lock_empty")) {
@@ -1107,6 +1141,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "gravity_magic" -> vars.proficiency_gravity_magic;
          case "gander", "gandr_machine_gun" -> vars.proficiency_gander;
          case "reinforcement" -> vars.proficiency_reinforcement;
+         case "healing_magic" -> vars.proficiency_healing_magic;
+         case "magic_bullet" -> vars.proficiency_magic_bullet;
+         case "suggestion_magic" -> vars.proficiency_suggestion_magic;
+         case "binding_magic" -> vars.proficiency_binding_magic;
+         case "fire_magic" -> vars.proficiency_fire_magic;
+         case "water_magic" -> vars.proficiency_water_magic;
+         case "wind_magic" -> vars.proficiency_wind_magic;
+         case "earth_magic" -> vars.proficiency_earth_magic;
+         case "spiritual_healing" -> vars.proficiency_spiritual_healing;
+         case "baptism_rite" -> vars.proficiency_baptism_rite;
+         case "time_alter" -> vars.proficiency_time_alter;
          default -> -1.0;
       };
    }
@@ -1422,15 +1467,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private String resolveFallbackCategory(String magicId) {
-      if (magicId != null && !magicId.isEmpty()) {
-         if (MagicClassification.getSchoolType(magicId) == MagicClassification.MagicSchoolType.NORDIC) {
-            return "nordic";
-         } else {
-            return magicId.startsWith("jewel_") ? "jewel" : "other";
-         }
-      } else {
-         return "other";
-      }
+      return MagicDisplayMetadata.categoryOf(magicId);
    }
 
    private boolean canPlaceDraggingEntry(TypeMoonWorldModVariables.PlayerVariables vars, Magical_attributes_Screen.MagicEntry entry) {
@@ -1518,6 +1555,18 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             ? Component.translatable("gui.typemoonworld.overlay.gandr.mode.barrage.short").getString()
             : Component.translatable("gui.typemoonworld.overlay.gandr.mode.rapid.short").getString();
          return base + " " + modeName;
+      } else if ("healing_magic".equals(entry.id)) {
+         int target = payload.contains("healing_target") ? payload.getInt("healing_target") : 0;
+         String targetName = target == 1
+            ? Component.translatable("gui.typemoonworld.overlay.healing.target.other.short").getString()
+            : Component.translatable("gui.typemoonworld.overlay.healing.target.self.short").getString();
+         return base + " " + targetName;
+      } else if (PlayerMagicSelectionService.isElementalMagic(entry.id)) {
+         int mode = payload.contains("element_mode") ? payload.getInt("element_mode") : 0;
+         String modeName = mode == 1
+            ? Component.translatable("gui.typemoonworld.overlay.element.mode.utility.short").getString()
+            : Component.translatable("gui.typemoonworld.overlay.element.mode.attack.short").getString();
+         return base + " " + modeName;
       } else {
          if ("projection".equals(entry.id)) {
             if (payload.contains("projection_structure_id")) {
@@ -1538,7 +1587,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private boolean isMultiOptionMagic(String magicId) {
-      return "reinforcement".equals(magicId) || "gravity_magic".equals(magicId) || "gandr_machine_gun".equals(magicId) || "projection".equals(magicId);
+      return "reinforcement".equals(magicId)
+         || "gravity_magic".equals(magicId)
+         || "gandr_machine_gun".equals(magicId)
+         || "projection".equals(magicId)
+         || "healing_magic".equals(magicId)
+         || PlayerMagicSelectionService.isElementalMagic(magicId);
    }
 
    private boolean shouldOpenPresetDialog(Magical_attributes_Screen.MagicEntry entry, CompoundTag payload) {
@@ -1565,6 +1619,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "reinforcement" -> "reinforcement_target";
          case "gravity_magic" -> "gravity_target";
          case "gandr_machine_gun" -> "gandr_mode";
+         case "healing_magic" -> "healing_target";
+         case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> "element_mode";
          case "projection" -> "projection_source";
          default -> null;
       };
@@ -1672,6 +1728,22 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          barrage.putInt("gandr_machine_gun_mode", 1);
          options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.gandr_barrage"), barrage));
          return options;
+      } else if ("healing_magic".equals(magicId) && "healing_target".equals(stageId)) {
+         CompoundTag self = new CompoundTag();
+         self.putInt("healing_target", 0);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.self"), self));
+         CompoundTag other = new CompoundTag();
+         other.putInt("healing_target", 1);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.other"), other));
+         return options;
+      } else if (PlayerMagicSelectionService.isElementalMagic(magicId) && "element_mode".equals(stageId)) {
+         CompoundTag attack = new CompoundTag();
+         attack.putInt("element_mode", 0);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.element.attack"), attack));
+         CompoundTag utility = new CompoundTag();
+         utility.putInt("element_mode", 1);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.element.utility"), utility));
+         return options;
       } else if ("projection".equals(magicId) && "projection_source".equals(stageId)) {
          options.addAll(this.buildProjectionPresetOptions(vars));
          return options;
@@ -1752,6 +1824,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          );
       } else if ("gravity_magic".equals(magicId)) {
          return this.buildGravityPayload(Mth.clamp(vars.gravity_magic_target, 0, 1), Mth.clamp(vars.gravity_magic_mode, -2, 2));
+      } else if ("healing_magic".equals(magicId)) {
+         CompoundTag payload = new CompoundTag();
+         payload.putInt("healing_target", Mth.clamp(vars.healing_magic_target, 0, 1));
+         return payload;
+      } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
+         CompoundTag payload = new CompoundTag();
+         payload.putInt("element_mode", Mth.clamp(PlayerMagicSelectionService.getElementMode(vars, magicId), 0, 1));
+         return payload;
       } else if (!"projection".equals(magicId)) {
          if ("gandr_machine_gun".equals(magicId)) {
             CompoundTag payload = new CompoundTag();

@@ -17,7 +17,17 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.IMagicRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicFireElement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicMagicBullet;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWaterElement;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWindElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
+import net.xxxjk.TYPE_MOON_WORLD.magic.church.MagicBaptismRite;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.cyan.MagicCyanThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.cyan.MagicCyanWind;
@@ -38,6 +48,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementEventHand
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementOther;
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementSelf;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -79,6 +90,17 @@ public final class BuiltinMagicExecutors {
       registry.register("gander", ctx -> toResult(MagicGander.execute(ctx.entity())), "typemoonworld_core");
       registry.register("jewel_machine_gun", ctx -> toResult(MagicJewelMachineGun.execute(ctx.entity())), "typemoonworld_core");
       registry.register("gandr_machine_gun", ctx -> toResult(MagicGandrMachineGun.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("healing_magic", ctx -> executeSimple(ctx, MagicHealing::execute), "typemoonworld_core");
+      registry.register("magic_bullet", ctx -> toResult(MagicMagicBullet.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("suggestion_magic", ctx -> toResult(MagicSuggestion.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("binding_magic", ctx -> toResult(MagicBinding.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("fire_magic", ctx -> toResult(MagicFireElement.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("water_magic", ctx -> toResult(MagicWaterElement.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("wind_magic", ctx -> toResult(MagicWindElement.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("earth_magic", ctx -> toResult(MagicEarthElement.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("time_alter", ctx -> toResult(MagicTimeAlter.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("spiritual_healing", ctx -> toResult(MagicSpiritualHealing.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
    }
 
    private static MagicExecutionResult executeKnowledgeOnly(MagicExecutionContext context) {

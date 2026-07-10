@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -205,10 +206,9 @@ public final class CursedArmHassanCombatHelper {
       if (target instanceof Player || target instanceof AbstractVillager || target instanceof WanderingTrader || target instanceof AbstractIllager || target instanceof Witch) {
          return true;
       }
-      if (target instanceof ServantEntity servant) {
-         return servant.getDefinition() != null
-            && (servant.getDefinition().traits().contains(ServantTraitTag.HUMANOID)
-               || servant.getDefinition().traits().contains(ServantTraitTag.LIVING_HUMAN));
+      if (ServantIdentityHelper.isServantLike(target)) {
+         return ServantIdentityHelper.hasTrait(target, ServantTraitTag.HUMANOID)
+            || ServantIdentityHelper.hasTrait(target, ServantTraitTag.LIVING_HUMAN);
       }
       if (target instanceof PathfinderMob && !(target instanceof Enemy)) {
          return false;

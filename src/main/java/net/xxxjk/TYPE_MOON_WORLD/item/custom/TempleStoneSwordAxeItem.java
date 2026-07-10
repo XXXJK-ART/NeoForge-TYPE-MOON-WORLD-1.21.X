@@ -9,8 +9,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TempleStoneSwordAxeRenderer;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -55,6 +60,15 @@ public class TempleStoneSwordAxeItem extends SwordItem implements GeoItem, Noble
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
       tooltip.add(Component.translatable("item.typemoonworld.temple_stone_sword_axe.desc").withStyle(ChatFormatting.GOLD));
+   }
+
+   @Override
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && PlayerNoblePhantasmHelper.useOneShotNineLives(serverPlayer, stack)) {
+         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+      }
+      return super.use(level, player, hand);
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {

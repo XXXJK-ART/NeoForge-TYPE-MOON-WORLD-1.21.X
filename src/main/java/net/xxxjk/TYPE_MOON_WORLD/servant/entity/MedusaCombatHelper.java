@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -973,8 +974,8 @@ public final class MedusaCombatHelper {
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target) || MagicResistanceHelper.hasMagicResistance(target)) {
          return false;
       }
-      if (target instanceof ServantEntity servant) {
-         return servant.getDefinition() != null && servant.getDefinition().traits().contains(ServantTraitTag.MALE);
+      if (ServantIdentityHelper.isServantLike(target)) {
+         return ServantIdentityHelper.hasTrait(target, ServantTraitTag.MALE);
       }
       return target instanceof Player
          || target instanceof AbstractVillager

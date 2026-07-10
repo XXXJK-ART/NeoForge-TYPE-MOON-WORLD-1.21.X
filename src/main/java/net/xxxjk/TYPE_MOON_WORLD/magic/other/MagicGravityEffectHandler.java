@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.other;
 
 import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -16,8 +18,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent.LivingJumpEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
 import org.joml.Vector3f;
@@ -38,6 +42,7 @@ public class MagicGravityEffectHandler {
    private static final int STACK_WINDOW_TICKS = 2;
    private static final int MAX_STACKS = 5;
    private static final int AURA_INTERVAL_TICKS = 6;
+   private static final Set<UUID> ACTIVE_GRAVITY_TARGETS = ConcurrentHashMap.newKeySet();
    private static final DustParticleOptions LIGHT_DUST = new DustParticleOptions(new Vector3f(0.4F, 0.95F, 1.0F), 1.1F);
    private static final DustParticleOptions HEAVY_DUST = new DustParticleOptions(new Vector3f(0.42F, 0.06F, 0.08F), 1.15F);
    private static final double HEAVY_EXTRA_FALL_ACCEL = 0.09;
@@ -70,6 +75,7 @@ public class MagicGravityEffectHandler {
       tag.putInt(TAG_STACKS, stacks);
       tag.putLong(TAG_STACK_WINDOW_UNTIL, now + STACK_WINDOW_TICKS);
       writeCasterUuid(tag, TAG_CASTER_UUID, caster, target);
+      trackGravityTarget(target);
    }
 
    public static void applyLinkedSlow(LivingEntity target, int durationTicks, int amplifier, LivingEntity caster) {
@@ -80,6 +86,7 @@ public class MagicGravityEffectHandler {
          tag.putInt(TAG_LINKED_SLOW_AMPLIFIER, Math.max(0, amplifier));
          writeCasterUuid(tag, TAG_LINKED_SLOW_CASTER_UUID, caster, target);
          target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 10, Math.max(0, amplifier), false, false, true));
+         trackGravityTarget(target);
       }
    }
 
@@ -94,6 +101,7 @@ public class MagicGravityEffectHandler {
       target.removeEffect(MobEffects.JUMP);
       target.removeEffect(MobEffects.SLOW_FALLING);
       target.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+      untrackGravityTarget(target);
    }
 
    public static int getCurrentMode(LivingEntity target) {
@@ -112,6 +120,7 @@ public class MagicGravityEffectHandler {
          } else {
             int mode = tag.getInt(TAG_MODE);
             if (mode >= -2 && mode <= 2) {
+               trackGravityTarget(target);
                return mode;
             } else {
                clearGravityState(target);
@@ -190,6 +199,12 @@ public class MagicGravityEffectHandler {
    public static void onEntityTick(Post event) {
       if (event.getEntity() instanceof LivingEntity living) {
          if (!living.level().isClientSide()) {
+            if (!ACTIVE_GRAVITY_TARGETS.contains(living.getUUID())) {
+               if (living.tickCount % 20 != 0 || !hasGravityStateTags(living)) {
+                  return;
+               }
+               trackGravityTarget(living);
+            }
             tickLinkedSlow(living);
             int mode = getCurrentMode(living);
             if (mode != 0) {
@@ -221,8 +236,23 @@ public class MagicGravityEffectHandler {
                   }
                }
             }
+            if (!hasGravityStateTags(living)) {
+               untrackGravityTarget(living);
+            }
          }
       }
+   }
+
+   @SubscribeEvent
+   public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+      if (!event.getLevel().isClientSide() && event.getEntity() instanceof LivingEntity living) {
+         untrackGravityTarget(living);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onServerStopping(ServerStoppingEvent event) {
+      ACTIVE_GRAVITY_TARGETS.clear();
    }
 
    @SubscribeEvent
@@ -370,6 +400,29 @@ public class MagicGravityEffectHandler {
          if (removeEffect) {
             living.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
          }
+         if (!hasGravityStateTags(living)) {
+            untrackGravityTarget(living);
+         }
+      }
+   }
+
+   private static boolean hasGravityStateTags(LivingEntity living) {
+      if (living == null) {
+         return false;
+      }
+      CompoundTag tag = living.getPersistentData();
+      return tag.contains(TAG_MODE) || tag.contains(TAG_UNTIL) || tag.contains(TAG_LINKED_SLOW_UNTIL);
+   }
+
+   private static void trackGravityTarget(LivingEntity living) {
+      if (living != null && !living.level().isClientSide()) {
+         ACTIVE_GRAVITY_TARGETS.add(living.getUUID());
+      }
+   }
+
+   private static void untrackGravityTarget(LivingEntity living) {
+      if (living != null) {
+         ACTIVE_GRAVITY_TARGETS.remove(living.getUUID());
       }
    }
 

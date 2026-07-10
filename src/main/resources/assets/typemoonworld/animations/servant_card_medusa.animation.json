@@ -1,0 +1,58 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation": {
+			"loop": true,
+			"bones": {
+				"armorBody": {
+					"scale": {
+						"vector": [1, 1.1, 0.8]
+					}
+				},
+				"eye mask": {
+					"position": {
+						"vector": [0, -0.05, -0.1]
+					}
+				},
+				"armorLeftLeg": {
+					"scale": {
+						"vector": [1.1, 1, 1.1]
+					}
+				},
+				"armorRightLeg": {
+					"scale": {
+						"vector": [1.1, 1, 1.1]
+					}
+				}
+			}
+		},
+		"eyes_open": {
+			"loop": true,
+			"bones": {
+				"armorBody": {
+					"scale": {
+						"vector": [1, 1.1, 0.8]
+					}
+				},
+				"eye mask": {
+					"position": {
+						"vector": [0, -0.05, -0.1]
+					},
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"armorLeftLeg": {
+					"scale": {
+						"vector": [1.1, 1, 1.1]
+					}
+				},
+				"armorRightLeg": {
+					"scale": {
+						"vector": [1.1, 1, 1.1]
+					}
+				}
+			}
+		}
+	}
+}

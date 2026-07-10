@@ -412,7 +412,157 @@ helper 的底线：
 
 大型召唤物、枪阵、领域地形一定要分批处理。
 
-## 12. 测试顺序
+## 12. 从者卡制作流程
+
+从者卡不是 NPC 从者本体，也不是玩家原魔术技能，而是“玩家变身为从者”的第三套入口。制作时要始终区分四层逻辑：
+- NPC 从者 AI 和 CombatHelper。
+- 从者卡玩家技能。
+- 玩家原本魔术/投影技能。
+- 武器自带技能和宝具。
+
+### 12.1 资源导入
+
+中文文件名只作为源文件名，进入 `assets` 后必须改成英文小写资源 ID，避免 `ResourceLocation` 路径问题。
+
+推荐路径：
+
+```text
+textures/item/servant_cards/<servant_id>_card.png
+textures/item/servant_card_armor/<servant_id>_chest.png
+textures/item/servant_card_armor/<servant_id>_legs.png
+geo/servant_card_<servant_id>.geo.json
+textures/models/armor/servant_card_<servant_id>.png
+animations/servant_card_<servant_id>.animation.json
+```
+
+如果从者卡盔甲有自己的 GEO、贴图、动画，就必须三件套一起使用，不要混用 NPC 本体的模型或动画。比如红 A 从者卡盔甲应使用从者卡目录中的 `Emiya.geo.json`、`Emiya.png`、`Emiya.animation.json`，导入后改名为 `servant_card_emiya_archer.*`。
+
+物品栏/创造页图标也要单独做。盔甲图标不应该继续用从者卡卡面贴图；胸甲、护腿分别使用 `textures/item/servant_card_armor/*_chest.png` 和 `*_legs.png`。
+
+### 12.2 物品、创造页与注册
+
+从者卡系统至少包含：
+- `ServantCardItem`：右键触发变身。
+- `ServantCardArmorItem`：从者卡盔甲外观。
+- `ServantMasterContractItem`：绑定御主。
+- `ServantCardReleaseItem`：主动解除变身。
+- 独立创造页：放所有从者卡、从者卡盔甲、契约道具、解除道具。
+
+从者卡卡面贴图可以批量导入所有 `*卡.png`，但资源名要统一映射成英文 ID，例如 `卫宫卡.png` -> `emiya_archer_card.png`。
+
+### 12.3 变身状态
+
+变身管理器需要统一处理：
+- 保存原盔甲、主手、副手。
+- 穿上对应从者卡盔甲。
+- 发放该从者武器。
+- 应用 `ServantDefinition.parameters()` 的生命、攻击、速度、护甲、暴击、魔力上限、魔力恢复。
+- 锁定玩家原魔术回路，避免按键误触。
+- 解除变身时恢复原装备、武器、属性和魔术状态。
+- 死亡、登出、维度切换时清理飞行、投射物、领域状态和临时 NBT。
+
+不要把从者卡状态写成零散的 item use 逻辑。所有入口都应该汇入统一 manager，便于恢复和排错。
+
+### 12.4 魔力系统
+
+从者卡 MP 独立于玩家原本 `player_mana`：
+- 最大值来自从者定义的 `manaPool()`。
+- 恢复速度按从者魔力等级或定义参数派生。
+- 技能、宝具、吟唱、飞行先扣自身 servant MP。
+- servant MP 不足时，再扣绑定御主的 `player_mana`。
+- 未绑定御主也能战斗，只是没有备用魔力池。
+
+从者卡 HUD 显示 servant MP；变身状态下原魔术师左下角魔力 UI 可以隐藏，避免两个魔力系统混在一起。
+
+### 12.5 HUD、按键与 F1
+
+所有从者卡 GUI 必须遵守原版 GUI 隐藏：
+
+```java
+if (Minecraft.getInstance().options.hideGui) {
+   return;
+}
+```
+
+HUD 建议显示：
+- HP。
+- servant MP。
+- 御主 MP。
+- 0-9 技能/宝具 CD。
+- 跳跃次数。
+- 飞行状态。
+
+快捷键建议：
+- NUMPAD 0-8：主动技能。
+- NUMPAD 9：非武器自带宝具。
+- 蹲下左键：节约技能槽的小技能。
+- 蹲下空格：高跳。
+- 双击跳跃：飞行从者切换飞行。
+
+武器自带宝具不要重复放进 NUMPAD 9，直接用武器右键/蓄力释放，并给武器自身加长 CD。
+
+### 12.6 移动、跳跃与飞行
+
+从者卡玩家应按敏捷提高基础跳跃能力。蹲下空格是高跳：
+- 没有方向键时垂直高跳。
+- 带 W/A/S/D 时向对应方向高跳。
+- 高跳消耗次数并逐步恢复。
+- 高跳要有基础粒子和音效反馈。
+- 从者卡玩家不吃摔落伤害。
+
+飞行能力不占技能槽。美狄亚、织田信长、恩奇都这类从者由统一飞行控制器处理：
+- 双击跳跃开关。
+- 跳跃上升，潜行下降，WASD 水平移动。
+- 持续消耗 servant MP。
+- MP 不足或解除变身时自动落地。
+
+### 12.7 NPC 技能适配到玩家动作
+
+适配玩家动作前，必须先读对应 NPC CombatHelper，理解真实技能结构，再决定槽位：
+- 只保留适合玩家主动释放的技能。
+- 小技能优先并入普攻、蹲下左键或武器右键。
+- 武器自带宝具不占 9。
+- 杀阶气息遮断做主动隐身。
+- 被动技能继续被动触发，不要硬塞进槽位。
+- 10 个槽不必填满，但不要超出太多。
+
+红 A 这类角色尤其要分清：
+- 玩家投影技能。
+- 从者卡红 A 技能。
+- NPC 红 A CombatHelper。
+- 无名弓、干将莫邪、螺旋剑等武器物品逻辑。
+
+例如红 A 从者卡：
+- 七重圆环应生成真正 `RhoAiasEntity`。
+- 无限剑制应走红 A 版本的节奏，进入后有剑雨和自动防御投射物。
+- 进入无限剑制后按 9 可直接退出。
+- 连续投影层写是红 A NPC 的连续射出逻辑，不是玩家技能里的连续投影层写。
+
+### 12.8 性能与清理
+
+从者卡通常会引入大量投射物、领域、剑雨、爆炸和清方块逻辑，必须注意：
+- 大范围清方块要分批执行，有 tick budget。
+- 越卡时清理越慢，但最终一定要清理完成。
+- 客户端只做输入、HUD、渲染；实体生成、伤害、扣 MP 在服务端。
+- 持续投射物必须有寿命、owner UUID 和解除时清理逻辑。
+- 解除变身、死亡、登出、维度切换都要清理飞行和领域状态。
+
+### 12.9 从者卡测试顺序
+
+推荐按这个顺序验证：
+1. `.\gradlew.bat compileJava`
+2. `.\gradlew.bat processResources`
+3. 创造页能看到所有从者卡和盔甲。
+4. 卡面、盔甲物品图标显示正确。
+5. 使用从者卡后能变身、穿盔甲、发武器。
+6. 属性、MP 上限、MP 恢复与定义 JSON 一致。
+7. F1 能隐藏从者卡 HUD 和原魔力 HUD。
+8. NUMPAD 0-9、蹲下左键、高跳、飞行按键工作。
+9. MP 消耗先扣 servant MP，不足再扣御主 MP。
+10. 解除变身后原装备、原武器、属性、魔术回路恢复。
+11. 死亡规则、登出、维度切换不残留状态。
+
+## 13. 测试顺序
 
 推荐按这个顺序验证：
 1. `./gradlew compileJava`
@@ -426,7 +576,7 @@ helper 的底线：
 9. 退出重进不残留异常状态
 10. 复杂领域/维度逻辑不把世界弄崩
 
-## 13. 最小落地清单
+## 14. 最小落地清单
 
 做一个可用从者，至少要有：
 
@@ -452,7 +602,7 @@ src/main/resources/assets/typemoonworld/animations/xxx.animation.json
 - 技能 JSON
 - 宝具 JSON
 
-## 14. 给后续 AI 的执行建议
+## 15. 给后续 AI 的执行建议
 
 后续让 AI 做新从者时，建议把需求拆成这些批次：
 
@@ -466,7 +616,7 @@ src/main/resources/assets/typemoonworld/animations/xxx.animation.json
 
 不要让 AI 一次性改二十多个文件还不编译。每一个批次后都至少跑一次 `compileJava` 或 JSON 检查。
 
-## 15. 结论
+## 16. 结论
 
 这套工程里，最重要的不是一口气把功能堆满，而是先把从者的“基础闭环”做稳：
 - 能生成

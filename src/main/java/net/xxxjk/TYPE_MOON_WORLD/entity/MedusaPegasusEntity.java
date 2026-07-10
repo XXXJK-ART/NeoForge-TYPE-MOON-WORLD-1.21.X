@@ -19,7 +19,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -145,7 +144,7 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float partialTick) {
-      return new Vec3(0.0, 0.55, -0.2);
+      return new Vec3(0.0, 1.25, -0.05);
    }
 
    public boolean isFlyingMode() {
@@ -157,7 +156,7 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       this.setNoGravity(flyingMode);
    }
 
-   public void setSummoner(MedusaEntity summoner) {
+   public void setSummoner(LivingEntity summoner) {
       this.summonerUuid = summoner.getUUID();
       this.getPersistentData().putUUID(TAG_SUMMONER_UUID, this.summonerUuid);
    }

@@ -17,6 +17,64 @@ public class ModCreativeModeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TAB =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, TYPE_MOON_WORLD.MOD_ID);
 
+    public static final Supplier<CreativeModeTab> SERVANT_CARDS_TAB = CREATIVE_MODE_TAB.register("servant_cards_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.SERVANT_CARD_EMIYA_ARCHER.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.servant_cards"))
+                    .displayItems((itemDisplayParameters, output) -> {
+                        output.accept(ModItems.SERVANT_MASTER_CONTRACT);
+                        output.accept(ModItems.COMMAND_SPELL);
+                        output.accept(ModItems.SERVANT_CARD_RELEASE);
+                        output.accept(ModItems.RANDOM_START_ATTRIBUTES);
+                        output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
+                        output.accept(ModItems.MASTER_CARD_TOHSAKA_RIN);
+                        output.accept(ModItems.MASTER_CARD_EMIYA_KIRITSUGU);
+                        output.accept(ModItems.MASTER_CARD_EMIYA_SHIROU);
+                        output.accept(ModItems.MASTER_CARD_KOTOMINE_KIREI);
+                        output.accept(ModItems.MASTER_CARD_LUVIA);
+                        output.accept(ModItems.MASTER_CARD_ELSA_SAIJO);
+                        output.accept(ModItems.MASTER_CARD_WAVER);
+                        output.accept(ModItems.MASTER_CARD_TOHSAKA_TOKIOMI);
+                        output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
+                        output.accept(ModItems.SERVANT_CARD_CU_CHULAINN);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN);
+                        output.accept(ModItems.SERVANT_CARD_HERACLES);
+                        output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU);
+                        output.accept(ModItems.SERVANT_CARD_GAWAIN);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS);
+                        output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
+                        output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_MEDEA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_HERACLES_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_HERACLES_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_GAWAIN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_GAWAIN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_LEGS);
+                    }).build());
+
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.MAGIC_FRAGMENTS.get()))
                     .title(Component.translatable("creativetab.typemoonworld.type_moon_world"))
@@ -46,11 +104,35 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_PROJECTION_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY);
                         output.accept(ModItems.MAGIC_SCROLL_GRAVITY_BROKEN);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDER);
+                        output.accept(ModItems.MAGIC_SCROLL_GANDER_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_PAGE_REINFORCEMENT);
-                        
+                        output.accept(ModItems.MAGIC_BOOK_HEALING);
+                        output.accept(ModItems.MAGIC_PAGE_HEALING);
+                        output.accept(ModItems.MAGIC_BOOK_MAGIC_BULLET);
+                        output.accept(ModItems.MAGIC_PAGE_MAGIC_BULLET);
+                        output.accept(ModItems.MAGIC_BOOK_SUGGESTION);
+                        output.accept(ModItems.MAGIC_PAGE_SUGGESTION);
+                        output.accept(ModItems.MAGIC_BOOK_BINDING);
+                        output.accept(ModItems.MAGIC_PAGE_BINDING);
+                        output.accept(ModItems.MAGIC_BOOK_FIRE);
+                        output.accept(ModItems.MAGIC_PAGE_FIRE);
+                        output.accept(ModItems.MAGIC_BOOK_WATER);
+                        output.accept(ModItems.MAGIC_PAGE_WATER);
+                        output.accept(ModItems.MAGIC_BOOK_WIND);
+                        output.accept(ModItems.MAGIC_PAGE_WIND);
+                        output.accept(ModItems.MAGIC_BOOK_EARTH);
+                        output.accept(ModItems.MAGIC_PAGE_EARTH);
+                        output.accept(ModItems.MAGIC_BOOK_TIME_ALTER);
+                        output.accept(ModItems.MAGIC_PAGE_TIME_ALTER);
+                        output.accept(ModItems.MAGIC_BOOK_SPIRITUAL_HEALING);
+                        output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
+                        output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
+                        output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
+
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
                         
@@ -75,6 +157,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);
+                        output.accept(ModItems.MERCURY_SWORD);
+                        output.accept(ModItems.THOMPSON_CONTENDER);
                         output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
@@ -88,6 +172,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.COPPER_MANA_SURVEY_POINTER);
                         output.accept(ModItems.COPPER_MANA_SURVEY_COMPASS);
                         output.accept(ModItems.LEYLINE_SURVEY_MAP);
+                        output.accept(ModItems.BULLET);
+                        output.accept(ModItems.ORIGIN_BULLET);
+                        output.accept(ModItems.KIRITSUGU_BONE_POWDER);
 
                         output.accept(ModItems.RAW_EMERALD);
                         output.accept(ModItems.RAW_RUBY);

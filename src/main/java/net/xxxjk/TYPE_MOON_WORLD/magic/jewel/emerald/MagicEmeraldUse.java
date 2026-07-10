@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 
 public class MagicEmeraldUse {
@@ -103,8 +104,8 @@ public class MagicEmeraldUse {
                   Direction up = Direction.UP;
                   List<BlockPos> placedBlocks = new ArrayList<>();
                   RandomSource random = level.getRandom();
-                  int widthRadius = Math.max(1, Math.round(1.0F * multiplier));
-                  int height = Math.max(2, Math.round(3.0F * multiplier));
+                  int widthRadius = Math.max(1, Math.round((float)MercurySwordMagicAmplifier.amplifyRadius(player, 1.0F * multiplier)));
+                  int height = Math.max(2, Math.round((float)MercurySwordMagicAmplifier.amplifyRadius(player, 3.0F * multiplier)));
                   int thickness = multiplier >= 1.2 ? 2 : 1;
 
                   for (int d = 0; d < thickness; d++) {
@@ -127,7 +128,7 @@ public class MagicEmeraldUse {
                   }
 
                   if (!placedBlocks.isEmpty()) {
-                     int baseDuration = 160;
+                     int baseDuration = MercurySwordMagicAmplifier.amplifyDuration(player, 160);
 
                      for (BlockPos pos : placedBlocks) {
                         int delay = baseDuration + random.nextInt(40);

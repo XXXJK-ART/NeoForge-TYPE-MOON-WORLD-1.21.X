@@ -370,7 +370,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void triggerExplosion() {
-      UBWBrokenPhantasmExplosion.explode(this.level(), this, this.getOwner(), this.getItem(), this.position());
+      UBWBrokenPhantasmExplosion.explodePlainNoTerrain(this.level(), this, this.getOwner(), this.position());
       this.discard();
    }
 

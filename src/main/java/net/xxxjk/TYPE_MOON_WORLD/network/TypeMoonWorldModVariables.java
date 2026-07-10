@@ -148,8 +148,20 @@ public class TypeMoonWorldModVariables {
          clone.proficiency_sword_barrel_full_open = original.proficiency_sword_barrel_full_open;
          clone.proficiency_gravity_magic = original.proficiency_gravity_magic;
          clone.proficiency_gander = original.proficiency_gander;
+         clone.proficiency_healing_magic = original.proficiency_healing_magic;
+         clone.proficiency_magic_bullet = original.proficiency_magic_bullet;
+         clone.proficiency_suggestion_magic = original.proficiency_suggestion_magic;
+         clone.proficiency_binding_magic = original.proficiency_binding_magic;
+         clone.proficiency_fire_magic = original.proficiency_fire_magic;
+         clone.proficiency_water_magic = original.proficiency_water_magic;
+         clone.proficiency_wind_magic = original.proficiency_wind_magic;
+         clone.proficiency_earth_magic = original.proficiency_earth_magic;
+         clone.proficiency_time_alter = original.proficiency_time_alter;
+         clone.proficiency_spiritual_healing = original.proficiency_spiritual_healing;
+         clone.proficiency_baptism_rite = original.proficiency_baptism_rite;
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
+         clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
          if (!event.isWasDeath()) {
             clone.is_chanting_ubw = original.is_chanting_ubw;
             clone.ubw_chant_progress = original.ubw_chant_progress;
@@ -164,6 +176,12 @@ public class TypeMoonWorldModVariables {
             clone.jewel_magic_mode = original.jewel_magic_mode;
             clone.gravity_magic_target = original.gravity_magic_target;
             clone.gravity_magic_mode = original.gravity_magic_mode;
+            clone.healing_magic_target = original.healing_magic_target;
+            clone.fire_magic_mode = original.fire_magic_mode;
+            clone.water_magic_mode = original.water_magic_mode;
+            clone.wind_magic_mode = original.wind_magic_mode;
+            clone.earth_magic_mode = original.earth_magic_mode;
+            clone.time_alter_mode = original.time_alter_mode;
             clone.is_sword_barrel_active = false;
          } else {
             clone.is_chanting_ubw = false;
@@ -211,6 +229,78 @@ public class TypeMoonWorldModVariables {
          clone.crest_practice_count = new HashMap<>(original.crest_practice_count);
          if (!event.isWasDeath()) {
             clone.player_mana = original.player_mana;
+            clone.servant_card_transformed = original.servant_card_transformed;
+            clone.servant_card_id = original.servant_card_id;
+            clone.servant_card_master_uuid = original.servant_card_master_uuid;
+            clone.servant_card_mana = original.servant_card_mana;
+            clone.servant_card_max_mana = original.servant_card_max_mana;
+            clone.servant_card_mana_regen = original.servant_card_mana_regen;
+            clone.servant_card_jump_charges = original.servant_card_jump_charges;
+            clone.servant_card_jump_recovery_ticks = original.servant_card_jump_recovery_ticks;
+            clone.servant_card_skill_cooldowns = original.servant_card_skill_cooldowns;
+            clone.servant_card_np_cooldown = original.servant_card_np_cooldown;
+            clone.servant_card_saved_armor = original.servant_card_saved_armor.copy();
+            clone.servant_card_saved_hands = original.servant_card_saved_hands.copy();
+            clone.servant_card_flying = original.servant_card_flying;
+            clone.servant_card_flight_forward = original.servant_card_flight_forward;
+            clone.servant_card_flight_strafe = original.servant_card_flight_strafe;
+            clone.servant_card_flight_vertical = original.servant_card_flight_vertical;
+            clone.servant_card_flight_toggle_cooldown = original.servant_card_flight_toggle_cooldown;
+            clone.servant_card_action_mode = original.servant_card_action_mode;
+            clone.servant_card_transform_cooldown = original.servant_card_transform_cooldown;
+            clone.servant_card_release_cooldown = original.servant_card_release_cooldown;
+            clone.servant_card_was_magus = original.servant_card_was_magus;
+            clone.servant_card_was_magic_circuit_open = original.servant_card_was_magic_circuit_open;
+            clone.servant_card_medea_dragonfang_stock = original.servant_card_medea_dragonfang_stock;
+            clone.servant_card_medea_mana_charm_stock = original.servant_card_medea_mana_charm_stock;
+            clone.servant_card_medea_heal_charm_stock = original.servant_card_medea_heal_charm_stock;
+            clone.servant_card_paracelsus_stone_stock = original.servant_card_paracelsus_stone_stock;
+            clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
+            clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
+            clone.servant_card_medusa_mystic_eyes_active = original.servant_card_medusa_mystic_eyes_active;
+            clone.servant_card_hassan_cloak_broken = original.servant_card_hassan_cloak_broken;
+            clone.servant_card_hassan_zabaniya_animation_until = original.servant_card_hassan_zabaniya_animation_until;
+            clone.master_active = original.master_active;
+            clone.master_servant_uuid = original.master_servant_uuid;
+            clone.master_command_spells = original.master_command_spells;
+            clone.master_command_spell_style = original.master_command_spell_style;
+            clone.master_command_spell_pose_active = false;
+            clone.master_revive_available = original.master_revive_available;
+            clone.master_saved_player_mana = original.master_saved_player_mana;
+            clone.master_saved_player_max_mana = original.master_saved_player_max_mana;
+            clone.master_saved_player_mana_regen = original.master_saved_player_mana_regen;
+            clone.master_saved_player_restore_magic_moment = original.master_saved_player_restore_magic_moment;
+            clone.master_saved_is_magus = original.master_saved_is_magus;
+            clone.master_saved_magic_circuit_open = original.master_saved_magic_circuit_open;
+            clone.master_saved_magic_circuit_open_timer = original.master_saved_magic_circuit_open_timer;
+            clone.master_servant_link_partner_uuid = original.master_servant_link_partner_uuid;
+            clone.master_servant_link_partner_hp = original.master_servant_link_partner_hp;
+            clone.master_servant_link_partner_max_hp = original.master_servant_link_partner_max_hp;
+            clone.master_servant_link_partner_mana = original.master_servant_link_partner_mana;
+            clone.master_servant_link_partner_max_mana = original.master_servant_link_partner_max_mana;
+            clone.master_servant_link_state = original.master_servant_link_state;
+            clone.master_servant_link_decay = original.master_servant_link_decay;
+            clone.master_servant_link_drawing_mana = original.master_servant_link_drawing_mana;
+            clone.master_servant_independent_ticks = original.master_servant_independent_ticks;
+            clone.master_servant_backlash_ticks = original.master_servant_backlash_ticks;
+            clone.master_artificial_leyline_dimension = original.master_artificial_leyline_dimension;
+            clone.master_artificial_leyline_x = original.master_artificial_leyline_x;
+            clone.master_artificial_leyline_y = original.master_artificial_leyline_y;
+            clone.master_artificial_leyline_z = original.master_artificial_leyline_z;
+            clone.master_artificial_leyline_bonus_active = original.master_artificial_leyline_bonus_active;
+            clone.master_card_active = original.master_card_active;
+            clone.master_card_id = original.master_card_id;
+            clone.master_card_saved_variables = original.master_card_saved_variables.copy();
+            clone.master_card_saved_inventory = original.master_card_saved_inventory.copy();
+         } else {
+            clone.servant_card_death_release = original.servant_card_death_release;
+         }
+
+         if (original.master_card_active) {
+            clone.master_card_active = original.master_card_active;
+            clone.master_card_id = original.master_card_id;
+            clone.master_card_saved_variables = original.master_card_saved_variables.copy();
+            clone.master_card_saved_inventory = original.master_card_saved_inventory.copy();
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
@@ -223,7 +313,12 @@ public class TypeMoonWorldModVariables {
       double magic_cooldown,
       double magic_circuit_open_timer,
       boolean is_magic_circuit_open,
-      double current_mana_regen_multiplier
+      double current_mana_regen_multiplier,
+      double servant_card_mana,
+      double servant_card_max_mana,
+      double servant_card_mana_regen,
+      double master_servant_link_partner_mana,
+      double master_servant_link_partner_max_mana
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ManaSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_sync")
@@ -236,9 +331,24 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.magic_circuit_open_timer);
             buffer.writeBoolean(message.is_magic_circuit_open);
             buffer.writeDouble(message.current_mana_regen_multiplier);
+            buffer.writeDouble(message.servant_card_mana);
+            buffer.writeDouble(message.servant_card_max_mana);
+            buffer.writeDouble(message.servant_card_mana_regen);
+            buffer.writeDouble(message.master_servant_link_partner_mana);
+            buffer.writeDouble(message.master_servant_link_partner_max_mana);
          },
          buffer -> new TypeMoonWorldModVariables.ManaSyncMessage(
-            buffer.readDouble(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(), buffer.readBoolean(), buffer.readDouble()
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readBoolean(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble()
          )
       );
 
@@ -249,7 +359,12 @@ public class TypeMoonWorldModVariables {
             vars.magic_cooldown,
             vars.magic_circuit_open_timer,
             vars.is_magic_circuit_open,
-            vars.current_mana_regen_multiplier
+            vars.current_mana_regen_multiplier,
+            vars.servant_card_mana,
+            vars.servant_card_max_mana,
+            vars.servant_card_mana_regen,
+            vars.master_servant_link_partner_mana,
+            vars.master_servant_link_partner_max_mana
          );
       }
 
@@ -270,6 +385,11 @@ public class TypeMoonWorldModVariables {
                   vars.magic_circuit_open_timer = message.magic_circuit_open_timer;
                   vars.is_magic_circuit_open = message.is_magic_circuit_open;
                   vars.current_mana_regen_multiplier = message.current_mana_regen_multiplier;
+                  vars.servant_card_mana = message.servant_card_mana;
+                  vars.servant_card_max_mana = message.servant_card_max_mana;
+                  vars.servant_card_mana_regen = message.servant_card_mana_regen;
+                  vars.master_servant_link_partner_mana = message.master_servant_link_partner_mana;
+                  vars.master_servant_link_partner_max_mana = message.master_servant_link_partner_max_mana;
                }
             );
          }
@@ -285,7 +405,13 @@ public class TypeMoonWorldModVariables {
       int reinforcement_mode,
       int reinforcement_target,
       int reinforcement_level,
-      int gandr_machine_gun_mode
+      int gandr_machine_gun_mode,
+      int healing_magic_target,
+      int fire_magic_mode,
+      int water_magic_mode,
+      int wind_magic_mode,
+      int earth_magic_mode,
+      int time_alter_mode
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ModeStateSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mode_state_sync")
@@ -301,10 +427,22 @@ public class TypeMoonWorldModVariables {
             buffer.writeInt(message.reinforcement_target);
             buffer.writeInt(message.reinforcement_level);
             buffer.writeInt(message.gandr_machine_gun_mode);
+            buffer.writeInt(message.healing_magic_target);
+            buffer.writeInt(message.fire_magic_mode);
+            buffer.writeInt(message.water_magic_mode);
+            buffer.writeInt(message.wind_magic_mode);
+            buffer.writeInt(message.earth_magic_mode);
+            buffer.writeInt(message.time_alter_mode);
          },
          buffer -> new TypeMoonWorldModVariables.ModeStateSyncMessage(
             buffer.readInt(),
             buffer.readBoolean(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
+            buffer.readInt(),
             buffer.readInt(),
             buffer.readInt(),
             buffer.readInt(),
@@ -325,7 +463,13 @@ public class TypeMoonWorldModVariables {
             vars.reinforcement_mode,
             vars.reinforcement_target,
             vars.reinforcement_level,
-            vars.gandr_machine_gun_mode
+            vars.gandr_machine_gun_mode,
+            vars.healing_magic_target,
+            vars.fire_magic_mode,
+            vars.water_magic_mode,
+            vars.wind_magic_mode,
+            vars.earth_magic_mode,
+            vars.time_alter_mode
          );
       }
 
@@ -349,6 +493,12 @@ public class TypeMoonWorldModVariables {
                      vars.reinforcement_target = Mth.clamp(message.reinforcement_target, 0, 3);
                      vars.reinforcement_level = Mth.clamp(message.reinforcement_level, 1, 5);
                      vars.gandr_machine_gun_mode = Mth.clamp(message.gandr_machine_gun_mode, 0, 1);
+                     vars.healing_magic_target = Mth.clamp(message.healing_magic_target, 0, 1);
+                     vars.fire_magic_mode = Mth.clamp(message.fire_magic_mode, 0, 1);
+                     vars.water_magic_mode = Mth.clamp(message.water_magic_mode, 0, 1);
+                     vars.wind_magic_mode = Mth.clamp(message.wind_magic_mode, 0, 1);
+                     vars.earth_magic_mode = Mth.clamp(message.earth_magic_mode, 0, 1);
+                     vars.time_alter_mode = Mth.clamp(message.time_alter_mode, 0, 1);
                   }
                )
                .exceptionally(e -> {
@@ -372,7 +522,7 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite");
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -407,6 +557,17 @@ public class TypeMoonWorldModVariables {
       public double proficiency_sword_barrel_full_open = 0.0;
       public double proficiency_gravity_magic = 0.0;
       public double proficiency_gander = 0.0;
+      public double proficiency_healing_magic = 0.0;
+      public double proficiency_magic_bullet = 0.0;
+      public double proficiency_suggestion_magic = 0.0;
+      public double proficiency_binding_magic = 0.0;
+      public double proficiency_fire_magic = 0.0;
+      public double proficiency_water_magic = 0.0;
+      public double proficiency_wind_magic = 0.0;
+      public double proficiency_earth_magic = 0.0;
+      public double proficiency_time_alter = 0.0;
+      public double proficiency_spiritual_healing = 0.0;
+      public double proficiency_baptism_rite = 0.0;
       public List<ItemStack> analyzed_items = new ArrayList<>();
       public ItemStack projection_selected_item = ItemStack.EMPTY;
       public List<TypeMoonWorldModVariables.PlayerVariables.SavedStructure> analyzed_structures = new ArrayList<>();
@@ -432,6 +593,12 @@ public class TypeMoonWorldModVariables {
       public int jewel_magic_mode = 0;
       public int gravity_magic_target = 0;
       public int gravity_magic_mode = 0;
+      public int healing_magic_target = 0;
+      public int fire_magic_mode = 0;
+      public int water_magic_mode = 0;
+      public int wind_magic_mode = 0;
+      public int earth_magic_mode = 0;
+      public int time_alter_mode = 0;
       public int reinforcement_mode = 0;
       public int reinforcement_target = 0;
       public boolean is_sword_barrel_active = false;
@@ -439,6 +606,71 @@ public class TypeMoonWorldModVariables {
       public int merlin_favor = 0;
       public int merlin_talk_counter = 0;
       public boolean crest_cast_context = false;
+      public boolean servant_card_transformed = false;
+      public String servant_card_id = "";
+      public String servant_card_master_uuid = "";
+      public double servant_card_mana = 0.0;
+      public double servant_card_max_mana = 0.0;
+      public double servant_card_mana_regen = 0.0;
+      public int servant_card_jump_charges = 0;
+      public int servant_card_jump_recovery_ticks = 0;
+      public String servant_card_skill_cooldowns = "";
+      public int servant_card_np_cooldown = 0;
+      public CompoundTag servant_card_saved_armor = new CompoundTag();
+      public CompoundTag servant_card_saved_hands = new CompoundTag();
+      public boolean servant_card_flying = false;
+      public double servant_card_flight_forward = 0.0;
+      public double servant_card_flight_strafe = 0.0;
+      public double servant_card_flight_vertical = 0.0;
+      public int servant_card_flight_toggle_cooldown = 0;
+      public int servant_card_action_mode = 0;
+      public int servant_card_transform_cooldown = 0;
+      public int servant_card_release_cooldown = 0;
+      public boolean servant_card_was_magus = false;
+      public boolean servant_card_was_magic_circuit_open = false;
+      public boolean servant_card_death_release = false;
+      public int servant_card_medea_dragonfang_stock = 0;
+      public int servant_card_medea_mana_charm_stock = 0;
+      public int servant_card_medea_heal_charm_stock = 0;
+      public int servant_card_paracelsus_stone_stock = 0;
+      public int servant_card_paracelsus_diamond_shield_stock = 0;
+      public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
+      public boolean servant_card_medusa_mystic_eyes_active = false;
+      public boolean servant_card_hassan_cloak_broken = false;
+      public int servant_card_hassan_zabaniya_animation_until = 0;
+      public boolean origin_bullet_sealed = false;
+      public boolean master_active = false;
+      public String master_servant_uuid = "";
+      public int master_command_spells = 0;
+      public String master_command_spell_style = "default";
+      public boolean master_command_spell_pose_active = false;
+      public boolean master_revive_available = false;
+      public double master_saved_player_mana = 0.0;
+      public double master_saved_player_max_mana = 0.0;
+      public double master_saved_player_mana_regen = 0.0;
+      public double master_saved_player_restore_magic_moment = 0.0;
+      public boolean master_saved_is_magus = false;
+      public boolean master_saved_magic_circuit_open = false;
+      public double master_saved_magic_circuit_open_timer = 0.0;
+      public String master_servant_link_partner_uuid = "";
+      public double master_servant_link_partner_hp = 0.0;
+      public double master_servant_link_partner_max_hp = 0.0;
+      public double master_servant_link_partner_mana = 0.0;
+      public double master_servant_link_partner_max_mana = 0.0;
+      public String master_servant_link_state = "none";
+      public double master_servant_link_decay = 0.0;
+      public boolean master_servant_link_drawing_mana = false;
+      public int master_servant_independent_ticks = 0;
+      public int master_servant_backlash_ticks = 0;
+      public String master_artificial_leyline_dimension = "";
+      public int master_artificial_leyline_x = 0;
+      public int master_artificial_leyline_y = 0;
+      public int master_artificial_leyline_z = 0;
+      public boolean master_artificial_leyline_bonus_active = false;
+      public boolean master_card_active = false;
+      public String master_card_id = "";
+      public CompoundTag master_card_saved_variables = new CompoundTag();
+      public CompoundTag master_card_saved_inventory = new CompoundTag();
 
       public TypeMoonWorldModVariables.PlayerVariables.SavedStructure getStructureById(String id) {
          if (id != null && !id.isEmpty()) {
@@ -545,7 +777,11 @@ public class TypeMoonWorldModVariables {
       }
 
       private static boolean isPresetOptionMagic(String magicId) {
-         return "reinforcement".equals(magicId) || "gravity_magic".equals(magicId) || "gandr_machine_gun".equals(magicId) || "projection".equals(magicId);
+         return "reinforcement".equals(magicId)
+            || "gravity_magic".equals(magicId)
+            || "gandr_machine_gun".equals(magicId)
+            || "projection".equals(magicId)
+            || "healing_magic".equals(magicId);
       }
 
       private static String canonicalSelfKnowledgeMagicId(String magicId) {
@@ -581,6 +817,8 @@ public class TypeMoonWorldModVariables {
             payload.putInt("gravity_mode", mode);
          } else if ("gandr_machine_gun".equals(crestEntry.magicId)) {
             payload.putInt("gandr_machine_gun_mode", Math.floorMod(seed, 2));
+         } else if ("healing_magic".equals(crestEntry.magicId)) {
+            payload.putInt("healing_target", Math.floorMod(seed, 2));
          } else if ("projection".equals(crestEntry.magicId)) {
             payload.putBoolean("projection_lock_empty", true);
          }
@@ -637,6 +875,10 @@ public class TypeMoonWorldModVariables {
          if (crestEntry != null) {
             crestEntry.entryId = ensureCrestEntryId(crestEntry.entryId);
             crestEntry.sourceKind = sanitizeCrestSourceKind(crestEntry.sourceKind);
+            if (!net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(crestEntry.magicId)) {
+               crestEntry.magicId = "";
+               crestEntry.active = false;
+            }
             if (crestEntry.presetPayload == null) {
                crestEntry.presetPayload = new CompoundTag();
             }
@@ -977,7 +1219,7 @@ public class TypeMoonWorldModVariables {
 
       public boolean addPlunderCrestEntry(String magicId, CompoundTag presetPayload, UUID originOwnerUuid, String originOwnerType, String originOwnerName) {
          this.ensureMagicSystemInitialized();
-         if (!isKnownMagicId(magicId)) {
+         if (!isKnownMagicId(magicId) || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(magicId)) {
             return false;
          } else {
             TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
@@ -1322,6 +1564,17 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("proficiency_sword_barrel_full_open", this.proficiency_sword_barrel_full_open);
          nbt.putDouble("proficiency_gravity_magic", this.proficiency_gravity_magic);
          nbt.putDouble("proficiency_gander", this.proficiency_gander);
+         nbt.putDouble("proficiency_healing_magic", this.proficiency_healing_magic);
+         nbt.putDouble("proficiency_magic_bullet", this.proficiency_magic_bullet);
+         nbt.putDouble("proficiency_suggestion_magic", this.proficiency_suggestion_magic);
+         nbt.putDouble("proficiency_binding_magic", this.proficiency_binding_magic);
+         nbt.putDouble("proficiency_fire_magic", this.proficiency_fire_magic);
+         nbt.putDouble("proficiency_water_magic", this.proficiency_water_magic);
+         nbt.putDouble("proficiency_wind_magic", this.proficiency_wind_magic);
+         nbt.putDouble("proficiency_earth_magic", this.proficiency_earth_magic);
+         nbt.putDouble("proficiency_time_alter", this.proficiency_time_alter);
+         nbt.putDouble("proficiency_spiritual_healing", this.proficiency_spiritual_healing);
+         nbt.putDouble("proficiency_baptism_rite", this.proficiency_baptism_rite);
          nbt.putDouble("proficiency_reinforcement", this.proficiency_reinforcement);
          nbt.putBoolean("is_chanting_ubw", this.is_chanting_ubw);
          nbt.putInt("ubw_chant_progress", this.ubw_chant_progress);
@@ -1338,6 +1591,12 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("jewel_magic_mode", this.jewel_magic_mode);
          nbt.putInt("gravity_magic_target", this.gravity_magic_target);
          nbt.putInt("gravity_magic_mode", this.gravity_magic_mode);
+         nbt.putInt("healing_magic_target", this.healing_magic_target);
+         nbt.putInt("fire_magic_mode", this.fire_magic_mode);
+         nbt.putInt("water_magic_mode", this.water_magic_mode);
+         nbt.putInt("wind_magic_mode", this.wind_magic_mode);
+         nbt.putInt("earth_magic_mode", this.earth_magic_mode);
+         nbt.putInt("time_alter_mode", this.time_alter_mode);
          nbt.putInt("reinforcement_mode", this.reinforcement_mode);
          nbt.putInt("reinforcement_target", this.reinforcement_target);
          nbt.putInt("reinforcement_level", this.reinforcement_level);
@@ -1345,6 +1604,71 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("ubw_broken_phantasm_enabled", this.ubw_broken_phantasm_enabled);
          nbt.putInt("merlin_favor", this.merlin_favor);
          nbt.putInt("merlin_talk_counter", this.merlin_talk_counter);
+         nbt.putBoolean("servant_card_transformed", this.servant_card_transformed);
+         nbt.putString("servant_card_id", this.servant_card_id == null ? "" : this.servant_card_id);
+         nbt.putString("servant_card_master_uuid", this.servant_card_master_uuid == null ? "" : this.servant_card_master_uuid);
+         nbt.putDouble("servant_card_mana", this.servant_card_mana);
+         nbt.putDouble("servant_card_max_mana", this.servant_card_max_mana);
+         nbt.putDouble("servant_card_mana_regen", this.servant_card_mana_regen);
+         nbt.putInt("servant_card_jump_charges", this.servant_card_jump_charges);
+         nbt.putInt("servant_card_jump_recovery_ticks", this.servant_card_jump_recovery_ticks);
+         nbt.putString("servant_card_skill_cooldowns", this.servant_card_skill_cooldowns == null ? "" : this.servant_card_skill_cooldowns);
+         nbt.putInt("servant_card_np_cooldown", this.servant_card_np_cooldown);
+         nbt.put("servant_card_saved_armor", this.servant_card_saved_armor == null ? new CompoundTag() : this.servant_card_saved_armor.copy());
+         nbt.put("servant_card_saved_hands", this.servant_card_saved_hands == null ? new CompoundTag() : this.servant_card_saved_hands.copy());
+         nbt.putBoolean("servant_card_flying", this.servant_card_flying);
+         nbt.putDouble("servant_card_flight_forward", this.servant_card_flight_forward);
+         nbt.putDouble("servant_card_flight_strafe", this.servant_card_flight_strafe);
+         nbt.putDouble("servant_card_flight_vertical", this.servant_card_flight_vertical);
+         nbt.putInt("servant_card_flight_toggle_cooldown", this.servant_card_flight_toggle_cooldown);
+         nbt.putInt("servant_card_action_mode", this.servant_card_action_mode);
+         nbt.putInt("servant_card_transform_cooldown", this.servant_card_transform_cooldown);
+         nbt.putInt("servant_card_release_cooldown", this.servant_card_release_cooldown);
+         nbt.putBoolean("servant_card_was_magus", this.servant_card_was_magus);
+         nbt.putBoolean("servant_card_was_magic_circuit_open", this.servant_card_was_magic_circuit_open);
+         nbt.putBoolean("servant_card_death_release", this.servant_card_death_release);
+         nbt.putInt("servant_card_medea_dragonfang_stock", this.servant_card_medea_dragonfang_stock);
+         nbt.putInt("servant_card_medea_mana_charm_stock", this.servant_card_medea_mana_charm_stock);
+         nbt.putInt("servant_card_medea_heal_charm_stock", this.servant_card_medea_heal_charm_stock);
+         nbt.putInt("servant_card_paracelsus_stone_stock", this.servant_card_paracelsus_stone_stock);
+         nbt.putInt("servant_card_paracelsus_diamond_shield_stock", this.servant_card_paracelsus_diamond_shield_stock);
+         nbt.putString("servant_card_enkidu_transfiguration_points", this.servant_card_enkidu_transfiguration_points == null ? "6,6,6,6,6" : this.servant_card_enkidu_transfiguration_points);
+         nbt.putBoolean("servant_card_medusa_mystic_eyes_active", this.servant_card_medusa_mystic_eyes_active);
+         nbt.putBoolean("servant_card_hassan_cloak_broken", this.servant_card_hassan_cloak_broken);
+         nbt.putInt("servant_card_hassan_zabaniya_animation_until", this.servant_card_hassan_zabaniya_animation_until);
+         nbt.putBoolean("origin_bullet_sealed", this.origin_bullet_sealed);
+         nbt.putBoolean("master_active", this.master_active);
+         nbt.putString("master_servant_uuid", this.master_servant_uuid == null ? "" : this.master_servant_uuid);
+         nbt.putInt("master_command_spells", this.master_command_spells);
+         nbt.putString("master_command_spell_style", this.master_command_spell_style == null || this.master_command_spell_style.isBlank() ? "default" : this.master_command_spell_style);
+         nbt.putBoolean("master_command_spell_pose_active", this.master_command_spell_pose_active);
+         nbt.putBoolean("master_revive_available", this.master_revive_available);
+         nbt.putDouble("master_saved_player_mana", this.master_saved_player_mana);
+         nbt.putDouble("master_saved_player_max_mana", this.master_saved_player_max_mana);
+         nbt.putDouble("master_saved_player_mana_regen", this.master_saved_player_mana_regen);
+         nbt.putDouble("master_saved_player_restore_magic_moment", this.master_saved_player_restore_magic_moment);
+         nbt.putBoolean("master_saved_is_magus", this.master_saved_is_magus);
+         nbt.putBoolean("master_saved_magic_circuit_open", this.master_saved_magic_circuit_open);
+         nbt.putDouble("master_saved_magic_circuit_open_timer", this.master_saved_magic_circuit_open_timer);
+         nbt.putString("master_servant_link_partner_uuid", this.master_servant_link_partner_uuid == null ? "" : this.master_servant_link_partner_uuid);
+         nbt.putDouble("master_servant_link_partner_hp", this.master_servant_link_partner_hp);
+         nbt.putDouble("master_servant_link_partner_max_hp", this.master_servant_link_partner_max_hp);
+         nbt.putDouble("master_servant_link_partner_mana", this.master_servant_link_partner_mana);
+         nbt.putDouble("master_servant_link_partner_max_mana", this.master_servant_link_partner_max_mana);
+         nbt.putString("master_servant_link_state", this.master_servant_link_state == null ? "none" : this.master_servant_link_state);
+         nbt.putDouble("master_servant_link_decay", this.master_servant_link_decay);
+         nbt.putBoolean("master_servant_link_drawing_mana", this.master_servant_link_drawing_mana);
+         nbt.putInt("master_servant_independent_ticks", this.master_servant_independent_ticks);
+         nbt.putInt("master_servant_backlash_ticks", this.master_servant_backlash_ticks);
+         nbt.putString("master_artificial_leyline_dimension", this.master_artificial_leyline_dimension == null ? "" : this.master_artificial_leyline_dimension);
+         nbt.putInt("master_artificial_leyline_x", this.master_artificial_leyline_x);
+         nbt.putInt("master_artificial_leyline_y", this.master_artificial_leyline_y);
+         nbt.putInt("master_artificial_leyline_z", this.master_artificial_leyline_z);
+         nbt.putBoolean("master_artificial_leyline_bonus_active", this.master_artificial_leyline_bonus_active);
+         nbt.putBoolean("master_card_active", this.master_card_active);
+         nbt.putString("master_card_id", this.master_card_id == null ? "" : this.master_card_id);
+         nbt.put("master_card_saved_variables", this.master_card_saved_variables == null ? new CompoundTag() : this.master_card_saved_variables.copy());
+         nbt.put("master_card_saved_inventory", this.master_card_saved_inventory == null ? new CompoundTag() : this.master_card_saved_inventory.copy());
          nbt.putInt("magic_system_data_version", this.magic_system_data_version);
          nbt.putInt("active_wheel_index", this.active_wheel_index);
          ListTag wheelList = new ListTag();
@@ -1463,6 +1787,17 @@ public class TypeMoonWorldModVariables {
          this.proficiency_sword_barrel_full_open = nbt.getDouble("proficiency_sword_barrel_full_open");
          this.proficiency_gravity_magic = nbt.getDouble("proficiency_gravity_magic");
          this.proficiency_gander = nbt.getDouble("proficiency_gander");
+         this.proficiency_healing_magic = nbt.getDouble("proficiency_healing_magic");
+         this.proficiency_magic_bullet = nbt.getDouble("proficiency_magic_bullet");
+         this.proficiency_suggestion_magic = nbt.getDouble("proficiency_suggestion_magic");
+         this.proficiency_binding_magic = nbt.getDouble("proficiency_binding_magic");
+         this.proficiency_fire_magic = nbt.getDouble("proficiency_fire_magic");
+         this.proficiency_water_magic = nbt.getDouble("proficiency_water_magic");
+         this.proficiency_wind_magic = nbt.getDouble("proficiency_wind_magic");
+         this.proficiency_earth_magic = nbt.getDouble("proficiency_earth_magic");
+         this.proficiency_time_alter = nbt.getDouble("proficiency_time_alter");
+         this.proficiency_spiritual_healing = nbt.getDouble("proficiency_spiritual_healing");
+         this.proficiency_baptism_rite = nbt.getDouble("proficiency_baptism_rite");
          this.proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
          this.is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
          this.ubw_chant_progress = nbt.getInt("ubw_chant_progress");
@@ -1511,6 +1846,31 @@ public class TypeMoonWorldModVariables {
          }
 
          this.gravity_magic_mode = Math.max(-2, Math.min(2, this.gravity_magic_mode));
+         if (nbt.contains("healing_magic_target")) {
+            this.healing_magic_target = nbt.getInt("healing_magic_target");
+         }
+
+         this.healing_magic_target = Math.max(0, Math.min(1, this.healing_magic_target));
+         if (nbt.contains("fire_magic_mode")) {
+            this.fire_magic_mode = nbt.getInt("fire_magic_mode");
+         }
+         if (nbt.contains("water_magic_mode")) {
+            this.water_magic_mode = nbt.getInt("water_magic_mode");
+         }
+         if (nbt.contains("wind_magic_mode")) {
+            this.wind_magic_mode = nbt.getInt("wind_magic_mode");
+         }
+         if (nbt.contains("earth_magic_mode")) {
+            this.earth_magic_mode = nbt.getInt("earth_magic_mode");
+         }
+         if (nbt.contains("time_alter_mode")) {
+            this.time_alter_mode = nbt.getInt("time_alter_mode");
+         }
+         this.fire_magic_mode = Math.max(0, Math.min(1, this.fire_magic_mode));
+         this.water_magic_mode = Math.max(0, Math.min(1, this.water_magic_mode));
+         this.wind_magic_mode = Math.max(0, Math.min(1, this.wind_magic_mode));
+         this.earth_magic_mode = Math.max(0, Math.min(1, this.earth_magic_mode));
+         this.time_alter_mode = Math.max(0, Math.min(1, this.time_alter_mode));
          if (nbt.contains("reinforcement_mode")) {
             this.reinforcement_mode = nbt.getInt("reinforcement_mode");
          }
@@ -1548,6 +1908,78 @@ public class TypeMoonWorldModVariables {
             this.merlin_talk_counter = nbt.getInt("merlin_talk_counter");
          }
 
+         this.servant_card_transformed = nbt.getBoolean("servant_card_transformed");
+         this.servant_card_id = nbt.contains("servant_card_id") ? nbt.getString("servant_card_id") : "";
+         this.servant_card_master_uuid = nbt.contains("servant_card_master_uuid") ? nbt.getString("servant_card_master_uuid") : "";
+         this.servant_card_mana = nbt.getDouble("servant_card_mana");
+         this.servant_card_max_mana = nbt.getDouble("servant_card_max_mana");
+         this.servant_card_mana_regen = nbt.getDouble("servant_card_mana_regen");
+         this.servant_card_jump_charges = nbt.contains("servant_card_jump_charges") ? nbt.getInt("servant_card_jump_charges") : 0;
+         this.servant_card_jump_recovery_ticks = nbt.contains("servant_card_jump_recovery_ticks") ? nbt.getInt("servant_card_jump_recovery_ticks") : 0;
+         this.servant_card_skill_cooldowns = nbt.contains("servant_card_skill_cooldowns") ? nbt.getString("servant_card_skill_cooldowns") : "";
+         this.servant_card_np_cooldown = nbt.contains("servant_card_np_cooldown") ? nbt.getInt("servant_card_np_cooldown") : 0;
+         this.servant_card_saved_armor = nbt.contains("servant_card_saved_armor", 10) ? nbt.getCompound("servant_card_saved_armor").copy() : new CompoundTag();
+         this.servant_card_saved_hands = nbt.contains("servant_card_saved_hands", 10) ? nbt.getCompound("servant_card_saved_hands").copy() : new CompoundTag();
+         this.servant_card_flying = nbt.getBoolean("servant_card_flying");
+         this.servant_card_flight_forward = nbt.contains("servant_card_flight_forward") ? nbt.getDouble("servant_card_flight_forward") : 0.0;
+         this.servant_card_flight_strafe = nbt.contains("servant_card_flight_strafe") ? nbt.getDouble("servant_card_flight_strafe") : 0.0;
+         this.servant_card_flight_vertical = nbt.contains("servant_card_flight_vertical") ? nbt.getDouble("servant_card_flight_vertical") : 0.0;
+         this.servant_card_flight_toggle_cooldown = nbt.contains("servant_card_flight_toggle_cooldown") ? nbt.getInt("servant_card_flight_toggle_cooldown") : 0;
+         this.servant_card_action_mode = nbt.contains("servant_card_action_mode") ? nbt.getInt("servant_card_action_mode") : 0;
+         this.servant_card_transform_cooldown = nbt.contains("servant_card_transform_cooldown") ? nbt.getInt("servant_card_transform_cooldown") : 0;
+         this.servant_card_release_cooldown = nbt.contains("servant_card_release_cooldown") ? nbt.getInt("servant_card_release_cooldown") : 0;
+         this.servant_card_was_magus = nbt.getBoolean("servant_card_was_magus");
+         this.servant_card_was_magic_circuit_open = nbt.getBoolean("servant_card_was_magic_circuit_open");
+         this.servant_card_death_release = nbt.getBoolean("servant_card_death_release");
+         this.servant_card_medea_dragonfang_stock = nbt.contains("servant_card_medea_dragonfang_stock") ? nbt.getInt("servant_card_medea_dragonfang_stock") : 0;
+         this.servant_card_medea_mana_charm_stock = nbt.contains("servant_card_medea_mana_charm_stock") ? nbt.getInt("servant_card_medea_mana_charm_stock") : 0;
+         this.servant_card_medea_heal_charm_stock = nbt.contains("servant_card_medea_heal_charm_stock") ? nbt.getInt("servant_card_medea_heal_charm_stock") : 0;
+         this.servant_card_paracelsus_stone_stock = nbt.contains("servant_card_paracelsus_stone_stock") ? nbt.getInt("servant_card_paracelsus_stone_stock") : 0;
+         this.servant_card_paracelsus_diamond_shield_stock = nbt.contains("servant_card_paracelsus_diamond_shield_stock") ? nbt.getInt("servant_card_paracelsus_diamond_shield_stock") : 0;
+         this.servant_card_enkidu_transfiguration_points = nbt.contains("servant_card_enkidu_transfiguration_points") ? nbt.getString("servant_card_enkidu_transfiguration_points") : "6,6,6,6,6";
+         this.servant_card_medusa_mystic_eyes_active = nbt.getBoolean("servant_card_medusa_mystic_eyes_active");
+         this.servant_card_hassan_cloak_broken = nbt.getBoolean("servant_card_hassan_cloak_broken");
+         this.servant_card_hassan_zabaniya_animation_until = nbt.contains("servant_card_hassan_zabaniya_animation_until") ? nbt.getInt("servant_card_hassan_zabaniya_animation_until") : 0;
+         this.origin_bullet_sealed = nbt.getBoolean("origin_bullet_sealed");
+         this.master_active = nbt.getBoolean("master_active");
+         this.master_servant_uuid = nbt.contains("master_servant_uuid") ? nbt.getString("master_servant_uuid") : "";
+         this.master_command_spells = nbt.contains("master_command_spells") ? nbt.getInt("master_command_spells") : 0;
+         this.master_command_spell_style = nbt.contains("master_command_spell_style") ? nbt.getString("master_command_spell_style") : "default";
+         if (this.master_command_spell_style == null || this.master_command_spell_style.isBlank()) {
+            this.master_command_spell_style = "default";
+         }
+         this.master_command_spell_pose_active = nbt.getBoolean("master_command_spell_pose_active");
+         this.master_revive_available = nbt.getBoolean("master_revive_available");
+         this.master_saved_player_mana = nbt.contains("master_saved_player_mana") ? nbt.getDouble("master_saved_player_mana") : 0.0;
+         this.master_saved_player_max_mana = nbt.contains("master_saved_player_max_mana") ? nbt.getDouble("master_saved_player_max_mana") : 0.0;
+         this.master_saved_player_mana_regen = nbt.contains("master_saved_player_mana_regen") ? nbt.getDouble("master_saved_player_mana_regen") : 0.0;
+         this.master_saved_player_restore_magic_moment = nbt.contains("master_saved_player_restore_magic_moment") ? nbt.getDouble("master_saved_player_restore_magic_moment") : 0.0;
+         this.master_saved_is_magus = nbt.getBoolean("master_saved_is_magus");
+         this.master_saved_magic_circuit_open = nbt.getBoolean("master_saved_magic_circuit_open");
+         this.master_saved_magic_circuit_open_timer = nbt.contains("master_saved_magic_circuit_open_timer") ? nbt.getDouble("master_saved_magic_circuit_open_timer") : 0.0;
+         this.master_servant_link_partner_uuid = nbt.contains("master_servant_link_partner_uuid") ? nbt.getString("master_servant_link_partner_uuid") : "";
+         this.master_servant_link_partner_hp = nbt.contains("master_servant_link_partner_hp") ? nbt.getDouble("master_servant_link_partner_hp") : 0.0;
+         this.master_servant_link_partner_max_hp = nbt.contains("master_servant_link_partner_max_hp") ? nbt.getDouble("master_servant_link_partner_max_hp") : 0.0;
+         this.master_servant_link_partner_mana = nbt.contains("master_servant_link_partner_mana") ? nbt.getDouble("master_servant_link_partner_mana") : 0.0;
+         this.master_servant_link_partner_max_mana = nbt.contains("master_servant_link_partner_max_mana") ? nbt.getDouble("master_servant_link_partner_max_mana") : 0.0;
+         this.master_servant_link_state = nbt.contains("master_servant_link_state") ? nbt.getString("master_servant_link_state") : "none";
+         this.master_servant_link_decay = nbt.contains("master_servant_link_decay") ? nbt.getDouble("master_servant_link_decay") : 0.0;
+         this.master_servant_link_drawing_mana = nbt.getBoolean("master_servant_link_drawing_mana");
+         this.master_servant_independent_ticks = nbt.contains("master_servant_independent_ticks") ? nbt.getInt("master_servant_independent_ticks") : 0;
+         this.master_servant_backlash_ticks = nbt.contains("master_servant_backlash_ticks") ? nbt.getInt("master_servant_backlash_ticks") : 0;
+         this.master_artificial_leyline_dimension = nbt.contains("master_artificial_leyline_dimension") ? nbt.getString("master_artificial_leyline_dimension") : "";
+         this.master_artificial_leyline_x = nbt.contains("master_artificial_leyline_x") ? nbt.getInt("master_artificial_leyline_x") : 0;
+         this.master_artificial_leyline_y = nbt.contains("master_artificial_leyline_y") ? nbt.getInt("master_artificial_leyline_y") : 0;
+         this.master_artificial_leyline_z = nbt.contains("master_artificial_leyline_z") ? nbt.getInt("master_artificial_leyline_z") : 0;
+         this.master_artificial_leyline_bonus_active = nbt.getBoolean("master_artificial_leyline_bonus_active");
+         this.master_card_active = nbt.getBoolean("master_card_active");
+         this.master_card_id = nbt.contains("master_card_id") ? nbt.getString("master_card_id") : "";
+         this.master_card_saved_variables = nbt.contains("master_card_saved_variables", 10)
+            ? nbt.getCompound("master_card_saved_variables").copy()
+            : new CompoundTag();
+         this.master_card_saved_inventory = nbt.contains("master_card_saved_inventory", 10)
+            ? nbt.getCompound("master_card_saved_inventory").copy()
+            : new CompoundTag();
          this.magic_system_data_version = nbt.contains("magic_system_data_version") ? nbt.getInt("magic_system_data_version") : 0;
          this.active_wheel_index = nbt.contains("active_wheel_index") ? nbt.getInt("active_wheel_index") : 0;
          this.magic_wheels.clear();
@@ -2189,7 +2621,18 @@ public class TypeMoonWorldModVariables {
       double sword_barrel_full_open,
       double gravity_magic,
       double gander,
-      double reinforcement
+      double reinforcement,
+      double healing_magic,
+      double magic_bullet,
+      double suggestion_magic,
+      double binding_magic,
+      double fire_magic,
+      double water_magic,
+      double wind_magic,
+      double earth_magic,
+      double time_alter,
+      double spiritual_healing,
+      double baptism_rite
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ProficiencySyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "proficiency_sync")
@@ -2205,8 +2648,30 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.gravity_magic);
             buffer.writeDouble(message.gander);
             buffer.writeDouble(message.reinforcement);
+            buffer.writeDouble(message.healing_magic);
+            buffer.writeDouble(message.magic_bullet);
+            buffer.writeDouble(message.suggestion_magic);
+            buffer.writeDouble(message.binding_magic);
+            buffer.writeDouble(message.fire_magic);
+            buffer.writeDouble(message.water_magic);
+            buffer.writeDouble(message.wind_magic);
+            buffer.writeDouble(message.earth_magic);
+            buffer.writeDouble(message.time_alter);
+            buffer.writeDouble(message.spiritual_healing);
+            buffer.writeDouble(message.baptism_rite);
          },
          buffer -> new TypeMoonWorldModVariables.ProficiencySyncMessage(
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
@@ -2229,7 +2694,18 @@ public class TypeMoonWorldModVariables {
             vars.proficiency_sword_barrel_full_open,
             vars.proficiency_gravity_magic,
             vars.proficiency_gander,
-            vars.proficiency_reinforcement
+            vars.proficiency_reinforcement,
+            vars.proficiency_healing_magic,
+            vars.proficiency_magic_bullet,
+            vars.proficiency_suggestion_magic,
+            vars.proficiency_binding_magic,
+            vars.proficiency_fire_magic,
+            vars.proficiency_water_magic,
+            vars.proficiency_wind_magic,
+            vars.proficiency_earth_magic,
+            vars.proficiency_time_alter,
+            vars.proficiency_spiritual_healing,
+            vars.proficiency_baptism_rite
          );
       }
 
@@ -2253,6 +2729,17 @@ public class TypeMoonWorldModVariables {
                   vars.proficiency_gravity_magic = message.gravity_magic;
                   vars.proficiency_gander = message.gander;
                   vars.proficiency_reinforcement = message.reinforcement;
+                  vars.proficiency_healing_magic = message.healing_magic;
+                  vars.proficiency_magic_bullet = message.magic_bullet;
+                  vars.proficiency_suggestion_magic = message.suggestion_magic;
+                  vars.proficiency_binding_magic = message.binding_magic;
+                  vars.proficiency_fire_magic = message.fire_magic;
+                  vars.proficiency_water_magic = message.water_magic;
+                  vars.proficiency_wind_magic = message.wind_magic;
+                  vars.proficiency_earth_magic = message.earth_magic;
+                  vars.proficiency_time_alter = message.time_alter;
+                  vars.proficiency_spiritual_healing = message.spiritual_healing;
+                  vars.proficiency_baptism_rite = message.baptism_rite;
                }
             );
          }

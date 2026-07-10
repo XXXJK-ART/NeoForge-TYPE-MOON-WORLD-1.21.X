@@ -211,6 +211,9 @@ public class ProjectionTickHandler {
          if (itemEntity.level().isClientSide) {
             return;
          }
+         if (itemEntity.tickCount % 10 != 0) {
+            return;
+         }
 
          ItemStack stack = itemEntity.getItem();
          if (stack.has(DataComponents.CUSTOM_DATA)) {
@@ -241,11 +244,14 @@ public class ProjectionTickHandler {
    public static void onLevelTick(net.neoforged.neoforge.event.tick.LevelTickEvent.Post event) {
       if (!event.getLevel().isClientSide) {
          ServerLevel level = (ServerLevel)event.getLevel();
+         if (level.getGameTime() % 20 != 0) {
+            return;
+         }
          Iterator<Entry<GlobalPos, Long>> it = projectedBlocks.entrySet().iterator();
 
          while (it.hasNext()) {
             Entry<GlobalPos, Long> entry = it.next();
-            if (entry.getKey().dimension() == level.dimension()) {
+            if (entry.getKey().dimension().equals(level.dimension())) {
                long placeTime = entry.getValue();
                if (level.getGameTime() - placeTime > 200L) {
                   BlockPos pos = entry.getKey().pos();

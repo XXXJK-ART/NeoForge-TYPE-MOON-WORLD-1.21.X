@@ -6,8 +6,15 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.core.particles.ParticleTypes;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusWorkshopHelper;
@@ -16,6 +23,9 @@ public class ParacelsusEntity extends ServantEntity {
    public static final String SERVANT_KEY = "paracelsus";
    private static final EntityDataAccessor<Integer> COMBAT_PHASE = SynchedEntityData.defineId(ParacelsusEntity.class, EntityDataSerializers.INT);
    private static final String TAG_COMBAT_PHASE = "ParacelsusCombatPhase";
+   private static final String TAG_DIAMOND_SHIELD_COUNT = "ParacelsusDiamondShieldCount";
+   private static final int DIAMOND_SHIELD_STARTING_CHARGES = 2;
+   private static final int DIAMOND_SHIELD_MAX_CHARGES = 3;
 
    public ParacelsusEntity(EntityType<ParacelsusEntity> entityType, Level level) {
       super(entityType, level, SERVANT_KEY);
@@ -33,6 +43,12 @@ public class ParacelsusEntity extends ServantEntity {
       if (!this.level().isClientSide()) {
          if (this.tickCount <= 2 && this.getMainHandItem().isEmpty()) {
             this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.PARACELSUS_SWORD.get()));
+         }
+         if (this.tickCount == 1 && this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT) <= 0) {
+            this.getPersistentData().putInt(TAG_DIAMOND_SHIELD_COUNT, DIAMOND_SHIELD_STARTING_CHARGES);
+         }
+         if (this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT) > DIAMOND_SHIELD_MAX_CHARGES) {
+            this.getPersistentData().putInt(TAG_DIAMOND_SHIELD_COUNT, DIAMOND_SHIELD_MAX_CHARGES);
          }
          int phase = this.computeCombatPhase();
          if (phase != this.getCombatPhase()) {
@@ -70,6 +86,24 @@ public class ParacelsusEntity extends ServantEntity {
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
       this.setCombatPhase(tag.contains(TAG_COMBAT_PHASE) ? tag.getInt(TAG_COMBAT_PHASE) : this.computeCombatPhase());
+   }
+
+   @Override
+   public boolean hurt(DamageSource source, float amount) {
+      if (!this.level().isClientSide && amount >= 18.0F && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         int shields = Math.min(this.getPersistentData().getInt(TAG_DIAMOND_SHIELD_COUNT), DIAMOND_SHIELD_MAX_CHARGES);
+         if (shields > 0) {
+            this.getPersistentData().putInt(TAG_DIAMOND_SHIELD_COUNT, shields - 1);
+            if (this.level() instanceof ServerLevel level) {
+               this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 120, 1, false, true, true));
+               level.sendParticles(ParticleTypes.ENCHANT, this.getX(), this.getY() + 1.0, this.getZ(), 36, 0.65, 0.5, 0.65, 0.03);
+               level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 1.0, this.getZ(), 18, 0.35, 0.35, 0.35, 0.02);
+               level.playSound(null, this.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 1.0F, 0.8F);
+            }
+            return false;
+         }
+      }
+      return super.hurt(source, amount);
    }
 
    @Override

@@ -153,6 +153,8 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       }
       if (ownedSummon && owner instanceof MedeaEntity medea && (this.distanceToSqr(owner) > 48.0 * 48.0 || !this.isCombatOwnerActive(medea))) {
          MedeaWorkshopHelper.reclaimDragonfang(medea, this);
+      } else if (ownedSummon && owner != null && !(owner instanceof MedeaEntity) && this.distanceToSqr(owner) > 48.0 * 48.0) {
+         this.discard();
       }
    }
 
@@ -169,7 +171,7 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       return this.summonerUuid;
    }
 
-   public void setSummoner(MedeaEntity summoner) {
+   public void setSummoner(LivingEntity summoner) {
       this.summonerUuid = summoner.getUUID();
       this.entityData.set(HAS_OWNER, true);
       this.getPersistentData().putBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON, true);

@@ -11,13 +11,19 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.NeutralMob;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -33,6 +39,8 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(ParacelsusSpiritCannonEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> AIM_YAW = SynchedEntityData.defineId(ParacelsusSpiritCannonEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> AIM_PITCH = SynchedEntityData.defineId(ParacelsusSpiritCannonEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Integer> ELEMENT_MODE = SynchedEntityData.defineId(ParacelsusSpiritCannonEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> HEALTH = SynchedEntityData.defineId(ParacelsusSpiritCannonEntity.class, EntityDataSerializers.FLOAT);
    private static final int NO_TARGET_TIMEOUT = 40;
    private static final int TARGET_RESCAN_INTERVAL = 10;
    private static final DustParticleOptions FIRE = new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.22F), 1.05F);
@@ -46,6 +54,10 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
    private int targetRescanTicks;
    private boolean dissolving;
    private boolean orbitAroundTarget;
+   private boolean guardianMode;
+   private double guardianX;
+   private double guardianY;
+   private double guardianZ;
 
    public ParacelsusSpiritCannonEntity(EntityType<? extends ParacelsusSpiritCannonEntity> type, Level level) {
       super(type, level);
@@ -71,6 +83,27 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       cannon.shootDelay = 4;
       cannon.setPos(initialPosition(owner, target, orbitAroundTarget));
       cannon.setFacing(orbitAroundTarget && target != null ? target.position().subtract(owner.position()) : owner.getLookAngle());
+      return cannon;
+   }
+
+   public static ParacelsusSpiritCannonEntity summonGuardian(ServerLevel level, LivingEntity owner, Vec3 pos, int element, int lifeTicks) {
+      ParacelsusSpiritCannonEntity cannon = new ParacelsusSpiritCannonEntity(ModEntities.PARACELSUS_SPIRIT_CANNON.get(), level);
+      cannon.ownerUuid = owner.getUUID();
+      cannon.guardianMode = true;
+      cannon.guardianX = pos.x;
+      cannon.guardianY = pos.y;
+      cannon.guardianZ = pos.z;
+      cannon.entityData.set(LIFE_TICKS, Math.max(40, lifeTicks));
+      cannon.entityData.set(SHOTS_LEFT, Math.max(20, lifeTicks / 18));
+      cannon.entityData.set(TARGET_ID, -1);
+      cannon.entityData.set(ELEMENT_MODE, Mth.clamp(element, 0, 3));
+      cannon.entityData.set(HEALTH, 50.0F);
+      cannon.shootDelay = 8;
+      cannon.noTargetTicks = 0;
+      cannon.setPos(pos.x, pos.y, pos.z);
+      cannon.setFacing(owner.getLookAngle());
+      cannon.setNoGravity(true);
+      cannon.setInvulnerable(false);
       return cannon;
    }
 
@@ -101,6 +134,8 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       builder.define(TARGET_ID, -1);
       builder.define(AIM_YAW, 0.0F);
       builder.define(AIM_PITCH, 0.0F);
+      builder.define(ELEMENT_MODE, -1);
+      builder.define(HEALTH, 50.0F);
    }
 
    @Override
@@ -110,12 +145,12 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
          return;
       }
 
-      ParacelsusEntity owner = this.getOwnerLiving(level);
+      LivingEntity owner = this.getOwnerLiving(level);
       if (owner == null || !owner.isAlive()) {
          this.dissolveAndDiscard(level);
          return;
       }
-      if (owner.getTarget() == null || !EntityUtils.isValidCombatTarget(owner, owner.getTarget())) {
+      if (!this.guardianMode && owner instanceof ParacelsusEntity paracelsus && (paracelsus.getTarget() == null || !EntityUtils.isValidCombatTarget(paracelsus, paracelsus.getTarget()))) {
          this.dissolveAndDiscard(level);
          return;
       }
@@ -130,7 +165,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       LivingEntity target = this.resolveTarget(level, owner);
       if (target == null) {
          this.noTargetTicks++;
-         if (this.noTargetTicks >= NO_TARGET_TIMEOUT) {
+         if (!this.guardianMode && this.noTargetTicks >= NO_TARGET_TIMEOUT) {
             this.dissolveAndDiscard(level);
             return;
          }
@@ -138,7 +173,11 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
          this.noTargetTicks = 0;
       }
 
-      this.updateOrbitPosition(owner, target);
+      if (this.guardianMode) {
+         this.updateGuardianPosition();
+      } else {
+         this.updateOrbitPosition(owner, target);
+      }
       this.setFacing(target != null ? target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(this.position()) : owner.getLookAngle());
       this.spawnElementalBody(level);
 
@@ -155,6 +194,42 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       this.fireShot(level, owner, target);
       this.entityData.set(SHOTS_LEFT, this.entityData.get(SHOTS_LEFT) - 1);
       this.shootDelay = 18;
+   }
+
+   @Override
+   public boolean isPickable() {
+      return true;
+   }
+
+   @Override
+   public boolean isAttackable() {
+      return true;
+   }
+
+   @Override
+   public boolean hurt(DamageSource source, float amount) {
+      if (this.level().isClientSide || amount <= 0.0F || this.isRemoved()) {
+         return false;
+      }
+      Entity attacker = source.getEntity();
+      if (attacker instanceof LivingEntity livingOwner && this.ownerUuid != null && this.ownerUuid.equals(livingOwner.getUUID())) {
+         return false;
+      }
+      float nextHealth = this.entityData.get(HEALTH) - amount;
+      this.entityData.set(HEALTH, nextHealth);
+      if (this.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 8, 0.12, 0.12, 0.12, 0.04);
+         level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.6F, 1.4F);
+         if (nextHealth <= 0.0F) {
+            this.dissolveAndDiscard(level);
+         }
+      }
+      return true;
+   }
+
+   private void updateGuardianPosition() {
+      double bob = Math.sin(this.tickCount * 0.1) * 0.08;
+      this.setPos(this.guardianX, this.guardianY + bob, this.guardianZ);
    }
 
    private void updateOrbitPosition(LivingEntity owner, LivingEntity target) {
@@ -186,7 +261,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       if (this.targetRescanTicks++ % TARGET_RESCAN_INTERVAL != 0) {
          return null;
       }
-      AABB search = this.getBoundingBox().inflate(26.0);
+      AABB search = this.getBoundingBox().inflate(this.guardianMode ? 18.0 : 26.0);
       LivingEntity best = null;
       double bestDistance = Double.MAX_VALUE;
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, candidate -> canTarget(owner, candidate))) {
@@ -207,7 +282,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
          && target.isAlive()
          && target != owner
          && target.getType() != ModEntities.PARACELSUS_SPIRIT_CANNON.get()
-         && EntityUtils.isValidCombatTarget(owner, target);
+         && isValidTargetForOwner(owner, target);
    }
 
    private boolean hasRoughLineOfSight(LivingEntity target) {
@@ -226,17 +301,55 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       Vec3 dir = end.subtract(start);
       this.setFacing(dir);
       target.invulnerableTime = 0;
-      float damage = 8.0F + (owner instanceof ParacelsusEntity paracelsus ? (float)(paracelsus.getCurrentMp() * 0.03) : 0.0F);
+      int element = this.currentElement();
+      float baseDamage = this.guardianMode ? 9.0F : 8.0F;
+      float damage = baseDamage + (owner instanceof ParacelsusEntity paracelsus ? (float)(paracelsus.getCurrentMp() * 0.03) : 0.0F);
+      if (owner instanceof ParacelsusEntity || isParacelsusCardOwner(owner)) {
+         damage *= 0.5F;
+      }
       target.hurt(owner.damageSources().magic(), damage);
       target.invulnerableTime = 0;
+      if (element == 0) {
+         target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 70));
+      } else if (element == 1) {
+         target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 45, 0, false, true, true));
+      } else if (element == 2) {
+         target.push(0.0, 0.24, 0.0);
+      } else if (element == 3) {
+         Vec3 push = target.position().subtract(this.position()).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize().scale(0.55);
+            target.push(push.x, 0.18, push.z);
+         }
+      }
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 12, 0.14, 0.14, 0.14, 0.02);
       level.sendParticles(ParticleTypes.ENCHANT, start.x, start.y, start.z, 14, 0.24, 0.24, 0.24, 0.03);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, start.x, start.y, start.z, 5, 0.08, 0.08, 0.08, 0.01);
       level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.45F, 1.25F);
    }
 
+   private static boolean isParacelsusCardOwner(LivingEntity owner) {
+      if (!(owner instanceof net.minecraft.server.level.ServerPlayer player)) {
+         return false;
+      }
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "paracelsus".equals(vars.servant_card_id);
+   }
+
    private void spawnElementalBody(ServerLevel level) {
       if (this.tickCount % 2 != 0) {
+         return;
+      }
+      int fixedElement = this.currentElement();
+      if (fixedElement >= 0) {
+         var particle = switch (fixedElement) {
+            case 0 -> FIRE;
+            case 1 -> WATER;
+            case 2 -> EARTH;
+            default -> WIND;
+         };
+         level.sendParticles(particle, this.getX(), this.getY() + 0.05, this.getZ(), 6, 0.16, 0.16, 0.16, 0.01);
+         level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 0.05, this.getZ(), 2, 0.05, 0.05, 0.05, 0.0);
          return;
       }
       double phase = this.tickCount * 0.22;
@@ -258,12 +371,35 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       this.discard();
    }
 
-   private ParacelsusEntity getOwnerLiving(ServerLevel level) {
+   private LivingEntity getOwnerLiving(ServerLevel level) {
       if (this.ownerUuid == null) {
          return null;
       }
       Entity owner = level.getEntity(this.ownerUuid);
-      return owner instanceof ParacelsusEntity paracelsus ? paracelsus : null;
+      if (owner instanceof LivingEntity living) {
+         return living;
+      }
+      return null;
+   }
+
+   private int currentElement() {
+      return this.entityData.get(ELEMENT_MODE);
+   }
+
+   private boolean isValidTargetForOwner(LivingEntity owner, LivingEntity target) {
+      if (target == null || target == owner || owner.isAlliedTo(target) || target.isAlliedTo(owner) || EntityUtils.isImmunePlayerTarget(target)) {
+         return false;
+      }
+      if (owner instanceof Player playerOwner) {
+         if (target instanceof Player targetPlayer) {
+            return !EntityUtils.isImmunePlayerTarget(targetPlayer);
+         }
+         if (target instanceof NeutralMob neutral) {
+            return neutral.isAngry();
+         }
+         return target instanceof Monster || (target instanceof Mob mob && mob.getTarget() == playerOwner);
+      }
+      return EntityUtils.isValidCombatTarget(owner, target);
    }
 
    private void setFacing(Vec3 direction) {
@@ -315,9 +451,15 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       this.entityData.set(TARGET_ID, tag.contains("TargetId") ? tag.getInt("TargetId") : -1);
       this.entityData.set(AIM_YAW, tag.getFloat("AimYaw"));
       this.entityData.set(AIM_PITCH, tag.getFloat("AimPitch"));
+      this.entityData.set(ELEMENT_MODE, tag.contains("ElementMode") ? tag.getInt("ElementMode") : -1);
+      this.entityData.set(HEALTH, tag.contains("Health") ? tag.getFloat("Health") : 50.0F);
       this.shootDelay = tag.getInt("ShootDelay");
       this.noTargetTicks = tag.getInt("NoTargetTicks");
       this.targetRescanTicks = tag.getInt("TargetRescanTicks");
+      this.guardianMode = tag.getBoolean("GuardianMode");
+      this.guardianX = tag.getDouble("GuardianX");
+      this.guardianY = tag.getDouble("GuardianY");
+      this.guardianZ = tag.getDouble("GuardianZ");
    }
 
    @Override
@@ -330,8 +472,14 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       tag.putInt("TargetId", this.entityData.get(TARGET_ID));
       tag.putFloat("AimYaw", this.entityData.get(AIM_YAW));
       tag.putFloat("AimPitch", this.entityData.get(AIM_PITCH));
+      tag.putInt("ElementMode", this.entityData.get(ELEMENT_MODE));
+      tag.putFloat("Health", this.entityData.get(HEALTH));
       tag.putInt("ShootDelay", this.shootDelay);
       tag.putInt("NoTargetTicks", this.noTargetTicks);
       tag.putInt("TargetRescanTicks", this.targetRescanTicks);
+      tag.putBoolean("GuardianMode", this.guardianMode);
+      tag.putDouble("GuardianX", this.guardianX);
+      tag.putDouble("GuardianY", this.guardianY);
+      tag.putDouble("GuardianZ", this.guardianZ);
    }
 }

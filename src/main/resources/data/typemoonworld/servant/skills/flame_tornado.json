@@ -1,0 +1,10 @@
+{
+  "id": "flame_tornado",
+  "display_name": "Flame Tornado",
+  "display_name_zh": "\u65e5\u8f6e\u706b\u7130\u9f99\u5377",
+  "type": "active",
+  "mp_cost": 24,
+  "cooldown_ticks": 260,
+  "duration_ticks": 28,
+  "effects": []
+}

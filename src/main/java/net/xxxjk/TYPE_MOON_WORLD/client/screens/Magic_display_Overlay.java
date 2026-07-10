@@ -17,14 +17,20 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 @EventBusSubscriber({Dist.CLIENT})
 @SuppressWarnings("null")
 public class Magic_display_Overlay {
+    private static final ResourceLocation MANA_ICON = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/screens/mana.png");
+
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void eventHandler(RenderGuiEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.hideGui) return;
         if (ReplayUiSuppressor.shouldHideTypeMoonHud()) return;
 
         int h = event.getGuiGraphics().guiHeight();
         Player entity = minecraft.player;
         if (entity == null) return;
+        TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        if (vars.servant_card_transformed) return;
+        if (!vars.is_magus) return;
 
         try {
             RenderSystem.disableDepthTest();
@@ -37,9 +43,6 @@ public class Magic_display_Overlay {
                     GlStateManager.DestFactor.ZERO
             );
             RenderSystem.setShaderColor(1, 1, 1, 1);
-
-            TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (!vars.is_magus) return;
 
             double currentMana = vars.player_mana;
             double maxMana = vars.player_max_mana;
@@ -80,7 +83,7 @@ public class Magic_display_Overlay {
 
             int iconX = barX - 4;
             int iconY = barY - 3;
-            event.getGuiGraphics().blit(ResourceLocation.parse("typemoonworld:textures/screens/mana.png"), iconX, iconY, 0, 0, 16, 16, 16, 16);
+            event.getGuiGraphics().blit(MANA_ICON, iconX, iconY, 0, 0, 16, 16, 16, 16);
 
             if (vars.is_magic_circuit_open) {
                 net.minecraft.network.chat.MutableComponent magicName = Component.translatable("gui.typemoonworld.mode.none");
@@ -129,6 +132,60 @@ public class Magic_display_Overlay {
                                 Component.translatable(translationKey),
                                 Component.translatable(targetKey),
                                 Component.translatable(modeKey)
+                        );
+                    } else if ("healing_magic".equals(magicId)) {
+                        magicColor = 0xFFCCFFCC;
+                        String targetKey = vars.healing_magic_target == 0
+                                ? "gui.typemoonworld.overlay.healing.target.self.short"
+                                : "gui.typemoonworld.overlay.healing.target.other.short";
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.healing.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(targetKey)
+                        );
+                    } else if ("magic_bullet".equals(magicId)) {
+                        magicColor = 0xFFCCAAFF;
+                    } else if ("suggestion_magic".equals(magicId)) {
+                        magicColor = 0xFFFFAAFF;
+                    } else if ("binding_magic".equals(magicId)) {
+                        magicColor = 0xFFFFDD66;
+                    } else if ("time_alter".equals(magicId)) {
+                        magicColor = 0xFF66CCFF;
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.time_alter.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(vars.time_alter_mode == 0
+                                        ? "gui.typemoonworld.overlay.time_alter.mode.accel.short"
+                                        : "gui.typemoonworld.overlay.time_alter.mode.stagnate.short")
+                        );
+                    } else if ("spiritual_healing".equals(magicId)) {
+                        magicColor = 0xFFF8F3E7;
+                    } else if ("baptism_rite".equals(magicId)) {
+                        magicColor = 0xFFFFD24A;
+                    } else if ("fire_magic".equals(magicId)
+                            || "water_magic".equals(magicId)
+                            || "wind_magic".equals(magicId)
+                            || "earth_magic".equals(magicId)) {
+                        int mode = switch (magicId) {
+                            case "fire_magic" -> vars.fire_magic_mode;
+                            case "water_magic" -> vars.water_magic_mode;
+                            case "wind_magic" -> vars.wind_magic_mode;
+                            case "earth_magic" -> vars.earth_magic_mode;
+                            default -> 0;
+                        };
+                        magicColor = switch (magicId) {
+                            case "fire_magic" -> 0xFFFF6633;
+                            case "water_magic" -> 0xFF66CCFF;
+                            case "wind_magic" -> 0xFF99FFCC;
+                            case "earth_magic" -> 0xFFCCAA66;
+                            default -> 0xFFFFFFFF;
+                        };
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.element.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(mode == 1
+                                        ? "gui.typemoonworld.overlay.element.mode.utility.short"
+                                        : "gui.typemoonworld.overlay.element.mode.attack.short")
                         );
                     } else if ("jewel_random_shoot".equals(magicId)) {
                         magicColor = 0xFFEAEAEA;

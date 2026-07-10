@@ -115,7 +115,7 @@ public class GanderProjectileRenderer extends EntityRenderer<GanderProjectileEnt
                Vec3 viewOffset = camPos.subtract(currentPos);
                poseStack.pushPose();
                Pose pose = poseStack.last();
-               int samplesPerSegment = 5;
+               int samplesPerSegment = 2;
                float textureRepeat = Math.max(1.0F, points.size() / 18.0F);
 
                for (int i = 0; i < points.size() - 1; i++) {

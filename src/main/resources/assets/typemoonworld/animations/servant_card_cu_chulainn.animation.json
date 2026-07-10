@@ -1,0 +1,56 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation": {
+			"loop": true,
+			"bones": {
+				"armorRightArm": {
+					"scale": {
+						"vector": [1.16, 1.04, 1.14]
+					}
+				},
+				"armorLeftArm": {
+					"scale": {
+						"vector": [1.16, 1.04, 1.14]
+					}
+				},
+				"armorLeftLeg": {
+					"scale": {
+						"vector": [1.2, 1.04, 1.12]
+					}
+				},
+				"armorRightLeg": {
+					"scale": {
+						"vector": [1.2, 1.04, 1.12]
+					}
+				},
+				"bone": {
+					"scale": {
+						"vector": [1.1, 1, 1]
+					}
+				},
+				"bone2": {
+					"scale": {
+						"vector": [1, 1, 0.7]
+					}
+				},
+				"bone3": {
+					"position": {
+						"vector": [0, 1, 0]
+					},
+					"scale": {
+						"vector": [1, 0.8, 1]
+					}
+				},
+				"bone4": {
+					"position": {
+						"vector": [0, 1, 0]
+					},
+					"scale": {
+						"vector": [1, 0.8, 1]
+					}
+				}
+			}
+		}
+	}
+}

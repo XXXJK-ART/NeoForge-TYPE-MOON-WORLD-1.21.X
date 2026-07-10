@@ -67,7 +67,7 @@ public class MagicProjection {
                return;
             }
 
-            double cost = calculateCost(target, swordAttributeActive, vars.proficiency_projection);
+            double cost = applyProjectionMagicDiscount(player, calculateCost(target, swordAttributeActive, vars.proficiency_projection));
             if (ManaHelper.consumeOneTimeMagicCost(player, cost)) {
                if (!crestProjectionCast) {
                   vars.proficiency_projection = Math.min(100.0, vars.proficiency_projection + 0.2);
@@ -163,6 +163,17 @@ public class MagicProjection {
       }
 
       return baseCost * (1.0 - proficiency * 0.005);
+   }
+
+   private static double applyProjectionMagicDiscount(ServerPlayer player, double cost) {
+      if (player == null || cost <= 0.0 || !player.getPersistentData().getBoolean("ProjectionMagicActive")) {
+         return cost;
+      }
+      float discount = player.getPersistentData().getFloat("ProjectionMagicSwordDiscount");
+      if (discount <= 0.0F) {
+         return cost;
+      }
+      return cost * Math.max(0.0F, Math.min(1.0F, discount));
    }
 
    private static boolean isNoblePhantasm(ItemStack stack) {

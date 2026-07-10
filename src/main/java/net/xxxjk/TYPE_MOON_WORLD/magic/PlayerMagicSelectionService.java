@@ -151,13 +151,25 @@ public final class PlayerMagicSelectionService {
          }
       } else if ("gandr_machine_gun".equals(magicId) && normalized.contains("gandr_machine_gun_mode")) {
          normalized.putInt("gandr_machine_gun_mode", clamp(normalized.getInt("gandr_machine_gun_mode"), 0, 1));
+      } else if ("healing_magic".equals(magicId) && normalized.contains("healing_target")) {
+         normalized.putInt("healing_target", clamp(normalized.getInt("healing_target"), 0, 1));
+      } else if ("time_alter".equals(magicId) && normalized.contains("time_alter_mode")) {
+         normalized.putInt("time_alter_mode", clamp(normalized.getInt("time_alter_mode"), 0, 1));
+      } else if (isElementalMagic(magicId) && normalized.contains("element_mode")) {
+         normalized.putInt("element_mode", clamp(normalized.getInt("element_mode"), 0, 1));
       }
 
       return normalized;
    }
 
    private static boolean supportsRuntimePreset(String magicId) {
-      return "reinforcement".equals(magicId) || "gravity_magic".equals(magicId) || "gandr_machine_gun".equals(magicId) || "projection".equals(magicId);
+      return "reinforcement".equals(magicId)
+         || "gravity_magic".equals(magicId)
+         || "gandr_machine_gun".equals(magicId)
+         || "projection".equals(magicId)
+         || "healing_magic".equals(magicId)
+         || "time_alter".equals(magicId)
+         || isElementalMagic(magicId);
    }
 
    private static CompoundTag buildPresetFromCurrentVars(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
@@ -171,6 +183,12 @@ public final class PlayerMagicSelectionService {
          payload.putInt("gravity_mode", clamp(vars.gravity_magic_mode, -2, 2));
       } else if ("gandr_machine_gun".equals(magicId)) {
          payload.putInt("gandr_machine_gun_mode", clamp(vars.gandr_machine_gun_mode, 0, 1));
+      } else if ("healing_magic".equals(magicId)) {
+         payload.putInt("healing_target", clamp(vars.healing_magic_target, 0, 1));
+      } else if ("time_alter".equals(magicId)) {
+         payload.putInt("time_alter_mode", clamp(vars.time_alter_mode, 0, 1));
+      } else if (isElementalMagic(magicId)) {
+         payload.putInt("element_mode", clamp(getElementMode(vars, magicId), 0, 1));
       } else if ("projection".equals(magicId)) {
          if (vars.projection_selected_structure_id != null && !vars.projection_selected_structure_id.isEmpty()) {
             payload.putString("projection_structure_id", vars.projection_selected_structure_id);
@@ -209,6 +227,18 @@ public final class PlayerMagicSelectionService {
          if (payload.contains("gandr_machine_gun_mode")) {
             vars.gandr_machine_gun_mode = clamp(payload.getInt("gandr_machine_gun_mode"), 0, 1);
          }
+      } else if ("healing_magic".equals(magicId)) {
+         if (payload.contains("healing_target")) {
+            vars.healing_magic_target = clamp(payload.getInt("healing_target"), 0, 1);
+         }
+      } else if ("time_alter".equals(magicId)) {
+         if (payload.contains("time_alter_mode")) {
+            vars.time_alter_mode = clamp(payload.getInt("time_alter_mode"), 0, 1);
+         }
+      } else if (isElementalMagic(magicId)) {
+         if (payload.contains("element_mode")) {
+            setElementMode(vars, magicId, clamp(payload.getInt("element_mode"), 0, 1));
+         }
       } else if ("projection".equals(magicId) && entity != null) {
          CompoundTag projectionPayload = TypeMoonWorldModVariables.PlayerVariables.normalizeProjectionPresetPayload(payload);
          if (projectionPayload.getBoolean("projection_lock_empty")) {
@@ -232,5 +262,38 @@ public final class PlayerMagicSelectionService {
 
    private static int clamp(int value, int min, int max) {
       return Math.max(min, Math.min(max, value));
+   }
+
+   public static boolean isElementalMagic(String magicId) {
+      return "fire_magic".equals(magicId)
+         || "water_magic".equals(magicId)
+         || "wind_magic".equals(magicId)
+         || "earth_magic".equals(magicId);
+   }
+
+   public static int getElementMode(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      if (vars == null) {
+         return 0;
+      }
+      return switch (magicId) {
+         case "fire_magic" -> vars.fire_magic_mode;
+         case "water_magic" -> vars.water_magic_mode;
+         case "wind_magic" -> vars.wind_magic_mode;
+         case "earth_magic" -> vars.earth_magic_mode;
+         default -> 0;
+      };
+   }
+
+   public static void setElementMode(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, int mode) {
+      if (vars == null) {
+         return;
+      }
+      int clamped = clamp(mode, 0, 1);
+      switch (magicId) {
+         case "fire_magic" -> vars.fire_magic_mode = clamped;
+         case "water_magic" -> vars.water_magic_mode = clamped;
+         case "wind_magic" -> vars.wind_magic_mode = clamped;
+         case "earth_magic" -> vars.earth_magic_mode = clamped;
+      }
    }
 }

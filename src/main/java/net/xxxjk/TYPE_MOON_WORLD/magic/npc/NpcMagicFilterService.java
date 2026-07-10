@@ -32,6 +32,15 @@ public final class NpcMagicFilterService {
       "reinforcement",
       "jewel_random_shoot",
       "jewel_machine_gun",
+      "healing_magic",
+      "spiritual_healing",
+      "magic_bullet",
+      "suggestion_magic",
+      "binding_magic",
+      "fire_magic",
+      "water_magic",
+      "wind_magic",
+      "earth_magic",
       "ruby_flame_sword",
       "sapphire_winter_frost",
       "emerald_winter_river",
@@ -90,6 +99,17 @@ public final class NpcMagicFilterService {
             case "jewel_machine_gun":
                payload.putInt("jewel_machine_gun_mode", random.nextBoolean() ? 1 : 0);
                return payload;
+            case "healing_magic":
+               payload.putInt("healing_target", 0);
+               return payload;
+            case "spiritual_healing":
+               return payload;
+            case "fire_magic":
+            case "water_magic":
+            case "wind_magic":
+            case "earth_magic":
+               payload.putInt("element_mode", random.nextInt(4) == 0 ? 1 : 0);
+               return payload;
             default:
                return payload;
          }
@@ -131,6 +151,19 @@ public final class NpcMagicFilterService {
                CompoundTag outj = new CompoundTag();
                outj.putInt("jewel_machine_gun_mode", Mth.clamp(source.contains("jewel_machine_gun_mode") ? source.getInt("jewel_machine_gun_mode") : 0, 0, 1));
                return outj;
+            case "healing_magic":
+               CompoundTag outh = new CompoundTag();
+               outh.putInt("healing_target", 0);
+               return outh;
+            case "spiritual_healing":
+               return source;
+            case "fire_magic":
+            case "water_magic":
+            case "wind_magic":
+            case "earth_magic":
+               CompoundTag oute = new CompoundTag();
+               oute.putInt("element_mode", Mth.clamp(source.contains("element_mode") ? source.getInt("element_mode") : 0, 0, 1));
+               return oute;
             default:
                return source;
          }
@@ -151,6 +184,17 @@ public final class NpcMagicFilterService {
             case "jewel_machine_gun":
                int jewelMode = source.contains("jewel_machine_gun_mode") ? source.getInt("jewel_machine_gun_mode") : 0;
                return jewelMode >= 0 && jewelMode <= 1;
+            case "healing_magic":
+               int healingTarget = source.contains("healing_target") ? source.getInt("healing_target") : 0;
+               return healingTarget == 0;
+            case "spiritual_healing":
+               return true;
+            case "fire_magic":
+            case "water_magic":
+            case "wind_magic":
+            case "earth_magic":
+               int elementMode = source.contains("element_mode") ? source.getInt("element_mode") : 0;
+               return elementMode >= 0 && elementMode <= 1;
             default:
                return true;
          }

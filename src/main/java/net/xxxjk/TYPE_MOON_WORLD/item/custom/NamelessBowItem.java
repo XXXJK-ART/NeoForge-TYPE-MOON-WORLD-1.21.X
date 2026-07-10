@@ -23,6 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessBowRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -51,7 +52,6 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       if (hand != InteractionHand.MAIN_HAND) {
          return InteractionResultHolder.pass(stack);
       }
-
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
    }
@@ -89,6 +89,12 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
          projectile.setPos(spawn.x, spawn.y - 0.12, spawn.z);
          projectile.setTrackedTarget(findLookTarget(serverLevel, player, MAX_TARGET_RANGE));
          projectile.setDeltaMovement(player.getLookAngle().normalize().scale(2.2 + charge * 0.8));
+         serverLevel.addFreshEntity(projectile);
+      } else if (payload.is(ModItems.PSEUDO_SPIRAL_SWORD.get())) {
+         PseudoSpiralSwordProjectileEntity projectile = new PseudoSpiralSwordProjectileEntity(serverLevel, player);
+         projectile.setPos(spawn.x, spawn.y - 0.12, spawn.z);
+         projectile.setTrackedTarget(findLookTarget(serverLevel, player, MAX_TARGET_RANGE));
+         projectile.setDeltaMovement(player.getLookAngle().normalize().scale(2.6 + charge * 1.0));
          serverLevel.addFreshEntity(projectile);
       } else {
          EmiyaArrowOrbProjectileEntity projectile = new EmiyaArrowOrbProjectileEntity(serverLevel, player, payload);

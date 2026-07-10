@@ -1,5 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.client.model.ExcaliburModel;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -7,5 +14,42 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 public class ExcaliburRenderer extends GeoItemRenderer<ExcaliburItem> {
    public ExcaliburRenderer() {
       super(new ExcaliburModel());
+   }
+
+   @Override
+   public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+      if (shouldHideWindVeiledExcalibur(stack, displayContext)) {
+         return;
+      }
+      super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+   }
+
+   private static boolean shouldHideWindVeiledExcalibur(ItemStack stack, ItemDisplayContext displayContext) {
+      if (!isHandDisplay(displayContext)) {
+         return false;
+      }
+      CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+      if (customData == null) {
+         return false;
+      }
+      var tag = customData.copyTag();
+      if (!tag.getBoolean("ServantCardArtoriaWindVeiled")) {
+         return false;
+      }
+      if (Minecraft.getInstance().player == null) {
+         return false;
+      }
+      long revealUntil = tag.getLong("ServantCardArtoriaWindRevealUntil");
+      if (revealUntil > Minecraft.getInstance().player.level().getGameTime()) {
+         return false;
+      }
+      return true;
+   }
+
+   private static boolean isHandDisplay(ItemDisplayContext displayContext) {
+      return displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+         || displayContext == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+         || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+         || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
    }
 }

@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemTerrainState;
 public class GemTerrainEventHandler {
    private static final String KEY_ECHO_CHUNKS = "TypeMoonGemEchoChunks";
    private static final String KEY_ECHO_COOLDOWN = "TypeMoonGemEchoCooldown";
+   private static final String KEY_ECHO_NEXT_SCAN = "TypeMoonGemEchoNextScan";
    private static final int MAX_ECHO_RECORDS = 128;
    private static final int ECHO_SCAN_RADIUS = 6;
    private static final Map<GemTerrainEventHandler.ResourceKeyKey, GemTerrainState> STATES = new ConcurrentHashMap<>();
@@ -125,6 +126,11 @@ public class GemTerrainEventHandler {
    private static void triggerGeodeEcho(ServerPlayer player, ServerLevel level) {
       long now = level.getGameTime();
       long cooldownUntil = player.getPersistentData().getLong("TypeMoonGemEchoCooldown");
+      long nextScan = player.getPersistentData().getLong("TypeMoonGemEchoNextScan");
+      if (nextScan > now) {
+         return;
+      }
+      player.getPersistentData().putLong("TypeMoonGemEchoNextScan", now + 80L);
       if (cooldownUntil <= now) {
          BlockPos center = player.blockPosition();
          BlockPos found = findNearbyGeodeBlock(level, center, 6);

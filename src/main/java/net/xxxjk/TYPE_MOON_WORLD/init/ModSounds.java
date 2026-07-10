@@ -72,6 +72,17 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_NP = register("paracelsus_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_VICTORY = register("paracelsus_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_FAIL = register("paracelsus_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR_SHORT = register("artoria_voice_excalibur_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_GALLATIN_SHORT = register("gawain_voice_gallatin_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> MEDEA_VOICE_RULE_BREAKER_SHORT = register("medea_voice_rule_breaker_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_ZABANIYA_SHORT = register("cursed_arm_hassan_voice_zabaniya_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LI_SHUWEN_VOICE_WU_ER_DA_SHORT = register("li_shuwen_voice_wu_er_da_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_NP_SHORT = register("paracelsus_voice_np_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> GILGAMESH_VOICE_EA_SHORT = register("gilgamesh_voice_ea_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ISKANDAR_VOICE_IONIOI_SHORT = register("iskandar_voice_ionioi_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_VOICE_NP_SHORT = register("okita_voice_np_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_UBW_SHORT = register("emiya_archer_voice_ubw_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_HAJUN_SHORT = register("oda_nobunaga_voice_hajun_short");
 
    private ModSounds() {
    }

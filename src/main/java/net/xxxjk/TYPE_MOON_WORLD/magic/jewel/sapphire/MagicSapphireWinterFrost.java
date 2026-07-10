@@ -25,6 +25,7 @@ import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 
@@ -85,7 +86,7 @@ public class MagicSapphireWinterFrost {
       Level level = player.level();
       if (!level.isClientSide) {
          BlockPos center = player.blockPosition();
-         int radius = Math.max(5, Math.round(10.0F * multiplier));
+         int radius = Math.max(5, Math.round((float)MercurySwordMagicAmplifier.amplifyRadius(player, 10.0F * multiplier)));
          Map<Integer, List<MagicSapphireWinterFrost.RestoreData>> restoreBuckets = new HashMap<>();
          RandomSource random = level.getRandom();
          if (level instanceof ServerLevel serverLevel) {
@@ -106,7 +107,7 @@ public class MagicSapphireWinterFrost {
                         BlockState iceState = randomIceState(random);
                         level.setBlock(pos, iceState, 2);
                         int baseDelay = 160 + random.nextInt(41);
-                        int delay = Math.round(baseDelay * multiplier);
+                        int delay = MercurySwordMagicAmplifier.amplifyDuration(player, Math.round(baseDelay * multiplier));
                         restoreBuckets.computeIfAbsent(delay, k -> new ArrayList<>()).add(new MagicSapphireWinterFrost.RestoreData(pos, state, iceState));
                      }
                   }
@@ -118,7 +119,7 @@ public class MagicSapphireWinterFrost {
 
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
             if (target != player && !EntityUtils.isImmunePlayerTarget(target)) {
-               int duration = Math.round(200.0F * multiplier);
+               int duration = MercurySwordMagicAmplifier.amplifyDuration(player, Math.round(200.0F * multiplier));
                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 4));
                EntityUtils.triggerSwarmAnger(level, player, target);
                if (target instanceof Mob mob) {
@@ -145,7 +146,7 @@ public class MagicSapphireWinterFrost {
                               BlockState iceState = randomIceState(random);
                               level.setBlock(pos, iceState, 2);
                               int baseDelay = 160 + random.nextInt(41);
-                              int delay = Math.round(baseDelay * multiplier);
+                              int delay = MercurySwordMagicAmplifier.amplifyDuration(player, Math.round(baseDelay * multiplier));
                               restoreBuckets.computeIfAbsent(delay, k -> new ArrayList<>())
                                  .add(new MagicSapphireWinterFrost.RestoreData(pos, Blocks.AIR.defaultBlockState(), iceState));
                            }

@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
 
 public class MagicEmeraldWinterRiver {
@@ -70,7 +71,7 @@ public class MagicEmeraldWinterRiver {
    private static void activateWinterRiver(Player player, float multiplier) {
       Level level = player.level();
       if (!level.isClientSide) {
-         int radius = Math.max(1, Math.round(2.0F * multiplier));
+         int radius = Math.max(1, Math.round((float)MercurySwordMagicAmplifier.amplifyRadius(player, 2.0F * multiplier)));
          int height = 2 * radius;
          BlockPos center = player.blockPosition();
          boolean airborneCast = !player.onGround() && !player.isInWater() && !player.isInLava() && !player.isFallFlying();

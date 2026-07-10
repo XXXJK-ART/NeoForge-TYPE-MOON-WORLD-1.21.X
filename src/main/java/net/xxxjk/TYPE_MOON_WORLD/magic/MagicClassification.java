@@ -25,6 +25,17 @@ public final class MagicClassification {
       Map.entry("structural_analysis", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("broken_phantasm", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("gravity_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("healing_magic", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("magic_bullet", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("suggestion_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("binding_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("fire_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("water_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("wind_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("earth_magic", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("time_alter", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("spiritual_healing", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("baptism_rite", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("gander", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("reinforcement", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("reinforcement_self", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
@@ -35,7 +46,9 @@ public final class MagicClassification {
    );
    private static final Set<String> ALL_MAGIC_IDS = Collections.unmodifiableSet(MAGIC_COST_TYPES.keySet());
    private static final Map<String, MagicClassification.MagicSchoolType> MAGIC_SCHOOL_TYPES = Map.ofEntries(
-      Map.entry("gander", MagicClassification.MagicSchoolType.NORDIC), Map.entry("gandr_machine_gun", MagicClassification.MagicSchoolType.NORDIC)
+      Map.entry("gander", MagicClassification.MagicSchoolType.NORDIC),
+      Map.entry("gandr_machine_gun", MagicClassification.MagicSchoolType.NORDIC),
+      Map.entry("baptism_rite", MagicClassification.MagicSchoolType.CHURCH)
    );
 
    private MagicClassification() {
@@ -59,7 +72,8 @@ public final class MagicClassification {
 
    public static enum MagicSchoolType {
       NONE,
-      NORDIC;
+      NORDIC,
+      CHURCH;
    }
 
    public static enum ManaCostType {
