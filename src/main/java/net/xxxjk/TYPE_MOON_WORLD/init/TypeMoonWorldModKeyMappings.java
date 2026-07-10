@@ -366,7 +366,6 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
-         syncProjectionSelectionFromCurrentCrestPreset(player, vars);
          boolean selectionActive = StructuralAnalysisSelectionClient.isActive();
          boolean structuralSelected = isStructuralAnalysisSelected(vars);
          boolean projectionStructureSelected = isStructureProjectionSelected(vars);

@@ -99,7 +99,7 @@ public final class ServantCardMedeaSkills {
       tickMedeaDragonfangs(player, vars);
    }
 
-   private static void clear(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   public static void clear(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
       if (!data.getBoolean(WORKSHOP_ACTIVE_TAG)
          && !data.getBoolean(MINOR_MAGIC_ACTIVE_TAG)
@@ -626,6 +626,7 @@ public final class ServantCardMedeaSkills {
       if (now - data.getLong(MINOR_MAGIC_LAST_TICK_TAG) < 12L) {
          return;
       }
+      data.putLong(MINOR_MAGIC_LAST_TICK_TAG, now);
       LivingEntity target = findLookTarget(player, 24.0, 2.2);
       if (target == null) {
          return;
@@ -636,7 +637,6 @@ public final class ServantCardMedeaSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.medea_minor_off"), true);
          return;
       }
-      data.putLong(MINOR_MAGIC_LAST_TICK_TAG, now);
       int modeIndex = Math.floorMod(data.getInt(MINOR_MAGIC_MODE_TAG), 4);
       data.putInt(MINOR_MAGIC_MODE_TAG, modeIndex + 1);
       Vec3 spawn = player.getEyePosition().add(player.getLookAngle().normalize().scale(0.55));

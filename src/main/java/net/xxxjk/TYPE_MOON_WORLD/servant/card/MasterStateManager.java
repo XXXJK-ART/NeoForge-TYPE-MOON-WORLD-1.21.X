@@ -301,8 +301,12 @@ public final class MasterStateManager {
       if (attribute == null) {
          return;
       }
-      attribute.removeModifier(MASTER_HEALTH_ID);
-      attribute.addPermanentModifier(new AttributeModifier(MASTER_HEALTH_ID, MASTER_MAX_HEALTH - player.getAttributeBaseValue(Attributes.MAX_HEALTH), AttributeModifier.Operation.ADD_VALUE));
+      double amount = MASTER_MAX_HEALTH - player.getAttributeBaseValue(Attributes.MAX_HEALTH);
+      AttributeModifier existing = attribute.getModifier(MASTER_HEALTH_ID);
+      if (existing == null || existing.amount() != amount || existing.operation() != AttributeModifier.Operation.ADD_VALUE) {
+         attribute.removeModifier(MASTER_HEALTH_ID);
+         attribute.addPermanentModifier(new AttributeModifier(MASTER_HEALTH_ID, amount, AttributeModifier.Operation.ADD_VALUE));
+      }
       if (player.getHealth() > player.getMaxHealth()) {
          player.setHealth(player.getMaxHealth());
       }

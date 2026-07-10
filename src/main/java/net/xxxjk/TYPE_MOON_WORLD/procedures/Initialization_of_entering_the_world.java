@@ -27,7 +27,6 @@ public class Initialization_of_entering_the_world {
             );
             _vars.player_max_mana = 0.0;
             _vars.player_mana = 0.0;
-            _vars.syncPlayerVariables(entity);
          }
       }
    }

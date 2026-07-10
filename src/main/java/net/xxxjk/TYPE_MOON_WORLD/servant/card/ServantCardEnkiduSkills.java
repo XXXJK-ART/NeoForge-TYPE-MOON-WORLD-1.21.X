@@ -2,7 +2,12 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -99,6 +104,7 @@ public final class ServantCardEnkiduSkills {
    private static final ResourceLocation TRANSFIG_TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_toughness");
    private static final ResourceLocation TRANSFIG_JUMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_jump");
    private static final ResourceLocation TRANSFIG_LUCK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_luck");
+   private static final Map<UUID, Set<UUID>> BOUND_TARGETS_BY_OWNER = new HashMap<>();
    private static final int ENUMA_WINDUP = 10 * 20;
    private static final int ENUMA_RELEASE_VISUAL = 5 * 20;
    private static final double ENUMA_GROUND_EXPLOSION_RADIUS = 60.0;
@@ -122,6 +128,12 @@ public final class ServantCardEnkiduSkills {
       tickPerfectFormPassive(player, vars, level);
       tickPassivePresence(player, level);
       interceptHostileProjectiles(player, level, 10.0);
+   }
+
+   public static void clear(ServerPlayer player) {
+      clearTrackedBoundTargets(player);
+      clearActiveEnumaState(player);
+      clearTransfigurationAttributes(player);
    }
 
    public static void performEnkiduTransfiguration(ServerPlayer player) {
@@ -896,7 +908,7 @@ public final class ServantCardEnkiduSkills {
    }
 
    private static void tickPassivePresence(ServerPlayer player, ServerLevel level) {
-      if (player.tickCount % 20 != 0) {
+      if ((player.tickCount + Math.floorMod(player.getUUID().hashCode(), 20)) % 20 != 0) {
          return;
       }
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(50.0), e -> e != player && e.isAlive() && !EntityUtils.isImmunePlayerTarget(e))) {
@@ -911,12 +923,12 @@ public final class ServantCardEnkiduSkills {
       if (player.tickCount - data.getInt(TAG_LAST_PROJECTILE_INTERCEPT) < 4) {
          return;
       }
+      data.putInt(TAG_LAST_PROJECTILE_INTERCEPT, player.tickCount);
       List<Projectile> projectiles = level.getEntitiesOfClass(Projectile.class, player.getBoundingBox().inflate(radius), p -> p.isAlive() && p.getOwner() != player);
       List<OdaMatchlockBulletEntity> bullets = level.getEntitiesOfClass(OdaMatchlockBulletEntity.class, player.getBoundingBox().inflate(radius), b -> b.isAlive() && b.getOwner() != player);
       if (projectiles.isEmpty() && bullets.isEmpty()) {
          return;
       }
-      data.putInt(TAG_LAST_PROJECTILE_INTERCEPT, player.tickCount);
       int spawned = 0;
       for (Projectile projectile : projectiles) {
          if (spawned++ >= 8) {
@@ -944,6 +956,7 @@ public final class ServantCardEnkiduSkills {
 
    private static void bindTarget(ServerPlayer player, ServerLevel level, LivingEntity target, int duration, boolean divine) {
       CompoundTag data = target.getPersistentData();
+      unregisterBoundTarget(data.hasUUID(BOUND_OWNER) ? data.getUUID(BOUND_OWNER) : null, target.getUUID());
       long until = level.getGameTime() + duration;
       data.putLong(BOUND_UNTIL, until);
       data.putUUID(BOUND_OWNER, player.getUUID());
@@ -956,18 +969,32 @@ public final class ServantCardEnkiduSkills {
          mob.setNoAi(true);
       }
       target.setDeltaMovement(Vec3.ZERO);
+      registerBoundTarget(player.getUUID(), target.getUUID());
       TYPE_MOON_WORLD.queueServerWork(duration + 2, () -> restoreBoundTarget(target, player.getUUID()));
    }
 
    private static void tickBoundTargets(ServerPlayer player, ServerLevel level) {
       long now = level.getGameTime();
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(96.0), LivingEntity::isAlive)) {
+      Set<UUID> targetIds = BOUND_TARGETS_BY_OWNER.get(player.getUUID());
+      if (targetIds == null || targetIds.isEmpty()) {
+         return;
+      }
+      Iterator<UUID> iterator = targetIds.iterator();
+      while (iterator.hasNext()) {
+         UUID targetId = iterator.next();
+         Entity entity = level.getEntity(targetId);
+         if (!(entity instanceof LivingEntity target) || !target.isAlive()) {
+            iterator.remove();
+            continue;
+         }
          CompoundTag data = target.getPersistentData();
          if (!data.hasUUID(BOUND_OWNER) || !player.getUUID().equals(data.getUUID(BOUND_OWNER))) {
+            iterator.remove();
             continue;
          }
          if (data.getLong(BOUND_UNTIL) <= now) {
-            restoreBoundTarget(target, player.getUUID());
+            restoreBoundTarget(target, player.getUUID(), false);
+            iterator.remove();
             continue;
          }
          target.setDeltaMovement(Vec3.ZERO);
@@ -979,14 +1006,25 @@ public final class ServantCardEnkiduSkills {
             mob.setNoAi(true);
          }
       }
+      if (targetIds.isEmpty()) {
+         BOUND_TARGETS_BY_OWNER.remove(player.getUUID());
+      }
    }
 
    private static void restoreBoundTarget(LivingEntity target, UUID owner) {
+      restoreBoundTarget(target, owner, true);
+   }
+
+   private static void restoreBoundTarget(LivingEntity target, UUID owner, boolean unregister) {
       if (target == null) {
          return;
       }
+      UUID targetId = target.getUUID();
       CompoundTag data = target.getPersistentData();
       if (!data.hasUUID(BOUND_OWNER) || !owner.equals(data.getUUID(BOUND_OWNER))) {
+         if (unregister) {
+            unregisterBoundTarget(owner, targetId);
+         }
          return;
       }
       if (target instanceof Mob mob) {
@@ -998,18 +1036,83 @@ public final class ServantCardEnkiduSkills {
       data.remove(BOUND_X);
       data.remove(BOUND_Y);
       data.remove(BOUND_Z);
+      if (unregister) {
+         unregisterBoundTarget(owner, targetId);
+      }
    }
 
    private static void performBoundPursuit(ServerPlayer player) {
       if (!player.isAlive() || !(player.level() instanceof ServerLevel level)) {
          return;
       }
-      List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(32.0), target -> {
-         CompoundTag data = target.getPersistentData();
-         return target.isAlive() && data.hasUUID(BOUND_OWNER) && player.getUUID().equals(data.getUUID(BOUND_OWNER)) && data.getLong(BOUND_UNTIL) > level.getGameTime();
-      });
-      for (LivingEntity target : targets) {
+      for (LivingEntity target : getTrackedBoundTargets(player, level)) {
          spawnAgeOfBabylonAroundTarget(player, level, target, 24, 0, 20.0F, 2.9F);
+      }
+   }
+
+   private static void registerBoundTarget(UUID owner, UUID target) {
+      if (owner == null || target == null) {
+         return;
+      }
+      BOUND_TARGETS_BY_OWNER.computeIfAbsent(owner, ignored -> new LinkedHashSet<>()).add(target);
+   }
+
+   private static void unregisterBoundTarget(UUID owner, UUID target) {
+      if (owner == null || target == null) {
+         return;
+      }
+      Set<UUID> targets = BOUND_TARGETS_BY_OWNER.get(owner);
+      if (targets == null) {
+         return;
+      }
+      targets.remove(target);
+      if (targets.isEmpty()) {
+         BOUND_TARGETS_BY_OWNER.remove(owner);
+      }
+   }
+
+   private static List<LivingEntity> getTrackedBoundTargets(ServerPlayer player, ServerLevel level) {
+      Set<UUID> targetIds = BOUND_TARGETS_BY_OWNER.get(player.getUUID());
+      if (targetIds == null || targetIds.isEmpty()) {
+         return List.of();
+      }
+      long now = level.getGameTime();
+      List<LivingEntity> targets = new ArrayList<>();
+      Iterator<UUID> iterator = targetIds.iterator();
+      while (iterator.hasNext()) {
+         UUID targetId = iterator.next();
+         Entity entity = level.getEntity(targetId);
+         if (!(entity instanceof LivingEntity target) || !target.isAlive()) {
+            iterator.remove();
+            continue;
+         }
+         CompoundTag data = target.getPersistentData();
+         if (!data.hasUUID(BOUND_OWNER) || !player.getUUID().equals(data.getUUID(BOUND_OWNER)) || data.getLong(BOUND_UNTIL) <= now) {
+            iterator.remove();
+            continue;
+         }
+         targets.add(target);
+      }
+      if (targetIds.isEmpty()) {
+         BOUND_TARGETS_BY_OWNER.remove(player.getUUID());
+      }
+      return targets;
+   }
+
+   private static void clearTrackedBoundTargets(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         BOUND_TARGETS_BY_OWNER.remove(player.getUUID());
+         return;
+      }
+      Set<UUID> targetIds = BOUND_TARGETS_BY_OWNER.remove(player.getUUID());
+      if (targetIds == null || targetIds.isEmpty()) {
+         return;
+      }
+      for (UUID targetId : targetIds) {
+         Entity entity = level.getEntity(targetId);
+         if (entity instanceof LivingEntity target) {
+            restoreBoundTarget(target, player.getUUID());
+         }
       }
    }
 

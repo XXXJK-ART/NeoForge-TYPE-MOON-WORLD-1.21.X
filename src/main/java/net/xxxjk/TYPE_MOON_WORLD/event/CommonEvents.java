@@ -112,6 +112,7 @@ public class CommonEvents {
    private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
    private static final Map<String, Set<UUID>> SUGGESTED_MOB_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
    private static final Map<String, Set<UUID>> SERVANT_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
+   private static final Map<String, Set<UUID>> SHIKI_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
 
    @SubscribeEvent
    public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
@@ -135,12 +136,13 @@ public class CommonEvents {
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
          }
+         if (event.getEntity() instanceof RyougiShikiEntity shiki && event.getLevel() instanceof ServerLevel serverLevel) {
+            trackShiki(shiki, serverLevel);
+         }
          // Pass servantId from spawn eggs after entity creation.
          if (event.getEntity() instanceof Monster monster) {
             try {
-               monster.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(monster, RyougiShikiEntity.class, true));
-               monster.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(monster,
-                  net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true));
+               addTypeMoonTargetGoals(monster);
             } catch (Exception var3) {
             }
          }
@@ -1031,6 +1033,9 @@ public class CommonEvents {
          untrackServant(e, serverLevel);
       }
       if (e instanceof RyougiShikiEntity) {
+         if (event.getLevel() instanceof ServerLevel serverLevel) {
+            untrackShiki(e, serverLevel);
+         }
          RemovalReason reason = e.getRemovalReason();
          if (reason != null) {
             if (reason == RemovalReason.KILLED
@@ -1181,6 +1186,12 @@ public class CommonEvents {
       }
    }
 
+   private static void trackShiki(RyougiShikiEntity shiki, ServerLevel level) {
+      if (shiki != null && level != null) {
+         SHIKI_IDS_BY_DIMENSION.computeIfAbsent(dimensionKey(level), unused -> ConcurrentHashMap.newKeySet()).add(shiki.getUUID());
+      }
+   }
+
    private static void untrackServant(Entity entity, ServerLevel level) {
       if (entity == null || level == null) {
          return;
@@ -1189,6 +1200,63 @@ public class CommonEvents {
       if (ids != null) {
          ids.remove(entity.getUUID());
       }
+   }
+
+   private static void untrackShiki(Entity entity, ServerLevel level) {
+      if (entity == null || level == null) {
+         return;
+      }
+      Set<UUID> ids = SHIKI_IDS_BY_DIMENSION.get(dimensionKey(level));
+      if (ids != null) {
+         ids.remove(entity.getUUID());
+      }
+   }
+
+   private static boolean hasTrackedServants(net.minecraft.world.level.Level level) {
+      if (!(level instanceof ServerLevel serverLevel)) {
+         return false;
+      }
+      Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(serverLevel));
+      return ids != null && !ids.isEmpty();
+   }
+
+   private static boolean hasTrackedShiki(net.minecraft.world.level.Level level) {
+      if (!(level instanceof ServerLevel serverLevel)) {
+         return false;
+      }
+      Set<UUID> ids = SHIKI_IDS_BY_DIMENSION.get(dimensionKey(serverLevel));
+      return ids != null && !ids.isEmpty();
+   }
+
+   private static void addTypeMoonTargetGoals(Monster monster) {
+      monster.targetSelector.addGoal(
+         3,
+         new NearestAttackableTargetGoal<RyougiShikiEntity>(monster, RyougiShikiEntity.class, 20, true, false, null) {
+            @Override
+            public boolean canUse() {
+               return hasTrackedShiki(this.mob.level()) && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+               return hasTrackedShiki(this.mob.level()) && super.canContinueToUse();
+            }
+         }
+      );
+      monster.targetSelector.addGoal(
+         4,
+         new NearestAttackableTargetGoal<ServantEntity>(monster, ServantEntity.class, 20, true, false, null) {
+            @Override
+            public boolean canUse() {
+               return hasTrackedServants(this.mob.level()) && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+               return hasTrackedServants(this.mob.level()) && super.canContinueToUse();
+            }
+         }
+      );
    }
 
    private static void forEachTrackedServant(ServerLevel level, Consumer<ServantEntity> consumer) {

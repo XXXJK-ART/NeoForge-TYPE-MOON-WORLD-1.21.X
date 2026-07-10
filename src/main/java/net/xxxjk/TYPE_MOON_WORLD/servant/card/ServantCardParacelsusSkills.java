@@ -96,7 +96,7 @@ public final class ServantCardParacelsusSkills {
       tickPhilosopherStoneAutoUse(player);
    }
 
-   private static void clear(ServerPlayer player) {
+   public static void clear(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       data.remove(WORKSHOP_ACTIVE_TAG);
       data.remove(WORKSHOP_X_TAG);
@@ -578,6 +578,7 @@ public final class ServantCardParacelsusSkills {
       if (now - data.getLong(SPIRIT_LAST_TICK_TAG) < SPIRIT_INTERVAL) {
          return;
       }
+      data.putLong(SPIRIT_LAST_TICK_TAG, now);
       LivingEntity target = findLookTarget(player, 24.0, 2.2);
       if (target == null || !isValidTarget(player, target)) {
          target = findNearestHostile(level, player, 22.0);
@@ -591,7 +592,6 @@ public final class ServantCardParacelsusSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_spirit_off"), true);
          return;
       }
-      data.putLong(SPIRIT_LAST_TICK_TAG, now);
       int mode = player.getRandom().nextInt(4);
       data.putInt(SPIRIT_MODE_TAG, mode);
       fireElementalSpirit(player, level, target, mode);

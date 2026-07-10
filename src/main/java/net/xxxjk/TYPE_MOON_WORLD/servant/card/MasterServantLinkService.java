@@ -35,13 +35,17 @@ public final class MasterServantLinkService {
       } else {
          applyMasterBacklash(player, false);
       }
+      if (!vars.master_active && !vars.servant_card_transformed) {
+         if (hasSnapshot(vars)) {
+            clearSnapshot(vars);
+         }
+         removeServantPenalties(player);
+         return;
+      }
       if (vars.master_active) {
          tickMaster(player, vars);
       } else if (vars.servant_card_transformed) {
          tickServant(player, vars);
-      } else {
-         clearSnapshot(vars);
-         removeServantPenalties(player);
       }
    }
 
@@ -192,8 +196,6 @@ public final class MasterServantLinkService {
          removeServantPenalties(servant);
          return;
       }
-      TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      updateSnapshots(master, masterVars, servant, vars, info);
       applyServantPenalties(servant, info.decay());
    }
 
@@ -211,10 +213,14 @@ public final class MasterServantLinkService {
       if (servant.level().dimension() != master.level().dimension()) {
          return new LinkInfo(true, true, 1.0, STATE_BROKEN);
       }
-      double distance = servant.distanceTo(master);
-      if (distance > BREAK_RANGE) {
+      double distanceSqr = servant.distanceToSqr(master);
+      if (distanceSqr > BREAK_RANGE * BREAK_RANGE) {
          return new LinkInfo(true, true, 1.0, STATE_BROKEN);
       }
+      if (distanceSqr <= NORMAL_RANGE * NORMAL_RANGE) {
+         return new LinkInfo(true, false, 0.0, STATE_NORMAL);
+      }
+      double distance = Math.sqrt(distanceSqr);
       double decay = Mth.clamp((distance - NORMAL_RANGE) / (BREAK_RANGE - NORMAL_RANGE), 0.0, 1.0);
       return new LinkInfo(true, false, decay, decay > 0.0 ? STATE_UNSTABLE : STATE_NORMAL);
    }
@@ -268,6 +274,17 @@ public final class MasterServantLinkService {
       vars.master_servant_link_drawing_mana = false;
    }
 
+   private static boolean hasSnapshot(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return (vars.master_servant_link_partner_uuid != null && !vars.master_servant_link_partner_uuid.isBlank())
+         || vars.master_servant_link_partner_hp != 0.0
+         || vars.master_servant_link_partner_max_hp != 0.0
+         || vars.master_servant_link_partner_mana != 0.0
+         || vars.master_servant_link_partner_max_mana != 0.0
+         || (vars.master_servant_link_state != null && !STATE_NONE.equals(vars.master_servant_link_state))
+         || vars.master_servant_link_decay != 0.0
+         || vars.master_servant_link_drawing_mana;
+   }
+
    private static int independentDurationTicks(ServerPlayer servant) {
       if (servant.getPersistentData().getBoolean("IndependentActionAActive")) {
          return 7 * 24 * 60 * 60 * 20;
@@ -302,9 +319,14 @@ public final class MasterServantLinkService {
       if (attribute == null) {
          return;
       }
-      attribute.removeModifier(MASTER_BACKLASH_HEALTH_ID);
+      AttributeModifier existing = attribute.getModifier(MASTER_BACKLASH_HEALTH_ID);
       if (active) {
-         attribute.addPermanentModifier(new AttributeModifier(MASTER_BACKLASH_HEALTH_ID, -0.2, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+         if (existing == null || existing.amount() != -0.2 || existing.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+            attribute.removeModifier(MASTER_BACKLASH_HEALTH_ID);
+            attribute.addPermanentModifier(new AttributeModifier(MASTER_BACKLASH_HEALTH_ID, -0.2, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+         }
+      } else if (existing != null) {
+         attribute.removeModifier(MASTER_BACKLASH_HEALTH_ID);
       }
       if (player.getHealth() > player.getMaxHealth()) {
          player.setHealth(player.getMaxHealth());
@@ -315,14 +337,19 @@ public final class MasterServantLinkService {
       if (attribute == null) {
          return;
       }
-      attribute.removeModifier(id);
+      AttributeModifier existing = attribute.getModifier(id);
       if (Math.abs(amount) > 1.0E-6) {
-         attribute.addPermanentModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+         if (existing == null || existing.amount() != amount || existing.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+            attribute.removeModifier(id);
+            attribute.addPermanentModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+         }
+      } else if (existing != null) {
+         attribute.removeModifier(id);
       }
    }
 
    private static void remove(AttributeInstance attribute, ResourceLocation id) {
-      if (attribute != null) {
+      if (attribute != null && attribute.getModifier(id) != null) {
          attribute.removeModifier(id);
       }
    }

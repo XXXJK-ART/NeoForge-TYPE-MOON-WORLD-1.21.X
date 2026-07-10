@@ -33,7 +33,7 @@ public final class ServantCardLiShuwenSkills {
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!vars.servant_card_transformed || !"li_shuwen".equals(vars.servant_card_id)) {
-         player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
+         clear(player);
          return;
       }
       int concealmentUntil = player.getPersistentData().getInt(CONCEALMENT_UNTIL_TAG);
@@ -47,6 +47,10 @@ public final class ServantCardLiShuwenSkills {
       if (player.level() instanceof ServerLevel level) {
          clearEnemyAggro(player, level);
       }
+   }
+
+   public static void clear(ServerPlayer player) {
+      player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
    }
 
    public static void performCircleRealm(ServerPlayer player) {

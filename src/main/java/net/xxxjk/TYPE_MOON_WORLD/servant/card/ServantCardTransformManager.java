@@ -52,6 +52,7 @@ public final class ServantCardTransformManager {
       if (vars.servant_card_transformed) {
          release(player, false);
       }
+      clearServantRuntimeState(player, vars);
       saveArmor(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
@@ -80,12 +81,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_forward = 0.0;
       vars.servant_card_flight_strafe = 0.0;
       vars.servant_card_flight_vertical = 0.0;
-      ServantCardEmiyaSkills.clearEmiyaLayeredProjection(player);
-      ServantCardArtoriaSkills.clear(player);
-      ServantCardCuChulainnSkills.clear(player);
-      ServantCardHeraclesSkills.clear(player);
-      ServantCardGawainSkills.clear(player);
-      ServantCardMedusaSkills.clear(player);
+      clearServantRuntimeState(player, vars);
       ServantCardTraitService.apply(player, definition);
       if ("heracles".equals(servantId)) {
          ServantCardHeraclesSkills.initializeHeraclesGodHand(player);
@@ -141,14 +137,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_medusa_mystic_eyes_active = false;
       vars.servant_card_hassan_cloak_broken = false;
       vars.servant_card_hassan_zabaniya_animation_until = 0;
-      ServantCardEmiyaSkills.clearEmiyaLayeredProjection(player);
-      ServantCardArtoriaSkills.clear(player);
-      ServantCardCuChulainnSkills.clear(player);
-      ServantCardHeraclesSkills.clear(player);
-      ServantCardGawainSkills.clear(player);
-      ServantCardMedusaSkills.clear(player);
-      ServantCardEnkiduSkills.clearActiveEnumaState(player);
-      ServantCardEnkiduSkills.clearTransfigurationAttributes(player);
+      clearServantRuntimeState(player, vars);
       ServantCardTraitService.clear(player);
       vars.is_magus = vars.servant_card_was_magus;
       vars.is_magic_circuit_open = vars.servant_card_was_magic_circuit_open;
@@ -172,7 +161,9 @@ public final class ServantCardTransformManager {
          vars.servant_card_release_cooldown--;
       }
       if (!vars.servant_card_transformed) {
-         clearServantCardTags(player);
+         if (hasServantCardTag(player)) {
+            clearServantCardTags(player);
+         }
          return;
       }
       ensureServantCardTags(player, vars.servant_card_id);
@@ -187,20 +178,44 @@ public final class ServantCardTransformManager {
       ServantCardFlightController.tick(player, vars);
       ServantCardDefenseHandler.tick(player, vars);
       ServantCardTraitService.tick(player);
-      ServantCardArtoriaSkills.tick(player, vars);
-      ServantCardCuChulainnSkills.tick(player, vars);
-      ServantCardHeraclesSkills.tick(player, vars);
-      ServantCardGawainSkills.tick(player, vars);
-      ServantCardMedeaSkills.tick(player, vars);
-      ServantCardParacelsusSkills.tick(player, vars);
-      ServantCardOdaNobunagaSkills.tick(player, vars);
-      ServantCardMedusaSkills.tick(player, vars);
-      ServantCardHassanSkills.tick(player, vars);
-      ServantCardLiShuwenSkills.tick(player, vars);
-      ServantCardEnkiduSkills.tick(player, vars);
-      ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
-      ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
-      ServantCardEmiyaSkills.tickEmiyaUbwSupport(player, vars);
+      tickCurrentServant(player, vars);
+   }
+
+   private static void tickCurrentServant(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      switch (vars.servant_card_id) {
+         case "artoria_pendragon" -> ServantCardArtoriaSkills.tick(player, vars);
+         case "cu_chulainn" -> ServantCardCuChulainnSkills.tick(player, vars);
+         case "heracles" -> ServantCardHeraclesSkills.tick(player, vars);
+         case "gawain" -> ServantCardGawainSkills.tick(player, vars);
+         case "medea" -> ServantCardMedeaSkills.tick(player, vars);
+         case "paracelsus" -> ServantCardParacelsusSkills.tick(player, vars);
+         case "oda_nobunaga" -> ServantCardOdaNobunagaSkills.tick(player, vars);
+         case "medusa" -> ServantCardMedusaSkills.tick(player, vars);
+         case "cursed_arm_hassan" -> ServantCardHassanSkills.tick(player, vars);
+         case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
+         case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
+         case "emiya_archer" -> {
+            ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
+            ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
+            ServantCardEmiyaSkills.tickEmiyaUbwSupport(player, vars);
+         }
+         default -> {
+         }
+      }
+   }
+
+   private static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServantCardEmiyaSkills.clearEmiyaLayeredProjection(player);
+      ServantCardArtoriaSkills.clear(player);
+      ServantCardCuChulainnSkills.clear(player);
+      ServantCardHeraclesSkills.clear(player);
+      ServantCardGawainSkills.clear(player);
+      ServantCardMedeaSkills.clear(player, vars);
+      ServantCardParacelsusSkills.clear(player);
+      ServantCardOdaNobunagaSkills.clear(player);
+      ServantCardMedusaSkills.clear(player);
+      ServantCardLiShuwenSkills.clear(player);
+      ServantCardEnkiduSkills.clear(player);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -231,6 +246,15 @@ public final class ServantCardTransformManager {
             player.removeTag(tag);
          }
       }
+   }
+
+   private static boolean hasServantCardTag(ServerPlayer player) {
+      for (String tag : player.getTags()) {
+         if (tag.equals(SERVANT_CARD_TAG_PREFIX) || tag.startsWith(SERVANT_CARD_TAG_PREFIX + "_")) {
+            return true;
+         }
+      }
+      return false;
    }
 
    private static String servantCardTag(String servantId) {
@@ -560,6 +584,9 @@ public final class ServantCardTransformManager {
    }
 
    private static void tickSkillCooldowns(TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars.servant_card_skill_cooldowns == null || vars.servant_card_skill_cooldowns.isBlank()) {
+         return;
+      }
       int[] cooldowns = parseSkillCooldowns(vars);
       boolean changed = false;
       for (int i = 0; i < cooldowns.length; i++) {
@@ -591,6 +618,9 @@ public final class ServantCardTransformManager {
    private static int[] parseSkillCooldowns(TypeMoonWorldModVariables.PlayerVariables vars) {
       int[] result = new int[9];
       String raw = vars.servant_card_skill_cooldowns == null ? "" : vars.servant_card_skill_cooldowns;
+      if (raw.isBlank()) {
+         return result;
+      }
       String[] parts = raw.split(",");
       for (int i = 0; i < result.length && i < parts.length; i++) {
          try {
@@ -603,6 +633,16 @@ public final class ServantCardTransformManager {
    }
 
    private static String serializeSkillCooldowns(int[] cooldowns) {
+      boolean any = false;
+      for (int i = 0; i < 9; i++) {
+         if (i < cooldowns.length && cooldowns[i] > 0) {
+            any = true;
+            break;
+         }
+      }
+      if (!any) {
+         return "";
+      }
       StringBuilder builder = new StringBuilder();
       for (int i = 0; i < 9; i++) {
          if (i > 0) {

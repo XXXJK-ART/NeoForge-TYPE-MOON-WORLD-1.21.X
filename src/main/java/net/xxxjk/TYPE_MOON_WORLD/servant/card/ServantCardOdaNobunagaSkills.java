@@ -119,6 +119,36 @@ public final class ServantCardOdaNobunagaSkills {
       tickOdaHajunField(player);
    }
 
+   public static void clear(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      data.remove(PRIMARY_ATTACK_COOLDOWN);
+      data.remove(SECONDARY_ATTACK_COOLDOWN);
+      data.remove(CHARGED_ACTIVE);
+      data.remove(CHARGED_START);
+      data.remove(THREE_THOUSAND_ACTIVE);
+      data.remove(THREE_THOUSAND_START);
+      data.remove(THREE_THOUSAND_FOLLOW);
+      data.remove(THREE_THOUSAND_RELEASED);
+      if (player.level() instanceof ServerLevel level) {
+         if (data.getLong(HAJUN_FIELD_ACTIVE_UNTIL) > 0L) {
+            returnFromOdaHajunField(player, level);
+            return;
+         }
+         restoreOdaHajunTerrain(player, level, Integer.MAX_VALUE);
+         restoreOdaHajunChantTerrain(player, level, Integer.MAX_VALUE);
+      }
+      data.remove(HAJUN_ACTIVE);
+      data.remove(HAJUN_START);
+      data.remove(HAJUN_PROGRESS);
+      data.remove(HAJUN_TIMER);
+      data.remove(HAJUN_FIELD_ACTIVE_UNTIL);
+      data.remove(HAJUN_FIELD_RETURN_DIM);
+      data.remove(HAJUN_FIELD_RETURN_X);
+      data.remove(HAJUN_FIELD_RETURN_Y);
+      data.remove(HAJUN_FIELD_RETURN_Z);
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(player, "oda_nobunaga", ModSounds.ODA_NOBUNAGA_VOICE_HAJUN.get(), null);
+   }
+
    public static boolean isHoldingHeshikiriClient(Player player) {
       return player != null && player.getMainHandItem().is(ModItems.HESHIKIRI_HASEBE.get());
    }
