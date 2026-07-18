@@ -230,11 +230,11 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean hasTsubameGaeshiTarget(ServerPlayer player) {
-      return findLookTarget(player, 5.5, 1.25) != null;
+      return findLookTarget(player, 8.0, 2.0) != null;
    }
 
    public static boolean useTsubameGaeshi(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 5.5, 1.25);
+      LivingEntity target = findLookTarget(player, 8.0, 2.0);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
@@ -244,9 +244,10 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useRuleBreaker(ServerPlayer player) {
-      if (!consumeStrict(player, 20.0)) {
-         return false;
-      }
+      ItemStack dagger = new ItemStack(ModItems.RULE_BREAKER.get());
+      markUbwProjection(dagger);
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.markGeneratedItem(dagger, true, false);
+      player.setItemInHand(InteractionHand.MAIN_HAND, dagger);
       LivingEntity target = findLookTarget(player, 5.0, 1.0);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);

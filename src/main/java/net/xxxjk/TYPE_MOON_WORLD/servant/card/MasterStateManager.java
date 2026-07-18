@@ -12,6 +12,8 @@ import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -232,6 +234,9 @@ public final class MasterStateManager {
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.no_command_spells"), true);
          return false;
       }
+      if (action == 3) {
+         return extractSingleCommandSpell(master, vars);
+      }
       ServerPlayer servant = MasterServantLinkService.getLinkedServant(master, vars);
       if (servant == null) {
          vars.master_command_spell_pose_active = false;
@@ -254,7 +259,11 @@ public final class MasterStateManager {
             yield false;
          }
          case 2 -> {
-            servant.hurt(servant.damageSources().magic(), Float.MAX_VALUE);
+            servant.getPersistentData().putBoolean("CausalSevered", true);
+            servant.getPersistentData().putInt("GodHandLives", 0);
+            servant.getPersistentData().remove("GodHandActive");
+            servant.setHealth(0.0F);
+            servant.die(servant.damageSources().genericKill());
             yield true;
          }
          default -> false;
@@ -270,6 +279,48 @@ public final class MasterStateManager {
       vars.syncPlayerVariables(master);
       MasterVisualStateSync.broadcast(master, vars);
       master.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_used", vars.master_command_spells), true);
+      return true;
+   }
+
+   public static boolean replaceCommandSpells(ServerPlayer player, int count, String style) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.master_active) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_requires_master"), true);
+         return false;
+      }
+      vars.master_command_spells = Math.max(0, count);
+      vars.master_command_spell_style = style;
+      vars.master_command_spell_pose_active = false;
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
+      return true;
+   }
+
+   public static boolean addSingleCommandSpell(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.master_active) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_requires_master"), true);
+         return false;
+      }
+      vars.master_command_spells++;
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
+      return true;
+   }
+
+   private static boolean extractSingleCommandSpell(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!vars.master_active || !"supervisor".equals(vars.master_command_spell_style) || vars.master_command_spells <= 0) {
+         return false;
+      }
+      ItemStack spell = new ItemStack(ModItems.SINGLE_COMMAND_SPELL.get());
+      if (!player.getInventory().add(spell)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.inventory_full"), true);
+         return false;
+      }
+      vars.master_command_spells--;
+      vars.master_command_spell_pose_active = false;
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
       return true;
    }
 

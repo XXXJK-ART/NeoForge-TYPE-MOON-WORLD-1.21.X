@@ -84,6 +84,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionStructureMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardBasicAttackMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.SetTimeAlterMultiplierMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardReleaseMessage;
@@ -204,6 +205,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);
       registrar.playToServer(ServantCardBasicAttackMessage.TYPE, ServantCardBasicAttackMessage.STREAM_CODEC, ServantCardBasicAttackMessage::handleData);
       registrar.playToServer(ServantCardFlightMessage.TYPE, ServantCardFlightMessage.STREAM_CODEC, ServantCardFlightMessage::handleData);
+      registrar.playToServer(SetTimeAlterMultiplierMessage.TYPE, SetTimeAlterMultiplierMessage.STREAM_CODEC, SetTimeAlterMultiplierMessage::handleData);
       registrar.playToServer(ServantCardHoldActionMessage.TYPE, ServantCardHoldActionMessage.STREAM_CODEC, ServantCardHoldActionMessage::handleData);
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);

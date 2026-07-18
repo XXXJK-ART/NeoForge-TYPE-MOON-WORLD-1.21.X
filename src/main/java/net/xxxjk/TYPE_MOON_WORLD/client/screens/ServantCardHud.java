@@ -96,9 +96,25 @@ public class ServantCardHud {
          0xFFE0E0E0,
          0.62F
       );
+      drawFlightStatus(gui, minecraft, vars, x, y + 58);
       drawCooldownGrid(gui, minecraft, vars, 5, 68);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
+   }
+
+   private static void drawFlightStatus(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      if (!"medea".equals(vars.servant_card_id) && !"enkidu".equals(vars.servant_card_id) && !"oda_nobunaga".equals(vars.servant_card_id)) return;
+      long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
+      Component text;
+      if ("oda_nobunaga".equals(vars.servant_card_id)) {
+         long cd = Math.max(0L, vars.servant_card_oda_flight_cooldown_until - now);
+         text = Component.translatable("hud.typemoonworld.servant_card.oda_flight", vars.servant_card_oda_flight_ticks / 20, ticksToSeconds((int)Math.min(Integer.MAX_VALUE, cd)));
+      } else {
+         long high = Math.max(0L, vars.servant_card_high_flight_until - now);
+         long cd = Math.max(0L, vars.servant_card_high_flight_cooldown_until - now);
+         text = Component.translatable("hud.typemoonworld.servant_card.flight", vars.servant_card_flight_mode, ticksToSeconds((int)Math.min(Integer.MAX_VALUE, high)), ticksToSeconds((int)Math.min(Integer.MAX_VALUE, cd)));
+      }
+      drawScaledString(gui, minecraft, text, x, y, 0xFFBFE8FF, 0.54F);
    }
 
    private static boolean isSurvivalLike(Minecraft minecraft) {

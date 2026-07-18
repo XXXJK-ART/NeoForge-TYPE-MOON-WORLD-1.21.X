@@ -98,6 +98,9 @@ public final class ServantCardOdaNobunagaSkills {
    private static final String HAJUN_FIELD_TARGET_RETURN_Y = "ServantCardOdaHajunTargetReturnY";
    private static final String HAJUN_FIELD_TARGET_RETURN_Z = "ServantCardOdaHajunTargetReturnZ";
    private static final double FLIGHT_MP_PER_TICK = 0.28;
+   private static final int FLIGHT_MAX_TICKS = 30 * 20;
+   private static final int FLIGHT_EXHAUSTED_COOLDOWN = 20 * 20;
+   private static final int FLIGHT_RECHARGE_INTERVAL = 30;
    private static final int HAJUN_CHANT_LINE_TICKS = 22;
    private static final int HAJUN_CHANT_LINES = 5;
    private static final int HAJUN_CARD_DURATION = 15 * 20;
@@ -618,11 +621,23 @@ public final class ServantCardOdaNobunagaSkills {
          stopMountFlight(player, vars, true);
          return true;
       }
+      long now = level.getGameTime();
+      if (now < vars.servant_card_oda_flight_cooldown_until) {
+         player.displayClientMessage(Component.translatable(
+            "message.typemoonworld.servant_card.oda_flight_cooldown",
+            String.format(java.util.Locale.ROOT, "%.1f", (vars.servant_card_oda_flight_cooldown_until - now) / 20.0)
+         ), true);
+         return false;
+      }
+      if (vars.servant_card_oda_flight_ticks <= 0) {
+         return false;
+      }
       mount = OdaMatchlockGunEntity.flightMount(level, player);
       mount.setPos(player.getX(), player.getY() + 0.08, player.getZ());
       level.addFreshEntity(mount);
       player.startRiding(mount, true);
       vars.servant_card_flying = true;
+      vars.servant_card_flight_mode = 1;
       vars.servant_card_flight_toggle_cooldown = 8;
       vars.syncPlayerVariables(player);
       level.playSound(null, player.blockPosition(), SoundEvents.CROSSBOW_LOADING_END.value(), SoundSource.PLAYERS, 0.9F, 0.7F);
@@ -642,6 +657,14 @@ public final class ServantCardOdaNobunagaSkills {
       }
       if (!ServantCardManaService.consumeSilently(player, vars, FLIGHT_MP_PER_TICK)) {
          stopMountFlight(player, vars, true);
+         return true;
+      }
+      vars.servant_card_oda_flight_ticks = Math.max(0, vars.servant_card_oda_flight_ticks - 1);
+      if (vars.servant_card_oda_flight_ticks <= 0) {
+         vars.servant_card_oda_flight_cooldown_until = level.getGameTime() + FLIGHT_EXHAUSTED_COOLDOWN;
+         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + FLIGHT_RECHARGE_INTERVAL;
+         stopMountFlight(player, vars, true);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.oda_flight_exhausted"), true);
          return true;
       }
       if (player.tickCount % 10 == 0) {
@@ -666,10 +689,33 @@ public final class ServantCardOdaNobunagaSkills {
          }
       }
       vars.servant_card_flying = false;
+      vars.servant_card_flight_mode = 0;
       vars.servant_card_flight_forward = 0.0;
       vars.servant_card_flight_strafe = 0.0;
       vars.servant_card_flight_vertical = 0.0;
+      if (player.level() instanceof ServerLevel level && vars.servant_card_oda_flight_ticks < FLIGHT_MAX_TICKS && vars.servant_card_oda_flight_recharge_at <= 0L) {
+         vars.servant_card_oda_flight_recharge_at = level.getGameTime() + FLIGHT_RECHARGE_INTERVAL;
+      }
       if (sync) {
+         vars.syncPlayerVariables(player);
+      }
+   }
+
+   public static void tickMountFlightRecharge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!(player.level() instanceof ServerLevel level) || vars.servant_card_flying) {
+         return;
+      }
+      long now = level.getGameTime();
+      if (now < vars.servant_card_oda_flight_cooldown_until || vars.servant_card_oda_flight_ticks >= FLIGHT_MAX_TICKS) {
+         return;
+      }
+      if (vars.servant_card_oda_flight_recharge_at <= 0L) {
+         vars.servant_card_oda_flight_recharge_at = now + FLIGHT_RECHARGE_INTERVAL;
+         return;
+      }
+      if (now >= vars.servant_card_oda_flight_recharge_at) {
+         vars.servant_card_oda_flight_ticks = Math.min(FLIGHT_MAX_TICKS, vars.servant_card_oda_flight_ticks + 20);
+         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_ticks >= FLIGHT_MAX_TICKS ? 0L : now + FLIGHT_RECHARGE_INTERVAL;
          vars.syncPlayerVariables(player);
       }
    }
@@ -698,16 +744,22 @@ public final class ServantCardOdaNobunagaSkills {
       source.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.2F, 0.55F);
       source.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 0.2, player.getZ(), 72, 4.0, 0.18, 4.0, 0.04);
       restoreOdaHajunChantTerrain(player, source, Integer.MAX_VALUE);
-      moveOdaHajunTargets(player, source, hajunLevel, targets, entry);
-      Entity moved = player.changeDimension(new DimensionTransition(hajunLevel, entry, Vec3.ZERO, player.getYRot(), player.getXRot(), DimensionTransition.DO_NOTHING));
-      if (moved instanceof ServerPlayer movedPlayer) {
-         CompoundTag movedData = movedPlayer.getPersistentData();
-         movedData.putString(HAJUN_FIELD_RETURN_DIM, data.getString(HAJUN_FIELD_RETURN_DIM));
-         movedData.putDouble(HAJUN_FIELD_RETURN_X, data.getDouble(HAJUN_FIELD_RETURN_X));
-         movedData.putDouble(HAJUN_FIELD_RETURN_Y, data.getDouble(HAJUN_FIELD_RETURN_Y));
-         movedData.putDouble(HAJUN_FIELD_RETURN_Z, data.getDouble(HAJUN_FIELD_RETURN_Z));
-         startOdaHajunLocalField(movedPlayer, hajunLevel);
-      }
+      hajunLevel.getChunk(Mth.floor(entry.x) >> 4, Mth.floor(entry.z) >> 4);
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 50, 4, false, false, false));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 45, 6, false, false, false));
+      TYPE_MOON_WORLD.queueServerWork(40, () -> {
+         if (!player.isAlive() || player.level() != source) return;
+         moveOdaHajunTargets(player, source, hajunLevel, targets, entry);
+         Entity moved = player.changeDimension(new DimensionTransition(hajunLevel, entry, Vec3.ZERO, player.getYRot(), player.getXRot(), DimensionTransition.DO_NOTHING));
+         if (moved instanceof ServerPlayer movedPlayer) {
+            CompoundTag movedData = movedPlayer.getPersistentData();
+            movedData.putString(HAJUN_FIELD_RETURN_DIM, data.getString(HAJUN_FIELD_RETURN_DIM));
+            movedData.putDouble(HAJUN_FIELD_RETURN_X, data.getDouble(HAJUN_FIELD_RETURN_X));
+            movedData.putDouble(HAJUN_FIELD_RETURN_Y, data.getDouble(HAJUN_FIELD_RETURN_Y));
+            movedData.putDouble(HAJUN_FIELD_RETURN_Z, data.getDouble(HAJUN_FIELD_RETURN_Z));
+            startOdaHajunLocalField(movedPlayer, hajunLevel);
+         }
+      });
    }
 
    private static void startOdaHajunLocalField(ServerPlayer player, ServerLevel level) {

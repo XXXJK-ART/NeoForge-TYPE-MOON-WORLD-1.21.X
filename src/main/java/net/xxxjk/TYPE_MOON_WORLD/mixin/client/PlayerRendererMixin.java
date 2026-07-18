@@ -83,7 +83,9 @@ public abstract class PlayerRendererMixin {
       }
 
       PlayerModel<AbstractClientPlayer> model = (PlayerModel<AbstractClientPlayer>)((PlayerRenderer)(Object)this).getModel();
-      CommandSpellMarkRenderer.renderRightHandMark(model, player, poseStack, buffer);
+      if (!"elsa_saijo".equals(CommandSpellVisualClient.getCommandSpellStyle(player))) {
+         CommandSpellMarkRenderer.renderRightHandMark(model, player, poseStack, buffer);
+      }
    }
 
    @Inject(

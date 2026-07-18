@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MercurySwordItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessChainDaggerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RuleBreakerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem;
@@ -173,6 +174,12 @@ public class ModItems {
             () -> new ServantMasterContractItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> COMMAND_SPELL = ITEMS.register("command_spell",
             () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    public static final DeferredItem<Item> SUPERVISOR_COMMAND_SPELL = ITEMS.register("supervisor_command_spell",
+            () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    public static final DeferredItem<Item> ELSA_COMMAND_SPELL = ITEMS.register("elsa_command_spell",
+            () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> SINGLE_COMMAND_SPELL = ITEMS.register("single_command_spell",
+            () -> new CommandSpellItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SERVANT_CARD_RELEASE = ITEMS.register("servant_card_release",
             () -> new ServantCardReleaseItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
 
@@ -184,6 +191,24 @@ public class ModItems {
     public static final DeferredItem<Item> MASTER_CARD_ELSA_SAIJO = registerMasterCard("elsa_saijo");
     public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
+
+    public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSimpleItem("relic_apocalypse");
+    public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSimpleItem("relic_apocalypse_page");
+    public static final DeferredItem<Item> RELIC_FIRST_SNAKE_SKIN = registerSimpleItem("relic_first_snake_skin");
+    public static final DeferredItem<Item> RELIC_HAJIQUAN_MANUAL = registerSimpleItem("relic_hajiquan_manual");
+    public static final DeferredItem<Item> RELIC_VALKYRIE_ARROWHEAD = registerSimpleItem("relic_valkyrie_arrowhead");
+    public static final DeferredItem<Item> RELIC_BRONZE_MIRROR = registerSimpleItem("relic_bronze_mirror");
+    public static final DeferredItem<Item> RELIC_ROUND_TABLE_FRAGMENT = registerSimpleItem("relic_round_table_fragment");
+    public static final DeferredItem<Item> RELIC_TSUBURA_SHIP_PLANK = registerSimpleItem("relic_tsubura_ship_plank");
+    public static final DeferredItem<Item> RELIC_BIZEN_TSUBA = registerSimpleItem("relic_bizen_tsuba");
+    public static final DeferredItem<Item> RELIC_OLD_MAN_MASK = registerSimpleItem("relic_old_man_mask");
+    public static final DeferredItem<Item> RELIC_BANDAGE = registerSimpleItem("relic_bandage");
+    public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSimpleItem("relic_philosophers_stone");
+    public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSimpleItem("relic_golden_fleece");
+    public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSimpleItem("relic_ato_cradle");
+    public static final DeferredItem<Item> GEM_NECKLACE = registerSimpleItem("gem_necklace");
+    public static final DeferredItem<Item> MYSTIC_MERCURY = ITEMS.register("mystic_mercury",
+            () -> new MysticMercuryItem(new Item.Properties().rarity(Rarity.RARE)));
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");

@@ -157,6 +157,7 @@ public class TypeMoonWorldModVariables {
          clone.proficiency_wind_magic = original.proficiency_wind_magic;
          clone.proficiency_earth_magic = original.proficiency_earth_magic;
          clone.proficiency_time_alter = original.proficiency_time_alter;
+         clone.time_alter_multiplier = original.time_alter_multiplier;
          clone.proficiency_spiritual_healing = original.proficiency_spiritual_healing;
          clone.proficiency_baptism_rite = original.proficiency_baptism_rite;
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
@@ -237,14 +238,24 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_mana_regen = original.servant_card_mana_regen;
             clone.servant_card_jump_charges = original.servant_card_jump_charges;
             clone.servant_card_jump_recovery_ticks = original.servant_card_jump_recovery_ticks;
+            clone.servant_card_jump_recovery_end = original.servant_card_jump_recovery_end;
             clone.servant_card_skill_cooldowns = original.servant_card_skill_cooldowns;
+            clone.servant_card_skill_cooldown_ends = original.servant_card_skill_cooldown_ends;
             clone.servant_card_np_cooldown = original.servant_card_np_cooldown;
+            clone.servant_card_np_cooldown_end = original.servant_card_np_cooldown_end;
             clone.servant_card_saved_armor = original.servant_card_saved_armor.copy();
             clone.servant_card_saved_hands = original.servant_card_saved_hands.copy();
             clone.servant_card_flying = original.servant_card_flying;
+            clone.servant_card_flight_mode = original.servant_card_flight_mode;
+            clone.servant_card_high_flight_until = original.servant_card_high_flight_until;
+            clone.servant_card_high_flight_cooldown_until = original.servant_card_high_flight_cooldown_until;
+            clone.servant_card_oda_flight_ticks = original.servant_card_oda_flight_ticks;
+            clone.servant_card_oda_flight_cooldown_until = original.servant_card_oda_flight_cooldown_until;
+            clone.servant_card_oda_flight_recharge_at = original.servant_card_oda_flight_recharge_at;
             clone.servant_card_flight_forward = original.servant_card_flight_forward;
             clone.servant_card_flight_strafe = original.servant_card_flight_strafe;
             clone.servant_card_flight_vertical = original.servant_card_flight_vertical;
+            clone.servant_card_emiya_copied_noble_phantasms = original.servant_card_emiya_copied_noble_phantasms;
             clone.servant_card_flight_toggle_cooldown = original.servant_card_flight_toggle_cooldown;
             clone.servant_card_action_mode = original.servant_card_action_mode;
             clone.servant_card_transform_cooldown = original.servant_card_transform_cooldown;
@@ -566,6 +577,7 @@ public class TypeMoonWorldModVariables {
       public double proficiency_wind_magic = 0.0;
       public double proficiency_earth_magic = 0.0;
       public double proficiency_time_alter = 0.0;
+      public int time_alter_multiplier = 4;
       public double proficiency_spiritual_healing = 0.0;
       public double proficiency_baptism_rite = 0.0;
       public List<ItemStack> analyzed_items = new ArrayList<>();
@@ -614,14 +626,24 @@ public class TypeMoonWorldModVariables {
       public double servant_card_mana_regen = 0.0;
       public int servant_card_jump_charges = 0;
       public int servant_card_jump_recovery_ticks = 0;
+      public long servant_card_jump_recovery_end = 0L;
       public String servant_card_skill_cooldowns = "";
+      public String servant_card_skill_cooldown_ends = "";
       public int servant_card_np_cooldown = 0;
+      public long servant_card_np_cooldown_end = 0L;
       public CompoundTag servant_card_saved_armor = new CompoundTag();
       public CompoundTag servant_card_saved_hands = new CompoundTag();
       public boolean servant_card_flying = false;
+      public int servant_card_flight_mode = 0;
+      public long servant_card_high_flight_until = 0L;
+      public long servant_card_high_flight_cooldown_until = 0L;
+      public int servant_card_oda_flight_ticks = 600;
+      public long servant_card_oda_flight_cooldown_until = 0L;
+      public long servant_card_oda_flight_recharge_at = 0L;
       public double servant_card_flight_forward = 0.0;
       public double servant_card_flight_strafe = 0.0;
       public double servant_card_flight_vertical = 0.0;
+      public String servant_card_emiya_copied_noble_phantasms = "";
       public int servant_card_flight_toggle_cooldown = 0;
       public int servant_card_action_mode = 0;
       public int servant_card_transform_cooldown = 0;
@@ -781,7 +803,8 @@ public class TypeMoonWorldModVariables {
             || "gravity_magic".equals(magicId)
             || "gandr_machine_gun".equals(magicId)
             || "projection".equals(magicId)
-            || "healing_magic".equals(magicId);
+            || "healing_magic".equals(magicId)
+            || "time_alter".equals(magicId);
       }
 
       private static String canonicalSelfKnowledgeMagicId(String magicId) {
@@ -821,6 +844,8 @@ public class TypeMoonWorldModVariables {
             payload.putInt("healing_target", Math.floorMod(seed, 2));
          } else if ("projection".equals(crestEntry.magicId)) {
             payload.putBoolean("projection_lock_empty", true);
+         } else if ("time_alter".equals(crestEntry.magicId)) {
+            payload.putInt("time_alter_multiplier", 4);
          }
 
          payload.putBoolean("preset_locked", true);
@@ -1573,6 +1598,7 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("proficiency_wind_magic", this.proficiency_wind_magic);
          nbt.putDouble("proficiency_earth_magic", this.proficiency_earth_magic);
          nbt.putDouble("proficiency_time_alter", this.proficiency_time_alter);
+         nbt.putInt("time_alter_multiplier", Math.max(1, this.time_alter_multiplier));
          nbt.putDouble("proficiency_spiritual_healing", this.proficiency_spiritual_healing);
          nbt.putDouble("proficiency_baptism_rite", this.proficiency_baptism_rite);
          nbt.putDouble("proficiency_reinforcement", this.proficiency_reinforcement);
@@ -1612,14 +1638,24 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("servant_card_mana_regen", this.servant_card_mana_regen);
          nbt.putInt("servant_card_jump_charges", this.servant_card_jump_charges);
          nbt.putInt("servant_card_jump_recovery_ticks", this.servant_card_jump_recovery_ticks);
+         nbt.putLong("servant_card_jump_recovery_end", this.servant_card_jump_recovery_end);
          nbt.putString("servant_card_skill_cooldowns", this.servant_card_skill_cooldowns == null ? "" : this.servant_card_skill_cooldowns);
+         nbt.putString("servant_card_skill_cooldown_ends", this.servant_card_skill_cooldown_ends == null ? "" : this.servant_card_skill_cooldown_ends);
          nbt.putInt("servant_card_np_cooldown", this.servant_card_np_cooldown);
+         nbt.putLong("servant_card_np_cooldown_end", this.servant_card_np_cooldown_end);
          nbt.put("servant_card_saved_armor", this.servant_card_saved_armor == null ? new CompoundTag() : this.servant_card_saved_armor.copy());
          nbt.put("servant_card_saved_hands", this.servant_card_saved_hands == null ? new CompoundTag() : this.servant_card_saved_hands.copy());
          nbt.putBoolean("servant_card_flying", this.servant_card_flying);
+         nbt.putInt("servant_card_flight_mode", this.servant_card_flight_mode);
+         nbt.putLong("servant_card_high_flight_until", this.servant_card_high_flight_until);
+         nbt.putLong("servant_card_high_flight_cooldown_until", this.servant_card_high_flight_cooldown_until);
+         nbt.putInt("servant_card_oda_flight_ticks", this.servant_card_oda_flight_ticks);
+         nbt.putLong("servant_card_oda_flight_cooldown_until", this.servant_card_oda_flight_cooldown_until);
+         nbt.putLong("servant_card_oda_flight_recharge_at", this.servant_card_oda_flight_recharge_at);
          nbt.putDouble("servant_card_flight_forward", this.servant_card_flight_forward);
          nbt.putDouble("servant_card_flight_strafe", this.servant_card_flight_strafe);
          nbt.putDouble("servant_card_flight_vertical", this.servant_card_flight_vertical);
+         nbt.putString("servant_card_emiya_copied_noble_phantasms", this.servant_card_emiya_copied_noble_phantasms == null ? "" : this.servant_card_emiya_copied_noble_phantasms);
          nbt.putInt("servant_card_flight_toggle_cooldown", this.servant_card_flight_toggle_cooldown);
          nbt.putInt("servant_card_action_mode", this.servant_card_action_mode);
          nbt.putInt("servant_card_transform_cooldown", this.servant_card_transform_cooldown);
@@ -1796,6 +1832,7 @@ public class TypeMoonWorldModVariables {
          this.proficiency_wind_magic = nbt.getDouble("proficiency_wind_magic");
          this.proficiency_earth_magic = nbt.getDouble("proficiency_earth_magic");
          this.proficiency_time_alter = nbt.getDouble("proficiency_time_alter");
+         this.time_alter_multiplier = nbt.contains("time_alter_multiplier") ? Math.max(1, nbt.getInt("time_alter_multiplier")) : 4;
          this.proficiency_spiritual_healing = nbt.getDouble("proficiency_spiritual_healing");
          this.proficiency_baptism_rite = nbt.getDouble("proficiency_baptism_rite");
          this.proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
@@ -1916,14 +1953,24 @@ public class TypeMoonWorldModVariables {
          this.servant_card_mana_regen = nbt.getDouble("servant_card_mana_regen");
          this.servant_card_jump_charges = nbt.contains("servant_card_jump_charges") ? nbt.getInt("servant_card_jump_charges") : 0;
          this.servant_card_jump_recovery_ticks = nbt.contains("servant_card_jump_recovery_ticks") ? nbt.getInt("servant_card_jump_recovery_ticks") : 0;
+         this.servant_card_jump_recovery_end = nbt.contains("servant_card_jump_recovery_end") ? nbt.getLong("servant_card_jump_recovery_end") : 0L;
          this.servant_card_skill_cooldowns = nbt.contains("servant_card_skill_cooldowns") ? nbt.getString("servant_card_skill_cooldowns") : "";
+         this.servant_card_skill_cooldown_ends = nbt.contains("servant_card_skill_cooldown_ends") ? nbt.getString("servant_card_skill_cooldown_ends") : "";
          this.servant_card_np_cooldown = nbt.contains("servant_card_np_cooldown") ? nbt.getInt("servant_card_np_cooldown") : 0;
+         this.servant_card_np_cooldown_end = nbt.contains("servant_card_np_cooldown_end") ? nbt.getLong("servant_card_np_cooldown_end") : 0L;
          this.servant_card_saved_armor = nbt.contains("servant_card_saved_armor", 10) ? nbt.getCompound("servant_card_saved_armor").copy() : new CompoundTag();
          this.servant_card_saved_hands = nbt.contains("servant_card_saved_hands", 10) ? nbt.getCompound("servant_card_saved_hands").copy() : new CompoundTag();
          this.servant_card_flying = nbt.getBoolean("servant_card_flying");
+         this.servant_card_flight_mode = nbt.contains("servant_card_flight_mode") ? nbt.getInt("servant_card_flight_mode") : (this.servant_card_flying ? 1 : 0);
+         this.servant_card_high_flight_until = nbt.contains("servant_card_high_flight_until") ? nbt.getLong("servant_card_high_flight_until") : 0L;
+         this.servant_card_high_flight_cooldown_until = nbt.contains("servant_card_high_flight_cooldown_until") ? nbt.getLong("servant_card_high_flight_cooldown_until") : 0L;
+         this.servant_card_oda_flight_ticks = nbt.contains("servant_card_oda_flight_ticks") ? Mth.clamp(nbt.getInt("servant_card_oda_flight_ticks"), 0, 600) : 600;
+         this.servant_card_oda_flight_cooldown_until = nbt.contains("servant_card_oda_flight_cooldown_until") ? nbt.getLong("servant_card_oda_flight_cooldown_until") : 0L;
+         this.servant_card_oda_flight_recharge_at = nbt.contains("servant_card_oda_flight_recharge_at") ? nbt.getLong("servant_card_oda_flight_recharge_at") : 0L;
          this.servant_card_flight_forward = nbt.contains("servant_card_flight_forward") ? nbt.getDouble("servant_card_flight_forward") : 0.0;
          this.servant_card_flight_strafe = nbt.contains("servant_card_flight_strafe") ? nbt.getDouble("servant_card_flight_strafe") : 0.0;
          this.servant_card_flight_vertical = nbt.contains("servant_card_flight_vertical") ? nbt.getDouble("servant_card_flight_vertical") : 0.0;
+         this.servant_card_emiya_copied_noble_phantasms = nbt.contains("servant_card_emiya_copied_noble_phantasms") ? nbt.getString("servant_card_emiya_copied_noble_phantasms") : "";
          this.servant_card_flight_toggle_cooldown = nbt.contains("servant_card_flight_toggle_cooldown") ? nbt.getInt("servant_card_flight_toggle_cooldown") : 0;
          this.servant_card_action_mode = nbt.contains("servant_card_action_mode") ? nbt.getInt("servant_card_action_mode") : 0;
          this.servant_card_transform_cooldown = nbt.contains("servant_card_transform_cooldown") ? nbt.getInt("servant_card_transform_cooldown") : 0;

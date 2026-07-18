@@ -23,6 +23,9 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
                         output.accept(ModItems.COMMAND_SPELL);
+                        output.accept(ModItems.SUPERVISOR_COMMAND_SPELL);
+                        output.accept(ModItems.ELSA_COMMAND_SPELL);
+                        output.accept(ModItems.SINGLE_COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
                         output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
@@ -73,6 +76,29 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_LEGS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_LEGS);
+                    }).build());
+
+    public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.RELIC_GOLDEN_FLEECE.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.relics"))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModItems.RELIC_APOCALYPSE);
+                        output.accept(ModItems.RELIC_APOCALYPSE_PAGE);
+                        output.accept(ModItems.RELIC_FIRST_SNAKE_SKIN);
+                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
+                        output.accept(ModItems.RELIC_VALKYRIE_ARROWHEAD);
+                        output.accept(ModItems.RELIC_BRONZE_MIRROR);
+                        output.accept(ModItems.RELIC_ROUND_TABLE_FRAGMENT);
+                        output.accept(ModItems.RELIC_TSUBURA_SHIP_PLANK);
+                        output.accept(ModItems.RELIC_BIZEN_TSUBA);
+                        output.accept(ModItems.RELIC_OLD_MAN_MASK);
+                        output.accept(ModItems.RELIC_BANDAGE);
+                        output.accept(ModItems.RELIC_PHILOSOPHERS_STONE);
+                        output.accept(ModItems.RELIC_GOLDEN_FLEECE);
+                        output.accept(ModItems.RELIC_ATO_CRADLE);
+                        output.accept(ModItems.GEM_NECKLACE);
+                        output.accept(ModItems.MYSTIC_MERCURY);
+                        output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
                     }).build());
 
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",

@@ -161,6 +161,14 @@ public final class ServantCardLiShuwenSkills {
       return true;
    }
 
+   public static void performLiFierceTiger(ServerPlayer player) {
+      Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 2.0, 0.12, dir.z * 2.0));
+      player.hurtMarked = true;
+      hitForwardArc(player, dir, 5.0, 38.0F);
+      spawnLiHitFx(player, findLookTarget(player, 5.5, 1.6));
+   }
+
    public static void revealCircleRealm(ServerPlayer player) {
       player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
       if (player.hasEffect(MobEffects.INVISIBILITY)) {

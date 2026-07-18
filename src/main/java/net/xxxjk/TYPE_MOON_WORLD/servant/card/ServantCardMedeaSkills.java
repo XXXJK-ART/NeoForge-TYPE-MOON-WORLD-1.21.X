@@ -131,6 +131,10 @@ public final class ServantCardMedeaSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return false;
       }
+      if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.workshop_overworld_only"), true);
+         return false;
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       CompoundTag data = player.getPersistentData();
       if (data.getBoolean(WORKSHOP_ACTIVE_TAG)) {
@@ -374,6 +378,10 @@ public final class ServantCardMedeaSkills {
 
    public static boolean performMedeaEscape(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.workshop_overworld_only"), true);
          return false;
       }
       CompoundTag data = player.getPersistentData();

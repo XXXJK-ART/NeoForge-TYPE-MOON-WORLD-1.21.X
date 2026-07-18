@@ -9,6 +9,11 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardFlightController {
    private static final double MP_PER_TICK = 0.28;
+   private static final int MODE_OFF = 0;
+   private static final int MODE_NORMAL = 1;
+   private static final int MODE_HIGH = 2;
+   private static final int HIGH_FLIGHT_DURATION = 20 * 20;
+   private static final int HIGH_FLIGHT_COOLDOWN = 30 * 20;
 
    private ServantCardFlightController() {
    }
@@ -43,6 +48,9 @@ public final class ServantCardFlightController {
       if (vars.servant_card_flight_toggle_cooldown > 0) {
          vars.servant_card_flight_toggle_cooldown--;
       }
+      if ("oda_nobunaga".equals(vars.servant_card_id)) {
+         ServantCardOdaNobunagaSkills.tickMountFlightRecharge(player, vars);
+      }
       if (!vars.servant_card_transformed || !vars.servant_card_flying) {
          if (!vars.servant_card_transformed || !canFly(vars.servant_card_id)) {
             stop(player, vars, false);
@@ -50,6 +58,13 @@ public final class ServantCardFlightController {
          return;
       }
       if ("oda_nobunaga".equals(vars.servant_card_id) && ServantCardOdaNobunagaSkills.tickMountFlight(player, vars)) {
+         return;
+      }
+      long now = player.level().getGameTime();
+      if (vars.servant_card_flight_mode == MODE_HIGH && now >= vars.servant_card_high_flight_until) {
+         vars.servant_card_high_flight_cooldown_until = now + HIGH_FLIGHT_COOLDOWN;
+         stop(player, vars, true);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.high_flight_expired"), true);
          return;
       }
       if (!canFly(vars.servant_card_id) || !ServantCardManaService.consumeSilently(player, vars, MP_PER_TICK)) {
@@ -73,7 +88,11 @@ public final class ServantCardFlightController {
          case "oda_nobunaga" -> 0.54;
          default -> 0.48;
       };
-      Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, vars.servant_card_flight_vertical * 0.42, 0.0);
+      double verticalInput = vars.servant_card_flight_vertical;
+      if (vars.servant_card_flight_mode == MODE_NORMAL && !hasGroundWithin(player, 5)) {
+         verticalInput = Math.min(verticalInput, -0.28);
+      }
+      Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, verticalInput * 0.42, 0.0);
       if (velocity.lengthSqr() < 0.0001) {
          velocity = new Vec3(0.0, -0.015, 0.0);
       }
@@ -92,6 +111,7 @@ public final class ServantCardFlightController {
       if (vars.servant_card_flying || player.isNoGravity()) {
          player.setNoGravity(false);
          vars.servant_card_flying = false;
+         vars.servant_card_flight_mode = MODE_OFF;
          vars.servant_card_flight_forward = 0.0;
          vars.servant_card_flight_strafe = 0.0;
          vars.servant_card_flight_vertical = 0.0;
@@ -115,11 +135,45 @@ public final class ServantCardFlightController {
          }
          return;
       }
-      vars.servant_card_flying = !vars.servant_card_flying;
+      long now = player.level().getGameTime();
+      if (!vars.servant_card_flying) {
+         vars.servant_card_flying = true;
+         vars.servant_card_flight_mode = MODE_NORMAL;
+      } else if (vars.servant_card_flight_mode == MODE_NORMAL) {
+         if (now < vars.servant_card_high_flight_cooldown_until) {
+            player.displayClientMessage(Component.translatable(
+               "message.typemoonworld.servant_card.high_flight_cooldown",
+               String.format(java.util.Locale.ROOT, "%.1f", (vars.servant_card_high_flight_cooldown_until - now) / 20.0)
+            ), true);
+            return;
+         }
+         vars.servant_card_flight_mode = MODE_HIGH;
+         vars.servant_card_high_flight_until = now + HIGH_FLIGHT_DURATION;
+      } else {
+         vars.servant_card_high_flight_cooldown_until = now + HIGH_FLIGHT_COOLDOWN;
+         vars.servant_card_flying = false;
+         vars.servant_card_flight_mode = MODE_OFF;
+      }
       vars.servant_card_flight_toggle_cooldown = 8;
       if (!vars.servant_card_flying) {
          player.setNoGravity(false);
       }
-      player.displayClientMessage(Component.translatable(vars.servant_card_flying ? "message.typemoonworld.servant_card.flight_enabled" : "message.typemoonworld.servant_card.flight_disabled"), true);
+      String message = !vars.servant_card_flying
+         ? "message.typemoonworld.servant_card.flight_disabled"
+         : vars.servant_card_flight_mode == MODE_HIGH
+            ? "message.typemoonworld.servant_card.high_flight_enabled"
+            : "message.typemoonworld.servant_card.normal_flight_enabled";
+      player.displayClientMessage(Component.translatable(message), true);
+   }
+
+   private static boolean hasGroundWithin(ServerPlayer player, int blocks) {
+      net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
+      for (int i = 1; i <= blocks; i++) {
+         pos.set(player.getBlockX(), Mth.floor(player.getY()) - i, player.getBlockZ());
+         if (!player.level().getBlockState(pos).getCollisionShape(player.level(), pos).isEmpty()) {
+            return true;
+         }
+      }
+      return false;
    }
 }

@@ -196,6 +196,15 @@ public final class ServantCardCuChulainnSkills {
       }
    }
 
+   public static void performDisengage(ServerPlayer player) {
+      ServantCardSkillUtils.clearHarmfulEffects(player);
+      player.heal(Math.max(4.0F, player.getMaxHealth() * 0.1F));
+      Vec3 back = PlayerNoblePhantasmHelper.horizontalLook(player).scale(-1.6);
+      player.setDeltaMovement(player.getDeltaMovement().add(back.x, 0.25, back.z));
+      player.hurtMarked = true;
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 60, 1, false, true, true));
+   }
+
    private static void spawnRuneParticles(ServerLevel level, ServerPlayer player, net.minecraft.core.particles.SimpleParticleType particle, int count, double spread, double speed) {
       double baseY = player.getY() + player.getBbHeight() * 0.62;
       level.sendParticles(particle, player.getX(), baseY, player.getZ(), count, spread, spread * 0.7, spread, speed);

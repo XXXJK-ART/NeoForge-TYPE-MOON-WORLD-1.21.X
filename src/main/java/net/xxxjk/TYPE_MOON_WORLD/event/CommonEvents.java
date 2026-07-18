@@ -44,6 +44,7 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
@@ -87,6 +88,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
@@ -412,7 +414,7 @@ public class CommonEvents {
                   player.clearFire();
                   return;
                }
-               if (ServantCardDefenseHandler.handleIncomingDamage(player, vars, event)) {
+               if (!SowaExpertiseHelper.rollBypass(event.getSource()) && ServantCardDefenseHandler.handleIncomingDamage(player, vars, event)) {
                   return;
                }
                if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
@@ -979,6 +981,16 @@ public class CommonEvents {
             OriginBulletHelper.clearPlayerSeal(player);
          }
 
+         if (event.getEntity() instanceof ServerPlayer player) {
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed) {
+               ServantCardTransformManager.prepareVanishingEquipment(player, vars);
+            }
+            if (vars.master_active) {
+               MasterStateManager.release(player);
+            }
+         }
+
          if (event.getEntity() instanceof ServantEntity servant) {
             CompoundTag data = servant.getPersistentData();
             boolean causalSevered = data.getBoolean("CausalSevered");
@@ -1161,6 +1173,13 @@ public class CommonEvents {
          mob.getPersistentData().remove(PetrifiedEffect.TAG_PREV_NO_AI);
          mob.getNavigation().stop();
          mob.setTarget(null);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onLivingDrops(LivingDropsEvent event) {
+      if (event.getEntity() instanceof Player) {
+         event.getDrops().removeIf(drop -> ServantCardTransformManager.shouldDeleteBoundDrop(drop.getItem()));
       }
    }
 

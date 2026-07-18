@@ -74,6 +74,8 @@ public final class ServantCardLoadoutManager {
          default -> {
          }
       }
+      ServantCardTransformManager.markGeneratedItem(main, true, false);
+      ServantCardTransformManager.markGeneratedItem(off, true, false);
       player.setItemInHand(InteractionHand.MAIN_HAND, main);
       player.setItemInHand(InteractionHand.OFF_HAND, off);
    }

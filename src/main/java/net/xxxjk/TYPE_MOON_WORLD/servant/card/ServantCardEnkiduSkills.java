@@ -368,7 +368,11 @@ public final class ServantCardEnkiduSkills {
    public static void performEnkiduDetection(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) {
          List<Integer> ids = new ArrayList<>();
-         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(100.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(100.0), e -> {
+            if (!e.isAlive() || e == player) return false;
+            if (e instanceof ServerPlayer other) return !other.isSpectator();
+            return !EntityUtils.isImmunePlayerTarget(e);
+         })) {
             living.removeEffect(MobEffects.INVISIBILITY);
             ids.add(living.getId());
          }

@@ -52,6 +52,7 @@ public final class ServantCardHassanSkills {
          storeOrDrop(player, current.copy());
       }
       ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get(), 16);
+      ServantCardTransformManager.markGeneratedItem(dirk, true, false);
       player.setItemInHand(InteractionHand.OFF_HAND, dirk);
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ(), 16, 0.28, 0.35, 0.28, 0.04);
@@ -82,6 +83,32 @@ public final class ServantCardHassanSkills {
 
    public static void performSelfModification(ServerPlayer player) {
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 1, false, true, true));
+   }
+
+   public static void performDirkThrow(ServerPlayer player) {
+      for (int i = -1; i <= 1; i++) {
+         net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity projectile = new net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity(player.level(), player);
+         projectile.setDamage(14.0F);
+         projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
+         Vec3 look = player.getLookAngle().yRot((float)Math.toRadians(i * 5.0));
+         projectile.shoot(look.x, look.y, look.z, 2.2F, 0.0F);
+         player.level().addFreshEntity(projectile);
+      }
+   }
+
+   public static void performShadowStep(ServerPlayer player) {
+      Vec3 target = player.position().add(player.getLookAngle().multiply(1.0, 0.0, 1.0).normalize().scale(6.0));
+      if (ServantCardSkillUtils.trySafeHorizontalTeleport(player, target.add(0.0, 0.1, 0.0))) {
+         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0, false, false, false));
+      }
+   }
+
+   public static void performShadowLunge(ServerPlayer player) {
+      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 14.0, 1.8);
+      Vec3 dir = target == null ? player.getLookAngle().multiply(1.0, 0.0, 1.0).normalize() : target.position().subtract(player.position()).normalize();
+      player.setDeltaMovement(dir.scale(2.4).add(0.0, 0.18, 0.0));
+      player.hurtMarked = true;
+      ServantCardSkillUtils.hitForwardArc(player, dir, 5.5, 30.0F);
    }
 
    public static boolean performZabaniya(ServerPlayer player) {

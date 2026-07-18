@@ -93,7 +93,6 @@ public final class ServantCardParacelsusSkills {
       }
       tickWorkshop(player, vars);
       tickElementalSpirits(player, vars);
-      tickPhilosopherStoneAutoUse(player);
    }
 
    public static void clear(ServerPlayer player) {
@@ -115,6 +114,10 @@ public final class ServantCardParacelsusSkills {
 
    public static boolean performParacelsusWorkshop(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.workshop_overworld_only"), true);
          return false;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -251,6 +254,10 @@ public final class ServantCardParacelsusSkills {
 
    public static boolean performParacelsusWorkshopTeleport(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.workshop_overworld_only"), true);
          return false;
       }
       CompoundTag data = player.getPersistentData();

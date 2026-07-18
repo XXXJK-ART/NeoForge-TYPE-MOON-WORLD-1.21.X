@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.special;
 
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,7 +29,17 @@ public final class MagicTimeAlter {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       double proficiency = vars.isCurrentSelectionFromCrest(MAGIC_ID) ? 100.0 : vars.proficiency_time_alter;
       int mode = vars.time_alter_mode == MODE_STAGNATE ? MODE_STAGNATE : MODE_ACCEL;
-      double multiplier = mode == MODE_ACCEL ? accelMultiplier(proficiency) : stagnateMultiplier(proficiency);
+      double multiplier;
+      if (vars.isCurrentSelectionFromCrest(MAGIC_ID)) {
+         CompoundTag preset = vars.getCurrentCrestPresetPayload();
+         multiplier = mode == MODE_ACCEL && preset.contains("time_alter_multiplier")
+            ? Math.max(1, preset.getInt("time_alter_multiplier"))
+            : mode == MODE_ACCEL ? accelMultiplier(proficiency) : stagnateMultiplier(proficiency);
+      } else {
+         multiplier = mode == MODE_ACCEL && proficiency >= 80.0
+            ? Math.max(1, vars.time_alter_multiplier)
+            : mode == MODE_ACCEL ? accelMultiplier(proficiency) : stagnateMultiplier(proficiency);
+      }
       int durationTicks = durationTicks(proficiency);
       double cost = mode == MODE_ACCEL ? accelCost(multiplier) : stagnateCost(multiplier);
 

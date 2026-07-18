@@ -114,6 +114,18 @@ public final class ServantCardGawainSkills {
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 180, 1, false, true, true));
    }
 
+   public static void performCharisma(ServerPlayer player) {
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 180, 0, false, true, true));
+      if (player.level() instanceof ServerLevel level) {
+         for (ServerPlayer ally : level.players()) {
+            if (ally != player && ally.distanceToSqr(player) <= 10.0 * 10.0) {
+               ally.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 180, 0, false, true, true));
+               ally.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 180, 0, false, true, true));
+            }
+         }
+      }
+   }
+
    public static void performGawainGallatinSpark(ServerPlayer player) {
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       boolean solar = hasSunBlessing(player);

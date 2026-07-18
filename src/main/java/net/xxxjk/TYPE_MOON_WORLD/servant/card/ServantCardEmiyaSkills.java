@@ -1,6 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -46,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -96,16 +101,30 @@ public final class ServantCardEmiyaSkills {
       ItemStack offStack = new ItemStack(off);
       PlayerNoblePhantasmHelper.markUbwProjection(mainStack);
       PlayerNoblePhantasmHelper.markUbwProjection(offStack);
+      ServantCardTransformManager.markGeneratedItem(mainStack, true, true);
+      ServantCardTransformManager.markGeneratedItem(offStack, true, true);
       player.setItemInHand(InteractionHand.MAIN_HAND, mainStack);
       player.setItemInHand(InteractionHand.OFF_HAND, offStack);
    }
 
    public static void cycleLoadout(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      ItemStack payload = vars.servant_card_action_mode == 1
-         ? new ItemStack(ModItems.CRIMSON_HOUND.get())
-         : new ItemStack(ModItems.PSEUDO_SPIRAL_SWORD.get());
+      List<Item> candidates = new ArrayList<>();
+      candidates.add(ModItems.CRIMSON_HOUND.get());
+      candidates.add(ModItems.PSEUDO_SPIRAL_SWORD.get());
+      for (String id : copiedNoblePhantasmIds(vars)) {
+         ResourceLocation key = ResourceLocation.tryParse(id);
+         if (key != null && BuiltInRegistries.ITEM.containsKey(key)) {
+            Item item = BuiltInRegistries.ITEM.get(key);
+            if (item instanceof NoblePhantasmItem && !candidates.contains(item)) candidates.add(item);
+         }
+      }
+      ItemStack payload = new ItemStack(candidates.get(player.getRandom().nextInt(candidates.size())));
       PlayerNoblePhantasmHelper.markUbwProjection(payload);
-      player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.NAMELESS_BOW.get()));
+      ServantCardTransformManager.markGeneratedItem(payload, true, true);
+      ItemStack bow = new ItemStack(ModItems.NAMELESS_BOW.get());
+      PlayerNoblePhantasmHelper.markUbwProjection(bow);
+      ServantCardTransformManager.markGeneratedItem(bow, true, true);
+      player.setItemInHand(InteractionHand.MAIN_HAND, bow);
       player.setItemInHand(InteractionHand.OFF_HAND, payload);
    }
 
@@ -182,18 +201,25 @@ public final class ServantCardEmiyaSkills {
    }
 
    public static boolean copyOpponentWeapon(ServerPlayer player) {
-      LivingEntity target = findCopyableWeaponTarget(player, 8.0, 1.6);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      LivingEntity target = findCopyableWeaponTarget(player, 20.0, 1.6);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
          return false;
       }
-      ItemStack weapon = target.getMainHandItem();
-      if (weapon.isEmpty()) {
-         weapon = target.getOffhandItem();
-      }
+      ItemStack weapon = target.getMainHandItem().getItem() instanceof NoblePhantasmItem
+         ? target.getMainHandItem() : target.getOffhandItem();
       ItemStack traced = weapon.copy();
       traced.setCount(1);
       PlayerNoblePhantasmHelper.markUbwProjection(traced);
+      ServantCardTransformManager.markGeneratedItem(traced, true, true);
+      ResourceLocation copiedId = BuiltInRegistries.ITEM.getKey(traced.getItem());
+      if (copiedId != null) {
+         LinkedHashSet<String> ids = copiedNoblePhantasmIds(vars);
+         ids.add(copiedId.toString());
+         vars.servant_card_emiya_copied_noble_phantasms = String.join(",", ids);
+         vars.syncPlayerVariables(player);
+      }
       if (traced.is(ModItems.BIZEN_NAGAMITSU.get())) {
          PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, traced);
       } else if (traced.is(ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
@@ -216,7 +242,17 @@ public final class ServantCardEmiyaSkills {
       if (target == null) {
          return null;
       }
-      return target.getMainHandItem().isEmpty() && target.getOffhandItem().isEmpty() ? null : target;
+      return target.getMainHandItem().getItem() instanceof NoblePhantasmItem
+         || target.getOffhandItem().getItem() instanceof NoblePhantasmItem ? target : null;
+   }
+
+   private static LinkedHashSet<String> copiedNoblePhantasmIds(TypeMoonWorldModVariables.PlayerVariables vars) {
+      LinkedHashSet<String> result = new LinkedHashSet<>();
+      String raw = vars.servant_card_emiya_copied_noble_phantasms == null ? "" : vars.servant_card_emiya_copied_noble_phantasms;
+      if (!raw.isBlank()) {
+         for (String id : raw.split(",")) if (!id.isBlank()) result.add(id.trim());
+      }
+      return result;
    }
 
    public static void tickEmiyaContinuousProjection(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
