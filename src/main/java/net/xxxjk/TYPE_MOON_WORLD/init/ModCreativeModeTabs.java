@@ -24,7 +24,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
                         output.accept(ModItems.COMMAND_SPELL);
                         output.accept(ModItems.SUPERVISOR_COMMAND_SPELL);
-                        output.accept(ModItems.ELSA_COMMAND_SPELL);
                         output.accept(ModItems.SINGLE_COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
@@ -97,8 +96,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_GOLDEN_FLEECE);
                         output.accept(ModItems.RELIC_ATO_CRADLE);
                         output.accept(ModItems.GEM_NECKLACE);
-                        output.accept(ModItems.MYSTIC_MERCURY);
-                        output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
+                        output.accept(ModItems.AVALON);
                     }).build());
 
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
@@ -119,6 +117,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.REMNANTS_OF_MADNESS);
                         output.accept(ModItems.SEED_OF_YGGDRASIL);
                         output.accept(ModItems.VOIDS_DUST);
+                        output.accept(ModItems.GEM_NECKLACE);
+                        output.accept(ModItems.MYSTIC_MERCURY);
+                        output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
                         
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
@@ -163,6 +164,13 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
                         
                         output.accept(ModItems.AVALON);
+                        output.accept(ModItems.GILGAMESH_BAB_ILU);
+                        output.accept(ModItems.GILGAMESH_EA);
+                        output.accept(ModItems.GILGAMESH_DURANDAL);
+                        output.accept(ModItems.GILGAMESH_GRAM);
+                        output.accept(ModItems.GILGAMESH_HARPE);
+                        output.accept(ModItems.GILGAMESH_VAJRA);
+                        output.accept(ModItems.GILGAMESH_FANGTIAN_HUAJI);
                         output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.HESHIKIRI_HASEBE);
@@ -316,6 +324,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
+                        output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                         output.accept(ModItems.PARACELSUS_SPAWN_EGG);

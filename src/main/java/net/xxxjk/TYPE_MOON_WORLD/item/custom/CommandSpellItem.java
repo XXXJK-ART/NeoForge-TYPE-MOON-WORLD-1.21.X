@@ -22,8 +22,6 @@ public class CommandSpellItem extends Item {
          boolean success;
          if (stack.is(ModItems.SUPERVISOR_COMMAND_SPELL.get())) {
             success = MasterStateManager.replaceCommandSpells(serverPlayer, 11, "supervisor");
-         } else if (stack.is(ModItems.ELSA_COMMAND_SPELL.get())) {
-            success = MasterStateManager.replaceCommandSpells(serverPlayer, 3, "elsa_saijo");
          } else if (stack.is(ModItems.SINGLE_COMMAND_SPELL.get())) {
             success = MasterStateManager.addSingleCommandSpell(serverPlayer);
          } else {

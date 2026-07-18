@@ -44,6 +44,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
@@ -58,6 +59,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -202,6 +204,10 @@ public final class ServantCardEmiyaSkills {
 
    public static boolean copyOpponentWeapon(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      GilgameshEntity crossTarget = findCrossSlashCopyTarget(player, 40.0);
+      if (crossTarget != null) {
+         return copyGilgameshCrossSlash(player, crossTarget);
+      }
       LivingEntity target = findCopyableWeaponTarget(player, 20.0, 1.6);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
@@ -234,6 +240,43 @@ public final class ServantCardEmiyaSkills {
       if (target.getMaxHealth() > player.getMaxHealth()) {
          player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 220, 1, false, true, true));
       }
+      return true;
+   }
+
+   public static GilgameshEntity findCrossSlashCopyTarget(ServerPlayer player, double range) {
+      LivingEntity target = findLookTarget(player, range, 2.4);
+      if (!(target instanceof GilgameshEntity gil)) {
+         return null;
+      }
+      return gil.getPersistentData().getLong("GilgameshCrossSlashCopyUntil") >= player.level().getGameTime() ? gil : null;
+   }
+
+   private static boolean copyGilgameshCrossSlash(ServerPlayer player, GilgameshEntity gil) {
+      if (!(player.level() instanceof ServerLevel level) || player.distanceTo(gil) > 40.0) {
+         return false;
+      }
+      Vec3 direction = gil.position().add(0.0, gil.getBbHeight() * 0.5, 0.0).subtract(player.position().add(0.0, player.getBbHeight() * 0.5, 0.0));
+      if (direction.lengthSqr() < 1.0E-4) {
+         direction = player.getLookAngle();
+      }
+      direction = direction.normalize();
+      GilgameshCrossSlashEntity green = new GilgameshCrossSlashEntity(level, player, GilgameshCrossSlashEntity.SlashType.IGALIMA, direction);
+      green.addImmuneEntity(gil);
+      green.addImmuneEntity(player);
+      level.addFreshEntity(green);
+      Vec3 copiedDirection = direction;
+      TYPE_MOON_WORLD.queueServerWork(8, () -> {
+         if (player.isAlive() && player.level() == level) {
+            GilgameshCrossSlashEntity white = new GilgameshCrossSlashEntity(level, player, GilgameshCrossSlashEntity.SlashType.SULSAGANA, copiedDirection);
+            white.addImmuneEntity(gil);
+            white.addImmuneEntity(player);
+            level.addFreshEntity(white);
+         }
+      });
+      for (GilgameshCrossSlashEntity original : level.getEntitiesOfClass(GilgameshCrossSlashEntity.class, gil.getBoundingBox().inflate(420.0), e -> e.isAlive() && e.isOwnedBy(gil))) {
+         original.addImmuneEntity(player);
+      }
+      VFXServerEffects.spawn(level, "gilgamesh_cross_slash", player.position(), 256.0);
       return true;
    }
 

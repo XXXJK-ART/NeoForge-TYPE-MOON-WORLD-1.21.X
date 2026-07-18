@@ -176,8 +176,6 @@ public class ModItems {
             () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> SUPERVISOR_COMMAND_SPELL = ITEMS.register("supervisor_command_spell",
             () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
-    public static final DeferredItem<Item> ELSA_COMMAND_SPELL = ITEMS.register("elsa_command_spell",
-            () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> SINGLE_COMMAND_SPELL = ITEMS.register("single_command_spell",
             () -> new CommandSpellItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SERVANT_CARD_RELEASE = ITEMS.register("servant_card_release",
@@ -209,6 +207,21 @@ public class ModItems {
     public static final DeferredItem<Item> GEM_NECKLACE = registerSimpleItem("gem_necklace");
     public static final DeferredItem<Item> MYSTIC_MERCURY = ITEMS.register("mystic_mercury",
             () -> new MysticMercuryItem(new Item.Properties().rarity(Rarity.RARE)));
+
+    public static final DeferredItem<Item> GILGAMESH_BAB_ILU = ITEMS.register("gilgamesh_bab_ilu",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "babili"));
+    public static final DeferredItem<Item> GILGAMESH_EA = ITEMS.register("gilgamesh_ea",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "ea"));
+    public static final DeferredItem<Item> GILGAMESH_DURANDAL = ITEMS.register("gilgamesh_durandal",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "durandal"));
+    public static final DeferredItem<Item> GILGAMESH_GRAM = ITEMS.register("gilgamesh_gram",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "gram"));
+    public static final DeferredItem<Item> GILGAMESH_HARPE = ITEMS.register("gilgamesh_harpe",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "harpe"));
+    public static final DeferredItem<Item> GILGAMESH_VAJRA = ITEMS.register("gilgamesh_vajra",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "vajra"));
+    public static final DeferredItem<Item> GILGAMESH_FANGTIAN_HUAJI = ITEMS.register("gilgamesh_fangtian_huaji",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "fangtian_huaji"));
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
@@ -794,6 +807,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ODA_NOBUNAGA, 0xB01818, 0xF4C430));
     public static final DeferredItem<Item> ENKIDU_SPAWN_EGG = ITEMS.register("enkidu_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
+    public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GILGAMESH, 0xD4AF37, 0xB11226));
     public static final DeferredItem<Item> GAWAIN_SPAWN_EGG = ITEMS.register("gawain_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GAWAIN, 0xC0C0C0, 0xFFD700));
     public static final DeferredItem<Item> LI_SHUWEN_SPAWN_EGG = ITEMS.register("li_shuwen_spawn_egg",

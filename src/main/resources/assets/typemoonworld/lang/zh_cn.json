@@ -1350,7 +1350,6 @@
     "skill.typemoonworld.servant_card.paracelsus_wind_cut": "苍穹的切割",
     "item.typemoonworld.command_spell": "令咒",
     "item.typemoonworld.supervisor_command_spell": "监督者令咒",
-    "item.typemoonworld.elsa_command_spell": "艾尔莎西条令咒",
     "item.typemoonworld.single_command_spell": "单划令咒",
     "item.typemoonworld.relic_apocalypse": "《启示录》",
     "item.typemoonworld.relic_apocalypse_page": "《启示录》残页",
@@ -1580,6 +1579,22 @@
     "message.typemoonworld.magic.baptism_rite.chant.4": "不忘歌颂，不忘祈祷，不忘我名。",
     "message.typemoonworld.magic.baptism_rite.chant.5": "除去伪装吧。",
     "message.typemoonworld.magic.baptism_rite.chant.6": "永远之命只能由死所赐予。",
-    "message.typemoonworld.magic.baptism_rite.chant.7": "愿主怜此哀魂。"
+    "message.typemoonworld.magic.baptism_rite.chant.7": "愿主怜此哀魂。",
+    "item.typemoonworld.gilgamesh_spawn_egg": "吉尔伽美什(Archer)刷怪蛋",
+    "entity.typemoonworld.gilgamesh": "吉尔伽美什(Archer)",
+    "item.typemoonworld.gilgamesh_bab_ilu": "王律键·巴比伦",
+    "item.typemoonworld.gilgamesh_ea": "乖离剑·EA",
+    "item.typemoonworld.gilgamesh_durandal": "不毁的极圣·杜兰达尔",
+    "item.typemoonworld.gilgamesh_gram": "魔剑·格拉墨",
+    "item.typemoonworld.gilgamesh_harpe": "赫帕尔",
+    "item.typemoonworld.gilgamesh_vajra": "金刚杵",
+    "item.typemoonworld.gilgamesh_fangtian_huaji": "方天画戟",
+    "item.typemoonworld.gilgamesh_bab_ilu.desc": "短按开启王之财宝投射宝具；长按解锁宝库并召唤乖离剑EA。",
+    "item.typemoonworld.gilgamesh_ea.desc": "解锁乖离剑，以风压、对界光炮与终末爆炸撕裂战场。",
+    "item.typemoonworld.gilgamesh_durandal.desc": "投射不毁的极圣，造成强力斩击并以圣霜冻结目标。",
+    "item.typemoonworld.gilgamesh_gram.desc": "投射屠龙魔剑，以烈焰灼烧目标并对龙种造成特攻。",
+    "item.typemoonworld.gilgamesh_harpe.desc": "投射弑杀不死者的镰剑，留下难以治愈的诅咒伤口。",
+    "item.typemoonworld.gilgamesh_vajra.desc": "投出雷神法器，沿途迸发紫色雷电并在命中处引爆雷霆。",
+    "item.typemoonworld.gilgamesh_fangtian_huaji.desc": "投射长柄重兵，贯穿目标并以大范围横扫击飞周围敌人。"
 }
 

@@ -54,24 +54,27 @@ public final class CommandSpellMarkRenderer {
 
    private static void drawDoubleSidedQuad(PoseStack poseStack, VertexConsumer consumer, boolean fullArm) {
       float minY = fullArm ? 0.02F : HAND_BACK_Y_MIN;
-      float maxY = fullArm ? 0.98F : HAND_BACK_Y_MAX;
-      vertex(consumer, poseStack, HAND_BACK_X, minY, HAND_BACK_Z_MIN, 0.0F, 1.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, minY, HAND_BACK_Z_MAX, 1.0F, 1.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, maxY, HAND_BACK_Z_MAX, 1.0F, 0.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, maxY, HAND_BACK_Z_MIN, 0.0F, 0.0F);
+      float maxY = fullArm ? 0.74F : HAND_BACK_Y_MAX;
+      float x = fullArm ? -0.128F : HAND_BACK_X;
+      float minZ = fullArm ? -0.125F : HAND_BACK_Z_MIN;
+      float maxZ = fullArm ? 0.125F : HAND_BACK_Z_MAX;
+      vertex(consumer, poseStack, x, minY, minZ, 0.0F, 1.0F);
+      vertex(consumer, poseStack, x, minY, maxZ, 1.0F, 1.0F);
+      vertex(consumer, poseStack, x, maxY, maxZ, 1.0F, 0.0F);
+      vertex(consumer, poseStack, x, maxY, minZ, 0.0F, 0.0F);
 
-      vertex(consumer, poseStack, HAND_BACK_X, maxY, HAND_BACK_Z_MIN, 0.0F, 0.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, maxY, HAND_BACK_Z_MAX, 1.0F, 0.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, minY, HAND_BACK_Z_MAX, 1.0F, 1.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, minY, HAND_BACK_Z_MIN, 0.0F, 1.0F);
+      vertex(consumer, poseStack, x, maxY, minZ, 0.0F, 0.0F);
+      vertex(consumer, poseStack, x, maxY, maxZ, 1.0F, 0.0F);
+      vertex(consumer, poseStack, x, minY, maxZ, 1.0F, 1.0F);
+      vertex(consumer, poseStack, x, minY, minZ, 0.0F, 1.0F);
    }
 
    private static void drawChestQuad(PoseStack poseStack, VertexConsumer consumer) {
       float z = -0.255F;
-      vertex(consumer, poseStack, -0.28F, 0.18F, z, 0.0F, 0.0F);
-      vertex(consumer, poseStack, 0.28F, 0.18F, z, 1.0F, 0.0F);
-      vertex(consumer, poseStack, 0.28F, 0.82F, z, 1.0F, 1.0F);
-      vertex(consumer, poseStack, -0.28F, 0.82F, z, 0.0F, 1.0F);
+      vertex(consumer, poseStack, 0.02F, 0.04F, z, 0.0F, 0.0F);
+      vertex(consumer, poseStack, 0.24F, 0.04F, z, 1.0F, 0.0F);
+      vertex(consumer, poseStack, 0.24F, 0.34F, z, 1.0F, 1.0F);
+      vertex(consumer, poseStack, 0.02F, 0.34F, z, 0.0F, 1.0F);
    }
 
    private static void vertex(VertexConsumer consumer, PoseStack poseStack, float x, float y, float z, float u, float v) {

@@ -27,6 +27,10 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GawainRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshGateWeaponRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshCrossSlashRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshEaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuChulainnRenderer;
@@ -213,6 +217,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
       event.registerEntityRenderer(ModEntities.ENKIDU.get(), EnkiduRenderer::new);
+      event.registerEntityRenderer(ModEntities.GILGAMESH.get(), GilgameshRenderer::new);
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), ParacelsusRenderer::new);
@@ -237,6 +242,9 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);
+      event.registerEntityRenderer(ModEntities.GILGAMESH_GATE_PROJECTILE.get(), GilgameshGateWeaponRenderer::new);
+      event.registerEntityRenderer(ModEntities.GILGAMESH_CROSS_SLASH.get(), GilgameshCrossSlashRenderer::new);
+      event.registerEntityRenderer(ModEntities.GILGAMESH_EA_BEAM.get(), GilgameshEaRenderer::new);
       event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_SHELL_EFFECT.get(), GravityShellRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_FIELD_SHELL_EFFECT.get(), GravityFieldShellRenderer::new);

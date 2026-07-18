@@ -50,6 +50,10 @@ public final class VFXClientRuntime {
    }
 
    public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed) {
+      spawn(effectId, x, y, z, targetEntityUuid, seed, Optional.empty());
+   }
+
+   public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed, Optional<Vec3> direction) {
       VFXEffectDefinition definition = EffectLibrary.INSTANCE.get(effectId);
       if (definition == null) {
          TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
@@ -72,6 +76,13 @@ public final class VFXClientRuntime {
          VFXEnvironmentManager.add(environment, originX, originY, originZ);
       }
       List<VFXEmitter> emitters = definition.createEmitters((float)originX, (float)originY, (float)originZ, seed);
+      if (direction.isPresent() && target == null) {
+         Quaternionf rotation = rotationFromForward(direction.get());
+         float fixedX = (float)originX, fixedY = (float)originY, fixedZ = (float)originZ;
+         for (VFXEmitter emitter : emitters) {
+            emitter.setDynamicTransform(() -> new Vector3f(fixedX, fixedY, fixedZ), () -> new Quaternionf(rotation));
+         }
+      }
       if (target != null) {
          Entity boundTarget = target;
          for (VFXEmitter emitter : emitters) {
@@ -81,6 +92,13 @@ public final class VFXClientRuntime {
       for (VFXEmitter emitter : emitters) {
          VFXRenderManager.addEmitter(emitter);
       }
+   }
+
+   private static Quaternionf rotationFromForward(Vec3 forward) {
+      Vec3 f = forward.normalize();
+      float yaw = (float)Math.atan2(-f.x, f.z);
+      float pitch = (float)Math.asin(Math.max(-1.0, Math.min(1.0, f.y)));
+      return new Quaternionf().rotateY(yaw).rotateX(-pitch);
    }
 
    public static void spawnTest(double x, double y, double z) {

@@ -23,7 +23,7 @@ public final class MasterStateManager {
    public static final int MAX_MASTER_MP = 1000;
    public static final double MASTER_MAX_HEALTH = 100.0;
    private static final String[] COMMAND_SPELL_STYLES = new String[]{
-      "default", "illya", "kiritsugu", "shirou", "bazett", "sakura", "rin", "luvia", "kirei"
+      "default", "illya", "kiritsugu", "shirou", "bazett", "sakura", "rin", "luvia", "kirei", "tokiomi", "waver"
    };
    private static final ResourceLocation MASTER_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "master_max_health");
 
@@ -384,6 +384,9 @@ public final class MasterStateManager {
    private static String sanitizeCommandSpellStyle(String style) {
       if (style == null || style.isBlank()) {
          return "default";
+      }
+      if ("elsa_saijo".equals(style) || "supervisor".equals(style)) {
+         return style;
       }
       for (String known : COMMAND_SPELL_STYLES) {
          if (known.equals(style)) {

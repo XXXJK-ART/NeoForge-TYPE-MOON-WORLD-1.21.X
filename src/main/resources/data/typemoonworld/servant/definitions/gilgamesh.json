@@ -1,0 +1,38 @@
+{
+  "id": "gilgamesh",
+  "display_name": "Gilgamesh (Archer)",
+  "display_name_zh": "吉尔伽美什(Archer)",
+  "class_type": "archer",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "archer", "male", "human", "sapient", "chaotic", "good", "divine", "ea_special"],
+  "parameters": {
+    "endurance": "B", "endurance_plus": false,
+    "strength": "B", "strength_plus": false,
+    "agility": "B", "agility_plus": false,
+    "magic": "A", "magic_plus": false,
+    "luck": "A", "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/gilgamesh.geo.json",
+    "texture": "typemoonworld:textures/entity/gilgamesh.png",
+    "animation": "typemoonworld:animations/gilgamesh.animation.json",
+    "animations": {
+      "idle": "standing", "walk": "standing", "fly": "arms crossed", "slash": "arms crossed",
+      "gate_of_babylon": "arms crossed", "chain_of_heaven": "arms crossed",
+      "ea_unlock": "arms crossed", "ea_release": "arms crossed",
+      "igalima_slash": "arms crossed", "sulsagana_slash": "arms crossed",
+      "np": "arms crossed"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.82, "eye_height": 1.64},
+    "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
+    "default_weapon": "", "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["slash", "sweep", "gate_of_babylon", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "ranged_np"]
+  },
+  "skills": ["magic_resistance_c", "independent_action_a", "golden_rule_a", "collector_ex", "divinity_b", "clairvoyance_ex", "charisma_a_plus"],
+  "noble_phantasm": "enuma_elish_ea",
+  "personality": {"obedience": "rebellious", "principle": "chaotic", "morality": "good", "social": "hermit", "combat": "frenzied", "starting_favor": 0.0},
+  "ai_config": "gilgamesh_ai",
+  "spawn_egg": {"primary": 13938487, "secondary": 11604518}
+}

@@ -173,6 +173,9 @@ public final class EnkiduCombatHelper {
       EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
       tickNatureDropCleanup(entity, level, now);
       tickEnumaWindup(entity, level, now);
+      if (GilgameshDuelState.tickEnkidu(entity, level)) {
+         return;
+      }
       if (isEnumaActive(entity, now)) {
          return;
       }
@@ -1964,6 +1967,25 @@ public final class EnkiduCombatHelper {
 
    private static boolean tryBeginEnumaElish(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
       return tryBeginEnumaElish(entity, level, target, now, phase, false);
+   }
+
+   public static void startGilgameshFinale(EnkiduEntity entity, ServerLevel level, GilgameshEntity target, long now) {
+      CompoundTag data = entity.getPersistentData();
+      data.putLong(TAG_LAST_ENUMA, now);
+      data.putLong(TAG_ENUMA_RELEASE, now + 64L);
+      data.putLong(TAG_ENUMA_FINISH, now + 164L);
+      data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
+      data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
+      data.remove(TAG_ENUMA_INVISIBLE);
+      data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
+      data.putDouble(TAG_ENUMA_START_X, entity.getX()); data.putDouble(TAG_ENUMA_START_Y, entity.getY()); data.putDouble(TAG_ENUMA_START_Z, entity.getZ());
+      data.putDouble(TAG_ENUMA_IMPACT_X, target.getX()); data.putDouble(TAG_ENUMA_IMPACT_Y, target.getY()); data.putDouble(TAG_ENUMA_IMPACT_Z, target.getZ());
+      data.putInt(TAG_ENUMA_STAGE, 0); data.putInt(TAG_ENUMA_BIND_STEP, ENUMA_BIND_COUNT); data.putLong(TAG_ENUMA_NEXT_BIND, now + 200L);
+      data.putLong(TAG_FLIGHT_UNTIL, now + 184L); data.remove(TAG_LAND_UNTIL);
+      entity.setNoGravity(true);
+      entity.triggerNamedActionAnimation("enkidu_enuma_elish");
+      ServantVoiceHelper.tryPlayEnkiduNp(entity);
+      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", entity.position(), 192.0);
    }
 
    private static boolean tryBeginEnumaElish(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase, boolean forceCounter) {

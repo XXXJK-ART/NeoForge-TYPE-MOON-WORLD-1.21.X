@@ -11,6 +11,7 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -214,6 +215,7 @@ public final class MagicResistanceHelper {
          || direct instanceof TopazProjectileEntity
          || direct instanceof GanderProjectileEntity
          || direct instanceof CyanWindFieldEntity
-         || direct instanceof ArtoriaExcaliburBeamEntity;
+         || direct instanceof ArtoriaExcaliburBeamEntity
+         || direct instanceof GilgameshEaBeamEntity;
    }
 }

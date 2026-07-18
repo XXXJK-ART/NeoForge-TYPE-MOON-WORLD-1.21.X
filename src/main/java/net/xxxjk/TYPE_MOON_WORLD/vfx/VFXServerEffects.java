@@ -33,6 +33,13 @@ public final class VFXServerEffects {
       PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius, message, new CustomPacketPayload[0]);
    }
 
+   public static void spawnOriented(ServerLevel level, String effectId, Vec3 origin, Vec3 direction, double radius) {
+      Vec3 dir = direction == null || direction.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : direction.normalize();
+      VFXSpawnEffectMessage message = new VFXSpawnEffectMessage(effectId, origin.x, origin.y, origin.z, Optional.empty(),
+         level.dimension().location().toString(), level.getRandom().nextLong(), Optional.of(dir));
+      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius, message, new CustomPacketPayload[0]);
+   }
+
    public static void spawn(ServerLevel level, String effectId, Entity target) {
       spawn(level, effectId, target, DEFAULT_RADIUS);
    }

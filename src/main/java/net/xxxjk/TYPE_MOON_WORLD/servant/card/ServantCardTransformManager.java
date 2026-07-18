@@ -383,7 +383,9 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", currentCooldown / 20.0F)), true);
          return false;
       }
-      if ("copy_weapon".equals(action.effectId()) && ServantCardEmiyaSkills.findCopyableWeaponTarget(player, 20.0, 1.6) == null) {
+      if ("copy_weapon".equals(action.effectId())
+         && ServantCardEmiyaSkills.findCopyableWeaponTarget(player, 20.0, 1.6) == null
+         && ServantCardEmiyaSkills.findCrossSlashCopyTarget(player, 40.0) == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
          return false;
       }

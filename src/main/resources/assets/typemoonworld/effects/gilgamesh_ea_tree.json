@@ -1,0 +1,98 @@
+{
+  "duration": 3.6,
+  "notes": [
+    "Only the inverted EA tree appears and disappears. No weather, sky, fog, screen tint, shockwave, lightning, or beam layers."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 3.6,
+      "rate": 1800,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.002,
+      "velocity": [0.0, 0.006, 0.0],
+      "velocity_variance": 0.002,
+      "component": {
+        "type": "image_mask",
+        "texture": "typemoonworld:textures/particle/ea_red.png",
+        "width": 36.8,
+        "height": 49.6,
+        "u_segments": 180,
+        "v_segments": 260,
+        "threshold": 0.32,
+        "reveal": "BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM",
+        "use_mask_texture": false,
+        "sample_density_scale": 0.42,
+        "particle_size_multiplier": 2.0
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.14, "color": "#DDFF1818" },
+        { "t": 0.72, "color": "#CCB00000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.16, "size": 0.07 },
+        { "t": 0.78, "size": 0.085 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.06, 0.06, 0.06], "easing": "ease_out_cubic" },
+        { "t": 0.18, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 0.72, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [1.05, 1.05, 1.05] },
+        { "t": 1.0, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.0, 0.0, 1.0], "scale": [0.08, 0.08, 0.08], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "EA_INVERTED_TREE"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 3.6,
+      "rate": 1800,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.002,
+      "velocity": [0.0, 0.006, 0.0],
+      "velocity_variance": 0.002,
+      "component": {
+        "type": "image_mask",
+        "texture": "typemoonworld:textures/particle/ea_red.png",
+        "width": 36.8,
+        "height": 49.6,
+        "u_segments": 180,
+        "v_segments": 260,
+        "threshold": 0.32,
+        "reveal": "BOTTOM_TO_TOP_THEN_TOP_TO_BOTTOM",
+        "use_mask_texture": false,
+        "sample_density_scale": 0.42,
+        "particle_size_multiplier": 2.0
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.14, "color": "#AAFF1818" },
+        { "t": 0.72, "color": "#99B00000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.16, "size": 0.07 },
+        { "t": 0.78, "size": 0.085 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [0.06, 0.06, 0.06], "easing": "ease_out_cubic" },
+        { "t": 0.18, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 0.72, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [1.05, 1.05, 1.05] },
+        { "t": 1.0, "pos": [0.0, 3.7, 2.1], "rot": [0.0, 0.7071068, 0.0, 0.7071068], "scale": [0.08, 0.08, 0.08], "easing": "ease_in_cubic" }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "particle_role": "EA_INVERTED_TREE_CROSS"
+    }
+  ]
+}

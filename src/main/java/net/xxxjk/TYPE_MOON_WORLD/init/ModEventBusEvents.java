@@ -35,6 +35,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.ARTORIA_PENDRAGON.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ENKIDU.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.GILGAMESH.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PARACELSUS.get(), ServantEntity.createAttributes().build());
