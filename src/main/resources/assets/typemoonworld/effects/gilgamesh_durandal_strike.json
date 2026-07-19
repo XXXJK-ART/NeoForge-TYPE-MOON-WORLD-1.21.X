@@ -1,1 +1,187 @@
-{"duration":0.8,"emitters":[{"rate":520,"particle_lifetime":0.55,"component":{"type":"line","start":[-3,1,1],"end":[3,1,10],"segments":160},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.5,"color":"#AA80D8FF"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.7},{"t":1,"size":0.05}],"blend":"ADDITIVE","enable_trail":true}]}
+{
+  "duration": 1.25,
+  "notes": "Durandal: indestructible holy blade manifestation, sacred cleave, frost wake and oath rings. Local +Z is the cast direction.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.28,
+      "rate": 780,
+      "particle_lifetime": 0.34,
+      "position_variance": 0.018,
+      "component": { "type": "line", "start": [0.0, -0.35, 0.6], "end": [0.0, 0.25, 10.2], "segments": 192 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF5C4" },
+        { "t": 0.16, "color": "#FFFFFFFF" },
+        { "t": 0.55, "color": "#FFFFE28A" },
+        { "t": 1.0, "color": "#00A9E9FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.3, "size": 0.3 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DURANDAL_UNBREAKABLE_BLADE_CORE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 2, "spread": [0.12, 0.12, 1.8], "offset": [0.0, 0.0, 4.8], "speed": 0.02, "chance": 0.45 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.34,
+      "rate": 520,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.16+0.34*sin(t*3.14159))*cos(t*31.4159+time*11.0)",
+        "expr_y": "(0.16+0.34*sin(t*3.14159))*sin(t*31.4159+time*11.0)",
+        "expr_z": "0.8+t*9.2",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#99FFFFFF" },
+        { "t": 0.48, "color": "#FFE8FAFF" },
+        { "t": 1.0, "color": "#0088D9FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.42, "size": 0.19 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DURANDAL_SACRED_FROST_COIL",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.18,
+      "end_time": 0.58,
+      "rate": 1120,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.3,
+      "position_variance": 0.035,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "6.0*sin((-1.08+t*2.16))",
+        "expr_y": "-0.7+3.4*sin(t*3.14159)",
+        "expr_z": "1.0+9.0*t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#FFFFFFFF" },
+        { "t": 0.42, "color": "#FFFFD66B" },
+        { "t": 0.72, "color": "#CCA9EBFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.24, "size": 0.72 },
+        { "t": 0.7, "size": 0.38 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DURANDAL_HOLY_CLEAVE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.1, 0.1, 0.1], "offset": [0.0, 0.0, 7.0], "speed": 0.0, "chance": 0.5 },
+        { "type": "snowflake", "count": 2, "spread": [3.0, 1.5, 3.0], "offset": [0.0, -0.2, 6.0], "speed": 0.04, "chance": 0.55 }
+      ]
+    },
+    {
+      "start_time": 0.28,
+      "end_time": 0.9,
+      "rate": 540,
+      "particle_lifetime": 0.72,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.035, 0.45],
+      "velocity_variance": 0.08,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.35+2.7*t)*cos(t*25.1327+time*5.0)",
+        "expr_y": "-0.65+0.5*sin(t*12.5664)",
+        "expr_z": "1.0+8.7*t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.45, "color": "#AA7EDCFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.14 },
+        { "t": 0.45, "size": 0.28 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "DURANDAL_FROST_WAKE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "snowflake", "count": 3, "spread": [2.5, 1.2, 4.2], "offset": [0.0, -0.4, 5.0], "speed": 0.025, "chance": 0.7 },
+        { "type": "enchanted_hit", "count": 2, "spread": [2.5, 1.0, 3.8], "offset": [0.0, 0.0, 5.0], "speed": 0.03, "chance": 0.45 }
+      ]
+    },
+    {
+      "start_time": 0.22,
+      "end_time": 0.72,
+      "rate": 420,
+      "particle_lifetime": 0.68,
+      "component": { "type": "circle", "radius": 1.0, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF2A8" },
+        { "t": 0.16, "color": "#FFFFF2A8" },
+        { "t": 0.58, "color": "#DDE2F7FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.32, "size": 0.22 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -0.1, 5.8], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.48, "pos": [0.0, -0.1, 5.8], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [3.8, 3.8, 3.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, -0.1, 5.8], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [5.2, 5.2, 5.2] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DURANDAL_UNBREAKABLE_OATH_RING",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.42,
+      "end_time": 1.05,
+      "rate": 380,
+      "particle_lifetime": 0.5,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.12, 0.35],
+      "velocity_variance": 0.2,
+      "component": { "type": "sphere", "radius": 1.0, "segments": 100 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#99FFFFFF" },
+        { "t": 0.45, "color": "#AA9DE7FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.4, "size": 0.18 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -0.15, 7.8], "scale": [0.5, 0.5, 0.5] },
+        { "t": 1.0, "pos": [0.0, -0.05, 8.4], "scale": [3.6, 2.0, 3.6], "easing": "ease_out_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DURANDAL_FROZEN_IMPACT"
+    }
+  ]
+}

@@ -17,18 +17,30 @@
     "texture": "typemoonworld:textures/entity/gilgamesh.png",
     "animation": "typemoonworld:animations/gilgamesh.animation.json",
     "animations": {
-      "idle": "standing", "walk": "standing", "fly": "arms crossed", "slash": "arms crossed",
-      "gate_of_babylon": "arms crossed", "chain_of_heaven": "arms crossed",
-      "ea_unlock": "arms crossed", "ea_release": "arms crossed",
-      "igalima_slash": "arms crossed", "sulsagana_slash": "arms crossed",
-      "np": "arms crossed"
+      "idle": "animation.gilgamesh.idle",
+      "walk": "animation.gilgamesh.walk",
+      "fly": "animation.gilgamesh.fly",
+      "float_idle": "animation.gilgamesh.fly",
+      "slash": "animation.gilgamesh.basic_attack",
+      "gate_single": "animation.gilgamesh.basic_attack",
+      "gate_small": "animation.gilgamesh.gate_cast",
+      "gate_large": "animation.gilgamesh.gate_barrage",
+      "gate_of_babylon": "animation.gilgamesh.gate_barrage",
+      "gate_duel": "animation.gilgamesh.gate_duel",
+      "durandal_slash": "animation.gilgamesh.basic_attack",
+      "chain_of_heaven": "animation.gilgamesh.chain_cast",
+      "ea_unlock": "animation.gilgamesh.ea_channel",
+      "ea_release": "animation.gilgamesh.ea_channel",
+      "igalima_slash": "animation.gilgamesh.cross_slash",
+      "sulsagana_slash": "animation.gilgamesh.cross_slash",
+      "np": "animation.gilgamesh.ea_channel"
     }
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.82, "eye_height": 1.64},
     "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
     "default_weapon": "", "immune_to_stone_axe_debuff": false,
-    "combat_actions": ["slash", "sweep", "gate_of_babylon", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "ranged_np"]
+    "combat_actions": ["slash", "sweep", "gate_single", "gate_small", "gate_large", "gate_of_babylon", "gate_duel", "durandal_slash", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "ranged_np"]
   },
   "skills": ["magic_resistance_c", "independent_action_a", "golden_rule_a", "collector_ex", "divinity_b", "clairvoyance_ex", "charisma_a_plus"],
   "noble_phantasm": "enuma_elish_ea",

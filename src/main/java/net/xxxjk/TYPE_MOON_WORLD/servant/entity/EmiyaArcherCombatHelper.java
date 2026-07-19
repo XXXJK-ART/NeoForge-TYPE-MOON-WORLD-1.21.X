@@ -1107,6 +1107,16 @@ public final class EmiyaArcherCombatHelper {
       UBWInstanceManager.scheduleDeleteInstance(level.getServer(), ownerId);
    }
 
+   /** Breaks an NPC-owned UBW when an anti-world noble phantasm is fired. */
+   public static boolean breakUbwForEa(EmiyaArcherEntity entity) {
+      if (entity == null || !(entity.level() instanceof ServerLevel level)
+         || !UBWInstanceManager.isUbwDimension(level)) {
+         return false;
+      }
+      returnFromUbw(entity, level);
+      return true;
+   }
+
    private static UUID returnPulledTargets(UUID ownerId, ServerLevel sourceLevel, ServerLevel fallbackReturnLevel) {
       List<LivingEntity> toReturn = new java.util.ArrayList<>();
       for (Entity candidate : sourceLevel.getEntities().getAll()) {

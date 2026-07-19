@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 
 public final class VFXServerEffects {
@@ -76,5 +77,10 @@ public final class VFXServerEffects {
          target.getId()
       );
       level.addFreshEntity(trigger);
+   }
+
+   public static void screenFlash(ServerLevel level, Vec3 origin, double radius, int ticks, float strength) {
+      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius,
+         new DuelScreenFlashMessage(ticks, strength), new CustomPacketPayload[0]);
    }
 }

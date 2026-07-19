@@ -213,7 +213,7 @@ public class ModItems {
     public static final DeferredItem<Item> GILGAMESH_EA = ITEMS.register("gilgamesh_ea",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "ea"));
     public static final DeferredItem<Item> GILGAMESH_DURANDAL = ITEMS.register("gilgamesh_durandal",
-            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "durandal"));
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "durandal"));
     public static final DeferredItem<Item> GILGAMESH_GRAM = ITEMS.register("gilgamesh_gram",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "gram"));
     public static final DeferredItem<Item> GILGAMESH_HARPE = ITEMS.register("gilgamesh_harpe",

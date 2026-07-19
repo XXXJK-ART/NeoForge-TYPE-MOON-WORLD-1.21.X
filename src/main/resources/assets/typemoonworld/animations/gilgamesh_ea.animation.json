@@ -1,6 +1,16 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
+		"idle": {
+			"loop": true,
+			"animation_length": 0.05,
+			"bones": {
+				"sword1": {"rotation": [0, 0, 0]},
+				"sword2": {"rotation": [0, 0, 0]},
+				"sword3": {"rotation": [0, 0, 0]},
+				"red": {"scale": [0, 0, 0]}
+			}
+		},
 		"xuanzhuan": {
 			"loop": "hold_on_last_frame",
 			"animation_length": 1.3333,

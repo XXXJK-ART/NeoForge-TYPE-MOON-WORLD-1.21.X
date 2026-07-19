@@ -66,8 +66,9 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
       LivingEntity owner = getOwner(level);
       if (owner == null || !owner.isAlive() || this.tickCount > 70) { this.discard(); return; }
       this.setPos(owner.getX(), owner.getY() + owner.getBbHeight() * 0.6, owner.getZ());
-      if (this.tickCount == 24 || this.tickCount == 32 || this.tickCount == 40) applyDamage(level, owner);
-      if (!terrainDone && this.tickCount >= (slashType == SlashType.IGALIMA ? 16 : 24)) queueTerrain(level);
+      int impactTick = slashType == SlashType.IGALIMA ? 24 : 32;
+      if (this.tickCount == impactTick) applyDamage(level, owner);
+      if (!terrainDone && this.tickCount >= impactTick) queueTerrain(level);
       if (this.tickCount % 2 == 0) {
          level.sendParticles(slashType == SlashType.IGALIMA ? ParticleTypes.HAPPY_VILLAGER : ParticleTypes.FLAME,
             this.getX(), this.getY(), this.getZ(), 80, 16, 5, 16, 0.12);
@@ -76,20 +77,21 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
    }
 
    private void applyDamage(net.minecraft.server.level.ServerLevel level, LivingEntity owner) {
-      Vec3 forward = new Vec3(direction.x, 0, direction.z).normalize();
+      Vec3 forward = new Vec3(direction.x, 0, direction.z);
+      if (forward.lengthSqr() < 1.0E-6) forward = new Vec3(0, 0, 1);
+      forward = forward.normalize();
       Vec3 side = new Vec3(-forward.z, 0, forward.x);
-      AABB box = new AABB(this.position().subtract(200, 75, 200), this.position().add(200, 75, 200));
+      Vec3 origin = this.position();
+      Vec3 end = origin.add(forward.scale(400.0));
+      AABB box = new AABB(origin, end).inflate(110.0, 80.0, 110.0);
       DamageSource source = slashType == SlashType.SULSAGANA ? owner.damageSources().inFire() : owner.damageSources().mobAttack(owner);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box,
          e -> e.isAlive() && e != owner && !immuneEntities.contains(e.getUUID()) && !EntityUtils.isImmunePlayerTarget(e))) {
-         if (!this.hit.add(target.getId())) continue;
-         Vec3 rel = target.position().add(0, target.getBbHeight() * 0.5, 0).subtract(this.position());
+         Vec3 rel = target.position().add(0, target.getBbHeight() * 0.5, 0).subtract(origin);
          double along = rel.dot(forward);
-         double diagonal = Math.abs(rel.dot(side) - rel.y * 0.85);
-         if (along < 0 || along > 400 || diagonal > 15 || Math.abs(rel.y) > 75) {
-            this.hit.remove(target.getId());
-            continue;
-         }
+         double sign = slashType == SlashType.IGALIMA ? 1.0 : -1.0;
+         double planeDistance = Math.abs(rel.dot(side) - sign * rel.y) / Math.sqrt(2.0);
+         if (along < 0 || along > 400 || planeDistance > 15 || Math.abs(rel.y) > 75 || !this.hit.add(target.getId())) continue;
          target.invulnerableTime = 0;
          target.hurt(source, 1500.0F);
          target.invulnerableTime = 0;
@@ -99,11 +101,12 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
    private void queueTerrain(net.minecraft.server.level.ServerLevel level) {
       terrainDone = true;
       Vec3 origin = this.position(); Vec3 castDirection = this.direction;
+      boolean mirrored = slashType == SlashType.SULSAGANA;
       if (slashType == SlashType.IGALIMA) {
-         DeferredTerrainDestruction.queueDiagonalCut(level, origin, castDirection, 400, 30, 150, null);
+         DeferredTerrainDestruction.queueDiagonalCut(level, origin, castDirection, 400, 30, 150, mirrored, null);
       } else {
-         DeferredTerrainDestruction.queueDiagonalCut(level, origin, castDirection, 400, 30, 150,
-            () -> DeferredTerrainDestruction.queueDiagonalBurnShell(level, origin, castDirection, 400, 30, 150, 4));
+         DeferredTerrainDestruction.queueDiagonalCut(level, origin, castDirection, 400, 30, 150, mirrored,
+            () -> DeferredTerrainDestruction.queueDiagonalBurnShell(level, origin, castDirection, 400, 30, 150, mirrored, 4));
       }
    }
 

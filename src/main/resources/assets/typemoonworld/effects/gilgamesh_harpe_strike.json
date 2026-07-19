@@ -1,1 +1,133 @@
-{"duration":0.8,"emitters":[{"rate":480,"particle_lifetime":0.55,"component":{"type":"parametric","mode":"EXPRESSION","expr_x":"6*cos(t*1.7-0.85)","expr_y":"1+2*sin(t*3.14)","expr_z":"1+7*t","t_start":0,"t_end":1,"segments":150},"color_over_life":[{"t":0,"color":"#00AA0000"},{"t":0.25,"color":"#CCAA0018"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.55},{"t":1,"size":0.04}],"blend":"ADDITIVE","enable_trail":true}]}
+{
+  "duration": 1.25,
+  "notes": "Harpe: crescent death-sickle, anti-undead wound and red-black curse fracture.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 720,
+      "particle_lifetime": 0.4,
+      "component": { "type": "circle", "radius": 1.0, "segments": 140 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.2, "color": "#FFE12E3F" },
+        { "t": 0.55, "color": "#FF7D0618" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.35, "size": 1.1 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.6, 1.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.2, 0.2, 0.2] },
+        { "t": 0.55, "pos": [0.0, 0.6, 4.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [2.6, 2.6, 2.6], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.5, 7.4], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [3.6, 3.6, 3.6] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "HARPE_DEATH_CRESCENT",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 0.62,
+      "rate": 1080,
+      "particle_lifetime": 0.5,
+      "position_variance": 0.04,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "5.5*sin(-1.05+t*2.1)",
+        "expr_y": "-0.25+2.9*sin(t*3.14159)",
+        "expr_z": "0.8+8.0*t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 210
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.14, "color": "#FFFF4855" },
+        { "t": 0.5, "color": "#EE8F0B25" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.26, "size": 0.65 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "HARPE_CURSED_SLASH",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.2,
+      "end_time": 1.15,
+      "rate": 540,
+      "particle_lifetime": 0.7,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.08, 0.38],
+      "velocity_variance": 0.18,
+      "component": {
+        "type": "fractal_lightning",
+        "start": [0.0, -0.5, 1.5],
+        "end": [0.0, 0.4, 8.4],
+        "iterations": 4,
+        "roughness": 0.5,
+        "period": 5.0,
+        "density": 8.0,
+        "randomize_start": true,
+        "randomize_end": true,
+        "random_radius_min": 0.0,
+        "random_radius_max": 0.35,
+        "random_height_min": -0.22,
+        "random_height_max": 0.22,
+        "seed1": 1.4,
+        "seed2": 3.1,
+        "seed3": 5.7,
+        "seed4": 7.9,
+        "seed5": 9.2,
+        "segments": 120
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFF1933" },
+        { "t": 0.45, "color": "#DD6A0016" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.4, "size": 0.3 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "HARPE_REGENERATION_SEAL",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "smoke", "count": 2, "spread": [2.0, 1.0, 2.6], "offset": [0.0, 0.0, 4.0], "speed": 0.025, "chance": 0.55 },
+        { "type": "soul", "count": 1, "spread": [1.5, 0.8, 2.0], "offset": [0.0, 0.2, 4.0], "speed": 0.02, "chance": 0.36 }
+      ]
+    },
+    {
+      "start_time": 0.42,
+      "end_time": 0.98,
+      "rate": 380,
+      "particle_lifetime": 0.55,
+      "component": { "type": "sphere", "radius": 1.0, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF3344" },
+        { "t": 0.25, "color": "#EEB20C22" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.36, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.3, 7.0], "scale": [0.4, 0.4, 0.4] },
+        { "t": 1.0, "pos": [0.0, 0.3, 7.7], "scale": [3.2, 1.5, 3.2] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "HARPE_WOUND_LOCK_IMPACT"
+    }
+  ]
+}

@@ -85,4 +85,8 @@ public class ClientPacketHandler {
    public static void handleEnkiduDetectionHighlight(List<Integer> entityIds, int ticks) {
       EnkiduDetectionHighlightClient.apply(entityIds, ticks);
    }
+
+   public static void handleDuelScreenFlash(int ticks, float strength) {
+      DuelScreenFlashClient.apply(ticks, strength);
+   }
 }

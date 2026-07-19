@@ -51,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationSetMessage;
@@ -225,6 +226,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(MasterVisualStateMessage.TYPE, MasterVisualStateMessage.STREAM_CODEC, MasterVisualStateMessage::handleData);
       registrar.playToClient(FirearmPoseMessage.TYPE, FirearmPoseMessage.STREAM_CODEC, FirearmPoseMessage::handleData);
       registrar.playToClient(EnkiduDetectionHighlightMessage.TYPE, EnkiduDetectionHighlightMessage.STREAM_CODEC, EnkiduDetectionHighlightMessage::handleData);
+      registrar.playToClient(DuelScreenFlashMessage.TYPE, DuelScreenFlashMessage.STREAM_CODEC, DuelScreenFlashMessage::handleData);
       registrar.playToClient(
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE,
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.STREAM_CODEC,

@@ -95,10 +95,8 @@ public final class VFXClientRuntime {
    }
 
    private static Quaternionf rotationFromForward(Vec3 forward) {
-      Vec3 f = forward.normalize();
-      float yaw = (float)Math.atan2(-f.x, f.z);
-      float pitch = (float)Math.asin(Math.max(-1.0, Math.min(1.0, f.y)));
-      return new Quaternionf().rotateY(yaw).rotateX(-pitch);
+      Vec3 f = forward.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : forward.normalize();
+      return new Quaternionf().rotationTo(new Vector3f(0.0F, 0.0F, 1.0F), new Vector3f((float)f.x, (float)f.y, (float)f.z));
    }
 
    public static void spawnTest(double x, double y, double z) {
@@ -111,10 +109,10 @@ public final class VFXClientRuntime {
          return;
       }
       String mode = binding.mode();
-      if ("artoria_blade".equals(mode) || "entity_yaw".equals(mode)) {
+      if ("artoria_blade".equals(mode) || "entity_yaw".equals(mode) || "entity_look".equals(mode)) {
          emitter.setDynamicTransform(
             () -> bindingOrigin(target, binding),
-            () -> binding.rotateWithEntity() ? yawRotation(target) : new Quaternionf()
+            () -> binding.rotateWithEntity() ? ("entity_look".equals(mode) ? rotationFromForward(target.getLookAngle()) : yawRotation(target)) : new Quaternionf()
          );
       }
    }

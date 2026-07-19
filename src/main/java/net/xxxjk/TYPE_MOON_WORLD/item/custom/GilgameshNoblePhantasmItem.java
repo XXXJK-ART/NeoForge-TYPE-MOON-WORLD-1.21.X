@@ -18,6 +18,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -39,6 +40,11 @@ import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** Marker item for treasures exposed from Gilgamesh's vault. */
@@ -57,6 +63,14 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
    public String modelId() { return this.modelId; }
 
    @Override
+   public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+      if ("durandal".equals(this.modelId) && stack.getDamageValue() != 0) {
+         stack.setDamageValue(0);
+      }
+      super.inventoryTick(stack, level, entity, slotId, isSelected);
+   }
+
+   @Override
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       if (player.getCooldowns().isOnCooldown(this)) {
@@ -65,7 +79,6 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       if ("babili".equals(this.modelId) || "ea".equals(this.modelId)) {
          player.startUsingItem(hand);
          if (player instanceof ServerPlayer serverPlayer && serverPlayer.level() instanceof ServerLevel serverLevel) {
-            if (findEaEntity(serverLevel, serverPlayer) == null) serverLevel.addFreshEntity(new GilgameshEaBeamEntity(serverLevel, serverPlayer, serverPlayer.getLookAngle()));
          }
          return InteractionResultHolder.consume(stack);
       }
@@ -92,6 +105,17 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
    }
 
    @Override
+   public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
+      if (!(living instanceof ServerPlayer player) || !(level instanceof ServerLevel serverLevel)) return;
+      int heldTicks = getUseDuration(stack, living) - remainingUseDuration;
+      if ("ea".equals(this.modelId) && heldTicks == 1 && findEaEntity(serverLevel, player) == null) {
+         GilgameshEaBeamEntity controller = new GilgameshEaBeamEntity(serverLevel, player, player.getLookAngle());
+         serverLevel.addFreshEntity(controller);
+      }
+      super.onUseTick(level, living, stack, remainingUseDuration);
+   }
+
+   @Override
    public int getUseDuration(ItemStack stack, LivingEntity entity) {
       return ("babili".equals(this.modelId) || "ea".equals(this.modelId)) ? 72000 : super.getUseDuration(stack, entity);
    }
@@ -105,28 +129,34 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
       if (!(living instanceof ServerPlayer player) || !(level instanceof ServerLevel serverLevel)) return;
       int heldTicks = this.getUseDuration(stack, living) - timeLeft;
+      if ("babili".equals(this.modelId)) {
+         if (heldTicks < BAB_ILU_LONG_PRESS_TICKS) {
+            AbilityStats gateStats = stats();
+            if (!consumeMana(player, gateStats.mana())) {
+               player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+               return;
+            }
+            if (castBabIlu(player)) player.getCooldowns().addCooldown(this, gateStats.cooldown());
+            else refundMana(player, gateStats.mana());
+         } else {
+            Vec3 direction = player.getLookAngle().normalize();
+            player.getCooldowns().addCooldown(this, 400);
+            VFXServerEffects.spawn(serverLevel, "gilgamesh_ea_tree", player.position().add(0, player.getBbHeight() * 0.65, 0), 192.0);
+            serverLevel.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.PLAYERS, 1.6F, 0.72F);
+            TYPE_MOON_WORLD.queueServerWork(EA_TREE_TICKS, () -> {
+               if (!player.isAlive() || player.level() != serverLevel) return;
+               giveEaIfMissing(player);
+               serverLevel.playSound(null, player.blockPosition(), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 1.5F, 0.62F);
+            });
+         }
+         return;
+      }
       GilgameshEaBeamEntity ea = findEaEntity(serverLevel, player);
       if (ea != null) {
-         if (heldTicks < BAB_ILU_LONG_PRESS_TICKS) {
-            ea.discard();
-            if ("babili".equals(this.modelId)) {
-               AbilityStats gateStats = stats();
-               if (!consumeMana(player, gateStats.mana())) {
-                  player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
-                  return;
-               }
-               if (castBabIlu(player)) player.getCooldowns().addCooldown(this, gateStats.cooldown());
-               else refundMana(player, gateStats.mana());
-            }
-            return;
-         }
-         if (heldTicks < 60) { ea.discard(); return; }
          ea.requestRelease(heldTicks);
          return;
       }
-      if (!"babili".equals(this.modelId)) return;
-      if (heldTicks < BAB_ILU_LONG_PRESS_TICKS) castBabIlu(player);
-      player.swing(player.getUsedItemHand(), true);
+      return;
    }
 
    private boolean castBabIlu(ServerPlayer player) {
@@ -328,6 +358,14 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       });
    }
 
-   @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) { }
+   @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+      if ("ea".equals(this.modelId)) controllers.add(new AnimationController<>(this, "ea_spin", 0, this::eaAnimation));
+   }
+   private PlayState eaAnimation(AnimationState<GilgameshNoblePhantasmItem> state) {
+      Entity entity = state.getData(DataTickets.ENTITY);
+      boolean active = entity instanceof LivingEntity living && GilgameshEaBeamEntity.isEaActiveFor(living);
+      state.getController().setAnimation(RawAnimation.begin().thenLoop(active ? "xuanzhuan2" : "idle"));
+      return PlayState.CONTINUE;
+   }
    @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
 }

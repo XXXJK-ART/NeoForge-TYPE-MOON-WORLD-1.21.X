@@ -49,6 +49,8 @@ public record VFXVanillaParticleDefinition(ParticleOptions options, int count, V
          case "end_rod" -> ParticleTypes.END_ROD;
          case "poof" -> ParticleTypes.POOF;
          case "flame" -> ParticleTypes.FLAME;
+         case "lava" -> ParticleTypes.LAVA;
+         case "snowflake" -> ParticleTypes.SNOWFLAKE;
          case "soul" -> ParticleTypes.SOUL;
          case "soul_fire_flame" -> ParticleTypes.SOUL_FIRE_FLAME;
          case "wax_on" -> ParticleTypes.WAX_ON;

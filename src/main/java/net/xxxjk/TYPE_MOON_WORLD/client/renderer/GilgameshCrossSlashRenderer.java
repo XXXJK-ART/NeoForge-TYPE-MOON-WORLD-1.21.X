@@ -15,11 +15,24 @@ public class GilgameshCrossSlashRenderer extends GeoEntityRenderer<GilgameshCros
       pose.pushPose();
       var direction = e.getSlashDirection();
       float ryaw = (float)(Mth.atan2(direction.x, direction.z) * 180.0 / Math.PI);
+      float age = e.tickCount + partial;
+      float appear = smooth(age / 16.0F);
+      float slashStart = e.getSlashType() == GilgameshCrossSlashEntity.SlashType.IGALIMA ? 16.0F : 24.0F;
+      float swing = smooth((age - slashStart) / 8.0F);
+      float vanish = 1.0F - smooth((age - 42.0F) / 12.0F);
+      float scale = (e.getSlashType() == GilgameshCrossSlashEntity.SlashType.IGALIMA ? 14.45F : 4.51F)
+         * Math.max(0.001F, appear * vanish);
       pose.mulPose(Axis.YP.rotationDegrees(ryaw));
+      pose.translate(0.0, 34.0 - 52.0 * swing, 14.0 + 108.0 * swing);
+      pose.mulPose(Axis.XP.rotationDegrees(-38.0F + 108.0F * swing));
       pose.mulPose(Axis.ZP.rotationDegrees(e.getSlashType() == GilgameshCrossSlashEntity.SlashType.IGALIMA ? 45.0F : -45.0F));
-      pose.translate(0.0, 1.5, -25.0);
-      pose.scale(14.0F, 14.0F, 14.0F);
+      pose.scale(scale, scale, scale);
       super.render(e, yaw, partial, pose, buffers, light);
       pose.popPose();
+   }
+
+   private static float smooth(float value) {
+      float clamped = Mth.clamp(value, 0.0F, 1.0F);
+      return clamped * clamped * (3.0F - 2.0F * clamped);
    }
 }

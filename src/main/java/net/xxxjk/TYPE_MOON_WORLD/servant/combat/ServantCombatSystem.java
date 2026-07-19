@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -85,7 +86,7 @@ public final class ServantCombatSystem {
       ServantDefinition definition = entity.getDefinition();
       ServantParams params = definition != null ? definition.parameters() : null;
       CompoundTag data = entity.getPersistentData();
-      initializeResources(data, params);
+      initializeResources(entity, data, params);
       tickResourceRegen(entity, data, params, now);
       tickRecovery(entity, data, params, now);
       updateCombatState(entity, definition, data, now);
@@ -254,13 +255,13 @@ public final class ServantCombatSystem {
       return entity.getPersistentData().getLong(TAG_DAMAGE_BOOST_UNTIL) > entity.level().getGameTime();
    }
 
-   private static void initializeResources(CompoundTag data, ServantParams params) {
+   private static void initializeResources(ServantEntity entity, CompoundTag data, ServantParams params) {
       double staminaMax = ServantCombatFormulas.staminaMax(params);
       if (!data.contains(TAG_STAMINA)) {
          data.putDouble(TAG_STAMINA, staminaMax);
       }
       if (!data.contains(TAG_POISE)) {
-         data.putDouble(TAG_POISE, adjustedPoiseMax(params, null));
+         data.putDouble(TAG_POISE, adjustedPoiseMax(params, entity));
       }
    }
 
@@ -270,7 +271,7 @@ public final class ServantCombatSystem {
       }
       double staminaMax = ServantCombatFormulas.staminaMax(params);
       if (now >= data.getLong(TAG_GUARD_EXHAUST_UNTIL)) {
-         double stamina = Math.min(staminaMax, data.getDouble(TAG_STAMINA) + ServantCombatFormulas.staminaRegenPerSecond(params) / 4.0);
+         double stamina = Math.min(staminaMax, data.getDouble(TAG_STAMINA) + adjustedStaminaRegenPerSecond(params, entity) / 4.0);
          data.putDouble(TAG_STAMINA, stamina);
       }
 
@@ -315,6 +316,16 @@ public final class ServantCombatSystem {
             }
             return;
          }
+         if (entity instanceof GilgameshEntity) {
+            ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
+            ServantCombatPhase desired = healthRatio <= 0.40
+               ? ServantCombatPhase.DECISIVE
+               : healthRatio <= 0.60 ? ServantCombatPhase.NORMAL : ServantCombatPhase.PROBING;
+            if (desired.id() > current.id()) {
+               data.putInt(TAG_PHASE, desired.id());
+            }
+            return;
+         }
          ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
          if (healthRatio <= 0.60 && current.id() < ServantCombatPhase.DECISIVE.id()) {
             data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
@@ -326,7 +337,8 @@ public final class ServantCombatSystem {
 
       long lastCombat = data.getLong(TAG_LAST_COMBAT_TICK);
       if (lastCombat <= 0) {
-         if (ServantCombatPhase.fromId(data.getInt(TAG_PHASE)) != ServantCombatPhase.PROBING) {
+         if (!(entity instanceof GilgameshEntity)
+            && ServantCombatPhase.fromId(data.getInt(TAG_PHASE)) != ServantCombatPhase.PROBING) {
             resetCombatState(entity, data);
          }
          return;
@@ -349,7 +361,9 @@ public final class ServantCombatSystem {
    }
 
    private static void resetCombatState(ServantEntity entity, CompoundTag data) {
-      data.putInt(TAG_PHASE, ServantCombatPhase.PROBING.id());
+      if (!(entity instanceof GilgameshEntity)) {
+         data.putInt(TAG_PHASE, ServantCombatPhase.PROBING.id());
+      }
       data.putDouble(TAG_STAMINA, ServantCombatFormulas.staminaMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null));
       data.putDouble(TAG_POISE, adjustedPoiseMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null, entity));
       data.remove(TAG_LAST_COMBAT_TICK);
@@ -944,6 +958,14 @@ public final class ServantCombatSystem {
 
    private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
       double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      if (entity instanceof GilgameshEntity) {
+         return poiseRegen * 2.0;
+      }
       return entity != null && LiShuwenCombatHelper.hasChineseMartialArts(entity) ? poiseRegen * 2.0 : poiseRegen;
+   }
+
+   private static double adjustedStaminaRegenPerSecond(ServantParams params, ServantEntity entity) {
+      double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
+      return entity instanceof GilgameshEntity ? staminaRegen * 1.75 : staminaRegen;
    }
 }

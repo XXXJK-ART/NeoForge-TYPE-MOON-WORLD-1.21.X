@@ -39,13 +39,22 @@ public final class DeferredTerrainDestruction {
       if (radius > 0 && halfHeight > 0) add(level, new EllipsoidJob(level, center, radius, halfHeight, maxHardness));
    }
    public static void queueDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, Runnable completion) {
-      add(level, new DiagonalJob(level, origin, direction, length, width, height, false, completion));
+      queueDiagonalCut(level, origin, direction, length, width, height, false, completion);
+   }
+   public static void queueDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, Runnable completion) {
+      add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, false, completion));
    }
    public static void queueDiagonalBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, double shell) {
-      add(level, new DiagonalJob(level, origin, direction, length, width, height, true, null).shell(shell));
+      queueDiagonalBurnShell(level, origin, direction, length, width, height, false, shell);
+   }
+   public static void queueDiagonalBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, double shell) {
+      add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, true, null).shell(shell));
    }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
       add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel));
+   }
+   public static void queueUpperHemisphere(ServerLevel level, Vec3 center, double radius, double minimumYExclusive, float maxHardness) {
+      if (level != null && radius > 0) add(level, new UpperHemisphereJob(level, center, radius, minimumYExclusive, maxHardness));
    }
 
    private static void add(ServerLevel level, Job job) { if (level != null && job != null) JOBS.computeIfAbsent(level.dimension(), k -> new ArrayDeque<>()).add(job); }
@@ -88,16 +97,23 @@ public final class DeferredTerrainDestruction {
       void cursor(){if(++z>radius){z=-radius;if(++y>height){y=-height;if(++x>radius)done=true;}}}
    }
    private static final class DiagonalJob extends Job {
-      final Vec3 origin,forward,side; final double length,width,height; final boolean burn; double shell; int along,lateral,vertical;
-      DiagonalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean burn,Runnable completion){super(level);this.origin=origin;Vec3 flat=new Vec3(direction.x,0,direction.z);this.forward=flat.lengthSqr()<1e-6?new Vec3(0,0,1):flat.normalize();this.side=new Vec3(-forward.z,0,forward.x);this.length=length;this.width=width;this.height=height;this.burn=burn;this.completion=completion;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
-      DiagonalJob shell(double shell){this.shell=shell;lateral=(int)-Math.ceil(width/2+shell);vertical=(int)-Math.ceil(height/2+shell);return this;}
-      void advance(){double d=along*.5, halfW=width/2, halfH=height/2;double lat=lateral;double y=vertical;cursor();boolean core=Math.abs(lat)<=halfW&&Math.abs(y)<=halfH;if(burn&&core)return;if(!burn&&!core)return;Vec3 point=origin.add(forward.scale(d)).add(side.scale(lat+y*.85)).add(0,y,0);BlockPos p=BlockPos.containing(point);if(!valid(p,Float.MAX_VALUE))return;if(burn)level.setBlock(p,level.random.nextFloat()<.75F?Blocks.NETHERRACK.defaultBlockState():Blocks.MAGMA_BLOCK.defaultBlockState(),3);else level.removeBlock(p,false);}
-      void cursor(){int maxLat=(int)Math.ceil(width/2+shell),maxY=(int)Math.ceil(height/2+shell);if(++vertical>maxY){vertical=-maxY;if(++lateral>maxLat){lateral=-maxLat;if(++along>(int)Math.ceil(length*2))done=true;}}}
+      final Vec3 origin,forward,side; final double length,width,height,sign; final boolean burn; double shell; int along,normal,vertical;
+      DiagonalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean mirrored,boolean burn,Runnable completion){super(level);this.origin=origin;Vec3 flat=new Vec3(direction.x,0,direction.z);this.forward=flat.lengthSqr()<1e-6?new Vec3(0,0,1):flat.normalize();this.side=new Vec3(-forward.z,0,forward.x);this.length=length;this.width=width;this.height=height;this.sign=mirrored?-1.0:1.0;this.burn=burn;this.completion=completion;resetCursor();}
+      DiagonalJob shell(double shell){this.shell=shell;resetCursor();return this;}
+      void resetCursor(){along=burn?(int)Math.floor(-shell*2.0):0;normal=(int)-Math.ceil(width/2+shell);vertical=(int)-Math.ceil(height/2+shell);}
+      void advance(){double distance=along*.5,n=normal,y=vertical;cursor();boolean inCore=distance>=0&&distance<=length&&Math.abs(n)<=width/2&&Math.abs(y)<=height/2;if(burn&&inCore)return;if(!burn&&!inCore)return;double sideOffset=sign*y+n*Math.sqrt(2.0);Vec3 point=origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0);BlockPos pos=BlockPos.containing(point);if(!valid(pos,Float.MAX_VALUE))return;if(burn)level.setBlock(pos,level.random.nextFloat()<.75F?Blocks.NETHERRACK.defaultBlockState():Blocks.MAGMA_BLOCK.defaultBlockState(),3);else level.removeBlock(pos,false);}
+      void cursor(){int maxNormal=(int)Math.ceil(width/2+shell),maxY=(int)Math.ceil(height/2+shell),maxAlong=(int)Math.ceil((length+shell)*2.0);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>maxAlong)done=true;}}}
    }
    private static final class DirectionalJob extends Job {
       final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; int along, lateral, vertical;
       DirectionalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean funnel){super(level);this.origin=origin;this.forward=direction.lengthSqr()<1e-6?new Vec3(0,0,1):direction.normalize();Vec3 worldUp=Math.abs(forward.y)>.95?new Vec3(0,0,1):new Vec3(0,1,0);this.right=forward.cross(worldUp).normalize();this.up=right.cross(forward).normalize();this.length=length;this.width=width;this.height=height;this.funnel=funnel;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
       void advance(){double distance=along*.5,progress=distance/length;double factor;if(funnel)factor=progress<.35?Math.max(.08,progress/.35):progress>.8?Math.max(.1,1-(progress-.8)*4.5):1;else factor=Math.max(.18,Math.sin(Math.PI*Math.max(0,Math.min(1,progress))));double hw=width*.5*factor,hh=height*.5*factor;int lat=lateral,v=vertical;cursor();if(Math.abs(lat)>hw||Math.abs(v)>hh||distance<4)return;BlockPos p=BlockPos.containing(origin.add(forward.scale(distance)).add(right.scale(lat)).add(up.scale(v)));if(valid(p,80))level.removeBlock(p,false);}
       void cursor(){int maxLat=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++lateral>maxLat){lateral=-maxLat;if(++along>(int)Math.ceil(length*2))done=true;}}}
+   }
+   private static final class UpperHemisphereJob extends Job {
+      final Vec3 center; final int radius; final double radiusSqr, minimumY; final float hardness; int x, y, z;
+      UpperHemisphereJob(ServerLevel level,Vec3 center,double radius,double minimumY,float hardness){super(level);this.center=center;this.radius=(int)Math.ceil(radius);this.radiusSqr=radius*radius;this.minimumY=minimumY;this.hardness=hardness;x=z=-this.radius;y=0;}
+      void advance(){int cx=x,cy=y,cz=z;cursor();double worldY=center.y+cy;if(worldY<=minimumY||cx*cx+cy*cy+cz*cz>radiusSqr)return;BlockPos pos=BlockPos.containing(center.x+cx,worldY,center.z+cz);if(valid(pos,hardness))level.removeBlock(pos,false);}
+      void cursor(){if(++z>radius){z=-radius;if(++y>radius){y=0;if(++x>radius)done=true;}}}
    }
 }

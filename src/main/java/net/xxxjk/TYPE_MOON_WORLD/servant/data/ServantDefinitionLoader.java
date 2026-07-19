@@ -196,7 +196,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       String idle = getStringOrDefault(animationsJson, "idle", "");
       String walk = getStringOrDefault(animationsJson, "walk", "");
       java.util.Map<String, String> actions = new java.util.LinkedHashMap<>();
-      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step", "gallatin_chant", "gallatin_release"}) {
+      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "float_idle", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step", "gallatin_chant", "gallatin_release", "gate_single", "gate_small", "gate_large", "gate_of_babylon", "gate_duel", "durandal_slash", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "np"}) {
          if (animationsJson.has(key)) {
             String value = animationsJson.get(key).getAsString();
             if (value != null && !value.isBlank()) {

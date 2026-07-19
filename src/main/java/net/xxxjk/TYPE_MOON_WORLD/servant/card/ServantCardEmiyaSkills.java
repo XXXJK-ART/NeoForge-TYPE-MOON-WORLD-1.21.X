@@ -264,19 +264,14 @@ public final class ServantCardEmiyaSkills {
       green.addImmuneEntity(gil);
       green.addImmuneEntity(player);
       level.addFreshEntity(green);
-      Vec3 copiedDirection = direction;
-      TYPE_MOON_WORLD.queueServerWork(8, () -> {
-         if (player.isAlive() && player.level() == level) {
-            GilgameshCrossSlashEntity white = new GilgameshCrossSlashEntity(level, player, GilgameshCrossSlashEntity.SlashType.SULSAGANA, copiedDirection);
-            white.addImmuneEntity(gil);
-            white.addImmuneEntity(player);
-            level.addFreshEntity(white);
-         }
-      });
+      GilgameshCrossSlashEntity white = new GilgameshCrossSlashEntity(level, player, GilgameshCrossSlashEntity.SlashType.SULSAGANA, direction);
+      white.addImmuneEntity(gil);
+      white.addImmuneEntity(player);
+      level.addFreshEntity(white);
       for (GilgameshCrossSlashEntity original : level.getEntitiesOfClass(GilgameshCrossSlashEntity.class, gil.getBoundingBox().inflate(420.0), e -> e.isAlive() && e.isOwnedBy(gil))) {
          original.addImmuneEntity(player);
       }
-      VFXServerEffects.spawn(level, "gilgamesh_cross_slash", player.position(), 256.0);
+      VFXServerEffects.spawnOriented(level, "gilgamesh_cross_slash", player.position(), direction, 256.0);
       return true;
    }
 
