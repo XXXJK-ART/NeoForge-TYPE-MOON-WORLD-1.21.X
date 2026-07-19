@@ -74,6 +74,12 @@ public final class ServantCardGilgameshSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      if (player.level() instanceof ServerLevel level) {
+         for (GilgameshCrossSlashEntity slash : level.getEntitiesOfClass(GilgameshCrossSlashEntity.class,
+            player.getBoundingBox().inflate(GilgameshCrossSlashEntity.SLASH_LENGTH + 64.0), e -> e.isOwnedBy(player))) {
+            slash.discard();
+         }
+      }
       player.getPersistentData().remove(KEY);
       player.getPersistentData().remove(SHIELD);
       player.getPersistentData().remove(ARMOR);
@@ -214,13 +220,17 @@ public final class ServantCardGilgameshSkills {
       LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 30.0, 3.0);
       if (target == null) return;
       Vec3 center = target.position().add(0.0, target.getBbHeight() * .5, 0.0);
-      for (int i = 0; i < 24; i++) {
-         double a = i * Math.PI * 2.0 / 24.0;
-         Vec3 start = center.add(Math.cos(a) * 8.0, 1.0 + Math.sin(a) * 3.0, Math.sin(a) * 8.0);
+      int count = 36;
+      double goldenAngle = Math.PI * (3.0 - Math.sqrt(5.0));
+      for (int i = 0; i < count; i++) {
+         double y = 1.0 - 2.0 * (i + .5) / count;
+         double radius = Math.sqrt(Math.max(0.0, 1.0 - y * y));
+         double angle = i * goldenAngle;
+         Vec3 start = center.add(Math.cos(angle) * radius * 8.0, y * 8.0, Math.sin(angle) * radius * 8.0);
          Vec3 aim = center.subtract(start).normalize();
          GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], 35.0F);
          p.setHomingTarget(target);
-         p.setLaunchDelay(12 + i % 5 * 4); level.addFreshEntity(p);
+         p.setLaunchDelay(16); level.addFreshEntity(p);
       }
    }
 
@@ -261,7 +271,16 @@ public final class ServantCardGilgameshSkills {
 
    public static void performLaughVault(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) level.playSound(null, player.blockPosition(), ModSounds.GILGAMESH_VOICE_MONGREL.get(), SoundSource.PLAYERS, 1.5F, 1.0F);
-      castProjectiles(player, 96, 64.0, 48.0F);
+      castProjectiles(player, 96, 128.0, 48.0F);
+      for (int round = 1; round < 4; round++) {
+         int delay = round * 16;
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (player.isAlive() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id) && hasKey(player)) {
+               castProjectiles(player, 96, 128.0, 48.0F);
+            }
+         });
+      }
    }
 
    public static void performCrossSlash(ServerPlayer player) {

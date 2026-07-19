@@ -1613,11 +1613,24 @@
     "skill.typemoonworld.servant_card.gilgamesh_divine_shield": "众神之盾",
     "skill.typemoonworld.servant_card.gilgamesh_clairvoyance": "千里眼",
     "skill.typemoonworld.servant_card.gilgamesh_charisma": "王者威仪",
-    "skill.typemoonworld.servant_card.gilgamesh_laugh_vault": "狂笑·超大规模王之宝库",
+    "skill.typemoonworld.servant_card.gilgamesh_laugh_vault": "大规模王之宝库",
     "skill.typemoonworld.servant_card.gilgamesh_cross_slash": "伊伽莉玛 & 修尔夏伽那",
     "skill.typemoonworld.servant_card.gilgamesh_melee": "近战小技能",
     "gui.typemoonworld.gilgamesh_vault.title": "王之宝库",
     "hud.typemoonworld.gilgamesh.mainhand": "主手：%s",
-    "hud.typemoonworld.gilgamesh.offhand": "副手：%s"
+    "hud.typemoonworld.gilgamesh.offhand": "副手：%s",
+    "hud.typemoonworld.gilgamesh.item_count": "数量：%s",
+    "hud.typemoonworld.gilgamesh.item_id": "物品ID：%s",
+    "hud.typemoonworld.gilgamesh.block_id": "方块ID：%s",
+    "hud.typemoonworld.gilgamesh.durability": "耐久：%s/%s",
+    "hud.typemoonworld.gilgamesh.entity_type": "类型：%s",
+    "hud.typemoonworld.gilgamesh.distance": "距离：%.1f格",
+    "hud.typemoonworld.gilgamesh.toughness": "护甲韧性：%.1f",
+    "hud.typemoonworld.gilgamesh.equipment.head": "头部：%s",
+    "hud.typemoonworld.gilgamesh.equipment.chest": "胸部：%s",
+    "hud.typemoonworld.gilgamesh.equipment.legs": "腿部：%s",
+    "hud.typemoonworld.gilgamesh.equipment.feet": "脚部：%s",
+    "hud.typemoonworld.gilgamesh.effects": "状态效果：",
+    "hud.typemoonworld.gilgamesh.effect": "  %s %s级（%ss）"
 }
 

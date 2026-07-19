@@ -1,23 +1,19 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
-import java.util.List;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.Tiers;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.level.Level;
 
 /** A non-instant-death projection of Gae Bolg for Gilgamesh's treasury wheel. */
-public final class GilgameshHarmlessGaeBulgItem extends SwordItem {
+public final class GilgameshHarmlessGaeBulgItem extends GaeBulgItem {
    public GilgameshHarmlessGaeBulgItem(Properties properties) {
-      super(Tiers.NETHERITE, properties);
+      super(properties);
    }
 
    @Override
-   public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-      super.appendHoverText(stack, context, tooltip, flag);
-      tooltip.add(Component.translatable("item.typemoonworld.gilgamesh_gae_bulg.desc").withStyle(ChatFormatting.RED));
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      return InteractionResultHolder.pass(player.getItemInHand(hand));
    }
 }

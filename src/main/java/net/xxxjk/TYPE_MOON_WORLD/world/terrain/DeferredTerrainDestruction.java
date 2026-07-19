@@ -2,10 +2,16 @@ package net.xxxjk.TYPE_MOON_WORLD.world.terrain;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -62,6 +68,24 @@ public final class DeferredTerrainDestruction {
       add(level, job);
       return new AdvancingDiagonalCut(job);
    }
+   /** Queues the exact swept volume between two consecutive blade poses. */
+   public static void queueSweptBlade(ServerLevel level, Vec3 previousCenter, Vec3 currentCenter,
+                                      Vec3 previousAxis, Vec3 currentAxis, Vec3 faceNormal,
+                                      double bladeLength, double radius,
+                                      boolean burnTrace, BooleanSupplier active) {
+      if (level == null || previousCenter == null || currentCenter == null || previousAxis == null || currentAxis == null) return;
+      add(level, new SweptBladeJob(level, previousCenter, currentCenter, previousAxis, currentAxis,
+         faceNormal, bladeLength, radius, burnTrace, active));
+   }
+
+   /** Queues complete, near-to-far voxel clearing for one or more connected slash traces. */
+   public static void queueBladeTrace(ServerLevel level, List<TraceSegment> segments, double radius,
+                                      boolean burnTrace, BooleanSupplier active) {
+      if (level == null || segments == null || segments.isEmpty()) return;
+      add(level, new BladeTraceJob(level, segments, radius, burnTrace, active));
+   }
+
+   public record TraceSegment(Vec3 start, Vec3 end) { }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
       add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel));
    }
@@ -141,6 +165,173 @@ public final class DeferredTerrainDestruction {
       @Override boolean ready(){return !done&&along<=Math.floor(targetDistance+1.0E-6);}
       @Override void advance(){double distance=along,n=normal,y=vertical;cursor();double sideOffset=sign*y+n*Math.sqrt(2.0);if(sign<0&&Math.abs(sideOffset-y)/Math.sqrt(2.0)<=width/2)return;BlockPos pos=BlockPos.containing(origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0));if(valid(pos,Float.MAX_VALUE))level.removeBlock(pos,false);}
       void cursor(){int maxNormal=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>Math.ceil(length)&&sealed)done=true;}}}
+   }
+
+   private static final class SweptBladeJob extends Job {
+      final Vec3 previousCenter, currentCenter, previousAxis, currentAxis, faceNormal;
+      final double bladeLength, radiusSqr;
+      final boolean burnTrace;
+      final BooleanSupplier active;
+      final int motionSteps, alongSteps, crossRadius, crossStep;
+      int motion, along, crossA, crossB;
+      final Set<Long> burned = new HashSet<>();
+
+      SweptBladeJob(ServerLevel level, Vec3 previousCenter, Vec3 currentCenter, Vec3 previousAxis,
+                    Vec3 currentAxis, Vec3 faceNormal, double bladeLength, double radius,
+                    boolean burnTrace, BooleanSupplier active) {
+         super(level);
+         this.previousCenter = previousCenter;
+         this.currentCenter = currentCenter;
+         this.previousAxis = previousAxis.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : previousAxis.normalize();
+         this.currentAxis = currentAxis.lengthSqr() < 1.0E-6 ? this.previousAxis : currentAxis.normalize();
+         Vec3 normal = faceNormal == null ? Vec3.ZERO : faceNormal.normalize();
+         this.faceNormal = normal.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : normal;
+         this.bladeLength = Math.max(2.0, bladeLength);
+         double sweepRadius = Math.max(1.0, radius);
+         this.radiusSqr = sweepRadius * sweepRadius;
+         this.burnTrace = burnTrace;
+         this.active = active;
+         this.motionSteps = Math.max(1, Mth.ceil(previousCenter.distanceTo(currentCenter) / 2.0));
+         double alongStep = sweepRadius >= 8.0 ? 3.0 : 2.0;
+         this.alongSteps = Math.max(1, Mth.ceil(this.bladeLength / alongStep));
+         this.crossRadius = Mth.ceil(sweepRadius);
+         this.crossStep = sweepRadius >= 8.0 ? 3 : 1;
+         this.crossA = this.crossB = -this.crossRadius;
+      }
+
+      @Override void advance() {
+         if (active != null && !active.getAsBoolean()) { done = true; return; }
+         int currentMotion = motion, currentAlong = along, currentA = crossA, currentB = crossB;
+         cursor();
+         if (currentA * currentA + currentB * currentB > radiusSqr) return;
+         double motionProgress = currentMotion / (double)motionSteps;
+         double alongProgress = currentAlong / (double)alongSteps;
+         Vec3 center = previousCenter.lerp(currentCenter, motionProgress);
+         Vec3 axis = previousAxis.lerp(currentAxis, motionProgress);
+         if (axis.lengthSqr() < 1.0E-6) axis = currentAxis;
+         axis = axis.normalize();
+         Vec3 widthAxis = faceNormal.cross(axis);
+         if (widthAxis.lengthSqr() < 1.0E-6) widthAxis = new Vec3(1, 0, 0);
+         widthAxis = widthAxis.normalize();
+         Vec3 point = center.add(axis.scale((alongProgress - 0.5) * bladeLength))
+            .add(faceNormal.scale(currentA)).add(widthAxis.scale(currentB));
+         BlockPos pos = BlockPos.containing(point);
+         if (!valid(pos, Float.MAX_VALUE)) return;
+         if (level.removeBlock(pos, false) && burnTrace) burnAdjacent(pos);
+      }
+
+      private void burnAdjacent(BlockPos cut) {
+         for (Direction direction : Direction.values()) {
+            BlockPos adjacent = cut.relative(direction);
+            if (!burned.add(adjacent.asLong()) || !level.hasChunkAt(adjacent)) continue;
+            BlockState state = level.getBlockState(adjacent);
+            if (state.isAir() || state.is(Blocks.BEDROCK) || level.getBlockEntity(adjacent) != null) continue;
+            long hash = adjacent.asLong() * 341873128712L + 132897987541L;
+            BlockState replacement = ((hash >>> 16) & 0xFFL) < 38L
+               ? Blocks.MAGMA_BLOCK.defaultBlockState() : Blocks.NETHERRACK.defaultBlockState();
+            level.setBlock(adjacent, replacement, 3);
+         }
+      }
+
+      private void cursor() {
+         crossB += crossStep;
+         if (crossB > crossRadius) {
+            crossB = -crossRadius;
+            crossA += crossStep;
+            if (crossA > crossRadius) {
+               crossA = -crossRadius;
+               if (++along > alongSteps) {
+                  along = 0;
+                  if (++motion > motionSteps) done = true;
+               }
+            }
+         }
+      }
+   }
+
+   private static final class BladeTraceJob extends Job {
+      final List<TraceSegment> segments;
+      final double radius, radiusSqr;
+      final boolean burnTrace;
+      final BooleanSupplier active;
+      final Set<Long> burned = new HashSet<>();
+      int segmentIndex;
+      int along, crossA, crossB;
+      int alongMax, crossRadius;
+      Vec3 start, forward, widthAxis, heightAxis;
+      boolean segmentReady;
+
+      BladeTraceJob(ServerLevel level, List<TraceSegment> segments, double radius,
+                    boolean burnTrace, BooleanSupplier active) {
+         super(level);
+         this.segments = List.copyOf(segments);
+         this.radius = Math.max(1.0, radius);
+         this.radiusSqr = this.radius * this.radius;
+         this.crossRadius = Mth.ceil(this.radius);
+         this.burnTrace = burnTrace;
+         this.active = active;
+      }
+
+      @Override void advance() {
+         if (active != null && !active.getAsBoolean()) { done = true; return; }
+         if (!segmentReady && !prepareSegment()) return;
+         int currentAlong = along;
+         int currentA = crossA;
+         int currentB = crossB;
+         cursor();
+         if (currentA * currentA + currentB * currentB > radiusSqr) return;
+         Vec3 point = start.add(forward.scale(currentAlong)).add(widthAxis.scale(currentA)).add(heightAxis.scale(currentB));
+         BlockPos pos = BlockPos.containing(point);
+         if (!valid(pos, Float.MAX_VALUE)) return;
+         if (level.removeBlock(pos, false) && burnTrace) burnAdjacent(pos);
+      }
+
+      private boolean prepareSegment() {
+         while (segmentIndex < segments.size()) {
+            TraceSegment segment = segments.get(segmentIndex++);
+            if (segment == null || segment.start() == null || segment.end() == null) continue;
+            Vec3 delta = segment.end().subtract(segment.start());
+            double length = delta.length();
+            if (length < 1.0E-4) continue;
+            this.start = segment.start();
+            this.forward = delta.scale(1.0 / length);
+            Vec3 worldUp = Math.abs(forward.y) > 0.92 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+            this.widthAxis = forward.cross(worldUp).normalize();
+            this.heightAxis = widthAxis.cross(forward).normalize();
+            this.alongMax = Mth.ceil(length);
+            this.along = 0;
+            this.crossA = -crossRadius;
+            this.crossB = -crossRadius;
+            this.segmentReady = true;
+            return true;
+         }
+         done = true;
+         return false;
+      }
+
+      private void cursor() {
+         crossB++;
+         if (crossB > crossRadius) {
+            crossB = -crossRadius;
+            if (++crossA > crossRadius) {
+               crossA = -crossRadius;
+               if (++along > alongMax) segmentReady = false;
+            }
+         }
+      }
+
+      private void burnAdjacent(BlockPos cut) {
+         for (Direction direction : Direction.values()) {
+            BlockPos adjacent = cut.relative(direction);
+            if (!burned.add(adjacent.asLong()) || !level.hasChunkAt(adjacent)) continue;
+            BlockState state = level.getBlockState(adjacent);
+            if (state.isAir() || state.is(Blocks.BEDROCK) || level.getBlockEntity(adjacent) != null) continue;
+            long hash = adjacent.asLong() * 341873128712L + 132897987541L;
+            BlockState replacement = ((hash >>> 16) & 0xFFL) < 38L
+               ? Blocks.MAGMA_BLOCK.defaultBlockState() : Blocks.NETHERRACK.defaultBlockState();
+            level.setBlock(adjacent, replacement, 3);
+         }
+      }
    }
    private static final class DirectionalJob extends Job {
       final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; int along, lateral, vertical;

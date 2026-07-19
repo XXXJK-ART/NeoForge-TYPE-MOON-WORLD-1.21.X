@@ -18,54 +18,55 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
-import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-/** A fixed giant blade manifestation followed by one half of the advancing X cut. */
+/** A moving, diagonal blade sweep. Each slash owns its own terrain and damage trace. */
 public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
    public enum SlashType { IGALIMA, SULSAGANA }
    public record SlashPair(GilgameshCrossSlashEntity igalima, GilgameshCrossSlashEntity sulsagana) { }
+   public record SlashPose(Vec3 center, Vec3 bladeAxis, Vec3 faceNormal, double progress) { }
 
-   public static final int MANIFEST_TICKS = 12;
-   public static final int IMPACT_TICK = 52;
-   public static final int SULSAGANA_START_TICK = 60;
-   public static final int FRONTS_MEET_TICK = 68;
-   public static final int MODEL_HOLD_TICKS = 60;
-   public static final int MODEL_FADE_TICKS = 10;
+   public static final int MANIFEST_TICKS = 4;
+   public static final int IMPACT_TICK = 40;
+   public static final int SULSAGANA_START_TICK = 7;
+   public static final int SWING_FADE_TICKS = 8;
+   public static final double MODEL_LENGTH = 100.0;
    public static final double SLASH_LENGTH = 400.0;
-   public static final double SLASH_HEIGHT = 150.0;
-   public static final double SLASH_WIDTH = 30.0;
-   private static final double DESCENT_HEIGHT = 40.0;
-   private static final int CONTROLLER_END_TICK = IMPACT_TICK + (int)(SLASH_LENGTH / 2.0) + 20;
-
+   public static final double AFTERSHOCK_LENGTH = 0.0;
+   public static final double SWEEP_RADIUS = 4.0;
+   private static final int SWING_TICKS = 24;
+   private static final int VISUAL_SWING_TICKS = 24;
+   private static final double START_SIDE_OFFSET = 64.0;
+   private static final double START_HEIGHT_OFFSET = 52.0;
    private static final EntityDataAccessor<Boolean> FIRE_SLASH = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Float> DIR_X = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> DIR_Y = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> DIR_Z = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> FRONT_DISTANCE = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> IMPACTED = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Integer> START_DELAY = SynchedEntityData.defineId(GilgameshCrossSlashEntity.class, EntityDataSerializers.INT);
 
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final Set<Integer> hit = new HashSet<>();
+   private final Set<Integer> aftershockHit = new HashSet<>();
    private final Set<UUID> immuneEntities = new HashSet<>();
    private UUID ownerUuid;
    private UUID castUuid;
    private SlashType slashType = SlashType.IGALIMA;
    private Vec3 direction = new Vec3(0, 0, 1);
    private Vec3 attackOrigin = Vec3.ZERO;
-   private Vec3 groundPosition = Vec3.ZERO;
-   private double processedDamageDistance;
-   private boolean terrainSealed;
-   private DeferredTerrainDestruction.AdvancingDiagonalCut terrainCut;
+   private int startDelay;
+   private boolean impactPlayed;
+   private boolean terrainTraceQueued;
 
    public GilgameshCrossSlashEntity(EntityType<?> type, Level level) {
       super(type, level);
@@ -74,40 +75,29 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
    }
 
    private GilgameshCrossSlashEntity(Level level, LivingEntity owner, SlashType type, Vec3 direction,
-                                     UUID castUuid, Vec3 attackOrigin, Vec3 groundPosition) {
+                                     UUID castUuid, Vec3 attackOrigin, int startDelay) {
       this(ModEntities.GILGAMESH_CROSS_SLASH.get(), level);
       this.ownerUuid = owner.getUUID();
       this.castUuid = castUuid;
       this.slashType = type;
       this.direction = normalizedFlat(direction);
       this.attackOrigin = attackOrigin;
-      this.groundPosition = groundPosition;
+      this.startDelay = startDelay;
       syncVisualState();
-      this.setPos(groundPosition.add(0.0, DESCENT_HEIGHT, 0.0));
+      this.setPos(getVisualCenter(0.0));
    }
 
    public static SlashPair spawnPair(ServerLevel level, LivingEntity owner, Vec3 direction, Entity... immune) {
       Vec3 forward = normalizedFlat(direction);
-      Vec3 horizontalCenter = owner.position().add(forward.scale(10.0));
-      int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-         Mth.floor(horizontalCenter.x), Mth.floor(horizontalCenter.z));
-      if (groundY <= level.getMinBuildHeight() || Math.abs(groundY - owner.getY()) > 80.0) {
-         groundY = Mth.floor(owner.getY());
-      }
-      Vec3 ground = new Vec3(horizontalCenter.x, groundY + 0.05, horizontalCenter.z);
-      Vec3 origin = new Vec3(horizontalCenter.x, owner.getY() + owner.getBbHeight() * 0.55, horizontalCenter.z);
+      double releaseY = Math.max(level.getMinBuildHeight() + 1.0, owner.getY() - 50.0);
+      Vec3 origin = new Vec3(owner.getX(), releaseY + owner.getBbHeight() * 0.55, owner.getZ()).subtract(forward.scale(12.0));
       UUID castId = UUID.randomUUID();
-      GilgameshCrossSlashEntity igalima = new GilgameshCrossSlashEntity(level, owner, SlashType.IGALIMA, forward, castId, origin, ground);
-      GilgameshCrossSlashEntity sulsagana = new GilgameshCrossSlashEntity(level, owner, SlashType.SULSAGANA, forward, castId, origin, ground);
-      if (immune != null) {
-         for (Entity entity : immune) {
-            igalima.addImmuneEntity(entity);
-            sulsagana.addImmuneEntity(entity);
-         }
-      }
+      GilgameshCrossSlashEntity igalima = new GilgameshCrossSlashEntity(level, owner, SlashType.IGALIMA, forward, castId, origin, 0);
+      GilgameshCrossSlashEntity sulsagana = new GilgameshCrossSlashEntity(level, owner, SlashType.SULSAGANA, forward, castId, origin, SULSAGANA_START_TICK);
+      if (immune != null) for (Entity entity : immune) { igalima.addImmuneEntity(entity); sulsagana.addImmuneEntity(entity); }
       level.addFreshEntity(igalima);
       level.addFreshEntity(sulsagana);
-      VFXServerEffects.spawnOriented(level, "gilgamesh_cross_slash", ground, forward, 512.0);
+      VFXServerEffects.spawnOriented(level, "gilgamesh_cross_slash", origin, forward, SLASH_LENGTH + AFTERSHOCK_LENGTH + 64.0);
       return new SlashPair(igalima, sulsagana);
    }
 
@@ -119,12 +109,69 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
    public void addImmuneEntity(Entity entity) { if (entity != null) immuneEntities.add(entity.getUUID()); }
    public boolean isOwnedBy(Entity entity) { return entity != null && entity.getUUID().equals(ownerUuid); }
 
+   public SlashPose getPose(double age) {
+      double activeAge = age - getStartDelay();
+      double progress = Mth.clamp(activeAge / (double)SWING_TICKS, 0.0, 1.0);
+      double eased = progress * progress * (3.0 - 2.0 * progress);
+      Vec3 forward = normalizedFlat(getSlashDirection());
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      double sign = this.getSlashType() == SlashType.IGALIMA ? 1.0 : -1.0;
+      Vec3 path = forward.scale(2.0).add(right.scale(sign)).add(0.0, -0.75, 0.0).normalize();
+      Vec3 start = attackOrigin.add(right.scale(-sign * START_SIDE_OFFSET)).add(0.0, START_HEIGHT_OFFSET, 0.0);
+      Vec3 center = start.add(path.scale(eased * SLASH_LENGTH));
+      Vec3 screenAxis = right.scale(sign).add(0.0, -1.0, 0.0).normalize();
+      double swing = (this.getSlashType() == SlashType.IGALIMA ? 1.0 : -1.0) * Math.sin(progress * Math.PI) * 32.0;
+      double radians = Math.toRadians(swing);
+      screenAxis = screenAxis.scale(Math.cos(radians)).add(forward.cross(screenAxis).scale(Math.sin(radians))).normalize();
+      double forwardTilt = Math.toRadians(18.0 + Math.sin(progress * Math.PI) * 14.0);
+      Vec3 axis = screenAxis.scale(Math.cos(forwardTilt)).add(forward.scale(Math.sin(forwardTilt))).normalize();
+      Vec3 faceNormal = forward.subtract(axis.scale(forward.dot(axis))).normalize();
+      return new SlashPose(center, axis, faceNormal, progress);
+   }
+
+   private SlashPose getAftershockPose(double distance) {
+      SlashPose end = getPose(getStartDelay() + SWING_TICKS);
+      Vec3 forward = normalizedFlat(getSlashDirection());
+      return new SlashPose(end.center().add(forward.scale(Mth.clamp(distance, 0.0, AFTERSHOCK_LENGTH))),
+         end.bladeAxis(), end.faceNormal(), 1.0);
+   }
+
+   private Vec3 getVisualCenter(double age) {
+      Vec3 forward = normalizedFlat(getSlashDirection());
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      double sign = this.getSlashType() == SlashType.IGALIMA ? 1.0 : -1.0;
+      double progress = getVisualProgress(age);
+      return attackOrigin.add(forward.scale(16.0)).add(right.scale(sign * 10.0)).add(0.0, 65.0 * (1.0 - progress), 0.0);
+   }
+
+   private double getVisualProgress(double age) {
+      double progress = Mth.clamp((age - getStartDelay()) / VISUAL_SWING_TICKS, 0.0, 1.0);
+      return progress * progress * (3.0 - 2.0 * progress);
+   }
+
+   public float getModelRollDegrees(float partialTick) {
+      double progress = getVisualProgress(this.tickCount + partialTick);
+      return this.getSlashType() == SlashType.IGALIMA
+         ? (float)(55.0 - 110.0 * progress)
+         : (float)(-55.0 + 110.0 * progress);
+   }
+
+   public float getModelPitchDegrees(float partialTick) {
+      double progress = getVisualProgress(this.tickCount + partialTick);
+      return (float)(-12.0 + 84.0 * progress);
+   }
+
    public float getModelAlpha(float partialTick) {
-      float age = this.tickCount + partialTick;
-      if (age < MANIFEST_TICKS) return Mth.clamp(age / MANIFEST_TICKS, 0.0F, 1.0F);
-      float fadeStart = IMPACT_TICK + MODEL_HOLD_TICKS;
-      if (age <= fadeStart) return 1.0F;
-      return 1.0F - Mth.clamp((age - fadeStart) / MODEL_FADE_TICKS, 0.0F, 1.0F);
+      double age = this.tickCount + partialTick - getStartDelay();
+      if (age < 0.0) return 0.0F;
+      if (age < MANIFEST_TICKS) return Mth.clamp((float)(age / MANIFEST_TICKS), 0.0F, 1.0F);
+      if (age > VISUAL_SWING_TICKS) return 0.0F;
+      return 1.0F;
+   }
+
+   public boolean shouldRenderBladeModel(float partialTick) {
+      double age = this.tickCount + partialTick - getStartDelay();
+      return age >= 0.0 && age <= VISUAL_SWING_TICKS;
    }
 
    @Override
@@ -132,128 +179,73 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
       super.tick();
       if (!(this.level() instanceof ServerLevel level)) return;
       LivingEntity owner = getOwner(level);
-      if (this.tickCount < IMPACT_TICK && (owner == null || !owner.isAlive() || owner.level() != level)) {
-         this.discard();
-         return;
+      if (owner == null || !owner.isAlive() || owner.level() != level) { this.discard(); return; }
+      this.setPos(getVisualCenter(this.tickCount));
+      double activeAge = this.tickCount - startDelay;
+      if (activeAge >= 0.0) {
+         if (!terrainTraceQueued) {
+            queueTerrainTrace(level, owner);
+            terrainTraceQueued = true;
+         }
+         this.entityData.set(FRONT_DISTANCE, (float)(getVisualProgress(this.tickCount) * SLASH_LENGTH));
+         if (activeAge >= VISUAL_SWING_TICKS && !impactPlayed) {
+            impactPlayed = true;
+            this.entityData.set(IMPACTED, true);
+            spawnImpact(level, getVisualCenter(this.tickCount));
+         }
       }
-
-      updateManifestPosition();
-      if (this.tickCount == IMPACT_TICK) {
-         this.entityData.set(IMPACTED, true);
-         if (this.slashType == SlashType.IGALIMA) spawnGroundImpact(level);
-      }
-
-      double nextFront = calculateFrontDistance(this.tickCount);
-      if (nextFront > 0.0 && this.terrainCut == null) {
-         ensureTerrainCut(level);
-         this.terrainCut.advanceTo(nextFront);
-      }
-      if (nextFront > this.processedDamageDistance) {
-         applyDamage(level, owner, this.processedDamageDistance, nextFront);
-         this.processedDamageDistance = nextFront;
-         this.entityData.set(FRONT_DISTANCE, (float)nextFront);
-         this.terrainCut.advanceTo(nextFront);
-         spawnWaveFront(level, nextFront);
-      }
-      if (nextFront >= SLASH_LENGTH && !this.terrainSealed) {
-         this.terrainSealed = true;
-         if (this.terrainCut != null) this.terrainCut.seal();
-      }
-      if (this.hasImpacted() && this.tickCount <= IMPACT_TICK + MODEL_HOLD_TICKS && this.tickCount % 5 == 0) {
-         spawnEmbeddedParticles(level);
-      }
-      if (this.tickCount > CONTROLLER_END_TICK) this.discard();
+      if (activeAge > VISUAL_SWING_TICKS + 4) this.discard();
    }
 
-   private void updateManifestPosition() {
-      if (this.tickCount < MANIFEST_TICKS) {
-         this.setPos(this.groundPosition.add(0.0, DESCENT_HEIGHT, 0.0));
-         return;
-      }
-      if (this.tickCount < IMPACT_TICK) {
-         double progress = Mth.clamp((this.tickCount - MANIFEST_TICKS) / (double)(IMPACT_TICK - MANIFEST_TICKS), 0.0, 1.0);
-         double remaining = DESCENT_HEIGHT * (1.0 - progress * progress);
-         this.setPos(this.groundPosition.add(0.0, remaining, 0.0));
-         return;
-      }
-      this.setPos(this.groundPosition);
+   private void queueTerrainTrace(ServerLevel level, LivingEntity owner) {
+      MuramasaSlashHandler.initiateGilgameshCross(level, owner, getSlashDirection(), this.slashType == SlashType.SULSAGANA);
    }
 
-   private double calculateFrontDistance(int age) {
-      if (this.slashType == SlashType.IGALIMA) {
-         return Mth.clamp((age - IMPACT_TICK) * 2.0, 0.0, SLASH_LENGTH);
-      }
-      if (age <= SULSAGANA_START_TICK) return 0.0;
-      int elapsed = age - SULSAGANA_START_TICK;
-      int catchUpTicks = FRONTS_MEET_TICK - SULSAGANA_START_TICK;
-      return Mth.clamp(elapsed <= catchUpTicks ? elapsed * 4.0 : 32.0 + (elapsed - catchUpTicks) * 2.0, 0.0, SLASH_LENGTH);
-   }
-
-   private void ensureTerrainCut(ServerLevel level) {
-      if (this.terrainCut != null) return;
-      boolean mirrored = this.slashType == SlashType.SULSAGANA;
-      Runnable completion = mirrored
-         ? () -> DeferredTerrainDestruction.queueCrossBurnShell(level, this.attackOrigin, this.direction,
-            SLASH_LENGTH, SLASH_WIDTH, SLASH_HEIGHT, true, 4.0)
-         : null;
-      this.terrainCut = DeferredTerrainDestruction.queueAdvancingDiagonalCut(level, this.attackOrigin, this.direction,
-         SLASH_LENGTH, SLASH_WIDTH, SLASH_HEIGHT, mirrored, completion);
-   }
-
-   private void applyDamage(ServerLevel level, LivingEntity owner, double previousFront, double currentFront) {
-      Vec3 forward = normalizedFlat(this.direction);
-      Vec3 side = new Vec3(-forward.z, 0, forward.x);
-      Vec3 from = this.attackOrigin.add(forward.scale(previousFront));
-      Vec3 to = this.attackOrigin.add(forward.scale(currentFront));
-      AABB search = new AABB(from, to).inflate(110.0, 80.0, 110.0);
-      DamageSource source = owner == null
-         ? level.damageSources().magic()
-         : this.slashType == SlashType.SULSAGANA ? owner.damageSources().inFire() : owner.damageSources().mobAttack(owner);
+   private void applyDamage(ServerLevel level, LivingEntity owner, SlashPose previous, SlashPose current, Set<Integer> hitTargets) {
+      Vec3 p0 = previous.center().subtract(previous.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      Vec3 p1 = previous.center().add(previous.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      Vec3 c0 = current.center().subtract(current.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      Vec3 c1 = current.center().add(current.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      AABB search = new AABB(p0, p1).minmax(new AABB(c0, c1)).inflate(SWEEP_RADIUS + 3.0);
+      DamageSource source = this.slashType == SlashType.SULSAGANA ? owner.damageSources().inFire() : owner.damageSources().mobAttack(owner);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
          e -> e.isAlive() && !e.getUUID().equals(this.ownerUuid) && !this.immuneEntities.contains(e.getUUID()) && !EntityUtils.isImmunePlayerTarget(e))) {
-         Vec3 rel = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(this.attackOrigin);
-         double along = rel.dot(forward);
-         double reach = Math.max(target.getBbWidth(), target.getBbHeight()) * 0.5;
-         if (along + reach < previousFront || along - reach > currentFront) continue;
-         double sign = this.slashType == SlashType.IGALIMA ? 1.0 : -1.0;
-         double planeDistance = Math.abs(rel.dot(side) - sign * rel.y) / Math.sqrt(2.0);
-         if (planeDistance > SLASH_WIDTH * 0.5 + reach || Math.abs(rel.y) > SLASH_HEIGHT * 0.5 + reach || !this.hit.add(target.getId())) continue;
+         if (hitTargets.contains(target.getId())) continue;
+         Vec3 point = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+         double distance = Math.min(Math.min(distanceToSegmentSqr(point, p0, p1), distanceToSegmentSqr(point, c0, c1)),
+            distanceToSegmentSqr(point, p0, c1));
+         double reach = Math.max(target.getBbWidth(), target.getBbHeight()) * 0.5 + SWEEP_RADIUS;
+         if (distance > reach * reach) continue;
+         hitTargets.add(target.getId());
          target.invulnerableTime = 0;
          target.hurt(source, 1500.0F);
          target.invulnerableTime = 0;
       }
    }
 
-   private void spawnGroundImpact(ServerLevel level) {
-      Vec3 point = this.groundPosition.add(0.0, 0.5, 0.0);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, point.x, point.y, point.z, 8, 4.0, 1.0, 4.0, 0.0);
-      level.sendParticles(ParticleTypes.POOF, point.x, point.y, point.z, 240, 18.0, 2.5, 18.0, 0.2);
-      level.sendParticles(ParticleTypes.END_ROD, point.x, point.y + 2.0, point.z, 160, 12.0, 10.0, 12.0, 0.12);
-      level.sendParticles(ParticleTypes.FLAME, point.x, point.y + 0.5, point.z, 120, 10.0, 1.0, 10.0, 0.08);
-      level.playSound(null, BlockPos.containing(point), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5.0F, 0.55F);
-      level.playSound(null, BlockPos.containing(point), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 4.0F, 0.45F);
+   private void spawnImpact(ServerLevel level, Vec3 point) {
+      level.sendParticles(this.slashType == SlashType.SULSAGANA ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
+         point.x, point.y, point.z, 45, 4.0, 4.0, 4.0, 0.08);
+      level.playSound(null, BlockPos.containing(point), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.5F, 0.8F);
    }
 
-   private void spawnEmbeddedParticles(ServerLevel level) {
-      boolean fire = this.slashType == SlashType.SULSAGANA;
-      level.sendParticles(fire ? ParticleTypes.FLAME : ParticleTypes.HAPPY_VILLAGER,
-         this.getX(), this.getY() + 4.0, this.getZ(), 24, 6.0, 8.0, 6.0, 0.04);
-      level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 3.0, this.getZ(), 10, 4.0, 5.0, 4.0, 0.02);
+   private void spawnTrailParticles(ServerLevel level, SlashPose pose) {
+      Vec3 start = pose.center().subtract(pose.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      Vec3 end = pose.center().add(pose.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      for (int i = 0; i <= 12; i++) {
+         Vec3 point = start.lerp(end, i / 12.0);
+         level.sendParticles(this.slashType == SlashType.SULSAGANA ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
+            point.x, point.y, point.z, 2, 0.7, 0.7, 0.7, 0.025);
+      }
    }
 
-   private void spawnWaveFront(ServerLevel level, double distance) {
-      if (this.tickCount % 2 != 0) return;
-      Vec3 forward = normalizedFlat(this.direction);
-      Vec3 side = new Vec3(-forward.z, 0, forward.x);
-      Vec3 center = this.attackOrigin.add(forward.scale(distance));
-      double sign = this.slashType == SlashType.IGALIMA ? 1.0 : -1.0;
-      for (int vertical = -75; vertical <= 75; vertical += 6) {
-         Vec3 point = center.add(side.scale(sign * vertical)).add(0.0, vertical, 0.0);
-         level.sendParticles(this.slashType == SlashType.IGALIMA ? ParticleTypes.HAPPY_VILLAGER : ParticleTypes.FLAME,
-            point.x, point.y, point.z, 2, 1.2, 1.2, 1.2, 0.03);
-         if (vertical % 18 == 0) {
-            level.sendParticles(ParticleTypes.END_ROD, point.x, point.y, point.z, 1, 0.5, 0.5, 0.5, 0.01);
-         }
+   private void spawnAftershockParticles(ServerLevel level, SlashPose pose) {
+      Vec3 start = pose.center().subtract(pose.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      Vec3 end = pose.center().add(pose.bladeAxis().scale(MODEL_LENGTH * 0.5));
+      for (int i = 0; i <= 16; i++) {
+         Vec3 point = start.lerp(end, i / 16.0);
+         level.sendParticles(this.slashType == SlashType.SULSAGANA ? ParticleTypes.LAVA : ParticleTypes.ELECTRIC_SPARK,
+            point.x, point.y, point.z, 2, 0.45, 0.45, 0.45, 0.08);
       }
    }
 
@@ -263,8 +255,16 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
       return entity instanceof LivingEntity living ? living : null;
    }
 
-   private static Vec3 normalizedFlat(Vec3 direction) {
-      Vec3 flat = direction == null ? Vec3.ZERO : new Vec3(direction.x, 0.0, direction.z);
+   private static double distanceToSegmentSqr(Vec3 point, Vec3 start, Vec3 end) {
+      Vec3 delta = end.subtract(start);
+      double lengthSqr = delta.lengthSqr();
+      if (lengthSqr < 1.0E-8) return point.distanceToSqr(start);
+      double t = Mth.clamp(point.subtract(start).dot(delta) / lengthSqr, 0.0, 1.0);
+      return point.distanceToSqr(start.add(delta.scale(t)));
+   }
+
+   private static Vec3 normalizedFlat(Vec3 value) {
+      Vec3 flat = value == null ? Vec3.ZERO : new Vec3(value.x, 0.0, value.z);
       return flat.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : flat.normalize();
    }
 
@@ -273,31 +273,28 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
       this.entityData.set(DIR_X, (float)this.direction.x);
       this.entityData.set(DIR_Y, (float)this.direction.y);
       this.entityData.set(DIR_Z, (float)this.direction.z);
-      this.entityData.set(FRONT_DISTANCE, (float)this.processedDamageDistance);
-      this.entityData.set(IMPACTED, this.tickCount >= IMPACT_TICK);
+      this.entityData.set(FRONT_DISTANCE, 0.0F);
+      this.entityData.set(IMPACTED, false);
+      this.entityData.set(START_DELAY, this.startDelay);
    }
 
-   @Override
-   protected void defineSynchedData(SynchedEntityData.Builder builder) {
-      builder.define(FIRE_SLASH, false);
-      builder.define(DIR_X, 0.0F);
-      builder.define(DIR_Y, 0.0F);
-      builder.define(DIR_Z, 1.0F);
-      builder.define(FRONT_DISTANCE, 0.0F);
-      builder.define(IMPACTED, false);
+   private int getStartDelay() { return this.entityData.get(START_DELAY); }
+
+   @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+      builder.define(FIRE_SLASH, false); builder.define(DIR_X, 0.0F); builder.define(DIR_Y, 0.0F); builder.define(DIR_Z, 1.0F);
+      builder.define(FRONT_DISTANCE, 0.0F); builder.define(IMPACTED, false); builder.define(START_DELAY, 0);
    }
 
-   @Override
-   protected void readAdditionalSaveData(CompoundTag tag) {
+   @Override protected void readAdditionalSaveData(CompoundTag tag) {
       if (tag.hasUUID("Owner")) this.ownerUuid = tag.getUUID("Owner");
       if (tag.hasUUID("Cast")) this.castUuid = tag.getUUID("Cast");
       this.slashType = tag.getBoolean("Fire") ? SlashType.SULSAGANA : SlashType.IGALIMA;
-      this.direction = normalizedFlat(new Vec3(tag.getDouble("DirX"), tag.getDouble("DirY"), tag.getDouble("DirZ")));
+      this.direction = normalizedFlat(new Vec3(tag.getDouble("DirX"), 0.0, tag.getDouble("DirZ")));
       this.attackOrigin = new Vec3(tag.getDouble("OriginX"), tag.getDouble("OriginY"), tag.getDouble("OriginZ"));
-      this.groundPosition = new Vec3(tag.getDouble("GroundX"), tag.getDouble("GroundY"), tag.getDouble("GroundZ"));
+      this.startDelay = tag.getInt("StartDelay");
       this.tickCount = tag.getInt("LifeTicks");
-      this.processedDamageDistance = tag.getDouble("ProcessedDistance");
-      this.terrainSealed = false;
+      this.impactPlayed = tag.getBoolean("ImpactPlayed");
+      this.terrainTraceQueued = false;
       this.immuneEntities.clear();
       int immuneCount = tag.getInt("ImmuneCount");
       for (int i = 0; i < immuneCount; i++) {
@@ -305,18 +302,18 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
          if (tag.hasUUID(key)) this.immuneEntities.add(tag.getUUID(key));
       }
       syncVisualState();
+      this.entityData.set(IMPACTED, this.impactPlayed);
+      this.setPos(getVisualCenter(this.tickCount));
    }
 
-   @Override
-   protected void addAdditionalSaveData(CompoundTag tag) {
+   @Override protected void addAdditionalSaveData(CompoundTag tag) {
       if (this.ownerUuid != null) tag.putUUID("Owner", this.ownerUuid);
       if (this.castUuid != null) tag.putUUID("Cast", this.castUuid);
       tag.putBoolean("Fire", this.slashType == SlashType.SULSAGANA);
-      tag.putDouble("DirX", this.direction.x); tag.putDouble("DirY", this.direction.y); tag.putDouble("DirZ", this.direction.z);
+      tag.putDouble("DirX", this.direction.x); tag.putDouble("DirZ", this.direction.z);
       tag.putDouble("OriginX", this.attackOrigin.x); tag.putDouble("OriginY", this.attackOrigin.y); tag.putDouble("OriginZ", this.attackOrigin.z);
-      tag.putDouble("GroundX", this.groundPosition.x); tag.putDouble("GroundY", this.groundPosition.y); tag.putDouble("GroundZ", this.groundPosition.z);
-      tag.putInt("LifeTicks", this.tickCount);
-      tag.putDouble("ProcessedDistance", this.processedDamageDistance);
+      tag.putInt("StartDelay", this.startDelay); tag.putInt("LifeTicks", this.tickCount);
+      tag.putBoolean("ImpactPlayed", this.impactPlayed);
       tag.putInt("ImmuneCount", this.immuneEntities.size());
       int immuneIndex = 0;
       for (UUID immune : this.immuneEntities) tag.putUUID("Immune" + immuneIndex++, immune);

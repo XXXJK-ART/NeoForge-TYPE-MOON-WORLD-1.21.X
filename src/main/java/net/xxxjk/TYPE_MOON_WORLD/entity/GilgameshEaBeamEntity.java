@@ -14,7 +14,6 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashParticipant;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamType;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshDuelState;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
@@ -150,8 +150,10 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private void tickWind(ServerLevel level, LivingEntity owner) {
+      if (!drainMana(owner, 2.5)) {
+         clearNpcEquipment(owner); setStage(Stage.FINISHED); discard(); return;
+      }
       if (stageTicks == 1) {
-         if (!drainMana(owner, 50.0)) { clearNpcEquipment(owner); setStage(Stage.FINISHED); discard(); return; }
          level.setWeatherParameters(0, EA_THUNDER_TICKS, true, true);
          VFXServerEffects.spawn(level, "ea_wind", owner, 192.0);
          if (owner instanceof GilgameshEntity && !isDuelTarget(level, owner)) {
@@ -216,6 +218,11 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private void tickBeam(ServerLevel level, LivingEntity owner) {
+      if (!drainMana(owner, 5.0)) {
+         setStage(Stage.FINISHED);
+         discard();
+         return;
+      }
       updateDirectionFromOwner(owner);
       if (!beamVisualStarted) {
          beamVisualStarted = true;
@@ -446,11 +453,10 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private boolean drainMana(LivingEntity owner, double amount) {
-      if (owner instanceof Player player && player.getAbilities().instabuild) return true;
       if (owner instanceof GilgameshEntity gil) { if (gil.getCurrentMp() < amount) return false; gil.setCurrentMp(gil.getCurrentMp() - amount); return true; }
       if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.servant_card_transformed) { if (vars.servant_card_mana < amount) return false; vars.servant_card_mana -= amount; vars.syncMana(player); return true; }
+         if (vars.servant_card_transformed) return ServantCardManaService.consumeNoblePhantasm(player, vars, amount);
          if (vars.player_mana < amount) return false; vars.player_mana -= amount; vars.syncMana(player); return true;
       }
       return true;

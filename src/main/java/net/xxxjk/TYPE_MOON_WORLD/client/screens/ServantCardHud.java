@@ -11,6 +11,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -25,7 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 @EventBusSubscriber({Dist.CLIENT})
 public class ServantCardHud {
    private static String cachedCooldownRaw = null;
-   private static int[] cachedCooldowns = new int[9];
+   private static int[] cachedCooldowns = new int[10];
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
@@ -102,7 +107,7 @@ public class ServantCardHud {
          0.62F
       );
       drawFlightStatus(gui, minecraft, vars, x, y + 58);
-      drawCooldownGrid(gui, minecraft, vars, 5, 68);
+      drawCooldownGrid(gui, minecraft, vars, 5, 78);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
       drawGilgameshOmniscience(gui, minecraft, vars);
@@ -111,30 +116,77 @@ public class ServantCardHud {
    private static void drawGilgameshOmniscience(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!"gilgamesh".equals(vars.servant_card_id) || minecraft.level == null || minecraft.player == null) return;
       HitResult hit = minecraft.hitResult;
-      if (hit == null || hit.getType() == HitResult.Type.MISS) return;
-      int x = gui.guiWidth() / 2 + 14;
-      int y = gui.guiHeight() / 2 + 10;
+      ItemEntity lookedAtItem = findLookedAtItem(minecraft, hit);
+      if ((hit == null || hit.getType() == HitResult.Type.MISS) && lookedAtItem == null) return;
       List<String> lines = new java.util.ArrayList<>();
-      if (hit instanceof BlockHitResult block) {
+      ItemStack icon = ItemStack.EMPTY;
+      if (lookedAtItem != null) {
+         ItemStack stack = lookedAtItem.getItem();
+         icon = stack;
+         lines.add(stack.getHoverName().getString());
+         lines.add(Component.translatable("hud.typemoonworld.gilgamesh.item_count", stack.getCount()).getString());
+         lines.add(Component.translatable("hud.typemoonworld.gilgamesh.item_id", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()).getString());
+         if (stack.isDamageableItem()) lines.add(Component.translatable("hud.typemoonworld.gilgamesh.durability", stack.getMaxDamage() - stack.getDamageValue(), stack.getMaxDamage()).getString());
+      } else if (hit instanceof BlockHitResult block) {
          lines.add(minecraft.level.getBlockState(block.getBlockPos()).getBlock().getName().getString());
+         lines.add(Component.translatable("hud.typemoonworld.gilgamesh.block_id", BuiltInRegistries.BLOCK.getKey(minecraft.level.getBlockState(block.getBlockPos()).getBlock()).toString()).getString());
       } else if (hit.getType() == HitResult.Type.ENTITY) {
          net.minecraft.world.entity.Entity entity = ((net.minecraft.world.phys.EntityHitResult)hit).getEntity();
          if (entity instanceof LivingEntity living) {
             lines.add(living.getName().getString());
+            lines.add(Component.translatable("hud.typemoonworld.gilgamesh.entity_type", living.getType().getDescription()).getString());
+            lines.add(Component.translatable("hud.typemoonworld.gilgamesh.distance", minecraft.player.distanceTo(living)).getString());
             lines.add(String.format(java.util.Locale.ROOT, "HP %.1f / %.1f", living.getHealth(), living.getMaxHealth()));
             lines.add("DEF " + living.getArmorValue());
+            lines.add(Component.translatable("hud.typemoonworld.gilgamesh.toughness", living.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS)).getString());
             if (!living.getMainHandItem().isEmpty()) lines.add(Component.translatable("hud.typemoonworld.gilgamesh.mainhand", living.getMainHandItem().getHoverName()).getString());
             if (!living.getOffhandItem().isEmpty()) lines.add(Component.translatable("hud.typemoonworld.gilgamesh.offhand", living.getOffhandItem().getHoverName()).getString());
+            if (!living.getMainHandItem().isEmpty()) icon = living.getMainHandItem();
+            for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+               ItemStack equipped = living.getItemBySlot(slot);
+               if (!equipped.isEmpty()) lines.add(Component.translatable("hud.typemoonworld.gilgamesh.equipment." + slot.getName(), equipped.getHoverName()).getString());
+            }
+            if (!living.getActiveEffects().isEmpty()) {
+               lines.add(Component.translatable("hud.typemoonworld.gilgamesh.effects").getString());
+               for (net.minecraft.world.effect.MobEffectInstance effect : living.getActiveEffects()) {
+                  lines.add(Component.translatable("hud.typemoonworld.gilgamesh.effect", effect.getEffect().value().getDisplayName(), effect.getAmplifier() + 1, String.format(java.util.Locale.ROOT, "%.1f", effect.getDuration() / 20.0F)).getString());
+               }
+            }
          } else if (entity instanceof ItemEntity item) {
+            icon = item.getItem();
             lines.add(item.getItem().getHoverName().getString());
-            lines.add("x" + item.getItem().getCount());
+            lines.add(Component.translatable("hud.typemoonworld.gilgamesh.item_count", item.getItem().getCount()).getString());
          }
       }
       if (lines.isEmpty()) return;
       int width = 0; for (String line : lines) width = Math.max(width, minecraft.font.width(line));
+      if (!icon.isEmpty()) width += 22;
+      int height = lines.size() * 10 + 7;
+      int x = Math.max(4, Math.min(gui.guiWidth() / 2 + 14, gui.guiWidth() - width - 8));
+      int y = Math.max(6, Math.min(gui.guiHeight() / 2 + 10, gui.guiHeight() - height - 6));
       gui.fill(x - 4, y - 4, x + width + 5, y + lines.size() * 10 + 3, 0xB0181820);
       gui.renderOutline(x - 4, y - 4, width + 9, lines.size() * 10 + 7, 0xFFD4AF37);
       for (int i = 0; i < lines.size(); i++) gui.drawString(minecraft.font, lines.get(i), x, y + i * 10, i == 0 ? 0xFFFFD54F : 0xFFE8E8E8, true);
+      if (!icon.isEmpty()) gui.renderItem(icon, x + width - 18, y);
+   }
+
+   private static ItemEntity findLookedAtItem(Minecraft minecraft, HitResult hit) {
+      if (minecraft.player == null || minecraft.level == null) return null;
+      Vec3 eye = minecraft.player.getEyePosition();
+      Vec3 look = minecraft.player.getLookAngle().normalize();
+      Vec3 end = eye.add(look.scale(16.0));
+      double hitDistance = hit == null || hit.getType() == HitResult.Type.MISS ? 16.0 : Math.sqrt(hit.distanceTo(minecraft.player));
+      ItemEntity best = null;
+      double bestDistance = hitDistance + .5;
+      for (ItemEntity item : minecraft.level.getEntitiesOfClass(ItemEntity.class, new AABB(eye, end).inflate(1.0), ItemEntity::isAlive)) {
+         Vec3 delta = item.position().add(0.0, item.getBbHeight() * .5, 0.0).subtract(eye);
+         double along = delta.dot(look);
+         if (along < 0.0 || along > bestDistance) continue;
+         if (delta.subtract(look.scale(along)).lengthSqr() > .8 * .8) continue;
+         best = item;
+         bestDistance = along;
+      }
+      return best;
    }
 
    private static void drawFlightStatus(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
@@ -209,7 +261,7 @@ public class ServantCardHud {
       for (int i = 0; i < 10; i++) {
          int drawX = x;
          int drawY = y + i * 8;
-         int ticks = i == 9 ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
+         int ticks = i == 9 && !"gilgamesh".equals(vars.servant_card_id) ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
          Component label = empty
@@ -297,13 +349,13 @@ public class ServantCardHud {
    private static int[] parseCooldowns(String raw) {
       if (raw == null || raw.isBlank()) {
          cachedCooldownRaw = raw;
-         cachedCooldowns = new int[9];
+         cachedCooldowns = new int[10];
          return cachedCooldowns;
       }
       if (raw.equals(cachedCooldownRaw)) {
          return cachedCooldowns;
       }
-      int[] result = new int[9];
+      int[] result = new int[10];
       String[] parts = raw.split(",");
       for (int i = 0; i < result.length && i < parts.length; i++) {
          try {

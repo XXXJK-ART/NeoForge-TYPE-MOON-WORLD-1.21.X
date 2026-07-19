@@ -360,8 +360,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
       }
-      boolean npSlot = slot == 9;
-      boolean np = npSlot && !"gilgamesh".equals(vars.servant_card_id);
+      boolean npSlot = slot == 9 && !"gilgamesh".equals(vars.servant_card_id);
+      boolean np = npSlot;
       if (np && "emiya_archer".equals(vars.servant_card_id) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
          if (vars.servant_card_np_cooldown > 0) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
@@ -705,7 +705,7 @@ public final class ServantCardTransformManager {
             changed = true;
          }
       }
-      int[] remaining = new int[9];
+      int[] remaining = new int[10];
       for (int i = 0; i < remaining.length; i++) {
          remaining[i] = remainingTicks(now, ends[i]);
          if (remaining[i] == 0) {
@@ -721,7 +721,7 @@ public final class ServantCardTransformManager {
    }
 
    public static int getSkillCooldown(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
-      if (slot < 0 || slot >= 9) {
+      if (slot < 0 || slot >= 10) {
          return 0;
       }
       return parseSkillCooldowns(vars)[slot];
@@ -762,7 +762,7 @@ public final class ServantCardTransformManager {
    }
 
    private static long[] parseSkillCooldownEnds(TypeMoonWorldModVariables.PlayerVariables vars) {
-      long[] result = new long[9];
+      long[] result = new long[10];
       String raw = vars.servant_card_skill_cooldown_ends == null ? "" : vars.servant_card_skill_cooldown_ends;
       if (raw.isBlank()) {
          return result;
@@ -790,7 +790,7 @@ public final class ServantCardTransformManager {
          return "";
       }
       StringBuilder builder = new StringBuilder();
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < 10; i++) {
          if (i > 0) builder.append(',');
          builder.append(i < ends.length ? Math.max(0L, ends[i]) : 0L);
       }
@@ -798,7 +798,7 @@ public final class ServantCardTransformManager {
    }
 
    private static int[] parseSkillCooldowns(TypeMoonWorldModVariables.PlayerVariables vars) {
-      int[] result = new int[9];
+      int[] result = new int[10];
       String raw = vars.servant_card_skill_cooldowns == null ? "" : vars.servant_card_skill_cooldowns;
       if (raw.isBlank()) {
          return result;
@@ -816,7 +816,7 @@ public final class ServantCardTransformManager {
 
    private static String serializeSkillCooldowns(int[] cooldowns) {
       boolean any = false;
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < 10; i++) {
          if (i < cooldowns.length && cooldowns[i] > 0) {
             any = true;
             break;
@@ -826,7 +826,7 @@ public final class ServantCardTransformManager {
          return "";
       }
       StringBuilder builder = new StringBuilder();
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < 10; i++) {
          if (i > 0) {
             builder.append(',');
          }

@@ -13,17 +13,15 @@ import software.bernie.geckolib.util.Color;
 public class GilgameshCrossSlashRenderer extends GeoEntityRenderer<GilgameshCrossSlashEntity> {
    public GilgameshCrossSlashRenderer(Context context) { super(context, new GilgameshCrossSlashModel()); }
    @Override public void render(GilgameshCrossSlashEntity e, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
+      if (!e.shouldRenderBladeModel(partial)) return;
       pose.pushPose();
       var direction = e.getSlashDirection();
       float ryaw = (float)(Mth.atan2(direction.x, direction.z) * 180.0 / Math.PI);
-      float age = e.tickCount + partial;
-      float appear = smooth(age / GilgameshCrossSlashEntity.MANIFEST_TICKS);
-      float scale = (e.getSlashType() == GilgameshCrossSlashEntity.SlashType.IGALIMA ? 14.45F : 4.51F)
-         * Math.max(0.001F, appear);
+      float scale = e.getSlashType() == GilgameshCrossSlashEntity.SlashType.IGALIMA ? 14.45F : 4.51F;
       pose.mulPose(Axis.YP.rotationDegrees(ryaw));
+      pose.mulPose(Axis.XP.rotationDegrees(e.getModelPitchDegrees(partial)));
+      pose.mulPose(Axis.ZP.rotationDegrees(e.getModelRollDegrees(partial)));
       pose.translate(0.0, -2.0, 0.0);
-      pose.mulPose(Axis.XP.rotationDegrees(70.0F));
-      pose.mulPose(Axis.ZP.rotationDegrees(e.getSlashType() == GilgameshCrossSlashEntity.SlashType.IGALIMA ? 45.0F : -45.0F));
       pose.scale(scale, scale, scale);
       super.render(e, yaw, partial, pose, buffers, light);
       pose.popPose();

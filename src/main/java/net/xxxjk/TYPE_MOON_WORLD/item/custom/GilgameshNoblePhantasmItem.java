@@ -78,15 +78,16 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       }
       if ("babili".equals(this.modelId) || "ea".equals(this.modelId)) {
          if ("ea".equals(this.modelId) && player instanceof ServerPlayer serverPlayer) {
-            AbilityStats eaStats = stats();
-            if (!consumeMana(serverPlayer, eaStats.mana())) {
-               serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+            if (!(serverPlayer.level() instanceof ServerLevel serverLevel)
+               || findEaEntity(serverLevel, serverPlayer) != null) {
+               return InteractionResultHolder.fail(stack);
+            }
+            GilgameshEaBeamEntity controller = new GilgameshEaBeamEntity(serverLevel, serverPlayer, serverPlayer.getLookAngle());
+            if (!serverLevel.addFreshEntity(controller)) {
                return InteractionResultHolder.fail(stack);
             }
          }
          player.startUsingItem(hand);
-         if (player instanceof ServerPlayer serverPlayer && serverPlayer.level() instanceof ServerLevel serverLevel) {
-         }
          return InteractionResultHolder.consume(stack);
       }
       if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResultHolder.consume(stack);
@@ -113,12 +114,6 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
 
    @Override
    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
-      if (!(living instanceof ServerPlayer player) || !(level instanceof ServerLevel serverLevel)) return;
-      int heldTicks = getUseDuration(stack, living) - remainingUseDuration;
-      if ("ea".equals(this.modelId) && heldTicks == 1 && findEaEntity(serverLevel, player) == null) {
-         GilgameshEaBeamEntity controller = new GilgameshEaBeamEntity(serverLevel, player, player.getLookAngle());
-         serverLevel.addFreshEntity(controller);
-      }
       super.onUseTick(level, living, stack, remainingUseDuration);
    }
 

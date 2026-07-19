@@ -1,88 +1,38 @@
 {
-  "duration": 14.0,
-  "notes": "Two 100-block blades descend as a crossed X, strike the ground, remain planted, then drive two diagonal Tsumukari-style wavefronts 400 blocks forward.",
+  "duration": 3.0,
+  "notes": "Two blades descend briefly, followed by a ground-level 400-block X-shaped Muramasa slash.",
   "environment": [
-    {"type":"screen_tint","color":"#18FFFFFF","start":2.55,"end":3.2,"fade_in":0.04,"fade_out":0.4,"intensity":0.22}
+    {"type":"screen_tint","color":"#18FFFFFF","start":0.0,"end":1.4,"fade_in":0.04,"fade_out":0.4,"intensity":0.2}
   ],
   "emitters": [
     {
-      "start_time":0.0,"end_time":0.8,"rate":1250,"particle_lifetime":0.7,"size_variance":0.35,
-      "component":{"type":"circle","radius":1.0,"segments":220},
-      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.18,"color":"#CCFFFFFF"},{"t":0.55,"color":"#AA77FF88"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.07},{"t":0.4,"size":0.38},{"t":1,"size":0.03}],
-      "transform_over_life":[{"t":0,"rot":[0.7071,0,0,0.7071],"scale":[0.5,0.5,0.5]},{"t":1,"rot":[0.7071,0,0,0.7071],"scale":[34,1,34]}],
-      "blend":"ADDITIVE"
-    },
-    {
-      "start_time":0.0,"end_time":2.6,"rate":1100,"particle_lifetime":0.75,"size_variance":0.4,
-      "component":{"type":"line","start":[-50,-20,0],"end":[50,80,0],"segments":260},
-      "color_over_life":[{"t":0,"color":"#00AAFF88"},{"t":0.2,"color":"#DD66FF88"},{"t":0.7,"color":"#FFFFFFFF"},{"t":1,"color":"#0066FF88"}],
-      "size_over_life":[{"t":0,"size":0.06},{"t":0.45,"size":0.4},{"t":1,"size":0.02}],
-      "transform_over_life":[{"t":0,"pos":[0,40,0],"scale":[0.35,0.35,0.35]},{"t":1,"pos":[0,0,0],"scale":[1,1,1]}],
+      "start_time":0.0,"end_time":1.2,"rate":900,"particle_lifetime":0.45,"size_variance":0.35,
+      "component":{"type":"line","start":[-36,34,0],"end":[36,-34,0],"segments":160},
+      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.18,"color":"#EEFFFFFF"},{"t":0.62,"color":"#AA77FFCC"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.08},{"t":0.35,"size":0.7},{"t":1,"size":0.02}],
+      "transform_over_life":[{"t":0,"pos":[-10,65,0]},{"t":1,"pos":[-10,0,0]}],
       "blend":"ADDITIVE","enable_trail":true
     },
     {
-      "start_time":0.0,"end_time":2.6,"rate":1100,"particle_lifetime":0.75,"size_variance":0.4,
-      "component":{"type":"line","start":[50,-20,0],"end":[-50,80,0],"segments":260},
-      "color_over_life":[{"t":0,"color":"#00FFD700"},{"t":0.2,"color":"#DDFFD700"},{"t":0.7,"color":"#FFFFFFFF"},{"t":1,"color":"#00FFD700"}],
-      "size_over_life":[{"t":0,"size":0.06},{"t":0.45,"size":0.4},{"t":1,"size":0.02}],
-      "transform_over_life":[{"t":0,"pos":[0,40,0],"scale":[0.35,0.35,0.35]},{"t":1,"pos":[0,0,0],"scale":[1,1,1]}],
+      "start_time":0.35,"end_time":1.55,"rate":980,"particle_lifetime":0.48,"size_variance":0.35,
+      "component":{"type":"line","start":[36,34,0],"end":[-36,-34,0],"segments":160},
+      "color_over_life":[{"t":0,"color":"#00FFD700"},{"t":0.18,"color":"#FFFFD060"},{"t":0.6,"color":"#FFFF7040"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.1},{"t":0.35,"size":0.82},{"t":1,"size":0.03}],
+      "transform_over_life":[{"t":0,"pos":[10,65,0]},{"t":1,"pos":[10,0,0]}],
       "blend":"ADDITIVE","enable_trail":true
     },
     {
-      "start_time":2.55,"end_time":3.25,"rate":5200,"particle_lifetime":0.72,"size_variance":0.5,
-      "component":{"type":"sphere","radius":1.0,"sample_count":360},
-      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.12,"color":"#FFFFFFFF"},{"t":0.38,"color":"#FFFFD700"},{"t":0.72,"color":"#AA66FF88"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.14},{"t":0.38,"size":1.35},{"t":1,"size":0.04}],
-      "transform_over_life":[{"t":0,"scale":[0.4,0.4,0.4]},{"t":0.5,"scale":[24,8,24]},{"t":1,"scale":[42,12,42]}],
-      "blend":"ADDITIVE"
-    },
-    {
-      "start_time":2.55,"end_time":3.8,"rate":1600,"particle_lifetime":0.9,
-      "component":{"type":"circle","radius":1.0,"segments":260},
-      "color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.3,"color":"#AAFFD700"},{"t":0.68,"color":"#8866FF88"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.1},{"t":0.4,"size":0.62},{"t":1,"size":0.03}],
-      "transform_over_life":[{"t":0,"scale":[1,1,1]},{"t":0.55,"scale":[48,1,48]},{"t":1,"scale":[86,1,86]}],
-      "blend":"ADDITIVE"
-    },
-    {
-      "start_time":2.6,"end_time":5.6,"rate":780,"particle_lifetime":1.05,"size_variance":0.45,
-      "component":{"type":"sphere","radius":1.0,"sample_count":250},
-      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.15,"color":"#AAFFFFFF"},{"t":0.5,"color":"#8877FF88"},{"t":0.75,"color":"#88FFD700"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.04},{"t":0.35,"size":0.18},{"t":1,"size":0.02}],
-      "transform_over_life":[{"t":0,"pos":[0,0,0],"scale":[10,4,10]},{"t":1,"pos":[0,0,0],"scale":[38,26,38]}],
-      "blend":"ADDITIVE"
-    },
-    {
-      "start_time":2.6,"end_time":12.6,"rate":3100,"particle_lifetime":0.48,"size_variance":0.35,
-      "velocity":[0,0,2],"velocity_variance":0.25,
-      "component":{"type":"line","start":[-75,-75,0],"end":[75,75,0],"segments":420},
-      "color_over_life":[{"t":0,"color":"#00AAFF88"},{"t":0.12,"color":"#DD66FF88"},{"t":0.42,"color":"#FFFFFFFF"},{"t":0.7,"color":"#AA66FF88"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.12},{"t":0.22,"size":1.0},{"t":0.7,"size":0.45},{"t":1,"size":0.03}],
-      "transform_over_life":[{"t":0,"pos":[0,0,0],"scale":[1,1,1]},{"t":1,"pos":[0,0,400],"scale":[1,1,1]}],
+      "start_time":0.85,"end_time":2.9,"rate":1050,"particle_lifetime":0.5,"size_variance":0.35,
+      "component":{"type":"line","start":[-84.5,0,-181.3],"end":[84.5,0,181.3],"segments":320},
+      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.12,"color":"#FFFFFFFF"},{"t":0.5,"color":"#CC77CCFF"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.08},{"t":0.3,"size":0.62},{"t":1,"size":0.02}],
       "blend":"ADDITIVE","enable_trail":true
     },
     {
-      "start_time":3.0,"end_time":12.6,"rate":3100,"particle_lifetime":0.48,"size_variance":0.35,
-      "velocity":[0,0,2],"velocity_variance":0.25,
-      "component":{"type":"line","start":[75,-75,0],"end":[-75,75,0],"segments":420},
-      "color_over_life":[{"t":0,"color":"#00FFD700"},{"t":0.12,"color":"#DDFFD700"},{"t":0.42,"color":"#FFFFFFFF"},{"t":0.7,"color":"#AAFFD700"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.12},{"t":0.22,"size":1.0},{"t":0.7,"size":0.45},{"t":1,"size":0.03}],
-      "transform_over_life":[{"t":0,"pos":[0,0,0],"scale":[0.18,0.18,0.18]},{"t":0.042,"pos":[0,0,32],"scale":[1,1,1]},{"t":1,"pos":[0,0,400],"scale":[1,1,1]}],
-      "blend":"ADDITIVE","enable_trail":true
-    },
-    {
-      "start_time":12.4,"end_time":14.0,"rate":820,"particle_lifetime":0.82,"size_variance":0.4,
-      "component":{"type":"line","start":[-75,-75,400],"end":[75,75,400],"segments":280},
-      "color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.25,"color":"#AA66FF88"},{"t":0.7,"color":"#88FFD700"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.18},{"t":0.35,"size":0.8},{"t":1,"size":0.02}],
-      "blend":"ADDITIVE","enable_trail":true
-    },
-    {
-      "start_time":12.4,"end_time":14.0,"rate":820,"particle_lifetime":0.82,"size_variance":0.4,
-      "component":{"type":"line","start":[75,-75,400],"end":[-75,75,400],"segments":280},
-      "color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.25,"color":"#AAFFD700"},{"t":0.7,"color":"#8866FF88"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.18},{"t":0.35,"size":0.8},{"t":1,"size":0.02}],
+      "start_time":1.2,"end_time":3.0,"rate":1150,"particle_lifetime":0.52,"size_variance":0.4,
+      "component":{"type":"line","start":[84.5,0,-181.3],"end":[-84.5,0,181.3],"segments":320},
+      "color_over_life":[{"t":0,"color":"#00FFD700"},{"t":0.12,"color":"#FFFFD060"},{"t":0.5,"color":"#FFFF7040"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.1},{"t":0.3,"size":0.72},{"t":1,"size":0.03}],
       "blend":"ADDITIVE","enable_trail":true
     }
   ]

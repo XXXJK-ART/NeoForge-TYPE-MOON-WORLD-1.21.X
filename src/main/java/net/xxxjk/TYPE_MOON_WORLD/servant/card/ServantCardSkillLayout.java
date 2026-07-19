@@ -123,13 +123,13 @@ public final class ServantCardSkillLayout {
             case -1 -> new ServantCardSkillAction("近战小技能", "gilgamesh_melee", 0.0, 18);
             case 0 -> new ServantCardSkillAction("王律键", "gilgamesh_key", 0.0, 0);
             case 1 -> new ServantCardSkillAction("天之锁", "gilgamesh_chains", 36.0, 260);
-            case 2 -> new ServantCardSkillAction(crouching ? "大规模王之宝库" : "王之宝库", crouching ? "gilgamesh_grand_vault" : "gilgamesh_vault", crouching ? 80.0 : 34.0, crouching ? 520 : 180);
+            case 2 -> new ServantCardSkillAction(crouching ? "大规模王之宝库" : "王之宝库", crouching ? "gilgamesh_grand_vault" : "gilgamesh_vault", crouching ? 80.0 : 34.0, crouching ? 200 : 100);
             case 3 -> new ServantCardSkillAction("环敌王之宝库", "gilgamesh_ring_vault", 55.0, 300);
             case 4 -> new ServantCardSkillAction("解毒的灵药", "gilgamesh_elixir", 45.0, 600);
             case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 100);
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
-            case 8 -> new ServantCardSkillAction("狂笑·超大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 3600);
+            case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);
             case 9 -> new ServantCardSkillAction("伊伽莉玛 & 修尔夏伽那", "gilgamesh_cross_slash", 160.0, 1400);
             default -> null;
          };

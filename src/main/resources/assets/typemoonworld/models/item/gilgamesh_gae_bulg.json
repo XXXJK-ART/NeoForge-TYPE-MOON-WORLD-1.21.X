@@ -1,6 +1,3 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "typemoonworld:item/gae_bulg"
-  }
+  "parent": "typemoonworld:item/gae_bulg"
 }
