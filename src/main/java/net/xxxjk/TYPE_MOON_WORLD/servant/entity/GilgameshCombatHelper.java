@@ -8,6 +8,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -48,6 +49,11 @@ public final class GilgameshCombatHelper {
    private static final String DAMAGE_WINDOW_TOTAL = "GilgameshDamageWindowTotal";
    private static final String NEXT_COMBAT_VOICE = "GilgameshNextCombatVoice";
    private static final String NEXT_COMBAT_VOICE_INDEX = "GilgameshNextCombatVoiceIndex";
+   private static final String NEXT_PROJECTION_DUEL = "GilgameshNextProjectionDuel";
+   private static final long PROJECTION_DUEL_COOLDOWN = 30L * 20L;
+   private static final float PROJECTION_DUEL_CHANCE = 0.18F;
+   private static final int PROJECTION_DUEL_ROUNDS = 12;
+   private static final int PROJECTION_WEAPONS_PER_ROUND = 50;
    private static final String LAST_EA = "GilgameshLastEa";
    private static final String LAST_CROSS = "GilgameshLastCross";
    private static final long MAJOR_NP_SWITCH_LOCK_TICKS = 200L;
@@ -60,6 +66,10 @@ public final class GilgameshCombatHelper {
    private static final String ENKIDU_BARRAGE_REMAINING = "GilgameshEnkiduBarrageRemaining";
    private static final String ENKIDU_BARRAGE_NEXT = "GilgameshEnkiduBarrageNext";
    private static final String ENKIDU_BARRAGE_COOLDOWN = "GilgameshEnkiduBarrageCooldown";
+   private static final String FLIGHT_CYCLE_START = "GilgameshFlightCycleStart";
+   private static final String FLIGHT_CYCLE_TARGET = "GilgameshFlightCycleTarget";
+   private static final int FLIGHT_CYCLE_TICKS = 18 * 20;
+   private static final int FLIGHT_ACTIVE_TICKS = 12 * 20;
    private GilgameshCombatHelper() { }
 
    public static void tick(GilgameshEntity entity) {
@@ -76,6 +86,15 @@ public final class GilgameshCombatHelper {
       if (entity.tickCount % 20 == 0) {
          entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
       }
+      // The finale owns the pair once it starts. Tick it before the normal
+      // target/EA checks so a lost target cannot leave both servants frozen.
+      if (GilgameshDuelState.tickGilgamesh(entity, level, now)) {
+         // The duel state locks normal AI, but its Bab-ilu -> EA prelude must
+         // still advance so the synchronized beam can actually be created.
+         tickEaSummon(entity, level, now, data);
+         endMeleeMode(entity);
+         return;
+      }
       if (tickEaSummon(entity, level, now, data)) {
          endMeleeMode(entity);
          return;
@@ -88,10 +107,6 @@ public final class GilgameshCombatHelper {
          return;
       }
       lockFacing(entity, target);
-      if (GilgameshDuelState.tickGilgamesh(entity, level, now)) {
-         endMeleeMode(entity);
-         return;
-      }
       if (GilgameshEaBeamEntity.isEaActiveFor(entity)) {
          endMeleeMode(entity);
          entity.getNavigation().stop();
@@ -112,10 +127,15 @@ public final class GilgameshCombatHelper {
       if (tryEa(entity, level, target, now, data)) return;
       if (now >= data.getLong(NEXT_GATE)) {
          ServantCombatPhase phase = ServantCombatSystem.getPhase(entity);
-         boolean projection = isProjectionCounterTarget(target);
-         GateAttack attack = projection ? new GateAttack(150 * 12, 22.0F, 14.4, 320) : chooseGateAttack(entity, target, phase);
+         boolean projection = isProjectionCounterTarget(target)
+            && now >= data.getLong(NEXT_PROJECTION_DUEL)
+            && entity.getRandom().nextFloat() < PROJECTION_DUEL_CHANCE;
+         GateAttack attack = projection
+            ? new GateAttack(PROJECTION_WEAPONS_PER_ROUND * PROJECTION_DUEL_ROUNDS, 22.0F, 14.4, 320)
+            : chooseGateAttack(entity, target, phase);
          if (entity.getCurrentMp() >= attack.mpCost()) {
-            fireGateVolley(entity, level, target, attack.count(), attack.damage());
+            fireGateVolley(entity, level, target, attack.count(), attack.damage(), projection);
+            if (projection) data.putLong(NEXT_PROJECTION_DUEL, now + PROJECTION_DUEL_COOLDOWN);
             data.putLong(LAST_GATE, now);
             data.putLong(NEXT_GATE, now + attack.cooldown());
             entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - attack.mpCost()));
@@ -141,7 +161,24 @@ public final class GilgameshCombatHelper {
    private static void updateFlight(GilgameshEntity entity, LivingEntity target, long now) {
       CompoundTag data = entity.getPersistentData();
       if (target == null || !target.isAlive() || ServantCombatSystem.cannotAct(entity)) {
-         entity.setFlyingMode(false);
+         enterGroundMode(entity);
+         data.remove(FLIGHT_CYCLE_START);
+         data.remove(FLIGHT_CYCLE_TARGET);
+         return;
+      }
+      if (isProjectionCounterTarget(target)) {
+         enterGroundMode(entity);
+         data.remove(FLIGHT_CYCLE_START);
+         data.remove(FLIGHT_CYCLE_TARGET);
+         return;
+      }
+      if (!data.hasUUID(FLIGHT_CYCLE_TARGET) || !target.getUUID().equals(data.getUUID(FLIGHT_CYCLE_TARGET))) {
+         data.putUUID(FLIGHT_CYCLE_TARGET, target.getUUID());
+         data.putLong(FLIGHT_CYCLE_START, now);
+      }
+      long elapsed = Math.floorMod(now - data.getLong(FLIGHT_CYCLE_START), (long)FLIGHT_CYCLE_TICKS);
+      if (elapsed >= FLIGHT_ACTIVE_TICKS) {
+         enterGroundMode(entity);
          return;
       }
       double distance = entity.distanceTo(target);
@@ -158,6 +195,15 @@ public final class GilgameshCombatHelper {
       Vec3 orbit = new Vec3(-away.z, 0, away.x).scale(retreat ? 0.06 : 0.10);
       double vertical = net.minecraft.util.Mth.clamp((desiredY - entity.getY()) * 0.08, -0.22, 0.22);
       entity.setDeltaMovement(entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0));
+   }
+
+   private static void enterGroundMode(GilgameshEntity entity) {
+      if (entity.isFlyingMode()) {
+         entity.setFlyingMode(false);
+      } else if (entity.isNoGravity()) {
+         entity.setNoGravity(false);
+      }
+      entity.fallDistance = 0.0F;
    }
 
    private static void lockFacing(GilgameshEntity entity, LivingEntity target) {
@@ -399,7 +445,9 @@ public final class GilgameshCombatHelper {
          entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_EA.get()));
          entity.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
          entity.triggerNamedActionAnimation("ea_release");
-         level.playSound(null, entity.blockPosition(), ModSounds.GILGAMESH_VOICE_EA_DRAW.get(), SoundSource.HOSTILE, 2.0F, 1.0F);
+         if (!data.getBoolean("GilEnkiduDuelActive")) {
+            level.playSound(null, entity.blockPosition(), ModSounds.GILGAMESH_VOICE_EA_DRAW.get(), SoundSource.HOSTILE, 2.0F, 1.0F);
+         }
          level.playSound(null, entity.blockPosition(), SoundEvents.PORTAL_TRIGGER, SoundSource.HOSTILE, 1.5F, 0.62F);
          data.remove(EA_SUMMON_END);
          data.putLong(EA_DRAW_END, now + EA_DRAW_TICKS);
@@ -430,6 +478,12 @@ public final class GilgameshCombatHelper {
       }
    }
 
+   /** Cancels only the NPC summon prelude; normal combat can resume safely. */
+   public static void cancelNpcEaSummon(GilgameshEntity entity) {
+      if (entity == null) return;
+      clearEaSummon(entity, entity.getPersistentData());
+   }
+
    private static boolean tryCrossSlash(GilgameshEntity entity, ServerLevel level, LivingEntity target, long now, CompoundTag data) {
       if (ServantCombatSystem.getPhase(entity) != ServantCombatPhase.DECISIVE
          || now - data.getLong(LAST_CROSS) < 1800
@@ -437,24 +491,16 @@ public final class GilgameshCombatHelper {
          || entity.tickCount % 40 != 0) return false;
       if (entity.getRandom().nextFloat() >= 0.05F) return false;
       Vec3 direction = target.position().subtract(entity.position()).multiply(1, 0, 1).normalize();
-      data.putLong("GilgameshCrossSlashCopyUntil", now + 32L);
+      data.putLong("GilgameshCrossSlashCopyUntil", now + GilgameshCrossSlashEntity.IMPACT_TICK);
       data.putDouble("GilgameshCrossSlashDirX", direction.x); data.putDouble("GilgameshCrossSlashDirY", direction.y); data.putDouble("GilgameshCrossSlashDirZ", direction.z);
       entity.triggerNamedActionAnimation("igalima_slash");
-      GilgameshCrossSlashEntity green = new GilgameshCrossSlashEntity(level, entity, GilgameshCrossSlashEntity.SlashType.IGALIMA, direction);
-      if (target instanceof EmiyaArcherEntity emiya) green.addImmuneEntity(emiya);
-      level.addFreshEntity(green);
-      GilgameshCrossSlashEntity white = new GilgameshCrossSlashEntity(level, entity, GilgameshCrossSlashEntity.SlashType.SULSAGANA, direction);
-      if (target instanceof EmiyaArcherEntity emiya) white.addImmuneEntity(emiya);
-      level.addFreshEntity(white);
+      Entity[] originalImmune = isProjectionCounterTarget(target) ? new Entity[]{target} : new Entity[0];
+      GilgameshCrossSlashEntity.spawnPair(level, entity, direction, originalImmune);
       if (target instanceof EmiyaArcherEntity emiya) {
          Vec3 counterDirection = entity.position().add(0, entity.getBbHeight() * 0.5, 0).subtract(emiya.position().add(0, emiya.getBbHeight() * 0.5, 0)).normalize();
-         GilgameshCrossSlashEntity counterGreen = new GilgameshCrossSlashEntity(level, emiya, GilgameshCrossSlashEntity.SlashType.IGALIMA, counterDirection);
-         counterGreen.addImmuneEntity(entity); counterGreen.addImmuneEntity(emiya); level.addFreshEntity(counterGreen);
-         GilgameshCrossSlashEntity counterWhite = new GilgameshCrossSlashEntity(level, emiya, GilgameshCrossSlashEntity.SlashType.SULSAGANA, counterDirection);
-         counterWhite.addImmuneEntity(entity); counterWhite.addImmuneEntity(emiya); level.addFreshEntity(counterWhite);
+         GilgameshCrossSlashEntity.spawnPair(level, emiya, counterDirection, entity, emiya);
          VFXServerEffects.spawn(level, "servant_emiya_projection", emiya, 256.0);
       }
-      VFXServerEffects.spawnOriented(level, "gilgamesh_cross_slash", entity.position(), direction, 256.0);
       data.putLong(LAST_CROSS, now);
       return true;
    }
@@ -467,17 +513,19 @@ public final class GilgameshCombatHelper {
       boolean projectionCounter = allowProjectionCounter && isProjectionCounterTarget(target);
       boolean ubw = projectionCounter && UBWInstanceManager.isUbwDimension(level);
       if (projectionCounter) {
-         count = 150 * 12;
+         count = PROJECTION_WEAPONS_PER_ROUND * PROJECTION_DUEL_ROUNDS;
       }
-      int waveSize = projectionCounter ? 150 : count >= 100 ? 20 : 16;
-      int waves = projectionCounter ? 12 : (count + waveSize - 1) / waveSize;
+      int waveSize = projectionCounter ? PROJECTION_WEAPONS_PER_ROUND : count >= 100 ? 20 : 16;
+      int waves = projectionCounter ? PROJECTION_DUEL_ROUNDS : (count + waveSize - 1) / waveSize;
       final int totalCount = count;
       GateFormation baseFormation = projectionCounter ? GateFormation.FRONTAL : chooseFormation(entity, target, count);
       triggerGateAnimation(entity, count);
       tryPlayCombatVoice(entity, level);
       for (int wave = 0; wave < waves; wave++) {
          int waveIndex = wave;
-         TYPE_MOON_WORLD.queueServerWork(wave * (ubw ? 15 : 10), () -> {
+         int roundStart = wave * 20 + 1;
+         int gilDelay = projectionCounter ? roundStart + (ubw ? 10 : 0) : wave * 10;
+         TYPE_MOON_WORLD.queueServerWork(gilDelay, () -> {
             if (!entity.isAlive() || !target.isAlive() || entity.level() != level) return;
             int amount = Math.min(waveSize, totalCount - waveIndex * waveSize);
             Vec3 forward = target.position().add(0, target.getBbHeight() * 0.55, 0)
@@ -491,7 +539,9 @@ public final class GilgameshCombatHelper {
                String weapon = weaponForSlot(target, globalIndex);
                float projectileDamage = projectionCounter ? damage : damage * GATE_PROJECTILE_DAMAGE_MULTIPLIER;
                GilgameshGateWeaponProjectileEntity projectile = new GilgameshGateWeaponProjectileEntity(level, entity, gate, aim, weapon, projectileDamage);
-               projectile.setLaunchDelay(24 + Math.min(16, (i / columns) * 3));
+               projectile.setLaunchDelay(projectionCounter
+                  ? 8 + Math.min(6, (i / columns) * 2)
+                  : 24 + Math.min(16, (i / columns) * 3));
                if (projectionCounter) {
                   projectile.setSourceStyle(0);
                   projectile.setDuelToken(entity.getUUID() + ":projection:" + waveIndex + ":" + i);
@@ -504,7 +554,8 @@ public final class GilgameshCombatHelper {
             level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.HOSTILE, 1.2F, 1.45F);
          });
          if (projectionCounter) {
-            TYPE_MOON_WORLD.queueServerWork(wave * (ubw ? 5 : 10), () -> spawnProjectionCounterWave(level, entity, target, totalCount, waveSize, waveIndex));
+            TYPE_MOON_WORLD.queueServerWork(roundStart,
+               () -> spawnProjectionCounterWave(level, entity, target, totalCount, waveSize, waveIndex));
          }
       }
    }
@@ -699,9 +750,8 @@ public final class GilgameshCombatHelper {
          Vec3 aim=gil.position().add(0,gil.getBbHeight()*0.55,0).subtract(gate).normalize();
          String weapon = weaponForSlot(emiya, waveIndex * waveSize + i);
          GilgameshGateWeaponProjectileEntity counter=new GilgameshGateWeaponProjectileEntity(level,emiya,gate,aim,weapon,0);
-         counter.setLaunchDelay(24 + Math.min(16, (i / columns) * 3));
+         counter.setLaunchDelay(8 + Math.min(6, (i / columns) * 2));
          counter.setSourceStyle(1); counter.setDuelToken(gil.getUUID()+":projection:"+waveIndex+":"+i); level.addFreshEntity(counter);
-         VFXServerEffects.spawn(level,"servant_emiya_projection",gate,160.0);
       }
    }
 

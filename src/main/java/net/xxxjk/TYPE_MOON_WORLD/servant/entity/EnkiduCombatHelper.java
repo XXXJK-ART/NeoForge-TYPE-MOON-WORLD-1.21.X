@@ -2008,11 +2008,12 @@ public final class EnkiduCombatHelper {
       return tryBeginEnumaElish(entity, level, target, now, phase, false);
    }
 
-   public static void startGilgameshFinale(EnkiduEntity entity, ServerLevel level, GilgameshEntity target, long now) {
+   public static void startGilgameshFinale(EnkiduEntity entity, ServerLevel level, GilgameshEntity target, long now, int chargeTicks) {
+      int synchronizedChargeTicks = Math.max(1, chargeTicks);
       CompoundTag data = entity.getPersistentData();
       data.putLong(TAG_LAST_ENUMA, now);
-      data.putLong(TAG_ENUMA_RELEASE, now + 140L);
-      data.putLong(TAG_ENUMA_FINISH, now + 290L);
+      data.putLong(TAG_ENUMA_RELEASE, now + synchronizedChargeTicks);
+      data.putLong(TAG_ENUMA_FINISH, now + synchronizedChargeTicks + ENUMA_RELEASE_VISUAL);
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
       data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
       data.remove(TAG_ENUMA_INVISIBLE);
@@ -2021,7 +2022,7 @@ public final class EnkiduCombatHelper {
       data.putDouble(TAG_ENUMA_IMPACT_X, target.getX()); data.putDouble(TAG_ENUMA_IMPACT_Y, target.getY()); data.putDouble(TAG_ENUMA_IMPACT_Z, target.getZ());
       data.putInt(TAG_ENUMA_STAGE, 0); data.putInt(TAG_ENUMA_BIND_STEP, ENUMA_BIND_COUNT); data.putLong(TAG_ENUMA_NEXT_BIND, now + 200L);
       data.putBoolean(TAG_ENUMA_DUEL_FINALE, true);
-      data.putLong(TAG_FLIGHT_UNTIL, now + 310L); data.remove(TAG_LAND_UNTIL);
+      data.putLong(TAG_FLIGHT_UNTIL, now + synchronizedChargeTicks + ENUMA_RELEASE_VISUAL + 20L); data.remove(TAG_LAND_UNTIL);
       entity.setNoGravity(true);
       entity.triggerNamedActionAnimation("enkidu_enuma_elish");
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", entity.position(), 192.0);
@@ -2124,6 +2125,16 @@ public final class EnkiduCombatHelper {
       Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       entity.faceToward(targetPoint);
       if (now < release) {
+         if (duelFinale) {
+            // The synchronized finale is a face-to-face stationary charge;
+            // the rush starts only on the shared release tick.
+            entity.setNoGravity(true);
+            entity.setDeltaMovement(Vec3.ZERO);
+            if (now % 4L == 0L) {
+               emitEnumaDrillFx(level, entity, targetPoint, now, false);
+            }
+            return;
+         }
          tickEnumaSequentialBinds(entity, level, target, now);
          entity.setNoGravity(true);
          double progress = 1.0 - (double)(release - now) / Math.max(1.0, ENUMA_WINDUP);

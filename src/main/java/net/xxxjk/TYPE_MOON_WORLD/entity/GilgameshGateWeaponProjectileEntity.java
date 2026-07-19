@@ -104,6 +104,11 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          if (this.tickCount == 1) {
             if (this.getSourceStyle() == 2) {
                VFXServerEffects.spawn(level, "servant_enkidu_age_of_babylon_gate", this.position(), 160.0);
+            } else if (this.getSourceStyle() == 1) {
+               // Emiya's counter projectiles are projections, not golden
+               // Gate of Babylon portals.
+               VFXServerEffects.spawnOriented(level, "servant_emiya_projection",
+                  this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
             } else {
                VFXServerEffects.spawnOriented(level, "gilgamesh_gate",
                   this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);

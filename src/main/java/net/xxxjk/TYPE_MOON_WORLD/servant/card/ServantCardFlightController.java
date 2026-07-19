@@ -19,7 +19,7 @@ public final class ServantCardFlightController {
    }
 
    public static boolean canFly(String servantId) {
-      return "medea".equals(servantId) || "oda_nobunaga".equals(servantId) || "enkidu".equals(servantId);
+      return "medea".equals(servantId) || "oda_nobunaga".equals(servantId) || "enkidu".equals(servantId) || "gilgamesh".equals(servantId);
    }
 
    public static void setInput(ServerPlayer player, boolean toggle, double forward, double strafe, double vertical) {
@@ -84,7 +84,7 @@ public final class ServantCardFlightController {
          movement = movement.normalize();
       }
       double horizontalSpeed = switch (vars.servant_card_id) {
-         case "enkidu" -> 0.58;
+         case "enkidu", "gilgamesh" -> 0.58;
          case "oda_nobunaga" -> 0.54;
          default -> 0.48;
       };

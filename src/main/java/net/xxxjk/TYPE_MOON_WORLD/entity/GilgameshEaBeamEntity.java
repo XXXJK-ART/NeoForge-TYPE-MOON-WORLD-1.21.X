@@ -56,6 +56,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private static final int BEAM_DAMAGE_START = 58;
    private static final int BEAM_DAMAGE_INTERVAL = 5;
    private static final int BEAM_DAMAGE_PULSES = 18;
+   private static final int EA_THUNDER_TICKS = 45 * 20;
    private static final double WIND_RADIUS = 50.0;
    private static final double BEAM_LENGTH = 150.0;
    private static final double BEAM_HALF_WIDTH = 12.0;
@@ -151,6 +152,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private void tickWind(ServerLevel level, LivingEntity owner) {
       if (stageTicks == 1) {
          if (!drainMana(owner, 50.0)) { clearNpcEquipment(owner); setStage(Stage.FINISHED); discard(); return; }
+         level.setWeatherParameters(0, EA_THUNDER_TICKS, true, true);
          VFXServerEffects.spawn(level, "ea_wind", owner, 192.0);
          if (owner instanceof GilgameshEntity && !isDuelTarget(level, owner)) {
             level.playSound(null, owner.blockPosition(), ModSounds.GILGAMESH_VOICE_EA_NPC.get(), SoundSource.HOSTILE, 3.0F, 1.0F);
@@ -330,7 +332,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          center.x, center.y + 0.5, center.z, 8, 0.8, 0.35, 0.8, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER,
          center.x, center.y + 1.5, center.z, 420, radius * 0.48, radius * 0.28, radius * 0.48, 0.2);
-      VFXServerEffects.screenFlash(level, center, 96.0, 8, 0.24F);
+      VFXServerEffects.screenFlash(level, center, 128.0, 12, 0.75F);
       for (int delay : new int[]{14, 32, 54, 78}) {
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
             level.sendParticles(net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER,
@@ -354,6 +356,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       if (returned == null || !(returned.level() instanceof ServerLevel destination) || destination == source) {
          return false;
       }
+      destination.setWeatherParameters(0, EA_THUNDER_TICKS, true, true);
       Entity moved = changeDimension(new DimensionTransition(destination,
          returned.position().add(0.0, returned.getBbHeight() * 0.65, 0.0), Vec3.ZERO,
          returned.getYRot(), returned.getXRot(), DimensionTransition.DO_NOTHING));

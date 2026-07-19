@@ -18,8 +18,10 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 /** Shared, round-robin terrain queue. Damage logic never waits for terrain work. */
 @EventBusSubscriber(modid = "typemoonworld")
 public final class DeferredTerrainDestruction {
-   private static final int MAX_CHECKS_PER_LEVEL_TICK = 4000;
-   private static final long SOFT_BUDGET_NANOS = 4_000_000L;
+   // A complete advancing X cross-section is roughly 19k checks per tick.
+   // The time cap remains authoritative when block updates are expensive.
+   private static final int MAX_CHECKS_PER_LEVEL_TICK = 20_000;
+   private static final long SOFT_BUDGET_NANOS = 12_000_000L;
    private static final Map<ResourceKey<Level>, ArrayDeque<Job>> JOBS = new HashMap<>();
    private DeferredTerrainDestruction() { }
 
@@ -50,6 +52,16 @@ public final class DeferredTerrainDestruction {
    public static void queueDiagonalBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, double shell) {
       add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, true, null).shell(shell));
    }
+   public static void queueCrossBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, double shell) {
+      add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, true, null).shell(shell).excludeCrossCore());
+   }
+   public static AdvancingDiagonalCut queueAdvancingDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction,
+                                                                 double length, double width, double height,
+                                                                 boolean mirrored, Runnable completion) {
+      AdvancingDiagonalJob job = new AdvancingDiagonalJob(level, origin, direction, length, width, height, mirrored, completion);
+      add(level, job);
+      return new AdvancingDiagonalCut(job);
+   }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
       add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel));
    }
@@ -62,10 +74,17 @@ public final class DeferredTerrainDestruction {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
       ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
       long started = System.nanoTime(); int checked = 0;
+      int idleJobs = 0;
       while (!queue.isEmpty() && checked < MAX_CHECKS_PER_LEVEL_TICK && System.nanoTime() - started < SOFT_BUDGET_NANOS) {
          Job job = queue.pollFirst(); int slice = 0;
-         while (!job.done && slice < 128 && checked < MAX_CHECKS_PER_LEVEL_TICK) { job.advance(); slice++; checked++; }
+         while (!job.done && job.ready() && slice < 128 && checked < MAX_CHECKS_PER_LEVEL_TICK) { job.advance(); slice++; checked++; }
          if (!job.done) queue.addLast(job); else job.finish();
+         if (slice == 0) {
+            idleJobs++;
+            if (idleJobs >= queue.size()) break;
+         } else {
+            idleJobs = 0;
+         }
       }
       if (queue.isEmpty()) JOBS.remove(level.dimension());
    }
@@ -75,6 +94,7 @@ public final class DeferredTerrainDestruction {
       final ServerLevel level; boolean done; Runnable completion;
       Job(ServerLevel level) { this.level = level; }
       abstract void advance();
+      boolean ready() { return true; }
       void finish() { if (completion != null) completion.run(); }
       boolean valid(BlockPos pos, float maxHardness) {
          if (!level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) return false;
@@ -97,12 +117,30 @@ public final class DeferredTerrainDestruction {
       void cursor(){if(++z>radius){z=-radius;if(++y>height){y=-height;if(++x>radius)done=true;}}}
    }
    private static final class DiagonalJob extends Job {
-      final Vec3 origin,forward,side; final double length,width,height,sign; final boolean burn; double shell; int along,normal,vertical;
+      final Vec3 origin,forward,side; final double length,width,height,sign; final boolean burn; double shell; boolean excludeCrossCore; int along,normal,vertical;
       DiagonalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean mirrored,boolean burn,Runnable completion){super(level);this.origin=origin;Vec3 flat=new Vec3(direction.x,0,direction.z);this.forward=flat.lengthSqr()<1e-6?new Vec3(0,0,1):flat.normalize();this.side=new Vec3(-forward.z,0,forward.x);this.length=length;this.width=width;this.height=height;this.sign=mirrored?-1.0:1.0;this.burn=burn;this.completion=completion;resetCursor();}
       DiagonalJob shell(double shell){this.shell=shell;resetCursor();return this;}
+      DiagonalJob excludeCrossCore(){this.excludeCrossCore=true;return this;}
       void resetCursor(){along=burn?(int)Math.floor(-shell*2.0):0;normal=(int)-Math.ceil(width/2+shell);vertical=(int)-Math.ceil(height/2+shell);}
-      void advance(){double distance=along*.5,n=normal,y=vertical;cursor();boolean inCore=distance>=0&&distance<=length&&Math.abs(n)<=width/2&&Math.abs(y)<=height/2;if(burn&&inCore)return;if(!burn&&!inCore)return;double sideOffset=sign*y+n*Math.sqrt(2.0);Vec3 point=origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0);BlockPos pos=BlockPos.containing(point);if(!valid(pos,Float.MAX_VALUE))return;if(burn)level.setBlock(pos,level.random.nextFloat()<.75F?Blocks.NETHERRACK.defaultBlockState():Blocks.MAGMA_BLOCK.defaultBlockState(),3);else level.removeBlock(pos,false);}
+      void advance(){double distance=along*.5,n=normal,y=vertical;cursor();boolean inCore=distance>=0&&distance<=length&&Math.abs(n)<=width/2&&Math.abs(y)<=height/2;if(burn&&inCore)return;if(!burn&&!inCore)return;double sideOffset=sign*y+n*Math.sqrt(2.0);Vec3 point=origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0);if(burn&&excludeCrossCore&&insideEitherCore(point,distance))return;BlockPos pos=BlockPos.containing(point);if(!valid(pos,Float.MAX_VALUE))return;if(burn)level.setBlock(pos,level.random.nextFloat()<.75F?Blocks.NETHERRACK.defaultBlockState():Blocks.MAGMA_BLOCK.defaultBlockState(),3);else level.removeBlock(pos,false);}
+      boolean insideEitherCore(Vec3 point,double distance){if(distance<0||distance>length)return false;Vec3 rel=point.subtract(origin);double sideDistance=rel.dot(side),verticalDistance=rel.y;return Math.abs(verticalDistance)<=height/2&&Math.min(Math.abs(sideDistance-verticalDistance),Math.abs(sideDistance+verticalDistance))/Math.sqrt(2.0)<=width/2;}
       void cursor(){int maxNormal=(int)Math.ceil(width/2+shell),maxY=(int)Math.ceil(height/2+shell),maxAlong=(int)Math.ceil((length+shell)*2.0);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>maxAlong)done=true;}}}
+   }
+   public static final class AdvancingDiagonalCut {
+      private final AdvancingDiagonalJob job;
+      private AdvancingDiagonalCut(AdvancingDiagonalJob job){this.job=job;}
+      public void advanceTo(double distance){job.advanceTo(distance);}
+      public void seal(){job.seal();}
+      public boolean isComplete(){return job.done;}
+   }
+   private static final class AdvancingDiagonalJob extends Job {
+      final Vec3 origin,forward,side; final double length,width,height,sign; int along,normal,vertical; double targetDistance; boolean sealed;
+      AdvancingDiagonalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean mirrored,Runnable completion){super(level);this.origin=origin;Vec3 flat=new Vec3(direction.x,0,direction.z);this.forward=flat.lengthSqr()<1e-6?new Vec3(0,0,1):flat.normalize();this.side=new Vec3(-forward.z,0,forward.x);this.length=length;this.width=width;this.height=height;this.sign=mirrored?-1.0:1.0;this.completion=completion;normal=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
+      void advanceTo(double distance){targetDistance=Math.max(targetDistance,Math.min(length,distance));}
+      void seal(){sealed=true;targetDistance=length;if(along>Math.ceil(length))done=true;}
+      @Override boolean ready(){return !done&&along<=Math.floor(targetDistance+1.0E-6);}
+      @Override void advance(){double distance=along,n=normal,y=vertical;cursor();double sideOffset=sign*y+n*Math.sqrt(2.0);if(sign<0&&Math.abs(sideOffset-y)/Math.sqrt(2.0)<=width/2)return;BlockPos pos=BlockPos.containing(origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0));if(valid(pos,Float.MAX_VALUE))level.removeBlock(pos,false);}
+      void cursor(){int maxNormal=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>Math.ceil(length)&&sealed)done=true;}}}
    }
    private static final class DirectionalJob extends Job {
       final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; int along, lateral, vertical;

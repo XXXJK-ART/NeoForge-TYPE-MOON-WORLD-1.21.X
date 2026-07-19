@@ -56,6 +56,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationSetMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.FirearmPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenGilgameshVaultScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GilgameshVaultSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ImplantMagicCrestMessage;
@@ -203,6 +205,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
       registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
+      registrar.playToServer(GilgameshVaultSelectionMessage.TYPE, GilgameshVaultSelectionMessage.STREAM_CODEC, GilgameshVaultSelectionMessage::handleData);
       registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);
       registrar.playToServer(ServantCardBasicAttackMessage.TYPE, ServantCardBasicAttackMessage.STREAM_CODEC, ServantCardBasicAttackMessage::handleData);
       registrar.playToServer(ServantCardFlightMessage.TYPE, ServantCardFlightMessage.STREAM_CODEC, ServantCardFlightMessage::handleData);
@@ -221,6 +224,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ThompsonContenderUseMessage.TYPE, ThompsonContenderUseMessage.STREAM_CODEC, ThompsonContenderUseMessage::handleData);
       registrar.playToClient(OpenMedeaCraftScreenMessage.TYPE, OpenMedeaCraftScreenMessage.STREAM_CODEC, OpenMedeaCraftScreenMessage::handleData);
       registrar.playToClient(OpenEnkiduTransfigurationScreenMessage.TYPE, OpenEnkiduTransfigurationScreenMessage.STREAM_CODEC, OpenEnkiduTransfigurationScreenMessage::handleData);
+      registrar.playToClient(OpenGilgameshVaultScreenMessage.TYPE, OpenGilgameshVaultScreenMessage.STREAM_CODEC, OpenGilgameshVaultScreenMessage::handleData);
       registrar.playToClient(OpenParacelsusCraftScreenMessage.TYPE, OpenParacelsusCraftScreenMessage.STREAM_CODEC, OpenParacelsusCraftScreenMessage::handleData);
       registrar.playToClient(OpenParacelsusElementScreenMessage.TYPE, OpenParacelsusElementScreenMessage.STREAM_CODEC, OpenParacelsusElementScreenMessage::handleData);
       registrar.playToClient(MasterVisualStateMessage.TYPE, MasterVisualStateMessage.STREAM_CODEC, MasterVisualStateMessage::handleData);

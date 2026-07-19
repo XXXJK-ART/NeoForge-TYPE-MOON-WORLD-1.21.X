@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.EmiyaProjectionItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
@@ -222,6 +223,10 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "vajra"));
     public static final DeferredItem<Item> GILGAMESH_FANGTIAN_HUAJI = ITEMS.register("gilgamesh_fangtian_huaji",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "fangtian_huaji"));
+    public static final DeferredItem<Item> GILGAMESH_SPIRAL_SWORD = ITEMS.register("gilgamesh_spiral_sword",
+            () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
+    public static final DeferredItem<Item> GILGAMESH_GAE_BULG = ITEMS.register("gilgamesh_gae_bulg",
+            () -> new GilgameshHarmlessGaeBulgItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
@@ -233,6 +238,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_HERACLES = registerServantCard("heracles");
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA = registerServantCard("oda_nobunaga");
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU = registerServantCard("enkidu");
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH = registerServantCard("gilgamesh");
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN = registerServantCard("gawain");
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS = registerServantCard("paracelsus");
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
@@ -260,6 +266,8 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA_LEGS = registerServantArmor("oda_nobunaga", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_CHEST = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_LEGS = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CHEST = registerServantArmor("gilgamesh", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_LEGS = registerServantArmor("gilgamesh", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN_CHEST = registerServantArmor("gawain", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN_LEGS = registerServantArmor("gawain", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS_CHEST = registerServantArmor("paracelsus", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -854,6 +862,7 @@ public class ModItems {
             case "heracles" -> (legs ? SERVANT_CARD_HERACLES_LEGS : SERVANT_CARD_HERACLES_CHEST).get();
             case "oda_nobunaga" -> (legs ? SERVANT_CARD_ODA_NOBUNAGA_LEGS : SERVANT_CARD_ODA_NOBUNAGA_CHEST).get();
             case "enkidu" -> (legs ? SERVANT_CARD_ENKIDU_LEGS : SERVANT_CARD_ENKIDU_CHEST).get();
+            case "gilgamesh" -> (legs ? SERVANT_CARD_GILGAMESH_LEGS : SERVANT_CARD_GILGAMESH_CHEST).get();
             case "gawain" -> (legs ? SERVANT_CARD_GAWAIN_LEGS : SERVANT_CARD_GAWAIN_CHEST).get();
             case "paracelsus" -> (legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
             case "li_shuwen" -> (legs ? SERVANT_CARD_LI_SHUWEN_LEGS : SERVANT_CARD_LI_SHUWEN_CHEST).get();

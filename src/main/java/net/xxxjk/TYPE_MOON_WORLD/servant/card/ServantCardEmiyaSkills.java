@@ -260,18 +260,10 @@ public final class ServantCardEmiyaSkills {
          direction = player.getLookAngle();
       }
       direction = direction.normalize();
-      GilgameshCrossSlashEntity green = new GilgameshCrossSlashEntity(level, player, GilgameshCrossSlashEntity.SlashType.IGALIMA, direction);
-      green.addImmuneEntity(gil);
-      green.addImmuneEntity(player);
-      level.addFreshEntity(green);
-      GilgameshCrossSlashEntity white = new GilgameshCrossSlashEntity(level, player, GilgameshCrossSlashEntity.SlashType.SULSAGANA, direction);
-      white.addImmuneEntity(gil);
-      white.addImmuneEntity(player);
-      level.addFreshEntity(white);
+      GilgameshCrossSlashEntity.spawnPair(level, player, direction, gil, player);
       for (GilgameshCrossSlashEntity original : level.getEntitiesOfClass(GilgameshCrossSlashEntity.class, gil.getBoundingBox().inflate(420.0), e -> e.isAlive() && e.isOwnedBy(gil))) {
          original.addImmuneEntity(player);
       }
-      VFXServerEffects.spawnOriented(level, "gilgamesh_cross_slash", player.position(), direction, 256.0);
       return true;
    }
 

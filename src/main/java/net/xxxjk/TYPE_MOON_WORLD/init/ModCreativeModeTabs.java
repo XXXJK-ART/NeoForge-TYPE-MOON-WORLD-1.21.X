@@ -46,6 +46,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_HERACLES);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU);
+                        output.accept(ModItems.SERVANT_CARD_GILGAMESH);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
@@ -69,6 +70,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_GILGAMESH_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_GILGAMESH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_CHEST);
@@ -171,6 +174,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GILGAMESH_HARPE);
                         output.accept(ModItems.GILGAMESH_VAJRA);
                         output.accept(ModItems.GILGAMESH_FANGTIAN_HUAJI);
+                        output.accept(ModItems.GILGAMESH_SPIRAL_SWORD);
+                        output.accept(ModItems.GILGAMESH_GAE_BULG);
                         output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.HESHIKIRI_HASEBE);

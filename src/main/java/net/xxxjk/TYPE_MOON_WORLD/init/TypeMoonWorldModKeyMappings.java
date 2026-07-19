@@ -133,6 +133,13 @@ public class TypeMoonWorldModKeyMappings {
          if (player == null || minecraft.screen != null) {
             return;
          }
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (event.isUseItem() && player.isCrouching() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
+            return;
+         }
          if (event.isUseItem() && player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.THOMPSON_CONTENDER.get())) {
             PacketDistributor.sendToServer(new ThompsonContenderUseMessage(), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -142,7 +149,6 @@ public class TypeMoonWorldModKeyMappings {
          if (!event.isAttack()) {
             return;
          }
-         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (player.isCrouching() && vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardActionMessage(-1), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -547,7 +553,8 @@ public class TypeMoonWorldModKeyMappings {
          boolean backDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == 1;
          if (jumpDown && !servantJumpDown) {
             long now = System.currentTimeMillis();
-            boolean flightServant = "medea".equals(vars.servant_card_id) || "oda_nobunaga".equals(vars.servant_card_id) || "enkidu".equals(vars.servant_card_id);
+            boolean flightServant = "medea".equals(vars.servant_card_id) || "oda_nobunaga".equals(vars.servant_card_id)
+               || "enkidu".equals(vars.servant_card_id) || "gilgamesh".equals(vars.servant_card_id);
             if (flightServant && now - servantLastJumpTapMs <= 280L && !sneakDown && !backDown) {
                PacketDistributor.sendToServer(new ServantCardFlightMessage(true, 0.0F, 0.0F, 0.0F), new CustomPacketPayload[0]);
                servantLastJumpTapMs = 0L;
@@ -607,7 +614,8 @@ public class TypeMoonWorldModKeyMappings {
             || "sasaki_kojiro".equals(servantId)
             || "cu_chulainn".equals(servantId)
             || "oda_nobunaga".equals(servantId)
-            || "enkidu".equals(servantId);
+            || "enkidu".equals(servantId)
+            || "gilgamesh".equals(servantId);
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

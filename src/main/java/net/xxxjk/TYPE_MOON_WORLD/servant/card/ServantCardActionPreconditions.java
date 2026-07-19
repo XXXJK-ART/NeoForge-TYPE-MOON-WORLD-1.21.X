@@ -6,7 +6,7 @@ public final class ServantCardActionPreconditions {
 
    public static boolean requiresLookTarget(String id) {
       return switch (id) {
-         case "cybele", "charm", "chains", "anti_mystery", "hasebe_repel", "oda_encircle_matchlocks" -> true;
+         case "cybele", "charm", "chains", "gilgamesh_chains", "gilgamesh_ring_vault", "anti_mystery", "hasebe_repel", "oda_encircle_matchlocks" -> true;
          default -> false;
       };
    }
@@ -15,7 +15,7 @@ public final class ServantCardActionPreconditions {
       return switch (id) {
          case "enuma_elish" -> 44.0;
          case "oda_encircle_matchlocks" -> 30.0;
-         case "anti_mystery", "chains" -> 26.0;
+         case "anti_mystery", "chains", "gilgamesh_chains", "gilgamesh_ring_vault" -> 30.0;
          case "cybele", "charm", "bellerophon" -> 18.0;
          default -> 8.0;
       };

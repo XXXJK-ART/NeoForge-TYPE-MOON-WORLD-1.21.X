@@ -1,11 +1,16 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.screens;
 
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -100,10 +105,40 @@ public class ServantCardHud {
       drawCooldownGrid(gui, minecraft, vars, 5, 68);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
+      drawGilgameshOmniscience(gui, minecraft, vars);
+   }
+
+   private static void drawGilgameshOmniscience(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!"gilgamesh".equals(vars.servant_card_id) || minecraft.level == null || minecraft.player == null) return;
+      HitResult hit = minecraft.hitResult;
+      if (hit == null || hit.getType() == HitResult.Type.MISS) return;
+      int x = gui.guiWidth() / 2 + 14;
+      int y = gui.guiHeight() / 2 + 10;
+      List<String> lines = new java.util.ArrayList<>();
+      if (hit instanceof BlockHitResult block) {
+         lines.add(minecraft.level.getBlockState(block.getBlockPos()).getBlock().getName().getString());
+      } else if (hit.getType() == HitResult.Type.ENTITY) {
+         net.minecraft.world.entity.Entity entity = ((net.minecraft.world.phys.EntityHitResult)hit).getEntity();
+         if (entity instanceof LivingEntity living) {
+            lines.add(living.getName().getString());
+            lines.add(String.format(java.util.Locale.ROOT, "HP %.1f / %.1f", living.getHealth(), living.getMaxHealth()));
+            lines.add("DEF " + living.getArmorValue());
+            if (!living.getMainHandItem().isEmpty()) lines.add(Component.translatable("hud.typemoonworld.gilgamesh.mainhand", living.getMainHandItem().getHoverName()).getString());
+            if (!living.getOffhandItem().isEmpty()) lines.add(Component.translatable("hud.typemoonworld.gilgamesh.offhand", living.getOffhandItem().getHoverName()).getString());
+         } else if (entity instanceof ItemEntity item) {
+            lines.add(item.getItem().getHoverName().getString());
+            lines.add("x" + item.getItem().getCount());
+         }
+      }
+      if (lines.isEmpty()) return;
+      int width = 0; for (String line : lines) width = Math.max(width, minecraft.font.width(line));
+      gui.fill(x - 4, y - 4, x + width + 5, y + lines.size() * 10 + 3, 0xB0181820);
+      gui.renderOutline(x - 4, y - 4, width + 9, lines.size() * 10 + 7, 0xFFD4AF37);
+      for (int i = 0; i < lines.size(); i++) gui.drawString(minecraft.font, lines.get(i), x, y + i * 10, i == 0 ? 0xFFFFD54F : 0xFFE8E8E8, true);
    }
 
    private static void drawFlightStatus(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
-      if (!"medea".equals(vars.servant_card_id) && !"enkidu".equals(vars.servant_card_id) && !"oda_nobunaga".equals(vars.servant_card_id)) return;
+      if (!"medea".equals(vars.servant_card_id) && !"enkidu".equals(vars.servant_card_id) && !"oda_nobunaga".equals(vars.servant_card_id) && !"gilgamesh".equals(vars.servant_card_id)) return;
       long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
       Component text;
       if ("oda_nobunaga".equals(vars.servant_card_id)) {

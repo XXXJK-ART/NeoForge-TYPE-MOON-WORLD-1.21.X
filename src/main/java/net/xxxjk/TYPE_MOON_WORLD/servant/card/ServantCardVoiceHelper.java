@@ -28,6 +28,7 @@ public final class ServantCardVoiceHelper {
          case "artoria_pendragon" -> ModSounds.ARTORIA_VOICE_ATTACK.get();
          case "oda_nobunaga" -> ModSounds.ODA_NOBUNAGA_VOICE_ATTACK.get();
          case "enkidu" -> ModSounds.ENKIDU_VOICE_ATTACK.get();
+         case "gilgamesh" -> ModSounds.GILGAMESH_VOICE_ATTACK.get();
          case "gawain" -> ModSounds.GAWAIN_VOICE_ATTACK.get();
          case "li_shuwen" -> ModSounds.LI_SHUWEN_VOICE_ATTACK.get();
          case "paracelsus" -> ModSounds.PARACELSUS_VOICE_ATTACK.get();
@@ -48,6 +49,7 @@ public final class ServantCardVoiceHelper {
          case "copy_weapon", "emiya_kb", "emiya_hound", "emiya_layered_projection" -> ModSounds.EMIYA_ARCHER_VOICE_PROJECTION.get();
          case "invisible_air_hammer", "invisible_air_release" -> ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get();
          case "enuma_elish" -> ModSounds.ENKIDU_VOICE_NP.get();
+         case "gilgamesh_cross_slash" -> ModSounds.GILGAMESH_VOICE_ATTACK.get();
          case "gallatin_spark" -> ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get();
          case "flame_tornado" -> ModSounds.GAWAIN_VOICE_FIRE_ATTACK.get();
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();

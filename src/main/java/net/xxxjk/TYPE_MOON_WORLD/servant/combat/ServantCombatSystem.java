@@ -236,7 +236,13 @@ public final class ServantCombatSystem {
       if (definition != null && isBerserker(definition)) {
          return ServantCombatPhase.DECISIVE;
       }
-      return ServantCombatPhase.fromId(entity.getPersistentData().getInt(TAG_PHASE));
+      ServantCombatPhase phase = ServantCombatPhase.fromId(entity.getPersistentData().getInt(TAG_PHASE));
+      if (!(entity instanceof GilgameshEntity)
+         && entity.getTarget() instanceof GilgameshEntity
+         && phase == ServantCombatPhase.PROBING) {
+         return ServantCombatPhase.NORMAL;
+      }
+      return phase;
    }
 
    public static void forcePhaseAtLeast(ServantEntity entity, ServantCombatPhase phase) {
@@ -306,6 +312,16 @@ public final class ServantCombatSystem {
          }
 
          double healthRatio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
+         if (!(entity instanceof GilgameshEntity) && target instanceof GilgameshEntity) {
+            ServantCombatPhase desired = healthRatio <= (entity instanceof EmiyaArcherEntity ? 0.40 : 0.60)
+               ? ServantCombatPhase.DECISIVE
+               : ServantCombatPhase.NORMAL;
+            ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
+            if (desired.id() > current.id()) {
+               data.putInt(TAG_PHASE, desired.id());
+            }
+            return;
+         }
          if (entity instanceof EmiyaArcherEntity) {
             if (healthRatio <= 0.40) {
                data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());

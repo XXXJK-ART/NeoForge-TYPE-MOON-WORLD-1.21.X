@@ -67,6 +67,8 @@ public final class ServantCardLoadoutManager {
          case "cursed_arm_hassan" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get());
          case "emiya_archer" -> {
          }
+         case "gilgamesh" -> {
+         }
          case "sasaki_kojiro" -> main = stack(ModItems.BIZEN_NAGAMITSU.get());
          case "oda_nobunaga" -> main = stack(ModItems.HESHIKIRI_HASEBE.get());
          case "gawain" -> main = stack(ModItems.EXCALIBUR_GALLATIN.get());

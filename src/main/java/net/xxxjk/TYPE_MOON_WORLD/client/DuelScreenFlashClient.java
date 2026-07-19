@@ -6,7 +6,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 
-/** Renders a brief, deliberately subtle white overlay over the HUD. */
+/** Renders the brief white impact flash over the HUD. */
 @EventBusSubscriber(value = Dist.CLIENT)
 public final class DuelScreenFlashClient {
    private static long expiresAtNanos;

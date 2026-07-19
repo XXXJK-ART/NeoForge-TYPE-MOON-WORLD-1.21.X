@@ -84,6 +84,9 @@ public final class ServantCardTransformManager {
       if ("enkidu".equals(servantId)) {
          vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       }
+      if ("gilgamesh".equals(servantId)) {
+         ServantCardGilgameshSkills.reset(player);
+      }
       vars.servant_card_medusa_mystic_eyes_active = false;
       vars.servant_card_hassan_cloak_broken = false;
       vars.servant_card_hassan_zabaniya_animation_until = 0;
@@ -220,6 +223,7 @@ public final class ServantCardTransformManager {
          case "cursed_arm_hassan" -> ServantCardHassanSkills.tick(player, vars);
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
+         case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "emiya_archer" -> {
             ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
             ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
@@ -242,6 +246,7 @@ public final class ServantCardTransformManager {
       ServantCardMedusaSkills.clear(player);
       ServantCardLiShuwenSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
+      ServantCardGilgameshSkills.clear(player);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -355,7 +360,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
       }
-      boolean np = slot == 9;
+      boolean npSlot = slot == 9;
+      boolean np = npSlot && !"gilgamesh".equals(vars.servant_card_id);
       if (np && "emiya_archer".equals(vars.servant_card_id) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
          if (vars.servant_card_np_cooldown > 0) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
@@ -369,8 +375,18 @@ public final class ServantCardTransformManager {
       if ("hajun".equals(action.effectId())) {
          return ServantCardOdaNobunagaSkills.performOdaHajunAction(player, vars, action);
       }
+      if ("gilgamesh_key".equals(action.effectId())) {
+         return ServantCardGilgameshSkills.performKey(player);
+      }
+      if ("gilgamesh_melee".equals(action.effectId())) {
+         return ServantCardGilgameshSkills.performMelee(player);
+      }
+      if (ServantCardGilgameshSkills.isVaultAction(action.effectId()) && !ServantCardGilgameshSkills.hasKey(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_required"), true);
+         return false;
+      }
       int cooldownSlot = slot < 0 ? 6 : slot;
-      int currentCooldown = np ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
+      int currentCooldown = npSlot ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
       if (ServantCardArtoriaSkills.isWindAction(action)) {
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT));
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT));
@@ -436,7 +452,7 @@ public final class ServantCardTransformManager {
          ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
       }
       int cooldownTicks = effectiveCooldownTicks(action, np);
-      if (np) {
+      if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
          setSkillCooldown(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, cooldownTicks);
@@ -1006,6 +1022,17 @@ public final class ServantCardTransformManager {
          case "sky_spear_sweep" -> ServantCardEnkiduSkills.performEnkiduSkySpearSweep(player);
          case "enkidu_morph_melee" -> ServantCardEnkiduSkills.performEnkiduMorphMelee(player);
          case "enuma_elish" -> ServantCardEnkiduSkills.performEnkiduEnumaElish(player);
+         case "gilgamesh_melee" -> ServantCardGilgameshSkills.performMelee(player);
+         case "gilgamesh_chains" -> ServantCardGilgameshSkills.performChains(player);
+         case "gilgamesh_vault" -> ServantCardGilgameshSkills.performVault(player, false);
+         case "gilgamesh_grand_vault" -> ServantCardGilgameshSkills.performVault(player, true);
+         case "gilgamesh_ring_vault" -> ServantCardGilgameshSkills.performRingVault(player);
+         case "gilgamesh_elixir" -> ServantCardGilgameshSkills.performElixir(player);
+         case "gilgamesh_divine_shield" -> ServantCardGilgameshSkills.performDivineShield(player);
+         case "gilgamesh_clairvoyance" -> ServantCardGilgameshSkills.performClairvoyance(player);
+         case "gilgamesh_charisma" -> ServantCardGilgameshSkills.performCharisma(player);
+         case "gilgamesh_laugh_vault" -> ServantCardGilgameshSkills.performLaughVault(player);
+         case "gilgamesh_cross_slash" -> ServantCardGilgameshSkills.performCrossSlash(player);
          case "gallatin_spark" -> ServantCardGawainSkills.performGawainGallatinSpark(player);
          case "solar_rebuke" -> ServantCardGawainSkills.performGawainSolarRebuke(player);
          case "radiant_field" -> ServantCardGawainSkills.performGawainRadiantField(player);

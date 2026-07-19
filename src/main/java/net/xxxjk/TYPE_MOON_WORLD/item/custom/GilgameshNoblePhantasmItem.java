@@ -77,6 +77,13 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
          return InteractionResultHolder.fail(stack);
       }
       if ("babili".equals(this.modelId) || "ea".equals(this.modelId)) {
+         if ("ea".equals(this.modelId) && player instanceof ServerPlayer serverPlayer) {
+            AbilityStats eaStats = stats();
+            if (!consumeMana(serverPlayer, eaStats.mana())) {
+               serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+               return InteractionResultHolder.fail(stack);
+            }
+         }
          player.startUsingItem(hand);
          if (player instanceof ServerPlayer serverPlayer && serverPlayer.level() instanceof ServerLevel serverLevel) {
          }
@@ -154,6 +161,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       GilgameshEaBeamEntity ea = findEaEntity(serverLevel, player);
       if (ea != null) {
          ea.requestRelease(heldTicks);
+         player.getCooldowns().addCooldown(this, stats().cooldown());
          return;
       }
       return;
@@ -281,7 +289,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
    private AbilityStats stats() {
       return switch (this.modelId) {
          case "babili" -> new AbilityStats(18.0, 160, 18.0F);
-         case "ea" -> new AbilityStats(200.0, 2400, 5000.0F);
+         case "ea" -> new AbilityStats(1000.0, 2400, 5000.0F);
          case "durandal" -> new AbilityStats(16.0, 240, 120.0F);
          case "gram" -> new AbilityStats(18.0, 280, 130.0F);
          case "harpe" -> new AbilityStats(14.0, 220, 80.0F);

@@ -7,6 +7,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGilgameshSkills;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
 public record ServantCardBasicAttackMessage(boolean secondary) implements CustomPacketPayload {
@@ -27,7 +29,12 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
    public static void handleData(ServantCardBasicAttackMessage message, IPayloadContext context) {
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player) {
-            ServantCardOdaNobunagaSkills.handleBasicAttackPacket(player, message.secondary);
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id) && message.secondary) {
+               ServantCardGilgameshSkills.performSingleVault(player);
+            } else {
+               ServantCardOdaNobunagaSkills.handleBasicAttackPacket(player, message.secondary);
+            }
          }
       });
    }
