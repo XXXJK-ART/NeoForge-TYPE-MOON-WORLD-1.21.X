@@ -314,6 +314,13 @@ public final class NpcMagicCastBridge {
             // Reinforcement is treated as a parallel support cast and should not block offensive casting flow.
             tryAdaptiveReinforcement(npc, target, vars, gameTime, threat, capabilities, behavior);
 
+            // A target already in striking range must get a chance to retaliate before retreat logic.
+            // This keeps damaged NPCs from permanently circling the player without ever swinging.
+            double distance = Math.sqrt(npc.distanceToSqr(target));
+            if (gameTime >= getCastLockUntil(npc) && tryMeleeSkillCombo(npc, target, vars, gameTime, capabilities, behavior)) {
+               return;
+            }
+
             if (shouldRetreat(npc, target, threat, behavior)) {
                handleRetreat(npc, target, vars, gameTime);
             } else {
@@ -321,14 +328,9 @@ public final class NpcMagicCastBridge {
                   return;
                }
 
-               double distance = Math.sqrt(npc.distanceToSqr(target));
                if (shouldForceRangedRetreat(capabilities, distance)) {
                   steerAwayFromTarget(npc, target, 14.0, 1.3);
                } else {
-                  if (gameTime >= getCastLockUntil(npc) && tryMeleeSkillCombo(npc, target, vars, gameTime, capabilities, behavior)) {
-                     return;
-                  }
-
                   if (threat.requiresDefensiveTactics()) {
                      boolean consumedCast = handleHighThreatTactics(npc, target, vars, gameTime, threat, capabilities);
                      if (consumedCast) {
@@ -2447,7 +2449,7 @@ public final class NpcMagicCastBridge {
          faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
          markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_PUNCH, 8);
          float damage = computeMartialDamage(npc, 1.25, 1.0, 3.0, 14.0);
-         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+         if (!hurtWithNpcMelee(npc, target, damage)) {
             return false;
          } else {
             target.knockback(0.4, npc.getX() - target.getX(), npc.getZ() - target.getZ());
@@ -2464,7 +2466,7 @@ public final class NpcMagicCastBridge {
          faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
          markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_WHIP_KICK, 10);
          float damage = computeMartialDamage(npc, 1.45, 1.4, 4.0, 16.0);
-         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+         if (!hurtWithNpcMelee(npc, target, damage)) {
             return false;
          } else {
             target.knockback(1.05, npc.getX() - target.getX(), npc.getZ() - target.getZ());
@@ -2482,7 +2484,7 @@ public final class NpcMagicCastBridge {
          faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
          markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_UPPER_THROW, 12);
          float damage = computeMartialDamage(npc, 1.3, 1.8, 4.0, 15.0);
-         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+         if (!hurtWithNpcMelee(npc, target, damage)) {
             return false;
          } else {
             Vec3 push = target.getDeltaMovement().add(0.0, 0.8, 0.0);
@@ -2509,7 +2511,7 @@ public final class NpcMagicCastBridge {
 
          for (LivingEntity nearby : npc.level()
             .getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(radius, 1.5, radius), e -> e != npc && e.isAlive())) {
-            if (nearby.hurt(npc.damageSources().mobAttack(npc), baseDamage)) {
+            if (hurtWithNpcMelee(npc, nearby, baseDamage)) {
                nearby.knockback(0.6, npc.getX() - nearby.getX(), npc.getZ() - nearby.getZ());
                nearby.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 28, 0, false, true, true));
                hit = true;
@@ -2522,6 +2524,13 @@ public final class NpcMagicCastBridge {
 
          return hit;
       }
+   }
+
+   private static boolean hurtWithNpcMelee(MysticMagicianEntity npc, LivingEntity target, float damage) {
+      target.invulnerableTime = 0;
+      boolean hit = target.hurt(npc.damageSources().mobAttack(npc), damage);
+      target.invulnerableTime = 0;
+      return hit;
    }
 
    private static float computeMartialDamage(MysticMagicianEntity npc, double multiplier, double flat, double min, double max) {

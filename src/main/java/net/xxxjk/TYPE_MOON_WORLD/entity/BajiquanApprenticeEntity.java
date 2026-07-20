@@ -32,7 +32,9 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
 
    @Override protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
-      this.goalSelector.addGoal(1, BajiquanNpcCombatController.combatGoal(this));
+      this.goalSelector.addGoal(1, BajiquanNpcCombatController.combatGoal(
+         this, () -> this.getPersistentData().getInt(TAG_PROFICIENCY), false
+      ));
       this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 0.9));
       this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
@@ -49,7 +51,6 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       if (!this.getPersistentData().contains(TAG_PROFICIENCY)) this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
-      BajiquanNpcCombatController.tick(this, this.getPersistentData().getInt(TAG_PROFICIENCY), false);
    }
 
    @Override public boolean hurt(DamageSource source, float amount) {

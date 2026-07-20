@@ -12,6 +12,8 @@ public final class BodyTrainingService {
    public static final int MAX_TOTAL_POINTS = 80;
    public static final int MAX_STAT_POINTS = 20;
    public static final int POINT_COST_STEP = 20;
+   public static final double MAX_DAMAGE_REDUCTION = 0.8;
+   public static final double MAX_STRENGTH_BONUS = 12.0;
    private static final ResourceLocation STRENGTH_ID = id("body_training_strength");
    private static final ResourceLocation SPEED_ID = id("body_training_speed");
    private static final ResourceLocation JUMP_ID = id("body_training_jump");
@@ -45,6 +47,7 @@ public final class BodyTrainingService {
    public static void award(ServerPlayer player, int amount) {
       if (amount <= 0) return;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed || vars.master_card_active) return;
       int cost = nextPointCost(vars);
       if (cost <= 0) return;
       vars.body_training_xp += amount;
@@ -94,13 +97,32 @@ public final class BodyTrainingService {
       int value = Mth.clamp(level, 0, MAX_STAT_POINTS);
       if (value <= 5) return value * 0.2;
       if (value <= 9) return 1.0 + (value - 5) * 0.4;
-      return 3.6 + (value - 10) * 0.4;
+      return 3.6 + (value - 10) * ((MAX_STRENGTH_BONUS - 3.6) / 10.0);
+   }
+
+   public static double resistanceReduction(int level) {
+      return Mth.clamp(stagedPercent(level), 0.0, MAX_DAMAGE_REDUCTION);
+   }
+
+   public static void clear(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null) return;
+      vars.body_training_xp = 0;
+      vars.body_training_points = 0;
+      vars.body_strength = 0;
+      vars.body_speed = 0;
+      vars.body_resistance = 0;
+      vars.body_technique = 0;
+      applyAttributes(player, vars);
    }
 
    public static void applyAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      update(player.getAttribute(Attributes.ATTACK_DAMAGE), STRENGTH_ID, strengthBonus(vars.body_strength), AttributeModifier.Operation.ADD_VALUE);
-      update(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, stagedPercent(vars.body_speed), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      update(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID, stagedPercent(vars.body_technique), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      boolean cardTransformed = vars.servant_card_transformed || vars.master_card_active;
+      int strength = cardTransformed ? 0 : vars.body_strength;
+      int speed = cardTransformed ? 0 : vars.body_speed;
+      int technique = cardTransformed ? 0 : vars.body_technique;
+      update(player.getAttribute(Attributes.ATTACK_DAMAGE), STRENGTH_ID, strengthBonus(strength), AttributeModifier.Operation.ADD_VALUE);
+      update(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, stagedPercent(speed), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      update(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID, stagedPercent(technique), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
    }
 
    private static void update(AttributeInstance attribute, ResourceLocation id, double amount, AttributeModifier.Operation operation) {

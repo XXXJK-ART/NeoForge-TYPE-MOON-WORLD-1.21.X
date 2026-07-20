@@ -54,7 +54,7 @@ public class BajiquanMasterEntity extends PathfinderMob {
 
    @Override protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
-      this.goalSelector.addGoal(1, BajiquanNpcCombatController.combatGoal(this));
+      this.goalSelector.addGoal(1, BajiquanNpcCombatController.combatGoal(this, this::combatProficiency, false));
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 10.0F));
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
    }
@@ -127,7 +127,6 @@ public class BajiquanMasterEntity extends PathfinderMob {
          }
          if (mayContinue) {
             this.setTarget(retaliationTarget);
-            BajiquanNpcCombatController.tick(this, 100.0, false);
             return;
          }
          clearRetaliation();
@@ -154,9 +153,14 @@ public class BajiquanMasterEntity extends PathfinderMob {
          player.displayClientMessage(Component.translatable("message.typemoonworld.bajiquan.duel.start"), false);
       } else if (data.getBoolean(TAG_ACTIVE)) {
          this.setTarget(player);
-         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         BajiquanNpcCombatController.tick(this, vars.bajiquan_proficiency >= 80.0 ? 100.0 : vars.bajiquan_proficiency, false);
       }
+   }
+
+   private double combatProficiency() {
+      ServerPlayer player = getDuelPlayer();
+      if (player == null) return 100.0;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.bajiquan_proficiency >= 80.0 ? 100.0 : vars.bajiquan_proficiency;
    }
 
    @Override public boolean hurt(DamageSource source, float amount) {

@@ -38,7 +38,10 @@ class BajiquanProgressionTest {
       assertEquals(2.6, BodyTrainingService.strengthBonus(9), 1.0E-9);
       assertEquals(3.6, BodyTrainingService.strengthBonus(10), 1.0E-9);
       assertEquals(0.38, BodyTrainingService.stagedPercent(20), 1.0E-9);
-      assertEquals(7.6, BodyTrainingService.strengthBonus(20), 1.0E-9);
+      assertEquals(12.0, BodyTrainingService.strengthBonus(20), 1.0E-9);
+      assertEquals(0.38, BodyTrainingService.resistanceReduction(20), 1.0E-9);
+      assertTrue(BodyTrainingService.resistanceReduction(Integer.MAX_VALUE) <= BodyTrainingService.MAX_DAMAGE_REDUCTION);
+      assertEquals(15.0, BajiquanCombatService.scaledDamage(3.0F, 20, 100.0), 1.0E-6);
    }
 
    @Test void legalComboCancelsAreExplicit() {

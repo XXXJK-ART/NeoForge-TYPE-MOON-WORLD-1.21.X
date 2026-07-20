@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
@@ -64,6 +65,7 @@ public final class ServantCardTransformManager {
       saveArmor(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
+      BodyTrainingService.clear(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
       vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);

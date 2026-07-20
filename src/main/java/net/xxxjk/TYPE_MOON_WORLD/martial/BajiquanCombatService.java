@@ -70,6 +70,9 @@ public final class BajiquanCombatService {
       TAG_PUNCH_FROM_KICK, TAG_SHOULDER_PURSUIT, TAG_PURSUIT_STAGE, TAG_FA_JIN_FOLLOWUPS, TAG_PALM_FROM_FLURRY
    };
    private static final int COMBO_WINDOW = 12;
+   // Full-body training plus 100% proficiency targets roughly two thirds of Li Shuwen's martial output.
+   private static final float FULL_BODY_DAMAGE_BONUS = 9.0F;
+   private static final float FULL_PROFICIENCY_DAMAGE_BONUS = 3.0F;
 
    private BajiquanCombatService() {}
 
@@ -279,12 +282,13 @@ public final class BajiquanCombatService {
          player.setDeltaMovement(player.getDeltaMovement().add(look(player).scale(0.55)));
          player.hurtMarked = true;
       } else if (move == BajiquanMove.TREMOR || move == BajiquanMove.CHARGED_TREMOR) {
-         tremor(player, move == BajiquanMove.CHARGED_TREMOR ? 5.0 : 3.0, move == BajiquanMove.CHARGED_TREMOR ? 60 : 30, move.damage());
+         tremor(player, move == BajiquanMove.CHARGED_TREMOR ? 5.0 : 3.0, move == BajiquanMove.CHARGED_TREMOR ? 60 : 30,
+            scaledDamage(vars, move.damage()));
       } else if (move == BajiquanMove.FIERCE_TIGER) {
          LivingEntity target = findTarget(player, 8.0);
          if (target != null) {
             dashToward(player, target, 1.35);
-            hit(player, target, move.damage(), 2.2, 0.25, 12);
+            hit(player, target, scaledDamage(vars, move.damage()), 2.2, 0.25, 12);
          }
       } else {
          LivingEntity target = move == BajiquanMove.FA_JIN
@@ -299,6 +303,7 @@ public final class BajiquanCombatService {
             if (move == BajiquanMove.FA_JIN || move == BajiquanMove.PUNCH && data.getInt(TAG_FA_JIN_FOLLOWUPS) > 0) dashToward(player, target, 0.75);
             float damage = move.damage();
             if (move == BajiquanMove.FA_JIN) damage = vars.bajiquan_proficiency >= 80.0 ? 14.0F : vars.bajiquan_proficiency >= 60.0 ? 11.0F : 8.0F;
+            damage = scaledDamage(vars, damage);
             double knockback = switch (move) {
                case FINISHER_KICK -> 1.4;
                case DOUBLE_PALM -> 2.2;
@@ -309,8 +314,9 @@ public final class BajiquanCombatService {
             double lift = move == BajiquanMove.KNEE ? 0.38 : move == BajiquanMove.DOWN_KICK ? -0.1 : 0.08;
             int stagger = move == BajiquanMove.FLURRY ? 12 : move == BajiquanMove.FINISHER_KICK ? 10 : 6;
             if (move == BajiquanMove.FLURRY) {
-               hit(player, target, 3.0F, knockback, lift, stagger, false);
-               hit(player, target, 3.0F, knockback, lift, stagger, true);
+               float strikeDamage = damage * 0.5F;
+               hit(player, target, strikeDamage, knockback, lift, stagger, false);
+               hit(player, target, strikeDamage, knockback, lift, stagger, true);
             } else {
                hit(player, target, damage, knockback, lift, stagger, true);
             }
@@ -326,6 +332,20 @@ public final class BajiquanCombatService {
       }
       spawnMoveFx(level, player, move);
       PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new BajiquanPoseMessage(player.getUUID(), move, Math.min(20, move.recoveryTicks())), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+   }
+
+   static float scaledDamage(TypeMoonWorldModVariables.PlayerVariables vars, float baseDamage) {
+      if (vars == null || baseDamage <= 0.0F) return Math.max(0.0F, baseDamage);
+      return scaledDamage(baseDamage, vars.body_strength, vars.bajiquan_proficiency);
+   }
+
+   static float scaledDamage(float baseDamage, int bodyStrength, double proficiency) {
+      if (baseDamage <= 0.0F) return Math.max(0.0F, baseDamage);
+      double bodyRatio = Mth.clamp(
+         BodyTrainingService.strengthBonus(bodyStrength) / BodyTrainingService.MAX_STRENGTH_BONUS, 0.0, 1.0
+      );
+      double proficiencyRatio = Mth.clamp(proficiency / 100.0, 0.0, 1.0);
+      return baseDamage + (float)(FULL_BODY_DAMAGE_BONUS * bodyRatio + FULL_PROFICIENCY_DAMAGE_BONUS * proficiencyRatio);
    }
 
    private static void hit(ServerPlayer player, LivingEntity target, float damage, double knockback, double lift, int stagger) {

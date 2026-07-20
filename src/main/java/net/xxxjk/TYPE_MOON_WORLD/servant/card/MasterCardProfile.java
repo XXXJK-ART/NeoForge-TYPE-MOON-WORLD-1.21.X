@@ -16,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class MasterCardProfile {
@@ -65,6 +66,7 @@ public final class MasterCardProfile {
          held.shrink(1);
       }
       saveOriginalStateAndClearPlayer(player, vars, profile.id());
+      BodyTrainingService.clear(player, vars);
       resetToProfileState(vars);
       // MasterStateManager synchronizes immediately; apply the target attributes first so
       // a previous sword attribute cannot auto-awaken Unlimited Blade Works during a switch.
@@ -109,6 +111,7 @@ public final class MasterCardProfile {
       clearPlayerInventory(player);
       if (!savedVariables.isEmpty()) {
          vars.deserializeNBT(player.registryAccess(), savedVariables);
+         BodyTrainingService.clear(player, vars);
       } else {
          vars.master_active = false;
          vars.master_card_active = false;

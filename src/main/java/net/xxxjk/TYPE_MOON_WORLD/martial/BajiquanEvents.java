@@ -147,7 +147,10 @@ public final class BajiquanEvents {
 
       if (event.getEntity() instanceof ServerPlayer player && !event.getSource().is(DamageTypeTags.BYPASSES_RESISTANCE)) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         event.setAmount((float)(event.getAmount() * (1.0 - BodyTrainingService.stagedPercent(vars.body_resistance))));
+         double reduction = vars.servant_card_transformed || vars.master_card_active
+            ? 0.0
+            : BodyTrainingService.resistanceReduction(vars.body_resistance);
+         event.setAmount((float)(event.getAmount() * (1.0 - reduction)));
       }
 
       if (event.getEntity() instanceof ServerPlayer player && event.getSource().is(DamageTypes.FALL)) {

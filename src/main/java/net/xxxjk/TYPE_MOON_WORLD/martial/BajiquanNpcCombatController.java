@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
 import java.util.EnumSet;
+import java.util.function.DoubleSupplier;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -27,7 +28,7 @@ public final class BajiquanNpcCombatController {
 
    private BajiquanNpcCombatController() {}
 
-   public static Goal combatGoal(PathfinderMob npc) {
+   public static Goal combatGoal(PathfinderMob npc, DoubleSupplier proficiency, boolean closeDefenseOnly) {
       return new Goal() {
          {
             this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
@@ -37,7 +38,10 @@ public final class BajiquanNpcCombatController {
          @Override public boolean canContinueToUse() { return validTarget(npc, npc.getTarget()); }
          @Override public void tick() {
             LivingEntity target = npc.getTarget();
-            if (target != null) npc.getLookControl().setLookAt(target, 60.0F, 50.0F);
+            if (target != null) {
+               npc.getLookControl().setLookAt(target, 60.0F, 50.0F);
+               BajiquanNpcCombatController.tick(npc, proficiency == null ? 0.0 : proficiency.getAsDouble(), closeDefenseOnly);
+            }
          }
          @Override public void stop() { npc.getNavigation().stop(); }
       };
