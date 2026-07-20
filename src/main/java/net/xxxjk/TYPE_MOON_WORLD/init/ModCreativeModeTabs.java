@@ -124,7 +124,11 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GEM_NECKLACE);
                         output.accept(ModItems.MYSTIC_MERCURY);
                         output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
-                        
+
+                        output.accept(ModItems.WAKIZASHI);
+                        output.accept(ModItems.KATANA);
+                        output.accept(ModItems.NODACHI);
+
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL);

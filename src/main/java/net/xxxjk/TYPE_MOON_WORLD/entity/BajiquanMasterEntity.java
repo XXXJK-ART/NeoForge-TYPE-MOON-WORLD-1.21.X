@@ -72,7 +72,17 @@ public class BajiquanMasterEntity extends PathfinderMob {
    ) {
       SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
       NpcScaleHelper.ensureRandomScale(this);
+      this.ensureRandomName();
       return data;
+   }
+
+   public void ensureRandomName() {
+      if (!this.level().isClientSide() && (!this.hasCustomName() || ChineseNpcNameGenerator.isGenericEntityName(
+         this.getCustomName(), "entity.typemoonworld.bajiquan_master"
+      ))) {
+         this.setCustomName(Component.literal(ChineseNpcNameGenerator.master(this.random)));
+         this.setCustomNameVisible(true);
+      }
    }
 
    @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -116,6 +126,7 @@ public class BajiquanMasterEntity extends PathfinderMob {
    @Override protected void customServerAiStep() {
       super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
+      this.ensureRandomName();
       CompoundTag data = this.getPersistentData();
       if (!data.hasUUID(TAG_PLAYER)) {
          LivingEntity retaliationTarget = getRetaliationTarget();

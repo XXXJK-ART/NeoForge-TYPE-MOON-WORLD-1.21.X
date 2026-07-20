@@ -50,6 +50,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
    @Override protected void customServerAiStep() {
       super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
+      this.ensureRandomName();
       if (!this.getPersistentData().contains(TAG_PROFICIENCY)) this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
    }
 
@@ -75,11 +76,21 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, type, data);
       NpcScaleHelper.ensureRandomScale(this);
       this.setFemale(this.random.nextBoolean());
+      this.ensureRandomName();
       this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
       if (type != MobSpawnType.NATURAL && type != MobSpawnType.CHUNK_GENERATION) {
          this.setPersistenceRequired();
       }
       return result;
+   }
+
+   public void ensureRandomName() {
+      if (!this.level().isClientSide() && (!this.hasCustomName() || ChineseNpcNameGenerator.isGenericEntityName(
+         this.getCustomName(), "entity.typemoonworld.bajiquan_apprentice"
+      ))) {
+         this.setCustomName(net.minecraft.network.chat.Component.literal(ChineseNpcNameGenerator.apprentice(this.random, this.isFemale())));
+         this.setCustomNameVisible(true);
+      }
    }
 
    @Override public void addAdditionalSaveData(CompoundTag tag) { super.addAdditionalSaveData(tag); tag.putBoolean("Female", this.isFemale()); }

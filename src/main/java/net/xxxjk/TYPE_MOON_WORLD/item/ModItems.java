@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.JapaneseSwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
@@ -51,6 +52,31 @@ public class ModItems {
     private static DeferredItem<Item> registerSimpleItem(String name) {
         return ITEMS.register(name, () -> new Item(new Item.Properties()));
     }
+
+    private static DeferredItem<Item> registerJapaneseSword(String name, double damage, double speed, double interactionRange) {
+        return ITEMS.register(name, () -> new JapaneseSwordItem(name, new Item.Properties().durability(250)
+                .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                        .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_damage"),
+                                        damage, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                        .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_speed"),
+                                        speed, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                        .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_range"),
+                                        interactionRange, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                        .build())));
+    }
+
+    public static final DeferredItem<Item> WAKIZASHI = registerJapaneseSword("wakizashi", 4.0, -2.2, -0.25);
+    public static final DeferredItem<Item> KATANA = registerJapaneseSword("katana", 5.0, -2.4, 0.0);
+    public static final DeferredItem<Item> NODACHI = registerJapaneseSword("nodachi", 6.0, -2.6, 0.5);
 
     public static final DeferredItem<Item> TEMPLE_STONE_SWORD_AXE = ITEMS.register("temple_stone_sword_axe",
             () -> new TempleStoneSwordAxeItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()

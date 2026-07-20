@@ -102,8 +102,7 @@ public final class DojoWorldEvents {
       if (master != null) {
          master.moveTo(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0.0F, 0.0F);
          master.setDojoHome(home);
-         master.setCustomName(net.minecraft.network.chat.Component.translatable("entity.typemoonworld.bajiquan_master"));
-         master.setCustomNameVisible(true);
+         master.ensureRandomName();
          level.addFreshEntity(master);
          saved.markInitialized(dojoId);
       }
