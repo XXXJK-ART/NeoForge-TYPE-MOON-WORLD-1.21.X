@@ -36,6 +36,9 @@ public final class ServantCardLiShuwenSkills {
          clear(player);
          return;
       }
+      if (player.tickCount % 60 == 0 && player.getHealth() < player.getMaxHealth()) {
+         player.heal(1.0F);
+      }
       int concealmentUntil = player.getPersistentData().getInt(CONCEALMENT_UNTIL_TAG);
       if (concealmentUntil <= 0) {
          return;
@@ -167,6 +170,35 @@ public final class ServantCardLiShuwenSkills {
       player.hurtMarked = true;
       hitForwardArc(player, dir, 5.0, 38.0F);
       spawnLiHitFx(player, findLookTarget(player, 5.5, 1.6));
+   }
+
+   public static void performLiBajiCombo(ServerPlayer player) {
+      revealCircleRealm(player);
+      Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(dir.scale(1.15)).add(0.0, 0.08, 0.0));
+      player.hurtMarked = true;
+      hitForwardArc(player, dir, 4.5, 30.0F);
+      spawnLiHitFx(player, findLookTarget(player, 5.0, 1.8));
+   }
+
+   public static void performLiHighJump(ServerPlayer player) {
+      revealCircleRealm(player);
+      player.setDeltaMovement(player.getDeltaMovement().x, 1.35, player.getDeltaMovement().z);
+      player.fallDistance = 0.0F;
+      player.hurtMarked = true;
+   }
+
+   public static void performLiFaJin(ServerPlayer player) {
+      revealCircleRealm(player);
+      LivingEntity target = findLookTarget(player, 6.0, 1.8);
+      if (target == null) return;
+      target.invulnerableTime = 0;
+      target.hurt(player.damageSources().playerAttack(player), 42.0F);
+      target.invulnerableTime = 0;
+      Vec3 dir = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0).normalize();
+      target.push(dir.x * 0.65, 0.12, dir.z * 0.65);
+      target.hurtMarked = true;
+      spawnLiHitFx(player, target);
    }
 
    public static void revealCircleRealm(ServerPlayer player) {

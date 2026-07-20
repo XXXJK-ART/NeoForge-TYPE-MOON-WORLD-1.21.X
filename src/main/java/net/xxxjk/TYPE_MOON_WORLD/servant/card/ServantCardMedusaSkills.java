@@ -854,8 +854,6 @@ public final class ServantCardMedusaSkills {
       LivingEntity target = findLookTarget(player, 26.0, 1.8);
       if (target == null) {
          ItemStack dagger = new ItemStack(ModItems.NAMELESS_CHAIN_DAGGER.get());
-         PlayerNoblePhantasmHelper.markUbwProjection(dagger);
-         ServantCardTransformManager.markGeneratedItem(dagger, true, false);
          player.setItemInHand(InteractionHand.MAIN_HAND, dagger);
          return;
       }

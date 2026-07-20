@@ -1,0 +1,106 @@
+package net.xxxjk.TYPE_MOON_WORLD.martial;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+
+public final class BodyTrainingService {
+   private static final ResourceLocation STRENGTH_ID = id("body_training_strength");
+   private static final ResourceLocation SPEED_ID = id("body_training_speed");
+   private static final ResourceLocation JUMP_ID = id("body_training_jump");
+
+   private BodyTrainingService() {}
+
+   public static int totalEarned(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return Mth.clamp(vars.body_training_points + vars.body_strength + vars.body_speed + vars.body_resistance + vars.body_technique, 0, 40);
+   }
+
+   public static int nextPointCost(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return pointCostForEarned(totalEarned(vars));
+   }
+
+   public static int pointCostForEarned(int earnedPoints) {
+      int next = Mth.clamp(earnedPoints, 0, 40) + 1;
+      return next > 40 ? 0 : next * 10;
+   }
+
+   public static void award(ServerPlayer player, int amount) {
+      if (amount <= 0) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      int cost = nextPointCost(vars);
+      if (cost <= 0) return;
+      vars.body_training_xp += amount;
+      boolean changed = false;
+      while ((cost = nextPointCost(vars)) > 0 && vars.body_training_xp >= cost) {
+         vars.body_training_xp -= cost;
+         vars.body_training_points++;
+         changed = true;
+         player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.body.point_gained"), true);
+      }
+      if (changed || player.tickCount % 20 == 0) vars.syncPlayerVariables(player);
+   }
+
+   public static boolean allocate(ServerPlayer player, String stat) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.body_training_points <= 0 || totalEarned(vars) > 40) return false;
+      boolean applied = switch (stat == null ? "" : stat) {
+         case "strength" -> increment(() -> vars.body_strength, v -> vars.body_strength = v);
+         case "speed" -> increment(() -> vars.body_speed, v -> vars.body_speed = v);
+         case "resistance" -> increment(() -> vars.body_resistance, v -> vars.body_resistance = v);
+         case "technique" -> increment(() -> vars.body_technique, v -> vars.body_technique = v);
+         default -> false;
+      };
+      if (applied) {
+         vars.body_training_points--;
+         applyAttributes(player, vars);
+         vars.syncPlayerVariables(player);
+      }
+      return applied;
+   }
+
+   private static boolean increment(IntGetter getter, IntSetter setter) {
+      int current = getter.get();
+      if (current >= 10) return false;
+      setter.set(current + 1);
+      return true;
+   }
+
+   public static double stagedPercent(int level) {
+      int value = Mth.clamp(level, 0, 10);
+      if (value <= 5) return value * 0.01;
+      if (value <= 9) return 0.05 + (value - 5) * 0.02;
+      return 0.18;
+   }
+
+   public static double strengthBonus(int level) {
+      int value = Mth.clamp(level, 0, 10);
+      if (value <= 5) return value * 0.2;
+      if (value <= 9) return 1.0 + (value - 5) * 0.4;
+      return 3.6;
+   }
+
+   public static void applyAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      update(player.getAttribute(Attributes.ATTACK_DAMAGE), STRENGTH_ID, strengthBonus(vars.body_strength), AttributeModifier.Operation.ADD_VALUE);
+      update(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, stagedPercent(vars.body_speed), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      update(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID, stagedPercent(vars.body_technique), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+   }
+
+   private static void update(AttributeInstance attribute, ResourceLocation id, double amount, AttributeModifier.Operation operation) {
+      if (attribute == null) return;
+      AttributeModifier old = attribute.getModifier(id);
+      if (old != null && Double.compare(old.amount(), amount) == 0 && old.operation() == operation) return;
+      if (old != null) attribute.removeModifier(id);
+      if (amount != 0.0) attribute.addTransientModifier(new AttributeModifier(id, amount, operation));
+   }
+
+   private static ResourceLocation id(String path) {
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", path);
+   }
+
+   @FunctionalInterface private interface IntGetter { int get(); }
+   @FunctionalInterface private interface IntSetter { void set(int value); }
+}

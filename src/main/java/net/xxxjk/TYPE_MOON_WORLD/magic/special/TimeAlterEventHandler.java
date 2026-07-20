@@ -28,7 +28,6 @@ public final class TimeAlterEventHandler {
    private static final String TAG_COOLDOWN_UNTIL = "TypeMoonTimeAlterCooldownUntil";
    private static final String TAG_STRAIN = "TypeMoonTimeAlterStrain";
    private static final String TAG_STRAIN_UNTIL = "TypeMoonTimeAlterStrainUntil";
-   private static final int STRAIN_RECOVERY_TICKS = 1200;
    private static final ResourceLocation SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_speed");
    private static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_attack_speed");
    private static final ResourceLocation JUMP_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_jump");
@@ -44,22 +43,13 @@ public final class TimeAlterEventHandler {
    }
 
    public static boolean canStart(ServerPlayer player, int mode, double multiplier) {
-      long now = player.level().getGameTime();
-      long cooldownUntil = player.getPersistentData().getLong(TAG_COOLDOWN_UNTIL);
-      if (cooldownUntil > now) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.cooldown", String.format("%.1f", (cooldownUntil - now) / 20.0)), true);
-         return false;
-      }
-      if (player.getPersistentData().getLong(TAG_STRAIN_UNTIL) <= now) {
-         player.getPersistentData().remove(TAG_STRAIN);
-         player.getPersistentData().remove(TAG_STRAIN_UNTIL);
-      }
+      clearLegacyRecoveryState(player);
       return true;
    }
 
    public static void release(ServerPlayer player) {
       if (player != null) {
-         finish(player, player.level().getGameTime());
+         finish(player);
       }
    }
 
@@ -84,7 +74,7 @@ public final class TimeAlterEventHandler {
 
       long now = player.level().getGameTime();
       if (activeUntil <= now || !player.isAlive()) {
-         finish(player, now);
+         finish(player);
          return;
       }
 
@@ -99,33 +89,30 @@ public final class TimeAlterEventHandler {
       }
    }
 
-   private static void finish(ServerPlayer player, long now) {
-      int mode = player.getPersistentData().getInt(TAG_MODE);
+   private static void finish(ServerPlayer player) {
       double multiplier = player.getPersistentData().getDouble(TAG_MULTIPLIER);
       removeModifiers(player);
       player.getPersistentData().remove(TAG_ACTIVE_UNTIL);
       player.getPersistentData().remove(TAG_MODE);
       player.getPersistentData().remove(TAG_MULTIPLIER);
 
-      double cooldownSeconds = mode == MagicTimeAlter.MODE_ACCEL
-         ? 10.0 + multiplier * 5.0
-         : 15.0 + (1.0 / Math.max(0.05, multiplier)) * 5.0;
-      player.getPersistentData().putLong(TAG_COOLDOWN_UNTIL, now + Math.round(cooldownSeconds * 20.0));
-
       float damage = (float)(multiplier * 3.0 + 2.0 * Math.pow(Math.max(0.0, multiplier - 1.0), 2.0));
       if (hasAvalon(player)) {
          damage *= 0.5F;
       }
-      int strain = player.getPersistentData().getInt(TAG_STRAIN);
-      damage *= 1.0F + strain * 0.5F;
-      player.getPersistentData().putInt(TAG_STRAIN, Math.min(6, strain + 1));
-      player.getPersistentData().putLong(TAG_STRAIN_UNTIL, now + STRAIN_RECOVERY_TICKS);
+      clearLegacyRecoveryState(player);
       player.invulnerableTime = 0;
       player.hurt(player.damageSources().source(BACKLASH_DAMAGE), damage);
       player.invulnerableTime = 0;
 
       player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 0.7F, 0.8F);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.release", String.format("%.1f", damage)), true);
+   }
+
+   private static void clearLegacyRecoveryState(ServerPlayer player) {
+      player.getPersistentData().remove(TAG_COOLDOWN_UNTIL);
+      player.getPersistentData().remove(TAG_STRAIN);
+      player.getPersistentData().remove(TAG_STRAIN_UNTIL);
    }
 
    private static void applyModifiers(ServerPlayer player, int mode, double multiplier) {

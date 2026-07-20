@@ -71,6 +71,9 @@ public final class PlayerMagicCastService {
          return;
       }
 
+      // Bajiquan uses its server-owned input state machine and never enters a magic executor.
+      if ("bajiquan".equals(entry.magicId)) return;
+
       MagicExecutionResult result = MagicModularRegistry.execute(
          new MagicExecutionContext(entity, vars, entry.magicId, "crest".equals(entry.sourceType))
       );

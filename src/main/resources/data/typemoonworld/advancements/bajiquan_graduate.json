@@ -1,0 +1,11 @@
+{
+  "parent": "typemoonworld:bajiquan",
+  "display": {
+    "icon": { "item": "minecraft:iron_chestplate" },
+    "title": { "translate": "adv.typemoonworld.bajiquan_graduate.title" },
+    "description": { "translate": "adv.typemoonworld.bajiquan_graduate.desc" },
+    "frame": "task", "hidden": false, "show_toast": true, "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } },
+  "requirements": [["impossible"]]
+}

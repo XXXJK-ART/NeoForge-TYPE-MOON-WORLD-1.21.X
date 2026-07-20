@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.PageChangeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
@@ -89,6 +91,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    Button tabCrestKnowledge;
    Button filterButton;
    final List<Button> wheelSwitchButtons = new ArrayList<>();
+   final List<Button> bodyTrainingButtons = new ArrayList<>();
    final List<Magical_attributes_Screen.MagicEntry> baseMagicCatalog = new ArrayList<>();
    final Map<String, Magical_attributes_Screen.MagicEntry> magicCatalogById = new HashMap<>();
    List<Magical_attributes_Screen.MagicEntry> sourceMagics = new ArrayList<>();
@@ -165,6 +168,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
+      this.addMagic("bajiquan", "key.typemoonworld.magic.bajiquan.short", "martial", 0xFF2EB872);
    }
 
    private void addMagic(String id, String nameKey, String category, int color) {
@@ -290,6 +294,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.ubw";
       } else if ("other".equals(category)) {
          return "gui.typemoonworld.category.other";
+      } else if ("martial".equals(category)) {
+         return "gui.typemoonworld.category.martial";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -306,6 +312,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
          "gui.typemoonworld.category.nordic"
+         ,"gui.typemoonworld.category.martial"
       };
       int maxCategoryWidth = 0;
 
@@ -374,14 +381,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("special".equals(current)) {
          return "other";
       } else {
-         return "other".equals(current) ? "nordic" : "all";
+         return "other".equals(current) ? "nordic" : "nordic".equals(current) ? "martial" : "all";
       }
    }
 
    private String getNextCategory(String current) {
       String next = this.nextCategoryRaw(current);
 
-      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 8; safety++) {
+      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 9; safety++) {
          next = this.nextCategoryRaw(next);
       }
 
@@ -467,6 +474,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addRenderableWidget(this.filterButton);
       this.wheelSwitchButtons.clear();
 
+      this.bodyTrainingButtons.clear();
+      String[] bodyStats = new String[]{"strength", "speed", "resistance", "technique"};
+      for (int i = 0; i < bodyStats.length; i++) {
+         String stat = bodyStats[i];
+         Button add = new NeonButton(this.leftPos + 334, this.topPos + 34 + i * 11, 14, 10, Component.literal("+"), e ->
+            PacketDistributor.sendToServer(new BodyTrainingPointMessage(stat), new CustomPacketPayload[0]), 0xFF2EB872);
+         this.addRenderableWidget(add);
+         this.bodyTrainingButtons.add(add);
+      }
+
       for (int i = 0; i < 10; i++) {
          int wheel = i;
          Button wheelBtn = new NeonButton(
@@ -516,6 +533,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
       for (Button button : this.wheelSwitchButtons) {
          button.visible = knowledgeVisible;
+      }
+      TypeMoonWorldModVariables.PlayerVariables bodyVars = this.getVars();
+      int[] bodyLevels = new int[]{bodyVars.body_strength, bodyVars.body_speed, bodyVars.body_resistance, bodyVars.body_technique};
+      for (int i = 0; i < this.bodyTrainingButtons.size(); i++) {
+         Button button = this.bodyTrainingButtons.get(i);
+         button.visible = bodyVisible;
+         button.active = bodyVisible && bodyVars.body_training_points > 0 && bodyLevels[i] < 10;
       }
 
       if (this.imagebutton_magical_attributes != null) {
@@ -1152,6 +1176,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "spiritual_healing" -> vars.proficiency_spiritual_healing;
          case "baptism_rite" -> vars.proficiency_baptism_rite;
          case "time_alter" -> vars.proficiency_time_alter;
+         case "bajiquan" -> vars.bajiquan_proficiency;
          default -> -1.0;
       };
    }
@@ -1176,11 +1201,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          int invW = 172;
          int invH = 85;
          GuiUtils.renderTechFrame(guiGraphics, invX, invY, invW, invH, -16733526, -16742145);
-         int eyeSlotX = x + 193 - 1;
+         int eyeSlotX = x + 122 - 1;
          int eyeSlotY = y + 51 - 1;
          int eyeSlotSize = 18;
          GuiUtils.renderTechFrame(guiGraphics, eyeSlotX, eyeSlotY, eyeSlotSize, eyeSlotSize, -65281, -65400);
-         int crestSlotX = x + 223 - 1;
+         int crestSlotX = x + 146 - 1;
          int crestSlotY = y + 51 - 1;
          GuiUtils.renderTechFrame(guiGraphics, crestSlotX, crestSlotY, eyeSlotSize, eyeSlotSize, -1811878, -5227974);
 
@@ -1206,10 +1231,20 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
       if (this.pageMode == 0) {
-         int eyeLabelX = 189;
-         int crestLabelX = 219;
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.mystic_eyes"), eyeLabelX, 41, -32513, false);
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.magic_crest"), crestLabelX, 41, -1811878, false);
+         TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.mystic_eyes"), 116, 42, -32513, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.magic_crest"), 140, 68, -1811878, false);
+         int cost = BodyTrainingService.nextPointCost(vars);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training.summary", vars.body_training_xp, cost, vars.body_training_points), 170, 24, 0xFF2EB872, false);
+         String[] keys = new String[]{"strength", "speed", "resistance", "technique"};
+         int[] levels = new int[]{vars.body_strength, vars.body_speed, vars.body_resistance, vars.body_technique};
+         for (int i = 0; i < keys.length; i++) {
+            int rowY = 35 + i * 11;
+            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training." + keys[i]), 170, rowY, -1, false);
+            guiGraphics.fill(244, rowY + 1, 328, rowY + 7, 0x55202020);
+            guiGraphics.fill(244, rowY + 1, 244 + levels[i] * 8, rowY + 7, 0xCC2EB872);
+            guiGraphics.drawString(this.font, levels[i] + "/10", 302, rowY, -1, false);
+         }
       } else {
          TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.screen.learned_magic"), 120, 24, -16719648, false);

@@ -11,6 +11,8 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.CastMagic;
 
 public record CastMagicMessage(int eventType, int pressedms) implements CustomPacketPayload {
@@ -52,6 +54,8 @@ public record CastMagicMessage(int eventType, int pressedms) implements CustomPa
    }
 
    private static void handleEvent(ServerPlayer player, int eventType) {
+      if (player.hasEffect(ModMobEffects.STAGGER) || player.hasEffect(ModMobEffects.OFF_BALANCE)
+         || BajiquanCombatService.isSparring(player)) return;
       switch (eventType) {
          case 0:
             CastMagic.execute(player);

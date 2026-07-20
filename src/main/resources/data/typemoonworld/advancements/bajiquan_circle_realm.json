@@ -1,0 +1,11 @@
+{
+  "parent": "typemoonworld:bajiquan_no_second_strike",
+  "display": {
+    "icon": { "item": "minecraft:ender_eye" },
+    "title": { "translate": "adv.typemoonworld.bajiquan_circle_realm.title" },
+    "description": { "translate": "adv.typemoonworld.bajiquan_circle_realm.desc" },
+    "frame": "challenge", "hidden": false, "show_toast": true, "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } },
+  "requirements": [["impossible"]]
+}

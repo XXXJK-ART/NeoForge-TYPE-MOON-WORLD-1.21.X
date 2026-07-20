@@ -21,6 +21,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.command.VFXCommands;
@@ -75,7 +78,8 @@ public class TypeMoonCommands {
       EARTH_MAGIC_ID,
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
-      BAPTISM_RITE_MAGIC_ID
+      BAPTISM_RITE_MAGIC_ID,
+      "bajiquan"
    };
    private static final String[] ALL_MAGICS = new String[]{
       BASIC_JEWEL_MAGIC_ID,
@@ -104,7 +108,8 @@ public class TypeMoonCommands {
       EARTH_MAGIC_ID,
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
-      BAPTISM_RITE_MAGIC_ID
+      BAPTISM_RITE_MAGIC_ID,
+      "bajiquan"
    };
 
    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -329,6 +334,73 @@ public class TypeMoonCommands {
                   )
             )
       );
+      dispatcher.register(
+         Commands.literal("typemoon").requires(source -> source.hasPermission(2))
+            .then(
+               Commands.literal("martial")
+                  .then(Commands.literal("learn").then(Commands.literal("bajiquan").executes(ctx -> setBajiquanLearned(ctx, true))))
+                  .then(Commands.literal("forget").then(Commands.literal("bajiquan").executes(ctx -> setBajiquanLearned(ctx, false))))
+            )
+            .then(
+               Commands.literal("player")
+                  .then(
+                     Commands.literal("martial")
+                        .then(
+                           Commands.literal("tiger")
+                              .then(
+                                 Commands.argument("enabled", BoolArgumentType.bool())
+                                    .executes(ctx -> setBajiquanTiger(ctx, BoolArgumentType.getBool(ctx, "enabled")))
+                              )
+                        )
+                  )
+                  .then(
+                     Commands.literal("body")
+                        .then(
+                           Commands.literal("xp")
+                              .then(
+                                 Commands.argument("value", IntegerArgumentType.integer(0))
+                                    .executes(ctx -> setBodyValue(ctx, "xp", IntegerArgumentType.getInteger(ctx, "value")))
+                              )
+                        )
+                        .then(
+                           Commands.literal("points")
+                              .then(
+                                 Commands.argument("value", IntegerArgumentType.integer(0, 40))
+                                    .executes(ctx -> setBodyValue(ctx, "points", IntegerArgumentType.getInteger(ctx, "value")))
+                              )
+                        )
+                        .then(
+                           Commands.literal("stat")
+                              .then(
+                                 Commands.argument("type", StringArgumentType.word())
+                                    .suggests(
+                                       (ctx, builder) -> SharedSuggestionProvider.suggest(
+                                             new String[]{"strength", "speed", "resistance", "technique"}, builder
+                                          )
+                                    )
+                                    .then(
+                                       Commands.argument("value", IntegerArgumentType.integer(0, 10))
+                                          .executes(
+                                             ctx -> setBodyStat(
+                                                   ctx,
+                                                   StringArgumentType.getString(ctx, "type"),
+                                                   IntegerArgumentType.getInteger(ctx, "value")
+                                                )
+                                          )
+                                    )
+                              )
+                        )
+                  )
+            )
+            .then(
+               Commands.literal("npc")
+                  .then(
+                     Commands.literal("duel")
+                        .then(Commands.literal("start").executes(ctx -> controlDuel(ctx, true)))
+                        .then(Commands.literal("stop").executes(ctx -> controlDuel(ctx, false)))
+                  )
+            )
+      );
    }
 
    private static int setFateCardDeath(CommandContext<CommandSourceStack> ctx, boolean enabled) {
@@ -371,6 +443,9 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger <true|false>"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-10>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc shiki clear | health <value>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc favor merlin|shiki <-5..5>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon progress king grant | revoke"), false);
@@ -416,6 +491,15 @@ public class TypeMoonCommands {
          vars.proficiency_time_alter = 0.0;
          vars.proficiency_spiritual_healing = 0.0;
          vars.proficiency_baptism_rite = 0.0;
+         vars.bajiquan_learned = false;
+         vars.bajiquan_proficiency = 0.0;
+         vars.bajiquan_tiger_unlocked = false;
+         vars.body_training_xp = 0;
+         vars.body_training_points = 0;
+         vars.body_strength = 0;
+         vars.body_speed = 0;
+         vars.body_resistance = 0;
+         vars.body_technique = 0;
          vars.learned_magics.clear();
          vars.has_unlimited_blade_works = false;
          player.getPersistentData().putBoolean("TypeMoonNoCooldown", false);
@@ -511,6 +595,15 @@ public class TypeMoonCommands {
          vars.proficiency_time_alter = 100.0;
          vars.proficiency_spiritual_healing = 100.0;
          vars.proficiency_baptism_rite = 100.0;
+         vars.bajiquan_learned = true;
+         vars.bajiquan_proficiency = 100.0;
+         vars.bajiquan_tiger_unlocked = true;
+         vars.body_training_xp = 0;
+         vars.body_training_points = 0;
+         vars.body_strength = 10;
+         vars.body_speed = 10;
+         vars.body_resistance = 10;
+         vars.body_technique = 10;
 
          for (String m : ALL_MAGICS) {
             if (!vars.learned_magics.contains(m)) {
@@ -914,6 +1007,9 @@ public class TypeMoonCommands {
             case "baptism_rite":
                vars.proficiency_baptism_rite = value;
                break;
+            case "bajiquan":
+               vars.bajiquan_proficiency = value;
+               break;
             default:
                validType = false;
          }
@@ -930,6 +1026,71 @@ public class TypeMoonCommands {
       } catch (Exception var9) {
          return 0;
       }
+   }
+
+   private static int setBajiquanLearned(CommandContext<CommandSourceStack> ctx, boolean learned) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         if (learned) BajiquanCombatService.learn(player); else BajiquanCombatService.forget(player);
+         ctx.getSource().sendSuccess(() -> Component.literal("bajiquan learned = " + learned), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int setBajiquanTiger(CommandContext<CommandSourceStack> ctx, boolean enabled) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         vars.bajiquan_tiger_unlocked = enabled;
+         vars.syncPlayerVariables(player);
+         ctx.getSource().sendSuccess(() -> Component.literal("bajiquan tiger = " + enabled), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int setBodyValue(CommandContext<CommandSourceStack> ctx, String type, int value) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if ("xp".equals(type)) vars.body_training_xp = Math.max(0, value); else vars.body_training_points = Math.max(0, Math.min(40, value));
+         vars.syncPlayerVariables(player);
+         ctx.getSource().sendSuccess(() -> Component.literal("body " + type + " = " + value), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int setBodyStat(CommandContext<CommandSourceStack> ctx, String type, int value) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         int clamped = Math.max(0, Math.min(10, value));
+         switch (type) {
+            case "strength" -> vars.body_strength = clamped;
+            case "speed" -> vars.body_speed = clamped;
+            case "resistance" -> vars.body_resistance = clamped;
+            case "technique" -> vars.body_technique = clamped;
+            default -> { ctx.getSource().sendFailure(Component.literal("Unknown body stat: " + type)); return 0; }
+         }
+         BodyTrainingService.applyAttributes(player, vars);
+         vars.syncPlayerVariables(player);
+         ctx.getSource().sendSuccess(() -> Component.literal("body " + type + " = " + clamped), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int controlDuel(CommandContext<CommandSourceStack> ctx, boolean start) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         BajiquanMasterEntity master = player.serverLevel().getEntitiesOfClass(BajiquanMasterEntity.class, player.getBoundingBox().inflate(24.0))
+            .stream().min(java.util.Comparator.comparingDouble(player::distanceToSqr)).orElse(null);
+         if (master == null) { ctx.getSource().sendFailure(Component.literal("No Bajiquan master within 24 blocks.")); return 0; }
+         boolean changed;
+         if (start) changed = master.startDuelCommand(player);
+         else { changed = master.hasDuel(); master.endDuel(master.getDuelPlayer(), false); }
+         if (!changed) return 0;
+         ctx.getSource().sendSuccess(() -> Component.literal(start ? "Bajiquan duel started." : "Bajiquan duel stopped."), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
    }
 
    private static int setMana(CommandContext<CommandSourceStack> ctx, double value) {

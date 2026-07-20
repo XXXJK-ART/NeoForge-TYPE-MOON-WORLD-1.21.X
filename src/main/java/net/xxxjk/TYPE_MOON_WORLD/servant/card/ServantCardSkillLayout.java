@@ -130,7 +130,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
             case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);
-            case 9 -> new ServantCardSkillAction("伊伽莉玛 & 修尔夏伽那", "gilgamesh_cross_slash", 160.0, 1400);
+            case 9 -> new ServantCardSkillAction("伊伽莉玛 & 修尔夏伽那", "gilgamesh_cross_slash", 300.0, 30 * 20);
             default -> null;
          };
          case "gawain" -> switch (slot) {
@@ -151,6 +151,9 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Tremor Interrupt", "interrupt", 24.0, 160);
             case 4 -> new ServantCardSkillAction("Pursuit", "pursuit", 16.0, 100);
             case 5 -> new ServantCardSkillAction("Fierce Tiger Climbs Mountain", "li_fierce_tiger", 26.0, 200);
+            case 6 -> new ServantCardSkillAction("Bajiquan Combination", "li_baji_combo", 20.0, 100);
+            case 7 -> new ServantCardSkillAction("Bajiquan High Jump", "li_high_jump", 8.0, 80);
+            case 8 -> new ServantCardSkillAction("Fa Jin", "li_fa_jin", 24.0, 140);
             case 9 -> new ServantCardSkillAction("Wu Er Da", "wu_er_da", 0.0, 1200);
             default -> null;
          };

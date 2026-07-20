@@ -42,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardReleaseItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantMasterContractItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -194,7 +195,10 @@ public class ModItems {
     public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSimpleItem("relic_apocalypse");
     public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSimpleItem("relic_apocalypse_page");
     public static final DeferredItem<Item> RELIC_FIRST_SNAKE_SKIN = registerSimpleItem("relic_first_snake_skin");
-    public static final DeferredItem<Item> RELIC_HAJIQUAN_MANUAL = registerSimpleItem("relic_hajiquan_manual");
+    public static final DeferredItem<Item> RELIC_HAJIQUAN_MANUAL = ITEMS.register("relic_hajiquan_manual",
+            () -> new BajiquanManualItem(new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> SPARRING_INVITATION = ITEMS.register("sparring_invitation",
+            () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> RELIC_VALKYRIE_ARROWHEAD = registerSimpleItem("relic_valkyrie_arrowhead");
     public static final DeferredItem<Item> RELIC_BRONZE_MIRROR = registerSimpleItem("relic_bronze_mirror");
     public static final DeferredItem<Item> RELIC_ROUND_TABLE_FRAGMENT = registerSimpleItem("relic_round_table_fragment");
@@ -790,6 +794,13 @@ public class ModItems {
 
     public static final DeferredItem<Item> MYSTIC_MAGICIAN_SPAWN_EGG = ITEMS.register("mystic_magician_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN, 0x000000, 0xC00000, new Item.Properties()));
+
+    public static final DeferredItem<Item> BAJIQUAN_MASTER_SPAWN_EGG = ITEMS.register("bajiquan_master_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.BAJIQUAN_MASTER, 0x27331F, 0xD8C59A, new Item.Properties()));
+    public static final DeferredItem<Item> BAJIQUAN_APPRENTICE_SPAWN_EGG = ITEMS.register("bajiquan_apprentice_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.BAJIQUAN_APPRENTICE, 0x3B5E39, 0xE2D2B4, new Item.Properties()));
+    public static final DeferredItem<Item> TOHSAKA_RIN_SPAWN_EGG = ITEMS.register("tohsaka_rin_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.TOHSAKA_RIN, 0x8B1126, 0xE8D8C5, new Item.Properties()));
 
     public static final DeferredItem<Item> HERACLES_SPAWN_EGG = ITEMS.register("heracles_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.HERACLES, 0x333333, 0x0D0D0D));

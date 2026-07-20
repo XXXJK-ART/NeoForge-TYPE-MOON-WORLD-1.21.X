@@ -207,6 +207,9 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MERLIN.get(), MerlinRenderer::new);
       event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);
       event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.BAJIQUAN_MASTER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.BajiquanMasterRenderer::new);
+      event.registerEntityRenderer(ModEntities.BAJIQUAN_APPRENTICE.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.BajiquanApprenticeRenderer::new);
+      event.registerEntityRenderer(ModEntities.TOHSAKA_RIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.TohsakaRinRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), SasakiKojiroRenderer::new);
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), CuChulainnRenderer::new);

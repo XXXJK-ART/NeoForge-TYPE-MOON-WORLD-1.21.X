@@ -94,7 +94,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_mode = 0;
       vars.servant_card_high_flight_until = 0L;
       vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_ticks = 600;
+      vars.servant_card_oda_flight_ticks = 100;
       vars.servant_card_oda_flight_cooldown_until = 0L;
       vars.servant_card_oda_flight_recharge_at = 0L;
       vars.servant_card_flight_forward = 0.0;
@@ -155,7 +155,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_mode = 0;
       vars.servant_card_high_flight_until = 0L;
       vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_ticks = 600;
+      vars.servant_card_oda_flight_ticks = 100;
       vars.servant_card_oda_flight_cooldown_until = 0L;
       vars.servant_card_oda_flight_recharge_at = 0L;
       vars.servant_card_flight_forward = 0.0;
@@ -1047,6 +1047,9 @@ public final class ServantCardTransformManager {
          case "counter" -> ServantCardLiShuwenSkills.performLiCounter(player);
          case "pursuit" -> ServantCardLiShuwenSkills.performLiPursuit(player);
          case "li_fierce_tiger" -> ServantCardLiShuwenSkills.performLiFierceTiger(player);
+         case "li_baji_combo" -> ServantCardLiShuwenSkills.performLiBajiCombo(player);
+         case "li_high_jump" -> ServantCardLiShuwenSkills.performLiHighJump(player);
+         case "li_fa_jin" -> ServantCardLiShuwenSkills.performLiFaJin(player);
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

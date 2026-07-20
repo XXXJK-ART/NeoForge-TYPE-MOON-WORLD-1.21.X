@@ -235,7 +235,8 @@ public final class ServantCardGilgameshSkills {
    }
 
    public static void performElixir(ServerPlayer player) {
-      ServantCardSkillUtils.clearHarmfulEffects(player); player.clearFire(); player.setHealth(player.getMaxHealth());
+      ServantCardSkillUtils.clearHarmfulEffects(player);
+      player.clearFire();
    }
 
    public static void performDivineShield(ServerPlayer player) {

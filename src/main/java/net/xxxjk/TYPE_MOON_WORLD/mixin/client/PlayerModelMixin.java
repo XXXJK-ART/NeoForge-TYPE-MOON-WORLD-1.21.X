@@ -8,6 +8,8 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.FirearmPoseClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.BajiquanPoseClient;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanMove;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
@@ -73,6 +75,11 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             }
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         BajiquanMove bajiquanMove = BajiquanPoseClient.getMove(player);
+         if (bajiquanMove != null) {
+            PlayerModel<?> model = (PlayerModel<?>)(Object)this;
+            applyBajiquanPose(model, bajiquanMove);
+         }
          if (vars.servant_card_transformed && "cursed_arm_hassan".equals(vars.servant_card_id) && limbSwingAmount > 0.05F) {
             PlayerModel<?> model = (PlayerModel<?>)(Object)this;
             model.rightArm.xRot = 0.0F;
@@ -81,6 +88,68 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             model.rightSleeve.copyFrom(model.rightArm);
          }
       }
+   }
+
+   private static void applyBajiquanPose(PlayerModel<?> model, BajiquanMove move) {
+      switch (move) {
+         case RIGHT_KICK, FINISHER_KICK, KNEE, DOWN_KICK -> {
+            model.body.yRot = 0.35F;
+            model.rightLeg.xRot = move == BajiquanMove.KNEE ? -1.25F : -0.15F;
+            model.rightLeg.yRot = -0.3F;
+            model.leftLeg.xRot = 0.2F;
+            model.rightArm.xRot = -0.6F;
+            model.leftArm.xRot = -0.4F;
+         }
+         case LEFT_KICK -> {
+            model.body.yRot = -0.35F;
+            model.leftLeg.xRot = -0.35F;
+            model.leftLeg.yRot = 0.3F;
+            model.rightLeg.xRot = 0.2F;
+            model.rightArm.xRot = -0.4F;
+            model.leftArm.xRot = -0.6F;
+         }
+         case PARRY, CLAMP -> {
+            model.rightArm.xRot = -1.25F;
+            model.rightArm.yRot = -0.75F;
+            model.leftArm.xRot = -1.25F;
+            model.leftArm.yRot = 0.75F;
+            model.rightLeg.xRot = 0.25F;
+            model.leftLeg.xRot = 0.25F;
+         }
+         case TREMOR, CHARGED_TREMOR, STOMP -> {
+            model.body.xRot = 0.35F;
+            model.rightArm.xRot = -2.1F;
+            model.leftArm.xRot = -2.1F;
+            model.rightLeg.xRot = 0.65F;
+            model.leftLeg.xRot = 0.65F;
+         }
+         case DOUBLE_PALM, FIERCE_TIGER, PUSH -> {
+            model.body.xRot = 0.15F;
+            model.rightArm.xRot = -1.55F;
+            model.leftArm.xRot = -1.55F;
+            model.rightArm.yRot = -0.18F;
+            model.leftArm.yRot = 0.18F;
+         }
+         case HIGH_JUMP, CHOP -> {
+            model.rightArm.xRot = -2.55F;
+            model.leftArm.xRot = -0.7F;
+            model.rightLeg.xRot = -0.3F;
+            model.leftLeg.xRot = 0.45F;
+         }
+         default -> {
+            model.body.yRot = 0.18F;
+            model.rightArm.xRot = -1.75F;
+            model.rightArm.yRot = -0.22F;
+            model.leftArm.xRot = -0.45F;
+            model.leftArm.yRot = 0.4F;
+            model.rightLeg.xRot = 0.25F;
+            model.leftLeg.xRot = -0.12F;
+         }
+      }
+      model.rightSleeve.copyFrom(model.rightArm);
+      model.leftSleeve.copyFrom(model.leftArm);
+      model.rightPants.copyFrom(model.rightLeg);
+      model.leftPants.copyFrom(model.leftLeg);
    }
 
    @Inject(

@@ -32,9 +32,9 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
    public static final HashMap<String, Object> guistate = new HashMap<>();
    public static final int SLOT_PIXEL_SIZE = 18;
    public static final int SLOT_SPACING = 18;
-   public static final int SLOT_MYSTIC_EYES_X = 193;
+   public static final int SLOT_MYSTIC_EYES_X = 122;
    public static final int SLOT_MYSTIC_EYES_Y = 51;
-   public static final int SLOT_MAGIC_CREST_X = 223;
+   public static final int SLOT_MAGIC_CREST_X = 146;
    public static final int SLOT_MAGIC_CREST_Y = 51;
    public static final int PLAYER_INV_X = 150;
    public static final int PLAYER_INV_Y = 85;
@@ -74,7 +74,7 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
       final TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)this.entity
          .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.ensureMagicSystemInitialized();
-      this.addSlot(new SlotItemHandler(vars.mysticEyesInventory, 0, 193, 51) {
+      this.addSlot(new SlotItemHandler(vars.mysticEyesInventory, 0, SLOT_MYSTIC_EYES_X, SLOT_MYSTIC_EYES_Y) {
          public boolean isActive() {
             return MagicalattributesMenu.this.pageMode == 0;
          }
@@ -91,7 +91,7 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
             super.onTake(player, stack);
          }
       });
-      this.addSlot(new SlotItemHandler(vars.magicCrestInventory, 0, 223, 51) {
+      this.addSlot(new SlotItemHandler(vars.magicCrestInventory, 0, SLOT_MAGIC_CREST_X, SLOT_MAGIC_CREST_Y) {
          public boolean isActive() {
             return MagicalattributesMenu.this.pageMode == 0;
          }

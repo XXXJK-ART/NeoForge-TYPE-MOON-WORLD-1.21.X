@@ -1,7 +1,8 @@
 ﻿{
-  "parent": "minecraft:item/generated",
+  "parent": "typemoonworld:item/template/card_3d",
   "textures": {
-    "layer0": "typemoonworld:item/servant_cards/artoria_pendragon_card"
+    "front": "typemoonworld:item/card_faces_3d/servant/artoria_pendragon_card",
+    "back": "typemoonworld:item/servant_card_backs/saber"
   }
 }
 

@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.effect.ReinforcementEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.SuggestionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.ReverseMovementEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.MartialControlEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
@@ -32,6 +33,12 @@ public class ModMobEffects {
    );
    public static final DeferredHolder<MobEffect, MobEffect> REVERSE_MOVEMENT = MOB_EFFECTS.register(
       "reverse_movement", () -> new ReverseMovementEffect(MobEffectCategory.HARMFUL, 0x7D5CFF)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> STAGGER = MOB_EFFECTS.register(
+      "stagger", () -> new MartialControlEffect(MobEffectCategory.HARMFUL, 0xD5B868, true)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> OFF_BALANCE = MOB_EFFECTS.register(
+      "off_balance", () -> new MartialControlEffect(MobEffectCategory.HARMFUL, 0x6F8F62, false)
    );
    public static final DeferredHolder<MobEffect, MobEffect> REINFORCEMENT_SELF_STRENGTH = MOB_EFFECTS.register(
       "reinforcement_self_strength",

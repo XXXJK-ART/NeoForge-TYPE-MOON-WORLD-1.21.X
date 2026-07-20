@@ -13,8 +13,9 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_UBW = "unlimited_blade_works";
    public static final String CATEGORY_OTHER = "other";
    public static final String CATEGORY_NORDIC = "nordic";
+   public static final String CATEGORY_MARTIAL = "martial";
    private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite");
-   private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of("baptism_rite");
+   private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of("baptism_rite", "bajiquan");
 
    private MagicDisplayMetadata() {
    }
@@ -45,6 +46,8 @@ public final class MagicDisplayMetadata {
          return CATEGORY_ELEMENTAL;
       } else if ("baptism_rite".equals(magicId)) {
          return CATEGORY_CHURCH;
+      } else if ("bajiquan".equals(magicId)) {
+         return CATEGORY_MARTIAL;
       } else if ("time_alter".equals(magicId)) {
          return CATEGORY_SPECIAL;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {

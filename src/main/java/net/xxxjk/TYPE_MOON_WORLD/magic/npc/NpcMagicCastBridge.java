@@ -51,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -379,6 +380,76 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   public static void configureTohsakaRin(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ensureMagicSystemInitialized();
+      vars.clearAllWheelSlots();
+      vars.learned_magics.clear();
+      vars.crest_entries.clear();
+      vars.player_max_mana = 1000.0;
+      vars.player_mana = 1000.0;
+      vars.player_mana_egenerated_every_moment = 8.0;
+      vars.player_restore_magic_moment = 4.0;
+      vars.is_magus = true;
+      vars.player_magic_attributes_earth = true;
+      vars.player_magic_attributes_water = true;
+      vars.player_magic_attributes_fire = true;
+      vars.player_magic_attributes_wind = true;
+      vars.player_magic_attributes_ether = true;
+      vars.player_magic_attributes_none = false;
+      vars.player_magic_attributes_imaginary_number = false;
+      vars.player_magic_attributes_sword = false;
+      vars.bajiquan_learned = true;
+      vars.bajiquan_proficiency = 60.0;
+      vars.bajiquan_tiger_unlocked = false;
+      if (!vars.learned_magics.contains("bajiquan")) vars.learned_magics.add("bajiquan");
+      vars.proficiency_gander = 80.0;
+      vars.proficiency_gravity_magic = 70.0;
+      vars.proficiency_reinforcement = 65.0;
+      vars.proficiency_jewel_magic_shoot = 85.0;
+      vars.proficiency_jewel_magic_release = 85.0;
+      String[] magics = new String[]{"gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_magic_shoot", "jewel_random_shoot", "jewel_magic_release", "jewel_machine_gun"};
+      for (int i = 0; i < magics.length; i++) {
+         String magic = magics[i];
+         vars.learned_magics.add(magic);
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, i);
+         entry.magicId = magic;
+         entry.sourceType = "self";
+         if ("gandr_machine_gun".equals(magic)) entry.presetPayload.putInt("gandr_machine_gun_mode", 1);
+         if ("gravity_magic".equals(magic)) { entry.presetPayload.putInt("gravity_target", 1); entry.presetPayload.putInt("gravity_mode", 2); }
+         if ("reinforcement".equals(magic)) { entry.presetPayload.putInt("reinforcement_target", 0); entry.presetPayload.putInt("reinforcement_mode", 0); entry.presetPayload.putInt("reinforcement_level", 4); }
+         vars.setWheelSlotEntry(0, i, entry);
+      }
+      vars.rebuildSelectedMagicsFromActiveWheel();
+      CompoundTag data = npc.getPersistentData();
+      data.putBoolean(TAG_MAGIC_INIT, true);
+      data.putBoolean(TAG_ATTR_INIT, true);
+      data.putInt(TAG_FIXED_LEVEL, 5);
+      data.putDouble(TAG_BASE_MAX_HEALTH, TohsakaRinEntity.MAX_HEALTH);
+      data.putDouble(TAG_BASE_MOVE_SPEED, 0.27);
+      data.putDouble(TAG_COMBAT_MOVE_SPEED, 0.39);
+      data.putDouble(TAG_BASE_ATTACK_DAMAGE, 5.0);
+      data.putInt(NPC_JEWEL_ITEM_BASIC, 64);
+      data.putInt(NPC_JEWEL_ITEM_ADVANCED, 32);
+      data.putInt(NPC_JEWEL_ITEM_ENGRAVED, 16);
+      if (npc.getAttribute(Attributes.MAX_HEALTH) != null) npc.getAttribute(Attributes.MAX_HEALTH).setBaseValue(TohsakaRinEntity.MAX_HEALTH);
+      if (npc.getAttribute(Attributes.MOVEMENT_SPEED) != null) npc.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.27);
+      if (npc.getAttribute(Attributes.ATTACK_DAMAGE) != null) npc.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0);
+      npc.setHealth((float)TohsakaRinEntity.MAX_HEALTH);
+      syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
+   }
+
+   /** Keeps the fixed NPC profile intact for Rin entities loaded from older saves. */
+   public static void ensureTohsakaRinBajiquan(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.bajiquan_learned = true;
+      vars.bajiquan_proficiency = 60.0;
+      vars.bajiquan_tiger_unlocked = false;
+      if (!vars.learned_magics.contains("bajiquan")) vars.learned_magics.add("bajiquan");
+   }
+
    public static void cleanup(MysticMagicianEntity npc) {
       if (npc != null) {
          clearNpcCombatSelfBuffs(npc);
@@ -489,7 +560,9 @@ public final class NpcMagicCastBridge {
             ? data.getDouble(TAG_BASE_ATTACK_DAMAGE)
             : randomZombieComparableStat(random, 3.0);
          double combatSpeed = data.contains(TAG_COMBAT_MOVE_SPEED) ? data.getDouble(TAG_COMBAT_MOVE_SPEED) : round3(baseSpeed * 1.45);
-         baseHealth = clampZombieComparableStat(baseHealth, 20.0);
+         baseHealth = npc instanceof TohsakaRinEntity
+            ? TohsakaRinEntity.MAX_HEALTH
+            : clampZombieComparableStat(baseHealth, 20.0);
          baseSpeed = clampZombieComparableStat(baseSpeed, 0.23);
          baseAttack = clampZombieComparableStat(baseAttack, 3.0);
          combatSpeed = clampCombatMoveSpeed(combatSpeed, baseSpeed);
