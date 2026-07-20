@@ -20,12 +20,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashParticipant;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
-public class ArtoriaExcaliburBeamEntity extends Entity {
+public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParticipant {
    private static final EntityDataAccessor<Float> END_X = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> END_Y = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> END_Z = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
@@ -42,6 +45,8 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
    private static final float CRATER_DAMAGE = 180.0F;
    private UUID ownerUuid;
    private boolean craterQueued;
+   private boolean clashing;
+   private float clashDamageScale = 1.0F;
 
    public ArtoriaExcaliburBeamEntity(EntityType<?> type, Level level) {
       super(type, level);
@@ -103,10 +108,13 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
          }
          this.updateEndFromOwner(owner);
          this.setPos(owner.position().add(0.0, owner.getBbHeight() * 0.66, 0.0).add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(1.2)));
+         BeamClashManager.tick(level, this);
          if (this.isBeamActive() && this.tickCount % DAMAGE_INTERVAL == 0) {
-            this.applyBeamDamage(level, owner);
+            if (!this.clashing) {
+               this.applyBeamDamage(level, owner);
+            }
          }
-         if (this.isBeamActive()) {
+         if (this.isBeamActive() && !this.clashing) {
             this.destroyBeamBlocks(level, owner);
          }
       }
@@ -186,7 +194,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       return LENGTH * (0.35 + this.powerScale() * 0.65);
    }
 
-   private double beamHalfWidth() {
+   public double beamHalfWidth() {
       return HALF_WIDTH * (0.28 + this.powerScale() * 0.72);
    }
 
@@ -229,7 +237,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
          double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / length));
          double allowedWidth = along < 0.0 ? 2.8 : this.beamHalfWidth() * Math.pow(widthScale, 0.35);
          if (side <= allowedWidth && vertical <= this.beamHalfHeight()) {
-            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE * this.powerScale());
+            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE * this.powerScale() * this.clashDamageScale);
             living.push(forward.x * 0.15, 0.0, forward.z * 0.15);
             living.hurtMarked = true;
          }
@@ -287,7 +295,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 10, 1.0, 0.8, 1.0, 0.0);
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.35, 0.35, 0.35, 0.0);
       VFXServerEffects.spawn(level, "artoria_excalibur_impact", center, 192.0);
-      float powerScale = this.powerScale();
+      float powerScale = this.powerScale() * this.clashDamageScale;
       int radius = Math.max(6, (int)Math.floor(28.0F * (0.25F + powerScale * 0.75F)));
       int halfHeight = Math.max(18, (int)Math.floor(112.0F * (0.22F + powerScale * 0.78F)));
       int batchHeight = 3;
@@ -348,5 +356,38 @@ public class ArtoriaExcaliburBeamEntity extends Entity {
       target.hurtTime = 0;
       target.hurtDuration = 0;
    }
+
+   @Override
+   public Entity clashEntity() { return this; }
+
+   @Override
+   public BeamType beamType() { return BeamType.EXCALIBUR; }
+
+   @Override
+   public LivingEntity beamOwner(ServerLevel level) { return this.getOwner(level); }
+
+   @Override
+   public Vec3 beamStart() { return this.position(); }
+
+   @Override
+   public Vec3 beamEnd() { return this.getEndPos(); }
+
+   @Override
+   public boolean isBeamDamageActive() { return this.isBeamActive(); }
+
+   @Override
+   public boolean isClashing() { return this.clashing; }
+
+   @Override
+   public void setClashing(boolean value) { this.clashing = value; }
+
+   @Override
+   public void setClashDamageScale(float value) { this.clashDamageScale = Math.max(0.0F, value); }
+
+   @Override
+   public void cancelClashBeam() { this.discard(); }
+
+   @Override
+   public void continueAfterClash() { this.clashing = false; }
 
 }

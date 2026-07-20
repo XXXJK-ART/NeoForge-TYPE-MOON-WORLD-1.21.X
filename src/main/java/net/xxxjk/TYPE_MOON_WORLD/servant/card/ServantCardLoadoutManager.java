@@ -67,6 +67,8 @@ public final class ServantCardLoadoutManager {
          case "cursed_arm_hassan" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get());
          case "emiya_archer" -> {
          }
+         case "gilgamesh" -> {
+         }
          case "sasaki_kojiro" -> main = stack(ModItems.BIZEN_NAGAMITSU.get());
          case "oda_nobunaga" -> main = stack(ModItems.HESHIKIRI_HASEBE.get());
          case "gawain" -> main = stack(ModItems.EXCALIBUR_GALLATIN.get());
@@ -74,6 +76,8 @@ public final class ServantCardLoadoutManager {
          default -> {
          }
       }
+      ServantCardTransformManager.markGeneratedItem(main, true, false);
+      ServantCardTransformManager.markGeneratedItem(off, true, false);
       player.setItemInHand(InteractionHand.MAIN_HAND, main);
       player.setItemInHand(InteractionHand.OFF_HAND, off);
    }

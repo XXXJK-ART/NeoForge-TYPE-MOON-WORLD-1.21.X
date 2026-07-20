@@ -1,0 +1,11 @@
+{
+  "duration":3.5,
+  "notes":"Enkidu-scale EA impact in red/black/white, deliberately without aftermath stardust.",
+  "environment":[{"type":"screen_tint","color":"#33FFFFFF","start":0,"end":0.5,"fade_in":0.03,"fade_out":0.3,"intensity":0.32}],
+  "emitters":[
+    {"start_time":0,"end_time":0.85,"rate":5200,"particle_lifetime":0.65,"component":{"type":"sphere","radius":1.0,"sample_count":280},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.22,"color":"#FFFF3030"},{"t":0.58,"color":"#CC660000"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.32},{"t":0.4,"size":1.8},{"t":1,"size":0.08}],"transform_over_life":[{"t":0,"scale":[0.2,0.2,0.2]},{"t":0.5,"scale":[12,12,12]},{"t":1,"scale":[4,4,4]}],"blend":"ADDITIVE"},
+    {"start_time":0.08,"end_time":1.8,"rate":2600,"particle_lifetime":0.8,"component":{"type":"sphere","radius":1.0,"sample_count":240},"color_over_life":[{"t":0,"color":"#DDFFFFFF"},{"t":0.3,"color":"#AAFF2020"},{"t":0.68,"color":"#88220000"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.18},{"t":0.45,"size":0.85},{"t":1,"size":0.04}],"transform_over_life":[{"t":0,"scale":[0.3,0.3,0.3]},{"t":0.6,"scale":[40,40,40]},{"t":1,"scale":[60,60,60]}],"blend":"ADDITIVE"},
+    {"start_time":0.1,"end_time":3.5,"rate":620,"particle_lifetime":1.1,"component":{"type":"circle","radius":1.0,"segments":220},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.3,"color":"#AAFF3030"},{"t":0.65,"color":"#66220000"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.1},{"t":0.5,"size":0.48},{"t":1,"size":0.02}],"transform_over_life":[{"t":0,"scale":[0.8,1,0.8]},{"t":0.5,"scale":[34,1,34]},{"t":1,"scale":[68,1,68]}],"blend":"ADDITIVE"},
+    {"start_time":0.15,"end_time":2.6,"rate":420,"particle_lifetime":0.55,"component":{"type":"fractal_lightning","start":[-20,12,-18],"end":[18,-4,20],"iterations":6,"roughness":0.6,"period":5,"density":8,"randomize_end":true,"random_radius_min":12,"random_radius_max":58,"segments":190},"color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.14,"color":"#FFFFFFFF"},{"t":0.5,"color":"#FFFF2020"},{"t":1,"color":"#00220000"}],"size_over_life":[{"t":0,"size":0.04},{"t":0.2,"size":0.35},{"t":1,"size":0.02}],"blend":"ADDITIVE"}
+  ]
+}

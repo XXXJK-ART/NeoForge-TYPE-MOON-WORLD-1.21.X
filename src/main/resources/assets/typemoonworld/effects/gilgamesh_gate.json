@@ -1,0 +1,42 @@
+{
+  "duration": 2.0,
+  "notes": "Upright golden Gate of Babylon portal. No environment or screen effects.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.0,
+      "rate": 420,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.06,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.01,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "circle", "radius": 1.0, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#33FFD700" },
+        { "t": 0.3, "color": "#FFFFD700" },
+        { "t": 0.72, "color": "#FFFFF2A8" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.42, "size": 0.14 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.12, 0.12, 0.12], "easing": "ease_out_cubic" },
+        { "t": 0.5, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.45, 1.45, 1.45], "easing": "ease_out_back" },
+        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.08, 0.08, 0.08], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_UPRIGHT_GOLD_GATE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.5, 0.5, 0.08], "speed": 0.012, "chance": 0.32 },
+        { "type": "enchanted_hit", "count": 1, "spread": [0.7, 0.7, 0.08], "speed": 0.018, "chance": 0.42 }
+      ]
+    }
+  ]
+}

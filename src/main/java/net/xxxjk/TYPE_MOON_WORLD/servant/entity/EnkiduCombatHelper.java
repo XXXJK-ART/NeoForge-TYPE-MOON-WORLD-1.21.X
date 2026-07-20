@@ -112,6 +112,7 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_DIR_X = "EnkiduEnumaDirX";
    private static final String TAG_ENUMA_DIR_Y = "EnkiduEnumaDirY";
    private static final String TAG_ENUMA_DIR_Z = "EnkiduEnumaDirZ";
+   private static final String TAG_ENUMA_DUEL_FINALE = "EnkiduEnumaGilgameshFinale";
    private static final String TAG_BOUND_UNTIL = "EnkiduBoundUntil";
    private static final String TAG_BOUND_OWNER = "EnkiduBoundOwner";
    private static final String TAG_BOUND_PREV_NO_AI = "EnkiduBoundPrevNoAi";
@@ -173,6 +174,9 @@ public final class EnkiduCombatHelper {
       EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
       tickNatureDropCleanup(entity, level, now);
       tickEnumaWindup(entity, level, now);
+      if (GilgameshDuelState.tickEnkidu(entity, level)) {
+         return;
+      }
       if (isEnumaActive(entity, now)) {
          return;
       }
@@ -204,6 +208,18 @@ public final class EnkiduCombatHelper {
       if (tryPresenceDetection(entity, level, now)) {
          return;
       }
+      // Against Gilgamesh, keep the queued 100-weapon Age of Babylon rounds
+      // together instead of letting another major skill consume the window.
+      if (target instanceof GilgameshEntity
+         && entity.getPersistentData().getLong(TAG_BIG_VOLLEY_TOKEN) > now) {
+         return;
+      }
+      // This matchup uses the normal Enkidu projectile path, not the removed
+      // projection-counter/door-pairing path.
+      if (target instanceof GilgameshEntity
+         && tryAgeOfBabylonVolley(entity, level, target, now, phase)) {
+         return;
+      }
       if (tryBeginEnumaElish(entity, level, target, now, phase)) {
          return;
       }
@@ -219,7 +235,8 @@ public final class EnkiduCombatHelper {
       if (tryMegaAgeOfBabylonVolley(entity, level, target, now, phase)) {
          return;
       }
-      if (tryAgeOfBabylonVolley(entity, level, target, now, phase)) {
+      if (!(target instanceof GilgameshEntity)
+         && tryAgeOfBabylonVolley(entity, level, target, now, phase)) {
          return;
       }
       if (tryEnkiduSmallSkill(entity, level, target, now, phase, distance)) {
@@ -646,6 +663,7 @@ public final class EnkiduCombatHelper {
    }
 
    private static boolean tryChainOfHeaven(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now) {
+      if (isChainForbiddenTarget(entity, target)) return false;
       CompoundTag data = entity.getPersistentData();
       boolean divine = hasTrait(target, ServantTraitTag.DIVINE);
       if (entity.distanceTo(target) > 22.0 || entity.getCurrentMp() < 30.0 || now - data.getLong(TAG_LAST_CHAIN) < CHAIN_COOLDOWN) {
@@ -667,6 +685,7 @@ public final class EnkiduCombatHelper {
    }
 
    private static void bindTarget(EnkiduEntity entity, ServerLevel level, LivingEntity target, int duration, boolean divine) {
+      if (isChainForbiddenTarget(entity, target)) return;
       long now = level.getGameTime();
       CompoundTag data = target.getPersistentData();
       data.putLong(TAG_BOUND_UNTIL, now + duration);
@@ -818,6 +837,10 @@ public final class EnkiduCombatHelper {
          return false;
       }
       CompoundTag data = entity.getPersistentData();
+      if (target instanceof GilgameshEntity
+         && (data.getLong(TAG_BIG_VOLLEY_TOKEN) > now || entity.getRandom().nextFloat() >= 0.12F)) {
+         return false;
+      }
       long cooldown = isFlying(entity) ? 18L + entity.getRandom().nextInt(16) : 34L + entity.getRandom().nextInt(28);
       if (now - data.getLong(TAG_LAST_SMALL_WEAPON) < cooldown) {
          return false;
@@ -833,8 +856,11 @@ public final class EnkiduCombatHelper {
    private static boolean tryAgeOfBabylonVolley(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
       CompoundTag data = entity.getPersistentData();
       boolean counterDuel = isProjectionCounterDuelTarget(target);
-      boolean highThreat = counterDuel || target.getMaxHealth() >= 160.0F || hasTrait(target, ServantTraitTag.BEAST) || hasTrait(target, ServantTraitTag.HUMAN_THREAT) || target instanceof EnderDragon;
-      int chance = phase == ServantCombatPhase.DECISIVE ? 55 : phase == ServantCombatPhase.NORMAL ? 40 : 24;
+      boolean gilgameshOpponent = target instanceof GilgameshEntity;
+      boolean highThreat = counterDuel || gilgameshOpponent || target.getMaxHealth() >= 160.0F || hasTrait(target, ServantTraitTag.BEAST) || hasTrait(target, ServantTraitTag.HUMAN_THREAT) || target instanceof EnderDragon;
+      int chance = gilgameshOpponent
+         ? phase == ServantCombatPhase.DECISIVE ? 92 : phase == ServantCombatPhase.NORMAL ? 82 : 62
+         : phase == ServantCombatPhase.DECISIVE ? 55 : phase == ServantCombatPhase.NORMAL ? 40 : 24;
       if ((!highThreat && phase != ServantCombatPhase.DECISIVE)
          || entity.getCurrentMp() < 30.0
          || now - data.getLong(TAG_LAST_BIG_VOLLEY) < phasedCooldown(BIG_VOLLEY_COOLDOWN, phase)
@@ -845,6 +871,23 @@ public final class EnkiduCombatHelper {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 30.0));
       data.putUUID(TAG_BIG_VOLLEY_TARGET, target.getUUID());
       entity.triggerNamedActionAnimation("age_of_babylon");
+      if (gilgameshOpponent) {
+         int rounds = 2 + entity.getRandom().nextInt(2);
+         data.putLong(TAG_BIG_VOLLEY_TOKEN, now + rounds * 52L + 80L);
+         VFXServerEffects.spawnReplayable(level, "servant_enkidu_age_of_babylon", entity, rounds * 2.6F + 1.0F);
+         for (int batch = 0; batch < rounds; batch++) {
+            final int batchIndex = batch;
+            TYPE_MOON_WORLD.queueServerWork(batch * 52 + 1, () -> {
+               if (entity.isAlive() && entity.level() instanceof ServerLevel serverLevel) {
+                  LivingEntity liveTarget = resolveAgeOfBabylonTarget(serverLevel, entity, data);
+                  if (liveTarget instanceof GilgameshEntity) {
+                     spawnEarthWeapons(entity, serverLevel, liveTarget, 100, batchIndex, 2.9F, true);
+                  }
+               }
+            });
+         }
+         return true;
+      }
       VFXServerEffects.spawnReplayable(level, "servant_enkidu_age_of_babylon", entity, 2.2F);
       if (!counterDuel) {
          data.putLong(TAG_BIG_VOLLEY_TOKEN, now + 70L);
@@ -871,7 +914,11 @@ public final class EnkiduCombatHelper {
    }
 
    private static boolean tryMegaAgeOfBabylonVolley(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase) {
-      if (phase != ServantCombatPhase.DECISIVE || target == null || !target.isAlive()) {
+      // Gilgamesh matchups use the ordinary 100-weapon sequence above. Do not
+      // replace it with the unrelated decisive/mega branch.
+      if (target instanceof GilgameshEntity
+         || phase != ServantCombatPhase.DECISIVE
+         || target == null || !target.isAlive()) {
          return false;
       }
       CompoundTag data = entity.getPersistentData();
@@ -1084,6 +1131,7 @@ public final class EnkiduCombatHelper {
    }
 
    private static boolean meleeShortChainPierce(EnkiduEntity entity, ServerLevel level, LivingEntity target, ServantCombatPhase phase) {
+      if (isChainForbiddenTarget(entity, target)) return false;
       entity.triggerNamedActionAnimation("chain_of_heaven");
       applyMeleeDamage(entity, target, (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * (0.7 + phase.id() * 0.1) + (hasTrait(target, ServantTraitTag.DIVINE) ? 5.0 : 1.5)), 0.2, true);
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 45 + phase.id() * 15, 0, false, true, true));
@@ -1116,6 +1164,7 @@ public final class EnkiduCombatHelper {
       double distance,
       boolean airborneBasic
    ) {
+      if (isChainForbiddenTarget(entity, target)) return false;
       CompoundTag data = entity.getPersistentData();
       int cooldown = airborneBasic ? 30 : phasedCooldown(CHAIN_LASH_COOLDOWN, phase);
       int chance = airborneBasic ? 70 : phaseChance(18, phase);
@@ -1804,14 +1853,7 @@ public final class EnkiduCombatHelper {
    }
 
    private static boolean isProjectionCounterDuelTarget(LivingEntity target) {
-      if (target instanceof EmiyaArcherEntity) {
-         return true;
-      }
-      if (target instanceof ServantEntity servant) {
-         String id = servant.getServantId();
-         return "gilgamesh".equalsIgnoreCase(id) || "archer_gilgamesh".equalsIgnoreCase(id);
-      }
-      return false;
+      return target instanceof EmiyaArcherEntity;
    }
 
    private static void triggerProjectionCounterVolley(LivingEntity target, EnkiduEntity enkidu, ServerLevel level, int batch, boolean counterDuel) {
@@ -1966,6 +2008,33 @@ public final class EnkiduCombatHelper {
       return tryBeginEnumaElish(entity, level, target, now, phase, false);
    }
 
+   public static void startGilgameshFinale(EnkiduEntity entity, ServerLevel level, GilgameshEntity target, long now, int chargeTicks) {
+      int synchronizedChargeTicks = Math.max(1, chargeTicks);
+      CompoundTag data = entity.getPersistentData();
+      data.putLong(TAG_LAST_ENUMA, now);
+      data.putLong(TAG_ENUMA_RELEASE, now + synchronizedChargeTicks);
+      data.putLong(TAG_ENUMA_FINISH, now + synchronizedChargeTicks + ENUMA_RELEASE_VISUAL);
+      data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
+      data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
+      data.remove(TAG_ENUMA_INVISIBLE);
+      data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
+      data.putDouble(TAG_ENUMA_START_X, entity.getX()); data.putDouble(TAG_ENUMA_START_Y, entity.getY()); data.putDouble(TAG_ENUMA_START_Z, entity.getZ());
+      data.putDouble(TAG_ENUMA_IMPACT_X, target.getX()); data.putDouble(TAG_ENUMA_IMPACT_Y, target.getY()); data.putDouble(TAG_ENUMA_IMPACT_Z, target.getZ());
+      data.putInt(TAG_ENUMA_STAGE, 0); data.putInt(TAG_ENUMA_BIND_STEP, ENUMA_BIND_COUNT); data.putLong(TAG_ENUMA_NEXT_BIND, now + 200L);
+      data.putBoolean(TAG_ENUMA_DUEL_FINALE, true);
+      data.putLong(TAG_FLIGHT_UNTIL, now + synchronizedChargeTicks + ENUMA_RELEASE_VISUAL + 20L); data.remove(TAG_LAND_UNTIL);
+      entity.setNoGravity(true);
+      entity.triggerNamedActionAnimation("enkidu_enuma_elish");
+      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", entity.position(), 192.0);
+   }
+
+   public static void cancelGilgameshDuelFinale(EnkiduEntity entity) {
+      if (entity == null || !entity.getPersistentData().getBoolean(TAG_ENUMA_DUEL_FINALE)) return;
+      clearEnumaState(entity);
+      entity.setNoGravity(false);
+      entity.setDeltaMovement(Vec3.ZERO);
+   }
+
    private static boolean tryBeginEnumaElish(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase, boolean forceCounter) {
       CompoundTag data = entity.getPersistentData();
       if (data.getLong(TAG_ENUMA_RELEASE) > now
@@ -2020,6 +2089,7 @@ public final class EnkiduCombatHelper {
       }
       Entity targetEntity = data.hasUUID(TAG_ENUMA_TARGET) ? level.getEntity(data.getUUID(TAG_ENUMA_TARGET)) : null;
       LivingEntity target = targetEntity instanceof LivingEntity livingTarget && livingTarget.isAlive() ? livingTarget : null;
+      boolean duelFinale = data.getBoolean(TAG_ENUMA_DUEL_FINALE);
       if (target == null) {
          if ((data.getBoolean(TAG_ENUMA_DAMAGE_DONE) || data.getInt(TAG_ENUMA_STAGE) == 1) && now < finish) {
             entity.getNavigation().stop();
@@ -2040,7 +2110,7 @@ public final class EnkiduCombatHelper {
                entity.setPos(groundImpact.x, groundImpact.y, groundImpact.z);
                entity.setDeltaMovement(Vec3.ZERO);
                restoreEnumaInvisibility(entity);
-               applyEnumaGroundExplosion(entity, level, groundImpact, null);
+               if (!duelFinale) applyEnumaGroundExplosion(entity, level, groundImpact, null);
                return;
             }
             entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.1, 0.0, 0.1));
@@ -2055,6 +2125,16 @@ public final class EnkiduCombatHelper {
       Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       entity.faceToward(targetPoint);
       if (now < release) {
+         if (duelFinale) {
+            // The synchronized finale is a face-to-face stationary charge;
+            // the rush starts only on the shared release tick.
+            entity.setNoGravity(true);
+            entity.setDeltaMovement(Vec3.ZERO);
+            if (now % 4L == 0L) {
+               emitEnumaDrillFx(level, entity, targetPoint, now, false);
+            }
+            return;
+         }
          tickEnumaSequentialBinds(entity, level, target, now);
          entity.setNoGravity(true);
          double progress = 1.0 - (double)(release - now) / Math.max(1.0, ENUMA_WINDUP);
@@ -2073,6 +2153,7 @@ public final class EnkiduCombatHelper {
          }
          return;
       }
+      if (duelFinale) GilgameshDuelState.markEnkiduRushStarted(entity, level, now);
       if (data.getBoolean(TAG_ENUMA_DAMAGE_DONE)) {
          if (now % 5L == 0L) {
             emitEnumaDrillFx(level, entity, targetPoint, now, true);
@@ -2093,6 +2174,22 @@ public final class EnkiduCombatHelper {
          ? new Vec3(data.getDouble(TAG_ENUMA_GROUND_X), data.getDouble(TAG_ENUMA_GROUND_Y), data.getDouble(TAG_ENUMA_GROUND_Z))
          : targetPoint;
       Vec3 toImpact = impact.subtract(entity.position());
+      if (duelFinale) {
+         if (toImpact.length() > 1.8) {
+            entity.setNoGravity(true);
+            entity.setDeltaMovement(toImpact.normalize().scale(2.65));
+            emitEnumaDrillFx(level, entity, impact, now, true);
+            return;
+         }
+         entity.setPos(targetPoint.x, targetPoint.y, targetPoint.z);
+         entity.setDeltaMovement(Vec3.ZERO);
+         if (target instanceof GilgameshEntity gilgamesh) {
+            GilgameshDuelState.completeDuelRush(entity, level, gilgamesh, targetPoint);
+         } else {
+            cancelGilgameshDuelFinale(entity);
+         }
+         return;
+      }
       if (toImpact.length() > 1.8 && now < release + ENUMA_RELEASE_VISUAL - 4L) {
          entity.setNoGravity(true);
          entity.setDeltaMovement(toImpact.normalize().scale(2.65));
@@ -2121,9 +2218,9 @@ public final class EnkiduCombatHelper {
          data.putDouble(TAG_ENUMA_DIR_Z, flightDir.z);
          entity.setPos(impact.x, Math.max(target.getY(), impact.y - entity.getBbHeight() * 0.45), impact.z);
          entity.setDeltaMovement(Vec3.ZERO);
-         applyNoDefenseDamageOverTicks(entity, target, 4000.0F, 20);
+         if (!duelFinale) applyNoDefenseDamageOverTicks(entity, target, 4000.0F, 20);
          restoreEnumaInvisibility(entity);
-         applyEnumaSmallExplosion(entity, level, impact, target);
+         if (!duelFinale) applyEnumaSmallExplosion(entity, level, impact, target);
          if (impact.distanceTo(groundImpact) > 1.8 && impact.distanceTo(groundImpact) <= 28.0 && now < release + ENUMA_RELEASE_VISUAL - 10L) {
             return;
          }
@@ -2136,11 +2233,15 @@ public final class EnkiduCombatHelper {
       entity.setPos(impact.x, Math.max(impact.y, impact.y - entity.getBbHeight() * 0.45), impact.z);
       entity.setDeltaMovement(Vec3.ZERO);
       restoreEnumaInvisibility(entity);
-      applyEnumaGroundExplosion(entity, level, impact, target);
+      if (!duelFinale) applyEnumaGroundExplosion(entity, level, impact, target);
    }
 
    private static void tickEnumaSequentialBinds(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now) {
       CompoundTag data = entity.getPersistentData();
+      if (isChainForbiddenTarget(entity, target)) {
+         data.putInt(TAG_ENUMA_BIND_STEP, ENUMA_BIND_COUNT);
+         return;
+      }
       int step = data.getInt(TAG_ENUMA_BIND_STEP);
       if (step >= ENUMA_BIND_COUNT || now < data.getLong(TAG_ENUMA_NEXT_BIND)) {
          return;
@@ -2152,6 +2253,10 @@ public final class EnkiduCombatHelper {
       level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 1.55F, divine ? 1.45F : 1.12F);
       data.putInt(TAG_ENUMA_BIND_STEP, step + 1);
       data.putLong(TAG_ENUMA_NEXT_BIND, now + ENUMA_BIND_DURATION + 4L);
+   }
+
+   private static boolean isChainForbiddenTarget(EnkiduEntity entity, LivingEntity target) {
+      return target == entity || target instanceof EnkiduEntity || target instanceof GilgameshEntity;
    }
 
    private static void maybeSpawnEnumaFlightFx(EnkiduEntity entity, ServerLevel level, long now) {
@@ -2191,6 +2296,7 @@ public final class EnkiduCombatHelper {
       data.remove(TAG_ENUMA_DIR_X);
       data.remove(TAG_ENUMA_DIR_Y);
       data.remove(TAG_ENUMA_DIR_Z);
+      data.remove(TAG_ENUMA_DUEL_FINALE);
    }
 
    private static void activateEnumaInvisibility(EnkiduEntity entity) {

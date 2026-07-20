@@ -1,338 +1,348 @@
 package net.xxxjk.TYPE_MOON_WORLD.world.terrain;
 
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
+/** Shared, round-robin terrain queue. Damage logic never waits for terrain work. */
+@EventBusSubscriber(modid = "typemoonworld")
 public final class DeferredTerrainDestruction {
-   private static final long SOFT_NANOS_PER_TICK = 2_000_000L;
-   private static final int MIN_BLOCKS_PER_TICK = 64;
-   private static final int MAX_BLOCKS_PER_TICK = 1400;
-   private static final RemovalCallback NO_CALLBACK = (level, pos, removed) -> {
-   };
+   // A complete advancing X cross-section is roughly 19k checks per tick.
+   // The time cap remains authoritative when block updates are expensive.
+   private static final int MAX_CHECKS_PER_LEVEL_TICK = 20_000;
+   private static final long SOFT_BUDGET_NANOS = 12_000_000L;
+   private static final Map<ResourceKey<Level>, ArrayDeque<Job>> JOBS = new HashMap<>();
+   private DeferredTerrainDestruction() { }
 
-   private DeferredTerrainDestruction() {
-   }
-
-   @FunctionalInterface
-   public interface BlockPredicate {
-      boolean canRemove(ServerLevel level, BlockPos pos, double distanceSqr, double radius, Vec3 center);
-   }
-
-   @FunctionalInterface
-   public interface RemovalCallback {
-      void onRemoved(ServerLevel level, BlockPos pos, int removed);
-   }
+   @FunctionalInterface public interface BlockPredicate { boolean canRemove(ServerLevel level, BlockPos pos, double distanceSqr, double radius, Vec3 center); }
+   @FunctionalInterface public interface RemovalCallback { void onRemoved(ServerLevel level, BlockPos pos, int removed); }
 
    public static void queueSphere(ServerLevel level, Vec3 center, int radius, float maxHardness, int targetTicks) {
-      if (level == null || radius <= 0) {
-         return;
-      }
-      int volumeEstimate = Math.max(1, (int)Math.ceil((4.0 * Math.PI * radius * radius * radius) / 3.0));
-      int initialBudget = clamp(volumeEstimate / Math.max(1, targetTicks), MIN_BLOCKS_PER_TICK, MAX_BLOCKS_PER_TICK);
-      new SphereJob(level, center, radius, maxHardness, initialBudget).schedule();
+      if (radius > 0) add(level, new SphereJob(level, center, radius, radius, maxHardness, false, null, null));
    }
-
-   public static void queueSphere(
-      ServerLevel level,
-      Vec3 center,
-      double radius,
-      int targetTicks,
-      BlockPredicate predicate,
-      RemovalCallback callback
-   ) {
-      if (level == null || radius <= 0.0 || predicate == null) {
-         return;
-      }
-      int r = (int)Math.ceil(radius);
-      int volumeEstimate = Math.max(1, (int)Math.ceil((4.0 * Math.PI * radius * radius * radius) / 3.0));
-      int initialBudget = clamp(volumeEstimate / Math.max(1, targetTicks), MIN_BLOCKS_PER_TICK, MAX_BLOCKS_PER_TICK);
-      new CustomSphereJob(level, center, radius, r, 0.0, predicate, callback == null ? NO_CALLBACK : callback, initialBudget).schedule();
+   public static void queueSphere(ServerLevel level, Vec3 center, double radius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
+      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback));
    }
-
-   public static void queueShell(
-      ServerLevel level,
-      Vec3 center,
-      double currentRadius,
-      double previousRadius,
-      int targetTicks,
-      BlockPredicate predicate,
-      RemovalCallback callback
-   ) {
-      if (level == null || currentRadius <= 0.0 || predicate == null) {
-         return;
-      }
-      double inner = Math.max(0.0, previousRadius);
-      int r = (int)Math.ceil(currentRadius);
-      double shellVolume = Math.max(1.0, (4.0 * Math.PI * (currentRadius * currentRadius * currentRadius - inner * inner * inner)) / 3.0);
-      int initialBudget = clamp((int)Math.ceil(shellVolume / Math.max(1, targetTicks)), MIN_BLOCKS_PER_TICK, MAX_BLOCKS_PER_TICK);
-      new CustomSphereJob(level, center, currentRadius, r, inner, predicate, callback == null ? NO_CALLBACK : callback, initialBudget).schedule();
+   public static void queueShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
+      if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius));
    }
-
    public static void queueEllipsoid(ServerLevel level, Vec3 center, int radius, int halfHeight, float maxHardness, int targetTicks) {
-      if (level == null || radius <= 0 || halfHeight <= 0) {
-         return;
-      }
-      int volumeEstimate = Math.max(1, (int)Math.ceil((4.0 * Math.PI * radius * radius * halfHeight) / 3.0));
-      int initialBudget = clamp(volumeEstimate / Math.max(1, targetTicks), MIN_BLOCKS_PER_TICK, MAX_BLOCKS_PER_TICK);
-      new EllipsoidJob(level, center, radius, halfHeight, maxHardness, initialBudget).schedule();
+      if (radius > 0 && halfHeight > 0) add(level, new EllipsoidJob(level, center, radius, halfHeight, maxHardness));
    }
+   public static void queueDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, Runnable completion) {
+      queueDiagonalCut(level, origin, direction, length, width, height, false, completion);
+   }
+   public static void queueDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, Runnable completion) {
+      add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, false, completion));
+   }
+   public static void queueDiagonalBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, double shell) {
+      queueDiagonalBurnShell(level, origin, direction, length, width, height, false, shell);
+   }
+   public static void queueDiagonalBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, double shell) {
+      add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, true, null).shell(shell));
+   }
+   public static void queueCrossBurnShell(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean mirrored, double shell) {
+      add(level, new DiagonalJob(level, origin, direction, length, width, height, mirrored, true, null).shell(shell).excludeCrossCore());
+   }
+   public static AdvancingDiagonalCut queueAdvancingDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction,
+                                                                 double length, double width, double height,
+                                                                 boolean mirrored, Runnable completion) {
+      AdvancingDiagonalJob job = new AdvancingDiagonalJob(level, origin, direction, length, width, height, mirrored, completion);
+      add(level, job);
+      return new AdvancingDiagonalCut(job);
+   }
+   /** Queues the exact swept volume between two consecutive blade poses. */
+   public static void queueSweptBlade(ServerLevel level, Vec3 previousCenter, Vec3 currentCenter,
+                                      Vec3 previousAxis, Vec3 currentAxis, Vec3 faceNormal,
+                                      double bladeLength, double radius,
+                                      boolean burnTrace, BooleanSupplier active) {
+      if (level == null || previousCenter == null || currentCenter == null || previousAxis == null || currentAxis == null) return;
+      add(level, new SweptBladeJob(level, previousCenter, currentCenter, previousAxis, currentAxis,
+         faceNormal, bladeLength, radius, burnTrace, active));
+   }
+
+   /** Queues complete, near-to-far voxel clearing for one or more connected slash traces. */
+   public static void queueBladeTrace(ServerLevel level, List<TraceSegment> segments, double radius,
+                                      boolean burnTrace, BooleanSupplier active) {
+      if (level == null || segments == null || segments.isEmpty()) return;
+      add(level, new BladeTraceJob(level, segments, radius, burnTrace, active));
+   }
+
+   public record TraceSegment(Vec3 start, Vec3 end) { }
+   public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
+      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel));
+   }
+   public static void queueUpperHemisphere(ServerLevel level, Vec3 center, double radius, double minimumYExclusive, float maxHardness) {
+      if (level != null && radius > 0) add(level, new UpperHemisphereJob(level, center, radius, minimumYExclusive, maxHardness));
+   }
+
+   private static void add(ServerLevel level, Job job) { if (level != null && job != null) JOBS.computeIfAbsent(level.dimension(), k -> new ArrayDeque<>()).add(job); }
+   @SubscribeEvent public static void tick(LevelTickEvent.Post event) {
+      if (!(event.getLevel() instanceof ServerLevel level)) return;
+      ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
+      long started = System.nanoTime(); int checked = 0;
+      int idleJobs = 0;
+      while (!queue.isEmpty() && checked < MAX_CHECKS_PER_LEVEL_TICK && System.nanoTime() - started < SOFT_BUDGET_NANOS) {
+         Job job = queue.pollFirst(); int slice = 0;
+         while (!job.done && job.ready() && slice < 128 && checked < MAX_CHECKS_PER_LEVEL_TICK) { job.advance(); slice++; checked++; }
+         if (!job.done) queue.addLast(job); else job.finish();
+         if (slice == 0) {
+            idleJobs++;
+            if (idleJobs >= queue.size()) break;
+         } else {
+            idleJobs = 0;
+         }
+      }
+      if (queue.isEmpty()) JOBS.remove(level.dimension());
+   }
+   @SubscribeEvent public static void unload(LevelEvent.Unload event) { if (event.getLevel() instanceof Level level && !level.isClientSide()) JOBS.remove(level.dimension()); }
 
    private abstract static class Job {
-      protected final ServerLevel level;
-      protected final Vec3 center;
-      protected final float maxHardness;
-      protected int budget;
+      final ServerLevel level; boolean done; Runnable completion;
+      Job(ServerLevel level) { this.level = level; }
+      abstract void advance();
+      boolean ready() { return true; }
+      void finish() { if (completion != null) completion.run(); }
+      boolean valid(BlockPos pos, float maxHardness) {
+         if (!level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) return false;
+         BlockState state = level.getBlockState(pos); float hardness = state.getDestroySpeed(level, pos);
+         return !state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0 && hardness <= maxHardness && state.getExplosionResistance(level, pos, null) < 1200;
+      }
+   }
+   private static final class SphereJob extends Job {
+      final Vec3 center; final int scan; final double radius, radiusSqr; final float hardness; final boolean shellOnly; final BlockPredicate predicate; final RemovalCallback callback;
+      double innerSqr; int x, y, z, removed;
+      SphereJob(ServerLevel level, Vec3 center, int scan, double radius, float hardness, boolean shellOnly, BlockPredicate predicate, RemovalCallback callback) { super(level); this.center=center; this.scan=scan; this.radius=radius; this.radiusSqr=radius*radius; this.hardness=hardness; this.shellOnly=shellOnly; this.predicate=predicate; this.callback=callback; x=y=z=-scan; }
+      SphereJob inner(double value) { innerSqr=Math.max(0,value*value); return this; }
+      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(predicate!=null ? predicate.canRemove(level,p,d,radius,center) : valid(p,hardness)){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
+      void cursor(){if(++z>scan){z=-scan;if(++y>scan){y=-scan;if(++x>scan)done=true;}}}
+   }
+   private static final class EllipsoidJob extends Job {
+      final Vec3 center; final int radius,height; final float hardness; int x,y,z;
+      EllipsoidJob(ServerLevel level,Vec3 center,int radius,int height,float hardness){super(level);this.center=center;this.radius=radius;this.height=height;this.hardness=hardness;x=z=-radius;y=-height;}
+      void advance(){int cx=x,cy=y,cz=z;cursor();double n=(cx*cx+cz*cz)/(double)(radius*radius)+(cy*cy)/(double)(height*height);if(n<=1){BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz);if(valid(p,hardness))level.removeBlock(p,false);}}
+      void cursor(){if(++z>radius){z=-radius;if(++y>height){y=-height;if(++x>radius)done=true;}}}
+   }
+   private static final class DiagonalJob extends Job {
+      final Vec3 origin,forward,side; final double length,width,height,sign; final boolean burn; double shell; boolean excludeCrossCore; int along,normal,vertical;
+      DiagonalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean mirrored,boolean burn,Runnable completion){super(level);this.origin=origin;Vec3 flat=new Vec3(direction.x,0,direction.z);this.forward=flat.lengthSqr()<1e-6?new Vec3(0,0,1):flat.normalize();this.side=new Vec3(-forward.z,0,forward.x);this.length=length;this.width=width;this.height=height;this.sign=mirrored?-1.0:1.0;this.burn=burn;this.completion=completion;resetCursor();}
+      DiagonalJob shell(double shell){this.shell=shell;resetCursor();return this;}
+      DiagonalJob excludeCrossCore(){this.excludeCrossCore=true;return this;}
+      void resetCursor(){along=burn?(int)Math.floor(-shell*2.0):0;normal=(int)-Math.ceil(width/2+shell);vertical=(int)-Math.ceil(height/2+shell);}
+      void advance(){double distance=along*.5,n=normal,y=vertical;cursor();boolean inCore=distance>=0&&distance<=length&&Math.abs(n)<=width/2&&Math.abs(y)<=height/2;if(burn&&inCore)return;if(!burn&&!inCore)return;double sideOffset=sign*y+n*Math.sqrt(2.0);Vec3 point=origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0);if(burn&&excludeCrossCore&&insideEitherCore(point,distance))return;BlockPos pos=BlockPos.containing(point);if(!valid(pos,Float.MAX_VALUE))return;if(burn)level.setBlock(pos,level.random.nextFloat()<.75F?Blocks.NETHERRACK.defaultBlockState():Blocks.MAGMA_BLOCK.defaultBlockState(),3);else level.removeBlock(pos,false);}
+      boolean insideEitherCore(Vec3 point,double distance){if(distance<0||distance>length)return false;Vec3 rel=point.subtract(origin);double sideDistance=rel.dot(side),verticalDistance=rel.y;return Math.abs(verticalDistance)<=height/2&&Math.min(Math.abs(sideDistance-verticalDistance),Math.abs(sideDistance+verticalDistance))/Math.sqrt(2.0)<=width/2;}
+      void cursor(){int maxNormal=(int)Math.ceil(width/2+shell),maxY=(int)Math.ceil(height/2+shell),maxAlong=(int)Math.ceil((length+shell)*2.0);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>maxAlong)done=true;}}}
+   }
+   public static final class AdvancingDiagonalCut {
+      private final AdvancingDiagonalJob job;
+      private AdvancingDiagonalCut(AdvancingDiagonalJob job){this.job=job;}
+      public void advanceTo(double distance){job.advanceTo(distance);}
+      public void seal(){job.seal();}
+      public boolean isComplete(){return job.done;}
+   }
+   private static final class AdvancingDiagonalJob extends Job {
+      final Vec3 origin,forward,side; final double length,width,height,sign; int along,normal,vertical; double targetDistance; boolean sealed;
+      AdvancingDiagonalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean mirrored,Runnable completion){super(level);this.origin=origin;Vec3 flat=new Vec3(direction.x,0,direction.z);this.forward=flat.lengthSqr()<1e-6?new Vec3(0,0,1):flat.normalize();this.side=new Vec3(-forward.z,0,forward.x);this.length=length;this.width=width;this.height=height;this.sign=mirrored?-1.0:1.0;this.completion=completion;normal=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
+      void advanceTo(double distance){targetDistance=Math.max(targetDistance,Math.min(length,distance));}
+      void seal(){sealed=true;targetDistance=length;if(along>Math.ceil(length))done=true;}
+      @Override boolean ready(){return !done&&along<=Math.floor(targetDistance+1.0E-6);}
+      @Override void advance(){double distance=along,n=normal,y=vertical;cursor();double sideOffset=sign*y+n*Math.sqrt(2.0);if(sign<0&&Math.abs(sideOffset-y)/Math.sqrt(2.0)<=width/2)return;BlockPos pos=BlockPos.containing(origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0));if(valid(pos,Float.MAX_VALUE))level.removeBlock(pos,false);}
+      void cursor(){int maxNormal=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>Math.ceil(length)&&sealed)done=true;}}}
+   }
 
-      protected Job(ServerLevel level, Vec3 center, float maxHardness, int budget) {
-         this.level = level;
-         this.center = center;
-         this.maxHardness = maxHardness;
-         this.budget = budget;
+   private static final class SweptBladeJob extends Job {
+      final Vec3 previousCenter, currentCenter, previousAxis, currentAxis, faceNormal;
+      final double bladeLength, radiusSqr;
+      final boolean burnTrace;
+      final BooleanSupplier active;
+      final int motionSteps, alongSteps, crossRadius, crossStep;
+      int motion, along, crossA, crossB;
+      final Set<Long> burned = new HashSet<>();
+
+      SweptBladeJob(ServerLevel level, Vec3 previousCenter, Vec3 currentCenter, Vec3 previousAxis,
+                    Vec3 currentAxis, Vec3 faceNormal, double bladeLength, double radius,
+                    boolean burnTrace, BooleanSupplier active) {
+         super(level);
+         this.previousCenter = previousCenter;
+         this.currentCenter = currentCenter;
+         this.previousAxis = previousAxis.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : previousAxis.normalize();
+         this.currentAxis = currentAxis.lengthSqr() < 1.0E-6 ? this.previousAxis : currentAxis.normalize();
+         Vec3 normal = faceNormal == null ? Vec3.ZERO : faceNormal.normalize();
+         this.faceNormal = normal.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : normal;
+         this.bladeLength = Math.max(2.0, bladeLength);
+         double sweepRadius = Math.max(1.0, radius);
+         this.radiusSqr = sweepRadius * sweepRadius;
+         this.burnTrace = burnTrace;
+         this.active = active;
+         this.motionSteps = Math.max(1, Mth.ceil(previousCenter.distanceTo(currentCenter) / 2.0));
+         double alongStep = sweepRadius >= 8.0 ? 3.0 : 2.0;
+         this.alongSteps = Math.max(1, Mth.ceil(this.bladeLength / alongStep));
+         this.crossRadius = Mth.ceil(sweepRadius);
+         this.crossStep = sweepRadius >= 8.0 ? 3 : 1;
+         this.crossA = this.crossB = -this.crossRadius;
       }
 
-      protected void schedule() {
-         TYPE_MOON_WORLD.queueServerWork(1, this::run);
+      @Override void advance() {
+         if (active != null && !active.getAsBoolean()) { done = true; return; }
+         int currentMotion = motion, currentAlong = along, currentA = crossA, currentB = crossB;
+         cursor();
+         if (currentA * currentA + currentB * currentB > radiusSqr) return;
+         double motionProgress = currentMotion / (double)motionSteps;
+         double alongProgress = currentAlong / (double)alongSteps;
+         Vec3 center = previousCenter.lerp(currentCenter, motionProgress);
+         Vec3 axis = previousAxis.lerp(currentAxis, motionProgress);
+         if (axis.lengthSqr() < 1.0E-6) axis = currentAxis;
+         axis = axis.normalize();
+         Vec3 widthAxis = faceNormal.cross(axis);
+         if (widthAxis.lengthSqr() < 1.0E-6) widthAxis = new Vec3(1, 0, 0);
+         widthAxis = widthAxis.normalize();
+         Vec3 point = center.add(axis.scale((alongProgress - 0.5) * bladeLength))
+            .add(faceNormal.scale(currentA)).add(widthAxis.scale(currentB));
+         BlockPos pos = BlockPos.containing(point);
+         if (!valid(pos, Float.MAX_VALUE)) return;
+         if (level.removeBlock(pos, false) && burnTrace) burnAdjacent(pos);
       }
 
-      private void run() {
-         long start = System.nanoTime();
-         int checked = 0;
-         while (checked < this.budget && this.advanceOne()) {
-            checked++;
-            if ((checked & 63) == 0 && System.nanoTime() - start > SOFT_NANOS_PER_TICK) {
-               break;
+      private void burnAdjacent(BlockPos cut) {
+         for (Direction direction : Direction.values()) {
+            BlockPos adjacent = cut.relative(direction);
+            if (!burned.add(adjacent.asLong()) || !level.hasChunkAt(adjacent)) continue;
+            BlockState state = level.getBlockState(adjacent);
+            if (state.isAir() || state.is(Blocks.BEDROCK) || level.getBlockEntity(adjacent) != null) continue;
+            long hash = adjacent.asLong() * 341873128712L + 132897987541L;
+            BlockState replacement = ((hash >>> 16) & 0xFFL) < 38L
+               ? Blocks.MAGMA_BLOCK.defaultBlockState() : Blocks.NETHERRACK.defaultBlockState();
+            level.setBlock(adjacent, replacement, 3);
+         }
+      }
+
+      private void cursor() {
+         crossB += crossStep;
+         if (crossB > crossRadius) {
+            crossB = -crossRadius;
+            crossA += crossStep;
+            if (crossA > crossRadius) {
+               crossA = -crossRadius;
+               if (++along > alongSteps) {
+                  along = 0;
+                  if (++motion > motionSteps) done = true;
+               }
             }
          }
+      }
+   }
 
-         long elapsed = System.nanoTime() - start;
-         if (elapsed > SOFT_NANOS_PER_TICK && this.budget > MIN_BLOCKS_PER_TICK) {
-            this.budget = Math.max(MIN_BLOCKS_PER_TICK, this.budget * 3 / 4);
-         } else if (elapsed < SOFT_NANOS_PER_TICK / 2 && checked >= this.budget && this.budget < MAX_BLOCKS_PER_TICK) {
-            this.budget = Math.min(MAX_BLOCKS_PER_TICK, this.budget + Math.max(16, this.budget / 8));
-         }
+   private static final class BladeTraceJob extends Job {
+      final List<TraceSegment> segments;
+      final double radius, radiusSqr;
+      final boolean burnTrace;
+      final BooleanSupplier active;
+      final Set<Long> burned = new HashSet<>();
+      int segmentIndex;
+      int along, crossA, crossB;
+      int alongMax, crossRadius;
+      Vec3 start, forward, widthAxis, heightAxis;
+      boolean segmentReady;
 
-         if (!this.isDone()) {
-            this.schedule();
-         }
+      BladeTraceJob(ServerLevel level, List<TraceSegment> segments, double radius,
+                    boolean burnTrace, BooleanSupplier active) {
+         super(level);
+         this.segments = List.copyOf(segments);
+         this.radius = Math.max(1.0, radius);
+         this.radiusSqr = this.radius * this.radius;
+         this.crossRadius = Mth.ceil(this.radius);
+         this.burnTrace = burnTrace;
+         this.active = active;
       }
 
-      protected boolean tryRemove(BlockPos pos) {
-         BlockState state = this.level.getBlockState(pos);
-         float hardness = state.getDestroySpeed(this.level, pos);
-         if (state.isAir()
-            || state.is(Blocks.BEDROCK)
-            || hardness < 0.0F
-            || hardness > this.maxHardness
-            || state.getExplosionResistance(this.level, pos, null) >= 1200.0F) {
-            return false;
-         }
-         return this.level.removeBlock(pos, false);
+      @Override void advance() {
+         if (active != null && !active.getAsBoolean()) { done = true; return; }
+         if (!segmentReady && !prepareSegment()) return;
+         int currentAlong = along;
+         int currentA = crossA;
+         int currentB = crossB;
+         cursor();
+         if (currentA * currentA + currentB * currentB > radiusSqr) return;
+         Vec3 point = start.add(forward.scale(currentAlong)).add(widthAxis.scale(currentA)).add(heightAxis.scale(currentB));
+         BlockPos pos = BlockPos.containing(point);
+         if (!valid(pos, Float.MAX_VALUE)) return;
+         if (level.removeBlock(pos, false) && burnTrace) burnAdjacent(pos);
       }
 
-      protected boolean tryRemove(BlockPos pos, BlockPredicate predicate, RemovalCallback callback, double distanceSqr, double radius, int removed) {
-         if (!predicate.canRemove(this.level, pos, distanceSqr, radius, this.center)) {
-            return false;
-         }
-         if (this.level.removeBlock(pos, false)) {
-            callback.onRemoved(this.level, pos, removed + 1);
+      private boolean prepareSegment() {
+         while (segmentIndex < segments.size()) {
+            TraceSegment segment = segments.get(segmentIndex++);
+            if (segment == null || segment.start() == null || segment.end() == null) continue;
+            Vec3 delta = segment.end().subtract(segment.start());
+            double length = delta.length();
+            if (length < 1.0E-4) continue;
+            this.start = segment.start();
+            this.forward = delta.scale(1.0 / length);
+            Vec3 worldUp = Math.abs(forward.y) > 0.92 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+            this.widthAxis = forward.cross(worldUp).normalize();
+            this.heightAxis = widthAxis.cross(forward).normalize();
+            this.alongMax = Mth.ceil(length);
+            this.along = 0;
+            this.crossA = -crossRadius;
+            this.crossB = -crossRadius;
+            this.segmentReady = true;
             return true;
          }
+         done = true;
          return false;
       }
 
-      protected abstract boolean advanceOne();
-
-      protected abstract boolean isDone();
-   }
-
-   private static final class SphereJob extends Job {
-      private final int radius;
-      private final int radiusSqr;
-      private int x;
-      private int y;
-      private int z;
-      private boolean done;
-
-      private SphereJob(ServerLevel level, Vec3 center, int radius, float maxHardness, int budget) {
-         super(level, center, maxHardness, budget);
-         this.radius = radius;
-         this.radiusSqr = radius * radius;
-         this.x = -radius;
-         this.y = -radius;
-         this.z = -radius;
-      }
-
-      @Override
-      protected boolean advanceOne() {
-         while (!this.done) {
-            int cx = this.x;
-            int cy = this.y;
-            int cz = this.z;
-            this.advanceCursor();
-            if (cx * cx + cy * cy + cz * cz <= this.radiusSqr) {
-               this.tryRemove(BlockPos.containing(this.center.x + cx, this.center.y + cy, this.center.z + cz));
-               return true;
-            }
-         }
-         return false;
-      }
-
-      private void advanceCursor() {
-         this.z++;
-         if (this.z > this.radius) {
-            this.z = -this.radius;
-            this.y++;
-            if (this.y > this.radius) {
-               this.y = -this.radius;
-               this.x++;
-               if (this.x > this.radius) {
-                  this.done = true;
-               }
+      private void cursor() {
+         crossB++;
+         if (crossB > crossRadius) {
+            crossB = -crossRadius;
+            if (++crossA > crossRadius) {
+               crossA = -crossRadius;
+               if (++along > alongMax) segmentReady = false;
             }
          }
       }
 
-      @Override
-      protected boolean isDone() {
-         return this.done;
+      private void burnAdjacent(BlockPos cut) {
+         for (Direction direction : Direction.values()) {
+            BlockPos adjacent = cut.relative(direction);
+            if (!burned.add(adjacent.asLong()) || !level.hasChunkAt(adjacent)) continue;
+            BlockState state = level.getBlockState(adjacent);
+            if (state.isAir() || state.is(Blocks.BEDROCK) || level.getBlockEntity(adjacent) != null) continue;
+            long hash = adjacent.asLong() * 341873128712L + 132897987541L;
+            BlockState replacement = ((hash >>> 16) & 0xFFL) < 38L
+               ? Blocks.MAGMA_BLOCK.defaultBlockState() : Blocks.NETHERRACK.defaultBlockState();
+            level.setBlock(adjacent, replacement, 3);
+         }
       }
    }
-
-   private static final class EllipsoidJob extends Job {
-      private final int radius;
-      private final int halfHeight;
-      private int x;
-      private int y;
-      private int z;
-      private boolean done;
-
-      private EllipsoidJob(ServerLevel level, Vec3 center, int radius, int halfHeight, float maxHardness, int budget) {
-         super(level, center, maxHardness, budget);
-         this.radius = radius;
-         this.halfHeight = halfHeight;
-         this.x = -radius;
-         this.y = -halfHeight;
-         this.z = -radius;
-      }
-
-      @Override
-      protected boolean advanceOne() {
-         while (!this.done) {
-            int cx = this.x;
-            int cy = this.y;
-            int cz = this.z;
-            this.advanceCursor();
-            double normalized = (cx * cx + cz * cz) / (double)(this.radius * this.radius)
-               + (cy * cy) / (double)(this.halfHeight * this.halfHeight);
-            if (normalized <= 1.0) {
-               this.tryRemove(BlockPos.containing(this.center.x + cx, this.center.y + cy, this.center.z + cz));
-               return true;
-            }
-         }
-         return false;
-      }
-
-      private void advanceCursor() {
-         this.z++;
-         if (this.z > this.radius) {
-            this.z = -this.radius;
-            this.y++;
-            if (this.y > this.halfHeight) {
-               this.y = -this.halfHeight;
-               this.x++;
-               if (this.x > this.radius) {
-                  this.done = true;
-               }
-            }
-         }
-      }
-
-      @Override
-      protected boolean isDone() {
-         return this.done;
-      }
+   private static final class DirectionalJob extends Job {
+      final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; int along, lateral, vertical;
+      DirectionalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean funnel){super(level);this.origin=origin;this.forward=direction.lengthSqr()<1e-6?new Vec3(0,0,1):direction.normalize();Vec3 worldUp=Math.abs(forward.y)>.95?new Vec3(0,0,1):new Vec3(0,1,0);this.right=forward.cross(worldUp).normalize();this.up=right.cross(forward).normalize();this.length=length;this.width=width;this.height=height;this.funnel=funnel;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
+      void advance(){double distance=along*.5,progress=distance/length;double factor;if(funnel)factor=progress<.35?Math.max(.08,progress/.35):progress>.8?Math.max(.1,1-(progress-.8)*4.5):1;else factor=Math.max(.18,Math.sin(Math.PI*Math.max(0,Math.min(1,progress))));double hw=width*.5*factor,hh=height*.5*factor;int lat=lateral,v=vertical;cursor();if(Math.abs(lat)>hw||Math.abs(v)>hh||distance<4)return;BlockPos p=BlockPos.containing(origin.add(forward.scale(distance)).add(right.scale(lat)).add(up.scale(v)));if(valid(p,80))level.removeBlock(p,false);}
+      void cursor(){int maxLat=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++lateral>maxLat){lateral=-maxLat;if(++along>(int)Math.ceil(length*2))done=true;}}}
    }
-
-   private static final class CustomSphereJob extends Job {
-      private final double radius;
-      private final int scanRadius;
-      private final double innerRadiusSqr;
-      private final double radiusSqr;
-      private final BlockPredicate predicate;
-      private final RemovalCallback callback;
-      private int x;
-      private int y;
-      private int z;
-      private int removed;
-      private boolean done;
-
-      private CustomSphereJob(
-         ServerLevel level,
-         Vec3 center,
-         double radius,
-         int scanRadius,
-         double innerRadius,
-         BlockPredicate predicate,
-         RemovalCallback callback,
-         int budget
-      ) {
-         super(level, center, Float.MAX_VALUE, budget);
-         this.radius = radius;
-         this.scanRadius = scanRadius;
-         this.innerRadiusSqr = innerRadius * innerRadius;
-         this.radiusSqr = radius * radius;
-         this.predicate = predicate;
-         this.callback = callback;
-         this.x = -scanRadius;
-         this.y = -scanRadius;
-         this.z = -scanRadius;
-      }
-
-      @Override
-      protected boolean advanceOne() {
-         while (!this.done) {
-            int cx = this.x;
-            int cy = this.y;
-            int cz = this.z;
-            this.advanceCursor();
-            double distSqr = cx * cx + cy * cy + cz * cz;
-            if (distSqr <= this.radiusSqr && distSqr > this.innerRadiusSqr) {
-               BlockPos pos = BlockPos.containing(this.center.x + cx, this.center.y + cy, this.center.z + cz);
-               if (this.tryRemove(pos, this.predicate, this.callback, distSqr, this.radius, this.removed)) {
-                  this.removed++;
-               }
-               return true;
-            }
-         }
-         return false;
-      }
-
-      private void advanceCursor() {
-         this.z++;
-         if (this.z > this.scanRadius) {
-            this.z = -this.scanRadius;
-            this.y++;
-            if (this.y > this.scanRadius) {
-               this.y = -this.scanRadius;
-               this.x++;
-               if (this.x > this.scanRadius) {
-                  this.done = true;
-               }
-            }
-         }
-      }
-
-      @Override
-      protected boolean isDone() {
-         return this.done;
-      }
-   }
-
-   private static int clamp(int value, int min, int max) {
-      return Math.max(min, Math.min(max, value));
+   private static final class UpperHemisphereJob extends Job {
+      final Vec3 center; final int radius; final double radiusSqr, minimumY; final float hardness; int x, y, z;
+      UpperHemisphereJob(ServerLevel level,Vec3 center,double radius,double minimumY,float hardness){super(level);this.center=center;this.radius=(int)Math.ceil(radius);this.radiusSqr=radius*radius;this.minimumY=minimumY;this.hardness=hardness;x=z=-this.radius;y=0;}
+      void advance(){int cx=x,cy=y,cz=z;cursor();double worldY=center.y+cy;if(worldY<=minimumY||cx*cx+cy*cy+cz*cz>radiusSqr)return;BlockPos pos=BlockPos.containing(center.x+cx,worldY,center.z+cz);if(valid(pos,hardness))level.removeBlock(pos,false);}
+      void cursor(){if(++z>radius){z=-radius;if(++y>radius){y=0;if(++x>radius)done=true;}}}
    }
 }

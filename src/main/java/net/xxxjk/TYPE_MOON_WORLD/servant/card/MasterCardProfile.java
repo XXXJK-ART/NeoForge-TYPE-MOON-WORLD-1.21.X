@@ -177,10 +177,12 @@ public final class MasterCardProfile {
             learnJewelSuite(vars, 85.0);
             learn(vars, "jewel_machine_gun");
             vars.proficiency_jewel_magic_release = Math.max(vars.proficiency_jewel_magic_release, 80.0);
+            learn(vars, "gander");
+            vars.proficiency_gander = Math.max(vars.proficiency_gander, 60.0);
             learn(vars, "reinforcement");
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, 65.0);
          }, MasterCardProfile::giveHighGemKit);
-         case "elsa_saijo" -> new Profile(masterId, "default", 350.0, 6.0, 11, Attributes.WIND, vars -> {
+         case "elsa_saijo" -> new Profile(masterId, "elsa_saijo", 350.0, 6.0, 11, Attributes.WIND, vars -> {
             learn(vars, "fire_magic");
             vars.proficiency_fire_magic = Math.max(vars.proficiency_fire_magic, 65.0);
             learn(vars, "wind_magic");
@@ -189,7 +191,7 @@ public final class MasterCardProfile {
             vars.proficiency_water_magic = Math.max(vars.proficiency_water_magic, 55.0);
          }, player -> {
          });
-         case "waver" -> new Profile(masterId, "default", 120.0, 3.0, 18, Attributes.EARTH, vars -> {
+         case "waver" -> new Profile(masterId, "waver", 120.0, 3.0, 18, Attributes.EARTH, vars -> {
             learn(vars, "reinforcement");
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, 35.0);
             learn(vars, "structural_analysis");
@@ -198,7 +200,7 @@ public final class MasterCardProfile {
             vars.proficiency_suggestion_magic = Math.max(vars.proficiency_suggestion_magic, 25.0);
          }, player -> {
          });
-         case "tohsaka_tokiomi" -> new Profile(masterId, "rin", 750.0, 7.0, 8, Attributes.FIRE, vars -> {
+         case "tohsaka_tokiomi" -> new Profile(masterId, "tokiomi", 750.0, 7.0, 8, Attributes.FIRE, vars -> {
             learnJewelSuite(vars, 85.0);
             learn(vars, "fire_magic");
             vars.proficiency_fire_magic = Math.max(vars.proficiency_fire_magic, 75.0);

@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 
 public final class VFXServerEffects {
@@ -30,6 +31,13 @@ public final class VFXServerEffects {
          level.dimension().location().toString(),
          level.getRandom().nextLong()
       );
+      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius, message, new CustomPacketPayload[0]);
+   }
+
+   public static void spawnOriented(ServerLevel level, String effectId, Vec3 origin, Vec3 direction, double radius) {
+      Vec3 dir = direction == null || direction.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : direction.normalize();
+      VFXSpawnEffectMessage message = new VFXSpawnEffectMessage(effectId, origin.x, origin.y, origin.z, Optional.empty(),
+         level.dimension().location().toString(), level.getRandom().nextLong(), Optional.of(dir));
       PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius, message, new CustomPacketPayload[0]);
    }
 
@@ -69,5 +77,10 @@ public final class VFXServerEffects {
          target.getId()
       );
       level.addFreshEntity(trigger);
+   }
+
+   public static void screenFlash(ServerLevel level, Vec3 origin, double radius, int ticks, float strength) {
+      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius,
+         new DuelScreenFlashMessage(ticks, strength), new CustomPacketPayload[0]);
    }
 }

@@ -18,6 +18,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -27,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -848,9 +851,12 @@ public final class ServantCardMedusaSkills {
 
 
    public static void performSnare(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 16.0, 1.8);
+      LivingEntity target = findLookTarget(player, 26.0, 1.8);
       if (target == null) {
-         hitForwardArc(player, PlayerNoblePhantasmHelper.horizontalLook(player), 5.0, 12.0F);
+         ItemStack dagger = new ItemStack(ModItems.NAMELESS_CHAIN_DAGGER.get());
+         PlayerNoblePhantasmHelper.markUbwProjection(dagger);
+         ServantCardTransformManager.markGeneratedItem(dagger, true, false);
+         player.setItemInHand(InteractionHand.MAIN_HAND, dagger);
          return;
       }
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4, false, true, true));
@@ -861,7 +867,7 @@ public final class ServantCardMedusaSkills {
       }
    }
 
-   private static void performMedusaMonsterStrength(ServerPlayer player) {
+   public static void performMedusaMonsterStrength(ServerPlayer player) {
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 220, 2, false, true, true));
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 160, 1, false, true, true));
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 160, 0, false, true, true));

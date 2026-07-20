@@ -1,0 +1,84 @@
+{
+  "duration": 15.0,
+  "notes": "Enkidu finale charge: green earth breath, star particles and a wide ritual field.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 1100,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.3,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.1, 0.0], "rotate_with_entity": false },
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "(3.0 + 22.0 * t) * cos(t * tau * 4.0 + time * 10.0)", "expr_y": "0.1 + 5.0 * t + sin(t * tau * 3.0 + time * 7.0) * 0.85", "expr_z": "(3.0 + 22.0 * t) * sin(t * tau * 4.0 + time * 10.0)", "t_start": 0.0, "t_end": 1.0, "segments": 280 },
+      "color_over_life": [{ "t": 0.0, "color": "#0044FF44" }, { "t": 0.16, "color": "#CC66FF88" }, { "t": 0.58, "color": "#AA20FF66" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.05 }, { "t": 0.45, "size": 0.32 }, { "t": 1.0, "size": 0.02 }],
+      "blend": "ADDITIVE",
+      "enable_trail": true,
+      "particle_role": "ENKIDU_DUEL_GREEN_BREATH"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 520,
+      "particle_lifetime": 0.7,
+      "size_variance": 0.22,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.05, 0.0], "rotate_with_entity": false },
+      "component": { "type": "circle", "radius": 1.0, "segments": 240 },
+      "color_over_life": [{ "t": 0.0, "color": "#0044FF44" }, { "t": 0.16, "color": "#CC66FF88" }, { "t": 0.68, "color": "#AA22CC66" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.05 }, { "t": 0.5, "size": 0.25 }, { "t": 1.0, "size": 0.02 }],
+      "transform_over_life": [{ "t": 0.0, "scale": [0.8, 1.0, 0.8] }, { "t": 0.5, "scale": [17.0, 1.0, 17.0] }, { "t": 1.0, "scale": [25.0, 1.0, 25.0] }],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_DUEL_EARTH_RING"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 620,
+      "particle_lifetime": 1.1,
+      "size_variance": 0.48,
+      "position_variance": 0.12,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 1.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 25.0, "sample_count": 440 },
+      "color_over_life": [{ "t": 0.0, "color": "#4488FF44" }, { "t": 0.35, "color": "#AA66FF88" }, { "t": 0.75, "color": "#AA20FF66" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.018 }, { "t": 0.45, "size": 0.09 }, { "t": 1.0, "size": 0.01 }],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_DUEL_STARFIELD"
+    },
+    {
+      "start_time": 0.2,
+      "end_time": 15.0,
+      "rate": 240,
+      "particle_lifetime": 0.6,
+      "size_variance": 0.2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 24.0, 0.0], "segments": 180 },
+      "color_over_life": [{ "t": 0.0, "color": "#0044FF44" }, { "t": 0.25, "color": "#CC88FFAA" }, { "t": 0.7, "color": "#AA44FF88" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.04 }, { "t": 0.45, "size": 0.2 }, { "t": 1.0, "size": 0.015 }],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_DUEL_EARTH_COLUMN"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 480,
+      "particle_lifetime": 1.25,
+      "size_variance": 0.55,
+      "position_variance": 0.18,
+      "velocity": [0.0, 0.16, 0.0],
+      "velocity_variance": 0.18,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.4, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 25.0, "sample_count": 380 },
+      "color_over_life": [{ "t": 0.0, "color": "#2266FF77" }, { "t": 0.28, "color": "#CCAAFFBB" }, { "t": 0.7, "color": "#AA20FF60" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.012 }, { "t": 0.45, "size": 0.13 }, { "t": 1.0, "size": 0.008 }],
+      "blend": "ADDITIVE",
+      "enable_trail": true,
+      "particle_role": "ENKIDU_DUEL_RANDOM_GREEN_FIELD"
+    }
+  ],
+  "environment": [
+    { "type": "thunderstorm_weather", "color": "#00000000", "start": 0.0, "end": 15.0, "fade_in": 0.35, "fade_out": 1.0, "intensity": 1.0 }
+  ]
+}

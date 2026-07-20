@@ -42,21 +42,39 @@ public final class CommandSpellMarkRenderer {
       ResourceLocation texture = textureFor(commandSpells, style);
       VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(texture));
       poseStack.pushPose();
-      model.rightArm.translateAndRotate(poseStack);
-      drawDoubleSidedQuad(poseStack, consumer);
+      if ("elsa_saijo".equals(style)) {
+         model.body.translateAndRotate(poseStack);
+         drawChestQuad(poseStack, consumer);
+      } else {
+         model.rightArm.translateAndRotate(poseStack);
+         drawDoubleSidedQuad(poseStack, consumer, "supervisor".equals(style));
+      }
       poseStack.popPose();
    }
 
-   private static void drawDoubleSidedQuad(PoseStack poseStack, VertexConsumer consumer) {
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MIN, HAND_BACK_Z_MIN, 0.0F, 1.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MIN, HAND_BACK_Z_MAX, 1.0F, 1.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MAX, HAND_BACK_Z_MAX, 1.0F, 0.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MAX, HAND_BACK_Z_MIN, 0.0F, 0.0F);
+   private static void drawDoubleSidedQuad(PoseStack poseStack, VertexConsumer consumer, boolean fullArm) {
+      float minY = fullArm ? 0.02F : HAND_BACK_Y_MIN;
+      float maxY = fullArm ? 0.74F : HAND_BACK_Y_MAX;
+      float x = fullArm ? -0.128F : HAND_BACK_X;
+      float minZ = fullArm ? -0.125F : HAND_BACK_Z_MIN;
+      float maxZ = fullArm ? 0.125F : HAND_BACK_Z_MAX;
+      vertex(consumer, poseStack, x, minY, minZ, 0.0F, 1.0F);
+      vertex(consumer, poseStack, x, minY, maxZ, 1.0F, 1.0F);
+      vertex(consumer, poseStack, x, maxY, maxZ, 1.0F, 0.0F);
+      vertex(consumer, poseStack, x, maxY, minZ, 0.0F, 0.0F);
 
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MAX, HAND_BACK_Z_MIN, 0.0F, 0.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MAX, HAND_BACK_Z_MAX, 1.0F, 0.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MIN, HAND_BACK_Z_MAX, 1.0F, 1.0F);
-      vertex(consumer, poseStack, HAND_BACK_X, HAND_BACK_Y_MIN, HAND_BACK_Z_MIN, 0.0F, 1.0F);
+      vertex(consumer, poseStack, x, maxY, minZ, 0.0F, 0.0F);
+      vertex(consumer, poseStack, x, maxY, maxZ, 1.0F, 0.0F);
+      vertex(consumer, poseStack, x, minY, maxZ, 1.0F, 1.0F);
+      vertex(consumer, poseStack, x, minY, minZ, 0.0F, 1.0F);
+   }
+
+   private static void drawChestQuad(PoseStack poseStack, VertexConsumer consumer) {
+      float z = -0.255F;
+      vertex(consumer, poseStack, 0.02F, 0.04F, z, 0.0F, 0.0F);
+      vertex(consumer, poseStack, 0.24F, 0.04F, z, 1.0F, 0.0F);
+      vertex(consumer, poseStack, 0.24F, 0.34F, z, 1.0F, 1.0F);
+      vertex(consumer, poseStack, 0.02F, 0.34F, z, 0.0F, 1.0F);
    }
 
    private static void vertex(VertexConsumer consumer, PoseStack poseStack, float x, float y, float z, float u, float v) {
@@ -70,6 +88,14 @@ public final class CommandSpellMarkRenderer {
 
    private static ResourceLocation textureFor(int commandSpells, String style) {
       String safeStyle = sanitizeStyle(style);
+      if ("supervisor".equals(safeStyle)) {
+         int stage = 12 - Math.max(0, Math.min(11, commandSpells));
+         return texture(safeStyle, Integer.toString(stage));
+      }
+      if ("elsa_saijo".equals(safeStyle)) {
+         int stage = 4 - Math.max(0, Math.min(3, commandSpells));
+         return texture(safeStyle, Integer.toString(stage));
+      }
       String suffix;
       if (commandSpells >= 3) {
          suffix = "3";

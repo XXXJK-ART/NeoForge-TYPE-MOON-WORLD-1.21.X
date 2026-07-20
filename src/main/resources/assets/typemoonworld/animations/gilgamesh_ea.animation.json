@@ -1,0 +1,173 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"loop": true,
+			"animation_length": 0.05,
+			"bones": {
+				"sword1": {"rotation": [0, 0, 0]},
+				"sword2": {"rotation": [0, 0, 0]},
+				"sword3": {"rotation": [0, 0, 0]},
+				"red": {"scale": [0, 0, 0]}
+			}
+		},
+		"xuanzhuan": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1.3333,
+			"bones": {
+				"front": {
+					"position": {
+						"vector": [0, 0, -0.16406]
+					},
+					"scale": {
+						"vector": [1, 1, 1.23125]
+					}
+				},
+				"behind": {
+					"position": {
+						"vector": [0, 0, 0.24219]
+					},
+					"scale": {
+						"vector": [1, 1, 1.71953]
+					}
+				},
+				"sword1": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 5, 0]
+						},
+						"0.5": {
+							"vector": [0, 82.5, 0]
+						},
+						"0.8333": {
+							"vector": [0, 182.5, 0]
+						},
+						"1.0833": {
+							"vector": [0, 277.5, 0]
+						},
+						"1.2917": {
+							"vector": [0, 367.5, 0]
+						}
+					}
+				},
+				"sword2": {
+					"rotation": {
+						"0.125": {
+							"vector": [0, 2.5, 0]
+						},
+						"0.1667": {
+							"vector": [0, -7.5, 0]
+						},
+						"0.5": {
+							"vector": [0, -90, 0]
+						},
+						"0.8333": {
+							"vector": [0, -170, 0]
+						},
+						"1.0833": {
+							"vector": [0, -260, 0]
+						},
+						"1.2917": {
+							"vector": [0, -350, 0]
+						}
+					}
+				},
+				"sword3": {
+					"rotation": {
+						"0.2917": {
+							"vector": [0, 2.5, 0]
+						},
+						"0.3333": {
+							"vector": [0, 12.5, 0]
+						},
+						"0.5": {
+							"vector": [0, 87.5, 0]
+						},
+						"0.8333": {
+							"vector": [0, 175, 0]
+						},
+						"1.0833": {
+							"vector": [0, 280, 0]
+						},
+						"1.2917": {
+							"vector": [0, 365, 0]
+						}
+					}
+				},
+				"red": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.5": {
+							"vector": [0, 87.5, 0]
+						},
+						"1.0": {
+							"vector": [0, 0, 0]
+						}
+					},
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				}
+			}
+		},
+		"xuanzhuan2": {
+			"loop": true,
+			"animation_length": 0.5,
+			"bones": {
+				"front": {
+					"position": {
+						"vector": [0, 0, 0.00391]
+					},
+					"scale": {
+						"vector": [1, 1, 1.61055]
+					}
+				},
+				"behind": {
+					"position": {
+						"vector": [0, 0, 0.25]
+					},
+					"scale": {
+						"vector": [1, 1, 1.40313]
+					}
+				},
+				"sword1": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.5": {
+							"vector": [0, 350, 0]
+						}
+					}
+				},
+				"sword2": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.5": {
+							"vector": [0, -352.5, 0]
+						}
+					}
+				},
+				"sword3": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.5": {
+							"vector": [0, 352.5, 0]
+						}
+					}
+				},
+				"red": {
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

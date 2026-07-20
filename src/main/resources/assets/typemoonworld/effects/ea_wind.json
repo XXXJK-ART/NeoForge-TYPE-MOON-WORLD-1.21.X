@@ -1,0 +1,59 @@
+{
+  "duration": 2.2,
+  "notes": "EA radial wind pressure: player-centered red/black/white tornado, extracted from the old galaxy-wind stage.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 2.0, "rate": 2600, "particle_lifetime": 0.72,
+      "size_variance": 0.3, "position_variance": 0.03, "velocity": [0,0.08,0], "velocity_variance": 0.12,
+      "binding": {"mode":"entity_yaw","offset":[0,-1.0,0],"rotate_with_entity":false},
+      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(2.5+21.0*t)*cos(t*tau*3+time*13)","expr_y":"0.2+30.0*t+sin(t*tau*5+time*8)*2.0","expr_z":"(2.5+21.0*t)*sin(t*tau*3+time*13)","t_start":0,"t_end":1,"segments":260},
+      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.12,"color":"#DDFFFFFF"},{"t":0.45,"color":"#CCFF2020"},{"t":0.78,"color":"#AA330000"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.08},{"t":0.45,"size":0.32},{"t":1,"size":0.025}], "blend":"ADDITIVE", "enable_trail":true
+    },
+    {
+      "start_time": 0.0, "end_time": 2.0, "rate": 2400, "particle_lifetime": 0.72,
+      "size_variance": 0.32, "position_variance": 0.03, "velocity": [0,0.08,0], "velocity_variance": 0.12,
+      "binding": {"mode":"entity_yaw","offset":[0,-1.0,0],"rotate_with_entity":false},
+      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(2.5+21.0*t)*cos(t*tau*3+time*13+2.094)","expr_y":"0.2+30.0*t+sin(t*tau*5+time*8+2.094)*2.0","expr_z":"(2.5+21.0*t)*sin(t*tau*3+time*13+2.094)","t_start":0,"t_end":1,"segments":260},
+      "color_over_life":[{"t":0,"color":"#00000000"},{"t":0.12,"color":"#CCFF3030"},{"t":0.55,"color":"#AA880000"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.07},{"t":0.5,"size":0.3},{"t":1,"size":0.02}], "blend":"ADDITIVE", "enable_trail":true
+    },
+    {
+      "start_time": 0.0, "end_time": 2.0, "rate": 2400, "particle_lifetime": 0.72,
+      "size_variance": 0.32, "position_variance": 0.03, "velocity": [0,0.08,0], "velocity_variance": 0.12,
+      "binding": {"mode":"entity_yaw","offset":[0,-1.0,0],"rotate_with_entity":false},
+      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(2.5+21.0*t)*cos(t*tau*3+time*13+4.188)","expr_y":"0.2+30.0*t+sin(t*tau*5+time*8+4.188)*2.0","expr_z":"(2.5+21.0*t)*sin(t*tau*3+time*13+4.188)","t_start":0,"t_end":1,"segments":260},
+      "color_over_life":[{"t":0,"color":"#00000000"},{"t":0.12,"color":"#CC111111"},{"t":0.5,"color":"#CCFF2020"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.07},{"t":0.5,"size":0.3},{"t":1,"size":0.02}], "blend":"ADDITIVE", "enable_trail":true
+    },
+    {
+      "start_time": 0.0, "end_time": 1.85, "rate": 1800, "particle_lifetime": 0.8,
+      "binding": {"mode":"entity_yaw","offset":[0,-1.0,0],"rotate_with_entity":false},
+      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(4.0+46.0*t)*cos(t*tau*1.5+time*10)","expr_y":"0.15+2.0*t","expr_z":"(4.0+46.0*t)*sin(t*tau*1.5+time*10)","t_start":0,"t_end":1,"segments":320},
+      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.16,"color":"#88FFFFFF"},{"t":0.55,"color":"#66AA0000"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.05},{"t":0.45,"size":0.2},{"t":1,"size":0.02}], "blend":"TRANSLUCENT"
+    },
+    {
+      "start_time": 1.55, "end_time": 2.2, "rate": 2200, "particle_lifetime": 0.55,
+      "binding": {"mode":"entity_look","offset":[0,0.35,1.7],"rotate_with_entity":true},
+      "component": {"type":"sphere","radius":1.0,"sample_count":220},
+      "color_over_life":[{"t":0,"color":"#00FF0000"},{"t":0.2,"color":"#CCFF2020"},{"t":0.58,"color":"#FFFFFFFF"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.12},{"t":0.55,"size":0.85},{"t":1,"size":0.08}],
+      "transform_over_life":[{"t":0,"scale":[8,8,8]},{"t":1,"scale":[0.35,0.35,0.35],"easing":"ease_in_cubic"}], "blend":"ADDITIVE"
+    },
+    {
+      "start_time":0.0,"end_time":2.1,"rate":520,"particle_lifetime":0.36,
+      "binding":{"mode":"entity_yaw","offset":[0,0,0],"rotate_with_entity":false},
+      "component":{"type":"fractal_lightning","start":[-18,1,-12],"end":[16,30,14],"iterations":5,"roughness":0.72,"period":3,"density":7,"randomize_start":true,"randomize_end":true,"random_radius_min":0.4,"random_radius_max":4.0,"segments":110},
+      "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.12,"color":"#FFFF3030"},{"t":0.48,"color":"#FFFF0808"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.04},{"t":0.28,"size":0.24},{"t":1,"size":0.015}],"blend":"ADDITIVE"
+    },
+    {
+      "start_time":0.25,"end_time":2.2,"rate":420,"particle_lifetime":0.3,
+      "binding":{"mode":"entity_yaw","offset":[0,0,0],"rotate_with_entity":false},
+      "component":{"type":"fractal_lightning","start":[20,24,-16],"end":[-14,3,12],"iterations":4,"roughness":0.68,"period":3,"density":6,"randomize_start":true,"randomize_end":true,"random_radius_min":0.25,"random_radius_max":3.0,"segments":96},
+      "color_over_life":[{"t":0,"color":"#00FF5050"},{"t":0.18,"color":"#CCFF1818"},{"t":0.58,"color":"#FFFFA0A0"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.035},{"t":0.3,"size":0.2},{"t":1,"size":0.01}],"blend":"ADDITIVE"
+    }
+  ]
+}

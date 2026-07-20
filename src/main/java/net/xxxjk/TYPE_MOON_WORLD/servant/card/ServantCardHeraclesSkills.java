@@ -205,6 +205,23 @@ public final class ServantCardHeraclesSkills {
       level.playSound(null, player.blockPosition(), SoundEvents.ENDER_DRAGON_GROWL, SoundSource.PLAYERS, 1.2F, 0.7F);
    }
 
+   public static void performValor(ServerPlayer player) {
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 2, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0, false, true, true));
+      player.getPersistentData().putLong("ServantCardHeraclesValorUntil", player.level().getGameTime() + 200L);
+   }
+
+   public static void performMindEye(ServerPlayer player) {
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 50, 3, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 50, 1, false, true, true));
+      player.getPersistentData().putLong("ServantCardHeraclesMindEyeUntil", player.level().getGameTime() + 50L);
+   }
+
+   public static void performBattleContinuation(ServerPlayer player) {
+      player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, player.getHealth() <= player.getMaxHealth() * 0.35F ? 3 : 1, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1, false, true, true));
+   }
+
    public static void showGodHandStatus(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       int lives = Math.max(1, data.getInt("GodHandLives") + 1);

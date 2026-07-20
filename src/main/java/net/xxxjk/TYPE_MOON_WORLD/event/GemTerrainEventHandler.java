@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,8 +33,13 @@ public class GemTerrainEventHandler {
    private static final String KEY_ECHO_CHUNKS = "TypeMoonGemEchoChunks";
    private static final String KEY_ECHO_COOLDOWN = "TypeMoonGemEchoCooldown";
    private static final String KEY_ECHO_NEXT_SCAN = "TypeMoonGemEchoNextScan";
+   private static final String KEY_TERRAIN_CACHE_DIM = "TypeMoonGemTerrainCacheDim";
+   private static final String KEY_TERRAIN_CACHE_CHUNK = "TypeMoonGemTerrainCacheChunk";
+   private static final String KEY_TERRAIN_CACHE_UNTIL = "TypeMoonGemTerrainCacheUntil";
+   private static final String KEY_TERRAIN_CACHE_RESULT = "TypeMoonGemTerrainCacheResult";
    private static final int MAX_ECHO_RECORDS = 128;
    private static final int ECHO_SCAN_RADIUS = 6;
+   private static final int TERRAIN_CACHE_TICKS = 100;
    private static final Map<GemTerrainEventHandler.ResourceKeyKey, GemTerrainState> STATES = new ConcurrentHashMap<>();
 
    public static boolean isResonanceActive(ServerLevel level, BlockPos pos) {
@@ -42,9 +48,16 @@ public class GemTerrainEventHandler {
       } else if (!isGemTerrain(level, pos)) {
          return false;
       } else {
-         long cycleTick = Math.floorMod(level.getGameTime(), Config.gemResonanceCycleTicks);
-         return cycleTick < Config.gemResonanceDurationTicks;
+         return isResonanceWindowActive(level);
       }
+   }
+
+   private static boolean isResonanceWindowActive(ServerLevel level) {
+      if (!Config.gemResonanceEnabled || Config.gemResonanceCycleTicks <= 0) {
+         return false;
+      }
+      long cycleTick = Math.floorMod(level.getGameTime(), Config.gemResonanceCycleTicks);
+      return cycleTick < Config.gemResonanceDurationTicks;
    }
 
    private static boolean isGemTerrain(ServerLevel level, BlockPos pos) {
@@ -52,21 +65,38 @@ public class GemTerrainEventHandler {
       return biomeHolder.is(ModTags.Biomes.IS_GEM_TERRAIN);
    }
 
+   private static boolean isCachedGemTerrain(ServerPlayer player, ServerLevel level, BlockPos pos) {
+      CompoundTag data = player.getPersistentData();
+      long now = level.getGameTime();
+      long chunkKey = chunkKey(pos.getX() >> 4, pos.getZ() >> 4);
+      String dimension = level.dimension().location().toString();
+      if (data.getLong(KEY_TERRAIN_CACHE_UNTIL) > now
+         && data.getLong(KEY_TERRAIN_CACHE_CHUNK) == chunkKey
+         && dimension.equals(data.getString(KEY_TERRAIN_CACHE_DIM))) {
+         return data.getBoolean(KEY_TERRAIN_CACHE_RESULT);
+      }
+
+      boolean result = isGemTerrain(level, pos);
+      data.putString(KEY_TERRAIN_CACHE_DIM, dimension);
+      data.putLong(KEY_TERRAIN_CACHE_CHUNK, chunkKey);
+      data.putLong(KEY_TERRAIN_CACHE_UNTIL, now + TERRAIN_CACHE_TICKS);
+      data.putBoolean(KEY_TERRAIN_CACHE_RESULT, result);
+      return result;
+   }
+
    @SubscribeEvent
    public static void onLevelTick(Post event) {
       if (event.getLevel() instanceof ServerLevel level) {
          if (!level.isClientSide) {
             if (level.dimension() == Level.OVERWORLD) {
-               boolean active = Config.gemResonanceEnabled
-                  && Config.gemResonanceCycleTicks > 0
-                  && Math.floorMod(level.getGameTime(), Config.gemResonanceCycleTicks) < Config.gemResonanceDurationTicks;
+               boolean active = isResonanceWindowActive(level);
                GemTerrainEventHandler.ResourceKeyKey key = new GemTerrainEventHandler.ResourceKeyKey(level.dimension().location().toString());
                GemTerrainState state = STATES.computeIfAbsent(key, unused -> new GemTerrainState());
                if (state.isResonanceActive() != active) {
                   state.setResonanceActive(active);
 
                   for (ServerPlayer player : level.players()) {
-                     if (isGemTerrain(level, player.blockPosition())) {
+                     if (isCachedGemTerrain(player, level, player.blockPosition())) {
                         if (active) {
                            player.displayClientMessage(Component.translatable("message.typemoonworld.gem_resonance.start"), true);
                            level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.AMBIENT, 0.65F, 1.05F);
@@ -87,12 +117,13 @@ public class GemTerrainEventHandler {
    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          if (player.level() instanceof ServerLevel level) {
-            if (player.tickCount % 20 == 0) {
-               if (isGemTerrain(level, player.blockPosition())) {
-                  if (isResonanceActive(level, player.blockPosition()) && player.tickCount % 40 == 0) {
+            if ((player.tickCount + player.getId()) % 20 == 0) {
+               BlockPos playerPos = player.blockPosition();
+               if (isCachedGemTerrain(player, level, playerPos)) {
+                  if (isResonanceWindowActive(level) && (player.tickCount + player.getId()) % 40 == 0) {
                      level.sendParticles(ParticleTypes.WAX_ON, player.getX(), player.getY() + 0.8, player.getZ(), 6, 0.45, 0.25, 0.45, 0.01);
                      if (level.random.nextFloat() < 0.15F) {
-                        level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_STEP, SoundSource.AMBIENT, 0.35F, 1.25F);
+                        level.playSound(null, playerPos, SoundEvents.AMETHYST_BLOCK_STEP, SoundSource.AMBIENT, 0.35F, 1.25F);
                      }
                   }
 

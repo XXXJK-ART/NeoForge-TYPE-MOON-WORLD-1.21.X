@@ -240,6 +240,21 @@ public final class ServantCardArtoriaSkills {
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.95F, 1.3F);
    }
 
+   public static void performInstinct(ServerPlayer player) {
+      player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+      player.removeEffect(MobEffects.DIG_SLOWDOWN);
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 2, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 1, false, true, true));
+      player.getPersistentData().putLong("ServantCardArtoriaInstinctUntil", player.level().getGameTime() + 40L);
+   }
+
+   public static void performRiding(ServerPlayer player) {
+      Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 2.2, 0.18, dir.z * 2.2));
+      player.hurtMarked = true;
+      ServantCardSkillUtils.hitForwardArc(player, dir, 6.0, 26.0F);
+   }
+
    private static void spawnManaBurstActivationFx(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 2, 0.0, 0.0, 0.0, 0.0);

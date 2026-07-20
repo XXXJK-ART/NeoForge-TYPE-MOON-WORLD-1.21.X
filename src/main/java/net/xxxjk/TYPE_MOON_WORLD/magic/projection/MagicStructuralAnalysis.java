@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
@@ -45,8 +47,9 @@ public class MagicStructuralAnalysis {
          boolean crestAnalysisCast = vars.isCurrentSelectionFromCrest("structural_analysis");
          boolean swordAttributeActive = vars.player_magic_attributes_sword && !crestAnalysisCast;
          ItemStack heldItem = player.getMainHandItem();
-         ItemStack targetItem = ItemStack.EMPTY;
-         if (!heldItem.isEmpty()) {
+         ItemStack targetItem = vars.has_unlimited_blade_works ? findActiveRhoAiasTarget(player) : ItemStack.EMPTY;
+         if (!targetItem.isEmpty()) {
+         } else if (!heldItem.isEmpty()) {
             targetItem = heldItem;
          } else {
             HitResult hitResult = rayTrace(player, 5.0);
@@ -76,6 +79,19 @@ public class MagicStructuralAnalysis {
             analyzeItem(player, vars, targetItem, swordAttributeActive, crestAnalysisCast);
          }
       }
+   }
+
+   private static ItemStack findActiveRhoAiasTarget(ServerPlayer player) {
+      HitResult hit = rayTrace(player, 20.0);
+      if (!(hit instanceof EntityHitResult entityHit) || !(entityHit.getEntity() instanceof LivingEntity owner)) {
+         return ItemStack.EMPTY;
+      }
+      for (RhoAiasEntity shield : player.level().getEntitiesOfClass(RhoAiasEntity.class, owner.getBoundingBox().inflate(10.0))) {
+         if (shield.isAlive() && shield.getOwnerEntity() == owner) {
+            return new ItemStack(ModItems.RHO_AIAS.get());
+         }
+      }
+      return ItemStack.EMPTY;
    }
 
    private static void analyzeItem(

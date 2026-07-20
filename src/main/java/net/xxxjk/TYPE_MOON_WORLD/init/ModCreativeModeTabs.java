@@ -23,6 +23,8 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
                         output.accept(ModItems.COMMAND_SPELL);
+                        output.accept(ModItems.SUPERVISOR_COMMAND_SPELL);
+                        output.accept(ModItems.SINGLE_COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
                         output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
@@ -44,6 +46,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_HERACLES);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU);
+                        output.accept(ModItems.SERVANT_CARD_GILGAMESH);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
@@ -67,12 +70,36 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_GILGAMESH_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_GILGAMESH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_CHEST);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_LEGS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_LEGS);
+                    }).build());
+
+    public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.RELIC_GOLDEN_FLEECE.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.relics"))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModItems.RELIC_APOCALYPSE);
+                        output.accept(ModItems.RELIC_APOCALYPSE_PAGE);
+                        output.accept(ModItems.RELIC_FIRST_SNAKE_SKIN);
+                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
+                        output.accept(ModItems.RELIC_VALKYRIE_ARROWHEAD);
+                        output.accept(ModItems.RELIC_BRONZE_MIRROR);
+                        output.accept(ModItems.RELIC_ROUND_TABLE_FRAGMENT);
+                        output.accept(ModItems.RELIC_TSUBURA_SHIP_PLANK);
+                        output.accept(ModItems.RELIC_BIZEN_TSUBA);
+                        output.accept(ModItems.RELIC_OLD_MAN_MASK);
+                        output.accept(ModItems.RELIC_BANDAGE);
+                        output.accept(ModItems.RELIC_PHILOSOPHERS_STONE);
+                        output.accept(ModItems.RELIC_GOLDEN_FLEECE);
+                        output.accept(ModItems.RELIC_ATO_CRADLE);
+                        output.accept(ModItems.GEM_NECKLACE);
+                        output.accept(ModItems.AVALON);
                     }).build());
 
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
@@ -93,6 +120,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.REMNANTS_OF_MADNESS);
                         output.accept(ModItems.SEED_OF_YGGDRASIL);
                         output.accept(ModItems.VOIDS_DUST);
+                        output.accept(ModItems.GEM_NECKLACE);
+                        output.accept(ModItems.MYSTIC_MERCURY);
+                        output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
                         
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
@@ -137,6 +167,15 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
                         
                         output.accept(ModItems.AVALON);
+                        output.accept(ModItems.GILGAMESH_BAB_ILU);
+                        output.accept(ModItems.GILGAMESH_EA);
+                        output.accept(ModItems.GILGAMESH_DURANDAL);
+                        output.accept(ModItems.GILGAMESH_GRAM);
+                        output.accept(ModItems.GILGAMESH_HARPE);
+                        output.accept(ModItems.GILGAMESH_VAJRA);
+                        output.accept(ModItems.GILGAMESH_FANGTIAN_HUAJI);
+                        output.accept(ModItems.GILGAMESH_SPIRAL_SWORD);
+                        output.accept(ModItems.GILGAMESH_GAE_BULG);
                         output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.HESHIKIRI_HASEBE);
@@ -290,6 +329,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
+                        output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                         output.accept(ModItems.PARACELSUS_SPAWN_EGG);

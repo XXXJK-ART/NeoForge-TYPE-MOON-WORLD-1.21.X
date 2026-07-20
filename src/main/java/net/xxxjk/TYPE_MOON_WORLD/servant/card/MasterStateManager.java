@@ -12,6 +12,8 @@ import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -21,7 +23,7 @@ public final class MasterStateManager {
    public static final int MAX_MASTER_MP = 1000;
    public static final double MASTER_MAX_HEALTH = 100.0;
    private static final String[] COMMAND_SPELL_STYLES = new String[]{
-      "default", "illya", "kiritsugu", "shirou", "bazett", "sakura", "rin", "luvia", "kirei"
+      "default", "illya", "kiritsugu", "shirou", "bazett", "sakura", "rin", "luvia", "kirei", "tokiomi", "waver"
    };
    private static final ResourceLocation MASTER_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "master_max_health");
 
@@ -232,6 +234,9 @@ public final class MasterStateManager {
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.no_command_spells"), true);
          return false;
       }
+      if (action == 3) {
+         return extractSingleCommandSpell(master, vars);
+      }
       ServerPlayer servant = MasterServantLinkService.getLinkedServant(master, vars);
       if (servant == null) {
          vars.master_command_spell_pose_active = false;
@@ -254,7 +259,11 @@ public final class MasterStateManager {
             yield false;
          }
          case 2 -> {
-            servant.hurt(servant.damageSources().magic(), Float.MAX_VALUE);
+            servant.getPersistentData().putBoolean("CausalSevered", true);
+            servant.getPersistentData().putInt("GodHandLives", 0);
+            servant.getPersistentData().remove("GodHandActive");
+            servant.setHealth(0.0F);
+            servant.die(servant.damageSources().genericKill());
             yield true;
          }
          default -> false;
@@ -270,6 +279,48 @@ public final class MasterStateManager {
       vars.syncPlayerVariables(master);
       MasterVisualStateSync.broadcast(master, vars);
       master.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_used", vars.master_command_spells), true);
+      return true;
+   }
+
+   public static boolean replaceCommandSpells(ServerPlayer player, int count, String style) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.master_active) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_requires_master"), true);
+         return false;
+      }
+      vars.master_command_spells = Math.max(0, count);
+      vars.master_command_spell_style = style;
+      vars.master_command_spell_pose_active = false;
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
+      return true;
+   }
+
+   public static boolean addSingleCommandSpell(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.master_active) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_requires_master"), true);
+         return false;
+      }
+      vars.master_command_spells++;
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
+      return true;
+   }
+
+   private static boolean extractSingleCommandSpell(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!vars.master_active || !"supervisor".equals(vars.master_command_spell_style) || vars.master_command_spells <= 0) {
+         return false;
+      }
+      ItemStack spell = new ItemStack(ModItems.SINGLE_COMMAND_SPELL.get());
+      if (!player.getInventory().add(spell)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master.inventory_full"), true);
+         return false;
+      }
+      vars.master_command_spells--;
+      vars.master_command_spell_pose_active = false;
+      vars.syncPlayerVariables(player);
+      MasterVisualStateSync.broadcast(player, vars);
       return true;
    }
 
@@ -301,8 +352,12 @@ public final class MasterStateManager {
       if (attribute == null) {
          return;
       }
-      attribute.removeModifier(MASTER_HEALTH_ID);
-      attribute.addPermanentModifier(new AttributeModifier(MASTER_HEALTH_ID, MASTER_MAX_HEALTH - player.getAttributeBaseValue(Attributes.MAX_HEALTH), AttributeModifier.Operation.ADD_VALUE));
+      double amount = MASTER_MAX_HEALTH - player.getAttributeBaseValue(Attributes.MAX_HEALTH);
+      AttributeModifier existing = attribute.getModifier(MASTER_HEALTH_ID);
+      if (existing == null || existing.amount() != amount || existing.operation() != AttributeModifier.Operation.ADD_VALUE) {
+         attribute.removeModifier(MASTER_HEALTH_ID);
+         attribute.addPermanentModifier(new AttributeModifier(MASTER_HEALTH_ID, amount, AttributeModifier.Operation.ADD_VALUE));
+      }
       if (player.getHealth() > player.getMaxHealth()) {
          player.setHealth(player.getMaxHealth());
       }
@@ -329,6 +384,9 @@ public final class MasterStateManager {
    private static String sanitizeCommandSpellStyle(String style) {
       if (style == null || style.isBlank()) {
          return "default";
+      }
+      if ("elsa_saijo".equals(style) || "supervisor".equals(style)) {
+         return style;
       }
       for (String known : COMMAND_SPELL_STYLES) {
          if (known.equals(style)) {

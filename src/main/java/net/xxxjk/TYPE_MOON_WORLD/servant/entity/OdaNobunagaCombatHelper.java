@@ -1120,6 +1120,17 @@ public final class OdaNobunagaCombatHelper {
       }
    }
 
+   /** Breaks an NPC-owned Hajun field when an anti-world noble phantasm is fired. */
+   public static boolean breakHajunForEa(OdaNobunagaEntity entity) {
+      if (entity == null || !(entity.level() instanceof ServerLevel level)
+         || !ModDimensions.isHajunDimension(level.dimension().location())) {
+         return false;
+      }
+      if (entity.getPersistentData().getLong(TAG_HAJUN_ACTIVE_UNTIL) <= 0L) return false;
+      returnFromHajun(entity, level);
+      return true;
+   }
+
    private static UUID returnPulledHajunTargets(UUID ownerId, ServerLevel sourceLevel, ServerLevel fallbackLevel) {
       List<LivingEntity> toReturn = new ArrayList<>();
       for (Entity candidate : sourceLevel.getEntities().getAll()) {

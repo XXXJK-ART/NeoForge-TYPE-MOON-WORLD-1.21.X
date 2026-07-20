@@ -1,0 +1,82 @@
+{
+  "duration": 15.0,
+  "notes": "Gilgamesh and Enkidu finale charge: red EA pressure, arena rings and persistent crimson lightning.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 1050,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.28,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.2, 0.0], "rotate_with_entity": false },
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "(3.0 + 22.0 * t) * cos(t * tau * 5.0 + time * 16.0)", "expr_y": "0.2 + 5.0 * t + sin(t * tau * 4.0 + time * 9.0) * 0.9", "expr_z": "(3.0 + 22.0 * t) * sin(t * tau * 5.0 + time * 16.0)", "t_start": 0.0, "t_end": 1.0, "segments": 280 },
+      "color_over_life": [{ "t": 0.0, "color": "#00FFFFFF" }, { "t": 0.16, "color": "#FFFF4040" }, { "t": 0.55, "color": "#CCFF0808" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.05 }, { "t": 0.45, "size": 0.3 }, { "t": 1.0, "size": 0.02 }],
+      "blend": "ADDITIVE",
+      "enable_trail": true,
+      "particle_role": "GILGAMESH_DUEL_EA_WIND"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 420,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.05, 0.0], "rotate_with_entity": false },
+      "component": { "type": "circle", "radius": 1.0, "segments": 220 },
+      "color_over_life": [{ "t": 0.0, "color": "#00FFFFFF" }, { "t": 0.15, "color": "#AAFF3030" }, { "t": 0.65, "color": "#88AA0000" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.05 }, { "t": 0.5, "size": 0.25 }, { "t": 1.0, "size": 0.02 }],
+      "transform_over_life": [{ "t": 0.0, "scale": [1.0, 1.0, 1.0] }, { "t": 0.5, "scale": [17.0, 1.0, 17.0] }, { "t": 1.0, "scale": [25.0, 1.0, 25.0] }],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_DUEL_PRESSURE_RING"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 15.0,
+      "rate": 680,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.44,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 3.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "fractal_lightning", "start": [-24.0, 1.0, -20.0], "end": [23.0, 27.0, 21.0], "iterations": 5, "roughness": 0.76, "period": 3, "density": 8, "randomize_start": true, "randomize_end": true, "random_radius_min": 0.4, "random_radius_max": 7.5, "segments": 150 },
+      "color_over_life": [{ "t": 0.0, "color": "#00FFFFFF" }, { "t": 0.12, "color": "#FFFF5050" }, { "t": 0.5, "color": "#FFFF0808" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.035 }, { "t": 0.25, "size": 0.22 }, { "t": 1.0, "size": 0.01 }],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_DUEL_RED_LIGHTNING",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.5,
+      "end_time": 15.0,
+      "rate": 440,
+      "particle_lifetime": 1.0,
+      "size_variance": 0.48,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "sphere", "radius": 25.0, "sample_count": 380 },
+      "color_over_life": [{ "t": 0.0, "color": "#44FF2020" }, { "t": 0.35, "color": "#AAFFFFFF" }, { "t": 0.75, "color": "#AAFF1010" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.018 }, { "t": 0.45, "size": 0.09 }, { "t": 1.0, "size": 0.01 }],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_DUEL_ARENA_SPARKS"
+    },
+    {
+      "start_time": 0.15,
+      "end_time": 15.0,
+      "rate": 360,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.5,
+      "position_variance": 0.12,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 2.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "fractal_lightning", "start": [22.0, 24.0, -23.0], "end": [-21.0, 0.5, 24.0], "iterations": 4, "roughness": 0.8, "period": 2, "density": 6, "randomize_start": true, "randomize_end": true, "random_radius_min": 0.5, "random_radius_max": 8.0, "segments": 120 },
+      "color_over_life": [{ "t": 0.0, "color": "#00FFFFFF" }, { "t": 0.1, "color": "#FFFFFFFF" }, { "t": 0.42, "color": "#FFFF1010" }, { "t": 1.0, "color": "#00000000" }],
+      "size_over_life": [{ "t": 0.0, "size": 0.025 }, { "t": 0.3, "size": 0.28 }, { "t": 1.0, "size": 0.01 }],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_DUEL_RANDOM_RED_LIGHTNING",
+      "enable_trail": true
+    }
+  ],
+  "environment": [
+    { "type": "thunderstorm_weather", "color": "#00000000", "start": 0.0, "end": 15.0, "fade_in": 0.35, "fade_out": 1.0, "intensity": 1.0 }
+  ]
+}

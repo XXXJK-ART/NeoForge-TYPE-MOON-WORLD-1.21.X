@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
@@ -866,7 +867,7 @@ public class ChantHandler {
                vars.ubw_chant_timer = 0;
                vars.syncPlayerVariables(player);
             } else if (vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id)) {
-               vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 2400);
+               ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, Math.max(vars.servant_card_np_cooldown, 2400));
                vars.syncPlayerVariables(player);
             }
          } else {
@@ -1219,8 +1220,29 @@ public class ChantHandler {
       vars.is_chanting_ubw = true;
       vars.ubw_chant_progress = 10;
       vars.ubw_chant_timer = 0;
+      if (player.getPersistentData().getBoolean("ServantCardUbwTransitionPending")) {
+         return true;
+      }
+      player.getPersistentData().putBoolean("ServantCardUbwTransitionPending", true);
+      var sourceDimension = player.level().dimension();
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 50, 4, false, false, false));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 45, 6, false, false, false));
       vars.syncPlayerVariables(player);
-      return activateUBW(player, vars);
+      TYPE_MOON_WORLD.queueServerWork(40, () -> {
+         player.getPersistentData().remove("ServantCardUbwTransitionPending");
+         TypeMoonWorldModVariables.PlayerVariables current = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (player.isAlive()
+            && player.level().dimension().equals(sourceDimension)
+            && current.servant_card_transformed
+            && "emiya_archer".equals(current.servant_card_id)) {
+            activateUBW(player, current);
+         } else {
+            current.is_chanting_ubw = false;
+            current.ubw_chant_progress = 0;
+            current.syncPlayerVariables(player);
+         }
+      });
+      return true;
    }
 
    private static void returnEntitiesOnly(

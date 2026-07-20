@@ -31,6 +31,12 @@ public class MasterCommandSpellScreen extends Screen {
       this.addRenderableWidget(Button.builder(Component.translatable("gui.typemoonworld.master_command_spell.suicide"), button -> this.cast(2))
          .bounds(x, y + 52, width, height)
          .build());
+      if (this.minecraft != null && this.minecraft.player != null
+         && "supervisor".equals(CommandSpellVisualClient.getCommandSpellStyle(this.minecraft.player))) {
+         this.addRenderableWidget(Button.builder(Component.translatable("gui.typemoonworld.master_command_spell.extract"), button -> this.cast(3))
+            .bounds(x, y + 78, width, height)
+            .build());
+      }
    }
 
    @Override

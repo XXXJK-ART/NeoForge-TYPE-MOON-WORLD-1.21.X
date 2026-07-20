@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.EnkiduTransfigurationScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusCraftSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusElementSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.GilgameshVaultScreen;
 
 public class ClientPacketHandler {
    public static void openProjectionGui() {
@@ -78,11 +79,19 @@ public class ClientPacketHandler {
       }
    }
 
+   public static void openGilgameshVaultScreen(int usedMask) {
+      if (!ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) Minecraft.getInstance().setScreen(new GilgameshVaultScreen(usedMask));
+   }
+
    public static void handleMasterVisualState(UUID playerId, boolean masterActive, int commandSpells, String style, boolean poseActive) {
       CommandSpellVisualClient.apply(playerId, masterActive, commandSpells, style, poseActive);
    }
 
    public static void handleEnkiduDetectionHighlight(List<Integer> entityIds, int ticks) {
       EnkiduDetectionHighlightClient.apply(entityIds, ticks);
+   }
+
+   public static void handleDuelScreenFlash(int ticks, float strength) {
+      DuelScreenFlashClient.apply(ticks, strength);
    }
 }

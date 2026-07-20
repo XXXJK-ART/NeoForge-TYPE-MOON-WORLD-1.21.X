@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -117,5 +118,23 @@ public final class ServantCardSkillUtils {
    public static void markProjectionPair(ItemStack mainStack, ItemStack offStack) {
       PlayerNoblePhantasmHelper.markUbwProjection(mainStack);
       PlayerNoblePhantasmHelper.markUbwProjection(offStack);
+   }
+
+   public static boolean trySafeHorizontalTeleport(ServerPlayer player, Vec3 desired) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      Vec3 origin = player.position();
+      Vec3 offset = desired.subtract(origin);
+      for (double scale : new double[]{1.0, 0.75, 0.5, 0.25}) {
+         Vec3 candidate = origin.add(offset.scale(scale));
+         BlockPos blockPos = BlockPos.containing(candidate);
+         AABB movedBox = player.getBoundingBox().move(candidate.subtract(origin));
+         if (level.getWorldBorder().isWithinBounds(blockPos) && level.noCollision(player, movedBox)) {
+            player.teleportTo(candidate.x, candidate.y, candidate.z);
+            return true;
+         }
+      }
+      return false;
    }
 }

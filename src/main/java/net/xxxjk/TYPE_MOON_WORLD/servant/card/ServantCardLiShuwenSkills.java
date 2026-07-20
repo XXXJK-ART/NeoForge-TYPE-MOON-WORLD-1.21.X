@@ -33,7 +33,7 @@ public final class ServantCardLiShuwenSkills {
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!vars.servant_card_transformed || !"li_shuwen".equals(vars.servant_card_id)) {
-         player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
+         clear(player);
          return;
       }
       int concealmentUntil = player.getPersistentData().getInt(CONCEALMENT_UNTIL_TAG);
@@ -47,6 +47,10 @@ public final class ServantCardLiShuwenSkills {
       if (player.level() instanceof ServerLevel level) {
          clearEnemyAggro(player, level);
       }
+   }
+
+   public static void clear(ServerPlayer player) {
+      player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
    }
 
    public static void performCircleRealm(ServerPlayer player) {
@@ -126,11 +130,11 @@ public final class ServantCardLiShuwenSkills {
          return false;
       }
       if (target == null) {
-         vars.servant_card_np_cooldown = WU_ER_DA_MISS_COOLDOWN;
+         ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, WU_ER_DA_MISS_COOLDOWN);
          spawnLiWuErDaMissFx(player);
          return true;
       }
-      vars.servant_card_np_cooldown = WU_ER_DA_HIT_COOLDOWN;
+      ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, WU_ER_DA_HIT_COOLDOWN);
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 180, 2, false, true, true));
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 5, false, true, true));
       spawnLiHitFx(player, target);
@@ -155,6 +159,14 @@ public final class ServantCardLiShuwenSkills {
          spawnLiHitFx(player, target);
       });
       return true;
+   }
+
+   public static void performLiFierceTiger(ServerPlayer player) {
+      Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 2.0, 0.12, dir.z * 2.0));
+      player.hurtMarked = true;
+      hitForwardArc(player, dir, 5.0, 38.0F);
+      spawnLiHitFx(player, findLookTarget(player, 5.5, 1.6));
    }
 
    public static void revealCircleRealm(ServerPlayer player) {

@@ -9,12 +9,19 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardFlightController {
    private static final double MP_PER_TICK = 0.28;
+   private static final int MODE_OFF = 0;
+   private static final int MODE_NORMAL = 1;
+   private static final int MODE_HIGH = 2;
+   private static final int HIGH_FLIGHT_MAX_TICKS = 30 * 20;
+   private static final int HIGH_FLIGHT_EXHAUSTED_COOLDOWN = 20 * 20;
+   private static final int HIGH_FLIGHT_RECHARGE_INTERVAL = 30;
+   private static final int HIGH_FLIGHT_RECHARGE_AMOUNT = 20;
 
    private ServantCardFlightController() {
    }
 
    public static boolean canFly(String servantId) {
-      return "medea".equals(servantId) || "oda_nobunaga".equals(servantId) || "enkidu".equals(servantId);
+      return "medea".equals(servantId) || "oda_nobunaga".equals(servantId) || "enkidu".equals(servantId) || "gilgamesh".equals(servantId);
    }
 
    public static void setInput(ServerPlayer player, boolean toggle, double forward, double strafe, double vertical) {
@@ -43,6 +50,11 @@ public final class ServantCardFlightController {
       if (vars.servant_card_flight_toggle_cooldown > 0) {
          vars.servant_card_flight_toggle_cooldown--;
       }
+      if ("oda_nobunaga".equals(vars.servant_card_id)) {
+         ServantCardOdaNobunagaSkills.tickMountFlightRecharge(player, vars);
+      } else if (vars.servant_card_transformed && canFly(vars.servant_card_id)) {
+         tickHighFlightRecharge(player, vars);
+      }
       if (!vars.servant_card_transformed || !vars.servant_card_flying) {
          if (!vars.servant_card_transformed || !canFly(vars.servant_card_id)) {
             stop(player, vars, false);
@@ -51,6 +63,19 @@ public final class ServantCardFlightController {
       }
       if ("oda_nobunaga".equals(vars.servant_card_id) && ServantCardOdaNobunagaSkills.tickMountFlight(player, vars)) {
          return;
+      }
+      long now = player.level().getGameTime();
+      if (vars.servant_card_flight_mode == MODE_HIGH) {
+         vars.servant_card_high_flight_until = now + vars.servant_card_oda_flight_ticks;
+         vars.servant_card_oda_flight_ticks = Math.max(0, vars.servant_card_oda_flight_ticks - 1);
+      }
+      if (vars.servant_card_flight_mode == MODE_HIGH && vars.servant_card_oda_flight_ticks <= 0) {
+         vars.servant_card_flight_mode = MODE_NORMAL;
+         vars.servant_card_high_flight_until = 0L;
+         vars.servant_card_oda_flight_cooldown_until = now + HIGH_FLIGHT_EXHAUSTED_COOLDOWN;
+         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + HIGH_FLIGHT_RECHARGE_INTERVAL;
+         vars.syncPlayerVariables(player);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.high_flight_expired"), true);
       }
       if (!canFly(vars.servant_card_id) || !ServantCardManaService.consumeSilently(player, vars, MP_PER_TICK)) {
          stop(player, vars, true);
@@ -69,11 +94,15 @@ public final class ServantCardFlightController {
          movement = movement.normalize();
       }
       double horizontalSpeed = switch (vars.servant_card_id) {
-         case "enkidu" -> 0.58;
+         case "enkidu", "gilgamesh" -> 0.58;
          case "oda_nobunaga" -> 0.54;
          default -> 0.48;
       };
-      Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, vars.servant_card_flight_vertical * 0.42, 0.0);
+      double verticalInput = vars.servant_card_flight_vertical;
+      if (vars.servant_card_flight_mode == MODE_NORMAL && !hasGroundWithin(player, 5)) {
+         verticalInput = Math.min(verticalInput, -0.28);
+      }
+      Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, verticalInput * 0.42, 0.0);
       if (velocity.lengthSqr() < 0.0001) {
          velocity = new Vec3(0.0, -0.015, 0.0);
       }
@@ -90,8 +119,12 @@ public final class ServantCardFlightController {
          return;
       }
       if (vars.servant_card_flying || player.isNoGravity()) {
+         if (vars.servant_card_flight_mode == MODE_HIGH) {
+            beginHighFlightRecharge(player, vars);
+         }
          player.setNoGravity(false);
          vars.servant_card_flying = false;
+         vars.servant_card_flight_mode = MODE_OFF;
          vars.servant_card_flight_forward = 0.0;
          vars.servant_card_flight_strafe = 0.0;
          vars.servant_card_flight_vertical = 0.0;
@@ -115,11 +148,83 @@ public final class ServantCardFlightController {
          }
          return;
       }
-      vars.servant_card_flying = !vars.servant_card_flying;
+      long now = player.level().getGameTime();
+      if (!vars.servant_card_flying) {
+         vars.servant_card_flying = true;
+         vars.servant_card_flight_mode = MODE_NORMAL;
+      } else if (vars.servant_card_flight_mode == MODE_NORMAL) {
+         if (now < vars.servant_card_oda_flight_cooldown_until || vars.servant_card_oda_flight_ticks <= 0) {
+            vars.servant_card_flying = false;
+            vars.servant_card_flight_mode = MODE_OFF;
+         } else {
+            vars.servant_card_flight_mode = MODE_HIGH;
+            vars.servant_card_high_flight_until = now + vars.servant_card_oda_flight_ticks;
+            vars.servant_card_oda_flight_recharge_at = 0L;
+         }
+      } else {
+         beginHighFlightRecharge(player, vars);
+         vars.servant_card_flying = false;
+         vars.servant_card_flight_mode = MODE_OFF;
+      }
+      vars.servant_card_high_flight_cooldown_until = 0L;
       vars.servant_card_flight_toggle_cooldown = 8;
       if (!vars.servant_card_flying) {
          player.setNoGravity(false);
       }
-      player.displayClientMessage(Component.translatable(vars.servant_card_flying ? "message.typemoonworld.servant_card.flight_enabled" : "message.typemoonworld.servant_card.flight_disabled"), true);
+      String message = !vars.servant_card_flying
+         ? "message.typemoonworld.servant_card.flight_disabled"
+         : vars.servant_card_flight_mode == MODE_HIGH
+            ? "message.typemoonworld.servant_card.high_flight_enabled"
+            : "message.typemoonworld.servant_card.normal_flight_enabled";
+      player.displayClientMessage(Component.translatable(message), true);
+   }
+
+   private static boolean hasGroundWithin(ServerPlayer player, int blocks) {
+      net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
+      for (int i = 1; i <= blocks; i++) {
+         pos.set(player.getBlockX(), Mth.floor(player.getY()) - i, player.getBlockZ());
+         if (!player.level().getBlockState(pos).getCollisionShape(player.level(), pos).isEmpty()) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private static void tickHighFlightRecharge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      vars.servant_card_high_flight_cooldown_until = 0L;
+      if (vars.servant_card_flight_mode == MODE_HIGH || !(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      long now = level.getGameTime();
+      if (vars.servant_card_oda_flight_ticks >= HIGH_FLIGHT_MAX_TICKS) {
+         vars.servant_card_oda_flight_recharge_at = 0L;
+         return;
+      }
+      if (now < vars.servant_card_oda_flight_cooldown_until) {
+         return;
+      }
+      if (vars.servant_card_oda_flight_recharge_at <= 0L) {
+         vars.servant_card_oda_flight_recharge_at = now + HIGH_FLIGHT_RECHARGE_INTERVAL;
+         return;
+      }
+      if (now >= vars.servant_card_oda_flight_recharge_at) {
+         vars.servant_card_oda_flight_ticks = Math.min(
+            HIGH_FLIGHT_MAX_TICKS,
+            vars.servant_card_oda_flight_ticks + HIGH_FLIGHT_RECHARGE_AMOUNT
+         );
+         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_ticks >= HIGH_FLIGHT_MAX_TICKS
+            ? 0L
+            : now + HIGH_FLIGHT_RECHARGE_INTERVAL;
+         vars.syncPlayerVariables(player);
+      }
+   }
+
+   private static void beginHighFlightRecharge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      vars.servant_card_high_flight_until = 0L;
+      if (player.level() instanceof ServerLevel level
+         && vars.servant_card_oda_flight_ticks < HIGH_FLIGHT_MAX_TICKS
+         && vars.servant_card_oda_flight_recharge_at <= 0L) {
+         vars.servant_card_oda_flight_recharge_at = level.getGameTime() + HIGH_FLIGHT_RECHARGE_INTERVAL;
+      }
    }
 }

@@ -1,7 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -47,7 +49,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
    private double currentRadius = 0.0;
    private BlockPos explosionCenter;
    private float maxRadius;
-   private List<Entity> damagedEntities = new ArrayList<>();
+   private final Set<UUID> damagedEntities = new HashSet<>();
 
    public BrokenPhantasmProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -97,11 +99,24 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
             this.spawnExplosionParticles();
          }
       } else {
+         Vec3 previous = this.position();
          super.tick();
          if (this.level().isClientSide) {
             this.level().addParticle(ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
             this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          } else {
+            AABB swept = new AABB(previous, this.position()).inflate(0.65);
+            List<LivingEntity> sweptTargets = this.level().getEntitiesOfClass(
+               LivingEntity.class,
+               swept,
+               entity -> entity.isAlive() && entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity)
+            );
+            if (!sweptTargets.isEmpty()) {
+               LivingEntity hit = sweptTargets.get(0);
+               this.setPos(hit.getX(), hit.getY() + hit.getBbHeight() * 0.5, hit.getZ());
+               this.startExplosion();
+               return;
+            }
             this.lifeTime++;
             if (this.lifeTime >= 200) {
                this.startExplosion();
@@ -170,7 +185,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                   float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance((LivingEntity)e, totalDamage);
                   finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack((LivingEntity)e, finalDamage);
                   e.hurt(explosionSource, finalDamage);
-                  this.damagedEntities.add(e);
+                  this.damagedEntities.add(e.getUUID());
                   if (this.getOwner() instanceof LivingEntity owner) {
                      EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);
                   }
@@ -194,7 +209,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
             DamageSource explosionSource = this.damageSources().explosion(this, this.getOwner());
 
             for (Entity e : entities) {
-               if (!this.damagedEntities.contains(e) && e instanceof LivingEntity && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e)) {
+               if (e instanceof LivingEntity living && !this.damagedEntities.contains(e.getUUID()) && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e)) {
                   double dist = e.distanceToSqr(this.getX(), this.getY(), this.getZ());
                   if (dist <= damageRadius * damageRadius) {
                      float totalDamage = this.getExplosionPower() * 10.0F;
@@ -202,7 +217,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                      float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance((LivingEntity)e, totalDamage);
                      finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack((LivingEntity)e, finalDamage);
                      e.hurt(explosionSource, finalDamage);
-                     this.damagedEntities.add(e);
+                     this.damagedEntities.add(e.getUUID());
                      if (this.getOwner() instanceof LivingEntity owner) {
                         EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);
                      }

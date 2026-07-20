@@ -93,10 +93,9 @@ public final class ServantCardParacelsusSkills {
       }
       tickWorkshop(player, vars);
       tickElementalSpirits(player, vars);
-      tickPhilosopherStoneAutoUse(player);
    }
 
-   private static void clear(ServerPlayer player) {
+   public static void clear(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       data.remove(WORKSHOP_ACTIVE_TAG);
       data.remove(WORKSHOP_X_TAG);
@@ -115,6 +114,10 @@ public final class ServantCardParacelsusSkills {
 
    public static boolean performParacelsusWorkshop(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.workshop_overworld_only"), true);
          return false;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -251,6 +254,10 @@ public final class ServantCardParacelsusSkills {
 
    public static boolean performParacelsusWorkshopTeleport(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.workshop_overworld_only"), true);
          return false;
       }
       CompoundTag data = player.getPersistentData();
@@ -578,6 +585,7 @@ public final class ServantCardParacelsusSkills {
       if (now - data.getLong(SPIRIT_LAST_TICK_TAG) < SPIRIT_INTERVAL) {
          return;
       }
+      data.putLong(SPIRIT_LAST_TICK_TAG, now);
       LivingEntity target = findLookTarget(player, 24.0, 2.2);
       if (target == null || !isValidTarget(player, target)) {
          target = findNearestHostile(level, player, 22.0);
@@ -591,7 +599,6 @@ public final class ServantCardParacelsusSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_spirit_off"), true);
          return;
       }
-      data.putLong(SPIRIT_LAST_TICK_TAG, now);
       int mode = player.getRandom().nextInt(4);
       data.putInt(SPIRIT_MODE_TAG, mode);
       fireElementalSpirit(player, level, target, mode);

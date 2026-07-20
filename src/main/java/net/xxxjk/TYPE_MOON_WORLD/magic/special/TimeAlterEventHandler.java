@@ -27,6 +27,8 @@ public final class TimeAlterEventHandler {
    private static final String TAG_MULTIPLIER = "TypeMoonTimeAlterMultiplier";
    private static final String TAG_COOLDOWN_UNTIL = "TypeMoonTimeAlterCooldownUntil";
    private static final String TAG_STRAIN = "TypeMoonTimeAlterStrain";
+   private static final String TAG_STRAIN_UNTIL = "TypeMoonTimeAlterStrainUntil";
+   private static final int STRAIN_RECOVERY_TICKS = 1200;
    private static final ResourceLocation SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_speed");
    private static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_attack_speed");
    private static final ResourceLocation JUMP_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_jump");
@@ -48,7 +50,10 @@ public final class TimeAlterEventHandler {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.cooldown", String.format("%.1f", (cooldownUntil - now) / 20.0)), true);
          return false;
       }
-      player.getPersistentData().remove(TAG_STRAIN);
+      if (player.getPersistentData().getLong(TAG_STRAIN_UNTIL) <= now) {
+         player.getPersistentData().remove(TAG_STRAIN);
+         player.getPersistentData().remove(TAG_STRAIN_UNTIL);
+      }
       return true;
    }
 
@@ -107,13 +112,14 @@ public final class TimeAlterEventHandler {
          : 15.0 + (1.0 / Math.max(0.05, multiplier)) * 5.0;
       player.getPersistentData().putLong(TAG_COOLDOWN_UNTIL, now + Math.round(cooldownSeconds * 20.0));
 
-      float damage = (float)(multiplier * 3.0);
+      float damage = (float)(multiplier * 3.0 + 2.0 * Math.pow(Math.max(0.0, multiplier - 1.0), 2.0));
       if (hasAvalon(player)) {
          damage *= 0.5F;
       }
       int strain = player.getPersistentData().getInt(TAG_STRAIN);
       damage *= 1.0F + strain * 0.5F;
       player.getPersistentData().putInt(TAG_STRAIN, Math.min(6, strain + 1));
+      player.getPersistentData().putLong(TAG_STRAIN_UNTIL, now + STRAIN_RECOVERY_TICKS);
       player.invulnerableTime = 0;
       player.hurt(player.damageSources().source(BACKLASH_DAMAGE), damage);
       player.invulnerableTime = 0;

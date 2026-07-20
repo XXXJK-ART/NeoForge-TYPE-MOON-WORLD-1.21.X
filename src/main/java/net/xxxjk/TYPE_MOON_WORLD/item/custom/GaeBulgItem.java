@@ -60,7 +60,10 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
 
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
-      tooltip.add(Component.translatable("item.typemoonworld.gae_bulg.desc").withStyle(ChatFormatting.RED));
+      String key = this instanceof GilgameshHarmlessGaeBulgItem
+         ? "item.typemoonworld.gilgamesh_gae_bulg.desc"
+         : "item.typemoonworld.gae_bulg.desc";
+      tooltip.add(Component.translatable(key).withStyle(ChatFormatting.RED));
    }
 
    @Override

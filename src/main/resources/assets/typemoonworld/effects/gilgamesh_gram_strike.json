@@ -1,0 +1,135 @@
+{
+  "duration": 1.3,
+  "notes": "Gram: dragon-slaying demonic sword, volcanic red-gold cleave with a dragon-shaped flame wake.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.25,
+      "rate": 900,
+      "particle_lifetime": 0.36,
+      "position_variance": 0.025,
+      "component": { "type": "helix", "radius": 0.55, "turns": 4.5, "height": 9.0, "segments": 192 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFB020" },
+        { "t": 0.18, "color": "#FFFFF0A0" },
+        { "t": 0.52, "color": "#FFFF6A1C" },
+        { "t": 1.0, "color": "#00B71900" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.3, "size": 0.28 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GRAM_FLAME_UNSHEATH",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flame", "count": 3, "spread": [0.3, 0.3, 1.5], "offset": [0.0, 0.0, 2.0], "speed": 0.08, "chance": 0.7 },
+        { "type": "lava", "count": 1, "spread": [0.25, 0.25, 1.8], "offset": [0.0, 0.0, 3.0], "speed": 0.03, "chance": 0.35 }
+      ]
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 0.64,
+      "rate": 1250,
+      "particle_lifetime": 0.52,
+      "size_variance": 0.25,
+      "position_variance": 0.05,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "7.0*sin(-1.12+t*2.24)",
+        "expr_y": "-0.55+3.7*sin(t*3.14159)",
+        "expr_z": "0.8+10.8*t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 240
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.1, "color": "#FFFFE4A0" },
+        { "t": 0.3, "color": "#FFFFA12B" },
+        { "t": 0.7, "color": "#EEFF2412" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.25, "size": 0.78 },
+        { "t": 0.72, "size": 0.34 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GRAM_DRAGON_SLAYER_ARC",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.1, 0.1, 0.1], "offset": [0.0, 0.0, 8.0], "speed": 0.0, "chance": 0.55 },
+        { "type": "large_smoke", "count": 1, "spread": [1.0, 0.8, 1.0], "offset": [0.0, 0.4, 6.0], "speed": 0.04, "chance": 0.22 }
+      ]
+    },
+    {
+      "start_time": 0.16,
+      "end_time": 1.1,
+      "rate": 610,
+      "particle_lifetime": 0.62,
+      "position_variance": 0.12,
+      "velocity": [0.0, 0.08, 0.52],
+      "velocity_variance": 0.18,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.35+2.9*t)*cos(t*21.991+time*8.0)",
+        "expr_y": "0.15+0.75*sin(t*12.566)",
+        "expr_z": "1.0+10.0*t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 200
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFB030" },
+        { "t": 0.42, "color": "#DDFF5A18" },
+        { "t": 0.8, "color": "#AAFF1608" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.4, "size": 0.34 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GRAM_VOLCANIC_WAKE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flame", "count": 4, "spread": [2.8, 1.2, 4.8], "offset": [0.0, 0.1, 5.5], "speed": 0.06, "chance": 0.72 },
+        { "type": "lava", "count": 2, "spread": [2.5, 1.0, 4.0], "offset": [0.0, 0.0, 5.5], "speed": 0.04, "chance": 0.34 }
+      ]
+    },
+    {
+      "start_time": 0.34,
+      "end_time": 1.0,
+      "rate": 360,
+      "particle_lifetime": 0.66,
+      "component": { "type": "sphere", "radius": 1.0, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFD080" },
+        { "t": 0.25, "color": "#FFFF8A20" },
+        { "t": 0.7, "color": "#BBFF2108" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.38, "size": 0.24 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.1, 8.5], "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.5, "pos": [0.0, 0.1, 9.2], "scale": [3.4, 2.0, 3.4], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.1, 9.8], "scale": [4.8, 2.8, 4.8] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GRAM_DRAGON_IMPACT",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.1, 0.1, 0.1], "offset": [0.0, 0.0, 9.0], "speed": 0.0, "chance": 0.72 }
+      ]
+    }
+  ]
+}

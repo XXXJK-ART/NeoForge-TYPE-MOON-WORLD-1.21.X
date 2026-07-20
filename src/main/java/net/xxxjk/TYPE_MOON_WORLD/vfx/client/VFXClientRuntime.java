@@ -1,8 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.vfx.client;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,6 +18,9 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public final class VFXClientRuntime {
+   private static final int MAX_TARGET_CACHE_SIZE = 256;
+   private static final Map<UUID, Integer> TARGET_ENTITY_IDS = new ConcurrentHashMap<>();
+
    private VFXClientRuntime() {
    }
 
@@ -45,6 +50,10 @@ public final class VFXClientRuntime {
    }
 
    public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed) {
+      spawn(effectId, x, y, z, targetEntityUuid, seed, Optional.empty());
+   }
+
+   public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed, Optional<Vec3> direction) {
       VFXEffectDefinition definition = EffectLibrary.INSTANCE.get(effectId);
       if (definition == null) {
          TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
@@ -53,12 +62,7 @@ public final class VFXClientRuntime {
       Minecraft mc = Minecraft.getInstance();
       Entity target = null;
       if (targetEntityUuid.isPresent() && mc.level != null) {
-         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (targetEntityUuid.get().equals(entity.getUUID())) {
-               target = entity;
-               break;
-            }
-         }
+         target = findTargetByUuid(mc, targetEntityUuid.get());
       }
       double originX = x;
       double originY = y;
@@ -72,6 +76,13 @@ public final class VFXClientRuntime {
          VFXEnvironmentManager.add(environment, originX, originY, originZ);
       }
       List<VFXEmitter> emitters = definition.createEmitters((float)originX, (float)originY, (float)originZ, seed);
+      if (direction.isPresent() && target == null) {
+         Quaternionf rotation = rotationFromForward(direction.get());
+         float fixedX = (float)originX, fixedY = (float)originY, fixedZ = (float)originZ;
+         for (VFXEmitter emitter : emitters) {
+            emitter.setDynamicTransform(() -> new Vector3f(fixedX, fixedY, fixedZ), () -> new Quaternionf(rotation));
+         }
+      }
       if (target != null) {
          Entity boundTarget = target;
          for (VFXEmitter emitter : emitters) {
@@ -81,6 +92,11 @@ public final class VFXClientRuntime {
       for (VFXEmitter emitter : emitters) {
          VFXRenderManager.addEmitter(emitter);
       }
+   }
+
+   private static Quaternionf rotationFromForward(Vec3 forward) {
+      Vec3 f = forward.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : forward.normalize();
+      return new Quaternionf().rotationTo(new Vector3f(0.0F, 0.0F, 1.0F), new Vector3f((float)f.x, (float)f.y, (float)f.z));
    }
 
    public static void spawnTest(double x, double y, double z) {
@@ -93,12 +109,38 @@ public final class VFXClientRuntime {
          return;
       }
       String mode = binding.mode();
-      if ("artoria_blade".equals(mode) || "entity_yaw".equals(mode)) {
+      if ("artoria_blade".equals(mode) || "entity_yaw".equals(mode) || "entity_look".equals(mode)) {
          emitter.setDynamicTransform(
             () -> bindingOrigin(target, binding),
-            () -> binding.rotateWithEntity() ? yawRotation(target) : new Quaternionf()
+            () -> binding.rotateWithEntity() ? ("entity_look".equals(mode) ? rotationFromForward(target.getLookAngle()) : yawRotation(target)) : new Quaternionf()
          );
       }
+   }
+
+   private static Entity findTargetByUuid(Minecraft mc, UUID targetUuid) {
+      Integer cachedId = TARGET_ENTITY_IDS.get(targetUuid);
+      if (cachedId != null) {
+         Entity cached = mc.level.getEntity(cachedId);
+         if (cached != null && cached.isAlive() && targetUuid.equals(cached.getUUID())) {
+            return cached;
+         }
+         TARGET_ENTITY_IDS.remove(targetUuid);
+      }
+
+      for (Entity entity : mc.level.entitiesForRendering()) {
+         if (targetUuid.equals(entity.getUUID())) {
+            rememberTarget(entity);
+            return entity;
+         }
+      }
+      return null;
+   }
+
+   private static void rememberTarget(Entity entity) {
+      if (TARGET_ENTITY_IDS.size() >= MAX_TARGET_CACHE_SIZE) {
+         TARGET_ENTITY_IDS.clear();
+      }
+      TARGET_ENTITY_IDS.put(entity.getUUID(), entity.getId());
    }
 
    private static Vector3f bindingOrigin(Entity target, VFXEffectDefinition.BindingDefinition binding) {

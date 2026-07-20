@@ -123,6 +123,20 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (event.getEntity() instanceof ServerPlayer servant && event.getTarget() instanceof ServerPlayer master) {
+            TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (servant.isCrouching() && servantVars.servant_card_transformed && masterVars.master_active) {
+               if (master.getVehicle() == servant) {
+                  master.stopRiding();
+               } else {
+                  master.stopRiding();
+                  master.startRiding(servant, true);
+               }
+               event.setCanceled(true);
+               return;
+            }
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
