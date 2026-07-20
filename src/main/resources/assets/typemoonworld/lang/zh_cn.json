@@ -1684,6 +1684,11 @@
     "message.typemoonworld.bajiquan.unlock.500": "化劲（完美）、寸劲（入门）、聚气（入门）",
     "message.typemoonworld.bajiquan.unlock.600": "寸劲（熟练）、聚气（熟练）",
     "message.typemoonworld.bajiquan.unlock.800": "寸劲（完美）、聚气（完美）",
-    "message.typemoonworld.bajiquan.unlock.1000": "圈境"
+    "message.typemoonworld.bajiquan.unlock.1000": "圈境",
+    "message.typemoonworld.master_carry.picked_up": "已抱起御主",
+    "message.typemoonworld.master_carry.carried": "从者已将你抱起",
+    "message.typemoonworld.master_carry.skill_blocked": "抱着御主时无法使用技能",
+    "skill.typemoonworld.servant_card.emiya_spherical_projection": "球形层写",
+    "skill.typemoonworld.servant_card.emiya_auto_counter": "无限剑制·自动反击"
 }
 

@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import org.jetbrains.annotations.NotNull;
 
 public class TypeMoonWorldModVariables {
@@ -1870,11 +1871,14 @@ public class TypeMoonWorldModVariables {
          this.bajiquan_tiger_unlocked = nbt.getBoolean("bajiquan_tiger_unlocked");
          this.bajiquan_circle_realm_cooldown_until = nbt.getLong("bajiquan_circle_realm_cooldown_until");
          this.body_training_xp = Math.max(0, nbt.getInt("body_training_xp"));
-         this.body_training_points = Mth.clamp(nbt.getInt("body_training_points"), 0, 40);
-         this.body_strength = Mth.clamp(nbt.getInt("body_strength"), 0, 10);
-         this.body_speed = Mth.clamp(nbt.getInt("body_speed"), 0, 10);
-         this.body_resistance = Mth.clamp(nbt.getInt("body_resistance"), 0, 10);
-         this.body_technique = Mth.clamp(nbt.getInt("body_technique"), 0, 10);
+         this.body_strength = Mth.clamp(nbt.getInt("body_strength"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         this.body_speed = Mth.clamp(nbt.getInt("body_speed"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         this.body_resistance = Mth.clamp(nbt.getInt("body_resistance"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         this.body_technique = Mth.clamp(nbt.getInt("body_technique"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         int allocatedBodyPoints = this.body_strength + this.body_speed + this.body_resistance + this.body_technique;
+         this.body_training_points = Mth.clamp(
+            nbt.getInt("body_training_points"), 0, Math.max(0, BodyTrainingService.MAX_TOTAL_POINTS - allocatedBodyPoints)
+         );
          this.proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
          this.is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
          this.ubw_chant_progress = nbt.getInt("ubw_chant_progress");

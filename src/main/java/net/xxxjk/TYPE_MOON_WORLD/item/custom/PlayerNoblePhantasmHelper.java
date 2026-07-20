@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -56,6 +57,8 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 public final class PlayerNoblePhantasmHelper {
    public static final String ONE_SHOT_TSUBAME_TAG = "TypeMoonOneShotTsubame";
    public static final String ONE_SHOT_NINE_LIVES_TAG = "TypeMoonOneShotNineLives";
+   private static final String SERVANT_CARD_COPIED_NP_TAG = "TypeMoonServantCardCopiedNoblePhantasm";
+   private static final String SERVANT_CARD_COPIED_NP_TOKEN_TAG = "TypeMoonServantCardCopiedNoblePhantasmToken";
    private static final String OVEREDGE_USE_COUNT_TAG = "TypeMoonOveredgeUseCount";
    private static final String GAE_DEATH_FLIGHT_TAG = "TypeMoonGaeBulgDeathFlight";
    private static final String GAE_DEATH_FLIGHT_PAID_TAG = "TypeMoonGaeBulgDeathFlightPaid";
@@ -156,6 +159,7 @@ public final class PlayerNoblePhantasmHelper {
       clearOneShotNineLives(stack);
       LivingEntity target = findLookTarget(player, 7.0, 1.7);
       performNineLives(player, target);
+      if (!player.getAbilities().instabuild) stack.shrink(1);
       player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
@@ -207,6 +211,7 @@ public final class PlayerNoblePhantasmHelper {
       }
       clearOneShotTsubame(stack);
       performTsubame(player, target);
+      if (!player.getAbilities().instabuild) stack.shrink(1);
       player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
@@ -224,6 +229,7 @@ public final class PlayerNoblePhantasmHelper {
       }
       clearOneShotTsubame(stack);
       performTsubame(player, target);
+      if (!player.getAbilities().instabuild) stack.shrink(1);
       player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
@@ -523,6 +529,25 @@ public final class PlayerNoblePhantasmHelper {
          tag.putBoolean("is_infinite_projection", true);
       });
       stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+   }
+
+   public static void markServantCardCopiedNoblePhantasm(ItemStack stack) {
+      if (stack.isEmpty()) return;
+      updateCustomData(stack, tag -> {
+         tag.putBoolean(SERVANT_CARD_COPIED_NP_TAG, true);
+         tag.putString(SERVANT_CARD_COPIED_NP_TOKEN_TAG, UUID.randomUUID().toString());
+      });
+   }
+
+   public static boolean isServantCardCopiedNoblePhantasm(ItemStack stack) {
+      CompoundTag tag = customTag(stack);
+      return !stack.isEmpty() && stack.getItem() instanceof NoblePhantasmItem && tag != null
+         && tag.getBoolean(SERVANT_CARD_COPIED_NP_TAG);
+   }
+
+   public static String servantCardCopiedNoblePhantasmToken(ItemStack stack) {
+      CompoundTag tag = customTag(stack);
+      return tag == null ? "" : tag.getString(SERVANT_CARD_COPIED_NP_TOKEN_TAG);
    }
 
    public static void tryCompleteProjectedKanshouBakuyaPair(ServerPlayer player, ItemStack stack, InteractionHand hand) {

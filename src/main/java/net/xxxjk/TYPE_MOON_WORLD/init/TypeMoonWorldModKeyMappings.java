@@ -10,7 +10,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -142,14 +141,13 @@ public class TypeMoonWorldModKeyMappings {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (isClientBajiquanActive(player, vars)) {
             boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
-            boolean entityTarget = minecraft.hitResult instanceof EntityHitResult;
             if (event.isAttack() && !blockTarget) {
                PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_A, player.isCrouching(), minecraft.options.keyJump.isDown()));
                event.setCanceled(true);
                event.setSwingHand(true);
                return;
             }
-            if (event.isUseItem() && !blockTarget && !entityTarget) {
+            if (event.isUseItem()) {
                PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_B, player.isCrouching(), minecraft.options.keyJump.isDown()));
                event.setCanceled(true);
                event.setSwingHand(true);

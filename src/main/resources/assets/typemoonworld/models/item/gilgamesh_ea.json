@@ -161,6 +161,6 @@
     }
   },
   "textures": {
-    "particle": "typemoonworld:entity/gilgamesh_ea"
+    "particle": "typemoonworld:item/red"
   }
 }

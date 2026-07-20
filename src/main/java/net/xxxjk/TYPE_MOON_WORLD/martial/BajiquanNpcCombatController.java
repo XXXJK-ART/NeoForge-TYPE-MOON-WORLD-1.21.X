@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
+import java.util.EnumSet;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -9,6 +10,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
@@ -19,8 +21,27 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 public final class BajiquanNpcCombatController {
    private static final String TAG_NEXT_SKILL = "TypeMoonBajiquanNpcNextSkill";
    private static final String TAG_NEXT_DASH = "TypeMoonBajiquanNpcNextDash";
+   private static final String TAG_NEXT_PATH = "TypeMoonBajiquanNpcNextPath";
+   private static final String TAG_STRAFE_SIDE = "TypeMoonBajiquanNpcStrafeSide";
+   private static final String TAG_NEXT_STRAFE_SWITCH = "TypeMoonBajiquanNpcNextStrafeSwitch";
 
    private BajiquanNpcCombatController() {}
+
+   public static Goal combatGoal(PathfinderMob npc) {
+      return new Goal() {
+         {
+            this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+         }
+
+         @Override public boolean canUse() { return validTarget(npc, npc.getTarget()); }
+         @Override public boolean canContinueToUse() { return validTarget(npc, npc.getTarget()); }
+         @Override public void tick() {
+            LivingEntity target = npc.getTarget();
+            if (target != null) npc.getLookControl().setLookAt(target, 60.0F, 50.0F);
+         }
+         @Override public void stop() { npc.getNavigation().stop(); }
+      };
+   }
 
    public static void tick(PathfinderMob npc, double proficiency, boolean closeDefenseOnly) {
       if (npc == null || npc.level().isClientSide() || !npc.isAlive()) return;
@@ -33,34 +54,60 @@ public final class BajiquanNpcCombatController {
 
       long now = npc.level().getGameTime();
       double distance = Math.sqrt(npc.distanceToSqr(target));
-      npc.lookAt(target, 50.0F, 45.0F);
-      if (!closeDefenseOnly && distance > 2.7) {
-         npc.getNavigation().moveTo(target, proficiency >= 80.0 ? 1.3 : 1.12);
-      }
-      if (closeDefenseOnly && distance > 4.5) return;
+      double verticalGap = Math.abs(target.getY() - npc.getY());
+      double attackReach = 2.65 + (npc.getBbWidth() + target.getBbWidth()) * 0.45;
+      boolean lineOfSight = npc.hasLineOfSight(target);
+      boolean skillReady = now >= npc.getPersistentData().getLong(TAG_NEXT_SKILL);
+      npc.getLookControl().setLookAt(target, 65.0F, 55.0F);
 
-      if (distance >= 3.0 && distance <= 7.5 && proficiency >= 10.0
+      if (closeDefenseOnly && distance > 5.4) return;
+      if (!closeDefenseOnly && distance > attackReach - 0.2
+         && (npc.getNavigation().isDone() || now >= npc.getPersistentData().getLong(TAG_NEXT_PATH))) {
+         npc.getNavigation().moveTo(target, proficiency >= 80.0 ? 1.38 : proficiency >= 25.0 ? 1.24 : 1.16);
+         npc.getPersistentData().putLong(TAG_NEXT_PATH, now + (npc.getNavigation().isDone() ? 3L : 6L));
+      }
+
+      if (skillReady && distance > attackReach && distance <= 7.0 && proficiency >= 10.0
          && now >= npc.getPersistentData().getLong(TAG_NEXT_DASH) && npc.hasLineOfSight(target)) {
          Vec3 direction = horizontalDirection(npc, target);
-         npc.setDeltaMovement(npc.getDeltaMovement().add(direction.scale(proficiency >= 40.0 ? 0.72 : 0.5)).add(0.0, 0.06, 0.0));
+         npc.getNavigation().stop();
+         npc.setDeltaMovement(npc.getDeltaMovement().add(direction.scale(proficiency >= 80.0 ? 0.82 : proficiency >= 40.0 ? 0.68 : 0.52)).add(0.0, 0.05, 0.0));
          npc.hurtMarked = true;
-         npc.getPersistentData().putLong(TAG_NEXT_DASH, now + 28L);
+         npc.getPersistentData().putLong(TAG_NEXT_DASH, now + (proficiency >= 80.0 ? 16L : 22L));
       }
 
-      if (distance > 4.8 || !npc.hasLineOfSight(target) || now < npc.getPersistentData().getLong(TAG_NEXT_SKILL)) return;
+      if (!skillReady || distance > attackReach || verticalGap > 2.5 || (!lineOfSight && distance > 2.25)) {
+         if (distance <= attackReach + 0.9 && verticalGap <= 2.5) circleTarget(npc, target, distance, attackReach, now);
+         return;
+      }
+      npc.getNavigation().stop();
       int roll = npc.getRandom().nextInt(100);
-      MoveType move = proficiency >= 40.0 && roll < 20 ? MoveType.PUSH
-         : proficiency >= 25.0 && roll < 40 ? MoveType.TREMOR
-         : proficiency >= 10.0 && roll < 72 ? MoveType.FLURRY
-         : proficiency >= 0.5 ? MoveType.KICK : MoveType.PUNCH;
+      MoveType move = proficiency >= 80.0 && roll < 22 ? MoveType.PUSH
+         : proficiency >= 40.0 && roll < 42 ? MoveType.TREMOR
+         : proficiency >= 10.0 && roll < 76 ? MoveType.FLURRY
+         : roll < 88 ? MoveType.KICK : MoveType.PUNCH;
       perform(npc, target, move);
       int recovery = switch (move) {
-         case TREMOR -> 34;
-         case PUSH -> 28;
-         case FLURRY -> 22;
-         default -> 18;
+         case TREMOR -> 24;
+         case PUSH -> 20;
+         case FLURRY -> 14;
+         default -> 11;
       };
+      if (proficiency >= 80.0) recovery = Math.max(8, recovery - 3);
+      else if (proficiency >= 40.0) recovery = Math.max(9, recovery - 1);
       npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + recovery);
+   }
+
+   private static void circleTarget(PathfinderMob npc, LivingEntity target, double distance, double attackReach, long now) {
+      if (now >= npc.getPersistentData().getLong(TAG_NEXT_STRAFE_SWITCH)) {
+         npc.getPersistentData().putInt(TAG_STRAFE_SIDE, npc.getRandom().nextBoolean() ? 1 : -1);
+         npc.getPersistentData().putLong(TAG_NEXT_STRAFE_SWITCH, now + 12L + npc.getRandom().nextInt(12));
+      }
+      int side = npc.getPersistentData().getInt(TAG_STRAFE_SIDE);
+      if (side == 0) side = 1;
+      float forward = distance > attackReach - 0.25 ? 0.5F : distance < 1.7 ? -0.2F : 0.12F;
+      npc.getMoveControl().strafe(forward, side * 0.62F);
+      npc.getLookControl().setLookAt(target, 70.0F, 55.0F);
    }
 
    private static void perform(PathfinderMob npc, LivingEntity target, MoveType move) {

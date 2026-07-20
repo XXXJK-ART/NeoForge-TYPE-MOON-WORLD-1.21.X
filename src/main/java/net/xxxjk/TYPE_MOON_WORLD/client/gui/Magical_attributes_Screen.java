@@ -539,7 +539,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       for (int i = 0; i < this.bodyTrainingButtons.size(); i++) {
          Button button = this.bodyTrainingButtons.get(i);
          button.visible = bodyVisible;
-         button.active = bodyVisible && bodyVars.body_training_points > 0 && bodyLevels[i] < 10;
+         button.active = bodyVisible && bodyVars.body_training_points > 0 && bodyLevels[i] < BodyTrainingService.MAX_STAT_POINTS;
       }
 
       if (this.imagebutton_magical_attributes != null) {
@@ -1242,8 +1242,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             int rowY = 35 + i * 11;
             guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training." + keys[i]), 170, rowY, -1, false);
             guiGraphics.fill(244, rowY + 1, 328, rowY + 7, 0x55202020);
-            guiGraphics.fill(244, rowY + 1, 244 + levels[i] * 8, rowY + 7, 0xCC2EB872);
-            guiGraphics.drawString(this.font, levels[i] + "/10", 302, rowY, -1, false);
+            int fillWidth = Mth.clamp(Math.round(84.0F * levels[i] / BodyTrainingService.MAX_STAT_POINTS), 0, 84);
+            guiGraphics.fill(244, rowY + 1, 244 + fillWidth, rowY + 7, 0xCC2EB872);
+            guiGraphics.drawString(this.font, levels[i] + "/" + BodyTrainingService.MAX_STAT_POINTS, 302, rowY, -1, false);
          }
       } else {
          TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();

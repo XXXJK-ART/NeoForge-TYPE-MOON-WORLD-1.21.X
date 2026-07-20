@@ -51,8 +51,8 @@ public class MuramasaSlashHandler {
       flat = flat.normalize();
       Vec3 right = new Vec3(-flat.z, 0.0, flat.x);
       Vec3 diagonal = flat.add(right.scale((burnAfter ? -1.0 : 1.0) * Math.tan(crossHalfAngle))).normalize();
-      // The cut is deliberately released 50 blocks below the caster's feet.
-      double releaseY = Math.max(level.getMinBuildHeight() + 1.0, owner.getY() - 50.0);
+      // The cut is deliberately released 30 blocks below the caster's feet.
+      double releaseY = Math.max(level.getMinBuildHeight() + 1.0, owner.getY() - 30.0);
       Vec3 center = new Vec3(owner.getX(), releaseY, owner.getZ());
       Vec3 start = center.subtract(diagonal.scale(200.0));
       if (burnAfter) {
@@ -119,6 +119,7 @@ public class MuramasaSlashHandler {
                Vec3 posVec = center.add(wOffset).add(0.0, h, 0.0);
                BlockPos pos = BlockPos.containing(posVec);
                if (isCasterSafetyColumn(slash, pos)) continue;
+               if (!level.hasChunkAt(pos)) continue;
                BlockState state = level.getBlockState(pos);
                boolean isFluid = !level.getFluidState(pos).isEmpty();
                float hardness = state.getDestroySpeed(level, pos);

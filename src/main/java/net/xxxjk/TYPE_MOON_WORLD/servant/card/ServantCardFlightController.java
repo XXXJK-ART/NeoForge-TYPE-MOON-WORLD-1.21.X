@@ -47,7 +47,10 @@ public final class ServantCardFlightController {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.servant_card_flight_toggle_cooldown > 0) {
+      boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
+      if (unlimited) {
+         vars.servant_card_flight_toggle_cooldown = 0;
+      } else if (vars.servant_card_flight_toggle_cooldown > 0) {
          vars.servant_card_flight_toggle_cooldown--;
       }
       if (vars.servant_card_transformed && canFly(vars.servant_card_id)) {
@@ -67,8 +70,14 @@ public final class ServantCardFlightController {
       if (vars.servant_card_flight_mode == MODE_HIGH && vars.servant_card_oda_flight_ticks <= 0) {
          vars.servant_card_flight_mode = MODE_NORMAL;
          vars.servant_card_high_flight_until = 0L;
-         vars.servant_card_oda_flight_cooldown_until = now + HIGH_FLIGHT_EXHAUSTED_COOLDOWN;
-         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + HIGH_FLIGHT_RECHARGE_INTERVAL;
+         if (unlimited) {
+            vars.servant_card_oda_flight_ticks = HIGH_FLIGHT_MAX_TICKS;
+            vars.servant_card_oda_flight_cooldown_until = 0L;
+            vars.servant_card_oda_flight_recharge_at = 0L;
+         } else {
+            vars.servant_card_oda_flight_cooldown_until = now + HIGH_FLIGHT_EXHAUSTED_COOLDOWN;
+            vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + HIGH_FLIGHT_RECHARGE_INTERVAL;
+         }
          vars.syncPlayerVariables(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.high_flight_expired"), true);
       }
@@ -136,7 +145,8 @@ public final class ServantCardFlightController {
    }
 
    private static void toggleFlight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.servant_card_flight_toggle_cooldown > 0) {
+      boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
+      if (!unlimited && vars.servant_card_flight_toggle_cooldown > 0) {
          return;
       }
       if (!canFly(vars.servant_card_id)) {
@@ -168,7 +178,7 @@ public final class ServantCardFlightController {
          ServantCardOdaNobunagaSkills.stopMountFlight(player, vars, false);
       }
       vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_flight_toggle_cooldown = 8;
+      vars.servant_card_flight_toggle_cooldown = unlimited ? 0 : 8;
       if (!vars.servant_card_flying) {
          player.setNoGravity(false);
       }
@@ -226,6 +236,12 @@ public final class ServantCardFlightController {
 
    private static void beginHighFlightRecharge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.servant_card_high_flight_until = 0L;
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         vars.servant_card_oda_flight_ticks = HIGH_FLIGHT_MAX_TICKS;
+         vars.servant_card_oda_flight_cooldown_until = 0L;
+         vars.servant_card_oda_flight_recharge_at = 0L;
+         return;
+      }
       if (player.level() instanceof ServerLevel level
          && vars.servant_card_oda_flight_ticks < HIGH_FLIGHT_MAX_TICKS
          && vars.servant_card_oda_flight_recharge_at <= 0L) {

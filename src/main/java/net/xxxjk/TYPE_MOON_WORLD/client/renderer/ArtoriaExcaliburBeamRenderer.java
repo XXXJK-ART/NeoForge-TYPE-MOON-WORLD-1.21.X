@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 
 public class ArtoriaExcaliburBeamRenderer extends EntityRenderer<ArtoriaExcaliburBeamEntity> {
-   private static final ResourceLocation INVISIBLE_TEXTURE = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/empty.png");
+   private static final ResourceLocation INVISIBLE_TEXTURE = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/empty.png");
 
    public ArtoriaExcaliburBeamRenderer(Context context) {
       super(context);

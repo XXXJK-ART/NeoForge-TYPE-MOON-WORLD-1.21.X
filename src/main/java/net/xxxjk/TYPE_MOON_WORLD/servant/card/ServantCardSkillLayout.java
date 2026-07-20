@@ -78,6 +78,8 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Projection Loadout Cycle", "emiya_cycle", 100.0, 20);
             case 5 -> new ServantCardSkillAction("Trace Opponent Weapon", "copy_weapon", 38.0, 360);
             case 6 -> new ServantCardSkillAction("Layered Projection", "emiya_layered_projection", 36.0, 240);
+            case 7 -> new ServantCardSkillAction("Spherical Layered Projection", "emiya_spherical_projection", 45.0, 240);
+            case 8 -> new ServantCardSkillAction("Unlimited Blade Counter", "emiya_auto_counter", 60.0, 600);
             case 9 -> new ServantCardSkillAction("Unlimited Blade Works", "ubw", 0.0, 3600);
             default -> null;
          };
@@ -130,7 +132,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
             case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);
-            case 9 -> new ServantCardSkillAction("伊伽莉玛 & 修尔夏伽那", "gilgamesh_cross_slash", 300.0, 30 * 20);
+            case 9 -> new ServantCardSkillAction("伊伽莉玛 & 修尔夏伽那", "gilgamesh_cross_slash", 300.0, 120 * 20);
             default -> null;
          };
          case "gawain" -> switch (slot) {

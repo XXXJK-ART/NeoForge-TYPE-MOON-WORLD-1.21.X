@@ -35,9 +35,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
@@ -55,6 +60,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
@@ -68,6 +75,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 import static net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.*;
 
+@EventBusSubscriber(modid = "typemoonworld")
 public final class ServantCardEmiyaSkills {
    private static final String EMIYA_LAYERED_OLD_UNTIL = "ServantCardEmiyaLayeredProjectionUntil";
    private static final String EMIYA_LAYERED_ROUNDS = "ServantCardEmiyaLayeredProjectionRounds";
@@ -75,6 +83,16 @@ public final class ServantCardEmiyaSkills {
    private static final int EMIYA_LAYERED_TOTAL_ROUNDS = 5;
    private static final int EMIYA_LAYERED_ROUND_INTERVAL = 10;
    private static final int EMIYA_LAYERED_SWORDS_PER_ROUND = 30;
+   private static final String EMIYA_SPHERICAL_ROUNDS = "ServantCardEmiyaSphericalProjectionRounds";
+   private static final String EMIYA_SPHERICAL_NEXT_TICK = "ServantCardEmiyaSphericalProjectionNextTick";
+   private static final String EMIYA_SPHERICAL_TARGET = "ServantCardEmiyaSphericalProjectionTarget";
+   private static final int EMIYA_SPHERICAL_TOTAL_ROUNDS = 10;
+   private static final int EMIYA_SPHERICAL_ROUND_INTERVAL = 10;
+   private static final String EMIYA_AUTO_COUNTER_UNTIL = "ServantCardEmiyaAutoCounterUntil";
+   private static final String EMIYA_AUTO_COUNTER_CLAIMED = "ServantCardEmiyaAutoCounterClaimed";
+   private static final int EMIYA_AUTO_COUNTER_DURATION = 300;
+   private static final String EMIYA_COPIED_NP_PENDING_TOKEN = "ServantCardEmiyaCopiedNpPendingToken";
+   private static final String EMIYA_COPIED_NP_PENDING_TICK = "ServantCardEmiyaCopiedNpPendingTick";
    private ServantCardEmiyaSkills() {
    }
 
@@ -88,6 +106,22 @@ public final class ServantCardEmiyaSkills {
    public static void cycleAction(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.servant_card_action_mode = nextEmiyaCycleMode(vars);
       cycleLoadout(player, vars);
+   }
+
+   public static void equipUniqueAmmo(ServerPlayer player, Item item) {
+      ItemStack displaced = player.getOffhandItem().copy();
+      removeAll(player, item);
+      if (!displaced.isEmpty() && !displaced.is(item) && !player.getInventory().add(displaced)) player.drop(displaced, false);
+      ItemStack ammo = new ItemStack(item);
+      PlayerNoblePhantasmHelper.markUbwProjection(ammo);
+      ServantCardTransformManager.markGeneratedItem(ammo, true, true);
+      player.setItemInHand(InteractionHand.OFF_HAND, ammo);
+   }
+
+   private static void removeAll(ServerPlayer player, Item item) {
+      for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+         if (player.getInventory().getItem(i).is(item)) player.getInventory().setItem(i, ItemStack.EMPTY);
+      }
    }
 
    public static void startUbwChant(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -163,7 +197,7 @@ public final class ServantCardEmiyaSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.ubw_need_third_line"), true);
          return false;
       }
-      if (vars.servant_card_np_cooldown > 0) {
+      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servant_card_np_cooldown > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
          return false;
       }
@@ -218,6 +252,7 @@ public final class ServantCardEmiyaSkills {
       ItemStack traced = weapon.copy();
       traced.setCount(1);
       PlayerNoblePhantasmHelper.markUbwProjection(traced);
+      PlayerNoblePhantasmHelper.markServantCardCopiedNoblePhantasm(traced);
       ServantCardTransformManager.markGeneratedItem(traced, true, true);
       ResourceLocation copiedId = BuiltInRegistries.ITEM.getKey(traced.getItem());
       if (copiedId != null) {
@@ -287,9 +322,10 @@ public final class ServantCardEmiyaSkills {
 
    public static void tickEmiyaContinuousProjection(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!"emiya_archer".equals(vars.servant_card_id)) {
-         clearEmiyaLayeredProjection(player);
+         clearEmiyaProjectionRounds(player);
          return;
       }
+      tickSphericalProjection(player);
       CompoundTag data = player.getPersistentData();
       data.remove(EMIYA_LAYERED_OLD_UNTIL);
       int rounds = data.getInt(EMIYA_LAYERED_ROUNDS);
@@ -316,6 +352,192 @@ public final class ServantCardEmiyaSkills {
       data.remove(EMIYA_LAYERED_OLD_UNTIL);
       data.remove(EMIYA_LAYERED_ROUNDS);
       data.remove(EMIYA_LAYERED_NEXT_TICK);
+   }
+
+   private static void clearEmiyaProjectionRounds(ServerPlayer player) {
+      clearEmiyaLayeredProjection(player);
+      CompoundTag data = player.getPersistentData();
+      data.remove(EMIYA_SPHERICAL_ROUNDS);
+      data.remove(EMIYA_SPHERICAL_NEXT_TICK);
+      data.remove(EMIYA_SPHERICAL_TARGET);
+   }
+
+   public static void clear(ServerPlayer player) {
+      clearEmiyaProjectionRounds(player);
+      CompoundTag data = player.getPersistentData();
+      data.remove(EMIYA_AUTO_COUNTER_UNTIL);
+      data.remove(EMIYA_COPIED_NP_PENDING_TOKEN);
+      data.remove(EMIYA_COPIED_NP_PENDING_TICK);
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public static void onCopiedNoblePhantasmUse(PlayerInteractEvent.RightClickItem event) {
+      if (!(event.getEntity() instanceof ServerPlayer player) || event.getLevel().isClientSide()
+         || ServantMasterCarryService.isCarryingMaster(player)) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      ItemStack stack = event.getItemStack();
+      if (!vars.servant_card_transformed || !"emiya_archer".equals(vars.servant_card_id)
+         || !PlayerNoblePhantasmHelper.isServantCardCopiedNoblePhantasm(stack)) return;
+      String token = PlayerNoblePhantasmHelper.servantCardCopiedNoblePhantasmToken(stack);
+      if (token.isBlank()) return;
+      CompoundTag data = player.getPersistentData();
+      data.putString(EMIYA_COPIED_NP_PENDING_TOKEN, token);
+      data.putLong(EMIYA_COPIED_NP_PENDING_TICK, player.level().getGameTime());
+   }
+
+   public static boolean performSphericalProjection(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      LivingEntity target = findLookTarget(player, 40.0, 2.5);
+      if (target == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
+      CompoundTag data = player.getPersistentData();
+      data.putInt(EMIYA_SPHERICAL_ROUNDS, EMIYA_SPHERICAL_TOTAL_ROUNDS);
+      data.putInt(EMIYA_SPHERICAL_NEXT_TICK, player.tickCount);
+      data.putUUID(EMIYA_SPHERICAL_TARGET, target.getUUID());
+      level.playSound(null, target.blockPosition(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.PLAYERS, 0.75F, 1.35F);
+      return true;
+   }
+
+   private static void tickSphericalProjection(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      int rounds = data.getInt(EMIYA_SPHERICAL_ROUNDS);
+      if (rounds <= 0 || player.tickCount < data.getInt(EMIYA_SPHERICAL_NEXT_TICK)) return;
+      if (!(player.level() instanceof ServerLevel level) || !data.hasUUID(EMIYA_SPHERICAL_TARGET)) {
+         clearSphericalProjection(player);
+         return;
+      }
+      Entity entity = level.getEntity(data.getUUID(EMIYA_SPHERICAL_TARGET));
+      if (!(entity instanceof LivingEntity target) || !target.isAlive() || player.distanceToSqr(target) > 4096.0) {
+         clearSphericalProjection(player);
+         return;
+      }
+      spawnSphericalProjectionVolley(player, level, target);
+      rounds--;
+      if (rounds <= 0) {
+         clearSphericalProjection(player);
+      } else {
+         data.putInt(EMIYA_SPHERICAL_ROUNDS, rounds);
+         data.putInt(EMIYA_SPHERICAL_NEXT_TICK, player.tickCount + EMIYA_SPHERICAL_ROUND_INTERVAL);
+      }
+   }
+
+   private static void clearSphericalProjection(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      data.remove(EMIYA_SPHERICAL_ROUNDS);
+      data.remove(EMIYA_SPHERICAL_NEXT_TICK);
+      data.remove(EMIYA_SPHERICAL_TARGET);
+   }
+
+   private static void spawnSphericalProjectionVolley(ServerPlayer player, ServerLevel level, LivingEntity target) {
+      Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+      double radius = Math.max(3.2, target.getBbWidth() * 2.0 + 2.2);
+      for (int i = 0; i < 20; i++) {
+         double phi = player.getRandom().nextDouble() * Math.PI * 2.0;
+         double u = player.getRandom().nextDouble() * 2.0 - 1.0;
+         double theta = Math.acos(u);
+         Vec3 offset = new Vec3(radius * Math.sin(theta) * Math.cos(phi), radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta));
+         Vec3 spawn = center.add(offset);
+         SwordBarrelProjectileEntity sword = new SwordBarrelProjectileEntity(level, player, new ItemStack(Items.IRON_SWORD));
+         sword.setPos(spawn.x, spawn.y, spawn.z);
+         sword.setTargetEntity(target.getId());
+         sword.setHover(15, center);
+         sword.setOwner(player);
+         sword.setMode1Tracking(true);
+         Vec3 direction = center.subtract(spawn).normalize();
+         sword.setXRot((float)Math.toDegrees(Math.asin(-direction.y)));
+         sword.setYRot((float)Math.toDegrees(Math.atan2(-direction.x, direction.z)));
+         level.addFreshEntity(sword);
+         if ((i & 3) == 0) level.sendParticles(ParticleTypes.ENCHANT, spawn.x, spawn.y, spawn.z, 5, 0.14, 0.14, 0.14, 0.03);
+      }
+      level.playSound(null, target.blockPosition(), SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 0.55F, 1.2F + player.getRandom().nextFloat() * 0.25F);
+   }
+
+   public static void startAutoCounter(ServerPlayer player) {
+      player.getPersistentData().putLong(EMIYA_AUTO_COUNTER_UNTIL, player.level().getGameTime() + EMIYA_AUTO_COUNTER_DURATION);
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1.0, player.getZ(), 32, 1.2, 0.8, 1.2, 0.08);
+         level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.8F, 1.4F);
+      }
+   }
+
+   public static void tickEmiyaEquipmentAndCounter(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      enforceSingleAmmo(player, ModItems.PSEUDO_SPIRAL_SWORD.get());
+      enforceSingleAmmo(player, ModItems.CRIMSON_HOUND.get());
+      updateKanshouBakuyaMagicResistance(player);
+      consumeUsedCopiedNoblePhantasm(player);
+      long now = player.level().getGameTime();
+      if (player.getPersistentData().getLong(EMIYA_AUTO_COUNTER_UNTIL) < now || !(player.level() instanceof ServerLevel level)) return;
+      if (now % 4L == 0L) {
+         int intercepted = 0;
+         for (Projectile projectile : level.getEntitiesOfClass(Projectile.class, player.getBoundingBox().inflate(20.0),
+            p -> p.isAlive() && p.getOwner() != player && !(p instanceof UBWProjectileEntity) && !(p instanceof UBWInterceptorSwordEntity)
+               && !p.getPersistentData().getBoolean(EMIYA_AUTO_COUNTER_CLAIMED))) {
+            Entity owner = projectile.getOwner();
+            if (owner instanceof LivingEntity living && player.isAlliedTo(living)) continue;
+            projectile.getPersistentData().putBoolean(EMIYA_AUTO_COUNTER_CLAIMED, true);
+            Vec3 spawn = player.position().add((player.getRandom().nextDouble() - 0.5) * 3.0, 2.0 + player.getRandom().nextDouble() * 2.0,
+               (player.getRandom().nextDouble() - 0.5) * 3.0);
+            level.addFreshEntity(new UBWInterceptorSwordEntity(level, projectile, player.getUUID(), spawn));
+            if (++intercepted >= 6) break;
+         }
+      }
+      if (now % 10L == 0L) {
+         level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(28.0), target -> isHostileTo(player, target))
+            .stream().sorted(java.util.Comparator.comparingDouble(player::distanceToSqr)).limit(2)
+            .forEach(target -> spawnSwordAtTarget(player, level, target));
+      }
+   }
+
+   private static void consumeUsedCopiedNoblePhantasm(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      String token = data.getString(EMIYA_COPIED_NP_PENDING_TOKEN);
+      if (token.isBlank()) return;
+      if (player.level().getGameTime() <= data.getLong(EMIYA_COPIED_NP_PENDING_TICK)) return;
+      if (player.isUsingItem() && token.equals(PlayerNoblePhantasmHelper.servantCardCopiedNoblePhantasmToken(player.getUseItem()))) return;
+      for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+         ItemStack stack = player.getInventory().getItem(i);
+         if (token.equals(PlayerNoblePhantasmHelper.servantCardCopiedNoblePhantasmToken(stack))) {
+            stack.shrink(1);
+            break;
+         }
+      }
+      data.remove(EMIYA_COPIED_NP_PENDING_TOKEN);
+      data.remove(EMIYA_COPIED_NP_PENDING_TICK);
+   }
+
+   private static void enforceSingleAmmo(ServerPlayer player, Item item) {
+      boolean found = false;
+      for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+         ItemStack stack = player.getInventory().getItem(i);
+         if (!stack.is(item)) continue;
+         if (!found) {
+            stack.setCount(1);
+            found = true;
+         } else {
+            player.getInventory().setItem(i, ItemStack.EMPTY);
+         }
+      }
+   }
+
+   private static void updateKanshouBakuyaMagicResistance(ServerPlayer player) {
+      ItemStack main = player.getMainHandItem();
+      ItemStack off = player.getOffhandItem();
+      boolean normalPair = main.is(ModItems.GAN_JIANG.get()) && off.is(ModItems.MO_YE.get())
+         || main.is(ModItems.MO_YE.get()) && off.is(ModItems.GAN_JIANG.get());
+      boolean overedgePair = main.is(ModItems.GAN_JIANG_OVEREDGE.get()) && off.is(ModItems.MO_YE_OVEREDGE.get())
+         || main.is(ModItems.MO_YE_OVEREDGE.get()) && off.is(ModItems.GAN_JIANG_OVEREDGE.get());
+      MagicResistanceRank rank = overedgePair ? MagicResistanceRank.B : normalPair ? MagicResistanceRank.C : MagicResistanceRank.D;
+      float debuffResistance = rank == MagicResistanceRank.B ? 0.175F : rank == MagicResistanceRank.C ? 0.10F : 0.0F;
+      MagicResistanceHelper.setMagicResistance(player, rank, MagicResistanceHelper.damageReductionForRank(rank), debuffResistance);
+   }
+
+   private static boolean isHostileTo(ServerPlayer player, LivingEntity target) {
+      if (target == player || !target.isAlive() || target.isAlliedTo(player) || EntityUtils.isImmunePlayerTarget(target)) return false;
+      if (target instanceof net.minecraft.world.entity.monster.Enemy) return true;
+      if (target instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() == player) return true;
+      return target instanceof ServerPlayer other && !other.isCreative() && !other.isSpectator();
    }
 
    public static void spawnLayeredProjectionVolley(ServerPlayer player, int count) {

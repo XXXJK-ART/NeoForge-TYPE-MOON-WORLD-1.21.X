@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.phys.Vec3;
 
 public class PetrifiedEffect extends UncurableEffect {
    public static final String TAG_PREV_NO_AI = "TypeMoonPrevNoAi";
@@ -31,8 +30,6 @@ public class PetrifiedEffect extends UncurableEffect {
 
    @Override
    public boolean applyEffectTick(LivingEntity entity, int amplifier) {
-      entity.setDeltaMovement(Vec3.ZERO);
-      entity.hurtMarked = true;
       entity.setSprinting(false);
       entity.stopUsingItem();
       if (entity instanceof Mob mob) {

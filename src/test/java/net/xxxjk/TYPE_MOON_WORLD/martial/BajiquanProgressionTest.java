@@ -21,13 +21,13 @@ class BajiquanProgressionTest {
       assertEquals(100.0, BajiquanMove.CIRCLE_REALM.requiredProficiency());
    }
 
-   @Test void bodyPointCurveTotalsEightThousandTwoHundred() {
+   @Test void bodyPointCurveTotalsSixtyFourThousandEightHundred() {
       int total = 0;
-      for (int earned = 0; earned < 40; earned++) total += BodyTrainingService.pointCostForEarned(earned);
-      assertEquals(8200, total);
-      assertEquals(10, BodyTrainingService.pointCostForEarned(0));
-      assertEquals(400, BodyTrainingService.pointCostForEarned(39));
-      assertEquals(0, BodyTrainingService.pointCostForEarned(40));
+      for (int earned = 0; earned < 80; earned++) total += BodyTrainingService.pointCostForEarned(earned);
+      assertEquals(64800, total);
+      assertEquals(20, BodyTrainingService.pointCostForEarned(0));
+      assertEquals(1600, BodyTrainingService.pointCostForEarned(79));
+      assertEquals(0, BodyTrainingService.pointCostForEarned(80));
    }
 
    @Test void stagedAttributesMatchTenLevelCurve() {
@@ -37,6 +37,8 @@ class BajiquanProgressionTest {
       assertEquals(1.0, BodyTrainingService.strengthBonus(5), 1.0E-9);
       assertEquals(2.6, BodyTrainingService.strengthBonus(9), 1.0E-9);
       assertEquals(3.6, BodyTrainingService.strengthBonus(10), 1.0E-9);
+      assertEquals(0.38, BodyTrainingService.stagedPercent(20), 1.0E-9);
+      assertEquals(7.6, BodyTrainingService.strengthBonus(20), 1.0E-9);
    }
 
    @Test void legalComboCancelsAreExplicit() {

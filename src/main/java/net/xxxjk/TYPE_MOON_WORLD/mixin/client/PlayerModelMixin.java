@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -86,6 +87,28 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             model.rightArm.yRot = 0.0F;
             model.rightArm.zRot = 0.0F;
             model.rightSleeve.copyFrom(model.rightArm);
+         }
+         PlayerModel<?> carryModel = (PlayerModel<?>)(Object)this;
+         if (ServantMasterCarryService.isCarryingMaster(player)) {
+            carryModel.rightArm.xRot = -1.28F;
+            carryModel.rightArm.yRot = -0.38F;
+            carryModel.rightArm.zRot = 0.18F;
+            carryModel.leftArm.xRot = -1.05F;
+            carryModel.leftArm.yRot = 0.48F;
+            carryModel.leftArm.zRot = -0.24F;
+            carryModel.rightSleeve.copyFrom(carryModel.rightArm);
+            carryModel.leftSleeve.copyFrom(carryModel.leftArm);
+         } else if (ServantMasterCarryService.isCarriedMaster(player)) {
+            carryModel.rightArm.xRot = -0.72F;
+            carryModel.leftArm.xRot = -0.72F;
+            carryModel.rightLeg.xRot = -1.05F;
+            carryModel.leftLeg.xRot = -1.05F;
+            carryModel.rightLeg.zRot = 0.18F;
+            carryModel.leftLeg.zRot = -0.18F;
+            carryModel.rightSleeve.copyFrom(carryModel.rightArm);
+            carryModel.leftSleeve.copyFrom(carryModel.leftArm);
+            carryModel.rightPants.copyFrom(carryModel.rightLeg);
+            carryModel.leftPants.copyFrom(carryModel.leftLeg);
          }
       }
    }

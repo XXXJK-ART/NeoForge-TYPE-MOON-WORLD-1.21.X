@@ -23,6 +23,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -245,9 +246,9 @@ public final class NpcMagicCastBridge {
                return distanceSqr <= 121.0;
             } else if (hasRanged && hasMeleeBurst) {
                return distanceSqr <= switch (temperament) {
-                  case TIMID -> 12.25;
-                  case BOLD -> 25.0;
-                  default -> 17.64;
+                  case TIMID -> 20.25;
+                  case BOLD -> 42.25;
+                  default -> 30.25;
                };
             } else if (hasRanged) {
                // Ranged-only (typically no reinforcement): avoid committing to melee unless target is very close.
@@ -1254,9 +1255,13 @@ public final class NpcMagicCastBridge {
    ) {
       if (npc != null && target != null && target.isAlive() && capabilities != null) {
          double distance = Math.sqrt(npc.distanceToSqr(target));
-         if (shouldForceMeleeEngage(capabilities, distance)) {
-            npc.getNavigation().moveTo(target, 1.14);
-            npc.lookAt(target, 45.0F, 45.0F);
+         if (shouldForceMeleeEngage(capabilities, distance) || (capabilities.hasMeleeBurst() && shouldUseMeleeGoal(npc))) {
+            if (distance > 2.75 && (npc.getNavigation().isDone() || npc.tickCount % 5 == 0)) {
+               npc.getNavigation().moveTo(target, 1.24);
+            } else if (distance <= 2.75 && npc.tickCount % 8 == 0) {
+               circleMeleeTarget(npc, target, distance);
+            }
+            npc.getLookControl().setLookAt(target, 60.0F, 50.0F);
          } else if (!capabilities.hasRanged()) {
             if (capabilities.hasMeleeBurst()) {
                if (distance > (behavior == null ? MELEE_ENGAGE_DISTANCE : behavior.meleeEngageDistance())) {
@@ -2388,40 +2393,41 @@ public final class NpcMagicCastBridge {
       } else {
          double distance = Math.sqrt(npc.distanceToSqr(target));
          double trigger = behavior == null ? 2.4 : behavior.meleeSkillTriggerDistance();
-         if (distance > trigger + 0.8) {
+         double skillReach = Math.max(3.25, trigger + 0.8);
+         if (distance > skillReach || Math.abs(target.getY() - npc.getY()) > 2.5 || (!npc.hasLineOfSight(target) && distance > 2.15)) {
             return false;
          } else {
             CompoundTag data = npc.getPersistentData();
             boolean rangedOnly = capabilities.hasRanged() && !capabilities.hasMeleeBurst();
             if (rangedOnly) {
-               if (distance <= 2.2 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 24L);
+               if (distance <= 3.0 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 20L);
                   return true;
                }
 
-               if (distance <= 1.9 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 12L);
+               if (distance <= 2.7 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 10L);
                   return true;
                }
 
                return false;
             } else {
-               if (distance <= 2.0 && gameTime >= data.getLong(TAG_MELEE_THROW_CD) && npc.getRandom().nextFloat() < 0.38F && performUpperThrow(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_THROW_CD, gameTime + 70L);
+               if (distance <= 2.75 && gameTime >= data.getLong(TAG_MELEE_THROW_CD) && npc.getRandom().nextFloat() < 0.42F && performUpperThrow(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_THROW_CD, gameTime + 52L);
                   if (gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && performSlam(npc, target, vars, gameTime, 2.6)) {
-                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 95L);
+                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 78L);
                   }
 
                   return true;
-               } else if (distance <= 2.4 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 26L);
+               } else if (distance <= 3.25 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 20L);
                   return true;
-               } else if (distance <= 1.9 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 12L);
+               } else if (distance <= 2.8 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 10L);
                   return true;
-               } else if (distance <= 2.5 && gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && npc.getRandom().nextFloat() < 0.24F) {
+               } else if (distance <= 3.0 && gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && npc.getRandom().nextFloat() < 0.28F) {
                   if (performSlam(npc, target, vars, gameTime, 3.2)) {
-                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 100L);
+                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 80L);
                      return true;
                   } else {
                      return false;
@@ -4387,8 +4393,18 @@ public final class NpcMagicCastBridge {
 
    private static void markMeleePose(MysticMagicianEntity caster, int pose, int ticks) {
       if (caster != null) {
+         caster.swing(InteractionHand.MAIN_HAND, true);
          caster.triggerMeleeSkillPose(pose, ticks);
       }
+   }
+
+   private static void circleMeleeTarget(MysticMagicianEntity npc, LivingEntity target, double distance) {
+      Vec3 forward = target.position().subtract(npc.position()).multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-5) return;
+      Vec3 side = getRightVector(forward.normalize()).scale(npc.getRandom().nextBoolean() ? 1.35 : -1.35);
+      Vec3 anchor = npc.position().add(side);
+      if (distance < 1.65) anchor = anchor.subtract(forward.normalize().scale(0.65));
+      npc.getNavigation().moveTo(anchor.x, npc.getY(), anchor.z, 1.12);
    }
 
    private static Vec3 getRightVector(Vec3 forward) {

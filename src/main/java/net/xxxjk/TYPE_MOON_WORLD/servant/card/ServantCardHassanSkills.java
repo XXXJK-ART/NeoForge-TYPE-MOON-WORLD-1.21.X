@@ -34,6 +34,7 @@ public final class ServantCardHassanSkills {
       if (!"cursed_arm_hassan".equals(vars.servant_card_id)) {
          return;
       }
+      ServantCardConcealmentHelper.tick(player);
       keepRightHandEmpty(player);
       if (!vars.servant_card_hassan_cloak_broken && player.getHealth() <= player.getMaxHealth() * (2.0F / 3.0F)) {
          vars.servant_card_hassan_cloak_broken = true;
@@ -99,7 +100,7 @@ public final class ServantCardHassanSkills {
    public static void performShadowStep(ServerPlayer player) {
       Vec3 target = player.position().add(player.getLookAngle().multiply(1.0, 0.0, 1.0).normalize().scale(6.0));
       if (ServantCardSkillUtils.trySafeHorizontalTeleport(player, target.add(0.0, 0.1, 0.0))) {
-         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0, false, false, false));
+         ServantCardConcealmentHelper.apply(player, 40);
       }
    }
 

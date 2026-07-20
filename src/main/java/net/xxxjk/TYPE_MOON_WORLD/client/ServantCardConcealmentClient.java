@@ -5,7 +5,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.client.Minecraft;
-import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 
 public final class ServantCardConcealmentClient {
    private ServantCardConcealmentClient() {

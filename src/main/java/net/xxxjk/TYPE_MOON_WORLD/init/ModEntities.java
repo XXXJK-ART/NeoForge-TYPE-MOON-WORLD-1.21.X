@@ -330,7 +330,7 @@ public class ModEntities {
       "cursed_arm_hassan", () -> Builder.of(CursedArmHassanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cursed_arm_hassan")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedusaPegasusEntity>> MEDUSA_PEGASUS = ENTITY_TYPES.register(
-      "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(1.8F, 2.0F).build("medusa_pegasus")
+      "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(2.4F, 2.4F).build("medusa_pegasus")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
       "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")

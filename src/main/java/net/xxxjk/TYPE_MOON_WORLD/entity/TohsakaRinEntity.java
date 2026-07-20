@@ -13,7 +13,6 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatPersonality;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatStyle;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcMagicCastBridge;
-import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanNpcCombatController;
 import org.jetbrains.annotations.Nullable;
 
 public class TohsakaRinEntity extends MysticMagicianEntity {
@@ -39,7 +38,6 @@ public class TohsakaRinEntity extends MysticMagicianEntity {
          NpcScaleHelper.ensureFixedScale(this, FIXED_SCALE);
          ensureFixedHealth();
          if (this.tickCount % 40 == 0) NpcMagicCastBridge.ensureTohsakaRinBajiquan(this);
-         BajiquanNpcCombatController.tick(this, 60.0, true);
       }
    }
 

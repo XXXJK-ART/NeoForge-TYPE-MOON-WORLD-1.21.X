@@ -570,7 +570,7 @@ public final class ServantCardOdaNobunagaSkills {
          vars.syncPlayerVariables(player);
          return true;
       }
-      if (vars.servant_card_np_cooldown > 0) {
+      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servant_card_np_cooldown > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
          return false;
       }
@@ -1098,10 +1098,11 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static boolean isOnCooldown(ServerPlayer player, String tag) {
-      return player.getPersistentData().getInt(tag) > player.tickCount;
+      return !ServantCardUnlimitedMode.isEnabled(player) && player.getPersistentData().getInt(tag) > player.tickCount;
    }
 
    private static void setCooldown(ServerPlayer player, String tag, int ticks) {
+      if (ServantCardUnlimitedMode.isEnabled(player)) return;
       player.getPersistentData().putInt(tag, player.tickCount + Math.max(1, ticks));
    }
 

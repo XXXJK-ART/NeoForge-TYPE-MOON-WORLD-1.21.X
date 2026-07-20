@@ -9,6 +9,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class BodyTrainingService {
+   public static final int MAX_TOTAL_POINTS = 80;
+   public static final int MAX_STAT_POINTS = 20;
+   public static final int POINT_COST_STEP = 20;
    private static final ResourceLocation STRENGTH_ID = id("body_training_strength");
    private static final ResourceLocation SPEED_ID = id("body_training_speed");
    private static final ResourceLocation JUMP_ID = id("body_training_jump");
@@ -16,7 +19,18 @@ public final class BodyTrainingService {
    private BodyTrainingService() {}
 
    public static int totalEarned(TypeMoonWorldModVariables.PlayerVariables vars) {
-      return Mth.clamp(vars.body_training_points + vars.body_strength + vars.body_speed + vars.body_resistance + vars.body_technique, 0, 40);
+      return Mth.clamp(vars.body_training_points + allocatedPoints(vars), 0, MAX_TOTAL_POINTS);
+   }
+
+   public static int allocatedPoints(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return Mth.clamp(vars.body_strength, 0, MAX_STAT_POINTS)
+         + Mth.clamp(vars.body_speed, 0, MAX_STAT_POINTS)
+         + Mth.clamp(vars.body_resistance, 0, MAX_STAT_POINTS)
+         + Mth.clamp(vars.body_technique, 0, MAX_STAT_POINTS);
+   }
+
+   public static int availablePointCapacity(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return Math.max(0, MAX_TOTAL_POINTS - allocatedPoints(vars));
    }
 
    public static int nextPointCost(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -24,8 +38,8 @@ public final class BodyTrainingService {
    }
 
    public static int pointCostForEarned(int earnedPoints) {
-      int next = Mth.clamp(earnedPoints, 0, 40) + 1;
-      return next > 40 ? 0 : next * 10;
+      int earned = Mth.clamp(earnedPoints, 0, MAX_TOTAL_POINTS);
+      return earned >= MAX_TOTAL_POINTS ? 0 : (earned + 1) * POINT_COST_STEP;
    }
 
    public static void award(ServerPlayer player, int amount) {
@@ -46,7 +60,7 @@ public final class BodyTrainingService {
 
    public static boolean allocate(ServerPlayer player, String stat) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.body_training_points <= 0 || totalEarned(vars) > 40) return false;
+      if (vars.body_training_points <= 0 || allocatedPoints(vars) >= MAX_TOTAL_POINTS) return false;
       boolean applied = switch (stat == null ? "" : stat) {
          case "strength" -> increment(() -> vars.body_strength, v -> vars.body_strength = v);
          case "speed" -> increment(() -> vars.body_speed, v -> vars.body_speed = v);
@@ -64,23 +78,23 @@ public final class BodyTrainingService {
 
    private static boolean increment(IntGetter getter, IntSetter setter) {
       int current = getter.get();
-      if (current >= 10) return false;
+      if (current >= MAX_STAT_POINTS) return false;
       setter.set(current + 1);
       return true;
    }
 
    public static double stagedPercent(int level) {
-      int value = Mth.clamp(level, 0, 10);
+      int value = Mth.clamp(level, 0, MAX_STAT_POINTS);
       if (value <= 5) return value * 0.01;
       if (value <= 9) return 0.05 + (value - 5) * 0.02;
-      return 0.18;
+      return 0.18 + (value - 10) * 0.02;
    }
 
    public static double strengthBonus(int level) {
-      int value = Mth.clamp(level, 0, 10);
+      int value = Mth.clamp(level, 0, MAX_STAT_POINTS);
       if (value <= 5) return value * 0.2;
       if (value <= 9) return 1.0 + (value - 5) * 0.4;
-      return 3.6;
+      return 3.6 + (value - 10) * 0.4;
    }
 
    public static void applyAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

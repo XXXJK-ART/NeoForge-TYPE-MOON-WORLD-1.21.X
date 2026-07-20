@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
@@ -26,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardUnlimitedMode;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.command.VFXCommands;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineChunkProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
@@ -365,7 +367,7 @@ public class TypeMoonCommands {
                         .then(
                            Commands.literal("points")
                               .then(
-                                 Commands.argument("value", IntegerArgumentType.integer(0, 40))
+                                 Commands.argument("value", IntegerArgumentType.integer(0, BodyTrainingService.MAX_TOTAL_POINTS))
                                     .executes(ctx -> setBodyValue(ctx, "points", IntegerArgumentType.getInteger(ctx, "value")))
                               )
                         )
@@ -379,7 +381,7 @@ public class TypeMoonCommands {
                                           )
                                     )
                                     .then(
-                                       Commands.argument("value", IntegerArgumentType.integer(0, 10))
+                                       Commands.argument("value", IntegerArgumentType.integer(0, BodyTrainingService.MAX_STAT_POINTS))
                                           .executes(
                                              ctx -> setBodyStat(
                                                    ctx,
@@ -398,6 +400,14 @@ public class TypeMoonCommands {
                      Commands.literal("duel")
                         .then(Commands.literal("start").executes(ctx -> controlDuel(ctx, true)))
                         .then(Commands.literal("stop").executes(ctx -> controlDuel(ctx, false)))
+                  )
+            )
+            .then(
+               Commands.literal("servant_card")
+                  .then(
+                     Commands.literal("unlimited")
+                        .then(Commands.literal("on").executes(ctx -> setServantCardUnlimited(ctx, true)))
+                        .then(Commands.literal("off").executes(ctx -> setServantCardUnlimited(ctx, false)))
                   )
             )
       );
@@ -433,6 +443,26 @@ public class TypeMoonCommands {
       }
    }
 
+   private static int setServantCardUnlimited(CommandContext<CommandSourceStack> ctx, boolean enabled) {
+      try {
+         ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (!vars.servant_card_transformed) {
+            ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("You must be transformed by a servant card."));
+            return 0;
+         }
+         ServantCardUnlimitedMode.setEnabled(player, enabled);
+         vars.syncPlayerVariables(player);
+         ((CommandSourceStack)ctx.getSource()).sendSuccess(
+            () -> Component.literal("Servant card unlimited mode: " + (enabled ? "ON" : "OFF")), false
+         );
+         return 1;
+      } catch (Exception e) {
+         ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("This command requires a player."));
+         return 0;
+      }
+   }
+
    private static int showHelp(CommandContext<CommandSourceStack> ctx) {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("TYPE-MOON-WORLD commands:"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon help"), false);
@@ -445,7 +475,8 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger <true|false>"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-10>"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-20>"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon servant_card unlimited on|off"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc shiki clear | health <value>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc favor merlin|shiki <-5..5>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon progress king grant | revoke"), false);
@@ -600,10 +631,10 @@ public class TypeMoonCommands {
          vars.bajiquan_tiger_unlocked = true;
          vars.body_training_xp = 0;
          vars.body_training_points = 0;
-         vars.body_strength = 10;
-         vars.body_speed = 10;
-         vars.body_resistance = 10;
-         vars.body_technique = 10;
+         vars.body_strength = BodyTrainingService.MAX_STAT_POINTS;
+         vars.body_speed = BodyTrainingService.MAX_STAT_POINTS;
+         vars.body_resistance = BodyTrainingService.MAX_STAT_POINTS;
+         vars.body_technique = BodyTrainingService.MAX_STAT_POINTS;
 
          for (String m : ALL_MAGICS) {
             if (!vars.learned_magics.contains(m)) {
@@ -1052,9 +1083,14 @@ public class TypeMoonCommands {
       try {
          ServerPlayer player = ctx.getSource().getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if ("xp".equals(type)) vars.body_training_xp = Math.max(0, value); else vars.body_training_points = Math.max(0, Math.min(40, value));
+         if ("xp".equals(type)) {
+            vars.body_training_xp = Math.max(0, value);
+         } else {
+            vars.body_training_points = Mth.clamp(value, 0, BodyTrainingService.availablePointCapacity(vars));
+         }
          vars.syncPlayerVariables(player);
-         ctx.getSource().sendSuccess(() -> Component.literal("body " + type + " = " + value), true);
+         int applied = "xp".equals(type) ? vars.body_training_xp : vars.body_training_points;
+         ctx.getSource().sendSuccess(() -> Component.literal("body " + type + " = " + applied), true);
          return 1;
       } catch (Exception ignored) { return 0; }
    }
@@ -1063,17 +1099,28 @@ public class TypeMoonCommands {
       try {
          ServerPlayer player = ctx.getSource().getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         int clamped = Math.max(0, Math.min(10, value));
+         int clamped = Mth.clamp(value, 0, BodyTrainingService.MAX_STAT_POINTS);
+         int current = switch (type) {
+            case "strength" -> vars.body_strength;
+            case "speed" -> vars.body_speed;
+            case "resistance" -> vars.body_resistance;
+            case "technique" -> vars.body_technique;
+            default -> -1;
+         };
+         if (current < 0) { ctx.getSource().sendFailure(Component.literal("Unknown body stat: " + type)); return 0; }
+         int otherAllocated = BodyTrainingService.allocatedPoints(vars) - current;
+         clamped = Math.min(clamped, Math.max(0, BodyTrainingService.MAX_TOTAL_POINTS - otherAllocated));
          switch (type) {
             case "strength" -> vars.body_strength = clamped;
             case "speed" -> vars.body_speed = clamped;
             case "resistance" -> vars.body_resistance = clamped;
             case "technique" -> vars.body_technique = clamped;
-            default -> { ctx.getSource().sendFailure(Component.literal("Unknown body stat: " + type)); return 0; }
          }
+         vars.body_training_points = Math.min(vars.body_training_points, BodyTrainingService.availablePointCapacity(vars));
          BodyTrainingService.applyAttributes(player, vars);
          vars.syncPlayerVariables(player);
-         ctx.getSource().sendSuccess(() -> Component.literal("body " + type + " = " + clamped), true);
+         int applied = clamped;
+         ctx.getSource().sendSuccess(() -> Component.literal("body " + type + " = " + applied), true);
          return 1;
       } catch (Exception ignored) { return 0; }
    }

@@ -19,7 +19,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -55,7 +54,7 @@ public class BajiquanMasterEntity extends PathfinderMob {
 
    @Override protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
-      this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.25, true));
+      this.goalSelector.addGoal(1, BajiquanNpcCombatController.combatGoal(this));
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 10.0F));
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
    }
@@ -163,9 +162,10 @@ public class BajiquanMasterEntity extends PathfinderMob {
    @Override public boolean hurt(DamageSource source, float amount) {
       if (!isDuelActive()) {
          boolean hurt = super.hurt(source, amount);
-         if (source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker
+         if (hurt && source.getEntity() instanceof LivingEntity attacker
             && attacker != this && !this.isAlliedTo(attacker)
             && (!(attacker instanceof Player player) || !player.isCreative() && !player.isSpectator())) {
+            this.setLastHurtByMob(attacker);
             beginRetaliation(attacker);
          }
          return hurt;

@@ -1,10 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -39,23 +41,42 @@ public final class BajiquanEvents {
       }
    }
 
-   @SubscribeEvent
-   public static void onRightClickBlock(RightClickBlock event) { cancelControlledInteraction(event); }
-
-   @SubscribeEvent
-   public static void onRightClickItem(RightClickItem event) { cancelControlledInteraction(event); }
-
-   @SubscribeEvent
-   public static void onEntityInteract(EntityInteract event) { cancelControlledInteraction(event); }
-
-   @SubscribeEvent
-   public static void onEntityInteractSpecific(EntityInteractSpecific event) { cancelControlledInteraction(event); }
-
-   private static void cancelControlledInteraction(net.neoforged.bus.api.ICancellableEvent event) {
-      if (event instanceof PlayerInteractEvent interaction
-         && (interaction.getEntity().hasEffect(ModMobEffects.STAGGER) || interaction.getEntity().hasEffect(ModMobEffects.OFF_BALANCE))) {
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onRightClickBlock(RightClickBlock event) {
+      if (shouldCancelInteraction(event)) {
          event.setCanceled(true);
+         event.setCancellationResult(InteractionResult.SUCCESS);
       }
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onRightClickItem(RightClickItem event) {
+      if (shouldCancelInteraction(event)) {
+         event.setCanceled(true);
+         event.setCancellationResult(InteractionResult.SUCCESS);
+      }
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onEntityInteract(EntityInteract event) {
+      if (shouldCancelInteraction(event)) {
+         event.setCanceled(true);
+         event.setCancellationResult(InteractionResult.SUCCESS);
+      }
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onEntityInteractSpecific(EntityInteractSpecific event) {
+      if (shouldCancelInteraction(event)) {
+         event.setCanceled(true);
+         event.setCancellationResult(InteractionResult.SUCCESS);
+      }
+   }
+
+   private static boolean shouldCancelInteraction(PlayerInteractEvent event) {
+      boolean controlled = event.getEntity().hasEffect(ModMobEffects.STAGGER) || event.getEntity().hasEffect(ModMobEffects.OFF_BALANCE);
+      boolean bajiquanInput = event.getEntity() instanceof ServerPlayer player && BajiquanCombatService.isActive(player);
+      return controlled || bajiquanInput;
    }
 
    @SubscribeEvent

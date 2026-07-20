@@ -1512,5 +1512,10 @@
     "message.typemoonworld.bajiquan.unlock.500": "Parry (Perfect), Fa Jin (Beginner), Qi Gathering (Beginner)",
     "message.typemoonworld.bajiquan.unlock.600": "Fa Jin (Skilled), Qi Gathering (Skilled)",
     "message.typemoonworld.bajiquan.unlock.800": "Fa Jin (Perfect), Qi Gathering (Perfect)",
-    "message.typemoonworld.bajiquan.unlock.1000": "Circle Realm"
+    "message.typemoonworld.bajiquan.unlock.1000": "Circle Realm",
+    "message.typemoonworld.master_carry.picked_up": "Master picked up",
+    "message.typemoonworld.master_carry.carried": "Your Servant has picked you up",
+    "message.typemoonworld.master_carry.skill_blocked": "Skills cannot be used while carrying your Master",
+    "skill.typemoonworld.servant_card.emiya_spherical_projection": "Spherical Projection",
+    "skill.typemoonworld.servant_card.emiya_auto_counter": "Unlimited Blade Works: Auto Counter"
 }

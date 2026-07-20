@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client;
 
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -11,6 +12,7 @@ import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.common.util.TriState;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService;
 
 @EventBusSubscriber(value = {Dist.CLIENT})
 public final class ServantCardClientEvents {
@@ -40,6 +42,10 @@ public final class ServantCardClientEvents {
    public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
       if (ServantCardConcealmentClient.isPerfectlyConcealed(event.getEntity())) {
          event.setCanceled(true);
+      } else if (ServantMasterCarryService.isCarriedMaster(event.getEntity())) {
+         event.getPoseStack().translate(0.0, 0.62, 0.0);
+         event.getPoseStack().mulPose(Axis.ZP.rotationDegrees(72.0F));
+         event.getPoseStack().translate(0.0, -0.62, 0.0);
       }
    }
 

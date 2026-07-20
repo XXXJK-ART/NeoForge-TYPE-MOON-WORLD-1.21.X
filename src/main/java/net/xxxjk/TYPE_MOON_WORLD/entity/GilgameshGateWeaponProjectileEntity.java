@@ -172,7 +172,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                break;
             }
          }
-         spawnTrail(level);
+         if ((this.tickCount & 1) == 0) spawnTrail(level);
       this.setPos(next);
    }
 
