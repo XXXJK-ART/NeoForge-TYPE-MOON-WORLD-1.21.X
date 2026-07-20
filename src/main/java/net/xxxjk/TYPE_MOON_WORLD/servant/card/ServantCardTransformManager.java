@@ -220,6 +220,7 @@ public final class ServantCardTransformManager {
          case "paracelsus" -> ServantCardParacelsusSkills.tick(player, vars);
          case "oda_nobunaga" -> ServantCardOdaNobunagaSkills.tick(player, vars);
          case "medusa" -> ServantCardMedusaSkills.tick(player, vars);
+         case "sasaki_kojiro" -> ServantCardSasakiKojiroSkills.tick(player);
          case "cursed_arm_hassan" -> ServantCardHassanSkills.tick(player, vars);
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
@@ -740,7 +741,7 @@ public final class ServantCardTransformManager {
 
    private static boolean tickNoblePhantasmCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       long now = player.level().getGameTime();
-      if (vars.servant_card_np_cooldown_end <= now && vars.servant_card_np_cooldown > 0) {
+      if (vars.servant_card_np_cooldown_end <= 0L && vars.servant_card_np_cooldown > 0) {
          vars.servant_card_np_cooldown_end = now + vars.servant_card_np_cooldown;
       }
       int remaining = remainingTicks(now, vars.servant_card_np_cooldown_end);

@@ -569,7 +569,7 @@ public final class ServantCardOdaNobunagaSkills {
          }
          finishOdaHajunChant(player, true);
          activateOdaHajunField(player, level);
-         vars.servant_card_np_cooldown = action.cooldownTicks();
+         ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, action.cooldownTicks());
          vars.syncPlayerVariables(player);
          return true;
       }
@@ -804,7 +804,7 @@ public final class ServantCardOdaNobunagaSkills {
          }
          finishOdaHajunChant(player, false);
          activateOdaHajunField(player, level);
-         vars.servant_card_np_cooldown = 3600;
+         ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, 3600);
          vars.syncPlayerVariables(player);
       }
    }

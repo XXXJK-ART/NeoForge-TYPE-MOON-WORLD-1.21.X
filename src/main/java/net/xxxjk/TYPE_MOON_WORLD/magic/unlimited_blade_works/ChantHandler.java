@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
@@ -866,7 +867,7 @@ public class ChantHandler {
                vars.ubw_chant_timer = 0;
                vars.syncPlayerVariables(player);
             } else if (vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id)) {
-               vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, 2400);
+               ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, Math.max(vars.servant_card_np_cooldown, 2400));
                vars.syncPlayerVariables(player);
             }
          } else {

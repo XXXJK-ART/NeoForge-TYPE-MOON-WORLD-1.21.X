@@ -197,8 +197,10 @@ public class ServantCardHud {
          long cd = Math.max(0L, vars.servant_card_oda_flight_cooldown_until - now);
          text = Component.translatable("hud.typemoonworld.servant_card.oda_flight", vars.servant_card_oda_flight_ticks / 20, ticksToSeconds((int)Math.min(Integer.MAX_VALUE, cd)));
       } else {
-         long high = Math.max(0L, vars.servant_card_high_flight_until - now);
-         long cd = Math.max(0L, vars.servant_card_high_flight_cooldown_until - now);
+         long high = vars.servant_card_flight_mode == 2
+            ? Math.max(0L, vars.servant_card_high_flight_until - now)
+            : vars.servant_card_oda_flight_ticks;
+         long cd = Math.max(0L, vars.servant_card_oda_flight_cooldown_until - now);
          text = Component.translatable("hud.typemoonworld.servant_card.flight", vars.servant_card_flight_mode, ticksToSeconds((int)Math.min(Integer.MAX_VALUE, high)), ticksToSeconds((int)Math.min(Integer.MAX_VALUE, cd)));
       }
       drawScaledString(gui, minecraft, text, x, y, 0xFFBFE8FF, 0.54F);

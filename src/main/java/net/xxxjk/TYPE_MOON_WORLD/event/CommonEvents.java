@@ -45,6 +45,7 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
@@ -124,6 +125,19 @@ public class CommonEvents {
       TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed || vars.master_active) {
          ServantCardTransformManager.normalizeFood(serverPlayer);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onServantCardFall(LivingFallEvent event) {
+      if (!(event.getEntity() instanceof ServerPlayer player)) {
+         return;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id)) {
+         player.fallDistance = 0.0F;
+         event.setDistance(0.0F);
+         event.setCanceled(true);
       }
    }
 

@@ -159,7 +159,9 @@ public final class PlayerNoblePhantasmHelper {
       player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
-         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
+            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
+         );
          vars.syncPlayerVariables(player);
       }
       return true;
@@ -208,7 +210,9 @@ public final class PlayerNoblePhantasmHelper {
       player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
-         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
+            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
+         );
          vars.syncPlayerVariables(player);
       }
       return true;
@@ -223,7 +227,9 @@ public final class PlayerNoblePhantasmHelper {
       player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
-         vars.servant_card_np_cooldown = Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
+            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
+         );
          vars.syncPlayerVariables(player);
       }
       return true;

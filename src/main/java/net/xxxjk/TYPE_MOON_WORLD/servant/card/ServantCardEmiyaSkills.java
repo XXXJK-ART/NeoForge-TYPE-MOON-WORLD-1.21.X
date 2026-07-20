@@ -153,7 +153,7 @@ public final class ServantCardEmiyaSkills {
                   ModSounds.EMIYA_ARCHER_VOICE_UBW.get(),
                   ModSounds.EMIYA_ARCHER_VOICE_UBW_SHORT.get()
                );
-               vars.servant_card_np_cooldown = action.cooldownTicks();
+               ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, action.cooldownTicks());
                vars.syncPlayerVariables(player);
                spawnServantCardSwordRain(player, 36, 18.0);
                return true;

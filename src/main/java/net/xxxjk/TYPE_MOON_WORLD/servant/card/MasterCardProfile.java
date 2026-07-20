@@ -177,6 +177,8 @@ public final class MasterCardProfile {
             learnJewelSuite(vars, 85.0);
             learn(vars, "jewel_machine_gun");
             vars.proficiency_jewel_magic_release = Math.max(vars.proficiency_jewel_magic_release, 80.0);
+            learn(vars, "gander");
+            vars.proficiency_gander = Math.max(vars.proficiency_gander, 60.0);
             learn(vars, "reinforcement");
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, 65.0);
          }, MasterCardProfile::giveHighGemKit);

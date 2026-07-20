@@ -130,11 +130,11 @@ public final class ServantCardLiShuwenSkills {
          return false;
       }
       if (target == null) {
-         vars.servant_card_np_cooldown = WU_ER_DA_MISS_COOLDOWN;
+         ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, WU_ER_DA_MISS_COOLDOWN);
          spawnLiWuErDaMissFx(player);
          return true;
       }
-      vars.servant_card_np_cooldown = WU_ER_DA_HIT_COOLDOWN;
+      ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, WU_ER_DA_HIT_COOLDOWN);
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 180, 2, false, true, true));
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 5, false, true, true));
       spawnLiHitFx(player, target);
