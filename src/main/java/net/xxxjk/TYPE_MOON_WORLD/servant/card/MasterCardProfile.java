@@ -268,6 +268,10 @@ public final class MasterCardProfile {
       vars.bajiquan_proficiency = 0.0;
       vars.bajiquan_tiger_unlocked = false;
       vars.bajiquan_circle_realm_cooldown_until = 0L;
+      vars.ganryu_learned = false;
+      vars.ganryu_proficiency = 0.0;
+      vars.ganryu_tsubame_unlocked = false;
+      vars.martial_ukemi_learned = false;
       vars.sword_barrel_mode = 0;
       vars.gandr_machine_gun_mode = 0;
       vars.jewel_magic_mode = 0;

@@ -37,7 +37,8 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    private static boolean hasDedicatedArmor(String servantId) {
       return switch (servantId) {
          case "emiya_archer", "enkidu", "cu_chulainn", "medea",
-            "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles" -> true;
+            "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles",
+            "gilgamesh", "paracelsus", "li_shuwen", "oda_nobunaga" -> true;
          default -> false;
       };
    }

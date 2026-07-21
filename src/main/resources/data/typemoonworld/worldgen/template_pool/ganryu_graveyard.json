@@ -1,0 +1,13 @@
+{
+  "name": "typemoonworld:ganryu_graveyard",
+  "fallback": "minecraft:empty",
+  "elements": [{
+    "weight": 1,
+    "element": {
+      "element_type": "minecraft:single_pool_element",
+      "location": "typemoonworld:ganryu_graveyard",
+      "projection": "rigid",
+      "processors": "typemoonworld:ganryu_graveyard"
+    }
+  }]
+}

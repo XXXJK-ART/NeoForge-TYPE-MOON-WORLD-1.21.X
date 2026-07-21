@@ -13,6 +13,8 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteractSpecific;
@@ -31,6 +33,7 @@ public final class BajiquanEvents {
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          BajiquanCombatService.tickPlayer(player);
+         GanryuCombatService.tickPlayer(player);
       }
    }
 
@@ -76,27 +79,57 @@ public final class BajiquanEvents {
    private static boolean shouldCancelInteraction(PlayerInteractEvent event) {
       boolean controlled = event.getEntity().hasEffect(ModMobEffects.STAGGER) || event.getEntity().hasEffect(ModMobEffects.OFF_BALANCE);
       boolean bajiquanInput = event.getEntity() instanceof ServerPlayer player && BajiquanCombatService.isActive(player);
-      return controlled || bajiquanInput;
+      boolean ganryuInput = event.getEntity() instanceof ServerPlayer player && GanryuCombatService.isActive(player);
+      return controlled || bajiquanInput || ganryuInput;
    }
 
    @SubscribeEvent
    public static void onLogin(PlayerLoggedInEvent event) {
       event.getEntity().getPersistentData().remove("TypeMoonBajiquanSparring");
       event.getEntity().getPersistentData().remove("TypeMoonBajiquanSparringMaster");
+      event.getEntity().getPersistentData().remove("TypeMoonGanryuSparring");
+      event.getEntity().getPersistentData().remove("TypeMoonGanryuSparringMaster");
+      if (event.getEntity() instanceof ServerPlayer player) {
+         MartialUkemiService.migrate(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
+      }
    }
 
    @SubscribeEvent
    public static void onLogout(PlayerLoggedOutEvent event) {
-      if (!(event.getEntity() instanceof ServerPlayer player) || !player.getPersistentData().hasUUID("TypeMoonBajiquanSparringMaster")) return;
-      java.util.UUID masterId = player.getPersistentData().getUUID("TypeMoonBajiquanSparringMaster");
-      for (net.minecraft.server.level.ServerLevel level : player.getServer().getAllLevels()) {
-         if (level.getEntity(masterId) instanceof net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity master) {
-            master.endDuel(player, false);
-            return;
+      if (!(event.getEntity() instanceof ServerPlayer player)) return;
+      if (player.getPersistentData().hasUUID("TypeMoonBajiquanSparringMaster")) {
+         java.util.UUID masterId = player.getPersistentData().getUUID("TypeMoonBajiquanSparringMaster");
+         for (net.minecraft.server.level.ServerLevel level : player.getServer().getAllLevels()) {
+            if (level.getEntity(masterId) instanceof net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity master) {
+               master.endDuel(player, false);
+               break;
+            }
          }
       }
       player.getPersistentData().remove("TypeMoonBajiquanSparring");
       player.getPersistentData().remove("TypeMoonBajiquanSparringMaster");
+      if (player.getPersistentData().hasUUID("TypeMoonGanryuSparringMaster")) {
+         java.util.UUID masterId = player.getPersistentData().getUUID("TypeMoonGanryuSparringMaster");
+         for (net.minecraft.server.level.ServerLevel level : player.getServer().getAllLevels()) {
+            if (level.getEntity(masterId) instanceof net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity master) {
+               master.endDuel(player, false);
+               break;
+            }
+         }
+      }
+      player.getPersistentData().remove("TypeMoonGanryuSparring");
+      player.getPersistentData().remove("TypeMoonGanryuSparringMaster");
+      GanryuCombatService.clearRuntime(player);
+   }
+
+   @SubscribeEvent
+   public static void onChangedDimension(PlayerChangedDimensionEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) GanryuCombatService.clearRuntime(player);
+   }
+
+   @SubscribeEvent
+   public static void onRespawn(PlayerRespawnEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) GanryuCombatService.clearRuntime(player);
    }
 
    @SubscribeEvent
@@ -114,6 +147,13 @@ public final class BajiquanEvents {
             && BajiquanCombatService.isMartialDamage(sparringAttacker);
          if (!allowed) { event.setCanceled(true); return; }
       }
+      if (event.getSource().getEntity() instanceof ServerPlayer sparringAttacker
+         && sparringAttacker.getPersistentData().getBoolean("TypeMoonGanryuSparring")) {
+         boolean allowed = sparringAttacker.getPersistentData().hasUUID("TypeMoonGanryuSparringMaster")
+            && event.getEntity().getUUID().equals(sparringAttacker.getPersistentData().getUUID("TypeMoonGanryuSparringMaster"))
+            && GanryuCombatService.isMartialDamage(sparringAttacker);
+         if (!allowed) { event.setCanceled(true); return; }
+      }
       if (event.getEntity() instanceof ServerPlayer sparringDefender
          && sparringDefender.getPersistentData().getBoolean("TypeMoonBajiquanSparring")) {
          boolean allowed = sparringDefender.getPersistentData().hasUUID("TypeMoonBajiquanSparringMaster")
@@ -125,6 +165,23 @@ public final class BajiquanEvents {
             event.setCanceled(true);
             sparringDefender.setHealth(1.0F);
             if (sparringDefender.serverLevel().getEntity(sparringDefender.getPersistentData().getUUID("TypeMoonBajiquanSparringMaster")) instanceof net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity master) {
+               master.endDuel(sparringDefender, false);
+            }
+            return;
+         }
+      }
+      if (event.getEntity() instanceof ServerPlayer sparringDefender
+         && sparringDefender.getPersistentData().getBoolean("TypeMoonGanryuSparring")) {
+         boolean allowed = sparringDefender.getPersistentData().hasUUID("TypeMoonGanryuSparringMaster")
+            && event.getSource().getEntity() != null
+            && event.getSource().getEntity().getUUID().equals(sparringDefender.getPersistentData().getUUID("TypeMoonGanryuSparringMaster"));
+         if (!allowed) { event.setCanceled(true); return; }
+         TypeMoonWorldModVariables.PlayerVariables duelVars = sparringDefender.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (duelVars.ganryu_proficiency < 80.0 && sparringDefender.getHealth() - event.getAmount() <= 0.0F) {
+            event.setCanceled(true);
+            sparringDefender.setHealth(1.0F);
+            if (sparringDefender.serverLevel().getEntity(sparringDefender.getPersistentData().getUUID("TypeMoonGanryuSparringMaster"))
+               instanceof net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity master) {
                master.endDuel(sparringDefender, false);
             }
             return;
@@ -160,6 +217,11 @@ public final class BajiquanEvents {
       }
 
       if (melee && event.getSource().is(DamageTypes.PLAYER_ATTACK) && event.getSource().getEntity() instanceof ServerPlayer attacker && event.getAmount() > 0.0F) {
+         if (!GanryuCombatService.isMartialDamage(attacker)
+            && attacker.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.NODACHI.get())) {
+            int bonus = GanryuCombatService.souwaBonus(attacker.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
+            if (bonus > 0) event.setAmount(event.getAmount() + bonus);
+         }
          long now = attacker.level().getGameTime();
          long last = attacker.getPersistentData().getLong("TypeMoonBodyTrainingLastAwardTick");
          if (last != now) {

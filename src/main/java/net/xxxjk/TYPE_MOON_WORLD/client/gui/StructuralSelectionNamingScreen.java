@@ -23,23 +23,24 @@ public class StructuralSelectionNamingScreen extends Screen {
       this.nameBox = new EditBox(this.font, x + 20, y + 52, 240, 20, Component.translatable("gui.typemoonworld.structure.naming.input"));
       this.nameBox.setMaxLength(32);
       this.nameBox.setValue("Structure");
+      this.nameBox.setTextColor(GuiUtils.ARCANE_TEXT);
       this.addRenderableWidget(this.nameBox);
       this.setInitialFocus(this.nameBox);
       this.addRenderableWidget(
-         new NeonButton(x + 42, y + 90, 86, 20, Component.translatable("gui.typemoonworld.structure.naming.save"), b -> this.submitAndClose(), -16711766)
+         new NeonButton(x + 42, y + 90, 86, 20, Component.translatable("gui.typemoonworld.structure.naming.save"), b -> this.submitAndClose(), GuiUtils.ARCANE_VALID).setArcaneStyle(true)
       );
       this.addRenderableWidget(
-         new NeonButton(x + 152, y + 90, 86, 20, Component.translatable("gui.typemoonworld.structure.naming.cancel"), b -> this.onClose(), -39305)
+         new NeonButton(x + 152, y + 90, 86, 20, Component.translatable("gui.typemoonworld.structure.naming.cancel"), b -> this.onClose(), GuiUtils.ARCANE_DANGER).setArcaneStyle(true)
       );
    }
 
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       int x = (this.width - 280) / 2;
       int y = (this.height - 130) / 2;
-      guiGraphics.fill(x, y, x + 280, y + 130, 1342177280);
-      GuiUtils.renderTechFrame(guiGraphics, x, y, 280, 130, -16733526, -16711681);
-      guiGraphics.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.structure.naming.title"), this.width / 2, y + 22, -1);
-      guiGraphics.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.structure.naming.subtitle"), this.width / 2, y + 36, -4864308);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderArcaneWindow(guiGraphics, x, y, BOX_W, BOX_H, GuiUtils.ARCANE_CYAN);
+      guiGraphics.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.structure.naming.title"), this.width / 2, y + 9, GuiUtils.ARCANE_TEXT);
+      guiGraphics.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.structure.naming.subtitle"), this.width / 2, y + 36, GuiUtils.ARCANE_TEXT_MUTED);
       super.render(guiGraphics, mouseX, mouseY, partialTick);
    }
 

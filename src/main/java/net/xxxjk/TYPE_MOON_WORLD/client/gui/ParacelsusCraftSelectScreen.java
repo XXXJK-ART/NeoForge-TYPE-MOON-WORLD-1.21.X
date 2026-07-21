@@ -84,8 +84,8 @@ public class ParacelsusCraftSelectScreen extends Screen {
       int bgY2 = startY + itemHeight + 12;
 
       this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-      guiGraphics.fill(bgX1, bgY1, bgX2, bgY2, 0xB0000000);
-      guiGraphics.renderOutline(bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, 0x88BFEFFF);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderArcaneWindow(guiGraphics, bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, 0xFF9ADBE8);
       guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 8, 0xFFEDE6FF);
       this.updateSelectionAt(mouseX, mouseY);
 
@@ -98,11 +98,8 @@ public class ParacelsusCraftSelectScreen extends Screen {
    private void renderChoice(GuiGraphics guiGraphics, int index, int x, int y, int width, int height) {
       boolean selected = index == this.selectedIndex;
       boolean full = this.isFull(index);
-      int fill = full ? 0x66502028 : selected ? 0xAA24405A : 0x77203844;
-      int border = full ? 0xAA907070 : selected ? 0xFFE6F7FF : 0x8890CFEA;
       int text = full ? 0xFFB0A0A0 : selected ? 0xFFFFFFFF : 0xFFD7EFFF;
-      guiGraphics.fill(x, y, x + width, y + height, fill);
-      guiGraphics.renderOutline(x, y, width, height, border);
+      GuiUtils.renderChoiceTile(guiGraphics, x, y, width, height, 0xFF9ADBE8, selected, !full);
 
       RenderSystem.enableBlend();
       guiGraphics.setColor(1.0F, 1.0F, 1.0F, full ? 0.45F : 0.86F);

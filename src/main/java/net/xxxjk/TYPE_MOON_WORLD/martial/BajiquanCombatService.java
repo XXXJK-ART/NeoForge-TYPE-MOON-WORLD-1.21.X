@@ -115,7 +115,9 @@ public final class BajiquanCombatService {
    }
 
    public static boolean isUnlocked(TypeMoonWorldModVariables.PlayerVariables vars, BajiquanMove move) {
-      if (vars == null || !vars.bajiquan_learned || vars.bajiquan_proficiency + 1.0E-6 < move.requiredProficiency()) return false;
+      if (vars == null || !vars.bajiquan_learned) return false;
+      if (move == BajiquanMove.UKEMI) return MartialUkemiService.isLearned(vars);
+      if (vars.bajiquan_proficiency + 1.0E-6 < move.requiredProficiency()) return false;
       return switch (move) {
          case CHARGED_TREMOR, DOUBLE_PALM, FIERCE_TIGER -> vars.bajiquan_tiger_unlocked;
          default -> true;
@@ -396,6 +398,7 @@ public final class BajiquanCombatService {
    public static void tickPlayer(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       BodyTrainingService.applyAttributes(player, vars);
+      MartialUkemiService.tick(player);
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
       boolean grounded = player.onGround();
@@ -448,15 +451,7 @@ public final class BajiquanCombatService {
    }
 
    public static boolean tryUkemi(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      long now = player.level().getGameTime();
-      if (!isUnlocked(vars, BajiquanMove.UKEMI) || player.getPersistentData().getLong(TAG_UKEMI_UNTIL) < now) return false;
-      Vec3 dir = look(player);
-      player.setDeltaMovement(dir.x * 0.9, Math.max(0.12, player.getDeltaMovement().y), dir.z * 0.9);
-      player.fallDistance *= 0.3F;
-      player.getPersistentData().putLong(TAG_UKEMI_UNTIL, 0L);
-      player.getPersistentData().putLong(TAG_UKEMI_REDUCTION_UNTIL, now + 4L);
-      player.hurtMarked = true;
-      return true;
+      return isUnlocked(vars, BajiquanMove.UKEMI) && MartialUkemiService.tryUse(player, isActive(player));
    }
 
    public static void activateCircleRealm(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -494,6 +489,7 @@ public final class BajiquanCombatService {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       double before = vars.bajiquan_proficiency;
       vars.bajiquan_proficiency = Mth.clamp(Math.round((before + amount) * 100.0) / 100.0, 0.0, 100.0);
+      if (vars.bajiquan_proficiency >= 30.0) vars.martial_ukemi_learned = true;
       notifyUnlocks(player, before, vars.bajiquan_proficiency);
       if (before < 40.0 && vars.bajiquan_proficiency >= 40.0) TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.BAJIQUAN_GRADUATE);
       if (before < 100.0 && vars.bajiquan_proficiency >= 100.0) TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.BAJIQUAN_CIRCLE_REALM);
@@ -524,10 +520,7 @@ public final class BajiquanCombatService {
    }
 
    public static boolean consumeUkemiReduction(ServerPlayer player) {
-      CompoundTag data = player.getPersistentData();
-      if (data.getLong(TAG_UKEMI_REDUCTION_UNTIL) < player.level().getGameTime()) return false;
-      data.remove(TAG_UKEMI_REDUCTION_UNTIL);
-      return true;
+      return MartialUkemiService.consumeReduction(player);
    }
 
    private static BajiquanMove moveById(String id) {

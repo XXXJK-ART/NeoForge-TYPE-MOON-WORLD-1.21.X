@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
@@ -231,6 +232,9 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<BajiquanApprenticeEntity>> BAJIQUAN_APPRENTICE = ENTITY_TYPES.register(
       "bajiquan_apprentice", () -> Builder.of(BajiquanApprenticeEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("bajiquan_apprentice")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysteriousSwordsmanEntity>> MYSTERIOUS_SWORDSMAN = ENTITY_TYPES.register(
+      "mysterious_swordsman", () -> Builder.of(MysteriousSwordsmanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("mysterious_swordsman")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<TohsakaRinEntity>> TOHSAKA_RIN = ENTITY_TYPES.register(
       "tohsaka_rin", () -> Builder.of(TohsakaRinEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("tohsaka_rin")

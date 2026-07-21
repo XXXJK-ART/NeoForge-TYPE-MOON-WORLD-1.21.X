@@ -1,0 +1,511 @@
+package net.xxxjk.TYPE_MOON_WORLD.martial;
+
+import java.util.Comparator;
+import java.util.UUID;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.network.GanryuPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+
+public final class GanryuCombatService {
+   public static final String MAGIC_ID = "ganryu";
+   public static final int INPUT_A = 0;
+   public static final int INPUT_B_START = 1;
+   public static final int INPUT_B_END = 2;
+   public static final int INPUT_JUMP = 3;
+   public static final int INPUT_DOWN = 4;
+   public static final TagKey<Item> WEAPONS = TagKey.create(Registries.ITEM,
+      ResourceLocation.fromNamespaceAndPath("typemoonworld", "ganryu_weapons"));
+   public static final ResourceKey<DamageType> TSUBAME_DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE,
+      ResourceLocation.fromNamespaceAndPath("typemoonworld", "ganryu_tsubame"));
+
+   private static final ResourceLocation STANCE_SLOW_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "ganryu_stance_slow");
+   private static final String TAG_RECOVERY = "TypeMoonGanryuRecoveryUntil";
+   private static final String TAG_STANCE_START = "TypeMoonGanryuStanceStart";
+   private static final String TAG_STANCE_STAGE = "TypeMoonGanryuStanceStage";
+   private static final String TAG_STANCE_POWER = "TypeMoonGanryuStancePower";
+   private static final String TAG_STANCE_CHAIN = "TypeMoonGanryuStanceChainUntil";
+   private static final String TAG_A_COUNT = "TypeMoonGanryuACount";
+   private static final String TAG_DOWN_A_COUNT = "TypeMoonGanryuDownACount";
+   private static final String TAG_LAST_SEQUENCE = "TypeMoonGanryuLastSequence";
+   private static final String TAG_DOWN_UNTIL = "TypeMoonGanryuDownUntil";
+   private static final String TAG_MARTIAL_DAMAGE = "TypeMoonGanryuDamage";
+   private static final String TAG_PENDING_TARGET = "TypeMoonGanryuPendingTarget";
+   private static final String TAG_PENDING_STRIKES = "TypeMoonGanryuPendingStrikes";
+   private static final String TAG_PENDING_NEXT = "TypeMoonGanryuPendingNext";
+   private static final String TAG_PENDING_DAMAGE = "TypeMoonGanryuPendingDamage";
+   private static final String TAG_PENDING_AWARDED = "TypeMoonGanryuPendingAwarded";
+   private static final int SEQUENCE_WINDOW = 30;
+   private static final int STANCE_CHARGE_TICKS = 60;
+
+   private GanryuCombatService() {}
+
+   public static boolean isAllowedBlade(ItemStack stack) {
+      return stack != null && !stack.isEmpty() && (stack.is(WEAPONS)
+         || stack.is(ModItems.WAKIZASHI.get()) || stack.is(ModItems.KATANA.get()) || stack.is(ModItems.NODACHI.get())
+         || stack.is(ModItems.BIZEN_NAGAMITSU.get()));
+   }
+
+   public static ItemStack activeBlade(ServerPlayer player) {
+      if (isAllowedBlade(player.getMainHandItem())) return player.getMainHandItem();
+      return isAllowedBlade(player.getOffhandItem()) ? player.getOffhandItem() : ItemStack.EMPTY;
+   }
+
+   public static boolean hasValidHands(ServerPlayer player) {
+      ItemStack main = player.getMainHandItem();
+      ItemStack off = player.getOffhandItem();
+      return (isAllowedBlade(main) || isAllowedBlade(off))
+         && (main.isEmpty() || isAllowedBlade(main)) && (off.isEmpty() || isAllowedBlade(off));
+   }
+
+   public static boolean isActive(ServerPlayer player) {
+      if (player == null) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.ganryu_learned && vars.is_magic_circuit_open && !vars.servant_card_transformed
+         && hasValidHands(player) && PlayerMagicSelectionService.isCurrentSelection(vars, MAGIC_ID);
+   }
+
+   public static boolean isReadyWithInvitation(ServerPlayer player) {
+      ItemStack main = player.getMainHandItem();
+      ItemStack off = player.getOffhandItem();
+      boolean invitationAndBlade = main.is(ModItems.SPARRING_INVITATION.get()) && isAllowedBlade(off)
+         || off.is(ModItems.SPARRING_INVITATION.get()) && isAllowedBlade(main);
+      if (!invitationAndBlade) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.ganryu_learned && vars.is_magic_circuit_open && !vars.servant_card_transformed
+         && PlayerMagicSelectionService.isCurrentSelection(vars, MAGIC_ID);
+   }
+
+   public static boolean learn(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.ganryu_learned) return false;
+      vars.ganryu_learned = true;
+      if (!vars.learned_magics.contains(MAGIC_ID)) vars.learned_magics.add(MAGIC_ID);
+      vars.syncPlayerVariables(player);
+      TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.GANRYU);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.learned"), false);
+      return true;
+   }
+
+   public static void forget(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ganryu_learned = false;
+      vars.ganryu_proficiency = 0.0;
+      vars.ganryu_tsubame_unlocked = false;
+      vars.learned_magics.remove(MAGIC_ID);
+      vars.rebuildSelectedMagicsFromActiveWheel();
+      clearRuntime(player);
+      vars.syncPlayerVariables(player);
+   }
+
+   public static boolean isUnlocked(TypeMoonWorldModVariables.PlayerVariables vars, GanryuMove move) {
+      if (vars == null || !vars.ganryu_learned) return false;
+      if (move == GanryuMove.UKEMI) return MartialUkemiService.isLearned(vars);
+      if (vars.ganryu_proficiency + 1.0E-6 < move.requiredProficiency()) return false;
+      return move != GanryuMove.TSUBAME_GAESHI || vars.ganryu_tsubame_unlocked;
+   }
+
+   public static void handleInput(ServerPlayer player, int input, boolean down, boolean up) {
+      if (input == INPUT_B_END) {
+         endStance(player);
+         return;
+      }
+      if (!isActive(player)) {
+         clearRuntime(player);
+         return;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (player.hasEffect(ModMobEffects.STAGGER) || player.hasEffect(ModMobEffects.OFF_BALANCE)) return;
+      CompoundTag data = player.getPersistentData();
+      long now = player.level().getGameTime();
+      if (input == INPUT_DOWN) {
+         data.putLong(TAG_DOWN_UNTIL, now + 8L);
+         return;
+      }
+      if (input == INPUT_JUMP) {
+         if ((down || data.getLong(TAG_DOWN_UNTIL) >= now) && now >= data.getLong(TAG_RECOVERY)) {
+            perform(player, vars, GanryuMove.HIGH_JUMP, 0.0F);
+         }
+         return;
+      }
+      if (input == INPUT_B_START) {
+         if (MartialUkemiService.tryUse(player, true)) return;
+         if (now < data.getLong(TAG_RECOVERY)) return;
+         if (!isUnlocked(vars, GanryuMove.STANCE)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.move_locked"), true);
+            return;
+         }
+         beginStance(player, now);
+         return;
+      }
+      if (input != INPUT_A || now < data.getLong(TAG_RECOVERY)) return;
+      if (isInStance(player)) {
+         handleStanceAttack(player, vars, down, now);
+         return;
+      }
+      if (now - data.getLong(TAG_LAST_SEQUENCE) > SEQUENCE_WINDOW) {
+         data.putInt(TAG_A_COUNT, 0);
+         data.putInt(TAG_DOWN_A_COUNT, 0);
+      }
+      GanryuMove move;
+      if (up && !player.onGround()) {
+         move = GanryuMove.STONE_FLOWER_SECOND;
+      } else if (down) {
+         int count = data.getInt(TAG_DOWN_A_COUNT) % 2 + 1;
+         data.putInt(TAG_DOWN_A_COUNT, count);
+         move = count == 1 ? GanryuMove.SPRING_BUD_SECOND : GanryuMove.SPARROW_THRUST_SECOND;
+      } else {
+         int count = data.getInt(TAG_A_COUNT) % 3 + 1;
+         data.putInt(TAG_A_COUNT, count);
+         move = count == 1 ? GanryuMove.STONE_FLOWER : count == 2 ? GanryuMove.SPARROW_THRUST : GanryuMove.SPRING_BUD;
+      }
+      if (!isUnlocked(vars, move)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.move_locked"), true);
+         return;
+      }
+      data.putLong(TAG_LAST_SEQUENCE, now);
+      perform(player, vars, move, 0.0F);
+   }
+
+   private static void beginStance(ServerPlayer player, long now) {
+      CompoundTag data = player.getPersistentData();
+      if (data.getLong(TAG_STANCE_START) <= 0L) data.putLong(TAG_STANCE_START, now);
+      applyStanceSlow(player, true);
+      sendPose(player, GanryuMove.STANCE, 20);
+   }
+
+   private static void handleStanceAttack(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, boolean down, long now) {
+      CompoundTag data = player.getPersistentData();
+      if (down) {
+         if (!isUnlocked(vars, GanryuMove.TSUBAME_GAESHI)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.move_locked"), true);
+            return;
+         }
+         LivingEntity target = findTarget(player, GanryuMove.TSUBAME_GAESHI.range());
+         if (target == null) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+            return;
+         }
+         float power = chargeRatio(data, now);
+         performTsubame(player, vars, target, power);
+         resetStanceChain(player, now);
+         return;
+      }
+      int stage = data.getInt(TAG_STANCE_STAGE);
+      GanryuMove move = stage == 1 && data.getLong(TAG_STANCE_CHAIN) >= now ? GanryuMove.FLOWER_BUD : GanryuMove.SPARROW_SLASH;
+      if (!isUnlocked(vars, move)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.move_locked"), true);
+         return;
+      }
+      if (move == GanryuMove.SPARROW_SLASH) {
+         float power = chargeRatio(data, now);
+         data.putFloat(TAG_STANCE_POWER, power);
+         data.putInt(TAG_STANCE_STAGE, 1);
+         data.putLong(TAG_STANCE_CHAIN, now + 40L);
+         perform(player, vars, move, power);
+      } else {
+         float power = data.getFloat(TAG_STANCE_POWER);
+         perform(player, vars, move, power);
+         resetStanceChain(player, now);
+      }
+   }
+
+   private static void perform(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, GanryuMove move, float stancePower) {
+      if (!isUnlocked(vars, move)) return;
+      if (move == GanryuMove.HIGH_JUMP && !player.onGround()) return;
+      long now = player.level().getGameTime();
+      int recovery = Math.max(1, (int)Math.ceil(move.recoveryTicks() * (1.0 - BodyTrainingService.stagedPercent(vars.body_technique))));
+      player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
+      if (move == GanryuMove.HIGH_JUMP) {
+         player.setDeltaMovement(player.getDeltaMovement().x, 1.05 + BodyTrainingService.stagedPercent(vars.body_technique) * 0.4, player.getDeltaMovement().z);
+         player.hurtMarked = true;
+      } else {
+         LivingEntity target = findTarget(player, move.range());
+         applyMovement(player, move, target);
+         if (move == GanryuMove.SPARROW_SLASH) {
+            float damage = Mth.lerp(Mth.clamp(stancePower, 0.0F, 1.0F), 4.0F, 8.0F);
+            queueSparrowSlash(player, target, damage);
+         } else if (target != null) {
+            float damage = move == GanryuMove.FLOWER_BUD
+               ? stanceDamage(10.0F, 20.0F, stancePower)
+               : scaledDamage(vars, move.damage());
+            hit(player, target, damage, move, true);
+         }
+      }
+      if (move != GanryuMove.HIGH_JUMP) damageBlade(player);
+      spawnMoveFx(player.serverLevel(), player, move);
+      sendPose(player, move, Math.min(40, Math.max(6, move.recoveryTicks())));
+   }
+
+   private static void performTsubame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingEntity target, float power) {
+      long now = player.level().getGameTime();
+      int recovery = Math.max(1, (int)Math.ceil(GanryuMove.TSUBAME_GAESHI.recoveryTicks()
+         * (1.0 - BodyTrainingService.stagedPercent(vars.body_technique))));
+      player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
+      boolean landed = tsubameLands(player.getRandom().nextFloat());
+      if (landed) {
+         target.stopUsingItem();
+         target.invulnerableTime = 0;
+         hit(player, target, Mth.lerp(Mth.clamp(power, 0.0F, 1.0F), 60.0F, 120.0F), GanryuMove.TSUBAME_GAESHI, true);
+      } else {
+         player.serverLevel().sendParticles(ParticleTypes.SMOKE, target.getX(), target.getY() + 1.0, target.getZ(), 20, 0.45, 0.6, 0.45, 0.06);
+      }
+      net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects.spawn(player.serverLevel(), "servant_sasaki_tsubame", player, 96.0);
+      damageBlade(player);
+      sendPose(player, GanryuMove.TSUBAME_GAESHI, 40);
+   }
+
+   private static void queueSparrowSlash(ServerPlayer player, LivingEntity target, float damage) {
+      if (target == null) return;
+      CompoundTag data = player.getPersistentData();
+      data.putUUID(TAG_PENDING_TARGET, target.getUUID());
+      data.putInt(TAG_PENDING_STRIKES, 3);
+      data.putLong(TAG_PENDING_NEXT, player.level().getGameTime());
+      data.putFloat(TAG_PENDING_DAMAGE, damage);
+      data.putBoolean(TAG_PENDING_AWARDED, false);
+   }
+
+   public static void tickPlayer(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      long now = player.level().getGameTime();
+      if (!isActive(player)) {
+         endStance(player);
+         clearPending(data);
+      } else if (isInStance(player)) {
+         applyStanceSlow(player, true);
+         if (data.getInt(TAG_STANCE_STAGE) == 1 && data.getLong(TAG_STANCE_CHAIN) < now) resetStanceChain(player, now);
+         if (now >= data.getLong(TAG_RECOVERY) && now % 10L == 0L) sendPose(player, GanryuMove.STANCE, 20);
+      }
+      if (data.getInt(TAG_PENDING_STRIKES) <= 0 || data.getLong(TAG_PENDING_NEXT) > now || !data.hasUUID(TAG_PENDING_TARGET)) return;
+      LivingEntity target = player.serverLevel().getEntity(data.getUUID(TAG_PENDING_TARGET)) instanceof LivingEntity living ? living : null;
+      if (target == null || !target.isAlive() || player.distanceToSqr(target) > 36.0) {
+         clearPending(data);
+         return;
+      }
+      boolean award = !data.getBoolean(TAG_PENDING_AWARDED);
+      boolean hit = hit(player, target, data.getFloat(TAG_PENDING_DAMAGE), GanryuMove.SPARROW_SLASH, award);
+      if (hit && award) data.putBoolean(TAG_PENDING_AWARDED, true);
+      int remaining = data.getInt(TAG_PENDING_STRIKES) - 1;
+      data.putInt(TAG_PENDING_STRIKES, remaining);
+      data.putLong(TAG_PENDING_NEXT, now + 3L);
+      Vec3 dir = horizontalLook(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(dir.scale(0.15)));
+      player.hurtMarked = true;
+      if (remaining <= 0) clearPending(data);
+   }
+
+   private static boolean hit(ServerPlayer player, LivingEntity target, float damage, GanryuMove move, boolean award) {
+      if (target == null || !canHit(player, target)) return false;
+      target.invulnerableTime = 0;
+      float finalDamage = damage;
+      if (activeBlade(player).is(ModItems.NODACHI.get())) {
+         finalDamage += souwaBonus(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
+      }
+      player.getPersistentData().putBoolean(TAG_MARTIAL_DAMAGE, true);
+      boolean landed;
+      try {
+         landed = target.hurt(move == GanryuMove.TSUBAME_GAESHI
+            ? player.damageSources().source(TSUBAME_DAMAGE, player)
+            : player.damageSources().playerAttack(player), finalDamage);
+      } finally {
+         player.getPersistentData().remove(TAG_MARTIAL_DAMAGE);
+      }
+      target.invulnerableTime = 0;
+      if (!landed) return false;
+      Vec3 direction = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
+      if (direction.lengthSqr() < 1.0E-4) direction = horizontalLook(player);
+      direction = direction.normalize();
+      double lift = switch (move) {
+         case SPARROW_THRUST, SPARROW_THRUST_SECOND, FLOWER_BUD -> 0.34;
+         case STONE_FLOWER_SECOND -> -0.12;
+         default -> 0.08;
+      };
+      target.push(direction.x * 0.15, lift, direction.z * 0.15);
+      target.hurtMarked = true;
+      if (award) addProficiency(player, isSparring(player) ? 0.25 : 0.05);
+      return true;
+   }
+
+   private static void applyMovement(ServerPlayer player, GanryuMove move, LivingEntity target) {
+      Vec3 dir = target == null ? horizontalLook(player) : target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0).normalize();
+      double speed = switch (move) {
+         case SPRING_BUD -> 0.55;
+         case SPRING_BUD_SECOND -> 0.70;
+         case SPARROW_SLASH -> 0.45;
+         case SPARROW_THRUST_SECOND -> -0.45;
+         default -> 0.0;
+      };
+      if (speed != 0.0 && dir.lengthSqr() > 1.0E-4) {
+         player.setDeltaMovement(player.getDeltaMovement().add(dir.x * speed, 0.04, dir.z * speed));
+         player.hurtMarked = true;
+      }
+   }
+
+   private static LivingEntity findTarget(ServerPlayer player, double range) {
+      Vec3 eye = player.getEyePosition();
+      Vec3 look = player.getLookAngle().normalize();
+      return player.level().getEntitiesOfClass(LivingEntity.class,
+         player.getBoundingBox().expandTowards(look.scale(range)).inflate(2.0), e -> canHit(player, e)).stream()
+         .filter(e -> {
+            Vec3 to = e.getBoundingBox().getCenter().subtract(eye);
+            return to.lengthSqr() <= range * range && to.normalize().dot(look) > 0.70 && player.hasLineOfSight(e);
+         }).min(Comparator.comparingDouble(player::distanceToSqr)).orElse(null);
+   }
+
+   private static boolean canHit(ServerPlayer player, LivingEntity target) {
+      return target != player && target.isAlive() && !target.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   public static int souwaBonus(TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars == null || !vars.ganryu_learned || vars.ganryu_proficiency < 25.0) return 0;
+      return vars.ganryu_proficiency >= 100.0 ? 6 : vars.ganryu_proficiency >= 50.0 ? 3 : 1;
+   }
+
+   static float scaledDamage(TypeMoonWorldModVariables.PlayerVariables vars, float baseDamage) {
+      if (vars == null) return Math.max(0.0F, baseDamage);
+      return BajiquanCombatService.scaledDamage(baseDamage, vars.body_strength, vars.ganryu_proficiency);
+   }
+
+   static float stanceDamage(float minimum, float maximum, float power) {
+      return Mth.lerp(Mth.clamp(power, 0.0F, 1.0F), minimum, maximum);
+   }
+
+   static boolean tsubameLands(float roll) {
+      return roll >= 0.0F && roll < 0.8F;
+   }
+
+   public static void addProficiency(ServerPlayer player, double amount) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double before = vars.ganryu_proficiency;
+      vars.ganryu_proficiency = Mth.clamp(Math.round((before + amount) * 100.0) / 100.0, 0.0, 100.0);
+      if (vars.ganryu_proficiency >= 50.0) vars.martial_ukemi_learned = true;
+      notifyUnlocks(player, before, vars.ganryu_proficiency);
+      if (before < 100.0 && vars.ganryu_proficiency >= 100.0) {
+         TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.GANRYU_SOUWA_PERFECT);
+      }
+      if ((int)(before * 20.0) != (int)(vars.ganryu_proficiency * 20.0)) vars.syncPlayerVariables(player);
+   }
+
+   private static void notifyUnlocks(ServerPlayer player, double before, double after) {
+      double[] thresholds = {0.5, 5.0, 10.0, 25.0, 50.0, 55.0, 60.0, 100.0};
+      String[] keys = {"05", "50", "100", "250", "500", "550", "600", "1000"};
+      for (int i = 0; i < thresholds.length; i++) {
+         if (before < thresholds[i] && after >= thresholds[i]) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.moves_unlocked",
+               Component.translatable("message.typemoonworld.ganryu.unlock." + keys[i])), false);
+         }
+      }
+   }
+
+   public static boolean isMartialDamage(ServerPlayer player) {
+      return player != null && player.getPersistentData().getBoolean(TAG_MARTIAL_DAMAGE);
+   }
+
+   public static boolean isSparring(ServerPlayer player) {
+      return player.getPersistentData().getBoolean("TypeMoonGanryuSparring");
+   }
+
+   public static boolean isInStance(ServerPlayer player) {
+      return player != null && player.getPersistentData().getLong(TAG_STANCE_START) > 0L;
+   }
+
+   public static void endStance(ServerPlayer player) {
+      if (player == null) return;
+      CompoundTag data = player.getPersistentData();
+      data.remove(TAG_STANCE_START);
+      data.remove(TAG_STANCE_STAGE);
+      data.remove(TAG_STANCE_POWER);
+      data.remove(TAG_STANCE_CHAIN);
+      applyStanceSlow(player, false);
+      sendPose(player, GanryuMove.STANCE, 0);
+   }
+
+   public static void clearRuntime(ServerPlayer player) {
+      if (player == null) return;
+      endStance(player);
+      clearPending(player.getPersistentData());
+      player.getPersistentData().remove(TAG_RECOVERY);
+      player.getPersistentData().remove(TAG_A_COUNT);
+      player.getPersistentData().remove(TAG_DOWN_A_COUNT);
+      player.getPersistentData().remove(TAG_LAST_SEQUENCE);
+      player.getPersistentData().remove(TAG_DOWN_UNTIL);
+   }
+
+   private static void resetStanceChain(ServerPlayer player, long now) {
+      CompoundTag data = player.getPersistentData();
+      data.putInt(TAG_STANCE_STAGE, 0);
+      data.remove(TAG_STANCE_POWER);
+      data.remove(TAG_STANCE_CHAIN);
+      data.putLong(TAG_STANCE_START, now);
+   }
+
+   private static float chargeRatio(CompoundTag data, long now) {
+      return Mth.clamp((now - data.getLong(TAG_STANCE_START)) / (float)STANCE_CHARGE_TICKS, 0.0F, 1.0F);
+   }
+
+   private static void applyStanceSlow(ServerPlayer player, boolean active) {
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (speed == null) return;
+      AttributeModifier old = speed.getModifier(STANCE_SLOW_ID);
+      if (old != null) speed.removeModifier(STANCE_SLOW_ID);
+      if (active) speed.addTransientModifier(new AttributeModifier(STANCE_SLOW_ID, -0.60, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+   }
+
+   private static void damageBlade(ServerPlayer player) {
+      ItemStack blade = activeBlade(player);
+      if (!blade.isDamageableItem() || player.getAbilities().instabuild) return;
+      EquipmentSlot slot = blade == player.getMainHandItem() ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+      blade.hurtAndBreak(1, player, slot);
+   }
+
+   private static void clearPending(CompoundTag data) {
+      data.remove(TAG_PENDING_TARGET);
+      data.remove(TAG_PENDING_STRIKES);
+      data.remove(TAG_PENDING_NEXT);
+      data.remove(TAG_PENDING_DAMAGE);
+      data.remove(TAG_PENDING_AWARDED);
+   }
+
+   private static Vec3 horizontalLook(ServerPlayer player) {
+      Vec3 dir = player.getLookAngle().multiply(1.0, 0.0, 1.0);
+      return dir.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : dir.normalize();
+   }
+
+   private static void spawnMoveFx(ServerLevel level, ServerPlayer player, GanryuMove move) {
+      Vec3 pos = player.position().add(horizontalLook(player).scale(1.3)).add(0.0, 1.0, 0.0);
+      level.sendParticles(move == GanryuMove.HIGH_JUMP ? ParticleTypes.CLOUD : ParticleTypes.SWEEP_ATTACK,
+         pos.x, pos.y, pos.z, move == GanryuMove.SPARROW_SLASH ? 3 : 1, 0.35, 0.2, 0.35, 0.03);
+      level.playSound(null, player.blockPosition(), move == GanryuMove.TSUBAME_GAESHI ? SoundEvents.ENDER_EYE_DEATH : SoundEvents.PLAYER_ATTACK_SWEEP,
+         SoundSource.PLAYERS, 0.85F, move == GanryuMove.TSUBAME_GAESHI ? 0.7F : 1.0F);
+   }
+
+   private static void sendPose(ServerPlayer player, GanryuMove move, int ticks) {
+      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new GanryuPoseMessage(player.getUUID(), move, ticks),
+         new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+   }
+}

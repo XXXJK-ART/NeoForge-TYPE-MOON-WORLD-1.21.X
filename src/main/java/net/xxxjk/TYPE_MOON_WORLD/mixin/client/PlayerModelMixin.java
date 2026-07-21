@@ -9,7 +9,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.FirearmPoseClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.BajiquanPoseClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.GanryuPoseClient;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanMove;
+import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuMove;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
@@ -81,6 +83,8 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             PlayerModel<?> model = (PlayerModel<?>)(Object)this;
             applyBajiquanPose(model, bajiquanMove);
          }
+         GanryuMove ganryuMove = GanryuPoseClient.getMove(player);
+         if (ganryuMove != null) applyGanryuPose((PlayerModel<?>)(Object)this, ganryuMove);
          if (vars.servant_card_transformed && "cursed_arm_hassan".equals(vars.servant_card_id) && limbSwingAmount > 0.05F) {
             PlayerModel<?> model = (PlayerModel<?>)(Object)this;
             model.rightArm.xRot = 0.0F;
@@ -173,6 +177,50 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
       model.leftSleeve.copyFrom(model.leftArm);
       model.rightPants.copyFrom(model.rightLeg);
       model.leftPants.copyFrom(model.leftLeg);
+   }
+
+   private static void applyGanryuPose(PlayerModel<?> model, GanryuMove move) {
+      switch (move) {
+         case STANCE -> {
+            model.body.yRot = 0.22F;
+            model.rightArm.xRot = -1.18F;
+            model.rightArm.yRot = -0.35F;
+            model.leftArm.xRot = -0.95F;
+            model.leftArm.yRot = 0.48F;
+         }
+         case SPARROW_THRUST, SPARROW_SLASH -> {
+            model.body.yRot = -0.38F;
+            model.rightArm.xRot = -1.55F;
+            model.rightArm.yRot = -0.12F;
+            model.leftArm.xRot = -1.15F;
+         }
+         case FLOWER_BUD, SPARROW_THRUST_SECOND -> {
+            model.body.xRot = -0.18F;
+            model.rightArm.xRot = -2.55F;
+            model.leftArm.xRot = -1.85F;
+         }
+         case STONE_FLOWER, STONE_FLOWER_SECOND -> {
+            model.body.xRot = 0.18F;
+            model.rightArm.xRot = -2.9F;
+            model.leftArm.xRot = -2.2F;
+         }
+         case SPRING_BUD, SPRING_BUD_SECOND -> {
+            model.body.yRot = 0.65F;
+            model.rightArm.xRot = -1.25F;
+            model.rightArm.yRot = -1.0F;
+            model.leftArm.xRot = -1.0F;
+         }
+         case TSUBAME_GAESHI -> {
+            model.body.yRot = -0.8F;
+            model.rightArm.xRot = -2.6F;
+            model.rightArm.yRot = 0.85F;
+            model.leftArm.xRot = -1.9F;
+            model.leftArm.yRot = -0.55F;
+         }
+         default -> {}
+      }
+      model.rightSleeve.copyFrom(model.rightArm);
+      model.leftSleeve.copyFrom(model.leftArm);
    }
 
    @Inject(

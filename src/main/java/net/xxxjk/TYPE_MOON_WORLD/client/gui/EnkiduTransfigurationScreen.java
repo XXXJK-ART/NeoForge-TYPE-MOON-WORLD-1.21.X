@@ -30,19 +30,27 @@ public class EnkiduTransfigurationScreen extends Screen {
    @Override
    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
       int centerX = this.width / 2;
-      int centerY = this.height / 2;
+      int centerY = this.height / 2 + 8;
+      int panelX = centerX - 126;
+      int panelY = centerY - 111;
+      GuiUtils.renderScreenBackdrop(gui, this.width, this.height);
+      GuiUtils.renderArcaneWindow(gui, panelX, panelY, 252, 222, GuiUtils.ARCANE_VALID);
       for (int y = -RADIUS; y <= RADIUS; y += 2) {
          for (int x = -RADIUS; x <= RADIUS; x += 2) {
             int distSqr = x * x + y * y;
             if (distSqr <= RADIUS * RADIUS && distSqr >= INNER_RADIUS * INNER_RADIUS) {
                int sector = sectorFor(centerX + x, centerY + y, centerX, centerY);
-               gui.fill(centerX + x, centerY + y, centerX + x + 2, centerY + y + 2, 0xAA000000 | (COLORS[sector] & 0x00FFFFFF));
+               int alpha = sector == sectorFor(mouseX, mouseY, centerX, centerY) ? 0x90000000 : 0x58000000;
+               gui.fill(centerX + x, centerY + y, centerX + x + 2, centerY + y + 2, alpha | (COLORS[sector] & 0x00FFFFFF));
             }
          }
       }
-      gui.drawCenteredString(this.font, this.title, centerX, centerY - RADIUS - 22, 0xFFE8F5E9);
+      gui.drawCenteredString(this.font, this.title, centerX, panelY + 9, GuiUtils.ARCANE_TEXT);
+      gui.renderOutline(centerX - RADIUS, centerY - RADIUS, RADIUS * 2, RADIUS * 2, 0x6653C58B);
       int remaining = Math.max(0, TOTAL_POINTS - sum(this.localPoints));
-      gui.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.enkidu_transfiguration.remaining", remaining), centerX, centerY - 4, 0xFFFFFFFF);
+      gui.fill(centerX - 24, centerY - 9, centerX + 24, centerY + 9, GuiUtils.ARCANE_BACKGROUND);
+      gui.renderOutline(centerX - 24, centerY - 9, 48, 18, GuiUtils.ARCANE_VALID);
+      gui.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.enkidu_transfiguration.remaining", remaining), centerX, centerY - 4, GuiUtils.ARCANE_TEXT);
       for (int i = 0; i < KEYS.length; i++) {
          double angle = -Math.PI / 2.0 + (i + 0.5) * Math.PI * 2.0 / KEYS.length;
          int labelX = centerX + (int)(Math.cos(angle) * 96.0);
@@ -55,7 +63,7 @@ public class EnkiduTransfigurationScreen extends Screen {
    @Override
    public boolean mouseClicked(double mouseX, double mouseY, int button) {
       int centerX = this.width / 2;
-      int centerY = this.height / 2;
+      int centerY = this.height / 2 + 8;
       double dx = mouseX - centerX;
       double dy = mouseY - centerY;
       double distSqr = dx * dx + dy * dy;

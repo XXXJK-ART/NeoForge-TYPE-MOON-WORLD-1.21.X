@@ -27,6 +27,9 @@ public final class TypeMoonAdvancementHelper {
    public static final String BAJIQUAN_GRADUATE = "bajiquan_graduate";
    public static final String BAJIQUAN_NO_SECOND_STRIKE = "bajiquan_no_second_strike";
    public static final String BAJIQUAN_CIRCLE_REALM = "bajiquan_circle_realm";
+   public static final String GANRYU = "ganryu";
+   public static final String GANRYU_TSUBAME = "ganryu_tsubame";
+   public static final String GANRYU_SOUWA_PERFECT = "ganryu_souwa_perfect";
 
    private TypeMoonAdvancementHelper() {
    }
@@ -80,6 +83,9 @@ public final class TypeMoonAdvancementHelper {
       if (vars.bajiquan_proficiency >= 40.0) grant(player, BAJIQUAN_GRADUATE);
       if (vars.bajiquan_tiger_unlocked) grant(player, BAJIQUAN_NO_SECOND_STRIKE);
       if (vars.bajiquan_proficiency >= 100.0) grant(player, BAJIQUAN_CIRCLE_REALM);
+      if (vars.ganryu_learned) grant(player, GANRYU);
+      if (vars.ganryu_tsubame_unlocked) grant(player, GANRYU_TSUBAME);
+      if (vars.ganryu_proficiency >= 100.0) grant(player, GANRYU_SOUWA_PERFECT);
    }
 
    public static void grantOutIfEligible(ServerPlayer player, LivingEntity target, int mode) {

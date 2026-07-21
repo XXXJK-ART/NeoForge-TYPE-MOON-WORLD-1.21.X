@@ -1,0 +1,11 @@
+{
+  "parent": "typemoonworld:ganryu",
+  "display": {
+    "icon": { "item": "typemoonworld:bizen_nagamitsu" },
+    "title": { "translate": "adv.typemoonworld.ganryu_tsubame.title" },
+    "description": { "translate": "adv.typemoonworld.ganryu_tsubame.desc" },
+    "frame": "challenge", "hidden": false, "show_toast": true, "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } },
+  "requirements": [["impossible"]]
+}

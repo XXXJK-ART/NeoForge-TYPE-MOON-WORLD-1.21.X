@@ -677,7 +677,10 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean servantCardHasHeadArmor(String servantId) {
-      return "medusa".equals(servantId) || "cursed_arm_hassan".equals(servantId);
+      return "medusa".equals(servantId)
+         || "cursed_arm_hassan".equals(servantId)
+         || "li_shuwen".equals(servantId)
+         || "oda_nobunaga".equals(servantId);
    }
 
    private static boolean servantCardHasLegArmor(String servantId) {

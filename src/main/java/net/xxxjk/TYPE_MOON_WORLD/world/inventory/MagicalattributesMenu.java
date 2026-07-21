@@ -33,13 +33,13 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
    public static final int SLOT_PIXEL_SIZE = 18;
    public static final int SLOT_SPACING = 18;
    public static final int SLOT_MYSTIC_EYES_X = 122;
-   public static final int SLOT_MYSTIC_EYES_Y = 51;
-   public static final int SLOT_MAGIC_CREST_X = 146;
-   public static final int SLOT_MAGIC_CREST_Y = 51;
-   public static final int PLAYER_INV_X = 150;
-   public static final int PLAYER_INV_Y = 85;
-   public static final int HOTBAR_X = 150;
-   public static final int HOTBAR_Y = 143;
+   public static final int SLOT_MYSTIC_EYES_Y = 58;
+   public static final int SLOT_MAGIC_CREST_X = 122;
+   public static final int SLOT_MAGIC_CREST_Y = 91;
+   public static final int PLAYER_INV_X = 180;
+   public static final int PLAYER_INV_Y = 146;
+   public static final int HOTBAR_X = 180;
+   public static final int HOTBAR_Y = 202;
    public final Level world;
    public final Player entity;
    public int x;
@@ -130,7 +130,7 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
 
       for (int i = 0; i < 3; i++) {
          for (int j = 0; j < 9; j++) {
-            this.addSlot(new Slot(inv, j + i * 9 + 9, 150 + j * 18, 85 + i * 18) {
+            this.addSlot(new Slot(inv, j + i * 9 + 9, PLAYER_INV_X + j * SLOT_SPACING, PLAYER_INV_Y + i * SLOT_SPACING) {
                public boolean isActive() {
                   return MagicalattributesMenu.this.pageMode == 0;
                }
@@ -139,7 +139,7 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
       }
 
       for (int k = 0; k < 9; k++) {
-         this.addSlot(new Slot(inv, k, 150 + k * 18, 143) {
+         this.addSlot(new Slot(inv, k, HOTBAR_X + k * SLOT_SPACING, HOTBAR_Y) {
             public boolean isActive() {
                return MagicalattributesMenu.this.pageMode == 0;
             }

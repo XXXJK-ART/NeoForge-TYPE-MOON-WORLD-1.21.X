@@ -12,6 +12,7 @@ public final class BajiquanClientStateEvents {
    @SubscribeEvent
    public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
       BajiquanPoseClient.clear();
+      GanryuPoseClient.clear();
       CircleRealmClient.clear();
    }
 }

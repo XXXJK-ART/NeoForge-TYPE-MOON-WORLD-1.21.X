@@ -77,7 +77,7 @@ public class MagicWheelSwitchScreen extends Screen {
          this.selectedWheel = (int)(angleDeg / angleStep);
       }
 
-      guiGraphics.fill(0, 0, this.width, this.height, 1241513984);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -86,15 +86,15 @@ public class MagicWheelSwitchScreen extends Screen {
       Tesselator tesselator = Tesselator.getInstance();
       BufferBuilder buffer = tesselator.begin(Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
       Matrix4f matrix = guiGraphics.pose().last().pose();
-      drawSector(buffer, matrix, centerX, centerY, innerRadius, radius, 0.0F, 360.0F, 30, 30, 30, 120);
+      drawSector(buffer, matrix, centerX, centerY, innerRadius, radius, 0.0F, 360.0F, 16, 21, 27, 210);
 
       for (int i = 0; i < 10; i++) {
          float start = i * angleStep - 90.0F;
          float end = (i + 1) * angleStep - 90.0F;
          if (i == this.selectedWheel) {
-            drawSector(buffer, matrix, centerX, centerY, innerRadius, radius + 14.0, start, end, 0, 200, 255, 230);
+            drawSector(buffer, matrix, centerX, centerY, innerRadius, radius + 14.0, start, end, 53, 198, 208, 230);
          } else if (i == this.currentWheel) {
-            drawSector(buffer, matrix, centerX, centerY, innerRadius, radius, start, end, 40, 130, 210, 190);
+            drawSector(buffer, matrix, centerX, centerY, innerRadius, radius, start, end, 214, 174, 93, 190);
          }
       }
 
@@ -127,14 +127,14 @@ public class MagicWheelSwitchScreen extends Screen {
          double midRad = Math.toRadians(start + angleStep / 2.0F);
          int textX = centerX + (int)(Math.cos(midRad) * (radius * 0.75));
          int textY = centerY + (int)(Math.sin(midRad) * (radius * 0.75));
-         int color = ix == this.selectedWheel ? -1 : (ix == this.currentWheel ? -7416065 : -5592406);
+         int color = ix == this.selectedWheel ? GuiUtils.ARCANE_TEXT : (ix == this.currentWheel ? GuiUtils.ARCANE_GOLD : GuiUtils.ARCANE_TEXT_MUTED);
          guiGraphics.drawCenteredString(this.font, String.valueOf(ix), textX, textY, color);
       }
 
       guiGraphics.drawCenteredString(
-         this.font, Component.translatable("gui.typemoonworld.magic_wheel.current", this.currentWheel), centerX, centerY - 5, -16711681
+         this.font, Component.translatable("gui.typemoonworld.magic_wheel.current", this.currentWheel), centerX, centerY - 5, GuiUtils.ARCANE_GOLD
       );
-      guiGraphics.drawCenteredString(this.font, this.title, centerX, centerY - 18, -1250068);
+      guiGraphics.drawCenteredString(this.font, this.title, centerX, centerY - 18, GuiUtils.ARCANE_TEXT);
       RenderSystem.disableBlend();
    }
 

@@ -90,8 +90,8 @@ public class MedeaCraftSelectScreen extends Screen {
       int bgY2 = startY + itemHeight + 12;
 
       this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-      guiGraphics.fill(bgX1, bgY1, bgX2, bgY2, 0xB0000000);
-      guiGraphics.renderOutline(bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, 0x88C7B4FF);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderArcaneWindow(guiGraphics, bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, 0xFFC58BE2);
       guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 8, 0xFFEDE6FF);
       this.updateSelectionAt(mouseX, mouseY);
 
@@ -104,11 +104,8 @@ public class MedeaCraftSelectScreen extends Screen {
    private void renderChoice(GuiGraphics guiGraphics, int index, int x, int y, int width, int height) {
       boolean selected = index == this.selectedIndex;
       boolean full = this.isFull(index);
-      int fill = full ? 0x66502028 : selected ? 0xAA403060 : 0x77302044;
-      int border = full ? 0xAA907070 : selected ? 0xFFE6D8FF : 0x889A7FCA;
       int text = full ? 0xFFB0A0A0 : selected ? 0xFFFFFFFF : 0xFFD7C9EE;
-      guiGraphics.fill(x, y, x + width, y + height, fill);
-      guiGraphics.renderOutline(x, y, width, height, border);
+      GuiUtils.renderChoiceTile(guiGraphics, x, y, width, height, 0xFFC58BE2, selected, !full);
 
       ResourceLocation icon = this.icon(index);
       RenderSystem.enableBlend();

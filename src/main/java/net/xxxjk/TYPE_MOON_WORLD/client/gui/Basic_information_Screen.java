@@ -7,13 +7,12 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -30,17 +29,16 @@ import org.joml.Vector3f;
 public class Basic_information_Screen extends AbstractContainerScreen<BasicInformationMenu> {
    private static final HashMap<String, Object> guistate = BasicInformationMenu.guistate;
    private static final double STAT_EPSILON = 1.0E-4;
-   private static final int STAT_ROW_HOVER_WIDTH = 220;
+   private static final int STAT_ROW_HOVER_WIDTH = 280;
    private final Level world;
    private final int x;
    private final int y;
    private final int z;
    private final Player entity;
    private final List<Basic_information_Screen.StatTooltipArea> statTooltipAreas = new ArrayList<>();
-   Button imagebutton_basic_attributes;
-   Button imagebutton_magical_attributes;
-   Button imagebutton_magical_properties;
-   private static final ResourceLocation texture = ResourceLocation.parse("typemoonworld:textures/screens/basic_information.png");
+   NeonButton imagebutton_basic_attributes;
+   NeonButton imagebutton_magical_attributes;
+   NeonButton imagebutton_magical_properties;
 
    public Basic_information_Screen(BasicInformationMenu container, Inventory inventory, Component text) {
       super(container, inventory, text);
@@ -49,8 +47,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       this.y = container.y;
       this.z = container.z;
       this.entity = container.entity;
-      this.imageWidth = 360;
-      this.imageHeight = 200;
+      this.imageWidth = 420;
+      this.imageHeight = 230;
    }
 
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
@@ -58,10 +56,10 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       if (Basic_information_back_player_self.execute(this.entity) instanceof LivingEntity livingEntity) {
          this.renderEntityInInventoryFollowsAngle(
             guiGraphics,
-            this.leftPos + 60,
-            this.topPos + 170,
-            (float)Math.atan((this.leftPos + 60 - mouseX) / 40.0),
-            (float)Math.atan((this.topPos + 87 - mouseY) / 40.0),
+            this.leftPos + 56,
+            this.topPos + 214,
+            (float)Math.atan((this.leftPos + 56 - mouseX) / 40.0),
+            (float)Math.atan((this.topPos + 112 - mouseY) / 40.0),
             livingEntity
          );
       }
@@ -76,20 +74,22 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       RenderSystem.defaultBlendFunc();
       int x = this.leftPos;
       int y = this.topPos;
-      int w = this.imageWidth;
-      int h = this.imageHeight;
-      GuiUtils.renderBackground(guiGraphics, x, y, w, h);
-      GuiUtils.renderTechFrame(guiGraphics, x + 10, y + 35, 100, 150, -16733526, -16711681);
+      GuiUtils.renderArcaneBackground(guiGraphics, x, y, this.imageWidth, this.imageHeight);
+      GuiUtils.renderArcanePanel(guiGraphics, x + 10, y + 36, 92, 184, GuiUtils.ARCANE_CYAN);
+      GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 36, 298, 84, GuiUtils.ARCANE_CYAN);
+      GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 128, 298, 92, GuiUtils.ARCANE_GOLD);
       RenderSystem.disableBlend();
    }
 
    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-      int startX = 125;
-      int startY = 40;
-      int spacing = 15;
+      int startX = 120;
       this.statTooltipAreas.clear();
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)this.entity
          .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.profile"), 18, 43, GuiUtils.ARCANE_TEXT_MUTED, false);
+      GuiUtils.renderSectionHeader(guiGraphics, 18, 43, 76, GuiUtils.ARCANE_CYAN);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.mana_overview"), startX, 43, GuiUtils.ARCANE_CYAN, false);
+      GuiUtils.renderSectionHeader(guiGraphics, startX, 43, 282, GuiUtils.ARCANE_CYAN);
       double currentMana = vars.player_mana;
       double maxMana = vars.player_max_mana;
       double baseCurrentMana = Math.min(currentMana, maxMana);
@@ -106,7 +106,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          baseCurrentMana,
          currentManaReasons,
          startX,
-         startY,
+         57,
+         STAT_ROW_HOVER_WIDTH,
          0,
          "gui.typemoonworld.basic_info.unit.mana",
          true
@@ -117,7 +118,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          maxMana,
          List.of(),
          startX,
-         startY + spacing,
+         70,
+         STAT_ROW_HOVER_WIDTH,
          0,
          "gui.typemoonworld.basic_info.unit.mana",
          true
@@ -135,17 +137,6 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          );
       }
 
-      this.drawStatWithModifiers(
-         guiGraphics,
-         Component.translatable("gui.typemoonworld.basic_info.mana_regen"),
-         baseRegen,
-         regenReasons,
-         startX,
-         startY + spacing * 2,
-         1,
-         "gui.typemoonworld.basic_info.unit.mana_per_cycle",
-         true
-      );
       double baseIntervalTicks = vars.player_restore_magic_moment;
       List<Basic_information_Screen.ModifierReason> intervalReasons = new ArrayList<>();
       if (vars.is_magic_circuit_open) {
@@ -168,26 +159,44 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          }
       }
 
+      float manaRatio = maxMana <= 0.0 ? 0.0F : (float)(currentMana / maxMana);
+      GuiUtils.renderProgressBar(guiGraphics, startX, 84, 282, 8, manaRatio, GuiUtils.ARCANE_CYAN);
+      this.drawStatWithModifiers(
+         guiGraphics,
+         Component.translatable("gui.typemoonworld.basic_info.mana_regen"),
+         baseRegen,
+         regenReasons,
+         startX,
+         99,
+         STAT_ROW_HOVER_WIDTH,
+         1,
+         "gui.typemoonworld.basic_info.unit.mana_per_cycle",
+         true
+      );
       this.drawStatWithModifiers(
          guiGraphics,
          Component.translatable("gui.typemoonworld.basic_info.regen_interval"),
          baseIntervalTicks / 20.0,
          intervalReasons,
          startX,
-         startY + spacing * 3,
+         108,
+         STAT_ROW_HOVER_WIDTH,
          2,
          "gui.typemoonworld.basic_info.unit.second",
          false
       );
-      int attrY = startY + spacing * 5;
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.affinities"), startX, 135, GuiUtils.ARCANE_GOLD, false);
+      GuiUtils.renderSectionHeader(guiGraphics, startX, 135, 282, GuiUtils.ARCANE_GOLD);
       Component baseLabel = Component.translatable("gui.typemoonworld.basic_info.base_attributes");
-      guiGraphics.drawString(this.font, baseLabel, startX, attrY, -16719648, false);
+      guiGraphics.drawString(this.font, baseLabel, startX, 150, GuiUtils.ARCANE_TEXT_MUTED, false);
       Component baseAttr = this.buildBaseAttributes(vars);
-      guiGraphics.drawWordWrap(this.font, baseAttr, startX, attrY + spacing, 160, -3355444);
+      guiGraphics.fill(startX, 164, startX + 4, 168, GuiUtils.ARCANE_CYAN);
+      guiGraphics.drawWordWrap(this.font, baseAttr, startX + 9, 161, 273, GuiUtils.ARCANE_TEXT);
       Component extraLabel = Component.translatable("gui.typemoonworld.basic_info.extra_attributes");
-      guiGraphics.drawString(this.font, extraLabel, startX, attrY + spacing * 3, -16719648, false);
+      guiGraphics.drawString(this.font, extraLabel, startX, 183, GuiUtils.ARCANE_TEXT_MUTED, false);
       Component extraAttr = this.buildExtraAttributes(vars);
-      guiGraphics.drawWordWrap(this.font, extraAttr, startX, attrY + spacing * 4, 160, -3355444);
+      guiGraphics.fill(startX, 197, startX + 4, 201, GuiUtils.ARCANE_GOLD);
+      guiGraphics.drawWordWrap(this.font, extraAttr, startX + 9, 194, 273, GuiUtils.ARCANE_TEXT);
    }
 
    private void drawStatWithModifiers(
@@ -197,6 +206,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       List<Basic_information_Screen.ModifierReason> reasons,
       int x,
       int y,
+      int hoverWidth,
       int decimals,
       String unitKey,
       boolean positiveIsBeneficial
@@ -219,7 +229,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
                new Basic_information_Screen.StatTooltipArea(
                   this.leftPos + x,
                   this.topPos + y - 1,
-                  220,
+                  hoverWidth,
                   9 + 3,
                   this.buildModifierTooltip(label, baseValue, totalModifier, decimals, unitKey, reasons, positiveIsBeneficial)
                )
@@ -278,14 +288,23 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       if (!lines.isEmpty()) {
          int padding = 5;
          int lineHeight = 10;
-         int tooltipWidth = 0;
-
+         int maxContentWidth = Math.min(260, this.width - padding * 2 - 12);
+         List<FormattedCharSequence> wrappedLines = new ArrayList<>();
          for (Component line : lines) {
+            if (line.getString().isEmpty()) {
+               wrappedLines.add(FormattedCharSequence.EMPTY);
+            } else {
+               wrappedLines.addAll(this.font.split(line, maxContentWidth));
+            }
+         }
+
+         int tooltipWidth = 0;
+         for (FormattedCharSequence line : wrappedLines) {
             tooltipWidth = Math.max(tooltipWidth, this.font.width(line));
          }
 
          tooltipWidth += padding * 2;
-         int tooltipHeight = lines.size() * lineHeight + padding * 2;
+         int tooltipHeight = wrappedLines.size() * lineHeight + padding * 2;
          int tooltipX = mouseX + 12;
          int tooltipY = mouseY - 12;
          if (tooltipX + tooltipWidth > this.width - 4) {
@@ -306,11 +325,11 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
 
          guiGraphics.pose().pushPose();
          guiGraphics.pose().translate(0.0F, 0.0F, 400.0F);
-         guiGraphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, -267386864);
-         guiGraphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, -16733526);
+         guiGraphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, GuiUtils.ARCANE_PANEL);
+         guiGraphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, GuiUtils.ARCANE_CYAN);
          int textY = tooltipY + padding;
 
-         for (Component line : lines) {
+         for (FormattedCharSequence line : wrappedLines) {
             guiGraphics.drawString(this.font, line, tooltipX + padding, textY, -1, false);
             textY += lineHeight;
          }
@@ -329,27 +348,27 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
 
    public void init() {
       super.init();
-      int btnY = this.topPos + 5;
-      int btnWidth = 80;
+      int btnY = this.topPos + 6;
+      int btnWidth = 78;
       int btnHeight = 16;
-      int startX = this.leftPos + this.imageWidth - btnWidth * 3 - 10;
+      int startX = this.leftPos + this.imageWidth - btnWidth * 3 - 14;
       this.imagebutton_basic_attributes = new NeonButton(
          startX, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {}
-      );
+      ).setArcaneStyle(true).setSelected(true);
       this.addRenderableWidget(this.imagebutton_basic_attributes);
       this.imagebutton_magical_attributes = new NeonButton(
          startX + btnWidth + 2, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.body_modification"), e -> {
             PacketDistributor.sendToServer(new Basic_information_Button_Message(0, this.x, this.y, this.z), new CustomPacketPayload[0]);
             Basic_information_Button_Message.handleButtonAction(this.entity, 0, this.x, this.y, this.z);
          }
-      );
+      ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_attributes);
       this.imagebutton_magical_properties = new NeonButton(
          startX + (btnWidth + 2) * 2, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.magic_knowledge"), e -> {
             PacketDistributor.sendToServer(new Basic_information_Button_Message(1, this.x, this.y, this.z), new CustomPacketPayload[0]);
             Basic_information_Button_Message.handleButtonAction(this.entity, 1, this.x, this.y, this.z);
          }
-      );
+      ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_properties);
    }
 

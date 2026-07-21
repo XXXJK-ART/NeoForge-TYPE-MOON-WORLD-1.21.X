@@ -6,7 +6,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 
 public final class ServantCardRegistry {
    public static final List<Entry> ENTRIES = List.of(
-      new Entry("gilgamesh", "Gilgamesh", "Gilgamesh", false),
+      new Entry("gilgamesh", "Gilgamesh", "Gilgamesh", true),
       new Entry("emiya_archer", "Emiya Archer", "卫宫", true),
       new Entry("artoria_pendragon", "Artoria Pendragon", "阿尔托莉雅", false),
       new Entry("sasaki_kojiro", "Sasaki Kojiro", "佐佐木小次郎", false),
@@ -15,11 +15,11 @@ public final class ServantCardRegistry {
       new Entry("medusa", "Medusa", "美杜莎", false),
       new Entry("cursed_arm_hassan", "Cursed Arm Hassan", "咒腕哈桑", false),
       new Entry("heracles", "Heracles", "赫拉克勒斯", false),
-      new Entry("oda_nobunaga", "Oda Nobunaga", "织田信长", false),
+      new Entry("oda_nobunaga", "Oda Nobunaga", "织田信长", true),
       new Entry("enkidu", "Enkidu", "恩奇都", true),
       new Entry("gawain", "Gawain", "高文", false),
-      new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", false),
-      new Entry("li_shuwen", "Li Shuwen", "李书文", false)
+      new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", true),
+      new Entry("li_shuwen", "Li Shuwen", "李书文", true)
    );
 
    private ServantCardRegistry() {

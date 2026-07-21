@@ -24,6 +24,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
@@ -81,7 +82,8 @@ public class TypeMoonCommands {
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
-      "bajiquan"
+      "bajiquan",
+      "ganryu"
    };
    private static final String[] ALL_MAGICS = new String[]{
       BASIC_JEWEL_MAGIC_ID,
@@ -111,7 +113,8 @@ public class TypeMoonCommands {
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
-      "bajiquan"
+      "bajiquan",
+      "ganryu"
    };
 
    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -341,7 +344,9 @@ public class TypeMoonCommands {
             .then(
                Commands.literal("martial")
                   .then(Commands.literal("learn").then(Commands.literal("bajiquan").executes(ctx -> setBajiquanLearned(ctx, true))))
+                  .then(Commands.literal("learn").then(Commands.literal("ganryu").executes(ctx -> setGanryuLearned(ctx, true))))
                   .then(Commands.literal("forget").then(Commands.literal("bajiquan").executes(ctx -> setBajiquanLearned(ctx, false))))
+                  .then(Commands.literal("forget").then(Commands.literal("ganryu").executes(ctx -> setGanryuLearned(ctx, false))))
             )
             .then(
                Commands.literal("player")
@@ -352,6 +357,13 @@ public class TypeMoonCommands {
                               .then(
                                  Commands.argument("enabled", BoolArgumentType.bool())
                                     .executes(ctx -> setBajiquanTiger(ctx, BoolArgumentType.getBool(ctx, "enabled")))
+                              )
+                        )
+                        .then(
+                           Commands.literal("tsubame")
+                              .then(
+                                 Commands.argument("enabled", BoolArgumentType.bool())
+                                    .executes(ctx -> setGanryuTsubame(ctx, BoolArgumentType.getBool(ctx, "enabled")))
                               )
                         )
                   )
@@ -525,6 +537,10 @@ public class TypeMoonCommands {
          vars.bajiquan_learned = false;
          vars.bajiquan_proficiency = 0.0;
          vars.bajiquan_tiger_unlocked = false;
+         vars.ganryu_learned = false;
+         vars.ganryu_proficiency = 0.0;
+         vars.ganryu_tsubame_unlocked = false;
+         vars.martial_ukemi_learned = false;
          vars.body_training_xp = 0;
          vars.body_training_points = 0;
          vars.body_strength = 0;
@@ -629,6 +645,10 @@ public class TypeMoonCommands {
          vars.bajiquan_learned = true;
          vars.bajiquan_proficiency = 100.0;
          vars.bajiquan_tiger_unlocked = true;
+         vars.ganryu_learned = true;
+         vars.ganryu_proficiency = 100.0;
+         vars.ganryu_tsubame_unlocked = true;
+         vars.martial_ukemi_learned = true;
          vars.body_training_xp = 0;
          vars.body_training_points = 0;
          vars.body_strength = BodyTrainingService.MAX_STAT_POINTS;
@@ -1041,6 +1061,10 @@ public class TypeMoonCommands {
             case "bajiquan":
                vars.bajiquan_proficiency = value;
                break;
+            case "ganryu":
+               vars.ganryu_proficiency = value;
+               if (value >= 50.0) vars.martial_ukemi_learned = true;
+               break;
             default:
                validType = false;
          }
@@ -1064,6 +1088,26 @@ public class TypeMoonCommands {
          ServerPlayer player = ctx.getSource().getPlayerOrException();
          if (learned) BajiquanCombatService.learn(player); else BajiquanCombatService.forget(player);
          ctx.getSource().sendSuccess(() -> Component.literal("bajiquan learned = " + learned), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int setGanryuLearned(CommandContext<CommandSourceStack> ctx, boolean learned) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         if (learned) GanryuCombatService.learn(player); else GanryuCombatService.forget(player);
+         ctx.getSource().sendSuccess(() -> Component.literal("ganryu learned = " + learned), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int setGanryuTsubame(CommandContext<CommandSourceStack> ctx, boolean enabled) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         vars.ganryu_tsubame_unlocked = enabled;
+         vars.syncPlayerVariables(player);
+         ctx.getSource().sendSuccess(() -> Component.literal("ganryu tsubame = " + enabled), true);
          return 1;
       } catch (Exception ignored) { return 0; }
    }

@@ -69,12 +69,12 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
       this.access = ContainerLevelAccess.create(this.level, pos);
       this.blockEntity = blockEntity;
       this.itemHandler = blockEntity.getItems();
-      this.addSlot(new SlotItemHandler(this.itemHandler, SLOT_GEM, 26, 34) {
+      this.addSlot(new SlotItemHandler(this.itemHandler, SLOT_GEM, 26, 44) {
          public boolean mayPlace(@NotNull ItemStack stack) {
             return stack.getItem() instanceof CarvedGemItem && GemEngravingService.getEngravedMagicId(stack) == null;
          }
       });
-      this.addSlot(new SlotItemHandler(this.itemHandler, SLOT_TOOL, 26, 65) {
+      this.addSlot(new SlotItemHandler(this.itemHandler, SLOT_TOOL, 26, 75) {
          public boolean mayPlace(@NotNull ItemStack stack) {
             return stack.getItem() instanceof ChiselItem;
          }
@@ -82,12 +82,12 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 13 + col * 18, 126 + row * 18));
+            this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 13 + col * 18, 136 + row * 18));
          }
       }
 
       for (int col = 0; col < 9; col++) {
-         this.addSlot(new Slot(playerInventory, col, 13 + col * 18, 184));
+         this.addSlot(new Slot(playerInventory, col, 13 + col * 18, 194));
       }
    }
 

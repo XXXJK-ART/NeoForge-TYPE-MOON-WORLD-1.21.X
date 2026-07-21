@@ -81,19 +81,16 @@ public class GemGravityModeSelectScreen extends Screen {
       int bgY1 = startY - padding - 20;
       int bgX2 = startX + totalWidth + padding;
       int bgY2 = startY + itemHeight + padding;
-      guiGraphics.fill(bgX1, bgY1, bgX2, bgY2, -1275068416);
-      guiGraphics.renderOutline(bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, -7829368);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderArcaneWindow(guiGraphics, bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, GuiUtils.ARCANE_CYAN);
       this.updateSelectionAt(mouseX, mouseY);
       guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 5, 16777215);
 
       for (int i = 0; i < this.modes.size(); i++) {
          int x = startX + i * (itemWidth + gap);
          boolean selected = i == this.selectedIndex;
-         int fillColor = selected ? 1627389951 : 1073741824;
-         int textColor = selected ? -171 : -5592406;
-         int borderColor = selected ? -1 : -11184811;
-         guiGraphics.fill(x, startY, x + itemWidth, startY + itemHeight, fillColor);
-         guiGraphics.renderOutline(x, startY, itemWidth, itemHeight, borderColor);
+         int textColor = selected ? GuiUtils.ARCANE_TEXT : GuiUtils.ARCANE_TEXT_MUTED;
+         GuiUtils.renderChoiceTile(guiGraphics, x, startY, itemWidth, itemHeight, GuiUtils.ARCANE_CYAN, selected, true);
          ResourceLocation icon = this.getIconByMode(this.modeIds.get(i));
          if (icon != null) {
             int iconSize = 24;

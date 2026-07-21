@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 public class LeylineSurveyMapScreen extends Screen {
    private static final ResourceLocation MAP_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/map/map_background.png");
    private static final int PANEL_WIDTH = 308;
-   private static final int PANEL_HEIGHT = 186;
+   private static final int PANEL_HEIGHT = 196;
    private static final int MAP_BACKGROUND_SIZE = 142;
    private static final int MAP_CANVAS_SIZE = 128;
    private static final int MAP_CANVAS_OFFSET = 7;
@@ -35,9 +35,9 @@ public class LeylineSurveyMapScreen extends Screen {
    }
 
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      guiGraphics.fill(0, 0, this.width, this.height, 1426063360);
-      int panelX = (this.width - 308) / 2;
-      int panelY = (this.height - 186) / 2;
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      int panelX = (this.width - PANEL_WIDTH) / 2;
+      int panelY = (this.height - PANEL_HEIGHT) / 2;
       this.renderPanel(guiGraphics, panelX, panelY);
       this.renderHeader(guiGraphics, panelX, panelY);
       this.renderMap(guiGraphics, panelX, panelY);
@@ -50,35 +50,32 @@ public class LeylineSurveyMapScreen extends Screen {
    }
 
    private void renderPanel(GuiGraphics guiGraphics, int panelX, int panelY) {
-      guiGraphics.fill(panelX, panelY, panelX + 308, panelY + 186, -871362528);
-      guiGraphics.fill(panelX, panelY, panelX + 308, panelY + 1, -7360544);
-      guiGraphics.fill(panelX, panelY + 186 - 1, panelX + 308, panelY + 186, -7360544);
-      guiGraphics.fill(panelX, panelY, panelX + 1, panelY + 186, -7360544);
-      guiGraphics.fill(panelX + 308 - 1, panelY, panelX + 308, panelY + 186, -7360544);
+      GuiUtils.renderArcaneWindow(guiGraphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, GuiUtils.ARCANE_VALID);
+      GuiUtils.renderArcanePanel(guiGraphics, panelX + 158, panelY + 32, 138, 152, GuiUtils.ARCANE_VALID);
    }
 
    private void renderHeader(GuiGraphics guiGraphics, int panelX, int panelY) {
-      guiGraphics.drawCenteredString(this.font, this.title, panelX + 154, panelY + 8, 15397631);
+      guiGraphics.drawCenteredString(this.font, this.title, panelX + PANEL_WIDTH / 2, panelY + 9, GuiUtils.ARCANE_TEXT);
       int textX = panelX + 164;
-      int textY = panelY + 26;
+      int textY = panelY + 38;
       String dimShort = this.font.plainSubstrByWidth(this.dimensionId, 130);
       guiGraphics.drawString(
-         this.font, Component.translatable("gui.typemoonworld.leyline_map.dimension", dimShort), textX, textY, 14280447, false
+         this.font, Component.translatable("gui.typemoonworld.leyline_map.dimension", dimShort), textX, textY, GuiUtils.ARCANE_TEXT, false
       );
       guiGraphics.drawString(
          this.font,
          Component.translatable("gui.typemoonworld.leyline_map.center", this.centerChunkX, this.centerChunkZ),
          textX,
          textY + 12,
-         14280447,
+         GuiUtils.ARCANE_TEXT,
          false
       );
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.leyline_map.hint"), textX, textY + 24, 11056852, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.leyline_map.hint"), textX, textY + 24, GuiUtils.ARCANE_TEXT_MUTED, false);
    }
 
    private void renderMap(GuiGraphics guiGraphics, int panelX, int panelY) {
       int mapLeft = panelX + 12;
-      int mapTop = panelY + 24;
+      int mapTop = panelY + 34;
       guiGraphics.blit(MAP_BACKGROUND, mapLeft, mapTop, 0.0F, 0.0F, 142, 142, 142, 142);
       int size = this.gridSize;
       if (size > 0 && this.concentrations.length == size * size) {
@@ -130,8 +127,8 @@ public class LeylineSurveyMapScreen extends Screen {
 
    private void renderLegend(GuiGraphics guiGraphics, int panelX, int panelY) {
       int legendX = panelX + 164;
-      int legendY = panelY + 74;
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.leyline_map.legend_title"), legendX, legendY, 15397631, false);
+      int legendY = panelY + 94;
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.leyline_map.legend_title"), legendX, legendY, GuiUtils.ARCANE_VALID, false);
       this.drawLegendRow(guiGraphics, legendX, legendY + 14, colorForConcentration(15), Component.translatable("gui.typemoonworld.leyline_map.legend.low"));
       this.drawLegendRow(guiGraphics, legendX, legendY + 28, colorForConcentration(40), Component.translatable("gui.typemoonworld.leyline_map.legend.mid"));
       this.drawLegendRow(guiGraphics, legendX, legendY + 42, colorForConcentration(65), Component.translatable("gui.typemoonworld.leyline_map.legend.high"));
@@ -141,14 +138,14 @@ public class LeylineSurveyMapScreen extends Screen {
 
    private void drawLegendRow(GuiGraphics guiGraphics, int x, int y, int color, Component text) {
       guiGraphics.fill(x, y + 2, x + 10, y + 10, color);
-      guiGraphics.drawString(this.font, text, x + 14, y + 1, 14280447, false);
+      guiGraphics.drawString(this.font, text, x + 14, y + 1, GuiUtils.ARCANE_TEXT, false);
    }
 
    private void renderHoverTooltip(GuiGraphics guiGraphics, int panelX, int panelY, int mouseX, int mouseY) {
       int size = this.gridSize;
       if (size > 0 && this.concentrations.length == size * size) {
          int mapLeft = panelX + 12;
-         int mapTop = panelY + 24;
+         int mapTop = panelY + 34;
          int canvasLeft = mapLeft + 7;
          int canvasTop = mapTop + 7;
          int canvasRight = canvasLeft + 128;

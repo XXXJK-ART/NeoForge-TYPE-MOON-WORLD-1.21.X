@@ -49,27 +49,28 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private static final HashMap<String, Object> guistate = MagicalattributesMenu.guistate;
    private static final int MAGIC_SOURCE_SELF = 0;
    private static final int MAGIC_SOURCE_CREST = 1;
-   private static final int LIST_X_OFFSET = 120;
-   private static final int LIST_Y_OFFSET = 52;
-   private static final int LIST_WIDTH = 132;
-   private static final int LIST_HEIGHT = 124;
-   private static final int CARD_WIDTH = 62;
-   private static final int CARD_HEIGHT = 22;
+   private static final int LIST_X_OFFSET = 118;
+   private static final int LIST_Y_OFFSET = 78;
+   private static final int LIST_WIDTH = 174;
+   private static final int LIST_HEIGHT = 108;
+   private static final int CARD_WIDTH = 84;
+   private static final int CARD_HEIGHT = 24;
    private static final int CARD_COLUMNS = 2;
    private static final int CARD_ROWS_VISIBLE = 4;
-   private static final int CARD_GAP_X = 8;
-   private static final int CARD_GAP_Y = 8;
-   private static final int WHEEL_X_OFFSET = 272;
-   private static final int WHEEL_Y_OFFSET = 60;
-   private static final int WHEEL_SLOT_SIZE = 22;
+   private static final int CARD_GAP_X = 6;
+   private static final int CARD_GAP_Y = 4;
+   private static final int WHEEL_X_OFFSET = 312;
+   private static final int WHEEL_Y_OFFSET = 78;
+   private static final int WHEEL_SLOT_SIZE = 27;
+   private static final int WHEEL_SLOT_GAP = 3;
    private static final int WHEEL_COLUMNS = 3;
-   private static final int FILTER_LABEL_X = 120;
-   private static final int FILTER_LABEL_Y = 34;
-   private static final int FILTER_BUTTON_Y = 31;
+   private static final int FILTER_LABEL_X = 118;
+   private static final int FILTER_LABEL_Y = 41;
+   private static final int FILTER_BUTTON_Y = 37;
    private static final int FILTER_BUTTON_MIN_WIDTH = 40;
    private static final int FILTER_BUTTON_MAX_WIDTH = 72;
    private static final int TOOLTIP_DELAY_MS = 1000;
-   private static final int MAX_TOOLTIP_HEIGHT = 126;
+   private static final int MAX_TOOLTIP_HEIGHT = 144;
    private static final int PRESET_DIALOG_WIDTH_DEFAULT = 232;
    private static final int PRESET_DIALOG_WIDTH_PROJECTION = 320;
    private static final int PRESET_DIALOG_MAX_HEIGHT_DEFAULT = 260;
@@ -84,13 +85,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private final int z;
    private final Player entity;
    private int pageMode;
-   Button imagebutton_basic_attributes;
-   Button imagebutton_magical_attributes;
-   Button imagebutton_magical_properties;
-   Button tabSelfKnowledge;
-   Button tabCrestKnowledge;
-   Button filterButton;
-   final List<Button> wheelSwitchButtons = new ArrayList<>();
+   NeonButton imagebutton_basic_attributes;
+   NeonButton imagebutton_magical_attributes;
+   NeonButton imagebutton_magical_properties;
+   NeonButton tabSelfKnowledge;
+   NeonButton tabCrestKnowledge;
+   NeonButton filterButton;
+   final List<NeonButton> wheelSwitchButtons = new ArrayList<>();
    final List<Button> bodyTrainingButtons = new ArrayList<>();
    final List<Magical_attributes_Screen.MagicEntry> baseMagicCatalog = new ArrayList<>();
    final Map<String, Magical_attributes_Screen.MagicEntry> magicCatalogById = new HashMap<>();
@@ -119,8 +120,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.z = container.z;
       this.entity = container.entity;
       this.pageMode = container.pageMode;
-      this.imageWidth = 360;
-      this.imageHeight = 200;
+      this.imageWidth = 420;
+      this.imageHeight = 230;
       this.initMagicCatalog();
       this.rebuildSourceMagics();
       this.updateFilteredMagics();
@@ -169,10 +170,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
       this.addMagic("bajiquan", "key.typemoonworld.magic.bajiquan.short", "martial", 0xFF2EB872);
+      this.addMagic("ganryu", "key.typemoonworld.magic.ganryu.short", "martial", 0xFF7893A8);
    }
 
    private void addMagic(String id, String nameKey, String category, int color) {
-      Magical_attributes_Screen.MagicEntry entry = new Magical_attributes_Screen.MagicEntry(id, nameKey, category, color);
+      Magical_attributes_Screen.MagicEntry entry = new Magical_attributes_Screen.MagicEntry(id, nameKey, category, MagicUiColors.colorFor(id, false));
       this.baseMagicCatalog.add(entry);
       this.magicCatalogById.put(id, entry);
    }
@@ -397,16 +399,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    public void init() {
       super.init();
-      int tabY = this.topPos + 5;
-      int tabWidth = 80;
+      int tabY = this.topPos + 6;
+      int tabWidth = 78;
       int tabHeight = 16;
-      int tabX = this.leftPos + this.imageWidth - tabWidth * 3 - 10;
+      int tabX = this.leftPos + this.imageWidth - tabWidth * 3 - 14;
       this.imagebutton_basic_attributes = new NeonButton(
          tabX, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {
             PacketDistributor.sendToServer(new Magical_attributes_Button_Message(0, this.x, this.y, this.z), new CustomPacketPayload[0]);
             Magical_attributes_Button_Message.handleButtonAction(this.entity, 0, this.x, this.y, this.z);
          }
-      );
+      ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_basic_attributes);
       this.imagebutton_magical_attributes = new NeonButton(
          tabX + tabWidth + 2, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.body_modification"), e -> {
@@ -415,7 +417,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             PacketDistributor.sendToServer(new PageChangeMessage(0), new CustomPacketPayload[0]);
             this.updateVisibility();
          }
-      );
+      ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_attributes);
       this.imagebutton_magical_properties = new NeonButton(
          tabX + (tabWidth + 2) * 2, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.magic_knowledge"), e -> {
@@ -427,21 +429,21 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             this.updateFilteredMagics();
             this.updateVisibility();
          }
-      );
+      ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_properties);
-      int sourceTabWidth = 52;
+      int sourceTabWidth = 78;
       int sourceTabHeight = 14;
-      int sourceTabGap = 4;
+      int sourceTabGap = 2;
       int sourceTabsX = this.leftPos + this.imageWidth - sourceTabWidth * 2 - sourceTabGap - 10;
-      int sourceTabsY = this.topPos + 30;
+      int sourceTabsY = this.topPos + 37;
       this.tabSelfKnowledge = new NeonButton(
          sourceTabsX, sourceTabsY, sourceTabWidth, sourceTabHeight, Component.translatable("gui.typemoonworld.magic_knowledge.source.self"), e -> {
             this.magicSourceTab = MAGIC_SOURCE_SELF;
             this.rebuildSourceMagics();
             this.updateFilteredMagics();
             this.updateSourceTabLabels();
-         }, -11557889
-      );
+         }, MagicUiColors.NORMAL
+      ).setArcaneStyle(true).setSelectedColor(MagicUiColors.NORMAL);
       this.addRenderableWidget(this.tabSelfKnowledge);
       this.tabCrestKnowledge = new NeonButton(
          sourceTabsX + sourceTabWidth + sourceTabGap,
@@ -459,8 +461,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                this.updateSourceTabLabels();
             }
          },
-         -1811878
-      );
+         MagicUiColors.CREST
+      ).setArcaneStyle(true).setSelectedColor(MagicUiColors.CREST);
       this.addRenderableWidget(this.tabCrestKnowledge);
       int filterButtonWidth = this.getFilterButtonWidth();
       this.filterButton = new NeonButton(
@@ -470,7 +472,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             this.updateFilteredMagics();
             e.setMessage(this.getFilterButtonText(this.filterCategory));
          }
-      );
+      ).setArcaneStyle(true);
       this.addRenderableWidget(this.filterButton);
       this.wheelSwitchButtons.clear();
 
@@ -478,17 +480,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       String[] bodyStats = new String[]{"strength", "speed", "resistance", "technique"};
       for (int i = 0; i < bodyStats.length; i++) {
          String stat = bodyStats[i];
-         Button add = new NeonButton(this.leftPos + 334, this.topPos + 34 + i * 11, 14, 10, Component.literal("+"), e ->
-            PacketDistributor.sendToServer(new BodyTrainingPointMessage(stat), new CustomPacketPayload[0]), 0xFF2EB872);
+         Button add = new NeonButton(this.leftPos + 390, this.topPos + 54 + i * 17, 14, 13, Component.literal("+"), e ->
+            PacketDistributor.sendToServer(new BodyTrainingPointMessage(stat), new CustomPacketPayload[0]), GuiUtils.ARCANE_VALID).setArcaneStyle(true);
          this.addRenderableWidget(add);
          this.bodyTrainingButtons.add(add);
       }
 
       for (int i = 0; i < 10; i++) {
          int wheel = i;
-         Button wheelBtn = new NeonButton(
-             this.leftPos + LIST_X_OFFSET + i * PRESET_DIALOG_OPTION_HEIGHT, this.topPos + 182, 16, 14, Component.literal(String.valueOf(i)), e -> this.switchWheel(wheel)
-          );
+         NeonButton wheelBtn = new NeonButton(
+             this.leftPos + LIST_X_OFFSET + i * PRESET_DIALOG_OPTION_HEIGHT, this.topPos + 208, 16, 14, Component.literal(String.valueOf(i)), e -> this.switchWheel(wheel)
+          ).setArcaneStyle(true);
          this.addRenderableWidget(wheelBtn);
          this.wheelSwitchButtons.add(wheelBtn);
       }
@@ -504,6 +506,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       if (this.tabCrestKnowledge != null) {
          this.tabCrestKnowledge.active = this.pageMode == 1 && this.hasUsableMagicCrest();
       }
+
+      this.updateSourceTabLabels();
 
       if (this.pageMode == 1 && this.minecraft != null && this.minecraft.level != null && this.minecraft.level.getGameTime() % 10L == 0L) {
          this.rebuildSourceMagics();
@@ -544,14 +548,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
       if (this.imagebutton_magical_attributes != null) {
          this.imagebutton_magical_attributes.visible = true;
+         this.imagebutton_magical_attributes.setSelected(this.pageMode == 0);
       }
 
       if (this.imagebutton_magical_properties != null) {
          this.imagebutton_magical_properties.visible = true;
+         this.imagebutton_magical_properties.setSelected(this.pageMode == 1);
       }
 
       if (this.imagebutton_basic_attributes != null) {
          this.imagebutton_basic_attributes.visible = true;
+         this.imagebutton_basic_attributes.setSelected(false);
       }
    }
 
@@ -569,32 +576,22 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       int active = vars.active_wheel_index;
 
       for (int i = 0; i < this.wheelSwitchButtons.size(); i++) {
-         this.wheelSwitchButtons.get(i).setMessage(Component.literal(i == active ? ">" + i : String.valueOf(i)));
+         NeonButton button = this.wheelSwitchButtons.get(i);
+         button.setMessage(Component.literal(String.valueOf(i)));
+         button.setSelected(i == active);
       }
    }
 
    private void updateSourceTabLabels() {
       this.ensureCrestSourceAvailability();
       if (this.tabSelfKnowledge != null) {
-         this.tabSelfKnowledge
-            .setMessage(
-               Component.translatable(
-                  this.magicSourceTab == MAGIC_SOURCE_SELF
-                     ? "gui.typemoonworld.magic_knowledge.source.self.active"
-                     : "gui.typemoonworld.magic_knowledge.source.self"
-                )
-             );
+         this.tabSelfKnowledge.setMessage(Component.translatable("gui.typemoonworld.magic_knowledge.source.self"));
+         this.tabSelfKnowledge.setSelected(this.magicSourceTab == MAGIC_SOURCE_SELF);
       }
 
       if (this.tabCrestKnowledge != null) {
-         this.tabCrestKnowledge
-            .setMessage(
-               Component.translatable(
-                  this.magicSourceTab == MAGIC_SOURCE_CREST
-                     ? "gui.typemoonworld.magic_knowledge.source.crest.active"
-                     : "gui.typemoonworld.magic_knowledge.source.crest"
-                )
-             );
+         this.tabCrestKnowledge.setMessage(Component.translatable("gui.typemoonworld.magic_knowledge.source.crest"));
+         this.tabCrestKnowledge.setSelected(this.magicSourceTab == MAGIC_SOURCE_CREST);
       }
    }
 
@@ -603,10 +600,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       if (Basic_information_back_player_self.execute(this.entity) instanceof LivingEntity livingEntity) {
          this.renderEntityInInventoryFollowsAngle(
             guiGraphics,
-            this.leftPos + 60,
-            this.topPos + 170,
-            (float)Math.atan((this.leftPos + 60 - mouseX) / 40.0),
-            (float)Math.atan((this.topPos + 87 - mouseY) / 40.0),
+            this.leftPos + 56,
+            this.topPos + 214,
+            (float)Math.atan((this.leftPos + 56 - mouseX) / 40.0),
+            (float)Math.atan((this.topPos + 112 - mouseY) / 40.0),
             livingEntity
          );
       }
@@ -625,6 +622,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
          if (this.presetDialogState != null) {
             this.renderPresetDialog(guiGraphics, mouseX, mouseY);
+         }
+
+         if (this.presetDialogState == null) {
+            this.renderKnowledgeHintTooltip(guiGraphics, mouseX, mouseY);
          }
       }
 
@@ -652,31 +653,40 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
           boolean hovered = mouseX >= cardX && mouseX < cardX + CARD_WIDTH && mouseY >= cardY && mouseY < cardY + CARD_HEIGHT;
          boolean disabled = !entry.active || isKnowledgeOnlyMagic(entry.id);
          boolean crest = "crest".equals(entry.sourceType);
-         int borderColor = crest ? -1811878 : -11557889;
-         int fillColor = crest ? 1613565716 : 1611669554;
+         int magicColor = MagicUiColors.colorFor(entry.id, crest);
+         int borderColor = magicColor;
+         int fillColor = GuiUtils.ARCANE_PANEL_ALT;
          if (hovered) {
-            fillColor = crest ? -1873795536 : -1875885984;
+            fillColor = 0xF028343E;
          }
 
          if (disabled) {
-            borderColor = -9539986;
-            fillColor = 1613968179;
+            borderColor = 0xFF56616B;
+            fillColor = 0xD0181D23;
          }
 
           guiGraphics.fill(cardX, cardY, cardX + CARD_WIDTH, cardY + CARD_HEIGHT, fillColor);
           guiGraphics.renderOutline(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, borderColor);
-         guiGraphics.fill(cardX + 2, cardY + 2, cardX + 6, cardY + 6, crest ? -1811878 : -11557889);
+         int accentColor = disabled ? 0xFF56616B : magicColor;
+         guiGraphics.fill(cardX + 1, cardY + 1, cardX + 4, cardY + CARD_HEIGHT - 1, accentColor);
          String name = this.getMagicShortName(entry);
-         int textColor = disabled ? -6645094 : -1;
-         int textX = cardX + 4;
-         int textY = cardY + 7;
-         int textMaxWidth = 54;
+         int textColor = disabled ? 0xFF77828C : GuiUtils.ARCANE_TEXT;
+         int textX = cardX + 7;
+         int textY = cardY + 6;
+         int textMaxWidth = CARD_WIDTH - 11;
          if (hovered && this.font.width(name) > textMaxWidth) {
             this.drawMarqueeText(guiGraphics, name, textX, textY, textMaxWidth, textColor);
          } else {
             String shortName = this.clampTextToWidth(name, textMaxWidth);
-             guiGraphics.drawCenteredString(this.font, Component.literal(shortName), cardX + CARD_WIDTH / 2, textY, textColor);
+             guiGraphics.drawString(this.font, shortName, textX, textY, textColor, false);
           }
+
+         double proficiency = this.getMagicProficiency(entry);
+         if (proficiency >= 0.0) {
+            int progressWidth = Mth.clamp((int)Math.round((CARD_WIDTH - 9) * Math.min(100.0, proficiency) / 100.0), 0, CARD_WIDTH - 9);
+            guiGraphics.fill(cardX + 7, cardY + CARD_HEIGHT - 4, cardX + CARD_WIDTH - 2, cardY + CARD_HEIGHT - 2, 0x660C1116);
+            guiGraphics.fill(cardX + 7, cardY + CARD_HEIGHT - 4, cardX + 7 + progressWidth, cardY + CARD_HEIGHT - 2, accentColor);
+         }
        }
 
        int totalRows = (this.filteredMagics.size() + 2 - 1) / 2;
@@ -685,8 +695,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
           int scrollBarHeight = LIST_HEIGHT;
           int barHeight = Math.max(24, (int)((float)(CARD_ROWS_VISIBLE * scrollBarHeight) / totalRows));
           int barTop = listY + (int)(this.scrollOffs * (scrollBarHeight - barHeight));
-          guiGraphics.fill(scrollBarX, listY, scrollBarX + 6, listY + scrollBarHeight, Integer.MIN_VALUE);
-          guiGraphics.fill(scrollBarX, barTop, scrollBarX + 6, barTop + barHeight, -16711681);
+          guiGraphics.fill(scrollBarX, listY, scrollBarX + 4, listY + scrollBarHeight, 0xA00C1116);
+          guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, GuiUtils.ARCANE_CYAN);
       }
    }
 
@@ -698,47 +708,48 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       for (int slot = 0; slot < 12; slot++) {
          int col = slot % WHEEL_COLUMNS;
          int row = slot / WHEEL_COLUMNS;
-          int slotX = this.leftPos + WHEEL_X_OFFSET + col * 25;
-          int slotY = this.topPos + WHEEL_Y_OFFSET + row * 25;
+          int slotX = this.leftPos + WHEEL_X_OFFSET + col * (WHEEL_SLOT_SIZE + WHEEL_SLOT_GAP);
+          int slotY = this.topPos + WHEEL_Y_OFFSET + row * (WHEEL_SLOT_SIZE + WHEEL_SLOT_GAP);
           boolean hovered = mouseX >= slotX && mouseX < slotX + WHEEL_SLOT_SIZE && mouseY >= slotY && mouseY < slotY + WHEEL_SLOT_SIZE;
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry wheelEntry = vars.getWheelSlotEntry(activeWheel, slot);
          boolean empty = wheelEntry == null || wheelEntry.isEmpty();
          boolean crest = !empty && "crest".equals(wheelEntry.sourceType);
          boolean castable = !empty && vars.isWheelSlotEntryCastable(wheelEntry);
-         int fillColor = 1343229968;
-         int borderColor = -13722952;
+         int magicColor = empty ? MagicUiColors.NORMAL : MagicUiColors.colorFor(wheelEntry.magicId, crest);
+         int fillColor = GuiUtils.ARCANE_PANEL_ALT;
+         int borderColor = GuiUtils.ARCANE_BORDER;
          if (empty) {
-            borderColor = hovered ? -9120532 : -13722952;
+            borderColor = hovered ? GuiUtils.ARCANE_TEXT_MUTED : GuiUtils.ARCANE_BORDER;
          } else if (crest) {
-            fillColor = castable ? -2144003552 : -2144128205;
-            borderColor = castable ? -1811878 : -7829368;
+            fillColor = castable ? MagicUiColors.withAlpha(magicColor, 0x45) : 0xD0181D23;
+            borderColor = castable ? magicColor : 0xFF666D74;
          } else {
-            fillColor = castable ? -2145371560 : -2144128205;
-            borderColor = castable ? -11557889 : -7829368;
+            fillColor = castable ? MagicUiColors.withAlpha(magicColor, 0x45) : 0xD0181D23;
+            borderColor = castable ? magicColor : 0xFF666D74;
          }
 
          if (hovered) {
-            fillColor |= 536870912;
+            fillColor = 0xF02A353E;
          }
 
-          guiGraphics.fill(slotX, slotY, slotX + WHEEL_SLOT_SIZE, slotY + WHEEL_SLOT_SIZE, fillColor);
-          guiGraphics.renderOutline(slotX, slotY, WHEEL_SLOT_SIZE, WHEEL_SLOT_SIZE, borderColor);
+         guiGraphics.fill(slotX, slotY, slotX + WHEEL_SLOT_SIZE, slotY + WHEEL_SLOT_SIZE, fillColor);
+         guiGraphics.renderOutline(slotX, slotY, WHEEL_SLOT_SIZE, WHEEL_SLOT_SIZE, borderColor);
          if (slot == currentSlot) {
-            guiGraphics.renderOutline(slotX - 1, slotY - 1, 24, 24, -11174);
+            guiGraphics.renderOutline(slotX - 2, slotY - 2, WHEEL_SLOT_SIZE + 4, WHEEL_SLOT_SIZE + 4, GuiUtils.ARCANE_GOLD);
          }
 
          if (hovered && this.draggingEntry != null && this.presetDialogState == null) {
-            int dragBorder = this.canPlaceDraggingEntry(vars, this.draggingEntry) ? -12255352 : -6645094;
-            guiGraphics.renderOutline(slotX - 2, slotY - 2, 26, 26, dragBorder);
+            int dragBorder = this.canPlaceDraggingEntry(vars, this.draggingEntry) ? GuiUtils.ARCANE_VALID : GuiUtils.ARCANE_DANGER;
+            guiGraphics.renderOutline(slotX - 2, slotY - 2, WHEEL_SLOT_SIZE + 4, WHEEL_SLOT_SIZE + 4, dragBorder);
          }
 
-         guiGraphics.drawString(this.font, String.valueOf(slot + 1), slotX + 1, slotY + 1, -5197648, false);
+         guiGraphics.drawString(this.font, String.valueOf(slot + 1), slotX + 2, slotY + 2, GuiUtils.ARCANE_TEXT_MUTED, false);
          if (!empty) {
             String name = wheelEntry.displayNameCache != null && !wheelEntry.displayNameCache.isEmpty()
                ? wheelEntry.displayNameCache
                : this.getFallbackMagicName(wheelEntry.magicId);
-            String shortName = this.clampTextToWidth(name, 20);
-             guiGraphics.drawCenteredString(this.font, Component.literal(shortName), slotX + WHEEL_SLOT_SIZE / 2, slotY + 12, -1);
+            String shortName = this.clampTextToWidth(name, WHEEL_SLOT_SIZE - 5);
+             guiGraphics.drawCenteredString(this.font, Component.literal(shortName), slotX + WHEEL_SLOT_SIZE / 2, slotY + 15, GuiUtils.ARCANE_TEXT);
           }
        }
    }
@@ -827,10 +838,43 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       int x = mouseX + 8;
       int y = mouseY + 8;
       int border = "crest".equals(this.draggingEntry.sourceType) ? -1811878 : -11557889;
-      int fill = "crest".equals(this.draggingEntry.sourceType) ? -1607462890 : -1609555912;
+      int fill = GuiUtils.ARCANE_PANEL_ALT;
+      border = MagicUiColors.colorFor(this.draggingEntry.id, "crest".equals(this.draggingEntry.sourceType));
       guiGraphics.fill(x, y, x + w, y + h, fill);
       guiGraphics.renderOutline(x, y, w, h, border);
       guiGraphics.drawString(this.font, display, x + 5, y + 4, -1, false);
+   }
+
+   private void renderKnowledgeHintTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+      int iconX = this.leftPos + 396;
+      int iconY = this.topPos + 208;
+      if (mouseX < iconX || mouseX >= iconX + 12 || mouseY < iconY || mouseY >= iconY + 14) {
+         return;
+      }
+
+      List<Component> lines = List.of(
+         Component.translatable("gui.typemoonworld.magic_knowledge.drag_hint"),
+         Component.translatable("gui.typemoonworld.magic_knowledge.clear_hint")
+      );
+      int padding = 5;
+      int width = 0;
+      for (Component line : lines) {
+         width = Math.max(width, this.font.width(line));
+      }
+
+      width += padding * 2;
+      int height = lines.size() * 10 + padding * 2;
+      int tooltipX = Math.min(mouseX + 10, this.width - width - 4);
+      int tooltipY = Math.max(4, mouseY - height - 4);
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(0.0F, 0.0F, 400.0F);
+      guiGraphics.fill(tooltipX, tooltipY, tooltipX + width, tooltipY + height, GuiUtils.ARCANE_PANEL);
+      guiGraphics.renderOutline(tooltipX, tooltipY, width, height, GuiUtils.ARCANE_GOLD);
+      for (int i = 0; i < lines.size(); i++) {
+         guiGraphics.drawString(this.font, lines.get(i), tooltipX + padding, tooltipY + padding + i * 10, GuiUtils.ARCANE_TEXT, false);
+      }
+
+      guiGraphics.pose().popPose();
    }
 
    private void checkTooltipHover(int mouseX, int mouseY) {
@@ -914,7 +958,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private void renderScrollableTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
       if (this.lastHoveredEntry != null) {
          List<Component> lines = this.getDescriptionLines(this.lastHoveredEntry);
-         int tooltipWidth = 180;
+         int tooltipWidth = 200;
          int contentWidth = tooltipWidth - 10;
          List<FormattedCharSequence> wrappedLines = this.buildWrappedTooltipLines(lines, contentWidth);
          int lineHeight = 9 + 1;
@@ -937,8 +981,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
          guiGraphics.pose().pushPose();
          guiGraphics.pose().translate(0.0F, 0.0F, 400.0F);
-         guiGraphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, -267386864);
-         guiGraphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, -16733526);
+         guiGraphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, GuiUtils.ARCANE_PANEL);
+         guiGraphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, GuiUtils.ARCANE_CYAN);
          int viewHeight = tooltipHeight - padding * 2;
          boolean canScroll = contentHeight > viewHeight;
          if (canScroll) {
@@ -946,8 +990,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             int scrollBarY = tooltipY + padding;
             int barHeight = Math.max(10, (int)((float)(viewHeight * viewHeight) / contentHeight));
             int barTop = scrollBarY + (int)(this.descScrollOffs * (viewHeight - barHeight));
-            guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + viewHeight, Integer.MIN_VALUE);
-            guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, -1);
+            guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + viewHeight, 0xA00C1116);
+            guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, GuiUtils.ARCANE_CYAN);
          }
 
          double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
@@ -990,7 +1034,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    private List<Component> getDescriptionLines(Magical_attributes_Screen.MagicEntry entry) {
       List<Component> lines = new ArrayList<>();
-      lines.add(Component.literal(this.getMagicFullName(entry)).withStyle(Style.EMPTY.withColor(entry.color).withBold(true)));
+      lines.add(
+         Component.literal(this.getMagicFullName(entry))
+            .withStyle(Style.EMPTY.withColor(MagicUiColors.colorFor(entry.id, "crest".equals(entry.sourceType))).withBold(true))
+      );
       lines.add(Component.empty());
       if (entry.wheelSlotIndex >= 0) {
          lines.add(Component.literal("槽位 " + (entry.wheelSlotIndex + 1)).withStyle(ChatFormatting.AQUA));
@@ -1177,6 +1224,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "baptism_rite" -> vars.proficiency_baptism_rite;
          case "time_alter" -> vars.proficiency_time_alter;
          case "bajiquan" -> vars.bajiquan_proficiency;
+         case "ganryu" -> vars.ganryu_proficiency;
          default -> -1.0;
       };
    }
@@ -1193,76 +1241,94 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       RenderSystem.defaultBlendFunc();
       int x = this.leftPos;
       int y = this.topPos;
-      GuiUtils.renderBackground(guiGraphics, x, y, this.imageWidth, this.imageHeight);
-      GuiUtils.renderTechFrame(guiGraphics, x + 10, y + 35, 100, 150, -16733526, -16711681);
+      GuiUtils.renderArcaneBackground(guiGraphics, x, y, this.imageWidth, this.imageHeight);
+      GuiUtils.renderArcanePanel(guiGraphics, x + 10, y + 36, 92, 184, GuiUtils.ARCANE_CYAN);
       if (this.pageMode == 0) {
-         int invX = x + 145;
-         int invY = y + 80;
-         int invW = 172;
-         int invH = 85;
-         GuiUtils.renderTechFrame(guiGraphics, invX, invY, invW, invH, -16733526, -16742145);
-         int eyeSlotX = x + 122 - 1;
-         int eyeSlotY = y + 51 - 1;
-         int eyeSlotSize = 18;
-         GuiUtils.renderTechFrame(guiGraphics, eyeSlotX, eyeSlotY, eyeSlotSize, eyeSlotSize, -65281, -65400);
-         int crestSlotX = x + 146 - 1;
-         int crestSlotY = y + 51 - 1;
-         GuiUtils.renderTechFrame(guiGraphics, crestSlotX, crestSlotY, eyeSlotSize, eyeSlotSize, -1811878, -5227974);
+         GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 36, 110, 90, GuiUtils.ARCANE_CREST);
+         GuiUtils.renderArcanePanel(guiGraphics, x + 228, y + 36, 182, 90, GuiUtils.ARCANE_VALID);
+         GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 132, 298, 88, GuiUtils.ARCANE_GOLD);
+         GuiUtils.renderArcaneSlot(
+            guiGraphics,
+            x + MagicalattributesMenu.SLOT_MYSTIC_EYES_X - 1,
+            y + MagicalattributesMenu.SLOT_MYSTIC_EYES_Y - 1,
+            MagicalattributesMenu.SLOT_PIXEL_SIZE,
+            GuiUtils.ARCANE_CYAN,
+            true
+         );
+         GuiUtils.renderArcaneSlot(
+            guiGraphics,
+            x + MagicalattributesMenu.SLOT_MAGIC_CREST_X - 1,
+            y + MagicalattributesMenu.SLOT_MAGIC_CREST_Y - 1,
+            MagicalattributesMenu.SLOT_PIXEL_SIZE,
+            GuiUtils.ARCANE_CREST,
+            true
+         );
 
          for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
-               int slotX = x + 150 + j * 18 - 1;
-               int slotY = y + 85 + i * 18 - 1;
-               guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, 553648127);
+               int slotX = x + MagicalattributesMenu.PLAYER_INV_X + j * MagicalattributesMenu.SLOT_SPACING - 1;
+               int slotY = y + MagicalattributesMenu.PLAYER_INV_Y + i * MagicalattributesMenu.SLOT_SPACING - 1;
+               GuiUtils.renderArcaneSlot(guiGraphics, slotX, slotY, MagicalattributesMenu.SLOT_PIXEL_SIZE, GuiUtils.ARCANE_BORDER, false);
             }
          }
 
          for (int k = 0; k < 9; k++) {
-            int slotX = x + 150 + k * 18 - 1;
-            int slotY = y + 143 - 1;
-            guiGraphics.fill(slotX, slotY, slotX + 18, slotY + 18, 553648127);
+            int slotX = x + MagicalattributesMenu.HOTBAR_X + k * MagicalattributesMenu.SLOT_SPACING - 1;
+            int slotY = y + MagicalattributesMenu.HOTBAR_Y - 1;
+            GuiUtils.renderArcaneSlot(guiGraphics, slotX, slotY, MagicalattributesMenu.SLOT_PIXEL_SIZE, GuiUtils.ARCANE_GOLD, false);
          }
       } else {
-         GuiUtils.renderTechFrame(guiGraphics, x + 120 - 6, y + 52 - 6, 148, 136, -13722952, -11549464);
+         GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 58, 188, 142, GuiUtils.ARCANE_CYAN);
+         GuiUtils.renderArcanePanel(guiGraphics, x + 306, y + 58, 104, 142, GuiUtils.ARCANE_GOLD);
+         guiGraphics.fill(x + 396, y + 208, x + 408, y + 222, GuiUtils.ARCANE_PANEL_ALT);
+         guiGraphics.renderOutline(x + 396, y + 208, 12, 14, GuiUtils.ARCANE_BORDER);
       }
 
       RenderSystem.disableBlend();
    }
 
    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.profile"), 18, 43, GuiUtils.ARCANE_TEXT_MUTED, false);
+      GuiUtils.renderSectionHeader(guiGraphics, 18, 43, 76, GuiUtils.ARCANE_CYAN);
       if (this.pageMode == 0) {
          TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.mystic_eyes"), 116, 42, -32513, false);
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.magic_crest"), 140, 68, -1811878, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.equipment"), 120, 43, GuiUtils.ARCANE_CREST, false);
+         GuiUtils.renderSectionHeader(guiGraphics, 120, 43, 94, GuiUtils.ARCANE_CREST);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.mystic_eyes.short"), 148, 63, GuiUtils.ARCANE_TEXT, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_modification.slot.magic_crest.short"), 148, 96, GuiUtils.ARCANE_TEXT, false);
          int cost = BodyTrainingService.nextPointCost(vars);
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training.summary", vars.body_training_xp, cost, vars.body_training_points), 170, 24, 0xFF2EB872, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training.summary", vars.body_training_xp, cost, vars.body_training_points), 236, 42, GuiUtils.ARCANE_VALID, false);
          String[] keys = new String[]{"strength", "speed", "resistance", "technique"};
          int[] levels = new int[]{vars.body_strength, vars.body_speed, vars.body_resistance, vars.body_technique};
          for (int i = 0; i < keys.length; i++) {
-            int rowY = 35 + i * 11;
-            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training." + keys[i]), 170, rowY, -1, false);
-            guiGraphics.fill(244, rowY + 1, 328, rowY + 7, 0x55202020);
-            int fillWidth = Mth.clamp(Math.round(84.0F * levels[i] / BodyTrainingService.MAX_STAT_POINTS), 0, 84);
-            guiGraphics.fill(244, rowY + 1, 244 + fillWidth, rowY + 7, 0xCC2EB872);
-            guiGraphics.drawString(this.font, levels[i] + "/" + BodyTrainingService.MAX_STAT_POINTS, 302, rowY, -1, false);
+            int rowY = 56 + i * 17;
+            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.body_training." + keys[i]), 236, rowY + 2, GuiUtils.ARCANE_TEXT, false);
+            GuiUtils.renderProgressBar(
+               guiGraphics,
+               300,
+               rowY + 2,
+               82,
+               9,
+               (float)levels[i] / BodyTrainingService.MAX_STAT_POINTS,
+               GuiUtils.ARCANE_VALID
+            );
+            String levelText = levels[i] + "/" + BodyTrainingService.MAX_STAT_POINTS;
+            guiGraphics.drawCenteredString(this.font, levelText, 341, rowY + 2, GuiUtils.ARCANE_TEXT);
          }
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.inventory"), 120, 137, GuiUtils.ARCANE_GOLD, false);
       } else {
          TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.screen.learned_magic"), 120, 24, -16719648, false);
          guiGraphics.drawString(
             this.font,
             Component.translatable("gui.typemoonworld.category.label"),
             FILTER_LABEL_X,
             FILTER_LABEL_Y,
-            -5592406,
+            GuiUtils.ARCANE_TEXT_MUTED,
             false
          );
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_slots"), 272, 50, -1811878, false);
-         guiGraphics.drawString(
-            this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_page", vars.active_wheel_index), 120, 170, -3355444, false
-         );
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.drag_hint"), 120, 150, -7697782, false);
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.clear_hint"), 120, 160, -7697782, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.magic_library"), 118, 64, GuiUtils.ARCANE_CYAN, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_slots"), 312, 64, GuiUtils.ARCANE_GOLD, false);
+         guiGraphics.drawCenteredString(this.font, "i", 402, 211, GuiUtils.ARCANE_TEXT_MUTED);
       }
    }
 
@@ -1272,10 +1338,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             return this.handlePresetDialogClick(mouseX, mouseY, button);
          }
 
-         int listX = this.leftPos + 120;
-         int listY = this.topPos + 52;
-         int scrollBarX = listX + 132 + 4;
-         if (mouseX >= scrollBarX && mouseX < scrollBarX + 6 && mouseY >= listY && mouseY < listY + 124) {
+         int listX = this.leftPos + LIST_X_OFFSET;
+         int listY = this.topPos + LIST_Y_OFFSET;
+         int scrollBarX = listX + LIST_WIDTH + 4;
+         if (mouseX >= scrollBarX && mouseX < scrollBarX + 4 && mouseY >= listY && mouseY < listY + LIST_HEIGHT) {
             this.scrolling = true;
             return true;
          }
@@ -1375,7 +1441,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
       if (this.scrolling && this.pageMode == 1) {
-         float d = (float)dragY / 124.0F;
+         float d = (float)dragY / LIST_HEIGHT;
          this.scrollOffs = Mth.clamp(this.scrollOffs + d, 0.0F, 1.0F);
          int totalRows = (this.filteredMagics.size() + 2 - 1) / 2;
          int maxStartRow = Math.max(0, totalRows - 4);
@@ -1395,10 +1461,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
          if (this.tooltipActive && this.lastHoveredEntry != null) {
             List<Component> lines = this.getDescriptionLines(this.lastHoveredEntry);
-            int contentWidth = 170;
+            int contentWidth = 190;
             int lineHeight = 9 + 1;
             int contentHeight = this.buildWrappedTooltipLines(lines, contentWidth).size() * lineHeight;
-            int viewHeight = 116;
+            int viewHeight = MAX_TOOLTIP_HEIGHT - 10;
             if (contentHeight > viewHeight) {
                float step = 10.0F / (contentHeight - viewHeight);
                this.descScrollOffs = Mth.clamp(this.descScrollOffs - (float)deltaY * step * 3.0F, 0.0F, 1.0F);
@@ -1406,9 +1472,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             }
          }
 
-         int listX = this.leftPos + 120;
-         int listY = this.topPos + 52;
-         if (mouseX >= listX && mouseX < listX + 132 && mouseY >= listY && mouseY < listY + 124) {
+         int listX = this.leftPos + LIST_X_OFFSET;
+         int listY = this.topPos + LIST_Y_OFFSET;
+         if (mouseX >= listX && mouseX < listX + LIST_WIDTH && mouseY >= listY && mouseY < listY + LIST_HEIGHT) {
             int totalRows = (this.filteredMagics.size() + 2 - 1) / 2;
             int maxStartRow = Math.max(0, totalRows - 4);
             if (maxStartRow > 0) {
@@ -1470,9 +1536,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       for (int slot = 0; slot < 12; slot++) {
          int col = slot % WHEEL_COLUMNS;
          int row = slot / WHEEL_COLUMNS;
-         int slotX = this.leftPos + 272 + col * 25;
-         int slotY = this.topPos + 60 + row * 25;
-         if (mouseX >= slotX && mouseX < slotX + 22 && mouseY >= slotY && mouseY < slotY + 22) {
+         int slotX = this.leftPos + WHEEL_X_OFFSET + col * (WHEEL_SLOT_SIZE + WHEEL_SLOT_GAP);
+         int slotY = this.topPos + WHEEL_Y_OFFSET + row * (WHEEL_SLOT_SIZE + WHEEL_SLOT_GAP);
+         if (mouseX >= slotX && mouseX < slotX + WHEEL_SLOT_SIZE && mouseY >= slotY && mouseY < slotY + WHEEL_SLOT_SIZE) {
             return slot;
          }
       }
@@ -1984,12 +2050,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          guiGraphics.pose().pushPose();
          guiGraphics.pose().translate(0.0F, 0.0F, 500.0F);
          guiGraphics.fill(0, 0, this.width, this.height, -1342177280);
-         guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, -535818216);
-         guiGraphics.renderOutline(panelX, panelY, panelWidth, panelHeight, -1811878);
-         guiGraphics.drawCenteredString(this.font, this.presetDialogState.title, panelX + panelWidth / 2, panelY + 8, -1);
+         guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, GuiUtils.ARCANE_PANEL);
+         guiGraphics.renderOutline(panelX, panelY, panelWidth, panelHeight, GuiUtils.ARCANE_CREST);
+         guiGraphics.fill(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + 3, GuiUtils.ARCANE_CREST);
+         guiGraphics.drawCenteredString(this.font, this.presetDialogState.title, panelX + panelWidth / 2, panelY + 8, GuiUtils.ARCANE_TEXT);
          if (isProjectionPresetStage(this.presetDialogState)) {
             guiGraphics.drawCenteredString(
-               this.font, Component.translatable("gui.typemoonworld.projection.title"), panelX + panelWidth / 2, panelY + 21, -5592406
+               this.font, Component.translatable("gui.typemoonworld.projection.title"), panelX + panelWidth / 2, panelY + 21, GuiUtils.ARCANE_TEXT_MUTED
             );
          }
 
@@ -2006,11 +2073,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             int optionH = 16;
             if (optionY + optionH >= optionsAreaY && optionY <= optionsAreaY + optionsAreaH) {
                boolean hovered = mouseX >= optionsAreaX && mouseX < optionsAreaX + optionW && mouseY >= optionY && mouseY < optionY + optionH;
-               guiGraphics.fill(optionsAreaX, optionY, optionsAreaX + optionW, optionY + optionH, hovered ? -1874190296 : 1882202148);
-               guiGraphics.renderOutline(optionsAreaX, optionY, optionW, optionH, -1811878);
+               guiGraphics.fill(optionsAreaX, optionY, optionsAreaX + optionW, optionY + optionH, hovered ? 0xF028343E : GuiUtils.ARCANE_PANEL_ALT);
+               guiGraphics.renderOutline(optionsAreaX, optionY, optionW, optionH, hovered ? GuiUtils.ARCANE_CREST : GuiUtils.ARCANE_BORDER);
                Component label = this.presetDialogState.options.get(i).label;
                String clipped = this.clampTextToWidth(label.getString(), Math.max(20, optionW - 8));
-               guiGraphics.drawString(this.font, clipped, optionsAreaX + 4, optionY + 4, -1, false);
+               guiGraphics.drawString(this.font, clipped, optionsAreaX + 4, optionY + 4, GuiUtils.ARCANE_TEXT, false);
             }
          }
 
@@ -2021,15 +2088,15 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                12, (int)((float)(optionsAreaH * optionsAreaH) / (this.presetDialogState.options.size() * PRESET_DIALOG_OPTION_HEIGHT))
             );
             int barTop = optionsAreaY + (int)(this.presetDialogScrollOffs * (optionsAreaH - barHeight));
-            guiGraphics.fill(scrollBarX, optionsAreaY, scrollBarX + 4, optionsAreaY + optionsAreaH, Integer.MIN_VALUE);
-            guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, -1);
+            guiGraphics.fill(scrollBarX, optionsAreaY, scrollBarX + 4, optionsAreaY + optionsAreaH, 0xA00C1116);
+            guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, GuiUtils.ARCANE_CREST);
          }
 
          int cancelX = panelX + panelWidth - 62;
          int cancelY = panelY + panelHeight - PRESET_DIALOG_OPTION_HEIGHT;
-         guiGraphics.fill(cancelX, cancelY, cancelX + 52, cancelY + 14, 1884311632);
-         guiGraphics.renderOutline(cancelX, cancelY, 52, 14, -5592406);
-         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.cancel"), cancelX + 26, cancelY + 3, -1);
+         guiGraphics.fill(cancelX, cancelY, cancelX + 52, cancelY + 14, GuiUtils.ARCANE_PANEL_ALT);
+         guiGraphics.renderOutline(cancelX, cancelY, 52, 14, GuiUtils.ARCANE_BORDER);
+         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.cancel"), cancelX + 26, cancelY + 3, GuiUtils.ARCANE_TEXT);
          guiGraphics.pose().popPose();
       }
    }

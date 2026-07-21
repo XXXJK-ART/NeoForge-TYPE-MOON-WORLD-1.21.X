@@ -40,7 +40,8 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
    public boolean hasRealArmorModel() {
       ServantCardRegistry.Entry entry = ServantCardRegistry.byId(this.servantId);
       return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
-         case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles" -> true;
+         case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles",
+            "gilgamesh", "paracelsus", "li_shuwen", "oda_nobunaga" -> true;
          default -> false;
       };
    }
@@ -79,9 +80,12 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          animation = isMedusaMysticEyesActive(state) ? "eyes_open" : "animation";
       } else if ("cursed_arm_hassan".equals(this.servantId)) {
          animation = hassanArmorAnimation(state);
+      } else if ("li_shuwen".equals(this.servantId)) {
+         animation = liShuwenArmorAnimation(state);
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
-         || "heracles".equals(this.servantId)) {
+         || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId)
+         || "paracelsus".equals(this.servantId) || "oda_nobunaga".equals(this.servantId)) {
          animation = "animation";
       }
       state.getController().setAnimation(RawAnimation.begin().thenLoop(animation));
@@ -119,6 +123,18 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          return vars.servant_card_hassan_cloak_broken ? "Cursed Arm No Cloak" : "Cursed Arm";
       }
       return vars.servant_card_hassan_cloak_broken ? "cloak out" : "cloak";
+   }
+
+   private String liShuwenArmorAnimation(AnimationState<ServantCardArmorItem> state) {
+      Entity entity = state.getData(DataTickets.ENTITY);
+      if (!(entity instanceof LivingEntity living)) {
+         return "animation";
+      }
+      float ratio = living.getHealth() / Math.max(1.0F, living.getMaxHealth());
+      if (ratio <= 0.333F) {
+         return "Jacket";
+      }
+      return ratio <= 0.666F ? "sunglasses" : "animation";
    }
 
    @Override
