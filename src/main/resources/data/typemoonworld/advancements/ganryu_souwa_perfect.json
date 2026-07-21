@@ -1,5 +1,5 @@
 {
-  "parent": "typemoonworld:ganryu_tsubame",
+  "parent": "typemoonworld:ganryu",
   "display": {
     "icon": { "item": "typemoonworld:nodachi" },
     "title": { "translate": "adv.typemoonworld.ganryu_souwa_perfect.title" },

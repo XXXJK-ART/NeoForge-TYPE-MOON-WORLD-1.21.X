@@ -485,8 +485,8 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger <true|false>"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan|ganryu"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger|tsubame <true|false>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-20>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon servant_card unlimited on|off"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc shiki clear | health <value>"), false);

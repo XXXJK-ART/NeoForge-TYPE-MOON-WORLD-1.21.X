@@ -177,7 +177,12 @@ public final class BajiquanEvents {
             && event.getSource().getEntity().getUUID().equals(sparringDefender.getPersistentData().getUUID("TypeMoonGanryuSparringMaster"));
          if (!allowed) { event.setCanceled(true); return; }
          TypeMoonWorldModVariables.PlayerVariables duelVars = sparringDefender.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (duelVars.ganryu_proficiency < 80.0 && sparringDefender.getHealth() - event.getAmount() <= 0.0F) {
+         float effectiveAmount = event.getAmount();
+         if (!event.getSource().is(DamageTypeTags.BYPASSES_RESISTANCE)
+            && !duelVars.servant_card_transformed && !duelVars.master_card_active) {
+            effectiveAmount *= (float)(1.0 - BodyTrainingService.resistanceReduction(duelVars.body_resistance));
+         }
+         if (duelVars.ganryu_proficiency < 80.0 && sparringDefender.getHealth() - effectiveAmount <= 0.0F) {
             event.setCanceled(true);
             sparringDefender.setHealth(1.0F);
             if (sparringDefender.serverLevel().getEntity(sparringDefender.getPersistentData().getUUID("TypeMoonGanryuSparringMaster"))

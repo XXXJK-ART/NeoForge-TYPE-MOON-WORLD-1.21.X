@@ -12,15 +12,21 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class GanryuNpcCombatController {
    private static final String TAG_NEXT_SKILL = "TypeMoonGanryuNpcNextSkill";
    private static final String TAG_NEXT_PATH = "TypeMoonGanryuNpcNextPath";
+   private static final String TAG_NEXT_DASH = "TypeMoonGanryuNpcNextDash";
+   private static final String TAG_STRAFE_SIDE = "TypeMoonGanryuNpcStrafeSide";
+   private static final String TAG_NEXT_STRAFE_SWITCH = "TypeMoonGanryuNpcNextStrafeSwitch";
    private static final String TAG_STANCE_MOVE = "TypeMoonGanryuNpcStanceMove";
    private static final String TAG_STANCE_READY = "TypeMoonGanryuNpcStanceReady";
+   private static final String TAG_STANCE_EXPIRE = "TypeMoonGanryuNpcStanceExpire";
    private static final String TAG_PENDING_STRIKES = "TypeMoonGanryuNpcPendingStrikes";
    private static final String TAG_PENDING_NEXT = "TypeMoonGanryuNpcPendingNext";
+   private static final String TAG_PENDING_EXPIRE = "TypeMoonGanryuNpcPendingExpire";
    private static final String TAG_PENDING_DAMAGE = "TypeMoonGanryuNpcPendingDamage";
 
    private GanryuNpcCombatController() {}
@@ -43,49 +49,82 @@ public final class GanryuNpcCombatController {
 
    private static void tick(PathfinderMob npc, double proficiency) {
       LivingEntity target = npc.getTarget();
-      if (!validTarget(npc, target)) return;
+      if (!validTarget(npc, target)) {
+         if (target != null) npc.setTarget(null);
+         return;
+      }
+      if (npc.hasEffect(ModMobEffects.STAGGER) || npc.hasEffect(ModMobEffects.OFF_BALANCE)) return;
       long now = npc.level().getGameTime();
       double distance = Math.sqrt(npc.distanceToSqr(target));
+      double verticalGap = Math.abs(target.getY() - npc.getY());
+      double attackReach = 2.9 + (npc.getBbWidth() + target.getBbWidth()) * 0.42;
+      boolean lineOfSight = npc.hasLineOfSight(target);
       npc.getLookControl().setLookAt(target, 70.0F, 55.0F);
-      if (tickPendingStrikes(npc, target, now)) return;
-      if (tickStance(npc, target, now, distance)) return;
-      if (distance > 3.1 && (npc.getNavigation().isDone() || now >= npc.getPersistentData().getLong(TAG_NEXT_PATH))) {
-         npc.getNavigation().moveTo(target, proficiency >= 80.0 ? 1.30 : 1.15);
-         npc.getPersistentData().putLong(TAG_NEXT_PATH, now + 5L);
+      if (tickPendingStrikes(npc, target, proficiency, now, distance, attackReach, lineOfSight)) return;
+      if (tickStance(npc, target, proficiency, now, distance, attackReach, lineOfSight)) return;
+
+      if (distance > attackReach - 0.25) {
+         approach(npc, target, proficiency, now);
+         if (lineOfSight && distance <= 10.0) tryGapClose(npc, target, proficiency, now, distance, attackReach);
       }
-      if (now < npc.getPersistentData().getLong(TAG_NEXT_SKILL) || distance > 8.0 || !npc.hasLineOfSight(target)) return;
+
+      boolean skillReady = now >= npc.getPersistentData().getLong(TAG_NEXT_SKILL);
+      if (!skillReady || distance > attackReach || verticalGap > 2.5 || (!lineOfSight && distance > 2.2)) {
+         if (distance <= attackReach + 1.0 && verticalGap <= 2.5) circleTarget(npc, target, distance, attackReach, now);
+         return;
+      }
       if (proficiency < 0.5) {
          npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + 10L);
          return;
       }
       int roll = npc.getRandom().nextInt(100);
       GanryuMove move;
-      if (proficiency >= 80.0 && distance <= 8.0 && roll < 10) move = GanryuMove.TSUBAME_GAESHI;
-      else if (proficiency >= 60.0 && roll < 25) move = GanryuMove.FLOWER_BUD;
-      else if (proficiency >= 55.0 && roll < 45) move = GanryuMove.SPARROW_SLASH;
-      else if (proficiency >= 25.0 && roll < 65) move = npc.getRandom().nextBoolean() ? GanryuMove.SPRING_BUD : GanryuMove.SPRING_BUD_SECOND;
-      else if (proficiency >= 5.0 && roll < 82) move = npc.getRandom().nextBoolean() ? GanryuMove.SPARROW_THRUST : GanryuMove.SPARROW_THRUST_SECOND;
+      if (proficiency >= 80.0 && roll < 5) move = GanryuMove.TSUBAME_GAESHI;
+      else if (proficiency >= 60.0 && roll < 12) move = GanryuMove.FLOWER_BUD;
+      else if (proficiency >= 55.0 && roll < 22) move = GanryuMove.SPARROW_SLASH;
+      else if (proficiency >= 25.0 && roll < 62) move = npc.getRandom().nextBoolean() ? GanryuMove.SPRING_BUD : GanryuMove.SPRING_BUD_SECOND;
+      else if (proficiency >= 5.0 && roll < 86) move = npc.getRandom().nextBoolean() ? GanryuMove.SPARROW_THRUST : GanryuMove.SPARROW_THRUST_SECOND;
       else move = GanryuMove.STONE_FLOWER;
       if (isStanceMove(move)) {
          npc.getPersistentData().putString(TAG_STANCE_MOVE, move.name());
          npc.getPersistentData().putLong(TAG_STANCE_READY, now + 60L);
+         npc.getPersistentData().putLong(TAG_STANCE_EXPIRE, now + 100L);
          npc.getNavigation().stop();
+         if (npc instanceof MysteriousSwordsmanEntity swordsman) swordsman.triggerMove(GanryuMove.STANCE);
       } else {
          perform(npc, target, move);
-         npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + Math.max(10, move.recoveryTicks() + 3));
+         int minimumRecovery = proficiency >= 80.0 ? 6 : 8;
+         int recovery = Math.max(minimumRecovery,
+            move.recoveryTicks() + 1 - (proficiency >= 80.0 ? 5 : proficiency >= 40.0 ? 2 : 0));
+         npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + recovery);
       }
    }
 
-   private static boolean tickStance(PathfinderMob npc, LivingEntity target, long now, double distance) {
+   private static boolean tickStance(PathfinderMob npc, LivingEntity target, double proficiency, long now,
+      double distance, double attackReach, boolean lineOfSight) {
       String queued = npc.getPersistentData().getString(TAG_STANCE_MOVE);
       if (queued.isEmpty()) return false;
       if (now < npc.getPersistentData().getLong(TAG_STANCE_READY)) {
-         if (distance > 6.0 && (npc.getNavigation().isDone() || now % 10L == 0L)) npc.getNavigation().moveTo(target, 0.4);
-         else if (distance <= 6.0) npc.getNavigation().stop();
+         if (distance > attackReach - 0.2 && (npc.getNavigation().isDone() || now % 6L == 0L)) {
+            npc.getNavigation().moveTo(target, proficiency >= 80.0 ? 0.62 : 0.52);
+         } else if (distance <= attackReach - 0.4) {
+            circleTarget(npc, target, distance, attackReach, now);
+         }
+         return true;
+      }
+      if (distance > attackReach || !lineOfSight) {
+         if (now > npc.getPersistentData().getLong(TAG_STANCE_EXPIRE) || distance > 12.0) {
+            clearStance(npc);
+            npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + 6L);
+            return false;
+         }
+         approach(npc, target, proficiency, now);
+         if (lineOfSight && distance <= 10.0) tryGapClose(npc, target, proficiency, now, distance, attackReach);
          return true;
       }
       npc.getPersistentData().remove(TAG_STANCE_MOVE);
       npc.getPersistentData().remove(TAG_STANCE_READY);
+      npc.getPersistentData().remove(TAG_STANCE_EXPIRE);
       GanryuMove move;
       try {
          move = GanryuMove.valueOf(queued);
@@ -93,15 +132,27 @@ public final class GanryuNpcCombatController {
          return false;
       }
       perform(npc, target, move);
-      int recovery = move == GanryuMove.TSUBAME_GAESHI ? 40 : 18;
+      int recovery = move == GanryuMove.TSUBAME_GAESHI ? 32 : proficiency >= 80.0 ? 12 : 15;
       npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + recovery);
       return true;
    }
 
-   private static boolean tickPendingStrikes(PathfinderMob npc, LivingEntity target, long now) {
+   private static boolean tickPendingStrikes(PathfinderMob npc, LivingEntity target, double proficiency, long now,
+      double distance, double attackReach, boolean lineOfSight) {
       int remaining = npc.getPersistentData().getInt(TAG_PENDING_STRIKES);
       if (remaining <= 0) return false;
+      if (now > npc.getPersistentData().getLong(TAG_PENDING_EXPIRE) || distance > 12.0) {
+         clearPendingStrikes(npc);
+         npc.getPersistentData().putLong(TAG_NEXT_SKILL, now + 6L);
+         return false;
+      }
       if (now < npc.getPersistentData().getLong(TAG_PENDING_NEXT)) return true;
+      if (distance > attackReach + 0.8 || !lineOfSight) {
+         approach(npc, target, proficiency, now);
+         if (lineOfSight && distance <= 8.0) tryGapClose(npc, target, proficiency, now, distance, attackReach);
+         return true;
+      }
+      if (npc instanceof MysteriousSwordsmanEntity swordsman) swordsman.triggerMove(GanryuMove.SPARROW_THRUST);
       hurtTarget(npc, target, npc.getPersistentData().getFloat(TAG_PENDING_DAMAGE), false);
       remaining--;
       npc.getPersistentData().putInt(TAG_PENDING_STRIKES, remaining);
@@ -109,9 +160,7 @@ public final class GanryuNpcCombatController {
       npc.setDeltaMovement(npc.getDeltaMovement().add(horizontalDirection(npc, target).scale(0.15)));
       npc.hurtMarked = true;
       if (remaining <= 0) {
-         npc.getPersistentData().remove(TAG_PENDING_STRIKES);
-         npc.getPersistentData().remove(TAG_PENDING_NEXT);
-         npc.getPersistentData().remove(TAG_PENDING_DAMAGE);
+         clearPendingStrikes(npc);
       }
       return remaining > 0;
    }
@@ -121,11 +170,59 @@ public final class GanryuNpcCombatController {
    }
 
    private static void clearQueuedActions(PathfinderMob npc) {
-      npc.getPersistentData().remove(TAG_STANCE_MOVE);
-      npc.getPersistentData().remove(TAG_STANCE_READY);
+      clearStance(npc);
+      clearPendingStrikes(npc);
+   }
+
+   private static void clearPendingStrikes(PathfinderMob npc) {
       npc.getPersistentData().remove(TAG_PENDING_STRIKES);
       npc.getPersistentData().remove(TAG_PENDING_NEXT);
+      npc.getPersistentData().remove(TAG_PENDING_EXPIRE);
       npc.getPersistentData().remove(TAG_PENDING_DAMAGE);
+   }
+
+   private static void clearStance(PathfinderMob npc) {
+      npc.getPersistentData().remove(TAG_STANCE_MOVE);
+      npc.getPersistentData().remove(TAG_STANCE_READY);
+      npc.getPersistentData().remove(TAG_STANCE_EXPIRE);
+   }
+
+   private static void approach(PathfinderMob npc, LivingEntity target, double proficiency, long now) {
+      if (!npc.getNavigation().isDone() && now < npc.getPersistentData().getLong(TAG_NEXT_PATH)) return;
+      double speed = proficiency >= 80.0 ? 1.52 : proficiency >= 25.0 ? 1.40 : 1.30;
+      boolean started = npc.getNavigation().moveTo(target, speed);
+      npc.getPersistentData().putLong(TAG_NEXT_PATH, now + (started ? 4L : 2L));
+   }
+
+   private static void tryGapClose(PathfinderMob npc, LivingEntity target, double proficiency, long now,
+      double distance, double attackReach) {
+      if (!npc.onGround() || distance <= attackReach - 0.1 || now < npc.getPersistentData().getLong(TAG_NEXT_DASH)) return;
+      Vec3 direction = horizontalDirection(npc, target);
+      double speed = proficiency >= 80.0 ? 1.05 : proficiency >= 25.0 ? 0.88 : 0.72;
+      if (proficiency >= 55.0 && distance <= 6.5
+         && npc.getRandom().nextInt(100) < (proficiency >= 80.0 ? 55 : 35)) {
+         int side = npc.getPersistentData().getInt(TAG_STRAFE_SIDE);
+         if (side == 0) side = npc.getRandom().nextBoolean() ? 1 : -1;
+         double lateral = proficiency >= 80.0 ? 0.34 : 0.24;
+         direction = direction.add(-direction.z * side * lateral, 0.0, direction.x * side * lateral).normalize();
+         npc.getPersistentData().putInt(TAG_STRAFE_SIDE, -side);
+      }
+      npc.getNavigation().stop();
+      npc.setDeltaMovement(direction.x * speed, Math.max(0.05, npc.getDeltaMovement().y), direction.z * speed);
+      npc.hurtMarked = true;
+      npc.getPersistentData().putLong(TAG_NEXT_DASH, now + (proficiency >= 80.0 ? 11L : 15L));
+   }
+
+   private static void circleTarget(PathfinderMob npc, LivingEntity target, double distance, double attackReach, long now) {
+      if (now >= npc.getPersistentData().getLong(TAG_NEXT_STRAFE_SWITCH)) {
+         npc.getPersistentData().putInt(TAG_STRAFE_SIDE, npc.getRandom().nextBoolean() ? 1 : -1);
+         npc.getPersistentData().putLong(TAG_NEXT_STRAFE_SWITCH, now + 10L + npc.getRandom().nextInt(10));
+      }
+      int side = npc.getPersistentData().getInt(TAG_STRAFE_SIDE);
+      if (side == 0) side = 1;
+      float forward = distance > attackReach - 0.25 ? 0.58F : distance < 1.55 ? -0.32F : 0.16F;
+      npc.getMoveControl().strafe(forward, side * 0.68F);
+      npc.getLookControl().setLookAt(target, 75.0F, 60.0F);
    }
 
    private static void perform(PathfinderMob npc, LivingEntity target, GanryuMove move) {
@@ -134,6 +231,10 @@ public final class GanryuNpcCombatController {
       Vec3 direction = horizontalDirection(npc, target);
       if (move == GanryuMove.SPRING_BUD || move == GanryuMove.SPRING_BUD_SECOND || move == GanryuMove.SPARROW_SLASH) {
          npc.setDeltaMovement(npc.getDeltaMovement().add(direction.scale(move == GanryuMove.SPRING_BUD_SECOND ? 0.65 : 0.45)).add(0.0, 0.04, 0.0));
+         npc.hurtMarked = true;
+      }
+      if (move == GanryuMove.SPARROW_THRUST_SECOND) {
+         npc.setDeltaMovement(npc.getDeltaMovement().add(direction.scale(-0.38)).add(0.0, 0.03, 0.0));
          npc.hurtMarked = true;
       }
       if (move == GanryuMove.TSUBAME_GAESHI && npc.getRandom().nextFloat() >= 0.8F) {
@@ -151,6 +252,7 @@ public final class GanryuNpcCombatController {
       if (move == GanryuMove.SPARROW_SLASH) {
          npc.getPersistentData().putInt(TAG_PENDING_STRIKES, 3);
          npc.getPersistentData().putLong(TAG_PENDING_NEXT, npc.level().getGameTime());
+         npc.getPersistentData().putLong(TAG_PENDING_EXPIRE, npc.level().getGameTime() + 35L);
          npc.getPersistentData().putFloat(TAG_PENDING_DAMAGE, damage);
       } else {
          if (move == GanryuMove.TSUBAME_GAESHI) target.stopUsingItem();

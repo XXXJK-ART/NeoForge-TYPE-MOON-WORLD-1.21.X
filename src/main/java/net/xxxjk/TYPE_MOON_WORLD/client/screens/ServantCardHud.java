@@ -24,7 +24,6 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
-import net.xxxjk.TYPE_MOON_WORLD.client.gui.GuiUtils;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
@@ -91,16 +90,12 @@ public class ServantCardHud {
       int x = 6;
       int y = 10;
       if (vars.master_active) {
-         GuiUtils.renderHudPanel(gui, x - 2, y + 34, 148, 25, GuiUtils.ARCANE_CREST);
          drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.master.status"), x, y + 38, 0xFFFFFFFF, 0.72F);
          drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.master.command_spells", vars.master_command_spells), x, y + 48, 0xFFE0E0E0, 0.62F);
          return;
       }
       String servant = vars.servant_card_id == null || vars.servant_card_id.isBlank() ? "servant" : vars.servant_card_id;
       Component servantName = "servant".equals(servant) ? Component.literal(servant) : Component.translatable("item.typemoonworld.servant_card_" + servant);
-      int servantAccent = "gilgamesh".equals(servant) ? GuiUtils.ARCANE_GOLD : "enkidu".equals(servant) ? GuiUtils.ARCANE_VALID : GuiUtils.ARCANE_CYAN;
-      GuiUtils.renderHudPanel(gui, x - 2, y + 34, 148, 35, servantAccent);
-      GuiUtils.renderHudPanel(gui, 4, 75, 144, 82, servantAccent);
       drawScaledString(gui, minecraft, servantName, x, y + 38, 0xFFFFFFFF, 0.72F);
       drawScaledString(
          gui,
@@ -169,7 +164,8 @@ public class ServantCardHud {
       int height = lines.size() * 10 + 7;
       int x = Math.max(4, Math.min(gui.guiWidth() / 2 + 14, gui.guiWidth() - width - 8));
       int y = Math.max(6, Math.min(gui.guiHeight() / 2 + 10, gui.guiHeight() - height - 6));
-      GuiUtils.renderHudPanel(gui, x - 4, y - 4, width + 9, lines.size() * 10 + 7, GuiUtils.ARCANE_GOLD);
+      gui.fill(x - 4, y - 4, x + width + 5, y + lines.size() * 10 + 3, 0xB0181820);
+      gui.renderOutline(x - 4, y - 4, width + 9, lines.size() * 10 + 7, 0xFFD4AF37);
       for (int i = 0; i < lines.size(); i++) gui.drawString(minecraft.font, lines.get(i), x, y + i * 10, i == 0 ? 0xFFFFD54F : 0xFFE8E8E8, true);
       if (!icon.isEmpty()) gui.renderItem(icon, x + width - 18, y);
    }
@@ -237,13 +233,12 @@ public class ServantCardHud {
 
    private static void drawBar(GuiGraphics gui, Minecraft minecraft, int x, int y, int width, String label, double value, double max, int startColor, int endColor) {
       int height = 8;
-      GuiUtils.renderHudPanel(gui, x - 2, y - 2, width + 4, height + 4, endColor);
-      gui.fill(x, y, x + width, y + height, GuiUtils.ARCANE_BACKGROUND);
+      gui.fill(x, y, x + width, y + height, 0x90000000);
       if (max > 0.0) {
          int fill = (int)(width * Math.max(0.0, Math.min(1.0, value / max)));
          gui.fillGradient(x, y, x + fill, y + height, startColor, endColor);
       }
-      gui.renderOutline(x - 1, y - 1, width + 2, height + 2, GuiUtils.ARCANE_BORDER);
+      gui.renderOutline(x - 1, y - 1, width + 2, height + 2, 0xCCFFFFFF);
       String text = label + " " + (int)value + "/" + (int)Math.max(0.0, max);
       float scale = 0.62F;
       int textX = x + (int)((width - minecraft.font.width(text) * scale) / 2.0F);
@@ -282,7 +277,7 @@ public class ServantCardHud {
          return;
       }
       int x = guiWidth - 66;
-      GuiUtils.renderHudPanel(gui, x - 3, y - 4, guiWidth - x - 2, 35, 0xFFC58BE2);
+      gui.fill(x - 3, y - 4, guiWidth - 5, y + 31, 0x44000000);
       drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.medea_items"), x, y - 2, 0xFFE6D8FF, 0.62F);
       drawScaledString(
          gui,
@@ -318,7 +313,7 @@ public class ServantCardHud {
          return;
       }
       int x = guiWidth - 78;
-      GuiUtils.renderHudPanel(gui, x - 3, y - 4, guiWidth - x - 2, 26, 0xFF9ADBE8);
+      gui.fill(x - 3, y - 4, guiWidth - 5, y + 22, 0x44000000);
       drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.paracelsus_items"), x, y - 2, 0xFFE6D8FF, 0.62F);
       drawScaledString(
          gui,

@@ -79,8 +79,11 @@ public final class GanryuCombatService {
    public static boolean hasValidHands(ServerPlayer player) {
       ItemStack main = player.getMainHandItem();
       ItemStack off = player.getOffhandItem();
-      return (isAllowedBlade(main) || isAllowedBlade(off))
-         && (main.isEmpty() || isAllowedBlade(main)) && (off.isEmpty() || isAllowedBlade(off));
+      return isValidHandCombination(main.isEmpty(), isAllowedBlade(main), off.isEmpty(), isAllowedBlade(off));
+   }
+
+   static boolean isValidHandCombination(boolean mainEmpty, boolean mainAllowed, boolean offEmpty, boolean offAllowed) {
+      return (mainAllowed || offAllowed) && (mainEmpty || mainAllowed) && (offEmpty || offAllowed);
    }
 
    public static boolean isActive(ServerPlayer player) {
@@ -124,10 +127,14 @@ public final class GanryuCombatService {
    }
 
    public static boolean isUnlocked(TypeMoonWorldModVariables.PlayerVariables vars, GanryuMove move) {
-      if (vars == null || !vars.ganryu_learned) return false;
-      if (move == GanryuMove.UKEMI) return MartialUkemiService.isLearned(vars);
-      if (vars.ganryu_proficiency + 1.0E-6 < move.requiredProficiency()) return false;
-      return move != GanryuMove.TSUBAME_GAESHI || vars.ganryu_tsubame_unlocked;
+      if (vars == null) return false;
+      if (move == GanryuMove.UKEMI) return vars.ganryu_learned && MartialUkemiService.isLearned(vars);
+      return isUnlocked(vars.ganryu_learned, vars.ganryu_proficiency, vars.ganryu_tsubame_unlocked, move);
+   }
+
+   static boolean isUnlocked(boolean learned, double proficiency, boolean tsubameUnlocked, GanryuMove move) {
+      return learned && move != null && proficiency + 1.0E-6 >= move.requiredProficiency()
+         && (move != GanryuMove.TSUBAME_GAESHI || tsubameUnlocked);
    }
 
    public static void handleInput(ServerPlayer player, int input, boolean down, boolean up) {
@@ -168,7 +175,8 @@ public final class GanryuCombatService {
          handleStanceAttack(player, vars, down, now);
          return;
       }
-      if (now - data.getLong(TAG_LAST_SEQUENCE) > SEQUENCE_WINDOW) {
+      boolean sequenceExpired = now - data.getLong(TAG_LAST_SEQUENCE) > SEQUENCE_WINDOW;
+      if (sequenceExpired) {
          data.putInt(TAG_A_COUNT, 0);
          data.putInt(TAG_DOWN_A_COUNT, 0);
       }
@@ -176,11 +184,11 @@ public final class GanryuCombatService {
       if (up && !player.onGround()) {
          move = GanryuMove.STONE_FLOWER_SECOND;
       } else if (down) {
-         int count = data.getInt(TAG_DOWN_A_COUNT) % 2 + 1;
+         int count = nextSequenceStage(data.getInt(TAG_DOWN_A_COUNT), 2, sequenceExpired);
          data.putInt(TAG_DOWN_A_COUNT, count);
          move = count == 1 ? GanryuMove.SPRING_BUD_SECOND : GanryuMove.SPARROW_THRUST_SECOND;
       } else {
-         int count = data.getInt(TAG_A_COUNT) % 3 + 1;
+         int count = nextSequenceStage(data.getInt(TAG_A_COUNT), 3, sequenceExpired);
          data.putInt(TAG_A_COUNT, count);
          move = count == 1 ? GanryuMove.STONE_FLOWER : count == 2 ? GanryuMove.SPARROW_THRUST : GanryuMove.SPRING_BUD;
       }
@@ -194,7 +202,7 @@ public final class GanryuCombatService {
 
    private static void beginStance(ServerPlayer player, long now) {
       CompoundTag data = player.getPersistentData();
-      if (data.getLong(TAG_STANCE_START) <= 0L) data.putLong(TAG_STANCE_START, now);
+      if (!data.contains(TAG_STANCE_START)) data.putLong(TAG_STANCE_START, now);
       applyStanceSlow(player, true);
       sendPose(player, GanryuMove.STANCE, 20);
    }
@@ -239,7 +247,7 @@ public final class GanryuCombatService {
       if (!isUnlocked(vars, move)) return;
       if (move == GanryuMove.HIGH_JUMP && !player.onGround()) return;
       long now = player.level().getGameTime();
-      int recovery = Math.max(1, (int)Math.ceil(move.recoveryTicks() * (1.0 - BodyTrainingService.stagedPercent(vars.body_technique))));
+      int recovery = recoveryTicks(move.recoveryTicks(), vars.body_technique);
       player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
       if (move == GanryuMove.HIGH_JUMP) {
          player.setDeltaMovement(player.getDeltaMovement().x, 1.05 + BodyTrainingService.stagedPercent(vars.body_technique) * 0.4, player.getDeltaMovement().z);
@@ -264,8 +272,7 @@ public final class GanryuCombatService {
 
    private static void performTsubame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingEntity target, float power) {
       long now = player.level().getGameTime();
-      int recovery = Math.max(1, (int)Math.ceil(GanryuMove.TSUBAME_GAESHI.recoveryTicks()
-         * (1.0 - BodyTrainingService.stagedPercent(vars.body_technique))));
+      int recovery = recoveryTicks(GanryuMove.TSUBAME_GAESHI.recoveryTicks(), vars.body_technique);
       player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
       boolean landed = tsubameLands(player.getRandom().nextFloat());
       if (landed) {
@@ -382,13 +389,21 @@ public final class GanryuCombatService {
    }
 
    public static int souwaBonus(TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars == null || !vars.ganryu_learned || vars.ganryu_proficiency < 25.0) return 0;
-      return vars.ganryu_proficiency >= 100.0 ? 6 : vars.ganryu_proficiency >= 50.0 ? 3 : 1;
+      return vars == null ? 0 : souwaBonus(vars.ganryu_learned, vars.ganryu_proficiency);
+   }
+
+   static int souwaBonus(boolean learned, double proficiency) {
+      if (!learned || proficiency < 25.0) return 0;
+      return proficiency >= 100.0 ? 6 : proficiency >= 50.0 ? 3 : 1;
    }
 
    static float scaledDamage(TypeMoonWorldModVariables.PlayerVariables vars, float baseDamage) {
       if (vars == null) return Math.max(0.0F, baseDamage);
-      return BajiquanCombatService.scaledDamage(baseDamage, vars.body_strength, vars.ganryu_proficiency);
+      return scaledDamage(baseDamage, vars.body_strength, vars.ganryu_proficiency);
+   }
+
+   static float scaledDamage(float baseDamage, int bodyStrength, double proficiency) {
+      return BajiquanCombatService.scaledDamage(baseDamage, bodyStrength, proficiency);
    }
 
    static float stanceDamage(float minimum, float maximum, float power) {
@@ -397,6 +412,15 @@ public final class GanryuCombatService {
 
    static boolean tsubameLands(float roll) {
       return roll >= 0.0F && roll < 0.8F;
+   }
+
+   static int recoveryTicks(int baseTicks, int bodyTechnique) {
+      return Math.max(1, (int)Math.ceil(Math.max(0, baseTicks) * (1.0 - BodyTrainingService.stagedPercent(bodyTechnique))));
+   }
+
+   static int nextSequenceStage(int current, int stages, boolean expired) {
+      if (stages <= 1 || expired) return 1;
+      return Math.floorMod(current, stages) + 1;
    }
 
    public static void addProficiency(ServerPlayer player, double amount) {
@@ -431,18 +455,21 @@ public final class GanryuCombatService {
    }
 
    public static boolean isInStance(ServerPlayer player) {
-      return player != null && player.getPersistentData().getLong(TAG_STANCE_START) > 0L;
+      return player != null && player.getPersistentData().contains(TAG_STANCE_START);
    }
 
    public static void endStance(ServerPlayer player) {
       if (player == null) return;
       CompoundTag data = player.getPersistentData();
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      boolean hadState = data.contains(TAG_STANCE_START) || data.contains(TAG_STANCE_STAGE)
+         || speed != null && speed.getModifier(STANCE_SLOW_ID) != null;
       data.remove(TAG_STANCE_START);
       data.remove(TAG_STANCE_STAGE);
       data.remove(TAG_STANCE_POWER);
       data.remove(TAG_STANCE_CHAIN);
       applyStanceSlow(player, false);
-      sendPose(player, GanryuMove.STANCE, 0);
+      if (hadState) sendPose(player, GanryuMove.STANCE, 0);
    }
 
    public static void clearRuntime(ServerPlayer player) {
@@ -465,7 +492,11 @@ public final class GanryuCombatService {
    }
 
    private static float chargeRatio(CompoundTag data, long now) {
-      return Mth.clamp((now - data.getLong(TAG_STANCE_START)) / (float)STANCE_CHARGE_TICKS, 0.0F, 1.0F);
+      return stanceCharge(now - data.getLong(TAG_STANCE_START));
+   }
+
+   static float stanceCharge(long elapsedTicks) {
+      return Mth.clamp(elapsedTicks / (float)STANCE_CHARGE_TICKS, 0.0F, 1.0F);
    }
 
    private static void applyStanceSlow(ServerPlayer player, boolean active) {

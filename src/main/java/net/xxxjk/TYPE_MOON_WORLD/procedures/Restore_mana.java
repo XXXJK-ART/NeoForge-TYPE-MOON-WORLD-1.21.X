@@ -8,8 +8,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -123,12 +121,6 @@ public class Restore_mana {
                   vars.is_magic_circuit_open = false;
                   vars.magic_circuit_open_timer = 0.0;
                   syncImmediately = true;
-                  if (entity instanceof LivingEntity living) {
-                     living.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 600, 1));
-                     living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 1200, 1));
-                     living.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 1200, 1));
-                  }
-
                   if (entity instanceof Player player && !player.level().isClientSide()) {
                      player.displayClientMessage(Component.translatable("message.typemoonworld.circuit.forced_close"), true);
                   }

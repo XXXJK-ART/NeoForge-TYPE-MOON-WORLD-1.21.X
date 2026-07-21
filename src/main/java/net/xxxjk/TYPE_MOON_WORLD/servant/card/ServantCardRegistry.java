@@ -17,7 +17,7 @@ public final class ServantCardRegistry {
       new Entry("heracles", "Heracles", "赫拉克勒斯", false),
       new Entry("oda_nobunaga", "Oda Nobunaga", "织田信长", true),
       new Entry("enkidu", "Enkidu", "恩奇都", true),
-      new Entry("gawain", "Gawain", "高文", false),
+      new Entry("gawain", "Gawain", "高文", true),
       new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", true),
       new Entry("li_shuwen", "Li Shuwen", "李书文", true)
    );

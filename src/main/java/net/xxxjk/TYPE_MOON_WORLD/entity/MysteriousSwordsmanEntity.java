@@ -12,6 +12,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -47,6 +48,7 @@ public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntit
    private static final String TAG_BOUND = "GraveyardBound";
    private static final String TAG_RETALIATION_TARGET = "RetaliationTarget";
    private static final String TAG_RETALIATION_UNTIL = "RetaliationUntil";
+   private static final String TAG_HEALTH_200_MIGRATED = "TypeMoonGanryuHealth200Migrated";
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public MysteriousSwordsmanEntity(EntityType<? extends MysteriousSwordsmanEntity> type, Level level) {
@@ -64,7 +66,7 @@ public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntit
    }
 
    public static AttributeSupplier.Builder createAttributes() {
-      return createMobAttributes().add(Attributes.MAX_HEALTH, 80.0).add(Attributes.MOVEMENT_SPEED, 0.30)
+      return createMobAttributes().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.MOVEMENT_SPEED, 0.30)
          .add(Attributes.ATTACK_DAMAGE, 7.0).add(Attributes.ARMOR, 8.0).add(Attributes.FOLLOW_RANGE, 32.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 0.7);
    }
@@ -110,6 +112,7 @@ public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntit
 
    @Override protected void customServerAiStep() {
       super.customServerAiStep();
+      migrateHealthTo200();
       ensureWeapon();
       if (!this.hasCustomName()) this.setCustomName(Component.translatable("entity.typemoonworld.mysterious_swordsman"));
       CompoundTag data = this.getPersistentData();
@@ -182,10 +185,12 @@ public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntit
    }
 
    public void triggerMove(GanryuMove move) {
-      this.swing(InteractionHand.MAIN_HAND, true);
+      if (move != GanryuMove.STANCE) this.swing(InteractionHand.MAIN_HAND, true);
       String trigger = switch (move) {
          case TSUBAME_GAESHI -> "tsubame";
-         case SPARROW_SLASH, SPRING_BUD, SPRING_BUD_SECOND -> "horizontal";
+         case STANCE -> "stance";
+         case SPARROW_SLASH, SPARROW_THRUST -> "thrust";
+         case SPRING_BUD, SPRING_BUD_SECOND -> "horizontal";
          default -> "slash";
       };
       this.triggerAnim("action_controller", trigger);
@@ -234,6 +239,17 @@ public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntit
       }
    }
 
+   private void migrateHealthTo200() {
+      CompoundTag data = this.getPersistentData();
+      if (data.getBoolean(TAG_HEALTH_200_MIGRATED)) return;
+      float oldMaximum = this.getMaxHealth();
+      float healthRatio = oldMaximum > 0.0F ? this.getHealth() / oldMaximum : 1.0F;
+      AttributeInstance maximumHealth = this.getAttribute(Attributes.MAX_HEALTH);
+      if (maximumHealth != null && maximumHealth.getBaseValue() < 200.0) maximumHealth.setBaseValue(200.0);
+      this.setHealth(this.getMaxHealth() * Math.min(1.0F, healthRatio));
+      data.putBoolean(TAG_HEALTH_200_MIGRATED, true);
+   }
+
    private static void consumeInvitation(ServerPlayer player, ItemStack invitation) {
       int remaining = Math.max(0, invitation.getCount() - (player.getAbilities().instabuild ? 0 : 1));
       ItemStack remainder = invitation.copy();
@@ -278,6 +294,8 @@ public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntit
          event.isMoving() ? RawAnimation.begin().thenLoop("animation.sasaki_kojiro.walk") : RawAnimation.begin().thenLoop("animation.sasaki_kojiro.idle")
       )));
       AnimationController<MysteriousSwordsmanEntity> action = new AnimationController<>(this, "action_controller", 0, event -> PlayState.STOP);
+      action.triggerableAnim("stance", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.idle"));
+      action.triggerableAnim("thrust", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.slash_diagonal"));
       action.triggerableAnim("slash", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.slash_diagonal"));
       action.triggerableAnim("horizontal", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.horizontal_swing"));
       action.triggerableAnim("tsubame", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.swallow_return"));

@@ -41,7 +41,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       ServantCardRegistry.Entry entry = ServantCardRegistry.byId(this.servantId);
       return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
          case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles",
-            "gilgamesh", "paracelsus", "li_shuwen", "oda_nobunaga" -> true;
+            "gilgamesh", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga" -> true;
          default -> false;
       };
    }
@@ -84,7 +84,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          animation = liShuwenArmorAnimation(state);
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
-         || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId)
+         || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)
          || "paracelsus".equals(this.servantId) || "oda_nobunaga".equals(this.servantId)) {
          animation = "animation";
       }

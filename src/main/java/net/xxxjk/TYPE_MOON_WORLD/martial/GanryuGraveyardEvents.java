@@ -87,7 +87,8 @@ public final class GanryuGraveyardEvents {
       }
       if (!areChunksLoaded(level, box)) return false;
       if (!level.getEntitiesOfClass(MysteriousSwordsmanEntity.class,
-         new net.minecraft.world.phys.AABB(box.minX() - 8, box.minY() - 8, box.minZ() - 8, box.maxX() + 8, box.maxY() + 16, box.maxZ() + 8)).isEmpty()) {
+         new net.minecraft.world.phys.AABB(box.minX() - 8, box.minY() - 8, box.minZ() - 8, box.maxX() + 8, box.maxY() + 16, box.maxZ() + 8),
+         MysteriousSwordsmanEntity::isGraveyardBound).isEmpty()) {
          saved.markInitialized(id);
          return true;
       }
@@ -98,7 +99,7 @@ public final class GanryuGraveyardEvents {
       if (swordsman == null) return false;
       swordsman.moveTo(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0.0F, 0.0F);
       swordsman.setGraveyardHome(home);
-      level.addFreshEntity(swordsman);
+      if (!level.addFreshEntity(swordsman)) return false;
       saved.markInitialized(id);
       return true;
    }
