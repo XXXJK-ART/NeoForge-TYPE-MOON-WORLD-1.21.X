@@ -10,10 +10,12 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
+import net.minecraft.network.chat.Component;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
 
 public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
    private static final EntityDataAccessor<Integer> CALAMITY = SynchedEntityData.defineId(ApocalypseHorsemanEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Boolean> PALE_RIDER_PROXY = SynchedEntityData.defineId(ApocalypseHorsemanEntity.class, EntityDataSerializers.BOOLEAN);
 
    public ApocalypseHorsemanEntity(EntityType<? extends ApocalypseHorsemanEntity> type, Level level) {
       super(type, level);
@@ -33,14 +35,25 @@ public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(CALAMITY, Calamity.SWORD.ordinal());
+      builder.define(PALE_RIDER_PROXY, false);
    }
 
    public void setCalamity(Calamity calamity) {
       this.entityData.set(CALAMITY, calamity.ordinal());
+      this.updateHorsemanName();
    }
 
    public Calamity getCalamity() {
       return Calamity.values()[Math.max(0, Math.min(Calamity.values().length - 1, this.entityData.get(CALAMITY)))];
+   }
+
+   public void setPaleRiderProxy(boolean value) {
+      this.entityData.set(PALE_RIDER_PROXY, value);
+      this.updateHorsemanName();
+   }
+
+   public boolean isPaleRiderProxy() {
+      return this.entityData.get(PALE_RIDER_PROXY);
    }
 
    @Override
@@ -48,31 +61,44 @@ public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
       super.tick();
       if (!this.level().isClientSide()) {
          PaleRiderEntity owner = this.getPaleRiderOwner();
-         if (owner == null || !owner.isCalamityActive()) {
+         boolean expired = owner == null || (this.isPaleRiderProxy() ? !owner.hasAnyDomain() : !owner.isCalamityActive());
+         if (expired) {
             this.discard();
             return;
          }
+         this.updateHorsemanName();
          owner.spawnHorsemanParticles(this);
       }
    }
 
    @Override
-   public void die(DamageSource source) {
-      PaleRiderEntity owner = this.getPaleRiderOwner();
-      if (owner != null) owner.disableCalamity(this.getCalamity());
-      super.die(source);
+   public boolean isInvulnerableTo(DamageSource source) {
+      return true;
    }
 
    @Override
    public void addAdditionalSaveData(CompoundTag tag) {
       super.addAdditionalSaveData(tag);
       tag.putInt("Calamity", this.getCalamity().ordinal());
+      tag.putBoolean("PaleRiderProxy", this.isPaleRiderProxy());
    }
 
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
       this.entityData.set(CALAMITY, Math.max(0, Math.min(Calamity.values().length - 1, tag.getInt("Calamity"))));
+      this.entityData.set(PALE_RIDER_PROXY, tag.getBoolean("PaleRiderProxy"));
+      this.updateHorsemanName();
+   }
+
+   private void updateHorsemanName() {
+      String key = this.isPaleRiderProxy() ? "entity.typemoonworld.horseman.death" : switch (this.getCalamity()) {
+         case SWORD -> "entity.typemoonworld.horseman.conquest";
+         case FAMINE -> "entity.typemoonworld.horseman.war";
+         case BEAST -> "entity.typemoonworld.horseman.famine";
+      };
+      this.setCustomName(Component.translatable(key));
+      this.setCustomNameVisible(true);
    }
 
    public enum Calamity {

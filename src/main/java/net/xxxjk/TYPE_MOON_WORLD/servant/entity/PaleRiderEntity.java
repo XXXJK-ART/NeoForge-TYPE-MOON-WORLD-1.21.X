@@ -16,6 +16,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
@@ -31,6 +32,8 @@ public final class PaleRiderEntity extends ServantEntity {
    private final SoulLibrary soulLibrary = new SoulLibrary();
    private final Map<UUID, SoulSnapshot> manifestedSouls = new HashMap<>();
    private UUID possessedHostUuid;
+   private UUID combatTargetUuid;
+   private long nextPossessedAttackTick;
    private UUID masterUuid;
 
    public PaleRiderEntity(EntityType<? extends PaleRiderEntity> type, Level level) {
@@ -51,6 +54,10 @@ public final class PaleRiderEntity extends ServantEntity {
 
    @Override
    protected void customServerAiStep() {
+      if (this.getPersistentData().getBoolean("PaleRiderCardProxy")) {
+         this.getNavigation().stop();
+         return;
+      }
       super.customServerAiStep();
       if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
          PaleRiderCombatHelper.tick(this);
@@ -60,7 +67,8 @@ public final class PaleRiderEntity extends ServantEntity {
    @Override
    public void tick() {
       super.tick();
-      if (this.level() instanceof ServerLevel level && this.isAlive()) {
+      if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()
+         && !this.getPersistentData().getBoolean("PaleRiderCardProxy")) {
          level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 0.9, this.getZ(), 7, 0.28, 0.85, 0.28, 0.015);
          level.sendParticles(new DustParticleOptions(new Vector3f(0.025F, 0.025F, 0.03F), 1.5F),
             this.getX(), this.getY() + 0.9, this.getZ(), 8, 0.3, 0.9, 0.3, 0.01);
@@ -95,19 +103,56 @@ public final class PaleRiderEntity extends ServantEntity {
       return level.getEntity(this.masterUuid) instanceof LivingEntity living ? living : null;
    }
 
+   public void setCardOwner(LivingEntity owner) {
+      this.masterUuid = owner == null ? null : owner.getUUID();
+      this.getPersistentData().putBoolean("PaleRiderCardProxy", true);
+   }
+
    public LivingEntity findPaleRiderEnemy(double radius) {
-      LivingEntity current = this.getTarget();
+      LivingEntity current = this.resolveCombatTarget();
       if (current != null && current.isAlive() && !current.isAlliedTo(this) && !this.isAlliedTo(current) && !EntityUtils.isImmunePlayerTarget(current)) {
+         if (this.getTarget() != current) this.setTarget(current);
          return current;
       }
+      if (current != null) this.clearCombatTarget();
       return null;
    }
 
+   public void lockCombatTarget(LivingEntity target) {
+      if (target == null || target == this || !target.isAlive() || this.isAlliedTo(target) || target.isAlliedTo(this)
+         || EntityUtils.isImmunePlayerTarget(target)) return;
+      this.combatTargetUuid = target.getUUID();
+      this.setTarget(target);
+   }
+
+   public void clearCombatTarget() {
+      this.combatTargetUuid = null;
+      this.setTarget(null);
+   }
+
+   private LivingEntity resolveCombatTarget() {
+      if (!(this.level() instanceof ServerLevel level)) return this.getTarget();
+      if (this.combatTargetUuid != null && level.getEntity(this.combatTargetUuid) instanceof LivingEntity living) return living;
+      LivingEntity current = this.getTarget();
+      if (current != null && current.isAlive()) this.combatTargetUuid = current.getUUID();
+      return current;
+   }
+
    public boolean captureSoul(LivingEntity defeated) {
-      if (defeated == null || defeated == this || defeated instanceof OwnedPaleRiderMob || defeated instanceof net.minecraft.world.entity.decoration.ArmorStand) {
+      if (defeated == null || defeated == this || defeated instanceof OwnedPaleRiderMob || defeated instanceof PaleRiderCrowEntity
+         || defeated instanceof net.minecraft.world.entity.decoration.ArmorStand) {
+         return false;
+      }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper.isServantLike(defeated)) {
          return false;
       }
       return this.soulLibrary.add(SoulSnapshot.capture(defeated));
+   }
+
+   @Override
+   public boolean doHurtTarget(Entity target) {
+      ServantVoiceHelper.tryPlayAttack(this);
+      return super.doHurtTarget(target);
    }
 
    public SoulLibrary getSoulLibrary() {
@@ -141,7 +186,8 @@ public final class PaleRiderEntity extends ServantEntity {
    }
 
    public boolean isUnderworldActive() {
-      return this.getPersistentData().getLong(PaleRiderCombatHelper.TAG_UNDERWORLD_UNTIL) > this.level().getGameTime();
+      return this.getPersistentData().getBoolean(PaleRiderCombatHelper.TAG_UNDERWORLD_ACTIVE)
+         || this.getPersistentData().getLong(PaleRiderCombatHelper.TAG_UNDERWORLD_UNTIL) > this.level().getGameTime();
    }
 
    public boolean isCalamityActive() {
@@ -158,7 +204,7 @@ public final class PaleRiderEntity extends ServantEntity {
 
    public void spawnHorsemanParticles(ApocalypseHorsemanEntity horseman) {
       if (!(this.level() instanceof ServerLevel level)) return;
-      Vector3f color = switch (horseman.getCalamity()) {
+      Vector3f color = horseman.isPaleRiderProxy() ? new Vector3f(0.12F, 0.5F, 1.0F) : switch (horseman.getCalamity()) {
          case SWORD -> new Vector3f(0.85F, 0.88F, 0.92F);
          case FAMINE -> new Vector3f(0.45F, 0.025F, 0.02F);
          case BEAST -> new Vector3f(0.035F, 0.035F, 0.035F);
@@ -168,11 +214,14 @@ public final class PaleRiderEntity extends ServantEntity {
    }
 
    public boolean beginPossession(Mob host) {
-      if (host == null || host instanceof ServantEntity || host.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES)) return false;
+      if (host == null || host == this || !host.isAlive() || host instanceof ServantEntity
+         || host.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES)) return false;
+      if (this.possessedHostUuid != null && this.possessedHostUuid.equals(host.getUUID()) && this.getVehicle() == host) return true;
       this.endPossession();
       if (!this.startRiding(host, true)) return false;
       this.possessedHostUuid = host.getUUID();
       host.getPersistentData().putBoolean("PaleRiderPossessed", true);
+      if (!(host instanceof SoulEchoEntity)) PaleRiderInfectionService.forceControl(host, this);
       return true;
    }
 
@@ -183,21 +232,69 @@ public final class PaleRiderEntity extends ServantEntity {
          this.endPossession();
          return;
       }
+      if (!(host instanceof SoulEchoEntity) && !PaleRiderInfectionService.isInfectedBy(host, this)) {
+         this.endPossession();
+         return;
+      }
+      LivingEntity retaliator = host.getLastHurtByMob();
+      if (retaliator != null && retaliator.isAlive()) this.lockCombatTarget(retaliator);
       LivingEntity target = this.findPaleRiderEnemy(64.0);
       if (target != null) {
+         host.setTarget(target);
+         host.setAggressive(true);
+         host.getLookControl().setLookAt(target, 30.0F, 30.0F);
          host.getNavigation().moveTo(target, 1.25);
+         double reach = host.getBbWidth() + target.getBbWidth() + 1.25;
+         long now = this.level().getGameTime();
+         if (host.distanceToSqr(target) <= reach * reach && host.getSensing().hasLineOfSight(target) && now >= this.nextPossessedAttackTick) {
+            this.nextPossessedAttackTick = now + 20L;
+            host.swing(InteractionHand.MAIN_HAND, true);
+            if (host.getAttribute(Attributes.ATTACK_DAMAGE) != null) host.doHurtTarget(target);
+            else target.hurt(host.damageSources().mobAttack(host), 2.0F);
+            PaleRiderInfectionService.infect(target, this, 2);
+         }
+      } else {
          host.setTarget(null);
+         host.setAggressive(false);
       }
    }
 
    public void endPossession() {
-      if (this.getVehicle() instanceof Mob host) host.getPersistentData().remove("PaleRiderPossessed");
+      if (this.getVehicle() instanceof Mob host) {
+         host.getPersistentData().remove("PaleRiderPossessed");
+         if (host instanceof SoulEchoEntity echo && !this.isUnderworldActive() && echo.isAlive() && echo.getSoulId() != null) {
+            this.returnManifestedSoul(echo.getSoulId());
+            echo.discard();
+         }
+      }
       this.stopRiding();
       this.possessedHostUuid = null;
    }
 
+   public boolean hasPossessedHost() {
+      return this.possessedHostUuid != null && this.getVehicle() != null && this.possessedHostUuid.equals(this.getVehicle().getUUID());
+   }
+
+   public boolean isPossessing(Entity entity) {
+      return entity != null && this.possessedHostUuid != null && this.possessedHostUuid.equals(entity.getUUID());
+   }
+
+   public Mob getPossessedHost() {
+      return this.getVehicle() instanceof Mob host && this.isPossessing(host) ? host : null;
+   }
+
+   public boolean redirectPossessedDamage(DamageSource source, float amount) {
+      Mob host = this.getPossessedHost();
+      if (host == null || !host.isAlive()) return false;
+      if (source.getEntity() == host || source.getDirectEntity() == host) return true;
+      host.invulnerableTime = 0;
+      host.hurt(source, amount);
+      return true;
+   }
+
    @Override
    public boolean hurt(DamageSource source, float amount) {
+      if (this.redirectPossessedDamage(source, amount)) return false;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.isMagicDamage(source)) amount *= 0.8F;
       int soulTiers = PaleRiderCombatHelper.countLivingSoulTiers(this);
       if (this.isUnderworldActive() && soulTiers > 0) amount *= Math.max(0.0F, 1.0F - soulTiers * 0.05F);
@@ -220,6 +317,7 @@ public final class PaleRiderEntity extends ServantEntity {
       for (SoulSnapshot snapshot : this.manifestedSouls.values()) manifested.add(snapshot.save());
       tag.put("PaleRiderManifestedSouls", manifested);
       if (this.possessedHostUuid != null) tag.putUUID("PaleRiderPossessedHost", this.possessedHostUuid);
+      if (this.combatTargetUuid != null) tag.putUUID("PaleRiderCombatTarget", this.combatTargetUuid);
       if (this.masterUuid != null) tag.putUUID("PaleRiderMaster", this.masterUuid);
    }
 
@@ -231,9 +329,12 @@ public final class PaleRiderEntity extends ServantEntity {
       ListTag manifested = tag.getList("PaleRiderManifestedSouls", Tag.TAG_COMPOUND);
       for (int index = 0; index < manifested.size(); index++) {
          SoulSnapshot soul = SoulSnapshot.load(manifested.getCompound(index));
-         this.manifestedSouls.put(soul.id(), soul);
+         if (soul.kind() != SoulSnapshot.SoulKind.SERVANT) {
+            this.manifestedSouls.put(soul.id(), soul);
+         }
       }
       this.possessedHostUuid = tag.hasUUID("PaleRiderPossessedHost") ? tag.getUUID("PaleRiderPossessedHost") : null;
+      this.combatTargetUuid = tag.hasUUID("PaleRiderCombatTarget") ? tag.getUUID("PaleRiderCombatTarget") : null;
       this.masterUuid = tag.hasUUID("PaleRiderMaster") ? tag.getUUID("PaleRiderMaster") : null;
       this.applyBaseStats(false);
    }

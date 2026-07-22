@@ -61,8 +61,16 @@ public final class SoulEchoEntity extends OwnedPaleRiderMob {
    @Override
    protected void customServerAiStep() {
       super.customServerAiStep();
+      if (this.getSoulKind() == SoulSnapshot.SoulKind.SERVANT) {
+         PaleRiderEntity oldOwner = this.getPaleRiderOwner();
+         if (oldOwner != null && this.soulId != null) {
+            oldOwner.consumeManifestedSoul(this.soulId);
+         }
+         this.discard();
+         return;
+      }
       PaleRiderEntity owner = this.getPaleRiderOwner();
-      if (owner == null || !owner.isAlive() || !owner.isUnderworldActive()) {
+      if (owner == null || !owner.isAlive() || !owner.isUnderworldActive() && !owner.isPossessing(this)) {
          this.discard();
          return;
       }

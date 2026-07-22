@@ -14,6 +14,7 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0, 100);
             case 4 -> new ServantCardSkillAction("Instinct A", "artoria_instinct", 18.0, 240);
             case 5 -> new ServantCardSkillAction("Riding B", "artoria_riding", 20.0, 160);
+            case 6 -> new ServantCardSkillAction("Mana Burst: Light Cannon", "mana_burst_beam", 100.0, 300);
             default -> null;
          };
          case "cu_chulainn" -> switch (slot) {
@@ -44,7 +45,7 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Blink Volley", "blink_volley", 26.0, 120);
             case 5 -> new ServantCardSkillAction("Barrier Nova", "barrier", 30.0, 240);
             case 6 -> new ServantCardSkillAction("Hecate Bind", "bind", 32.0, 220);
-            case 7 -> new ServantCardSkillAction("Aerial Escape", "escape", 28.0, 180);
+            case 7 -> new ServantCardSkillAction("Aerial Escape", "escape", 120.0, 400);
             case 8 -> new ServantCardSkillAction(crouching ? "Greater Hecate Beam" : "Thunderstorm", crouching ? "medea_beam" : "thunder", crouching ? 40.0 : 42.0, crouching ? 220 : 320);
             case 9 -> new ServantCardSkillAction("Rule Breaker", "rule_breaker", 80.0, 3600);
             default -> null;
@@ -163,12 +164,25 @@ public final class ServantCardSkillLayout {
             case 0 -> new ServantCardSkillAction("Workshop", "paracelsus_workshop", 0.0, 80);
             case 1 -> new ServantCardSkillAction("Item Construction", "paracelsus_craft_stone", 0.0, 80);
             case 2 -> new ServantCardSkillAction("Elemental Spirit", "paracelsus_spirit_toggle", 0.0, 20);
-            case 3 -> new ServantCardSkillAction("Return to Workshop", "paracelsus_workshop_teleport", 28.0, 180);
+            case 3 -> new ServantCardSkillAction("Return to Workshop", "paracelsus_workshop_teleport", 120.0, 400);
             case 4 -> new ServantCardSkillAction("Furnace of the Flame Emperor", "paracelsus_fire_furnace", 40.0, 600);
             case 5 -> new ServantCardSkillAction("Deep Sea Pressure", "paracelsus_water_pressure", 35.0, 500);
             case 6 -> new ServantCardSkillAction("Roar of the Mountains", "paracelsus_earth_roar", 45.0, 700);
             case 7 -> new ServantCardSkillAction("Cutting of the Firmament", "paracelsus_wind_cut", 30.0, 400);
             case 8 -> new ServantCardSkillAction("Elemental Guardian", "paracelsus_elemental_guardian", 0.0, 100);
+            default -> null;
+         };
+         case "pale_rider" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Plague Spawn", "pale_rider_spawn", 10.0, 40);
+            case 1 -> new ServantCardSkillAction("Possession", "pale_rider_possession", 18.0, 80);
+            case 2 -> new ServantCardSkillAction("Command", "pale_rider_command", 0.0, 20);
+            case 3 -> new ServantCardSkillAction("Perfect Concealment", "pale_rider_stealth", 12.0, 80);
+            case 4 -> new ServantCardSkillAction("Ash Transfer", "pale_rider_transfer", 20.0, 100);
+            case 5 -> new ServantCardSkillAction("Plague Rush", "pale_rider_plague_rush", 12.0, 140);
+            case 6 -> new ServantCardSkillAction("Ash Step", "pale_rider_ash_step", 8.0, 100);
+            case 7 -> new ServantCardSkillAction("Death Pulse", "pale_rider_death_pulse", 18.0, 200);
+            case 8 -> new ServantCardSkillAction("Underworld", "pale_rider_underworld", 150.0, 2400);
+            case 9 -> new ServantCardSkillAction("Four Calamities", "pale_rider_calamity", 300.0, 3600);
             default -> null;
          };
          default -> null;

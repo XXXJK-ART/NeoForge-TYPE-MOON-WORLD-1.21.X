@@ -26,6 +26,8 @@ public final class PaleRiderInfectionService {
    public static final String TAG_IMMUNE_UNTIL = "PaleRiderInfectionImmuneUntil";
    public static final String TAG_CONTROLLED = "PaleRiderControlled";
    public static final String TAG_PREVIOUS_NO_AI = "PaleRiderPreviousNoAi";
+   public static final String TAG_WAS_IN_CALAMITY = "PaleRiderInfectionWasInCalamity";
+   public static final String TAG_CALAMITY_EXIT_CLEANSE = "PaleRiderInfectionCalamityExitCleanse";
    private static final String TAG_LAST_SERVICE_TICK = "PaleRiderInfectionLastServiceTick";
    private static final String TAG_NEXT_CONTROLLED_ATTACK = "PaleRiderControlledNextAttack";
 
@@ -56,7 +58,11 @@ public final class PaleRiderInfectionService {
 
    public static void tick(LivingEntity target) {
       int level = getLevel(target);
-      if (level <= 0 || !(target.level() instanceof ServerLevel serverLevel)) {
+      if (!(target.level() instanceof ServerLevel serverLevel)) {
+         return;
+      }
+      if (level <= 0) {
+         if (target.getPersistentData().contains(TAG_LEVEL)) cleanse(target, false);
          return;
       }
       long now = serverLevel.getGameTime();
@@ -65,18 +71,28 @@ public final class PaleRiderInfectionService {
       }
       target.getPersistentData().putLong(TAG_LAST_SERVICE_TICK, now);
       if (target.getPersistentData().getLong(TAG_UNTIL) <= now) {
-         cleanse(target, false);
-         return;
+         if (isControlled(target) && getOwner(serverLevel, target) instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
+            target.getPersistentData().putInt(TAG_LEVEL, InfectionRules.MAX_LEVEL);
+            target.getPersistentData().putLong(TAG_UNTIL, now + InfectionRules.DURATION_TICKS);
+            target.addEffect(new MobEffectInstance(ModMobEffects.PALE_RIDER_INFECTION, InfectionRules.DURATION_TICKS,
+               InfectionRules.MAX_LEVEL - 1, false, true, true));
+         } else {
+            cleanse(target, false);
+            return;
+         }
       }
       LivingEntity owner = getOwner(serverLevel, target);
       if (owner == null || !owner.isAlive()) {
          cleanse(target, false);
          return;
       }
+      if (owner instanceof PaleRiderEntity rider && tickCalamityExit(target, rider, level, now)) {
+         return;
+      }
       boolean controlled = isControlled(target);
-      if (target.tickCount % 20 == Math.floorMod(target.getId(), 20)) {
+      if (target.tickCount % InfectionRules.DAMAGE_INTERVAL_TICKS == Math.floorMod(target.getId(), InfectionRules.DAMAGE_INTERVAL_TICKS)) {
          if (!controlled) {
-            target.hurt(owner.damageSources().source(PaleRiderDamageTypes.INFECTION, owner), 10.0F);
+            target.hurt(owner.damageSources().source(PaleRiderDamageTypes.INFECTION, owner), InfectionRules.damagePerSecond(level));
          }
          spread(serverLevel, target, owner, level);
       }
@@ -101,6 +117,8 @@ public final class PaleRiderInfectionService {
       data.remove(TAG_OWNER);
       data.remove(TAG_UNTIL);
       data.remove(TAG_LAST_SERVICE_TICK);
+      data.remove(TAG_WAS_IN_CALAMITY);
+      data.remove(TAG_CALAMITY_EXIT_CLEANSE);
       target.removeEffect(ModMobEffects.PALE_RIDER_INFECTION);
       if (grantImmunity) {
          data.putLong(TAG_IMMUNE_UNTIL, target.level().getGameTime() + InfectionRules.IMMUNITY_TICKS);
@@ -111,7 +129,7 @@ public final class PaleRiderInfectionService {
    public static int getLevel(LivingEntity target) {
       CompoundTag data = target.getPersistentData();
       if (data.getLong(TAG_UNTIL) <= target.level().getGameTime()) {
-         return 0;
+         return isControlled(target) ? InfectionRules.MAX_LEVEL : 0;
       }
       return Math.max(0, Math.min(InfectionRules.MAX_LEVEL, data.getInt(TAG_LEVEL)));
    }
@@ -129,8 +147,17 @@ public final class PaleRiderInfectionService {
       if (!(mob.level() instanceof ServerLevel level)) return null;
       LivingEntity owner = getOwner(level, mob);
       if (!(owner instanceof Mob ownerMob)) return null;
-      LivingEntity target = ownerMob.getTarget();
+      LivingEntity target = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(96.0) : ownerMob.getTarget();
       return isValidCommandTarget(mob, owner, target) ? target : null;
+   }
+
+   public static boolean isInfectedBy(LivingEntity target, PaleRiderEntity owner) {
+      CompoundTag data = target.getPersistentData();
+      return isInfected(target) && data.hasUUID(TAG_OWNER) && owner.getUUID().equals(data.getUUID(TAG_OWNER));
+   }
+
+   public static void forceControl(Mob mob, PaleRiderEntity owner) {
+      if (mob != null && owner != null && canControl(mob)) beginControl(mob, owner);
    }
 
    public static boolean arePaleRiderAllies(Entity first, Entity second) {
@@ -159,6 +186,11 @@ public final class PaleRiderInfectionService {
          data.putBoolean(TAG_PREVIOUS_NO_AI, mob.isNoAi());
       }
       data.putBoolean(TAG_CONTROLLED, true);
+      data.putInt(TAG_LEVEL, InfectionRules.MAX_LEVEL);
+      data.putUUID(TAG_OWNER, owner.getUUID());
+      data.putLong(TAG_UNTIL, mob.level().getGameTime() + InfectionRules.DURATION_TICKS);
+      mob.addEffect(new MobEffectInstance(ModMobEffects.PALE_RIDER_INFECTION, InfectionRules.DURATION_TICKS,
+         InfectionRules.MAX_LEVEL - 1, false, true, true));
       mob.setNoAi(false);
       if (owner instanceof Mob ownerMob && ownerMob.getTarget() == mob) {
          ownerMob.setTarget(null);
@@ -174,7 +206,39 @@ public final class PaleRiderInfectionService {
             mob.getX(), mob.getY() + mob.getBbHeight() * 0.65, mob.getZ(), 3, mob.getBbWidth() * 0.4, mob.getBbHeight() * 0.4, mob.getBbWidth() * 0.4, 0.01);
       }
 
-      LivingEntity commandTarget = owner instanceof Mob ownerMob ? ownerMob.getTarget() : null;
+      if (mob.getPersistentData().getBoolean("PaleRiderPossessed")) return;
+
+      if (owner instanceof PaleRiderEntity cardProxy
+         && cardProxy.getPersistentData().getBoolean("PaleRiderCardProxy")
+         && cardProxy.getMaster() instanceof net.minecraft.server.level.ServerPlayer cardOwner) {
+         int command = cardOwner.getPersistentData().getInt("PaleRiderCardCommand");
+         if (command == 0) {
+            mob.setTarget(null);
+            mob.setAggressive(false);
+            return;
+         }
+         if (command == 1) {
+            mob.setTarget(null);
+            mob.setAggressive(false);
+            mob.getNavigation().stop();
+            return;
+         }
+         if (command == 3) {
+            mob.setTarget(null);
+            mob.setAggressive(false);
+            if (mob.distanceToSqr(cardOwner) > 4.0) mob.getNavigation().moveTo(cardOwner, 1.05);
+            else mob.getNavigation().stop();
+            return;
+         }
+         LivingEntity nearbyTarget = level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(24.0),
+            candidate -> candidate != mob && candidate != cardOwner && candidate.isAlive()
+               && !cardProxy.isAlliedTo(candidate) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate))
+            .stream().min((left, right) -> Double.compare(left.distanceToSqr(mob), right.distanceToSqr(mob))).orElse(null);
+         if (nearbyTarget != null) cardProxy.lockCombatTarget(nearbyTarget);
+      }
+
+      LivingEntity commandTarget = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(96.0)
+         : owner instanceof Mob ownerMob ? ownerMob.getTarget() : null;
       if (!isValidCommandTarget(mob, owner, commandTarget)) {
          mob.setTarget(null);
          mob.setAggressive(false);
@@ -238,9 +302,27 @@ public final class PaleRiderInfectionService {
       return level.getEntity(id) instanceof LivingEntity living ? living : null;
    }
 
+   private static boolean tickCalamityExit(LivingEntity target, PaleRiderEntity rider, int infectionLevel, long now) {
+      CompoundTag data = target.getPersistentData();
+      boolean inside = rider.isCalamityActive() && target.distanceToSqr(rider) <= PaleRiderCorruptionService.CALAMITY_RADIUS_SQR;
+      if (inside) {
+         data.putBoolean(TAG_WAS_IN_CALAMITY, true);
+         data.remove(TAG_CALAMITY_EXIT_CLEANSE);
+         return false;
+      }
+      if (!data.getBoolean(TAG_WAS_IN_CALAMITY)) return false;
+      if (!data.contains(TAG_CALAMITY_EXIT_CLEANSE)) {
+         data.putLong(TAG_CALAMITY_EXIT_CLEANSE, now + InfectionRules.calamityExitCleanseTicks(infectionLevel));
+      }
+      if (now < data.getLong(TAG_CALAMITY_EXIT_CLEANSE)) return false;
+      cleanse(target, false);
+      return true;
+   }
+
    private static PaleRiderEntity getPaleRiderController(Entity entity) {
       if (entity instanceof PaleRiderEntity rider) return rider;
       if (entity instanceof OwnedPaleRiderMob owned) return owned.getPaleRiderOwner();
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity crow) return crow.getPaleRiderOwner();
       if (isControlled(entity) && entity.level() instanceof ServerLevel level
          && level.getEntity(entity.getPersistentData().getUUID(TAG_OWNER)) instanceof PaleRiderEntity rider) {
          return rider;

@@ -486,5 +486,16 @@
     "oda_nobunaga_voice_hajun_short": {
                                "category": "hostile",
                                "sounds": [ "typemoonworld:voice/short_np/hajun_short" ]
+                           },
+    "pale_rider_voice_attack": {
+                               "category": "hostile",
+                               "sounds": [
+                                   "typemoonworld:voice/pale_rider/attack1",
+                                   "typemoonworld:voice/pale_rider/attack2"
+                               ]
+                           },
+    "pale_rider_voice_four_calamities": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/pale_rider/four_calamities" ]
                            }
 }

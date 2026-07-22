@@ -106,7 +106,7 @@ public final class VFXEnvironmentManager {
          if (!"screen_tint".equals(active.definition.type())) {
             continue;
          }
-         float alpha = active.alpha();
+         float alpha = active.spatialAlpha();
          int color = active.definition.color();
          int argb = ((Math.min(255, Math.round(alpha * 255.0F)) & 255) << 24) | (color & 0x00FFFFFF);
          overlay = blendOver(overlay, argb);

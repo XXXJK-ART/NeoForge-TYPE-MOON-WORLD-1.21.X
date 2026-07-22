@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 
 public final class ServantCardDefenseHandler {
    private static final String TAG_PREFIX = "ServantCardCombat";
@@ -92,6 +93,8 @@ public final class ServantCardDefenseHandler {
          return false;
       }
 
+      boolean infectionDamage = PaleRiderDamageTypes.isInfection(event.getSource());
+
       ServantParams params = paramsFor(vars);
       if (params == null) {
          return false;
@@ -106,13 +109,13 @@ public final class ServantCardDefenseHandler {
          player.removeEffect(MobEffects.ABSORPTION);
          player.setAbsorptionAmount(0.0F);
       }
-      if (!divineDefenseBroken && !specialNoblePhantasmDamage && now < data.getLong(TAG_INVULN_UNTIL)) {
+      if (!infectionDamage && !divineDefenseBroken && !specialNoblePhantasmDamage && now < data.getLong(TAG_INVULN_UNTIL)) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return true;
       }
-      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken)) {
+      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
          return true;
       }
       if (!divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
@@ -165,7 +168,7 @@ public final class ServantCardDefenseHandler {
          }
       }
 
-      if (!specialNoblePhantasmDamage && !divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+      if (!infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -196,7 +199,8 @@ public final class ServantCardDefenseHandler {
       TypeMoonWorldModVariables.PlayerVariables vars,
       LivingIncomingDamageEvent event,
       long now,
-      boolean divineDefenseBroken
+      boolean divineDefenseBroken,
+      boolean infectionDamage
    ) {
       if (!"heracles".equals(vars.servant_card_id) || !HeraclesGodHandHelper.hasGodHand(player)) {
          return false;
@@ -216,14 +220,14 @@ public final class ServantCardDefenseHandler {
       boolean poisonOrWither = isPoisonOrWitherDamage(event.getSource());
       boolean specialAttack = divineDefenseBroken || majorBrokenPhantasmExplosion || artoriaExcalibur || gaeBulgArmy || poisonOrWither;
 
-      if (!specialAttack && damage < data.getFloat("GodHandThreshold")) {
+      if (!infectionDamage && !specialAttack && damage < data.getFloat("GodHandThreshold")) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          spawnDefenseFx(player, ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, 1.4F);
          return true;
       }
 
-      if (!specialAttack) {
+      if (!infectionDamage && !specialAttack) {
          float reduction = data.getFloat("GodHandAdaptiveReduction");
          float maxReduction = data.getFloat("GodHandAdaptiveMax");
          float currentResistance = data.getFloat("GodHandCurrentResistance");

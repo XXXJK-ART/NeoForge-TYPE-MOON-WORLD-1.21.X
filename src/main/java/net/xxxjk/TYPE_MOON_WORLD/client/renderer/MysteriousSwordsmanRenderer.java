@@ -13,11 +13,9 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 
 public class MysteriousSwordsmanRenderer extends GeoEntityRenderer<MysteriousSwordsmanEntity> {
-   private static final float MODEL_SCALE = 0.95F * 0.7F;
-
    public MysteriousSwordsmanRenderer(EntityRendererProvider.Context context) {
       super(context, new MysteriousSwordsmanModel());
-      this.withScale(MODEL_SCALE);
+      this.withScale(0.95F);
       this.addRenderLayer(new BlockAndItemGeoLayer<MysteriousSwordsmanEntity>(this) {
          @Override protected ItemStack getStackForBone(GeoBone bone, MysteriousSwordsmanEntity animatable) {
             return "right arm".equals(bone.getName()) ? animatable.getMainHandItem() : ItemStack.EMPTY;

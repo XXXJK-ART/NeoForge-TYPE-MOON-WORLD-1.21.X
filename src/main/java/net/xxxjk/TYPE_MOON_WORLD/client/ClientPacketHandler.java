@@ -11,6 +11,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusCraftSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusElementSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.GilgameshVaultScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.PaleRiderScreen;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 
 public class ClientPacketHandler {
    public static void openProjectionGui() {
@@ -81,6 +83,20 @@ public class ClientPacketHandler {
 
    public static void openGilgameshVaultScreen(int usedMask) {
       if (!ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) Minecraft.getInstance().setScreen(new GilgameshVaultScreen(usedMask));
+   }
+
+   public static void openPaleRiderScreen(int kind, List<PaleRiderOpenScreenMessage.Target> targets) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) return;
+      Minecraft mc = Minecraft.getInstance();
+      if (kind == 4 && mc.level != null && targets != null && !targets.isEmpty()) {
+         PaleRiderCameraClient.follow(targets.getFirst().entityId());
+         return;
+      }
+      if (kind == 5) {
+         PaleRiderCameraClient.reset();
+         return;
+      }
+      if (mc.player != null) mc.setScreen(new PaleRiderScreen(kind, targets));
    }
 
    public static void handleMasterVisualState(UUID playerId, boolean masterActive, int commandSpells, String style, boolean poseActive) {

@@ -113,7 +113,8 @@ public final class ServantCardTransformManager {
       vars.is_magic_circuit_open = false;
       equipArmor(player, servantId);
       ServantCardLoadoutManager.saveAndEquip(player, vars, servantId);
-      applyAttributes(player, definition.parameters());
+      if ("pale_rider".equals(servantId)) ServantCardPaleRiderSkills.initialize(player, vars);
+      applyAttributes(player, definition.parameters(), servantId);
       if ("enkidu".equals(servantId)) {
          ServantCardEnkiduSkills.applyCurrentTransfiguration(player);
       }
@@ -132,6 +133,7 @@ public final class ServantCardTransformManager {
       ServantCardDefenseHandler.clear(player);
       stopActiveNoblePhantasmVoices(player);
       restoreArmor(player, vars);
+      if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
       ServerPlayer linkedMaster = MasterServantLinkService.getLinkedMaster(player, vars);
       if (linkedMaster != null) {
@@ -229,6 +231,7 @@ public final class ServantCardTransformManager {
          case "sasaki_kojiro" -> ServantCardSasakiKojiroSkills.tick(player);
          case "cursed_arm_hassan" -> ServantCardHassanSkills.tick(player, vars);
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
+         case "pale_rider" -> ServantCardPaleRiderSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "emiya_archer" -> {
@@ -253,6 +256,7 @@ public final class ServantCardTransformManager {
       ServantCardOdaNobunagaSkills.clear(player);
       ServantCardMedusaSkills.clear(player);
       ServantCardLiShuwenSkills.clear(player);
+      ServantCardPaleRiderSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
    }
@@ -393,6 +397,12 @@ public final class ServantCardTransformManager {
       }
       if ("gilgamesh_melee".equals(action.effectId())) {
          return ServantCardGilgameshSkills.performMelee(player);
+      }
+      if ("pale_rider".equals(vars.servant_card_id)
+         && ((slot == 1 && ServantCardPaleRiderSkills.isPossessing(player))
+            || (slot == 8 && ServantCardPaleRiderSkills.isUnderworldActive(player))
+            || (slot == 9 && ServantCardPaleRiderSkills.isCalamityActive(player)))) {
+         return performAction(player, vars, action);
       }
       if (ServantCardGilgameshSkills.isVaultAction(action.effectId()) && !ServantCardGilgameshSkills.hasKey(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_required"), true);
@@ -584,14 +594,17 @@ public final class ServantCardTransformManager {
       return true;
    }
 
-   private static void applyAttributes(ServerPlayer player, ServantParams params) {
+   private static void applyAttributes(ServerPlayer player, ServantParams params, String servantId) {
       removeAttributes(player);
       addOrReplace(player.getAttribute(Attributes.MAX_HEALTH), MAX_HEALTH_ID, params.maxHealth() - player.getAttributeBaseValue(Attributes.MAX_HEALTH));
       addOrReplace(player.getAttribute(Attributes.ATTACK_DAMAGE), ATTACK_ID, params.attackDamage() - player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE));
       addOrReplace(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, params.movementSpeed() - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED));
       addOrReplace(player.getAttribute(Attributes.ARMOR), ARMOR_ID, params.armor());
       addOrReplace(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID, armorToughnessBonus(params));
-      addOrReplace(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), KNOCKBACK_RESISTANCE_ID, knockbackResistanceBonus(params));
+      double knockbackResistance = "heracles".equals(servantId)
+         ? Math.max(0.0, 1.0 - player.getAttributeBaseValue(Attributes.KNOCKBACK_RESISTANCE))
+         : knockbackResistanceBonus(params);
+      addOrReplace(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), KNOCKBACK_RESISTANCE_ID, knockbackResistance);
       addOrReplace(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID, jumpStrengthBonus(params));
       player.setHealth((float)Math.min(params.maxHealth(), Math.max(1.0, params.maxHealth())));
    }
@@ -911,6 +924,7 @@ public final class ServantCardTransformManager {
          case "artoria_small_combo" -> ServantCardArtoriaSkills.performSmallCombo(player);
          case "artoria_instinct" -> ServantCardArtoriaSkills.performInstinct(player);
          case "artoria_riding" -> ServantCardArtoriaSkills.performRiding(player);
+         case "mana_burst_beam" -> ServantCardArtoriaSkills.performManaBurstBeam(player);
          case "tsubame_gaeshi" -> {
             if (!ServantCardSasakiKojiroSkills.performTsubameGaeshi(player)) {
                return false;
@@ -1097,6 +1111,16 @@ public final class ServantCardTransformManager {
          case "li_baji_combo" -> ServantCardLiShuwenSkills.performLiBajiCombo(player);
          case "li_high_jump" -> ServantCardLiShuwenSkills.performLiHighJump(player);
          case "li_fa_jin" -> ServantCardLiShuwenSkills.performLiFaJin(player);
+         case "pale_rider_spawn" -> { if (!ServantCardPaleRiderSkills.spawnMenu(player, player.isCrouching())) return false; }
+         case "pale_rider_possession" -> { if (!ServantCardPaleRiderSkills.openPossession(player)) return false; }
+         case "pale_rider_command" -> { if (!ServantCardPaleRiderSkills.openCommand(player)) return false; }
+         case "pale_rider_stealth" -> ServantCardPaleRiderSkills.togglePerfectConcealment(player);
+         case "pale_rider_transfer" -> { if (!ServantCardPaleRiderSkills.transfer(player)) return false; }
+         case "pale_rider_plague_rush" -> { if (!ServantCardPaleRiderSkills.plagueRush(player)) return false; }
+         case "pale_rider_ash_step" -> { if (!ServantCardPaleRiderSkills.ashStep(player)) return false; }
+         case "pale_rider_death_pulse" -> { if (!ServantCardPaleRiderSkills.deathPulse(player)) return false; }
+         case "pale_rider_underworld" -> { if (!ServantCardPaleRiderSkills.toggleUnderworld(player)) return false; }
+         case "pale_rider_calamity" -> { if (!ServantCardPaleRiderSkills.toggleCalamity(player)) return false; }
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

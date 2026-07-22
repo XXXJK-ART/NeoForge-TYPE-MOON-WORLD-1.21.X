@@ -377,6 +377,9 @@ public class CommonEvents {
          if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
             event.setCanceled(true);
          } else {
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) {
+               return;
+            }
             if (event.getSource().getEntity() instanceof LivingEntity attackerWithPetrify
                && attackerWithPetrify.hasEffect(ModMobEffects.PETRIFIED)) {
                event.setCanceled(true);
@@ -412,6 +415,13 @@ public class CommonEvents {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
+               if (vars.servant_card_transformed && "enkidu".equals(vars.servant_card_id)
+                  && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardEnkiduSkills.isEnumaElishActive(player)
+                  && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.bypassesEnkiduNoblePhantasm(event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  return;
+               }
                if (vars.servant_card_transformed
                   && "paracelsus".equals(vars.servant_card_id)
                   && isParacelsusIgnoredDamage(event.getSource())) {
@@ -463,7 +473,8 @@ public class CommonEvents {
                   if (!OriginBulletHelper.isOriginBulletDamage(event.getSource()) && tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }
-                  if (living instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)) {
+                  if (living instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)
+                     && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.bypassesEnkiduNoblePhantasm(event.getSource())) {
                      event.setCanceled(true);
                      event.setAmount(0.0F);
                      if (enkidu.level() instanceof ServerLevel serverLevel && enkidu.tickCount % 6 == 0) {
@@ -710,6 +721,7 @@ public class CommonEvents {
       boolean enkiduWitherUndefendable = servant instanceof EnkiduEntity && EnkiduCombatHelper.isPerfectFormUndefendableDamage(event.getSource());
       boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
+      boolean paleRiderInfection = net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource());
       if (servant instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isFireDamage(event.getSource())) {
          EnkiduCombatHelper.extinguishFire(enkidu);
          event.setCanceled(true);
@@ -730,7 +742,7 @@ public class CommonEvents {
       if (invisibleAirBypass) {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
-      if (!originBullet && !enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
+      if (!paleRiderInfection && !originBullet && !enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
          event.setCanceled(true);
          return;
       }
@@ -840,7 +852,7 @@ public class CommonEvents {
       // --- God Hand: immunity against low-rank damage ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (!heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
+         if (!paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -853,7 +865,7 @@ public class CommonEvents {
          }
 
          // Adaptive resistance: repeated damage types are reduced over time.
-         if (!heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
+         if (!paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
             float reduction = data.getFloat("GodHandAdaptiveReduction");
             float maxReduction = data.getFloat("GodHandAdaptiveMax");
             float currentResistance = data.getFloat("GodHandCurrentResistance");

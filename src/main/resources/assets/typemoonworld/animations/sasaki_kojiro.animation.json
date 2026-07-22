@@ -7,6 +7,9 @@
         "bone": {
           "position": {
             "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
           }
         },
         "bone4": {
@@ -63,6 +66,9 @@
             "0.6": { "vector": [0, -6, 0] },
             "0.9": { "vector": [0, -5.8, 0] },
             "1.2": { "vector": [0, -6, 0] }
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
           }
         },
         "body": {
@@ -159,6 +165,9 @@
         "bone": {
           "position": {
             "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
           }
         },
         "body": {
@@ -251,6 +260,9 @@
         "bone": {
           "position": {
             "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
           }
         },
         "body": {
@@ -343,6 +355,9 @@
         "bone": {
           "position": {
             "vector": [0, -6, 0]
+          },
+          "scale": {
+            "vector": [0.7, 0.7, 0.7]
           }
         },
         "body": {

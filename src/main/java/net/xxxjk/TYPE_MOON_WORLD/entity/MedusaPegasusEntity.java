@@ -19,6 +19,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -84,7 +86,36 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       super.tick();
       if (!this.level().isClientSide()) {
          this.snapToNearbyGround();
+         this.pullEnemiesTowardHead();
          this.spawnPegasusTrail();
+      }
+   }
+
+   private void pullEnemiesTowardHead() {
+      if (!(this.level() instanceof ServerLevel level) || (!this.isFlyingMode() && !this.isVehicle())) return;
+      LivingEntity summoner = this.getSummoner();
+      if (summoner == null) return;
+      Vec3 motion = this.getDeltaMovement();
+      Vec3 forward = motion.horizontalDistanceSqr() > 1.0E-4
+         ? new Vec3(motion.x, 0.0, motion.z).normalize()
+         : this.getLookAngle().multiply(1.0, 0.0, 1.0).normalize();
+      if (forward.lengthSqr() < 1.0E-4) forward = new Vec3(0.0, 0.0, 1.0);
+      Vec3 head = this.position().add(forward.scale(1.9)).add(0.0, this.getBbHeight() * 0.62, 0.0);
+      AABB area = new AABB(head, head).inflate(4.5, 2.8, 4.5);
+      for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area,
+         target -> target != this && target != summoner && target.isAlive()
+            && !summoner.isAlliedTo(target) && !target.isAlliedTo(summoner)
+            && !EntityUtils.isImmunePlayerTarget(target))) {
+         Vec3 pull = head.subtract(victim.position().add(0.0, victim.getBbHeight() * 0.5, 0.0));
+         double distance = pull.length();
+         if (distance < 0.15 || distance > 4.8) continue;
+         double strength = 0.12 + (1.0 - Math.min(1.0, distance / 4.8)) * 0.24;
+         Vec3 velocity = victim.getDeltaMovement().scale(0.68).add(pull.normalize().scale(strength));
+         victim.setDeltaMovement(velocity);
+         victim.hurtMarked = true;
+      }
+      if (this.tickCount % 4 == 0) {
+         level.sendParticles(ParticleTypes.END_ROD, head.x, head.y, head.z, 5, 0.34, 0.28, 0.34, 0.018);
       }
    }
 

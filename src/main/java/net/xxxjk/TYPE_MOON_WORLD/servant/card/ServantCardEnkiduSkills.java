@@ -485,7 +485,6 @@ public final class ServantCardEnkiduSkills {
       data.putDouble(ENUMA_START_X, player.getX());
       data.putDouble(ENUMA_START_Y, player.getY());
       data.putDouble(ENUMA_START_Z, player.getZ());
-      player.setInvulnerable(true);
       player.setNoGravity(true);
       player.fallDistance = 0.0F;
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", player, 192.0);
@@ -595,7 +594,6 @@ public final class ServantCardEnkiduSkills {
       }
       long release = data.getLong(ENUMA_RELEASE_TICK);
       if (now < release) {
-         player.setInvulnerable(true);
          player.setNoGravity(true);
          player.fallDistance = 0.0F;
          double progress = 1.0 - (double)(release - now) / Math.max(1.0, ENUMA_WINDUP);
@@ -655,6 +653,10 @@ public final class ServantCardEnkiduSkills {
 
    public static void clearActiveEnumaState(ServerPlayer player) {
       clearEnumaState(player);
+   }
+
+   public static boolean isEnumaElishActive(ServerPlayer player) {
+      return player != null && player.getPersistentData().getBoolean(ENUMA_ACTIVE);
    }
 
    private static void clearEnumaState(ServerPlayer player) {

@@ -23,9 +23,7 @@ public final class ServantCardLiShuwenSkills {
    private static final String CONCEALMENT_UNTIL_TAG = "ServantCardConcealmentUntil";
    private static final int CIRCLE_REALM_DURATION = 1400;
    private static final int WU_ER_DA_HIT_COOLDOWN = 1200;
-   private static final int WU_ER_DA_MISS_COOLDOWN = 100;
    private static final double WU_ER_DA_HIT_COST = 15.0;
-   private static final double WU_ER_DA_MISS_COST = 2.0;
 
    private ServantCardLiShuwenSkills() {
    }
@@ -119,17 +117,15 @@ public final class ServantCardLiShuwenSkills {
    }
 
    public static boolean performLiWuErDa(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      revealCircleRealm(player);
       LivingEntity target = findLookTarget(player, 5.2, 1.9);
-      double cost = target == null ? WU_ER_DA_MISS_COST : WU_ER_DA_HIT_COST;
-      if (!ServantCardManaService.consume(player, vars, cost)) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
+      if (target == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
-      if (target == null) {
-         ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, WU_ER_DA_MISS_COOLDOWN);
-         spawnLiWuErDaMissFx(player);
-         return true;
+      revealCircleRealm(player);
+      if (!ServantCardManaService.consume(player, vars, WU_ER_DA_HIT_COST)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
+         return false;
       }
       ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, WU_ER_DA_HIT_COOLDOWN);
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 180, 2, false, true, true));
@@ -199,16 +195,6 @@ public final class ServantCardLiShuwenSkills {
       player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
       if (player.hasEffect(MobEffects.INVISIBILITY)) {
          player.removeEffect(MobEffects.INVISIBILITY);
-      }
-   }
-
-   private static void spawnLiWuErDaMissFx(ServerPlayer player) {
-      if (player.level() instanceof ServerLevel level) {
-         Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
-         Vec3 pos = player.position().add(dir.scale(2.2)).add(0.0, 0.9, 0.0);
-         level.sendParticles(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 14, 0.22, 0.16, 0.22, 0.025);
-         level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
-         level.playSound(null, BlockPos.containing(pos), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.65F, 0.9F);
       }
    }
 

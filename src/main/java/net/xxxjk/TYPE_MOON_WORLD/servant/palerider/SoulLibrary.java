@@ -13,7 +13,7 @@ public final class SoulLibrary {
    private final List<SoulSnapshot> souls = new ArrayList<>();
 
    public boolean add(SoulSnapshot snapshot) {
-      if (snapshot == null || this.souls.size() >= MAX_SOULS) {
+      if (snapshot == null || snapshot.kind() == SoulSnapshot.SoulKind.SERVANT || this.souls.size() >= MAX_SOULS) {
          return false;
       }
       return this.souls.add(snapshot);
@@ -54,7 +54,10 @@ public final class SoulLibrary {
       this.souls.clear();
       ListTag entries = root.getList("Entries", Tag.TAG_COMPOUND);
       for (int index = 0; index < entries.size() && this.souls.size() < MAX_SOULS; index++) {
-         this.souls.add(SoulSnapshot.load(entries.getCompound(index)));
+         SoulSnapshot snapshot = SoulSnapshot.load(entries.getCompound(index));
+         if (snapshot.kind() != SoulSnapshot.SoulKind.SERVANT) {
+            this.souls.add(snapshot);
+         }
       }
    }
 }

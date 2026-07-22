@@ -29,16 +29,34 @@ public final class SoulEchoRenderer extends EntityRenderer<SoulEchoEntity> {
       if (proxy == null) {
          return;
       }
+      int previousTick = proxy.tickCount;
+      proxy.tickCount = echo.tickCount;
       proxy.setYRot(echo.getYRot());
       proxy.setXRot(echo.getXRot());
       proxy.yRotO = echo.yRotO;
       proxy.xRotO = echo.xRotO;
+      proxy.setDeltaMovement(echo.getDeltaMovement());
+      proxy.setPose(echo.getPose());
+      proxy.setOnGround(echo.onGround());
       if (proxy instanceof net.minecraft.world.entity.LivingEntity living) {
          living.yBodyRot = echo.yBodyRot;
          living.yBodyRotO = echo.yBodyRotO;
          living.yHeadRot = echo.yHeadRot;
          living.yHeadRotO = echo.yHeadRotO;
-         living.walkAnimation.setSpeed(echo.walkAnimation.speed());
+         int elapsedTicks = Math.max(0, Math.min(5, echo.tickCount - previousTick));
+         for (int index = 0; index < elapsedTicks; index++) {
+            living.walkAnimation.update(echo.walkAnimation.speed(), 1.0F);
+         }
+         living.attackAnim = echo.attackAnim;
+         living.oAttackAnim = echo.oAttackAnim;
+         living.swinging = echo.swinging;
+         living.swingingArm = echo.swingingArm;
+         living.swingTime = echo.swingTime;
+         living.hurtTime = echo.hurtTime;
+         living.deathTime = echo.deathTime;
+         if (living instanceof net.minecraft.world.entity.Mob proxyMob) {
+            proxyMob.setAggressive(echo.isAggressive());
+         }
       }
       RenderSystem.setShaderColor(0.015F, 0.015F, 0.018F, 1.0F);
       Minecraft.getInstance().getEntityRenderDispatcher().render(proxy, 0.0, 0.0, 0.0, yaw, partialTick, poseStack, buffers, light);

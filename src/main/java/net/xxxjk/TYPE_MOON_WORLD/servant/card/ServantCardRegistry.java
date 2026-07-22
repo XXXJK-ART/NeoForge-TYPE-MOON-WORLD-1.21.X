@@ -19,7 +19,8 @@ public final class ServantCardRegistry {
       new Entry("enkidu", "Enkidu", "恩奇都", true),
       new Entry("gawain", "Gawain", "高文", true),
       new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", true),
-      new Entry("li_shuwen", "Li Shuwen", "李书文", true)
+      new Entry("li_shuwen", "Li Shuwen", "李书文", true),
+      new Entry("pale_rider", "Pale Rider", "苍白骑士", false)
    );
 
    private ServantCardRegistry() {

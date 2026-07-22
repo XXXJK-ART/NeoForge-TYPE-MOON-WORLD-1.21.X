@@ -12,6 +12,7 @@ class InfectionRulesTest {
       assertEquals(5, InfectionRules.clampLevel(20));
       assertEquals(600, InfectionRules.DURATION_TICKS);
       assertEquals(600, InfectionRules.IMMUNITY_TICKS);
+      assertEquals(20, InfectionRules.DAMAGE_INTERVAL_TICKS);
    }
 
    @Test
@@ -34,5 +35,28 @@ class InfectionRulesTest {
       }
       assertEquals(1.0, InfectionRules.ordinaryControlChance(3, true), 1.0E-9);
       assertEquals(1.0, InfectionRules.ordinaryControlChance(4, false), 1.0E-9);
+   }
+
+   @Test
+   void damageScalesWithInfectionLevel() {
+      float[] damage = {5.0F, 10.0F, 15.0F, 20.0F, 25.0F};
+      for (int level = 1; level <= 5; level++) {
+         assertEquals(damage[level - 1], InfectionRules.damagePerSecond(level), 0.0F);
+      }
+   }
+
+   @Test
+   void conceptDeathChanceScalesWithInfectionLevel() {
+      float[] chances = {0.01F, 0.05F, 0.10F, 0.15F, 0.20F};
+      for (int level = 1; level <= 5; level++) {
+         assertEquals(chances[level - 1], InfectionRules.conceptDeathChance(level), 0.0F);
+      }
+   }
+
+   @Test
+   void calamityExitCleanseDelayMatchesInfectionLevel() {
+      for (int level = 1; level <= 5; level++) {
+         assertEquals(level * 20, InfectionRules.calamityExitCleanseTicks(level));
+      }
    }
 }

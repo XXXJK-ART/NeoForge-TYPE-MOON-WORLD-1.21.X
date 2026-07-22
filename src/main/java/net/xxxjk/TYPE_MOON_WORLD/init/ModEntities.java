@@ -71,6 +71,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity;
@@ -404,6 +405,9 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RatSwarmEntity>> RAT_SWARM = ENTITY_TYPES.register(
       "rat_swarm", () -> Builder.of(RatSwarmEntity::new, MobCategory.CREATURE).sized(1.6F, 0.65F).clientTrackingRange(48).updateInterval(2).build("rat_swarm")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<PaleRiderCrowEntity>> PALE_RIDER_CROW = ENTITY_TYPES.register(
+      "pale_rider_crow", () -> Builder.of(PaleRiderCrowEntity::new, MobCategory.CREATURE).sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(2).build("pale_rider_crow")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<SoulEchoEntity>> SOUL_ECHO = ENTITY_TYPES.register(
       "soul_echo", () -> Builder.of(SoulEchoEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("soul_echo")
