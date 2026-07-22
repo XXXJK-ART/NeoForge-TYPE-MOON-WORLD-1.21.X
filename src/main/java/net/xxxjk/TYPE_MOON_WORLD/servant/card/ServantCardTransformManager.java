@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.component.DataComponents;
@@ -26,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
@@ -63,6 +65,7 @@ public final class ServantCardTransformManager {
       saveArmor(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
+      BodyTrainingService.clear(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
       vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);
@@ -94,7 +97,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_mode = 0;
       vars.servant_card_high_flight_until = 0L;
       vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_ticks = 600;
+      vars.servant_card_oda_flight_ticks = 100;
       vars.servant_card_oda_flight_cooldown_until = 0L;
       vars.servant_card_oda_flight_recharge_at = 0L;
       vars.servant_card_flight_forward = 0.0;
@@ -155,7 +158,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_mode = 0;
       vars.servant_card_high_flight_until = 0L;
       vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_ticks = 600;
+      vars.servant_card_oda_flight_ticks = 100;
       vars.servant_card_oda_flight_cooldown_until = 0L;
       vars.servant_card_oda_flight_recharge_at = 0L;
       vars.servant_card_flight_forward = 0.0;
@@ -229,6 +232,7 @@ public final class ServantCardTransformManager {
             ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
             ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
             ServantCardEmiyaSkills.tickEmiyaUbwSupport(player, vars);
+            ServantCardEmiyaSkills.tickEmiyaEquipmentAndCounter(player, vars);
          }
          default -> {
          }
@@ -236,7 +240,7 @@ public final class ServantCardTransformManager {
    }
 
    private static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      ServantCardEmiyaSkills.clearEmiyaLayeredProjection(player);
+      ServantCardEmiyaSkills.clear(player);
       ServantCardArtoriaSkills.clear(player);
       ServantCardCuChulainnSkills.clear(player);
       ServantCardHeraclesSkills.clear(player);
@@ -356,6 +360,10 @@ public final class ServantCardTransformManager {
       if (!vars.servant_card_transformed || slot < -1 || slot > 9) {
          return false;
       }
+      if (ServantMasterCarryService.isCarryingMaster(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master_carry.skill_blocked"), true);
+         return false;
+      }
       ServantCardSkillAction action = actionFor(vars.servant_card_id, slot, player.isCrouching());
       if (action == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
@@ -363,8 +371,9 @@ public final class ServantCardTransformManager {
       }
       boolean npSlot = slot == 9 && !"gilgamesh".equals(vars.servant_card_id);
       boolean np = npSlot;
+      boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
       if (np && "emiya_archer".equals(vars.servant_card_id) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
-         if (vars.servant_card_np_cooldown > 0) {
+         if (!unlimited && vars.servant_card_np_cooldown > 0) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
             return false;
          }
@@ -387,8 +396,8 @@ public final class ServantCardTransformManager {
          return false;
       }
       int cooldownSlot = slot < 0 ? 6 : slot;
-      int currentCooldown = npSlot ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
-      if (ServantCardArtoriaSkills.isWindAction(action)) {
+      int currentCooldown = unlimited ? 0 : npSlot ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
+      if (!unlimited && ServantCardArtoriaSkills.isWindAction(action)) {
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT));
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT));
       }
@@ -490,7 +499,7 @@ public final class ServantCardTransformManager {
 
    public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed) {
+      if (!vars.servant_card_transformed || ServantMasterCarryService.isCarryingMaster(player)) {
          return;
       }
       if ("emiya_archer".equals(vars.servant_card_id) && slot == 1) {
@@ -567,7 +576,7 @@ public final class ServantCardTransformManager {
       }
       vars.servant_card_jump_charges--;
       vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
-      vars.servant_card_jump_recovery_end = player.level().getGameTime() + vars.servant_card_jump_recovery_ticks;
+      vars.servant_card_jump_recovery_end = 0L;
       vars.syncPlayerVariables(player);
       return true;
    }
@@ -668,7 +677,10 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean servantCardHasHeadArmor(String servantId) {
-      return "medusa".equals(servantId) || "cursed_arm_hassan".equals(servantId);
+      return "medusa".equals(servantId)
+         || "cursed_arm_hassan".equals(servantId)
+         || "li_shuwen".equals(servantId)
+         || "oda_nobunaga".equals(servantId);
    }
 
    private static boolean servantCardHasLegArmor(String servantId) {
@@ -682,6 +694,18 @@ public final class ServantCardTransformManager {
          return false;
       }
       long now = player.level().getGameTime();
+      if (!hasJumpRecoverySupport(player)) {
+         boolean changed = false;
+         if (vars.servant_card_jump_recovery_end > 0L) {
+            vars.servant_card_jump_recovery_ticks = Math.max(1, remainingTicks(now, vars.servant_card_jump_recovery_end));
+            vars.servant_card_jump_recovery_end = 0L;
+            changed = true;
+         } else if (vars.servant_card_jump_recovery_ticks <= 0) {
+            vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
+            changed = true;
+         }
+         return changed;
+      }
       if (vars.servant_card_jump_recovery_end <= 0L && vars.servant_card_jump_recovery_ticks > 0) {
          vars.servant_card_jump_recovery_end = now + vars.servant_card_jump_recovery_ticks;
       }
@@ -693,6 +717,14 @@ public final class ServantCardTransformManager {
       vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
       vars.servant_card_jump_recovery_end = vars.servant_card_jump_charges >= 4 ? 0L : now + vars.servant_card_jump_recovery_ticks;
       return true;
+   }
+
+   private static boolean hasJumpRecoverySupport(ServerPlayer player) {
+      if (!player.onGround()) {
+         return false;
+      }
+      BlockPos supportPos = player.getOnPos();
+      return !player.level().getBlockState(supportPos).getCollisionShape(player.level(), supportPos).isEmpty();
    }
 
    private static boolean tickSkillCooldowns(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -729,6 +761,9 @@ public final class ServantCardTransformManager {
    }
 
    private static void setSkillCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int slot, int ticks) {
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         return;
+      }
       int[] cooldowns = parseSkillCooldowns(vars);
       long[] ends = parseSkillCooldownEnds(vars);
       if (slot >= 0 && slot < cooldowns.length) {
@@ -754,6 +789,11 @@ public final class ServantCardTransformManager {
    }
 
    public static void setNoblePhantasmCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int ticks) {
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         vars.servant_card_np_cooldown = 0;
+         vars.servant_card_np_cooldown_end = 0L;
+         return;
+      }
       vars.servant_card_np_cooldown = Math.max(0, ticks);
       vars.servant_card_np_cooldown_end = ticks > 0 ? player.level().getGameTime() + ticks : 0L;
    }
@@ -948,14 +988,18 @@ public final class ServantCardTransformManager {
             }
          }
          case "emiya_kb" -> ServantCardEmiyaSkills.equipPair(player, ModItems.GAN_JIANG.get(), ModItems.MO_YE.get());
-         case "emiya_spiral" -> player.setItemInHand(InteractionHand.OFF_HAND, markGeneratedItem(new ItemStack(ModItems.PSEUDO_SPIRAL_SWORD.get()), true, true));
-         case "emiya_hound" -> player.setItemInHand(InteractionHand.OFF_HAND, markGeneratedItem(new ItemStack(ModItems.CRIMSON_HOUND.get()), true, true));
+         case "emiya_spiral" -> ServantCardEmiyaSkills.equipUniqueAmmo(player, ModItems.PSEUDO_SPIRAL_SWORD.get());
+         case "emiya_hound" -> ServantCardEmiyaSkills.equipUniqueAmmo(player, ModItems.CRIMSON_HOUND.get());
          case "copy_weapon" -> {
             if (!ServantCardEmiyaSkills.copyOpponentWeapon(player)) {
                return false;
             }
          }
          case "emiya_layered_projection" -> ServantCardEmiyaSkills.startLayeredProjection(player);
+         case "emiya_spherical_projection" -> {
+            if (!ServantCardEmiyaSkills.performSphericalProjection(player)) return false;
+         }
+         case "emiya_auto_counter" -> ServantCardEmiyaSkills.startAutoCounter(player);
          case "emiya_cycle" -> ServantCardEmiyaSkills.cycleAction(player, vars);
          case "paracelsus_workshop" -> {
             if (!ServantCardParacelsusSkills.performParacelsusWorkshop(player)) {
@@ -1047,6 +1091,9 @@ public final class ServantCardTransformManager {
          case "counter" -> ServantCardLiShuwenSkills.performLiCounter(player);
          case "pursuit" -> ServantCardLiShuwenSkills.performLiPursuit(player);
          case "li_fierce_tiger" -> ServantCardLiShuwenSkills.performLiFierceTiger(player);
+         case "li_baji_combo" -> ServantCardLiShuwenSkills.performLiBajiCombo(player);
+         case "li_high_jump" -> ServantCardLiShuwenSkills.performLiHighJump(player);
+         case "li_fa_jin" -> ServantCardLiShuwenSkills.performLiFaJin(player);
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

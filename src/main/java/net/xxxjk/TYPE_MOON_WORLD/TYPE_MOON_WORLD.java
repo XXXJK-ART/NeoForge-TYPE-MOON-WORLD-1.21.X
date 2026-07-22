@@ -47,6 +47,12 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GanryuPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
@@ -180,6 +186,9 @@ public class TYPE_MOON_WORLD {
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
+      registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
+      registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);
+      registrar.playToServer(BodyTrainingPointMessage.TYPE, BodyTrainingPointMessage.STREAM_CODEC, BodyTrainingPointMessage::handleData);
       registrar.playToServer(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
       registrar.playToServer(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
       registrar.playToServer(
@@ -229,6 +238,9 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(OpenParacelsusElementScreenMessage.TYPE, OpenParacelsusElementScreenMessage.STREAM_CODEC, OpenParacelsusElementScreenMessage::handleData);
       registrar.playToClient(MasterVisualStateMessage.TYPE, MasterVisualStateMessage.STREAM_CODEC, MasterVisualStateMessage::handleData);
       registrar.playToClient(FirearmPoseMessage.TYPE, FirearmPoseMessage.STREAM_CODEC, FirearmPoseMessage::handleData);
+      registrar.playToClient(BajiquanPoseMessage.TYPE, BajiquanPoseMessage.STREAM_CODEC, BajiquanPoseMessage::handleData);
+      registrar.playToClient(GanryuPoseMessage.TYPE, GanryuPoseMessage.STREAM_CODEC, GanryuPoseMessage::handleData);
+      registrar.playToClient(CircleRealmStateMessage.TYPE, CircleRealmStateMessage.STREAM_CODEC, CircleRealmStateMessage::handleData);
       registrar.playToClient(EnkiduDetectionHighlightMessage.TYPE, EnkiduDetectionHighlightMessage.STREAM_CODEC, EnkiduDetectionHighlightMessage::handleData);
       registrar.playToClient(DuelScreenFlashMessage.TYPE, DuelScreenFlashMessage.STREAM_CODEC, DuelScreenFlashMessage::handleData);
       registrar.playToClient(

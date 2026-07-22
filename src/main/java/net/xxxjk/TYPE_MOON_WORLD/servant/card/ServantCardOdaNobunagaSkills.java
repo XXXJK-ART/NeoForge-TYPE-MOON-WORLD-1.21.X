@@ -98,9 +98,6 @@ public final class ServantCardOdaNobunagaSkills {
    private static final String HAJUN_FIELD_TARGET_RETURN_Y = "ServantCardOdaHajunTargetReturnY";
    private static final String HAJUN_FIELD_TARGET_RETURN_Z = "ServantCardOdaHajunTargetReturnZ";
    private static final double FLIGHT_MP_PER_TICK = 0.28;
-   private static final int FLIGHT_MAX_TICKS = 30 * 20;
-   private static final int FLIGHT_EXHAUSTED_COOLDOWN = 20 * 20;
-   private static final int FLIGHT_RECHARGE_INTERVAL = 30;
    private static final int HAJUN_CHANT_LINE_TICKS = 22;
    private static final int HAJUN_CHANT_LINES = 5;
    private static final int HAJUN_CARD_DURATION = 15 * 20;
@@ -573,7 +570,7 @@ public final class ServantCardOdaNobunagaSkills {
          vars.syncPlayerVariables(player);
          return true;
       }
-      if (vars.servant_card_np_cooldown > 0) {
+      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servant_card_np_cooldown > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
          return false;
       }
@@ -612,34 +609,21 @@ public final class ServantCardOdaNobunagaSkills {
       }
    }
 
-   public static boolean toggleMountFlight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   public static boolean startMountFlight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!vars.servant_card_transformed || !"oda_nobunaga".equals(vars.servant_card_id) || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
       OdaMatchlockGunEntity mount = findMount(level, player);
-      if (vars.servant_card_flying || mount != null || player.getVehicle() instanceof OdaMatchlockGunEntity) {
-         stopMountFlight(player, vars, true);
+      if (player.getVehicle() instanceof OdaMatchlockGunEntity current && current.isMountFor(player.getUUID())) {
          return true;
       }
-      long now = level.getGameTime();
-      if (now < vars.servant_card_oda_flight_cooldown_until) {
-         player.displayClientMessage(Component.translatable(
-            "message.typemoonworld.servant_card.oda_flight_cooldown",
-            String.format(java.util.Locale.ROOT, "%.1f", (vars.servant_card_oda_flight_cooldown_until - now) / 20.0)
-         ), true);
-         return false;
-      }
-      if (vars.servant_card_oda_flight_ticks <= 0) {
-         return false;
+      if (mount != null) {
+         mount.discard();
       }
       mount = OdaMatchlockGunEntity.flightMount(level, player);
       mount.setPos(player.getX(), player.getY() + 0.08, player.getZ());
       level.addFreshEntity(mount);
       player.startRiding(mount, true);
-      vars.servant_card_flying = true;
-      vars.servant_card_flight_mode = 1;
-      vars.servant_card_flight_toggle_cooldown = 8;
-      vars.syncPlayerVariables(player);
       level.playSound(null, player.blockPosition(), SoundEvents.CROSSBOW_LOADING_END.value(), SoundSource.PLAYERS, 0.9F, 0.7F);
       return true;
    }
@@ -652,25 +636,21 @@ public final class ServantCardOdaNobunagaSkills {
          return true;
       }
       if (!(player.level() instanceof ServerLevel level) || !(player.getVehicle() instanceof OdaMatchlockGunEntity mount) || !mount.isMountFor(player.getUUID())) {
-         stopMountFlight(player, vars, true);
+         ServantCardFlightController.stop(player, vars, true);
          return true;
       }
       if (!ServantCardManaService.consumeSilently(player, vars, FLIGHT_MP_PER_TICK)) {
-         stopMountFlight(player, vars, true);
-         return true;
-      }
-      vars.servant_card_oda_flight_ticks = Math.max(0, vars.servant_card_oda_flight_ticks - 1);
-      if (vars.servant_card_oda_flight_ticks <= 0) {
-         vars.servant_card_oda_flight_cooldown_until = level.getGameTime() + FLIGHT_EXHAUSTED_COOLDOWN;
-         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + FLIGHT_RECHARGE_INTERVAL;
-         stopMountFlight(player, vars, true);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.oda_flight_exhausted"), true);
+         ServantCardFlightController.stop(player, vars, true);
          return true;
       }
       if (player.tickCount % 10 == 0) {
          vars.syncMana(player);
       }
-      mount.setMountInput(vars.servant_card_flight_forward, vars.servant_card_flight_strafe, vars.servant_card_flight_vertical);
+      double verticalInput = vars.servant_card_flight_vertical;
+      if (vars.servant_card_flight_mode == 1 && !ServantCardFlightController.hasGroundWithin(player, 5)) {
+         verticalInput = Math.min(verticalInput, -0.28);
+      }
+      mount.setMountInput(vars.servant_card_flight_forward, vars.servant_card_flight_strafe, verticalInput);
       player.fallDistance = 0.0F;
       return true;
    }
@@ -693,29 +673,7 @@ public final class ServantCardOdaNobunagaSkills {
       vars.servant_card_flight_forward = 0.0;
       vars.servant_card_flight_strafe = 0.0;
       vars.servant_card_flight_vertical = 0.0;
-      if (player.level() instanceof ServerLevel level && vars.servant_card_oda_flight_ticks < FLIGHT_MAX_TICKS && vars.servant_card_oda_flight_recharge_at <= 0L) {
-         vars.servant_card_oda_flight_recharge_at = level.getGameTime() + FLIGHT_RECHARGE_INTERVAL;
-      }
       if (sync) {
-         vars.syncPlayerVariables(player);
-      }
-   }
-
-   public static void tickMountFlightRecharge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!(player.level() instanceof ServerLevel level) || vars.servant_card_flying) {
-         return;
-      }
-      long now = level.getGameTime();
-      if (now < vars.servant_card_oda_flight_cooldown_until || vars.servant_card_oda_flight_ticks >= FLIGHT_MAX_TICKS) {
-         return;
-      }
-      if (vars.servant_card_oda_flight_recharge_at <= 0L) {
-         vars.servant_card_oda_flight_recharge_at = now + FLIGHT_RECHARGE_INTERVAL;
-         return;
-      }
-      if (now >= vars.servant_card_oda_flight_recharge_at) {
-         vars.servant_card_oda_flight_ticks = Math.min(FLIGHT_MAX_TICKS, vars.servant_card_oda_flight_ticks + 20);
-         vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_ticks >= FLIGHT_MAX_TICKS ? 0L : now + FLIGHT_RECHARGE_INTERVAL;
          vars.syncPlayerVariables(player);
       }
    }
@@ -737,7 +695,7 @@ public final class ServantCardOdaNobunagaSkills {
       data.putDouble(HAJUN_FIELD_RETURN_X, player.getX());
       data.putDouble(HAJUN_FIELD_RETURN_Y, player.getY());
       data.putDouble(HAJUN_FIELD_RETURN_Z, player.getZ());
-      stopMountFlight(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), true);
+      ServantCardFlightController.stop(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), true);
       List<LivingEntity> targets = collectOdaHajunTargets(player, source);
       Vec3 randomEntry = UBWInstanceManager.randomEntryPosition(player.getRandom());
       Vec3 entry = new Vec3(randomEntry.x, findHajunSafeSpawnY(hajunLevel, Mth.floor(randomEntry.x), Mth.floor(randomEntry.z)), randomEntry.z);
@@ -1140,10 +1098,11 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static boolean isOnCooldown(ServerPlayer player, String tag) {
-      return player.getPersistentData().getInt(tag) > player.tickCount;
+      return !ServantCardUnlimitedMode.isEnabled(player) && player.getPersistentData().getInt(tag) > player.tickCount;
    }
 
    private static void setCooldown(ServerPlayer player, String tag, int ticks) {
+      if (ServantCardUnlimitedMode.isEnabled(player)) return;
       player.getPersistentData().putInt(tag, player.tickCount + Math.max(1, ticks));
    }
 

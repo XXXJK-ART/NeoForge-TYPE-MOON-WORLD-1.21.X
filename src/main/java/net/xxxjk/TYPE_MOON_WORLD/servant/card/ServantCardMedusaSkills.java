@@ -474,13 +474,15 @@ public final class ServantCardMedusaSkills {
    }
 
    private static void applyMedusaChargeHits(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
-      AABB hitBox = pegasus.getBoundingBox().inflate(1.5, 0.8, 1.5);
+      Vec3 forward = pegasus.getLookAngle().normalize();
+      AABB hitBox = pegasus.getBoundingBox().expandTowards(forward.scale(2.8)).inflate(2.1, 1.2, 2.1);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_HIT_UNTIL_TAG, now))) {
          victim.getPersistentData().putLong(MEDUSA_BELLEROPHON_HIT_UNTIL_TAG, now + 20L);
+         pullTowardPegasusHead(pegasus, victim, forward, 1.35, 0.3);
          victim.invulnerableTime = 0;
          victim.hurt(player.damageSources().playerAttack(player), 300.0F);
          victim.invulnerableTime = 0;
-         pushAwayFrom(pegasus, victim, 1.2, 0.45);
+         pushAwayFrom(pegasus, victim, 0.65, 0.35);
          if (player.getPersistentData().getBoolean(MEDUSA_EYES_ACTIVE_TAG)) {
             victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0, false, true, true));
          }
@@ -488,7 +490,8 @@ public final class ServantCardMedusaSkills {
    }
 
    private static void applyMedusaRideCollisionHits(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
-      AABB hitBox = pegasus.getBoundingBox().inflate(1.1, 0.8, 1.1);
+      Vec3 sweep = pegasus.getDeltaMovement().multiply(1.5, 0.5, 1.5);
+      AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(1.9, 1.1, 1.9);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, now))) {
          victim.getPersistentData().putLong(MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, now + 10L);
          victim.invulnerableTime = 0;
@@ -530,6 +533,15 @@ public final class ServantCardMedusaSkills {
       if (pegasus.isAlive()) {
          pegasus.discard();
       }
+   }
+
+   private static void pullTowardPegasusHead(MedusaPegasusEntity pegasus, LivingEntity victim, Vec3 forward, double strength, double lift) {
+      Vec3 head = pegasus.position().add(forward.scale(1.8)).add(0.0, pegasus.getBbHeight() * 0.58, 0.0);
+      Vec3 pull = head.subtract(victim.position().add(0.0, victim.getBbHeight() * 0.45, 0.0));
+      if (pull.lengthSqr() < 1.0E-4) return;
+      Vec3 velocity = pull.normalize().scale(strength);
+      victim.setDeltaMovement(velocity.x, Math.max(velocity.y, lift), velocity.z);
+      victim.hurtMarked = true;
    }
 
    private static void clearMedusaBellerophonData(ServerPlayer player) {
@@ -854,8 +866,6 @@ public final class ServantCardMedusaSkills {
       LivingEntity target = findLookTarget(player, 26.0, 1.8);
       if (target == null) {
          ItemStack dagger = new ItemStack(ModItems.NAMELESS_CHAIN_DAGGER.get());
-         PlayerNoblePhantasmHelper.markUbwProjection(dagger);
-         ServantCardTransformManager.markGeneratedItem(dagger, true, false);
          player.setItemInHand(InteractionHand.MAIN_HAND, dagger);
          return;
       }

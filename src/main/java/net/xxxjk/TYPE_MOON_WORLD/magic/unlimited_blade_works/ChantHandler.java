@@ -1048,7 +1048,7 @@ public class ChantHandler {
                   TypeMoonWorldModVariables.PlayerVariables targetVars = (TypeMoonWorldModVariables.PlayerVariables)targetPlayer.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
-                  if (targetVars.is_chanting_ubw) {
+                  if (targetVars.is_chanting_ubw && !isUninterruptibleServantCardChant(targetPlayer, targetVars)) {
                      interruptChant(targetPlayer, targetVars, "message.typemoonworld.unlimited_blade_works.interrupted");
                   }
                }
@@ -1425,7 +1425,7 @@ public class ChantHandler {
                }
             }
 
-            if (vars.is_chanting_ubw) {
+            if (vars.is_chanting_ubw && !isUninterruptibleServantCardChant(player, vars)) {
                float damage = event.getAmount();
                if (damage >= 4.0F) {
                   interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.interrupted");
@@ -1433,6 +1433,10 @@ public class ChantHandler {
             }
          }
       }
+   }
+
+   private static boolean isUninterruptibleServantCardChant(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      return player != null && vars != null && vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id);
    }
 
    private record BlockBackup(BlockState state, @Nullable CompoundTag nbt) {

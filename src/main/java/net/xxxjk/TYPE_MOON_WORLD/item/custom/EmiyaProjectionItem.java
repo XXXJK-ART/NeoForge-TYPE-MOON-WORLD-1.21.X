@@ -103,6 +103,7 @@ public class EmiyaProjectionItem extends SwordItem implements GeoItem, NoblePhan
          if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             PlayerNoblePhantasmHelper.usePseudoSpiralDash(serverPlayer);
             player.getCooldowns().addCooldown(this, PSEUDO_SPIRAL_COOLDOWN);
+            if (!player.getAbilities().instabuild) stack.shrink(1);
          }
          return InteractionResultHolder.consume(stack);
       }

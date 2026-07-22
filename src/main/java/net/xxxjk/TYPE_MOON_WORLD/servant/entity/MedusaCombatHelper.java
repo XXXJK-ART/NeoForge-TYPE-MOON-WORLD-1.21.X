@@ -696,11 +696,13 @@ public final class MedusaCombatHelper {
    }
 
    private static void applyChargeHits(MedusaEntity entity, MedusaPegasusEntity pegasus, long now) {
-      AABB hitBox = pegasus.getBoundingBox().inflate(1.5, 0.8, 1.5);
+      Vec3 forward = pegasus.getLookAngle().normalize();
+      AABB hitBox = pegasus.getBoundingBox().expandTowards(forward.scale(2.8)).inflate(2.1, 1.2, 2.1);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isChargeVictim(entity, target, TAG_BELLEROPHON_HIT_UNTIL, now))) {
          victim.getPersistentData().putLong(TAG_BELLEROPHON_HIT_UNTIL, now + 20L);
+         pullTowardPegasusHead(pegasus, victim, forward, 1.35, 0.3);
          victim.hurt(entity.damageSources().generic(), 300.0F);
-         pushAway(pegasus, victim, 1.2, 0.45);
+         pushAway(pegasus, victim, 0.65, 0.35);
          if (entity.isEyesReleased()) {
             victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0, false, true, true));
          }
@@ -708,7 +710,8 @@ public final class MedusaCombatHelper {
    }
 
    private static void applyRideCollisionHits(MedusaEntity entity, MedusaPegasusEntity pegasus, long now) {
-      AABB hitBox = pegasus.getBoundingBox().inflate(1.1, 0.8, 1.1);
+      Vec3 sweep = pegasus.getDeltaMovement().multiply(1.5, 0.5, 1.5);
+      AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(1.9, 1.1, 1.9);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isChargeVictim(entity, target, TAG_PEGASUS_COLLISION_HIT_UNTIL, now))) {
          victim.getPersistentData().putLong(TAG_PEGASUS_COLLISION_HIT_UNTIL, now + 10L);
          victim.hurt(entity.damageSources().generic(), 50.0F);
@@ -1633,6 +1636,15 @@ public final class MedusaCombatHelper {
          horizontal = Math.sqrt(push.x * push.x + push.z * push.z);
       }
       victim.push(push.x / horizontal * horizontalStrength, verticalStrength, push.z / horizontal * horizontalStrength);
+      victim.hurtMarked = true;
+   }
+
+   private static void pullTowardPegasusHead(MedusaPegasusEntity pegasus, LivingEntity victim, Vec3 forward, double strength, double lift) {
+      Vec3 head = pegasus.position().add(forward.scale(1.8)).add(0.0, pegasus.getBbHeight() * 0.58, 0.0);
+      Vec3 pull = head.subtract(victim.position().add(0.0, victim.getBbHeight() * 0.45, 0.0));
+      if (pull.lengthSqr() < 1.0E-4) return;
+      Vec3 velocity = pull.normalize().scale(strength);
+      victim.setDeltaMovement(velocity.x, Math.max(velocity.y, lift), velocity.z);
       victim.hurtMarked = true;
    }
 

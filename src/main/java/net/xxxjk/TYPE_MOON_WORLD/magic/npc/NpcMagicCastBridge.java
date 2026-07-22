@@ -23,6 +23,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -51,6 +52,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -244,9 +246,9 @@ public final class NpcMagicCastBridge {
                return distanceSqr <= 121.0;
             } else if (hasRanged && hasMeleeBurst) {
                return distanceSqr <= switch (temperament) {
-                  case TIMID -> 12.25;
-                  case BOLD -> 25.0;
-                  default -> 17.64;
+                  case TIMID -> 20.25;
+                  case BOLD -> 42.25;
+                  default -> 30.25;
                };
             } else if (hasRanged) {
                // Ranged-only (typically no reinforcement): avoid committing to melee unless target is very close.
@@ -312,6 +314,13 @@ public final class NpcMagicCastBridge {
             // Reinforcement is treated as a parallel support cast and should not block offensive casting flow.
             tryAdaptiveReinforcement(npc, target, vars, gameTime, threat, capabilities, behavior);
 
+            // A target already in striking range must get a chance to retaliate before retreat logic.
+            // This keeps damaged NPCs from permanently circling the player without ever swinging.
+            double distance = Math.sqrt(npc.distanceToSqr(target));
+            if (gameTime >= getCastLockUntil(npc) && tryMeleeSkillCombo(npc, target, vars, gameTime, capabilities, behavior)) {
+               return;
+            }
+
             if (shouldRetreat(npc, target, threat, behavior)) {
                handleRetreat(npc, target, vars, gameTime);
             } else {
@@ -319,14 +328,9 @@ public final class NpcMagicCastBridge {
                   return;
                }
 
-               double distance = Math.sqrt(npc.distanceToSqr(target));
                if (shouldForceRangedRetreat(capabilities, distance)) {
                   steerAwayFromTarget(npc, target, 14.0, 1.3);
                } else {
-                  if (gameTime >= getCastLockUntil(npc) && tryMeleeSkillCombo(npc, target, vars, gameTime, capabilities, behavior)) {
-                     return;
-                  }
-
                   if (threat.requiresDefensiveTactics()) {
                      boolean consumedCast = handleHighThreatTactics(npc, target, vars, gameTime, threat, capabilities);
                      if (consumedCast) {
@@ -377,6 +381,76 @@ public final class NpcMagicCastBridge {
             maybeCloseCircuit(npc, vars, gameTime);
          }
       }
+   }
+
+   public static void configureTohsakaRin(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ensureMagicSystemInitialized();
+      vars.clearAllWheelSlots();
+      vars.learned_magics.clear();
+      vars.crest_entries.clear();
+      vars.player_max_mana = 1000.0;
+      vars.player_mana = 1000.0;
+      vars.player_mana_egenerated_every_moment = 8.0;
+      vars.player_restore_magic_moment = 4.0;
+      vars.is_magus = true;
+      vars.player_magic_attributes_earth = true;
+      vars.player_magic_attributes_water = true;
+      vars.player_magic_attributes_fire = true;
+      vars.player_magic_attributes_wind = true;
+      vars.player_magic_attributes_ether = true;
+      vars.player_magic_attributes_none = false;
+      vars.player_magic_attributes_imaginary_number = false;
+      vars.player_magic_attributes_sword = false;
+      vars.bajiquan_learned = true;
+      vars.bajiquan_proficiency = 60.0;
+      vars.bajiquan_tiger_unlocked = false;
+      if (!vars.learned_magics.contains("bajiquan")) vars.learned_magics.add("bajiquan");
+      vars.proficiency_gander = 80.0;
+      vars.proficiency_gravity_magic = 70.0;
+      vars.proficiency_reinforcement = 65.0;
+      vars.proficiency_jewel_magic_shoot = 85.0;
+      vars.proficiency_jewel_magic_release = 85.0;
+      String[] magics = new String[]{"gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_magic_shoot", "jewel_random_shoot", "jewel_magic_release", "jewel_machine_gun"};
+      for (int i = 0; i < magics.length; i++) {
+         String magic = magics[i];
+         vars.learned_magics.add(magic);
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, i);
+         entry.magicId = magic;
+         entry.sourceType = "self";
+         if ("gandr_machine_gun".equals(magic)) entry.presetPayload.putInt("gandr_machine_gun_mode", 1);
+         if ("gravity_magic".equals(magic)) { entry.presetPayload.putInt("gravity_target", 1); entry.presetPayload.putInt("gravity_mode", 2); }
+         if ("reinforcement".equals(magic)) { entry.presetPayload.putInt("reinforcement_target", 0); entry.presetPayload.putInt("reinforcement_mode", 0); entry.presetPayload.putInt("reinforcement_level", 4); }
+         vars.setWheelSlotEntry(0, i, entry);
+      }
+      vars.rebuildSelectedMagicsFromActiveWheel();
+      CompoundTag data = npc.getPersistentData();
+      data.putBoolean(TAG_MAGIC_INIT, true);
+      data.putBoolean(TAG_ATTR_INIT, true);
+      data.putInt(TAG_FIXED_LEVEL, 5);
+      data.putDouble(TAG_BASE_MAX_HEALTH, TohsakaRinEntity.MAX_HEALTH);
+      data.putDouble(TAG_BASE_MOVE_SPEED, 0.27);
+      data.putDouble(TAG_COMBAT_MOVE_SPEED, 0.39);
+      data.putDouble(TAG_BASE_ATTACK_DAMAGE, 5.0);
+      data.putInt(NPC_JEWEL_ITEM_BASIC, 64);
+      data.putInt(NPC_JEWEL_ITEM_ADVANCED, 32);
+      data.putInt(NPC_JEWEL_ITEM_ENGRAVED, 16);
+      if (npc.getAttribute(Attributes.MAX_HEALTH) != null) npc.getAttribute(Attributes.MAX_HEALTH).setBaseValue(TohsakaRinEntity.MAX_HEALTH);
+      if (npc.getAttribute(Attributes.MOVEMENT_SPEED) != null) npc.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.27);
+      if (npc.getAttribute(Attributes.ATTACK_DAMAGE) != null) npc.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0);
+      npc.setHealth((float)TohsakaRinEntity.MAX_HEALTH);
+      syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
+   }
+
+   /** Keeps the fixed NPC profile intact for Rin entities loaded from older saves. */
+   public static void ensureTohsakaRinBajiquan(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.bajiquan_learned = true;
+      vars.bajiquan_proficiency = 60.0;
+      vars.bajiquan_tiger_unlocked = false;
+      if (!vars.learned_magics.contains("bajiquan")) vars.learned_magics.add("bajiquan");
    }
 
    public static void cleanup(MysticMagicianEntity npc) {
@@ -489,7 +563,9 @@ public final class NpcMagicCastBridge {
             ? data.getDouble(TAG_BASE_ATTACK_DAMAGE)
             : randomZombieComparableStat(random, 3.0);
          double combatSpeed = data.contains(TAG_COMBAT_MOVE_SPEED) ? data.getDouble(TAG_COMBAT_MOVE_SPEED) : round3(baseSpeed * 1.45);
-         baseHealth = clampZombieComparableStat(baseHealth, 20.0);
+         baseHealth = npc instanceof TohsakaRinEntity
+            ? TohsakaRinEntity.MAX_HEALTH
+            : clampZombieComparableStat(baseHealth, 20.0);
          baseSpeed = clampZombieComparableStat(baseSpeed, 0.23);
          baseAttack = clampZombieComparableStat(baseAttack, 3.0);
          combatSpeed = clampCombatMoveSpeed(combatSpeed, baseSpeed);
@@ -1181,9 +1257,13 @@ public final class NpcMagicCastBridge {
    ) {
       if (npc != null && target != null && target.isAlive() && capabilities != null) {
          double distance = Math.sqrt(npc.distanceToSqr(target));
-         if (shouldForceMeleeEngage(capabilities, distance)) {
-            npc.getNavigation().moveTo(target, 1.14);
-            npc.lookAt(target, 45.0F, 45.0F);
+         if (shouldForceMeleeEngage(capabilities, distance) || (capabilities.hasMeleeBurst() && shouldUseMeleeGoal(npc))) {
+            if (distance > 2.75 && (npc.getNavigation().isDone() || npc.tickCount % 5 == 0)) {
+               npc.getNavigation().moveTo(target, 1.24);
+            } else if (distance <= 2.75 && npc.tickCount % 8 == 0) {
+               circleMeleeTarget(npc, target, distance);
+            }
+            npc.getLookControl().setLookAt(target, 60.0F, 50.0F);
          } else if (!capabilities.hasRanged()) {
             if (capabilities.hasMeleeBurst()) {
                if (distance > (behavior == null ? MELEE_ENGAGE_DISTANCE : behavior.meleeEngageDistance())) {
@@ -2315,40 +2395,41 @@ public final class NpcMagicCastBridge {
       } else {
          double distance = Math.sqrt(npc.distanceToSqr(target));
          double trigger = behavior == null ? 2.4 : behavior.meleeSkillTriggerDistance();
-         if (distance > trigger + 0.8) {
+         double skillReach = Math.max(3.25, trigger + 0.8);
+         if (distance > skillReach || Math.abs(target.getY() - npc.getY()) > 2.5 || (!npc.hasLineOfSight(target) && distance > 2.15)) {
             return false;
          } else {
             CompoundTag data = npc.getPersistentData();
             boolean rangedOnly = capabilities.hasRanged() && !capabilities.hasMeleeBurst();
             if (rangedOnly) {
-               if (distance <= 2.2 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 24L);
+               if (distance <= 3.0 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 20L);
                   return true;
                }
 
-               if (distance <= 1.9 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 12L);
+               if (distance <= 2.7 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 10L);
                   return true;
                }
 
                return false;
             } else {
-               if (distance <= 2.0 && gameTime >= data.getLong(TAG_MELEE_THROW_CD) && npc.getRandom().nextFloat() < 0.38F && performUpperThrow(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_THROW_CD, gameTime + 70L);
+               if (distance <= 2.75 && gameTime >= data.getLong(TAG_MELEE_THROW_CD) && npc.getRandom().nextFloat() < 0.42F && performUpperThrow(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_THROW_CD, gameTime + 52L);
                   if (gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && performSlam(npc, target, vars, gameTime, 2.6)) {
-                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 95L);
+                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 78L);
                   }
 
                   return true;
-               } else if (distance <= 2.4 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 26L);
+               } else if (distance <= 3.25 && gameTime >= data.getLong(TAG_MELEE_KICK_CD) && performWhipKick(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_KICK_CD, gameTime + 20L);
                   return true;
-               } else if (distance <= 1.9 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
-                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 12L);
+               } else if (distance <= 2.8 && gameTime >= data.getLong(TAG_MELEE_PUNCH_CD) && performPunch(npc, target, gameTime)) {
+                  data.putLong(TAG_MELEE_PUNCH_CD, gameTime + 10L);
                   return true;
-               } else if (distance <= 2.5 && gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && npc.getRandom().nextFloat() < 0.24F) {
+               } else if (distance <= 3.0 && gameTime >= data.getLong(TAG_MELEE_SLAM_CD) && npc.getRandom().nextFloat() < 0.28F) {
                   if (performSlam(npc, target, vars, gameTime, 3.2)) {
-                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 100L);
+                     data.putLong(TAG_MELEE_SLAM_CD, gameTime + 80L);
                      return true;
                   } else {
                      return false;
@@ -2368,7 +2449,7 @@ public final class NpcMagicCastBridge {
          faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
          markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_PUNCH, 8);
          float damage = computeMartialDamage(npc, 1.25, 1.0, 3.0, 14.0);
-         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+         if (!hurtWithNpcMelee(npc, target, damage)) {
             return false;
          } else {
             target.knockback(0.4, npc.getX() - target.getX(), npc.getZ() - target.getZ());
@@ -2385,7 +2466,7 @@ public final class NpcMagicCastBridge {
          faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
          markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_WHIP_KICK, 10);
          float damage = computeMartialDamage(npc, 1.45, 1.4, 4.0, 16.0);
-         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+         if (!hurtWithNpcMelee(npc, target, damage)) {
             return false;
          } else {
             target.knockback(1.05, npc.getX() - target.getX(), npc.getZ() - target.getZ());
@@ -2403,7 +2484,7 @@ public final class NpcMagicCastBridge {
          faceCasterToDirection(npc, target.position().subtract(npc.position()).normalize());
          markMeleePose(npc, MysticMagicianEntity.MELEE_POSE_UPPER_THROW, 12);
          float damage = computeMartialDamage(npc, 1.3, 1.8, 4.0, 15.0);
-         if (!target.hurt(npc.damageSources().mobAttack(npc), damage)) {
+         if (!hurtWithNpcMelee(npc, target, damage)) {
             return false;
          } else {
             Vec3 push = target.getDeltaMovement().add(0.0, 0.8, 0.0);
@@ -2430,7 +2511,7 @@ public final class NpcMagicCastBridge {
 
          for (LivingEntity nearby : npc.level()
             .getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(radius, 1.5, radius), e -> e != npc && e.isAlive())) {
-            if (nearby.hurt(npc.damageSources().mobAttack(npc), baseDamage)) {
+            if (hurtWithNpcMelee(npc, nearby, baseDamage)) {
                nearby.knockback(0.6, npc.getX() - nearby.getX(), npc.getZ() - nearby.getZ());
                nearby.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 28, 0, false, true, true));
                hit = true;
@@ -2443,6 +2524,13 @@ public final class NpcMagicCastBridge {
 
          return hit;
       }
+   }
+
+   private static boolean hurtWithNpcMelee(MysticMagicianEntity npc, LivingEntity target, float damage) {
+      target.invulnerableTime = 0;
+      boolean hit = target.hurt(npc.damageSources().mobAttack(npc), damage);
+      target.invulnerableTime = 0;
+      return hit;
    }
 
    private static float computeMartialDamage(MysticMagicianEntity npc, double multiplier, double flat, double min, double max) {
@@ -4314,8 +4402,18 @@ public final class NpcMagicCastBridge {
 
    private static void markMeleePose(MysticMagicianEntity caster, int pose, int ticks) {
       if (caster != null) {
+         caster.swing(InteractionHand.MAIN_HAND, true);
          caster.triggerMeleeSkillPose(pose, ticks);
       }
+   }
+
+   private static void circleMeleeTarget(MysticMagicianEntity npc, LivingEntity target, double distance) {
+      Vec3 forward = target.position().subtract(npc.position()).multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-5) return;
+      Vec3 side = getRightVector(forward.normalize()).scale(npc.getRandom().nextBoolean() ? 1.35 : -1.35);
+      Vec3 anchor = npc.position().add(side);
+      if (distance < 1.65) anchor = anchor.subtract(forward.normalize().scale(0.65));
+      npc.getNavigation().moveTo(anchor.x, npc.getY(), anchor.z, 1.12);
    }
 
    private static Vec3 getRightVector(Vec3 forward) {

@@ -1,0 +1,11 @@
+{
+  "parent": "typemoonworld:ganryu",
+  "display": {
+    "icon": { "item": "typemoonworld:nodachi" },
+    "title": { "translate": "adv.typemoonworld.ganryu_souwa_perfect.title" },
+    "description": { "translate": "adv.typemoonworld.ganryu_souwa_perfect.desc" },
+    "frame": "challenge", "hidden": false, "show_toast": true, "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } },
+  "requirements": [["impossible"]]
+}

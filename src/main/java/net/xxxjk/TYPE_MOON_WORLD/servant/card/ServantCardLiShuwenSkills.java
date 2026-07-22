@@ -10,7 +10,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -36,6 +35,9 @@ public final class ServantCardLiShuwenSkills {
          clear(player);
          return;
       }
+      if (player.tickCount % 60 == 0 && player.getHealth() < player.getMaxHealth()) {
+         player.heal(1.0F);
+      }
       int concealmentUntil = player.getPersistentData().getInt(CONCEALMENT_UNTIL_TAG);
       if (concealmentUntil <= 0) {
          return;
@@ -44,9 +46,7 @@ public final class ServantCardLiShuwenSkills {
          player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
          return;
       }
-      if (player.level() instanceof ServerLevel level) {
-         clearEnemyAggro(player, level);
-      }
+      ServantCardConcealmentHelper.tick(player);
    }
 
    public static void clear(ServerPlayer player) {
@@ -54,10 +54,9 @@ public final class ServantCardLiShuwenSkills {
    }
 
    public static void performCircleRealm(ServerPlayer player) {
-      player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, CIRCLE_REALM_DURATION, 0, false, false, false));
+      ServantCardConcealmentHelper.apply(player, CIRCLE_REALM_DURATION);
       player.getPersistentData().putInt(CONCEALMENT_UNTIL_TAG, player.tickCount + CIRCLE_REALM_DURATION);
       if (player.level() instanceof ServerLevel level) {
-         clearEnemyAggro(player, level);
          VFXServerEffects.spawn(level, "servant_li_shuwen_quanjing", player, 64.0);
          level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.85, player.getZ(), 18, 0.35, 0.22, 0.35, 0.015);
          level.playSound(null, player.blockPosition(), SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 0.55F, 0.55F);
@@ -169,6 +168,35 @@ public final class ServantCardLiShuwenSkills {
       spawnLiHitFx(player, findLookTarget(player, 5.5, 1.6));
    }
 
+   public static void performLiBajiCombo(ServerPlayer player) {
+      revealCircleRealm(player);
+      Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(dir.scale(1.15)).add(0.0, 0.08, 0.0));
+      player.hurtMarked = true;
+      hitForwardArc(player, dir, 4.5, 30.0F);
+      spawnLiHitFx(player, findLookTarget(player, 5.0, 1.8));
+   }
+
+   public static void performLiHighJump(ServerPlayer player) {
+      revealCircleRealm(player);
+      player.setDeltaMovement(player.getDeltaMovement().x, 1.35, player.getDeltaMovement().z);
+      player.fallDistance = 0.0F;
+      player.hurtMarked = true;
+   }
+
+   public static void performLiFaJin(ServerPlayer player) {
+      revealCircleRealm(player);
+      LivingEntity target = findLookTarget(player, 6.0, 1.8);
+      if (target == null) return;
+      target.invulnerableTime = 0;
+      target.hurt(player.damageSources().playerAttack(player), 42.0F);
+      target.invulnerableTime = 0;
+      Vec3 dir = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0).normalize();
+      target.push(dir.x * 0.65, 0.12, dir.z * 0.65);
+      target.hurtMarked = true;
+      spawnLiHitFx(player, target);
+   }
+
    public static void revealCircleRealm(ServerPlayer player) {
       player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
       if (player.hasEffect(MobEffects.INVISIBILITY)) {
@@ -192,13 +220,6 @@ public final class ServantCardLiShuwenSkills {
          level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 10, 0.22, 0.18, 0.22, 0.02);
          level.playSound(null, BlockPos.containing(pos), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 0.8F, 0.72F);
-      }
-   }
-
-   private static void clearEnemyAggro(ServerPlayer player, ServerLevel level) {
-      for (Mob mob : level.getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(48.0), mob -> mob.isAlive() && mob.getTarget() == player)) {
-         mob.setTarget(null);
-         mob.getNavigation().stop();
       }
    }
 

@@ -1,0 +1,20 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation": {
+			"loop": true,
+			"bones": {
+				"3": {
+					"scale": {
+						"vector": [0.8, 1, 0.8]
+					}
+				},
+				"body": {
+					"scale": {
+						"vector": [0.9, 1, 0.9]
+					}
+				}
+			}
+		}
+	}
+}

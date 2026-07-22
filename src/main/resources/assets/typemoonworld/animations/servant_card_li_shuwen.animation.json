@@ -1,0 +1,84 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation": {
+			"loop": true,
+			"bones": {
+				"body": {
+					"scale": {
+						"vector": [1, 1, 0.9]
+					}
+				},
+				"bone9": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"coat": {
+					"position": {
+						"vector": [0, 2, 0]
+					},
+					"scale": {
+						"vector": [1, 0.8, 1]
+					}
+				}
+			}
+		},
+		"sunglasses": {
+			"loop": true,
+			"bones": {
+				"body": {
+					"scale": {
+						"vector": [1, 1, 0.9]
+					}
+				},
+				"bone9": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"coat": {
+					"position": {
+						"vector": [0, 2, 0]
+					},
+					"scale": {
+						"vector": [1, 0.8, 1]
+					}
+				},
+				"galasses": {
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				}
+			}
+		},
+		"Jacket": {
+			"loop": true,
+			"bones": {
+				"body": {
+					"scale": {
+						"vector": [1, 1, 0.9]
+					}
+				},
+				"bone9": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"coat": {
+					"position": {
+						"vector": [0, 2, 0]
+					},
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"galasses": {
+					"scale": {
+						"vector": [0, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

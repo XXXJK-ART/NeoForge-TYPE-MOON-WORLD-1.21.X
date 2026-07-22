@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:plains",
+    "minecraft:sunflower_plains",
+    "minecraft:meadow",
+    "minecraft:grove",
+    "minecraft:jagged_peaks",
+    "minecraft:stony_peaks",
+    "minecraft:frozen_peaks"
+  ]
+}

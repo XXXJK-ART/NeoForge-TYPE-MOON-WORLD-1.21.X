@@ -22,41 +22,36 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    private static final int PANEL_X = 0;
    private static final int PANEL_Y = 0;
    private static final int PANEL_W = 320;
-   private static final int PANEL_H = 224;
+   private static final int PANEL_H = 234;
    private static final int SECTION_GEM_X = 8;
-   private static final int SECTION_GEM_Y = 18;
+   private static final int SECTION_GEM_Y = 28;
    private static final int SECTION_GEM_W = 56;
    private static final int SECTION_GEM_H = 84;
    private static final int SECTION_MAGIC_X = 70;
-   private static final int SECTION_MAGIC_Y = 18;
+   private static final int SECTION_MAGIC_Y = 28;
    private static final int SECTION_MAGIC_W = 124;
    private static final int SECTION_MAGIC_H = 98;
    private static final int SECTION_CTRL_X = 196;
-   private static final int SECTION_CTRL_Y = 18;
+   private static final int SECTION_CTRL_Y = 28;
    private static final int SECTION_CTRL_W = 114;
    private static final int SECTION_CTRL_H = 174;
    private static final int SECTION_INV_X = 8;
-   private static final int SECTION_INV_Y = 118;
+   private static final int SECTION_INV_Y = 128;
    private static final int SECTION_INV_W = 172;
    private static final int SECTION_INV_H = 96;
    private static final int ENGRAVE_BUTTON_H = 18;
    private static final int ENGRAVE_BUTTON_BOTTOM_MARGIN = 6;
    private static final int SLOT_GEM_X = 25;
-   private static final int SLOT_GEM_Y = 33;
+   private static final int SLOT_GEM_Y = 43;
    private static final int SLOT_TOOL_X = 25;
-   private static final int SLOT_TOOL_Y = 64;
+   private static final int SLOT_TOOL_Y = 74;
    private static final int SLOT_SIZE = 18;
-   private static final int COLOR_BORDER_DARK = -14869219;
-   private static final int COLOR_BORDER_LIGHT = -7566196;
-   private static final int COLOR_PANEL_OUTER = -11184811;
-   private static final int COLOR_PANEL_INNER = -12632257;
-   private static final int COLOR_SECTION_OUTER = -10395295;
-   private static final int COLOR_SECTION_INNER = -11908534;
-   private static final int COLOR_SLOT_INNER = -13882324;
-   private static final int COLOR_TEXT = -2039584;
-   private static final int COLOR_TEXT_HINT = -3750202;
-   private static final int COLOR_TEXT_WARN = -32640;
-   private static final int COLOR_TEXT_OK = -6756712;
+   private static final int COLOR_BORDER_LIGHT = GuiUtils.ARCANE_CYAN;
+   private static final int COLOR_SLOT_INNER = 0xD015191F;
+   private static final int COLOR_TEXT = GuiUtils.ARCANE_TEXT;
+   private static final int COLOR_TEXT_HINT = GuiUtils.ARCANE_TEXT_MUTED;
+   private static final int COLOR_TEXT_WARN = GuiUtils.ARCANE_DANGER;
+   private static final int COLOR_TEXT_OK = GuiUtils.ARCANE_VALID;
    private final List<GemCarvingTableScreen.MagicButtonEntry> magicButtons = new ArrayList<>();
    private Button engraveButton;
    private Button reinforcementPartButton;
@@ -163,7 +158,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    }
 
    private Button vanillaButton(int x, int y, int width, int height, Component text, OnPress onPress) {
-      return Button.builder(text, onPress).bounds(x, y, width, height).build();
+      return new NeonButton(x, y, width, height, text, onPress, GuiUtils.ARCANE_CYAN).setArcaneStyle(true);
    }
 
    private void updateUiState() {
@@ -171,6 +166,9 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
 
       for (GemCarvingTableScreen.MagicButtonEntry entry : this.magicButtons) {
          boolean selected = entry.magicId.equals(this.selectedMagicId);
+         if (entry.button instanceof NeonButton neonButton) {
+            neonButton.setSelected(selected);
+         }
          int maxTextWidth = Math.max(8, entry.button.getWidth() - 8);
          entry.button.setMessage(this.getMagicButtonLabel(entry.magicId, selected, maxTextWidth));
       }
@@ -269,6 +267,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
 
    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
@@ -279,42 +278,32 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
       this.drawSection(guiGraphics, x + SECTION_MAGIC_X, y + SECTION_MAGIC_Y, SECTION_MAGIC_W, SECTION_MAGIC_H);
       this.drawSection(guiGraphics, x + SECTION_CTRL_X, y + SECTION_CTRL_Y, SECTION_CTRL_W, SECTION_CTRL_H);
       this.drawSection(guiGraphics, x + SECTION_INV_X, y + SECTION_INV_Y, SECTION_INV_W, SECTION_INV_H);
-      guiGraphics.fill(x + SLOT_GEM_X, y + SLOT_GEM_Y, x + SLOT_GEM_X + SLOT_SIZE, y + SLOT_GEM_Y + SLOT_SIZE, COLOR_SLOT_INNER);
-      guiGraphics.fill(x + SLOT_TOOL_X, y + SLOT_TOOL_Y, x + SLOT_TOOL_X + SLOT_SIZE, y + SLOT_TOOL_Y + SLOT_SIZE, COLOR_SLOT_INNER);
-      guiGraphics.renderOutline(x + SLOT_GEM_X, y + SLOT_GEM_Y, SLOT_SIZE, SLOT_SIZE, COLOR_BORDER_LIGHT);
-      guiGraphics.renderOutline(x + SLOT_TOOL_X, y + SLOT_TOOL_Y, SLOT_SIZE, SLOT_SIZE, COLOR_BORDER_LIGHT);
+      GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_GEM_X, y + SLOT_GEM_Y, SLOT_SIZE, GuiUtils.ARCANE_CYAN, true);
+      GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_TOOL_X, y + SLOT_TOOL_Y, SLOT_SIZE, GuiUtils.ARCANE_GOLD, true);
    }
 
    private void drawPanel(GuiGraphics guiGraphics, int x, int y, int w, int h) {
-      guiGraphics.fill(x, y, x + w, y + h, COLOR_BORDER_DARK);
-      guiGraphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, COLOR_PANEL_OUTER);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, COLOR_PANEL_INNER);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + 3, COLOR_BORDER_LIGHT);
-      guiGraphics.fill(x + 2, y + 2, x + 3, y + h - 2, COLOR_BORDER_LIGHT);
+      GuiUtils.renderArcaneWindow(guiGraphics, x, y, w, h, GuiUtils.ARCANE_CYAN);
    }
 
    private void drawSection(GuiGraphics guiGraphics, int x, int y, int w, int h) {
-      guiGraphics.fill(x, y, x + w, y + h, COLOR_BORDER_DARK);
-      guiGraphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, COLOR_SECTION_OUTER);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, COLOR_SECTION_INNER);
-      guiGraphics.fill(x + 2, y + 2, x + w - 2, y + 3, COLOR_BORDER_LIGHT);
-      guiGraphics.fill(x + 2, y + 2, x + 3, y + h - 2, COLOR_BORDER_LIGHT);
+      GuiUtils.renderArcanePanel(guiGraphics, x, y, w, h, GuiUtils.ARCANE_CYAN);
    }
 
    protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
       Component title = Component.translatable("gui.typemoonworld.gem_carving_table.title");
       int titleX = (this.imageWidth - this.font.width(title)) / 2;
       guiGraphics.drawString(this.font, title, titleX, 6, COLOR_TEXT, false);
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.gem_slot"), 11, 22, COLOR_TEXT_HINT, false);
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.tool_slot"), 11, 53, COLOR_TEXT_HINT, false);
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.magic_list"), 73, 22, COLOR_TEXT_HINT, false);
-      guiGraphics.drawString(this.font, this.playerInventoryTitle, 11, 116, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.gem_slot"), 11, 32, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.tool_slot"), 11, 63, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.magic_list"), 73, 32, COLOR_TEXT_HINT, false);
+      guiGraphics.drawString(this.font, this.playerInventoryTitle, 11, 126, COLOR_TEXT_HINT, false);
       if ("reinforcement".equals(this.selectedMagicId)) {
          Component lvl = Component.translatable("gui.typemoonworld.gem_carving_table.reinforcement_level", this.reinforcementLevel);
          int textX = SECTION_CTRL_X + 26 + (62 - this.font.width(lvl)) / 2;
-         guiGraphics.drawString(this.font, lvl, textX, 151, COLOR_TEXT, false);
+         guiGraphics.drawString(this.font, lvl, textX, 161, COLOR_TEXT, false);
       } else if ("projection".equals(this.selectedMagicId)) {
-         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.projection_target"), 200, 148, COLOR_TEXT, false);
+         guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.projection_target"), 200, 158, COLOR_TEXT, false);
       }
 
       if (this.selectedMagicId != null && this.minecraft != null && this.minecraft.player != null) {
@@ -335,7 +324,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
                this.font,
                Component.translatable("gui.typemoonworld.gem_carving_table.success_chance", preview.chance() + "%"),
                200,
-               46,
+               56,
                COLOR_TEXT_OK,
                false
             );
@@ -345,7 +334,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
                   "gui.typemoonworld.gem_carving_table.mana_usage", (int)Math.ceil(preview.requiredMana()), preview.capacity()
                ),
                200,
-               58,
+               68,
                COLOR_TEXT,
                false
             );
@@ -356,15 +345,15 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
                }
 
                String clamped = this.font.plainSubstrByWidth(target, 106);
-               guiGraphics.drawString(this.font, Component.literal(clamped), 200, 160, COLOR_TEXT_HINT, false);
+               guiGraphics.drawString(this.font, Component.literal(clamped), 200, 170, COLOR_TEXT_HINT, false);
             }
          } else {
             this.engraveButton.active = false;
-            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.success_chance_invalid"), 200, 46, COLOR_TEXT_WARN, false);
+            guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.gem_carving_table.success_chance_invalid"), 200, 56, COLOR_TEXT_WARN, false);
             Component errorText = hasTool
                ? Component.translatable(preview.errorKey(), preview.errorArgs())
                : Component.translatable("message.typemoonworld.gem.engrave.need_tool");
-            guiGraphics.drawWordWrap(this.font, errorText, 200, 58, 106, COLOR_TEXT_WARN);
+            guiGraphics.drawWordWrap(this.font, errorText, 200, 68, 106, COLOR_TEXT_WARN);
          }
       } else if (this.engraveButton != null) {
          this.engraveButton.active = false;

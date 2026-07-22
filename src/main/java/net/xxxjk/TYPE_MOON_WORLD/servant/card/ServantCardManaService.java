@@ -76,6 +76,9 @@ public final class ServantCardManaService {
       if (amount <= 0.0) {
          return true;
       }
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         return true;
+      }
       if (noblePhantasm && MasterServantLinkService.STATE_INDEPENDENT.equals(vars.master_servant_link_state)) {
          return false;
       }

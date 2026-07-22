@@ -8,10 +8,15 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.client.CommandSpellVisualClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.FirearmPoseClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.BajiquanPoseClient;
+import net.xxxjk.TYPE_MOON_WORLD.client.GanryuPoseClient;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanMove;
+import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuMove;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -73,6 +78,13 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             }
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         BajiquanMove bajiquanMove = BajiquanPoseClient.getMove(player);
+         if (bajiquanMove != null) {
+            PlayerModel<?> model = (PlayerModel<?>)(Object)this;
+            applyBajiquanPose(model, bajiquanMove);
+         }
+         GanryuMove ganryuMove = GanryuPoseClient.getMove(player);
+         if (ganryuMove != null) applyGanryuPose((PlayerModel<?>)(Object)this, ganryuMove);
          if (vars.servant_card_transformed && "cursed_arm_hassan".equals(vars.servant_card_id) && limbSwingAmount > 0.05F) {
             PlayerModel<?> model = (PlayerModel<?>)(Object)this;
             model.rightArm.xRot = 0.0F;
@@ -80,7 +92,135 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             model.rightArm.zRot = 0.0F;
             model.rightSleeve.copyFrom(model.rightArm);
          }
+         PlayerModel<?> carryModel = (PlayerModel<?>)(Object)this;
+         if (ServantMasterCarryService.isCarryingMaster(player)) {
+            carryModel.rightArm.xRot = -1.28F;
+            carryModel.rightArm.yRot = -0.38F;
+            carryModel.rightArm.zRot = 0.18F;
+            carryModel.leftArm.xRot = -1.05F;
+            carryModel.leftArm.yRot = 0.48F;
+            carryModel.leftArm.zRot = -0.24F;
+            carryModel.rightSleeve.copyFrom(carryModel.rightArm);
+            carryModel.leftSleeve.copyFrom(carryModel.leftArm);
+         } else if (ServantMasterCarryService.isCarriedMaster(player)) {
+            carryModel.rightArm.xRot = -0.72F;
+            carryModel.leftArm.xRot = -0.72F;
+            carryModel.rightLeg.xRot = -1.05F;
+            carryModel.leftLeg.xRot = -1.05F;
+            carryModel.rightLeg.zRot = 0.18F;
+            carryModel.leftLeg.zRot = -0.18F;
+            carryModel.rightSleeve.copyFrom(carryModel.rightArm);
+            carryModel.leftSleeve.copyFrom(carryModel.leftArm);
+            carryModel.rightPants.copyFrom(carryModel.rightLeg);
+            carryModel.leftPants.copyFrom(carryModel.leftLeg);
+         }
       }
+   }
+
+   private static void applyBajiquanPose(PlayerModel<?> model, BajiquanMove move) {
+      switch (move) {
+         case RIGHT_KICK, FINISHER_KICK, KNEE, DOWN_KICK -> {
+            model.body.yRot = 0.35F;
+            model.rightLeg.xRot = move == BajiquanMove.KNEE ? -1.25F : -0.15F;
+            model.rightLeg.yRot = -0.3F;
+            model.leftLeg.xRot = 0.2F;
+            model.rightArm.xRot = -0.6F;
+            model.leftArm.xRot = -0.4F;
+         }
+         case LEFT_KICK -> {
+            model.body.yRot = -0.35F;
+            model.leftLeg.xRot = -0.35F;
+            model.leftLeg.yRot = 0.3F;
+            model.rightLeg.xRot = 0.2F;
+            model.rightArm.xRot = -0.4F;
+            model.leftArm.xRot = -0.6F;
+         }
+         case PARRY, CLAMP -> {
+            model.rightArm.xRot = -1.25F;
+            model.rightArm.yRot = -0.75F;
+            model.leftArm.xRot = -1.25F;
+            model.leftArm.yRot = 0.75F;
+            model.rightLeg.xRot = 0.25F;
+            model.leftLeg.xRot = 0.25F;
+         }
+         case TREMOR, CHARGED_TREMOR, STOMP -> {
+            model.body.xRot = 0.35F;
+            model.rightArm.xRot = -2.1F;
+            model.leftArm.xRot = -2.1F;
+            model.rightLeg.xRot = 0.65F;
+            model.leftLeg.xRot = 0.65F;
+         }
+         case DOUBLE_PALM, FIERCE_TIGER, PUSH -> {
+            model.body.xRot = 0.15F;
+            model.rightArm.xRot = -1.55F;
+            model.leftArm.xRot = -1.55F;
+            model.rightArm.yRot = -0.18F;
+            model.leftArm.yRot = 0.18F;
+         }
+         case HIGH_JUMP, CHOP -> {
+            model.rightArm.xRot = -2.55F;
+            model.leftArm.xRot = -0.7F;
+            model.rightLeg.xRot = -0.3F;
+            model.leftLeg.xRot = 0.45F;
+         }
+         default -> {
+            model.body.yRot = 0.18F;
+            model.rightArm.xRot = -1.75F;
+            model.rightArm.yRot = -0.22F;
+            model.leftArm.xRot = -0.45F;
+            model.leftArm.yRot = 0.4F;
+            model.rightLeg.xRot = 0.25F;
+            model.leftLeg.xRot = -0.12F;
+         }
+      }
+      model.rightSleeve.copyFrom(model.rightArm);
+      model.leftSleeve.copyFrom(model.leftArm);
+      model.rightPants.copyFrom(model.rightLeg);
+      model.leftPants.copyFrom(model.leftLeg);
+   }
+
+   private static void applyGanryuPose(PlayerModel<?> model, GanryuMove move) {
+      switch (move) {
+         case STANCE -> {
+            model.body.yRot = 0.22F;
+            model.rightArm.xRot = -1.18F;
+            model.rightArm.yRot = -0.35F;
+            model.leftArm.xRot = -0.95F;
+            model.leftArm.yRot = 0.48F;
+         }
+         case SPARROW_THRUST, SPARROW_SLASH -> {
+            model.body.yRot = -0.38F;
+            model.rightArm.xRot = -1.55F;
+            model.rightArm.yRot = -0.12F;
+            model.leftArm.xRot = -1.15F;
+         }
+         case FLOWER_BUD, SPARROW_THRUST_SECOND -> {
+            model.body.xRot = -0.18F;
+            model.rightArm.xRot = -2.55F;
+            model.leftArm.xRot = -1.85F;
+         }
+         case STONE_FLOWER, STONE_FLOWER_SECOND -> {
+            model.body.xRot = 0.18F;
+            model.rightArm.xRot = -2.9F;
+            model.leftArm.xRot = -2.2F;
+         }
+         case SPRING_BUD, SPRING_BUD_SECOND -> {
+            model.body.yRot = 0.65F;
+            model.rightArm.xRot = -1.25F;
+            model.rightArm.yRot = -1.0F;
+            model.leftArm.xRot = -1.0F;
+         }
+         case TSUBAME_GAESHI -> {
+            model.body.yRot = -0.8F;
+            model.rightArm.xRot = -2.6F;
+            model.rightArm.yRot = 0.85F;
+            model.leftArm.xRot = -1.9F;
+            model.leftArm.yRot = -0.55F;
+         }
+         default -> {}
+      }
+      model.rightSleeve.copyFrom(model.rightArm);
+      model.leftSleeve.copyFrom(model.leftArm);
    }
 
    @Inject(

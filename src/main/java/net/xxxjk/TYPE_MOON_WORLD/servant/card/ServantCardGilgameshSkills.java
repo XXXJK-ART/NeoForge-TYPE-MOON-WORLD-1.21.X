@@ -180,8 +180,8 @@ public final class ServantCardGilgameshSkills {
 
    public static boolean performMelee(ServerPlayer player) {
       long now = player.level().getGameTime();
-      if (now < player.getPersistentData().getLong(MELEE_COOLDOWN)) return false;
-      player.getPersistentData().putLong(MELEE_COOLDOWN, now + 18L);
+      if (!ServantCardUnlimitedMode.isEnabled(player) && now < player.getPersistentData().getLong(MELEE_COOLDOWN)) return false;
+      if (!ServantCardUnlimitedMode.isEnabled(player)) player.getPersistentData().putLong(MELEE_COOLDOWN, now + 18L);
       hitForwardArc(player, player.getLookAngle(), 4.5, 28.0F);
       ServantCardVoiceHelper.tryPlayAttack(player);
       return true;
@@ -206,9 +206,9 @@ public final class ServantCardGilgameshSkills {
    public static boolean performSingleVault(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       long now = player.level().getGameTime();
-      if (!hasKey(player) || now < player.getPersistentData().getLong(SINGLE_COOLDOWN)) return false;
+      if (!hasKey(player) || !ServantCardUnlimitedMode.isEnabled(player) && now < player.getPersistentData().getLong(SINGLE_COOLDOWN)) return false;
       if (!ServantCardManaService.consume(player, vars, 12.0)) return false;
-      player.getPersistentData().putLong(SINGLE_COOLDOWN, now + 80L);
+      if (!ServantCardUnlimitedMode.isEnabled(player)) player.getPersistentData().putLong(SINGLE_COOLDOWN, now + 80L);
       if (!(player.level() instanceof ServerLevel level)) return false;
       Vec3 direction = EntityUtils.getAutoAimDirection(player, 48.0, 18.0);
       GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, player.getEyePosition().add(direction.scale(.8)), direction, WEAPONS[player.getRandom().nextInt(WEAPONS.length)], 24.0F);
@@ -235,7 +235,8 @@ public final class ServantCardGilgameshSkills {
    }
 
    public static void performElixir(ServerPlayer player) {
-      ServantCardSkillUtils.clearHarmfulEffects(player); player.clearFire(); player.setHealth(player.getMaxHealth());
+      ServantCardSkillUtils.clearHarmfulEffects(player);
+      player.clearFire();
    }
 
    public static void performDivineShield(ServerPlayer player) {

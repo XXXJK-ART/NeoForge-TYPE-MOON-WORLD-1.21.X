@@ -16,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class MasterCardProfile {
@@ -65,7 +66,11 @@ public final class MasterCardProfile {
          held.shrink(1);
       }
       saveOriginalStateAndClearPlayer(player, vars, profile.id());
+      BodyTrainingService.clear(player, vars);
       resetToProfileState(vars);
+      // MasterStateManager synchronizes immediately; apply the target attributes first so
+      // a previous sword attribute cannot auto-awaken Unlimited Blade Works during a switch.
+      applyAttributes(vars, profile.attributes());
       if (!MasterStateManager.activateProfile(player, profile.commandSpellStyle())) {
          return false;
       }
@@ -76,7 +81,6 @@ public final class MasterCardProfile {
       vars.player_mana = profile.maxMana();
       vars.player_mana_egenerated_every_moment = profile.regenAmount();
       vars.player_restore_magic_moment = profile.regenIntervalTicks();
-      applyAttributes(vars, profile.attributes());
       profile.applyMagic(vars);
       TYPE_MOON_WORLD.queueServerWork(2, () -> {
          TypeMoonWorldModVariables.PlayerVariables delayedVars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -107,6 +111,7 @@ public final class MasterCardProfile {
       clearPlayerInventory(player);
       if (!savedVariables.isEmpty()) {
          vars.deserializeNBT(player.registryAccess(), savedVariables);
+         BodyTrainingService.clear(player, vars);
       } else {
          vars.master_active = false;
          vars.master_card_active = false;
@@ -122,6 +127,7 @@ public final class MasterCardProfile {
    private static Profile profile(String masterId) {
       return switch (masterId) {
          case "tohsaka_rin" -> new Profile(masterId, "rin", 1000.0, 8.0, 4, Attributes.FIVE_ELEMENTS, vars -> {
+            learnBajiquan(vars, 60.0);
             learnJewelSuite(vars, 85.0);
             learn(vars, "gander");
             vars.proficiency_gander = Math.max(vars.proficiency_gander, 80.0);
@@ -166,6 +172,7 @@ public final class MasterCardProfile {
          }, player -> {
          });
          case "kotomine_kirei" -> new Profile(masterId, "kirei", 300.0, 5.0, 10, Attributes.NONE, vars -> {
+            learnBajiquan(vars, 80.0);
             learn(vars, "baptism_rite");
             vars.proficiency_baptism_rite = Math.max(vars.proficiency_baptism_rite, 85.0);
             learn(vars, "spiritual_healing");
@@ -257,6 +264,14 @@ public final class MasterCardProfile {
       vars.proficiency_time_alter = 0.0;
       vars.proficiency_spiritual_healing = 0.0;
       vars.proficiency_baptism_rite = 0.0;
+      vars.bajiquan_learned = false;
+      vars.bajiquan_proficiency = 0.0;
+      vars.bajiquan_tiger_unlocked = false;
+      vars.bajiquan_circle_realm_cooldown_until = 0L;
+      vars.ganryu_learned = false;
+      vars.ganryu_proficiency = 0.0;
+      vars.ganryu_tsubame_unlocked = false;
+      vars.martial_ukemi_learned = false;
       vars.sword_barrel_mode = 0;
       vars.gandr_machine_gun_mode = 0;
       vars.jewel_magic_mode = 0;
@@ -334,6 +349,12 @@ public final class MasterCardProfile {
       if (!vars.learned_magics.contains(magicId)) {
          vars.learned_magics.add(magicId);
       }
+   }
+
+   private static void learnBajiquan(TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {
+      vars.bajiquan_learned = true;
+      vars.bajiquan_proficiency = Math.max(vars.bajiquan_proficiency, proficiency);
+      learn(vars, "bajiquan");
    }
 
    private static void addAnalyzedItem(TypeMoonWorldModVariables.PlayerVariables vars, ItemStack stack) {

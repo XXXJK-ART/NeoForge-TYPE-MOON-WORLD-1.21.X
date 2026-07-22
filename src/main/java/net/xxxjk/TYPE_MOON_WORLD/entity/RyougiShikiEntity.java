@@ -1183,7 +1183,8 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
                      directEntity.discard();
                      return false;
                   }
-               } else if (directEntity instanceof LivingEntity attackerx && source.getDirectEntity() == source.getEntity()) {
+               } else if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+                  && directEntity instanceof LivingEntity attackerx && source.getDirectEntity() == source.getEntity()) {
                   float chance = this.random.nextFloat();
                   float immunityReduction = this.hasLeftArm() ? 0.0F : 0.2F;
                   if (chance < 0.8F - immunityReduction) {

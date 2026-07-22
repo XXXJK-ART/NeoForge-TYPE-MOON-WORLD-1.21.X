@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import org.jetbrains.annotations.NotNull;
 
 public class TypeMoonWorldModVariables {
@@ -160,6 +161,20 @@ public class TypeMoonWorldModVariables {
          clone.time_alter_multiplier = original.time_alter_multiplier;
          clone.proficiency_spiritual_healing = original.proficiency_spiritual_healing;
          clone.proficiency_baptism_rite = original.proficiency_baptism_rite;
+         clone.bajiquan_learned = original.bajiquan_learned;
+         clone.bajiquan_proficiency = original.bajiquan_proficiency;
+         clone.bajiquan_tiger_unlocked = original.bajiquan_tiger_unlocked;
+         clone.bajiquan_circle_realm_cooldown_until = original.bajiquan_circle_realm_cooldown_until;
+         clone.ganryu_learned = original.ganryu_learned;
+         clone.ganryu_proficiency = original.ganryu_proficiency;
+         clone.ganryu_tsubame_unlocked = original.ganryu_tsubame_unlocked;
+         clone.martial_ukemi_learned = original.martial_ukemi_learned;
+         clone.body_training_xp = original.body_training_xp;
+         clone.body_training_points = original.body_training_points;
+         clone.body_strength = original.body_strength;
+         clone.body_speed = original.body_speed;
+         clone.body_resistance = original.body_resistance;
+         clone.body_technique = original.body_technique;
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
          clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
@@ -533,7 +548,7 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu");
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -580,6 +595,20 @@ public class TypeMoonWorldModVariables {
       public int time_alter_multiplier = 4;
       public double proficiency_spiritual_healing = 0.0;
       public double proficiency_baptism_rite = 0.0;
+      public boolean bajiquan_learned = false;
+      public double bajiquan_proficiency = 0.0;
+      public boolean bajiquan_tiger_unlocked = false;
+      public long bajiquan_circle_realm_cooldown_until = 0L;
+      public boolean ganryu_learned = false;
+      public double ganryu_proficiency = 0.0;
+      public boolean ganryu_tsubame_unlocked = false;
+      public boolean martial_ukemi_learned = false;
+      public int body_training_xp = 0;
+      public int body_training_points = 0;
+      public int body_strength = 0;
+      public int body_speed = 0;
+      public int body_resistance = 0;
+      public int body_technique = 0;
       public List<ItemStack> analyzed_items = new ArrayList<>();
       public ItemStack projection_selected_item = ItemStack.EMPTY;
       public List<TypeMoonWorldModVariables.PlayerVariables.SavedStructure> analyzed_structures = new ArrayList<>();
@@ -637,7 +666,7 @@ public class TypeMoonWorldModVariables {
       public int servant_card_flight_mode = 0;
       public long servant_card_high_flight_until = 0L;
       public long servant_card_high_flight_cooldown_until = 0L;
-      public int servant_card_oda_flight_ticks = 600;
+      public int servant_card_oda_flight_ticks = 100;
       public long servant_card_oda_flight_cooldown_until = 0L;
       public long servant_card_oda_flight_recharge_at = 0L;
       public double servant_card_flight_forward = 0.0;
@@ -1601,6 +1630,20 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("time_alter_multiplier", Math.max(1, this.time_alter_multiplier));
          nbt.putDouble("proficiency_spiritual_healing", this.proficiency_spiritual_healing);
          nbt.putDouble("proficiency_baptism_rite", this.proficiency_baptism_rite);
+         nbt.putBoolean("bajiquan_learned", this.bajiquan_learned);
+         nbt.putDouble("bajiquan_proficiency", this.bajiquan_proficiency);
+         nbt.putBoolean("bajiquan_tiger_unlocked", this.bajiquan_tiger_unlocked);
+         nbt.putLong("bajiquan_circle_realm_cooldown_until", this.bajiquan_circle_realm_cooldown_until);
+         nbt.putBoolean("ganryu_learned", this.ganryu_learned);
+         nbt.putDouble("ganryu_proficiency", this.ganryu_proficiency);
+         nbt.putBoolean("ganryu_tsubame_unlocked", this.ganryu_tsubame_unlocked);
+         nbt.putBoolean("martial_ukemi_learned", this.martial_ukemi_learned);
+         nbt.putInt("body_training_xp", this.body_training_xp);
+         nbt.putInt("body_training_points", this.body_training_points);
+         nbt.putInt("body_strength", this.body_strength);
+         nbt.putInt("body_speed", this.body_speed);
+         nbt.putInt("body_resistance", this.body_resistance);
+         nbt.putInt("body_technique", this.body_technique);
          nbt.putDouble("proficiency_reinforcement", this.proficiency_reinforcement);
          nbt.putBoolean("is_chanting_ubw", this.is_chanting_ubw);
          nbt.putInt("ubw_chant_progress", this.ubw_chant_progress);
@@ -1835,6 +1878,24 @@ public class TypeMoonWorldModVariables {
          this.time_alter_multiplier = nbt.contains("time_alter_multiplier") ? Math.max(1, nbt.getInt("time_alter_multiplier")) : 4;
          this.proficiency_spiritual_healing = nbt.getDouble("proficiency_spiritual_healing");
          this.proficiency_baptism_rite = nbt.getDouble("proficiency_baptism_rite");
+         this.bajiquan_learned = nbt.getBoolean("bajiquan_learned");
+         this.bajiquan_proficiency = Mth.clamp(nbt.getDouble("bajiquan_proficiency"), 0.0, 100.0);
+         this.bajiquan_tiger_unlocked = nbt.getBoolean("bajiquan_tiger_unlocked");
+         this.bajiquan_circle_realm_cooldown_until = nbt.getLong("bajiquan_circle_realm_cooldown_until");
+         this.ganryu_learned = nbt.getBoolean("ganryu_learned");
+         this.ganryu_proficiency = Mth.clamp(nbt.getDouble("ganryu_proficiency"), 0.0, 100.0);
+         this.ganryu_tsubame_unlocked = nbt.getBoolean("ganryu_tsubame_unlocked");
+         this.martial_ukemi_learned = nbt.getBoolean("martial_ukemi_learned")
+            || this.bajiquan_proficiency >= 30.0 || this.ganryu_proficiency >= 50.0;
+         this.body_training_xp = Math.max(0, nbt.getInt("body_training_xp"));
+         this.body_strength = Mth.clamp(nbt.getInt("body_strength"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         this.body_speed = Mth.clamp(nbt.getInt("body_speed"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         this.body_resistance = Mth.clamp(nbt.getInt("body_resistance"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         this.body_technique = Mth.clamp(nbt.getInt("body_technique"), 0, BodyTrainingService.MAX_STAT_POINTS);
+         int allocatedBodyPoints = this.body_strength + this.body_speed + this.body_resistance + this.body_technique;
+         this.body_training_points = Mth.clamp(
+            nbt.getInt("body_training_points"), 0, Math.max(0, BodyTrainingService.MAX_TOTAL_POINTS - allocatedBodyPoints)
+         );
          this.proficiency_reinforcement = nbt.getDouble("proficiency_reinforcement");
          this.is_chanting_ubw = nbt.getBoolean("is_chanting_ubw");
          this.ubw_chant_progress = nbt.getInt("ubw_chant_progress");
@@ -1964,7 +2025,7 @@ public class TypeMoonWorldModVariables {
          this.servant_card_flight_mode = nbt.contains("servant_card_flight_mode") ? nbt.getInt("servant_card_flight_mode") : (this.servant_card_flying ? 1 : 0);
          this.servant_card_high_flight_until = nbt.contains("servant_card_high_flight_until") ? nbt.getLong("servant_card_high_flight_until") : 0L;
          this.servant_card_high_flight_cooldown_until = nbt.contains("servant_card_high_flight_cooldown_until") ? nbt.getLong("servant_card_high_flight_cooldown_until") : 0L;
-         this.servant_card_oda_flight_ticks = nbt.contains("servant_card_oda_flight_ticks") ? Mth.clamp(nbt.getInt("servant_card_oda_flight_ticks"), 0, 600) : 600;
+         this.servant_card_oda_flight_ticks = nbt.contains("servant_card_oda_flight_ticks") ? Mth.clamp(nbt.getInt("servant_card_oda_flight_ticks"), 0, 100) : 100;
          this.servant_card_oda_flight_cooldown_until = nbt.contains("servant_card_oda_flight_cooldown_until") ? nbt.getLong("servant_card_oda_flight_cooldown_until") : 0L;
          this.servant_card_oda_flight_recharge_at = nbt.contains("servant_card_oda_flight_recharge_at") ? nbt.getLong("servant_card_oda_flight_recharge_at") : 0L;
          this.servant_card_flight_forward = nbt.contains("servant_card_flight_forward") ? nbt.getDouble("servant_card_flight_forward") : 0.0;

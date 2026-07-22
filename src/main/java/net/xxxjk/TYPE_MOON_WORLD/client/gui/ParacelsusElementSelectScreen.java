@@ -68,8 +68,8 @@ public class ParacelsusElementSelectScreen extends Screen {
       int bgY2 = startY + itemHeight + 12;
 
       this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-      guiGraphics.fill(bgX1, bgY1, bgX2, bgY2, 0xB0000000);
-      guiGraphics.renderOutline(bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, 0x88BFEFFF);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderArcaneWindow(guiGraphics, bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, 0xFF9ADBE8);
       guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 8, 0xFFEDE6FF);
       this.updateSelectionAt(mouseX, mouseY);
 
@@ -82,18 +82,15 @@ public class ParacelsusElementSelectScreen extends Screen {
    private void renderChoice(GuiGraphics guiGraphics, int index, int x, int y, int width, int height) {
       boolean selected = index == this.selectedIndex;
       int color = switch (index) {
-         case 0 -> 0xAA5A2020;
-         case 1 -> 0xAA20365A;
-         case 2 -> 0xAA285A28;
-         default -> 0xAAE6EAF5;
+         case 0 -> 0xFFE05B67;
+         case 1 -> 0xFF4B8DE8;
+         case 2 -> 0xFF53C58B;
+         default -> 0xFFDDE8EE;
       };
-      int fill = selected ? color : (color & 0x77FFFFFF);
-      int border = selected ? 0xFFFFFFFF : 0x8890CFEA;
-      int text = index == 3 ? 0xFF203040 : 0xFFFFFFFF;
-      guiGraphics.fill(x, y, x + width, y + height, fill);
-      guiGraphics.renderOutline(x, y, width, height, border);
+      int text = GuiUtils.ARCANE_TEXT;
+      GuiUtils.renderChoiceTile(guiGraphics, x, y, width, height, color, selected, true);
       guiGraphics.drawCenteredString(this.font, this.label(index), x + width / 2, y + 10, text);
-      guiGraphics.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.paracelsus_element.deploy"), x + width / 2, y + 29, index == 3 ? 0xFF345060 : 0xFFBFEFBF);
+      guiGraphics.drawCenteredString(this.font, Component.translatable("gui.typemoonworld.paracelsus_element.deploy"), x + width / 2, y + 29, selected ? color : GuiUtils.ARCANE_TEXT_MUTED);
    }
 
    private boolean updateSelectionAt(double mouseX, double mouseY) {

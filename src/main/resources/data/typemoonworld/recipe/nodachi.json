@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "I  ",
+    " I ",
+    "  K"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "K": {
+      "item": "typemoonworld:katana"
+    }
+  },
+  "result": {
+    "id": "typemoonworld:nodachi",
+    "count": 1
+  }
+}

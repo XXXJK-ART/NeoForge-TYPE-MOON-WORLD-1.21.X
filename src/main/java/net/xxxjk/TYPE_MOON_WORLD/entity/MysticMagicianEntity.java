@@ -279,7 +279,7 @@ public class MysticMagicianEntity extends PathfinderMob {
 
    protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
-      this.goalSelector.addGoal(1, new MysticMagicianEntity.NpcAwareMeleeAttackGoal(this, 1.05, false));
+      this.goalSelector.addGoal(1, new MysticMagicianEntity.NpcAwareMeleeAttackGoal(this, 1.18, true));
       this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 0.85));
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
@@ -404,6 +404,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData
    ) {
       SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+      NpcScaleHelper.ensureRandomScale(this);
       int variant = this.random.nextInt(6);
       this.setSkinVariant(variant);
       if (!this.hasCustomName()) {
@@ -417,7 +418,9 @@ public class MysticMagicianEntity extends PathfinderMob {
       this.setCombatPersonality(NpcCombatPersonality.random(this.random));
       this.setCombatTemperament(NpcCombatTemperament.random(this.random));
       NpcMagicCastBridge.onSpawnInitialized(this);
-      this.setPersistenceRequired();
+      if (spawnType != MobSpawnType.NATURAL && spawnType != MobSpawnType.CHUNK_GENERATION) {
+         this.setPersistenceRequired();
+      }
       return data;
    }
 
@@ -447,6 +450,7 @@ public class MysticMagicianEntity extends PathfinderMob {
 
    protected void customServerAiStep() {
       super.customServerAiStep();
+      NpcScaleHelper.ensureRandomScale(this);
       if ((Integer)this.entityData.get(CAST_POSE_TICKS) > 0) {
          this.entityData.set(CAST_POSE_TICKS, (Integer)this.entityData.get(CAST_POSE_TICKS) - 1);
       }

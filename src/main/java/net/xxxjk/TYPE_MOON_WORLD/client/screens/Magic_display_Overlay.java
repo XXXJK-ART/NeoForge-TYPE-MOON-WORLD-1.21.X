@@ -12,6 +12,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.GuiUtils;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicUiColors;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber({Dist.CLIENT})
@@ -26,6 +28,7 @@ public class Magic_display_Overlay {
         if (ReplayUiSuppressor.shouldHideTypeMoonHud()) return;
 
         int h = event.getGuiGraphics().guiHeight();
+        int guiWidth = event.getGuiGraphics().guiWidth();
         Player entity = minecraft.player;
         if (entity == null) return;
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -52,7 +55,8 @@ public class Magic_display_Overlay {
             int barX = 10;
             int barY = h - 20;
 
-            event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, 0x80000000);
+            GuiUtils.renderHudPanel(event.getGuiGraphics(), barX - 3, barY - 3, barWidth + 6, barHeight + 6, GuiUtils.ARCANE_CYAN);
+            event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, GuiUtils.ARCANE_BACKGROUND);
 
             int startColor = 0xFF00E5FF;
             int endColor = 0xFF2979FF;
@@ -70,10 +74,7 @@ public class Magic_display_Overlay {
                 event.getGuiGraphics().fillGradient(barX, barY, barX + fillWidth, barY + barHeight, startColor, endColor);
             }
 
-            event.getGuiGraphics().fill(barX - 1, barY - 1, barX + barWidth + 1, barY, 0xFFFFFFFF);
-            event.getGuiGraphics().fill(barX - 1, barY + barHeight, barX + barWidth + 1, barY + barHeight + 1, 0xFFFFFFFF);
-            event.getGuiGraphics().fill(barX - 1, barY - 1, barX, barY + barHeight + 1, 0xFFFFFFFF);
-            event.getGuiGraphics().fill(barX + barWidth, barY - 1, barX + barWidth + 1, barY + barHeight + 1, 0xFFFFFFFF);
+            event.getGuiGraphics().renderOutline(barX - 1, barY - 1, barWidth + 2, barHeight + 2, GuiUtils.ARCANE_BORDER);
 
             String manaText = (int) currentMana + " / " + (int) maxMana;
             int textWidth = minecraft.font.width(manaText);
@@ -243,16 +244,23 @@ public class Magic_display_Overlay {
                             );
                         }
                     }
+
+                    magicColor = MagicUiColors.colorFor(magicId, vars.isCurrentSelectionFromCrest(magicId));
                 }
 
                 Component labelStr = Component.translatable("gui.typemoonworld.overlay.current_magic");
                 int magicTextX = barX;
                 int magicTextY = barY - 12;
+                int maxNameWidth = Math.max(24, guiWidth - magicTextX - minecraft.font.width(labelStr) - 14);
+                String clippedName = minecraft.font.plainSubstrByWidth(magicName.getString(), maxNameWidth);
+                Component displayMagicName = Component.literal(clippedName);
+                int magicPanelWidth = Math.min(guiWidth - magicTextX - 6, minecraft.font.width(labelStr) + minecraft.font.width(displayMagicName) + 8);
+                GuiUtils.renderHudPanel(event.getGuiGraphics(), magicTextX - 3, magicTextY - 2, magicPanelWidth, 12, magicColor);
 
-                event.getGuiGraphics().drawString(minecraft.font, labelStr, magicTextX, magicTextY, 0xFFFFFFFF, true);
+                event.getGuiGraphics().drawString(minecraft.font, labelStr, magicTextX, magicTextY, GuiUtils.ARCANE_TEXT_MUTED, true);
                 event.getGuiGraphics().drawString(
                         minecraft.font,
-                        magicName,
+                        displayMagicName,
                         magicTextX + minecraft.font.width(labelStr),
                         magicTextY,
                         magicColor,

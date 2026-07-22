@@ -36,16 +36,17 @@ import org.lwjgl.glfw.GLFW;
 
 public class ProjectionPresetScreen extends Screen {
    private static final int LIST_X_OFFSET = 10;
-   private static final int LIST_Y_OFFSET = 40;
+   private static final int LIST_Y_OFFSET = 82;
    private static final int SLOT_SIZE = 18;
    private static final int COLS = 18;
-   private static final int ROWS = 8;
+   private static final int ROWS = 7;
+   private static final String[] FILTERS = {"all", "structure", "noble_phantasm", "combat", "tools", "building", "misc", "special"};
    private static final long STRUCTURE_DELETE_HOLD_MS = 700L;
    private final Player player;
    private int leftPos;
    private int topPos;
-   private int imageWidth = 360;
-   private int imageHeight = 200;
+   private int imageWidth = 380;
+   private int imageHeight = 230;
    private float scrollOffs = 0.0F;
    private int startIndex = 0;
    private String currentFilter = "all";
@@ -82,11 +83,10 @@ public class ProjectionPresetScreen extends Screen {
    }
 
    private void initFilterButtons() {
-      int btnY = this.topPos + 5;
-      int btnH = 20;
-      int startX = this.leftPos + LIST_X_OFFSET;
-      int gap = 2;
-      String[] filters = new String[]{"all", "structure", "noble_phantasm", "combat", "tools", "building", "misc", "special"};
+      int btnH = 18;
+      int startX = this.leftPos + 14;
+      int gap = 4;
+      int buttonWidth = 85;
       String[] labels = new String[]{
          "gui.typemoonworld.projection.filter.all",
          "gui.typemoonworld.projection.filter.structure",
@@ -97,25 +97,19 @@ public class ProjectionPresetScreen extends Screen {
          "gui.typemoonworld.projection.filter.misc",
          "gui.typemoonworld.projection.filter.special"
       };
-      int currentX = startX;
-
-      for (int i = 0; i < filters.length; i++) {
-         String filter = filters[i];
+      for (int i = 0; i < FILTERS.length; i++) {
+         String filter = FILTERS[i];
          String labelKey = labels[i];
-         int width = Minecraft.getInstance().font.width(Component.translatable(labelKey)) + 10;
-         if (width < 40) {
-            width = 40;
-         }
-
-         NeonButton btn = new NeonButton(currentX, btnY, width, btnH, Component.translatable(labelKey), b -> {
+         int buttonX = startX + i % 4 * (buttonWidth + gap);
+         int buttonY = this.topPos + 34 + i / 4 * (btnH + 4);
+         NeonButton btn = new NeonButton(buttonX, buttonY, buttonWidth, btnH, Component.translatable(labelKey), b -> {
             this.currentFilter = filter;
             this.scrollOffs = 0.0F;
             this.startIndex = 0;
             this.updateFilteredItems();
-         }, -16711681);
+         }, GuiUtils.ARCANE_CYAN).setArcaneStyle(true).setCompactStyle(true);
          this.addRenderableWidget(btn);
          this.filterButtons.add(btn);
-         currentX += width + gap;
       }
    }
 
@@ -189,17 +183,24 @@ public class ProjectionPresetScreen extends Screen {
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       this.lastMouseX = mouseX;
       this.lastMouseY = mouseY;
-      super.render(guiGraphics, mouseX, mouseY, partialTick);
       int x = this.leftPos;
       int y = this.topPos;
       int w = this.imageWidth;
       int h = this.imageHeight;
-      GuiUtils.renderBackground(guiGraphics, x, y, w, h);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderArcaneWindow(guiGraphics, x, y, w, h, GuiUtils.ARCANE_CYAN);
+      guiGraphics.drawCenteredString(this.font, this.title, x + w / 2, y + 9, GuiUtils.ARCANE_TEXT);
+      for (int i = 0; i < this.filterButtons.size(); i++) {
+         Button button = this.filterButtons.get(i);
+         if (button instanceof NeonButton neonButton) {
+            neonButton.setSelected(i < FILTERS.length && FILTERS[i].equals(this.currentFilter));
+         }
+      }
       int listX = this.leftPos + LIST_X_OFFSET;
       int listY = this.topPos + LIST_Y_OFFSET;
       int listW = w - 20;
-      int listH = h - 40 - 10;
-      GuiUtils.renderTechFrame(guiGraphics, listX - 2, listY - 2, listW + 4, listH + 4, -16733526, -16711681);
+      int listH = ROWS * SLOT_SIZE;
+      GuiUtils.renderArcanePanel(guiGraphics, listX - 3, listY - 3, listW + 2, listH + 6, GuiUtils.ARCANE_CYAN);
       int totalVisible = COLS * ROWS;
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)this.player
          .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -214,17 +215,18 @@ public class ProjectionPresetScreen extends Screen {
          int row = i / COLS;
          int slotX = listX + col * SLOT_SIZE;
          int slotY = listY + row * SLOT_SIZE;
+         boolean hovered = mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE;
          if (this.isStructureFilter()) {
             TypeMoonWorldModVariables.PlayerVariables.SavedStructure structure = this.filteredStructures.get(index);
             ItemStack icon = structure.icon.isEmpty() ? new ItemStack(Items.STONE) : structure.icon.copy();
             icon.setCount(1);
             boolean isSelected = structure.id != null && structure.id.equals(vars.projection_selected_structure_id);
+            GuiUtils.renderArcaneSlot(guiGraphics, slotX, slotY, SLOT_SIZE, isSelected ? GuiUtils.ARCANE_GOLD : GuiUtils.ARCANE_CYAN, isSelected || hovered);
             if (isSelected) {
-               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2147418368);
+               guiGraphics.renderOutline(slotX + 1, slotY + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, GuiUtils.ARCANE_GOLD);
             }
 
-            if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
-               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2130706433);
+            if (hovered) {
                guiGraphics.renderTooltip(this.font, Component.literal(structure.name), mouseX, mouseY);
             }
 
@@ -235,12 +237,12 @@ public class ProjectionPresetScreen extends Screen {
             ItemStack displayStack = stack.copy();
             displayStack.setCount(1);
             boolean isSelectedx = ItemStack.isSameItemSameComponents(stack, vars.projection_selected_item);
+            GuiUtils.renderArcaneSlot(guiGraphics, slotX, slotY, SLOT_SIZE, isSelectedx ? GuiUtils.ARCANE_GOLD : GuiUtils.ARCANE_CYAN, isSelectedx || hovered);
             if (isSelectedx) {
-               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2147418368);
+               guiGraphics.renderOutline(slotX + 1, slotY + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, GuiUtils.ARCANE_GOLD);
             }
 
-            if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
-               guiGraphics.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, -2130706433);
+            if (hovered) {
                guiGraphics.renderTooltip(this.font, displayStack, mouseX, mouseY);
             }
 
@@ -250,6 +252,7 @@ public class ProjectionPresetScreen extends Screen {
       }
 
       this.renderScrollBar(guiGraphics, listY, ROWS * SLOT_SIZE, x + w - 8);
+      super.render(guiGraphics, mouseX, mouseY, partialTick);
    }
 
    public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -357,14 +360,7 @@ public class ProjectionPresetScreen extends Screen {
    private void renderScrollBar(GuiGraphics guiGraphics, int scrollBarY, int scrollBarH, int scrollBarX) {
       int totalRows = (this.getCurrentEntryCount() + COLS - 1) / COLS;
       if (totalRows > ROWS) {
-         int barHeight = (int)((float)(ROWS * scrollBarH) / totalRows);
-         if (barHeight < 20) {
-            barHeight = 20;
-         }
-
-         int barTop = scrollBarY + (int)(this.scrollOffs * (scrollBarH - barHeight));
-         guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + scrollBarH, Integer.MIN_VALUE);
-         guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, -16711681);
+         GuiUtils.renderScrollBar(guiGraphics, scrollBarX, scrollBarY, scrollBarH, this.scrollOffs, (float)ROWS / totalRows, GuiUtils.ARCANE_CYAN);
       }
    }
 

@@ -1,0 +1,11 @@
+{
+  "parent": "typemoonworld:magic_apprentice",
+  "display": {
+    "icon": { "item": "typemoonworld:relic_hajiquan_manual" },
+    "title": { "translate": "adv.typemoonworld.bajiquan.title" },
+    "description": { "translate": "adv.typemoonworld.bajiquan.desc" },
+    "frame": "task", "hidden": false, "show_toast": true, "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } },
+  "requirements": [["impossible"]]
+}

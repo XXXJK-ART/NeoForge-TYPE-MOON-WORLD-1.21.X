@@ -89,7 +89,7 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
 
    public static SlashPair spawnPair(ServerLevel level, LivingEntity owner, Vec3 direction, Entity... immune) {
       Vec3 forward = normalizedFlat(direction);
-      double releaseY = Math.max(level.getMinBuildHeight() + 1.0, owner.getY() - 50.0);
+      double releaseY = Math.max(level.getMinBuildHeight() + 1.0, owner.getY() - 30.0);
       Vec3 origin = new Vec3(owner.getX(), releaseY + owner.getBbHeight() * 0.55, owner.getZ()).subtract(forward.scale(12.0));
       UUID castId = UUID.randomUUID();
       GilgameshCrossSlashEntity igalima = new GilgameshCrossSlashEntity(level, owner, SlashType.IGALIMA, forward, castId, origin, 0);

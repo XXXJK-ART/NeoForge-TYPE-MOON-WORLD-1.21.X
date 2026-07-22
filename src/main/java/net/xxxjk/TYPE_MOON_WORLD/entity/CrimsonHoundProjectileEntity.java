@@ -66,7 +66,9 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
       }
 
       Entity targetEntity = this.level().getEntity(this.entityData.get(TARGET_ID));
-      if (targetEntity instanceof LivingEntity target && target.isAlive()) {
+      boolean tracking = targetEntity instanceof LivingEntity livingTarget && livingTarget.isAlive();
+      if (tracking) {
+         LivingEntity target = (LivingEntity)targetEntity;
          Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0).subtract(this.position());
          if (aim.lengthSqr() > 1.0E-4) {
             Vec3 desired = aim.normalize().scale(Math.max(1.6, this.getDeltaMovement().length()));
@@ -79,7 +81,7 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
          }
       }
 
-      if (this.tickCount > 80) {
+      if (!tracking && this.tickCount > 80) {
          triggerBrokenPhantasm(this.position());
          this.discard();
       }

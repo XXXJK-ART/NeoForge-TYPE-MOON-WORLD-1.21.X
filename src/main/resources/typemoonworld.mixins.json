@@ -4,6 +4,7 @@
   "package": "net.xxxjk.TYPE_MOON_WORLD.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "EntityPassengerPositionMixin",
     "LivingEntityInputAccessor",
     "PlayerPegasusDismountMixin",
     "TranslatableContentsMixin"

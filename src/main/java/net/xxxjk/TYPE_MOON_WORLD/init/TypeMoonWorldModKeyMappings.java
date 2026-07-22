@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,6 +29,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
+import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
@@ -43,6 +46,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(
@@ -102,6 +107,11 @@ public class TypeMoonWorldModKeyMappings {
       private static final boolean[] numpadWheelDown = new boolean[10];
       private static final boolean[] servantCardHoldDown = new boolean[10];
       private static boolean servantJumpDown = false;
+      private static boolean bajiquanJumpDown = false;
+      private static boolean bajiquanCrouchDown = false;
+      private static boolean ganryuJumpDown = false;
+      private static boolean ganryuCrouchDown = false;
+      private static boolean ganryuUseDown = false;
       private static long servantLastJumpTapMs = 0L;
       private static int servantFlightInputSendDelay = 0;
       private static int servantFlightInputKeepaliveChecks = 0;
@@ -134,6 +144,35 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (isClientGanryuActive(player, vars)) {
+            boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
+            if (event.isAttack() && !blockTarget) {
+               PacketDistributor.sendToServer(new GanryuInputMessage(GanryuCombatService.INPUT_A, player.isCrouching(), minecraft.options.keyJump.isDown()));
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+            if (event.isUseItem()) {
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+         }
+         if (isClientBajiquanActive(player, vars)) {
+            boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
+            if (event.isAttack() && !blockTarget) {
+               PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_A, player.isCrouching(), minecraft.options.keyJump.isDown()));
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+            if (event.isUseItem()) {
+               PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_B, player.isCrouching(), minecraft.options.keyJump.isDown()));
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+         }
          if (event.isUseItem() && player.isCrouching() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -225,6 +264,32 @@ public class TypeMoonWorldModKeyMappings {
             TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                TypeMoonWorldModVariables.PLAYER_VARIABLES
             );
+            boolean jumpDownNow = Minecraft.getInstance().options.keyJump.isDown();
+            boolean crouchDownNow = Minecraft.getInstance().options.keyShift.isDown();
+            boolean useDownNow = Minecraft.getInstance().options.keyUse.isDown();
+            boolean ganryuActive = isClientGanryuActive(player, vars);
+            if (ganryuActive && crouchDownNow && !ganryuCrouchDown) {
+               PacketDistributor.sendToServer(new GanryuInputMessage(GanryuCombatService.INPUT_DOWN, true, false));
+            }
+            if (ganryuActive && jumpDownNow && !ganryuJumpDown) {
+               PacketDistributor.sendToServer(new GanryuInputMessage(GanryuCombatService.INPUT_JUMP, player.isCrouching(), true));
+            }
+            if (ganryuActive && useDownNow && !ganryuUseDown) {
+               PacketDistributor.sendToServer(new GanryuInputMessage(GanryuCombatService.INPUT_B_START, player.isCrouching(), jumpDownNow));
+            } else if ((!ganryuActive || !useDownNow) && ganryuUseDown) {
+               PacketDistributor.sendToServer(new GanryuInputMessage(GanryuCombatService.INPUT_B_END, false, false));
+            }
+            ganryuJumpDown = ganryuActive && jumpDownNow;
+            ganryuCrouchDown = ganryuActive && crouchDownNow;
+            ganryuUseDown = ganryuActive && useDownNow;
+            if (isClientBajiquanActive(player, vars) && crouchDownNow && !bajiquanCrouchDown) {
+               PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_DOWN, true, false));
+            }
+            if (isClientBajiquanActive(player, vars) && jumpDownNow && !bajiquanJumpDown) {
+               PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_JUMP, player.isCrouching(), true));
+            }
+            bajiquanJumpDown = jumpDownNow;
+            bajiquanCrouchDown = crouchDownNow;
             localCastingArm = resolveLocalCastingArm(player);
             syncProjectionSelectionFromCurrentCrestPreset(player, vars);
             updateMachineGunFiringPose(vars);
@@ -339,7 +404,7 @@ public class TypeMoonWorldModKeyMappings {
                Lose_health_regain_mana_Message.pressAction(player, 0, 0);
             }
 
-            if (TypeMoonWorldModKeyMappings.BASIC_INFORMATION_GUI.consumeClick() && vars.is_magus && !suppressScreens) {
+            if (TypeMoonWorldModKeyMappings.BASIC_INFORMATION_GUI.consumeClick() && !suppressScreens) {
                PacketDistributor.sendToServer(new Basic_information_gui_Message(0, 0), new CustomPacketPayload[0]);
                Basic_information_gui_Message.pressAction(player, 0, 0);
             }
@@ -376,6 +441,12 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         if (isClientBajiquanActive(player, vars)) {
+            if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick()) {
+               PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_CIRCLE_REALM, false, false));
+            }
+            return;
+         }
          boolean selectionActive = StructuralAnalysisSelectionClient.isActive();
          boolean structuralSelected = isStructuralAnalysisSelected(vars);
          boolean projectionStructureSelected = isStructureProjectionSelected(vars);
@@ -685,6 +756,22 @@ public class TypeMoonWorldModKeyMappings {
 
       private static boolean isGunLikeSpellSelected(TypeMoonWorldModVariables.PlayerVariables vars) {
          return isGanderSelected(vars) || isJewelMachineGunSelected(vars);
+      }
+
+      private static boolean isClientBajiquanActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         return player != null && vars != null && vars.bajiquan_learned && vars.is_magic_circuit_open && !vars.servant_card_transformed
+            && player.getMainHandItem().isEmpty() && player.getOffhandItem().isEmpty()
+            && BajiquanCombatService.MAGIC_ID.equals(net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService.getCurrentMagicId(vars));
+      }
+
+      private static boolean isClientGanryuActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         if (player == null || vars == null || !vars.ganryu_learned || !vars.is_magic_circuit_open || vars.servant_card_transformed
+            || !GanryuCombatService.MAGIC_ID.equals(net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService.getCurrentMagicId(vars))) return false;
+         ItemStack main = player.getMainHandItem();
+         ItemStack off = player.getOffhandItem();
+         return (GanryuCombatService.isAllowedBlade(main) || GanryuCombatService.isAllowedBlade(off))
+            && (main.isEmpty() || GanryuCombatService.isAllowedBlade(main))
+            && (off.isEmpty() || GanryuCombatService.isAllowedBlade(off));
       }
 
       private static HumanoidArm resolveLocalCastingArm(Player player) {

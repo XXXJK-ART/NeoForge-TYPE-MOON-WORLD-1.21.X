@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:swords",
+    "typemoonworld:wakizashi",
+    "typemoonworld:katana",
+    "typemoonworld:nodachi",
+    "typemoonworld:bizen_nagamitsu"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "parent": "typemoonworld:bajiquan_graduate",
+  "display": {
+    "icon": { "item": "minecraft:iron_sword" },
+    "title": { "translate": "adv.typemoonworld.bajiquan_no_second_strike.title" },
+    "description": { "translate": "adv.typemoonworld.bajiquan_no_second_strike.desc" },
+    "frame": "challenge", "hidden": false, "show_toast": true, "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } },
+  "requirements": [["impossible"]]
+}

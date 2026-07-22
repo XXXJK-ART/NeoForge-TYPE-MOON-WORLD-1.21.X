@@ -39,6 +39,10 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MuramasaSlashProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
@@ -221,7 +225,19 @@ public class ModEntities {
       "stone_man", () -> Builder.of(StoneManEntity::new, MobCategory.CREATURE).sized(1.0F, 2.5F).build("stone_man")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN = ENTITY_TYPES.register(
-      "mystic_magician", () -> Builder.of(MysticMagicianEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("mystic_magician")
+      "mystic_magician", () -> Builder.of(MysticMagicianEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<BajiquanMasterEntity>> BAJIQUAN_MASTER = ENTITY_TYPES.register(
+      "bajiquan_master", () -> Builder.of(BajiquanMasterEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("bajiquan_master")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<BajiquanApprenticeEntity>> BAJIQUAN_APPRENTICE = ENTITY_TYPES.register(
+      "bajiquan_apprentice", () -> Builder.of(BajiquanApprenticeEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("bajiquan_apprentice")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysteriousSwordsmanEntity>> MYSTERIOUS_SWORDSMAN = ENTITY_TYPES.register(
+      "mysterious_swordsman", () -> Builder.of(MysteriousSwordsmanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("mysterious_swordsman")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<TohsakaRinEntity>> TOHSAKA_RIN = ENTITY_TYPES.register(
+      "tohsaka_rin", () -> Builder.of(TohsakaRinEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("tohsaka_rin")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<SwordBarrelProjectileEntity>> SWORD_BARREL_PROJECTILE = ENTITY_TYPES.register(
       "sword_barrel_projectile",
@@ -318,7 +334,7 @@ public class ModEntities {
       "cursed_arm_hassan", () -> Builder.of(CursedArmHassanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cursed_arm_hassan")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedusaPegasusEntity>> MEDUSA_PEGASUS = ENTITY_TYPES.register(
-      "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(1.8F, 2.0F).build("medusa_pegasus")
+      "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(2.4F, 2.4F).build("medusa_pegasus")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
       "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")

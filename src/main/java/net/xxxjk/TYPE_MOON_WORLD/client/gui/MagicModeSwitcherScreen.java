@@ -303,8 +303,7 @@ public class MagicModeSwitcherScreen extends Screen {
       int bgY1 = startY - padding - 20;
       int bgX2 = startX + totalWidth + padding;
       int bgY2 = startY + itemHeight + padding;
-      guiGraphics.fill(bgX1, bgY1, bgX2, bgY2, -1275068416);
-      guiGraphics.renderOutline(bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, -7829368);
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
       this.updateSelectionAt(mouseX, mouseY);
       boolean showIcons = true;
       boolean isSwordBarrel = false;
@@ -313,6 +312,7 @@ public class MagicModeSwitcherScreen extends Screen {
       boolean isGravity = false;
       boolean isJewelRelease = false;
       String currentMagic = "";
+      int accentColor = MagicUiColors.NORMAL;
       if (!this.modes.isEmpty()) {
          Player player = Minecraft.getInstance().player;
          if (player != null) {
@@ -321,6 +321,7 @@ public class MagicModeSwitcherScreen extends Screen {
             );
             if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                currentMagic = vars.selected_magics.get(vars.current_magic_index);
+               accentColor = MagicUiColors.colorFor(currentMagic, vars.isCurrentSelectionFromCrest(currentMagic));
             }
 
             if ("sword_barrel_full_open".equals(currentMagic)) {
@@ -338,13 +339,15 @@ public class MagicModeSwitcherScreen extends Screen {
          }
       }
 
-      guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 5, 16777215);
+      GuiUtils.renderArcaneWindow(guiGraphics, bgX1, bgY1, bgX2 - bgX1, bgY2 - bgY1, accentColor);
+      guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, bgY1 + 9, GuiUtils.ARCANE_TEXT);
 
       for (int i = 0; i < this.modes.size(); i++) {
          int x = startX + i * (itemWidth + gap);
          boolean isSelected = i == this.selectedIndex;
-         int fillColor = isSelected ? 1627389951 : 1073741824;
-         int textColor = isSelected ? -171 : -5592406;
+         boolean enabled = true;
+         int fillColor = isSelected ? MagicUiColors.withAlpha(accentColor, 0x68) : 0x8012161B;
+         int textColor = isSelected ? -1 : MagicUiColors.withAlpha(accentColor, 0xFF);
          if (isReinforcement && this.reinforcementStage == 2) {
             Player player = Minecraft.getInstance().player;
             if (player != null) {
@@ -356,6 +359,7 @@ public class MagicModeSwitcherScreen extends Screen {
                if (level > maxLevel) {
                   fillColor = 1616205141;
                   textColor = -11184811;
+                  enabled = false;
                }
             }
          }
@@ -372,9 +376,13 @@ public class MagicModeSwitcherScreen extends Screen {
             }
          }
 
-         guiGraphics.fill(x, startY, x + itemWidth, startY + itemHeight, fillColor);
-         int borderColor = isSelected ? -1 : -11184811;
-         guiGraphics.renderOutline(x, startY, itemWidth, itemHeight, borderColor);
+         GuiUtils.renderChoiceTile(guiGraphics, x, startY, itemWidth, itemHeight, accentColor, isSelected, enabled);
+         if (isSwordBarrel && modeId == 3 && this.minecraft != null && this.minecraft.player != null) {
+            TypeMoonWorldModVariables.PlayerVariables varsx = this.minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (varsx.ubw_broken_phantasm_enabled) {
+               guiGraphics.fill(x + 3, startY + itemHeight - 3, x + itemWidth - 3, startY + itemHeight - 1, GuiUtils.ARCANE_DANGER);
+            }
+         }
          if (showIcons) {
             RenderSystem.enableBlend();
             int iconSize = 24;
@@ -444,7 +452,7 @@ public class MagicModeSwitcherScreen extends Screen {
                }
 
                if (iconLoc != null) {
-                  guiGraphics.setColor(0.0F, 1.0F, 1.0F, 0.5F);
+                  guiGraphics.setColor(MagicUiColors.red(accentColor) / 255.0F, MagicUiColors.green(accentColor) / 255.0F, MagicUiColors.blue(accentColor) / 255.0F, 0.65F);
                   guiGraphics.blit(iconLoc, iconX, iconY, 0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
                   guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
                }
@@ -466,7 +474,7 @@ public class MagicModeSwitcherScreen extends Screen {
                }
 
                if (iconLocx != null) {
-                  guiGraphics.setColor(0.54F, 0.49F, 1.0F, 0.75F);
+                  guiGraphics.setColor(MagicUiColors.red(accentColor) / 255.0F, MagicUiColors.green(accentColor) / 255.0F, MagicUiColors.blue(accentColor) / 255.0F, 0.75F);
                   guiGraphics.blit(iconLocx, iconX, iconY, 0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
                   guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
                }
