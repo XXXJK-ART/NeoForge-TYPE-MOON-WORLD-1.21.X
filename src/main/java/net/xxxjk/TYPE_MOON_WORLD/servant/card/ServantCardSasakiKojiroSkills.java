@@ -37,6 +37,6 @@ public final class ServantCardSasakiKojiroSkills {
    public static void performTransparency(ServerPlayer player) {
       ServantCardSkillUtils.clearHarmfulEffects(player);
       ServantCardConcealmentHelper.apply(player, 80);
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 1, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 1, false, false, false));
    }
 }

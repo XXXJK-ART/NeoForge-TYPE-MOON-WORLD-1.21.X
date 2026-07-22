@@ -44,6 +44,12 @@ class BajiquanProgressionTest {
       assertEquals(15.0, BajiquanCombatService.scaledDamage(3.0F, 20, 100.0), 1.0E-6);
    }
 
+   @Test void servantCardBodyTrainingSnapshotRoundTrips() {
+      var original = new BodyTrainingService.BodyTrainingData(321, 7, 20, 13, 9, 11);
+      var restored = BodyTrainingService.readSnapshot(BodyTrainingService.writeSnapshot(original));
+      assertEquals(original, restored);
+   }
+
    @Test void legalComboCancelsAreExplicit() {
       assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PUNCH, BajiquanMove.SHOULDER, false));
       assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.FLURRY, BajiquanMove.PALM, false));

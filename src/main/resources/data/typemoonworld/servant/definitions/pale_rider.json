@@ -1,0 +1,75 @@
+{
+  "id": "pale_rider",
+  "display_name": "Pale Rider",
+  "display_name_zh": "苍白骑士",
+  "class_type": "rider",
+  "faction": "earth",
+  "traits": [
+    "servant",
+    "rider",
+    "mounted",
+    "genderless",
+    "conceptual_existence",
+    "apocalypse_horseman",
+    "plague",
+    "false_rider",
+    "system_servant",
+    "neutral_alignment",
+    "balanced"
+  ],
+  "parameters": {
+    "endurance": "B",
+    "endurance_plus": false,
+    "strength": "E",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "A",
+    "magic_plus": false,
+    "luck": "C",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/empty.geo.json",
+    "texture": "typemoonworld:textures/particle/particle_white.png",
+    "animation": "typemoonworld:animations/empty.animation.json",
+    "animations": {}
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "default_weapon": "",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "pale_rider_infection",
+      "pale_rider_innocent_world",
+      "pale_rider_possession",
+      "pale_rider_underworld",
+      "pale_rider_four_calamities"
+    ]
+  },
+  "skills": [
+    "magic_resistance_c_pale_rider",
+    "riding_ex_pale_rider",
+    "infection_a_pale_rider",
+    "innocent_world_ex_pale_rider",
+    "underworld_guidance_ex_pale_rider"
+  ],
+  "noble_phantasm": "sword_famine_death_beast",
+  "personality": {
+    "obedience": "compliant",
+    "principle": "neutral",
+    "morality": "neutral",
+    "social": "hermit",
+    "combat": "cautious",
+    "starting_favor": 100.0
+  },
+  "ai_config": "pale_rider_ai",
+  "spawn_egg": {
+    "primary": 1513756,
+    "secondary": 13093841
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "zero"
+  },
+  "vertex": "minecraft:blit",
+  "fragment": "typemoonworld:pale_rider_desaturate",
+  "attributes": ["Position"],
+  "samplers": [
+    { "name": "DiffuseSampler" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] },
+    { "name": "InSize", "type": "float", "count": 2, "values": [1, 1] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [1, 1] },
+    { "name": "Time", "type": "float", "count": 1, "values": [0] },
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [1, 1] }
+  ]
+}

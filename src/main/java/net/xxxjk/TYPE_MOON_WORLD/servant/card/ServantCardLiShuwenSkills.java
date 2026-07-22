@@ -57,8 +57,6 @@ public final class ServantCardLiShuwenSkills {
       ServantCardConcealmentHelper.apply(player, CIRCLE_REALM_DURATION);
       player.getPersistentData().putInt(CONCEALMENT_UNTIL_TAG, player.tickCount + CIRCLE_REALM_DURATION);
       if (player.level() instanceof ServerLevel level) {
-         VFXServerEffects.spawn(level, "servant_li_shuwen_quanjing", player, 64.0);
-         level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.85, player.getZ(), 18, 0.35, 0.22, 0.35, 0.015);
          level.playSound(null, player.blockPosition(), SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 0.55F, 0.55F);
       }
    }

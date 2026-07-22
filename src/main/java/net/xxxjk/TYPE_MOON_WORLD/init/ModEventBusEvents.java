@@ -59,6 +59,11 @@ public class ModEventBusEvents {
       event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PARACELSUS.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.PALE_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.RAT_SWARM.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity.createAttributes().build());
+      event.put(ModEntities.SOUL_ECHO.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity.createAttributes().build());
+      event.put(ModEntities.APOCALYPSE_HORSEMAN.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity.createAttributes().build());
+      event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }

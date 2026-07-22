@@ -16,8 +16,8 @@ public final class ServantCardCommonSkills {
 
    public static void performPresenceConcealment(ServerPlayer player, String id) {
       int duration = "circle_realm".equals(id) ? 140 : 220;
-      player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, duration, 0, false, false, true));
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 1, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, duration, 0, false, false, false));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 1, false, false, false));
       player.getPersistentData().putInt("ServantCardConcealmentUntil", player.tickCount + duration);
    }
 

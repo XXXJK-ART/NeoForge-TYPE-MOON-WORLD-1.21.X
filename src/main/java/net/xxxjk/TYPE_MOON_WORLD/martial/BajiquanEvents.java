@@ -222,6 +222,9 @@ public final class BajiquanEvents {
       }
 
       if (melee && event.getSource().is(DamageTypes.PLAYER_ATTACK) && event.getSource().getEntity() instanceof ServerPlayer attacker && event.getAmount() > 0.0F) {
+         if (GanryuCombatService.consumeBasicAttackAward(attacker)) {
+            GanryuCombatService.addProficiency(attacker, GanryuCombatService.isSparring(attacker) ? 0.25 : 0.05);
+         }
          if (!GanryuCombatService.isMartialDamage(attacker)
             && attacker.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.NODACHI.get())) {
             int bonus = GanryuCombatService.souwaBonus(attacker.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));

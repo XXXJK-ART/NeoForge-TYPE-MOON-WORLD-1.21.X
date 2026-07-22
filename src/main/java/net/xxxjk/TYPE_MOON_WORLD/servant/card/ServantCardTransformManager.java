@@ -65,7 +65,7 @@ public final class ServantCardTransformManager {
       saveArmor(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
-      BodyTrainingService.clear(player, vars);
+      BodyTrainingService.stashForServantCard(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
       vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);
@@ -140,6 +140,7 @@ public final class ServantCardTransformManager {
          MasterStateManager.clearServantSide(player, vars);
       }
       vars.servant_card_transformed = false;
+      BodyTrainingService.restoreFromServantCard(player, vars);
       clearServantCardTags(player);
       vars.servant_card_id = "";
       vars.servant_card_master_uuid = "";
@@ -192,9 +193,11 @@ public final class ServantCardTransformManager {
          vars.servant_card_release_cooldown--;
       }
       if (!vars.servant_card_transformed) {
+         boolean bodyTrainingRestored = BodyTrainingService.restoreFromServantCard(player, vars);
          if (hasServantCardTag(player)) {
             clearServantCardTags(player);
          }
+         if (bodyTrainingRestored) vars.syncPlayerVariables(player);
          return;
       }
       ensureServantCardTags(player, vars.servant_card_id);

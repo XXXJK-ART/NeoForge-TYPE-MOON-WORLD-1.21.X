@@ -366,12 +366,12 @@ public final class ServantCardDefenseHandler {
          return false;
       }
       player.getPersistentData().putLong(TAG_LI_PASSIVE_DODGE_COOLDOWN, now + 80L);
-      player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, true));
+      player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, false));
       player.getPersistentData().putLong(TAG_INVULN_UNTIL, now + 8L);
       Vec3 away = dodgeDirection(player, event.getSource());
       player.setDeltaMovement(away.x * 1.15, Math.max(player.getDeltaMovement().y, 0.08), away.z * 1.15);
       player.hurtMarked = true;
-      spawnDefenseFx(player, ParticleTypes.SMOKE, SoundEvents.PLAYER_ATTACK_SWEEP, 1.8F);
+      player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 1.8F);
       return true;
    }
 

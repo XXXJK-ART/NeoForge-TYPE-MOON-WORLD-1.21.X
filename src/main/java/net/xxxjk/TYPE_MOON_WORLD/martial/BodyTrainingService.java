@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -17,6 +18,7 @@ public final class BodyTrainingService {
    private static final ResourceLocation STRENGTH_ID = id("body_training_strength");
    private static final ResourceLocation SPEED_ID = id("body_training_speed");
    private static final ResourceLocation JUMP_ID = id("body_training_jump");
+   private static final String SNAPSHOT_STORED = "Stored";
 
    private BodyTrainingService() {}
 
@@ -106,13 +108,78 @@ public final class BodyTrainingService {
 
    public static void clear(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (player == null || vars == null) return;
+      clearValues(vars);
+      applyAttributes(player, vars);
+   }
+
+   public static void stashForServantCard(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null) return;
+      stashValues(vars);
+      applyAttributes(player, vars);
+   }
+
+   public static boolean restoreFromServantCard(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null || !restoreValues(vars)) return false;
+      applyAttributes(player, vars);
+      return true;
+   }
+
+   static void stashValues(TypeMoonWorldModVariables.PlayerVariables vars) {
+      CompoundTag saved = vars.servant_card_saved_body_training;
+      if (saved == null || !saved.getBoolean(SNAPSHOT_STORED)) {
+         vars.servant_card_saved_body_training = writeSnapshot(new BodyTrainingData(
+            vars.body_training_xp, vars.body_training_points, vars.body_strength,
+            vars.body_speed, vars.body_resistance, vars.body_technique
+         ));
+      }
+      clearValues(vars);
+   }
+
+   static boolean restoreValues(TypeMoonWorldModVariables.PlayerVariables vars) {
+      BodyTrainingData saved = readSnapshot(vars.servant_card_saved_body_training);
+      if (saved == null) return false;
+      vars.body_training_xp = saved.xp();
+      vars.body_strength = saved.strength();
+      vars.body_speed = saved.speed();
+      vars.body_resistance = saved.resistance();
+      vars.body_technique = saved.technique();
+      vars.body_training_points = saved.points();
+      vars.servant_card_saved_body_training = new CompoundTag();
+      return true;
+   }
+
+   static CompoundTag writeSnapshot(BodyTrainingData values) {
+      int strength = Mth.clamp(values.strength(), 0, MAX_STAT_POINTS);
+      int speed = Mth.clamp(values.speed(), 0, MAX_STAT_POINTS);
+      int resistance = Mth.clamp(values.resistance(), 0, MAX_STAT_POINTS);
+      int technique = Mth.clamp(values.technique(), 0, MAX_STAT_POINTS);
+      int allocated = strength + speed + resistance + technique;
+      CompoundTag saved = new CompoundTag();
+      saved.putBoolean(SNAPSHOT_STORED, true);
+      saved.putInt("Xp", Math.max(0, values.xp()));
+      saved.putInt("Points", Mth.clamp(values.points(), 0, Math.max(0, MAX_TOTAL_POINTS - allocated)));
+      saved.putInt("Strength", strength);
+      saved.putInt("Speed", speed);
+      saved.putInt("Resistance", resistance);
+      saved.putInt("Technique", technique);
+      return saved;
+   }
+
+   static BodyTrainingData readSnapshot(CompoundTag saved) {
+      if (saved == null || !saved.getBoolean(SNAPSHOT_STORED)) return null;
+      return new BodyTrainingData(
+         saved.getInt("Xp"), saved.getInt("Points"), saved.getInt("Strength"),
+         saved.getInt("Speed"), saved.getInt("Resistance"), saved.getInt("Technique")
+      ).normalized();
+   }
+
+   private static void clearValues(TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.body_training_xp = 0;
       vars.body_training_points = 0;
       vars.body_strength = 0;
       vars.body_speed = 0;
       vars.body_resistance = 0;
       vars.body_technique = 0;
-      applyAttributes(player, vars);
    }
 
    public static void applyAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -139,4 +206,19 @@ public final class BodyTrainingService {
 
    @FunctionalInterface private interface IntGetter { int get(); }
    @FunctionalInterface private interface IntSetter { void set(int value); }
+
+   record BodyTrainingData(int xp, int points, int strength, int speed, int resistance, int technique) {
+      BodyTrainingData normalized() {
+         int normalizedStrength = Mth.clamp(this.strength, 0, MAX_STAT_POINTS);
+         int normalizedSpeed = Mth.clamp(this.speed, 0, MAX_STAT_POINTS);
+         int normalizedResistance = Mth.clamp(this.resistance, 0, MAX_STAT_POINTS);
+         int normalizedTechnique = Mth.clamp(this.technique, 0, MAX_STAT_POINTS);
+         int allocated = normalizedStrength + normalizedSpeed + normalizedResistance + normalizedTechnique;
+         return new BodyTrainingData(
+            Math.max(0, this.xp),
+            Mth.clamp(this.points, 0, Math.max(0, MAX_TOTAL_POINTS - allocated)),
+            normalizedStrength, normalizedSpeed, normalizedResistance, normalizedTechnique
+         );
+      }
+   }
 }

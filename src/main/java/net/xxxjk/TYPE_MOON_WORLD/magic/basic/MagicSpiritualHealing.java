@@ -71,6 +71,7 @@ public final class MagicSpiritualHealing {
          heal = Math.max(2, heal / 2);
       }
       target.heal(heal);
+      net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       int removed = cleanseSpiritualEffects(target, proficiency);
       spawnHealingParticles(target, proficiency);
       target.level().playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.8F, 1.65F);
@@ -92,6 +93,7 @@ public final class MagicSpiritualHealing {
          heal = Math.max(2, heal / 2);
       }
       target.heal(heal);
+      net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       cleanseSpiritualEffects(target, clamped);
       spawnHealingParticles(target, clamped);
       return true;

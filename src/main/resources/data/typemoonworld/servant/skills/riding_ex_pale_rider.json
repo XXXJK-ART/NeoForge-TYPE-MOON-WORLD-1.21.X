@@ -1,0 +1,12 @@
+{
+  "id": "riding_ex_pale_rider",
+  "display_name": "Riding EX",
+  "display_name_zh": "骑乘 EX",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [],
+  "description": "Possesses ordinary non-player creatures and controls their movement without a time limit.",
+  "description_zh": "可无时限附身普通非玩家生物并操纵其移动。"
+}

@@ -29,7 +29,6 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -62,7 +61,7 @@ public class MagicProjection {
                return;
             }
 
-            if (target.getItem() instanceof AvalonItem) {
+            if (MagicStructuralAnalysis.isDivineConstruct(target)) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.projection.cannot_project_divine"), true);
                return;
             }

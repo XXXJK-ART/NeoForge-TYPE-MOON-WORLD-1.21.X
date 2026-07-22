@@ -175,6 +175,8 @@ public class TypeMoonWorldModVariables {
          clone.body_speed = original.body_speed;
          clone.body_resistance = original.body_resistance;
          clone.body_technique = original.body_technique;
+         clone.servant_card_saved_body_training = original.servant_card_saved_body_training == null
+            ? new CompoundTag() : original.servant_card_saved_body_training.copy();
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
          clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
@@ -330,6 +332,9 @@ public class TypeMoonWorldModVariables {
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
+         if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player) {
+            BodyTrainingService.restoreFromServantCard(player, clone);
+         }
       }
    }
 
@@ -662,6 +667,7 @@ public class TypeMoonWorldModVariables {
       public long servant_card_np_cooldown_end = 0L;
       public CompoundTag servant_card_saved_armor = new CompoundTag();
       public CompoundTag servant_card_saved_hands = new CompoundTag();
+      public CompoundTag servant_card_saved_body_training = new CompoundTag();
       public boolean servant_card_flying = false;
       public int servant_card_flight_mode = 0;
       public long servant_card_high_flight_until = 0L;
@@ -1688,6 +1694,8 @@ public class TypeMoonWorldModVariables {
          nbt.putLong("servant_card_np_cooldown_end", this.servant_card_np_cooldown_end);
          nbt.put("servant_card_saved_armor", this.servant_card_saved_armor == null ? new CompoundTag() : this.servant_card_saved_armor.copy());
          nbt.put("servant_card_saved_hands", this.servant_card_saved_hands == null ? new CompoundTag() : this.servant_card_saved_hands.copy());
+         nbt.put("servant_card_saved_body_training", this.servant_card_saved_body_training == null
+            ? new CompoundTag() : this.servant_card_saved_body_training.copy());
          nbt.putBoolean("servant_card_flying", this.servant_card_flying);
          nbt.putInt("servant_card_flight_mode", this.servant_card_flight_mode);
          nbt.putLong("servant_card_high_flight_until", this.servant_card_high_flight_until);
@@ -2021,6 +2029,8 @@ public class TypeMoonWorldModVariables {
          this.servant_card_np_cooldown_end = nbt.contains("servant_card_np_cooldown_end") ? nbt.getLong("servant_card_np_cooldown_end") : 0L;
          this.servant_card_saved_armor = nbt.contains("servant_card_saved_armor", 10) ? nbt.getCompound("servant_card_saved_armor").copy() : new CompoundTag();
          this.servant_card_saved_hands = nbt.contains("servant_card_saved_hands", 10) ? nbt.getCompound("servant_card_saved_hands").copy() : new CompoundTag();
+         this.servant_card_saved_body_training = nbt.contains("servant_card_saved_body_training", 10)
+            ? nbt.getCompound("servant_card_saved_body_training").copy() : new CompoundTag();
          this.servant_card_flying = nbt.getBoolean("servant_card_flying");
          this.servant_card_flight_mode = nbt.contains("servant_card_flight_mode") ? nbt.getInt("servant_card_flight_mode") : (this.servant_card_flying ? 1 : 0);
          this.servant_card_high_flight_until = nbt.contains("servant_card_high_flight_until") ? nbt.getLong("servant_card_high_flight_until") : 0L;

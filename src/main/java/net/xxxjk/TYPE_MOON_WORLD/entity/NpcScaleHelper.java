@@ -6,6 +6,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public final class NpcScaleHelper {
+   public static final double DEFAULT_RANDOM_SCALE = 0.85;
    private static final String TAG_RANDOM_SCALE_INITIALIZED = "TypeMoonNpcRandomScaleV1";
    private static final String TAG_FIXED_SCALE_INITIALIZED = "TypeMoonNpcFixedScaleV1";
    private static final double MIN_RANDOM_SCALE = 0.7;

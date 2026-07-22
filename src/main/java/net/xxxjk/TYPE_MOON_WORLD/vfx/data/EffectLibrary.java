@@ -243,7 +243,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       }
       for (JsonElement element : array) {
          JsonObject json = GsonHelper.convertToJsonObject(element, "environment");
-         requireOnly(json, "type", "color", "start", "end", "fade_in", "fade_out", "intensity");
+         requireOnly(json, "type", "color", "start", "end", "fade_in", "fade_out", "intensity", "radius");
          String type = GsonHelper.getAsString(json, "type", "screen_tint");
          float start = Mth.clamp(GsonHelper.getAsFloat(json, "start", 0.0F), 0.0F, effectDuration);
          float end = Mth.clamp(GsonHelper.getAsFloat(json, "end", effectDuration), start, effectDuration);
@@ -255,7 +255,8 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
                end,
                Math.max(0.0F, GsonHelper.getAsFloat(json, "fade_in", 0.15F)),
                Math.max(0.0F, GsonHelper.getAsFloat(json, "fade_out", 0.25F)),
-               Mth.clamp(GsonHelper.getAsFloat(json, "intensity", 1.0F), 0.0F, 1.0F)
+               Mth.clamp(GsonHelper.getAsFloat(json, "intensity", 1.0F), 0.0F, 1.0F),
+               Math.max(0.0F, GsonHelper.getAsFloat(json, "radius", 0.0F))
             )
          );
       }

@@ -1737,6 +1737,21 @@
     "adv.typemoonworld.ganryu_souwa_perfect.title": "宗和的心得",
     "adv.typemoonworld.ganryu_souwa_perfect.desc": "岩流熟练度达到100%",
     "death.attack.ganryu_tsubame": "%1$s倒在了燕返之下",
-    "death.attack.ganryu_tsubame.player": "%1$s被%2$s的燕返斩杀"
+    "death.attack.ganryu_tsubame.player": "%1$s被%2$s的燕返斩杀",
+    "entity.typemoonworld.pale_rider": "苍白骑士",
+    "entity.typemoonworld.rat_swarm": "老鼠群",
+    "entity.typemoonworld.soul_echo": "显现的黑魂",
+    "entity.typemoonworld.apocalypse_horseman": "天启骑士",
+    "entity.typemoonworld.apocalypse_horse": "天启骷髅马",
+    "entity.typemoonworld.concept_sword": "概念剑",
+    "item.typemoonworld.pale_rider_spawn_egg": "苍白骑士刷怪蛋",
+    "effect.typemoonworld.pale_rider_infection": "感染",
+    "effect.typemoonworld.pale_rider_fear": "恐惧",
+    "death.attack.pale_rider_infection": "%1$s死于苍白骑士的瘟疫",
+    "death.attack.pale_rider_rat_bite": "%1$s被鼠群吞噬",
+    "death.attack.pale_rider_famine": "%1$s在苍白骑士的领域中饥竭而死",
+    "death.attack.pale_rider_concept_sword": "%1$s被概念剑贯穿",
+    "death.attack.pale_rider_concept_death": "%1$s被死亡的概念抹除",
+    "message.typemoonworld.pale_rider.contract": "苍白骑士沉默地接受了契约。"
 }
 

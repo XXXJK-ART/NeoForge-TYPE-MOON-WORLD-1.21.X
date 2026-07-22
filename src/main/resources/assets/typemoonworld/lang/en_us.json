@@ -1573,5 +1573,20 @@
     "adv.typemoonworld.ganryu_souwa_perfect.title": "Souwa Expertise",
     "adv.typemoonworld.ganryu_souwa_perfect.desc": "Reach 100% Ganryu proficiency",
     "death.attack.ganryu_tsubame": "%1$s was cut down by Tsubame Gaeshi",
-    "death.attack.ganryu_tsubame.player": "%1$s was cut down by %2$s's Tsubame Gaeshi"
+    "death.attack.ganryu_tsubame.player": "%1$s was cut down by %2$s's Tsubame Gaeshi",
+    "entity.typemoonworld.pale_rider": "Pale Rider",
+    "entity.typemoonworld.rat_swarm": "Rat Swarm",
+    "entity.typemoonworld.soul_echo": "Manifested Soul",
+    "entity.typemoonworld.apocalypse_horseman": "Apocalypse Horseman",
+    "entity.typemoonworld.apocalypse_horse": "Apocalypse Horse",
+    "entity.typemoonworld.concept_sword": "Concept Sword",
+    "item.typemoonworld.pale_rider_spawn_egg": "Pale Rider Spawn Egg",
+    "effect.typemoonworld.pale_rider_infection": "Infection",
+    "effect.typemoonworld.pale_rider_fear": "Fear",
+    "death.attack.pale_rider_infection": "%1$s succumbed to Pale Rider's plague",
+    "death.attack.pale_rider_rat_bite": "%1$s was devoured by the rat swarm",
+    "death.attack.pale_rider_famine": "%1$s starved in Pale Rider's domain",
+    "death.attack.pale_rider_concept_sword": "%1$s was pierced by a conceptual sword",
+    "death.attack.pale_rider_concept_death": "%1$s was erased by Death",
+    "message.typemoonworld.pale_rider.contract": "Pale Rider silently accepts the contract."
 }

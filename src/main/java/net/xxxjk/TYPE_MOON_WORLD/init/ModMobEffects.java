@@ -16,6 +16,8 @@ import net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.SuggestionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.ReverseMovementEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.MartialControlEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.PaleRiderFearEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.PaleRiderInfectionEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
@@ -39,6 +41,12 @@ public class ModMobEffects {
    );
    public static final DeferredHolder<MobEffect, MobEffect> OFF_BALANCE = MOB_EFFECTS.register(
       "off_balance", () -> new MartialControlEffect(MobEffectCategory.HARMFUL, 0x6F8F62, false)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> PALE_RIDER_INFECTION = MOB_EFFECTS.register(
+      "pale_rider_infection", PaleRiderInfectionEffect::new
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> PALE_RIDER_FEAR = MOB_EFFECTS.register(
+      "pale_rider_fear", PaleRiderFearEffect::new
    );
    public static final DeferredHolder<MobEffect, MobEffect> REINFORCEMENT_SELF_STRENGTH = MOB_EFFECTS.register(
       "reinforcement_self_strength",
