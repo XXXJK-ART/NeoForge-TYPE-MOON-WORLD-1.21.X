@@ -10,6 +10,7 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
@@ -64,16 +65,17 @@ public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
             this.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.15);
          }
       }
-      level.sendParticles(new DustParticleOptions(new Vector3f(0.15F, 0.55F, 1.0F), 1.2F),
-         this.getX(), this.getY() + 0.2, this.getZ(), 8, 0.55, 0.15, 0.55, 0.02);
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + 0.2, this.getZ(), 4, 0.45, 0.08, 0.45, 0.01);
+      if (this.tickCount % 4 == Math.floorMod(this.getId(), 4)) {
+         level.sendParticles(new DustParticleOptions(new Vector3f(0.15F, 0.55F, 1.0F), 1.2F),
+            this.getX(), this.getY() + 0.2, this.getZ(), 8, 0.55, 0.15, 0.55, 0.02);
+         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + 0.2, this.getZ(), 4, 0.45, 0.08, 0.45, 0.01);
+      }
    }
 
    private void tickCardFormation(ServerPlayer player) {
       if (this.getFirstPassenger() == player) {
          this.setNoAi(true);
          this.getNavigation().stop();
-         this.applyPlayerInput(player);
          return;
       }
       if (!(this.getFirstPassenger() instanceof ApocalypseHorsemanEntity horseman)) return;
@@ -111,25 +113,34 @@ public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
       }
    }
 
-   private void applyPlayerInput(ServerPlayer player) {
-      float forwardInput = player.zza;
-      float strafeInput = player.xxa;
+   @Override
+   public LivingEntity getControllingPassenger() {
+      return this.getFirstPassenger() instanceof Player player ? player : super.getControllingPassenger();
+   }
+
+   @Override
+   protected Vec3 getRiddenInput(Player player, Vec3 travelVector) {
+      float strafe = player.xxa * 0.5F;
+      float forward = player.zza;
+      if (forward < 0.0F) forward *= 0.25F;
+      return new Vec3(strafe, 0.0, forward);
+   }
+
+   @Override
+   protected float getRiddenSpeed(Player player) {
+      return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED);
+   }
+
+   @Override
+   protected void tickRidden(Player player, Vec3 travelVector) {
+      super.tickRidden(player, travelVector);
       this.setYRot(player.getYRot());
-      this.yBodyRot = this.getYRot();
-      if (Math.abs(forwardInput) < 0.01F && Math.abs(strafeInput) < 0.01F) {
-         double vertical = ((LivingEntityInputAccessor)player).typemoonworld$isJumping() && this.onGround() ? 0.42 : this.getDeltaMovement().y;
-         this.setDeltaMovement(this.getDeltaMovement().x * 0.35, vertical, this.getDeltaMovement().z * 0.35);
-         return;
+      this.setXRot(player.getXRot() * 0.5F);
+      this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+      if (this.isControlledByLocalInstance() && this.onGround()
+         && ((LivingEntityInputAccessor)player).typemoonworld$isJumping()) {
+         this.jumpFromGround();
       }
-      double angle = Math.toRadians(player.getYRot());
-      Vec3 forward = new Vec3(-Math.sin(angle), 0.0, Math.cos(angle));
-      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
-      Vec3 movement = forward.scale(forwardInput).add(right.scale(strafeInput));
-      if (movement.lengthSqr() > 1.0) movement = movement.normalize();
-      double speed = forwardInput < 0.0F ? 0.22 : 0.4;
-      double vertical = ((LivingEntityInputAccessor)player).typemoonworld$isJumping() && this.onGround() ? 0.42 : this.getDeltaMovement().y;
-      this.setDeltaMovement(movement.x * speed, vertical, movement.z * speed);
-      this.hasImpulse = true;
    }
 
    private static Vec3 cardFormationDestination(LivingEntity leader, ApocalypseHorsemanEntity horseman) {

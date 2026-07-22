@@ -31,6 +31,7 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
    private static final EntityDataAccessor<Boolean> DOMAIN_SPAWNED = SynchedEntityData.defineId(RatSwarmEntity.class, EntityDataSerializers.BOOLEAN);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private long lastBiteTick;
+   private long nextTargetScanTick;
 
    public RatSwarmEntity(EntityType<? extends RatSwarmEntity> type, Level level) {
       super(type, level);
@@ -83,7 +84,8 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
          }
       }
       this.syncCasualties();
-      if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())) {
+      if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())
+         || net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(this.getTarget())) {
          this.setTarget(findEnemy(owner, 48.0));
       }
       if (this.tickCount % 10 == Math.floorMod(this.getId(), 10)) {
@@ -121,6 +123,11 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
 
    private LivingEntity findEnemy(LivingEntity owner, double radius) {
       if (owner instanceof PaleRiderEntity rider) return rider.findPaleRiderEnemy(radius);
+      long now = this.level().getGameTime();
+      if (now < this.nextTargetScanTick) {
+         return null;
+      }
+      this.nextTargetScanTick = now + 10L + Math.floorMod(this.getId(), 5);
       return this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius),
          target -> target != this && target != owner && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(owner, target)

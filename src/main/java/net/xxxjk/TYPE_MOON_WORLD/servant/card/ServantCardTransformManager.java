@@ -673,6 +673,12 @@ public final class ServantCardTransformManager {
    }
 
    private static void equipArmor(ServerPlayer player, String servantId) {
+      if ("pale_rider".equals(servantId)) {
+         for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) player.setItemSlot(slot, ItemStack.EMPTY);
+         }
+         return;
+      }
       if ("medea".equals(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.HEAD)), false, false));
          player.setItemSlot(EquipmentSlot.CHEST, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.CHEST)), false, false));

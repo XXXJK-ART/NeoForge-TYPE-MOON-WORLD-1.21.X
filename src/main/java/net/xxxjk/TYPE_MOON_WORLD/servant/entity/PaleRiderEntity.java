@@ -71,7 +71,8 @@ public final class PaleRiderEntity extends ServantEntity {
          this.discard();
          return;
       }
-      if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()) {
+      if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()
+         && this.tickCount % 4 == Math.floorMod(this.getId(), 4)) {
          level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 0.9, this.getZ(), 7, 0.28, 0.85, 0.28, 0.015);
          level.sendParticles(new DustParticleOptions(new Vector3f(0.025F, 0.025F, 0.03F), 1.5F),
             this.getX(), this.getY() + 0.9, this.getZ(), 8, 0.3, 0.9, 0.3, 0.01);

@@ -370,11 +370,11 @@ public final class PaleRiderCombatHelper {
       rider.getPersistentData().remove(TAG_CALAMITY_ACTIVE);
       PaleRiderCorruptionService.end(rider);
       rider.getPersistentData().remove(TAG_LAST_DEATH_JUDGMENT);
-      for (ApocalypseHorsemanEntity horseman : level.getEntitiesOfClass(ApocalypseHorsemanEntity.class, rider.getBoundingBox().inflate(160.0),
+      for (ApocalypseHorsemanEntity horseman : PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorsemanEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && !entity.isPaleRiderProxy())) horseman.discard();
-      for (RatSwarmEntity rats : level.getEntitiesOfClass(RatSwarmEntity.class, rider.getBoundingBox().inflate(160.0),
+      for (RatSwarmEntity rats : PaleRiderEntityIndex.owned(level, rider.getUUID(), RatSwarmEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && entity.isDomainSpawned())) rats.discard();
-      for (PaleRiderCrowEntity crow : level.getEntitiesOfClass(PaleRiderCrowEntity.class, rider.getBoundingBox().inflate(160.0),
+      for (PaleRiderCrowEntity crow : PaleRiderEntityIndex.owned(level, rider.getUUID(), PaleRiderCrowEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && entity.isDomainSpawned())) crow.discard();
       VFXServerEffects.spawn(level, "pale_rider_calamity_end", rider, 40.0);
    }
@@ -382,14 +382,14 @@ public final class PaleRiderCombatHelper {
    private static void tickMounts(PaleRiderEntity rider, ServerLevel level, long now) {
       if (!rider.hasAnyDomain()) {
          if (rider.getVehicle() instanceof ApocalypseHorseEntity) rider.stopRiding();
-         for (ApocalypseHorseEntity horse : level.getEntitiesOfClass(ApocalypseHorseEntity.class, rider.getBoundingBox().inflate(160.0),
+         for (ApocalypseHorseEntity horse : PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorseEntity.class,
             entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()))) horse.discard();
          return;
       }
-      for (ApocalypseHorseEntity horse : level.getEntitiesOfClass(ApocalypseHorseEntity.class, rider.getBoundingBox().inflate(160.0),
+      for (ApocalypseHorseEntity horse : PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorseEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && entity.getPassengers().isEmpty())) horse.discard();
       if (rider.hasPossessedHost()) {
-         ApocalypseHorsemanEntity proxy = level.getEntitiesOfClass(ApocalypseHorsemanEntity.class, rider.getBoundingBox().inflate(160.0),
+         ApocalypseHorsemanEntity proxy = PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorsemanEntity.class,
             entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && entity.isPaleRiderProxy()).stream().findFirst().orElse(null);
          if (proxy == null) {
             proxy = ModEntities.APOCALYPSE_HORSEMAN.get().create(level);
@@ -402,16 +402,16 @@ public final class PaleRiderCombatHelper {
          }
          if (proxy != null) ensureHorse(rider, proxy, level, now);
       } else {
-         for (ApocalypseHorsemanEntity proxy : level.getEntitiesOfClass(ApocalypseHorsemanEntity.class, rider.getBoundingBox().inflate(160.0),
+         for (ApocalypseHorsemanEntity proxy : PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorsemanEntity.class,
             entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && entity.isPaleRiderProxy())) proxy.discard();
          ensureHorse(rider, rider, level, now);
       }
-      for (ApocalypseHorsemanEntity horseman : level.getEntitiesOfClass(ApocalypseHorsemanEntity.class, rider.getBoundingBox().inflate(160.0),
+      for (ApocalypseHorsemanEntity horseman : PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorsemanEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()))) ensureHorse(rider, horseman, level, now);
    }
 
    private static void ensureCalamityHorsemen(PaleRiderEntity rider, ServerLevel level) {
-      List<ApocalypseHorsemanEntity> existing = level.getEntitiesOfClass(ApocalypseHorsemanEntity.class, rider.getBoundingBox().inflate(160.0),
+      List<ApocalypseHorsemanEntity> existing = PaleRiderEntityIndex.owned(level, rider.getUUID(), ApocalypseHorsemanEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()) && !entity.isPaleRiderProxy());
       for (ApocalypseHorsemanEntity.Calamity calamity : ApocalypseHorsemanEntity.Calamity.values()) {
          List<ApocalypseHorsemanEntity> matching = existing.stream().filter(entity -> entity.getCalamity() == calamity).toList();
@@ -481,8 +481,7 @@ public final class PaleRiderCombatHelper {
    }
 
    private static int countOwnedCrows(ServerLevel level, PaleRiderEntity rider) {
-      return level.getEntitiesOfClass(PaleRiderCrowEntity.class,
-         new AABB(-3.0E7, level.getMinBuildHeight(), -3.0E7, 3.0E7, level.getMaxBuildHeight(), 3.0E7),
+      return PaleRiderEntityIndex.owned(level, rider.getUUID(), PaleRiderCrowEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid())).size();
    }
 
@@ -498,6 +497,15 @@ public final class PaleRiderCombatHelper {
       long now = target.level().getGameTime();
       cleanupPenalty(target, FEAR_ATTACK_ID, now);
       cleanupPenalty(target, FAMINE_ATTACK_ID, now);
+   }
+
+   public static boolean hasExpiredPenaltyMarkers(LivingEntity target) {
+      if (target == null) {
+         return false;
+      }
+      CompoundTag data = target.getPersistentData();
+      return data.contains("PaleRiderPenaltyUntil_" + FEAR_ATTACK_ID.getPath())
+         || data.contains("PaleRiderPenaltyUntil_" + FAMINE_ATTACK_ID.getPath());
    }
 
    private static void cleanupPenalty(LivingEntity target, net.minecraft.resources.ResourceLocation id, long now) {
@@ -526,9 +534,9 @@ public final class PaleRiderCombatHelper {
       rider.endPossession();
       if (!(rider.level() instanceof ServerLevel level)) return;
       if (returnSouls) rider.returnAllLivingSouls();
-      for (OwnedPaleRiderMob owned : level.getEntitiesOfClass(OwnedPaleRiderMob.class, rider.getBoundingBox().inflate(192.0),
+      for (OwnedPaleRiderMob owned : PaleRiderEntityIndex.owned(level, rider.getUUID(), OwnedPaleRiderMob.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()))) owned.discard();
-      for (PaleRiderCrowEntity crow : level.getEntitiesOfClass(PaleRiderCrowEntity.class, rider.getBoundingBox().inflate(192.0),
+      for (PaleRiderCrowEntity crow : PaleRiderEntityIndex.owned(level, rider.getUUID(), PaleRiderCrowEntity.class,
          entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid()))) crow.discard();
       rider.getPersistentData().remove(TAG_UNDERWORLD_UNTIL);
       rider.getPersistentData().remove(TAG_UNDERWORLD_ACTIVE);
@@ -555,8 +563,7 @@ public final class PaleRiderCombatHelper {
    }
 
    private static <T extends OwnedPaleRiderMob> int countOwned(ServerLevel level, PaleRiderEntity rider, Class<T> type) {
-      return level.getEntitiesOfClass(type, new AABB(-3.0E7, level.getMinBuildHeight(), -3.0E7, 3.0E7, level.getMaxBuildHeight(), 3.0E7),
-         entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid())).size();
+      return PaleRiderEntityIndex.owned(level, rider.getUUID(), type, entity -> rider.getUUID().equals(entity.getPaleRiderOwnerUuid())).size();
    }
 
    private static void spawnDomainShell(ServerLevel level, Vec3 center, double radius, boolean inner) {

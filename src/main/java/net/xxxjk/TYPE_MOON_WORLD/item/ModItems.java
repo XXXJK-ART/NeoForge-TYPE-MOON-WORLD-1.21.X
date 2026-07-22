@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.item;
 
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -899,6 +900,7 @@ public class ModItems {
         boolean head = slot == net.minecraft.world.entity.EquipmentSlot.HEAD;
         boolean legs = slot == net.minecraft.world.entity.EquipmentSlot.LEGS;
         return switch (servantId == null ? "" : servantId) {
+            case "pale_rider" -> Items.AIR;
             case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
             case "artoria_pendragon" -> (legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
             case "sasaki_kojiro" -> (legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();

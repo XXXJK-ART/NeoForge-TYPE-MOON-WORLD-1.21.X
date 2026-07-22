@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,11 +30,16 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderEntityIndex;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.RatSwarmRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.SoulLibrary;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.SoulSnapshot;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -46,6 +53,7 @@ public final class ServantCardPaleRiderSkills {
    public static final String UNDERWORLD_TAG = "PaleRiderCardUnderworldActive";
    public static final String CALAMITY_TAG = "PaleRiderCardCalamityActive";
    public static final String DOMAIN_PROXY_TAG = "PaleRiderCardDomainProxyUuid";
+   private static final String SOUL_LIBRARY_TAG = "PaleRiderCardSoulLibrary";
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
    private static final int MAX_CONTROLLED = 128;
 
@@ -69,6 +77,7 @@ public final class ServantCardPaleRiderSkills {
       removeLegacyProxy(player);
       releasePossession(player);
       if (player.level() instanceof ServerLevel level) {
+         returnAllLivingSouls(player, level);
          for (LivingEntity entity : controlled(level, player.getUUID())) {
             if (entity instanceof OwnedPaleRiderMob || entity instanceof PaleRiderCrowEntity) entity.discard();
             else PaleRiderInfectionService.cleanse(entity, false);
@@ -110,9 +119,17 @@ public final class ServantCardPaleRiderSkills {
       }
 
       if (player.level() instanceof ServerLevel level) {
-         if (isUnderworldActive(player) && player.tickCount % 80 == 0) VFXServerEffects.spawn(level, "pale_rider_underworld_sustain", player, 64.0);
-         if (isCalamityActive(player)) tickCalamity(player, vars, level);
          tickDomainMounts(player, level);
+         LivingEntity domainAnchor = getDomainAnchor(player);
+         if (domainAnchor != null) {
+            if (isUnderworldActive(player) && player.tickCount % 80 == 0) {
+               VFXServerEffects.spawn(level, "pale_rider_underworld_sustain", domainAnchor, 64.0);
+            }
+            if (isCalamityActive(player)) {
+               tickCalamity(player, vars, level, domainAnchor);
+               if (player.tickCount % 80 == 0) VFXServerEffects.spawn(level, "pale_rider_calamity_sustain", domainAnchor, 40.0);
+            }
+         }
          if (player.tickCount % 20 == 0) {
             PacketDistributor.sendToPlayer(player, new PaleRiderStateMessage(countControlled(level, player.getUUID()), host != null,
                isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG)), new CustomPacketPayload[0]);
@@ -286,16 +303,26 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean toggleUnderworld(ServerPlayer player) {
+      LivingEntity previousAnchor = getDomainAnchor(player);
+      Vec3 previousOrigin = previousAnchor == null ? player.position() : previousAnchor.position();
       boolean active = !isUnderworldActive(player);
       player.getPersistentData().putBoolean(UNDERWORLD_TAG, active);
       if (player.level() instanceof ServerLevel level) {
+         if (!active) returnAllLivingSouls(player, level);
          tickDomainMounts(player, level);
-         VFXServerEffects.spawn(level, active ? "pale_rider_underworld_open" : "pale_rider_underworld_end", player, 64.0);
+         LivingEntity anchor = getDomainAnchor(player);
+         if (active && anchor != null) {
+            manifestStoredSouls(player, level, anchor);
+            VFXServerEffects.spawn(level, "pale_rider_underworld_open", anchor, 64.0);
+         }
+         else VFXServerEffects.spawn(level, "pale_rider_underworld_end", previousOrigin, 64.0);
       }
       return true;
    }
 
    public static boolean toggleCalamity(ServerPlayer player) {
+      LivingEntity previousAnchor = getDomainAnchor(player);
+      Vec3 previousOrigin = previousAnchor == null ? player.position() : previousAnchor.position();
       boolean active = !isCalamityActive(player);
       player.getPersistentData().putBoolean(CALAMITY_TAG, active);
       if (player.level() instanceof ServerLevel level) {
@@ -306,7 +333,9 @@ public final class ServantCardPaleRiderSkills {
             cleanupCalamityHorsemen(player, level);
          }
          tickDomainMounts(player, level);
-         VFXServerEffects.spawn(level, active ? "pale_rider_calamity_open" : "pale_rider_calamity_end", player, 40.0);
+         LivingEntity anchor = getDomainAnchor(player);
+         if (active && anchor != null) VFXServerEffects.spawn(level, "pale_rider_calamity_open", anchor, 40.0);
+         else VFXServerEffects.spawn(level, "pale_rider_calamity_end", previousOrigin, 40.0);
       }
       return true;
    }
@@ -319,6 +348,45 @@ public final class ServantCardPaleRiderSkills {
       return player.level() instanceof ServerLevel level ? controlled(level, player.getUUID()).stream().filter(Mob.class::isInstance).map(Mob.class::cast).toList() : List.of();
    }
 
+   public static boolean captureSoul(ServerPlayer player, LivingEntity defeated) {
+      if (!PaleRiderInfectionService.isPaleRiderCardPlayer(player) || defeated == null || defeated == player
+         || defeated instanceof OwnedPaleRiderMob || defeated instanceof PaleRiderCrowEntity
+         || defeated instanceof net.minecraft.world.entity.decoration.ArmorStand
+         || ServantIdentityHelper.isServantLike(defeated)) return false;
+      SoulLibrary library = loadSoulLibrary(player);
+      boolean added = library.add(SoulSnapshot.capture(defeated));
+      if (added) saveSoulLibrary(player, library);
+      return added;
+   }
+
+   public static void returnManifestedSoul(ServerPlayer player, SoulEchoEntity echo) {
+      if (echo == null || echo.getSnapshot() == null) return;
+      SoulLibrary library = loadSoulLibrary(player);
+      if (library.add(echo.getSnapshot())) saveSoulLibrary(player, library);
+   }
+
+   public static void returnAllLivingSouls(ServerPlayer player, ServerLevel level) {
+      List<SoulEchoEntity> echoes = ownedSoulEchoes(player, level);
+      if (echoes.isEmpty()) return;
+      SoulLibrary library = loadSoulLibrary(player);
+      boolean changed = false;
+      for (SoulEchoEntity echo : echoes) {
+         if (echo.isAlive() && echo.getSnapshot() != null) changed |= library.add(echo.getSnapshot());
+         echo.discard();
+      }
+      if (changed) saveSoulLibrary(player, library);
+   }
+
+   public static LivingEntity findSoulEchoTarget(ServerPlayer player, SoulEchoEntity echo) {
+      if (!(player.level() instanceof ServerLevel level)) return null;
+      LivingEntity anchor = getDomainAnchor(player);
+      if (anchor == null) return null;
+      return level.getEntitiesOfClass(LivingEntity.class, anchor.getBoundingBox().inflate(50.0), target -> target != player
+         && target != echo && target.isAlive() && !PaleRiderInfectionService.arePaleRiderAllies(player, target)
+         && !EntityUtils.isImmunePlayerTarget(target)).stream()
+         .min((left, right) -> Double.compare(left.distanceToSqr(echo), right.distanceToSqr(echo))).orElse(null);
+   }
+
    private static void tickPerfectConcealment(ServerPlayer player) {
       if (!player.getPersistentData().getBoolean(STEALTH_TAG)) return;
       if (player.getPersistentData().getLong(STEALTH_UNTIL_TAG) > player.level().getGameTime()) return;
@@ -326,8 +394,47 @@ public final class ServantCardPaleRiderSkills {
       player.getPersistentData().remove(STEALTH_UNTIL_TAG);
    }
 
-   private static void tickCalamity(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServerLevel level) {
-      PaleRiderCorruptionService.tickDomain(player, level);
+   private static void manifestStoredSouls(ServerPlayer player, ServerLevel level, LivingEntity anchor) {
+      int slots = Math.max(0, 50 - ownedSoulEchoes(player, level).size());
+      SoulLibrary library = loadSoulLibrary(player);
+      List<SoulSnapshot> souls = library.takeStrongest(slots);
+      int index = 0;
+      for (SoulSnapshot soul : souls) {
+         SoulEchoEntity echo = ModEntities.SOUL_ECHO.get().create(level);
+         if (echo == null) {
+            library.add(soul);
+            continue;
+         }
+         double angle = Math.PI * 2.0 * index++ / Math.max(1, souls.size());
+         double radius = 4.0 + (index % 5) * 1.4;
+         echo.moveTo(anchor.getX() + Math.cos(angle) * radius, anchor.getY(), anchor.getZ() + Math.sin(angle) * radius, anchor.getYRot(), 0.0F);
+         echo.setPaleRiderOwner(player);
+         echo.applySnapshot(soul);
+         if (!level.addFreshEntity(echo)) library.add(soul);
+      }
+      saveSoulLibrary(player, library);
+   }
+
+   private static SoulLibrary loadSoulLibrary(ServerPlayer player) {
+      CompoundTag persisted = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+      SoulLibrary library = new SoulLibrary();
+      if (persisted.contains(SOUL_LIBRARY_TAG, Tag.TAG_COMPOUND)) library.load(persisted.getCompound(SOUL_LIBRARY_TAG));
+      return library;
+   }
+
+   private static void saveSoulLibrary(ServerPlayer player, SoulLibrary library) {
+      CompoundTag persisted = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+      persisted.put(SOUL_LIBRARY_TAG, library.save());
+      player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persisted);
+   }
+
+   private static List<SoulEchoEntity> ownedSoulEchoes(ServerPlayer player, ServerLevel level) {
+      return PaleRiderEntityIndex.owned(level, player.getUUID(), SoulEchoEntity.class,
+         echo -> player.getUUID().equals(echo.getPaleRiderOwnerUuid()));
+   }
+
+   private static void tickCalamity(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServerLevel level, LivingEntity domainAnchor) {
+      PaleRiderCorruptionService.tickDomain(player, domainAnchor, level);
       long now = level.getGameTime();
       if (now - player.getPersistentData().getLong(LAST_CALAMITY_TICK_TAG) < 20L) return;
       player.getPersistentData().putLong(LAST_CALAMITY_TICK_TAG, now);
@@ -336,15 +443,19 @@ public final class ServantCardPaleRiderSkills {
          return;
       }
       vars.servant_card_mana -= 10.0;
-      List<LivingEntity> enemies = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(25.0),
-         target -> target != player && target.isAlive() && !PaleRiderInfectionService.arePaleRiderAllies(player, target) && !EntityUtils.isImmunePlayerTarget(target));
+      List<LivingEntity> enemies = level.getEntitiesOfClass(LivingEntity.class, domainAnchor.getBoundingBox().inflate(25.0),
+         target -> target != player && target != domainAnchor && target.isAlive()
+            && !PaleRiderInfectionService.arePaleRiderAllies(player, target) && !EntityUtils.isImmunePlayerTarget(target));
       for (LivingEntity enemy : enemies) {
          enemy.hurt(player.damageSources().source(PaleRiderDamageTypes.FAMINE, player), 5.0F);
          PaleRiderInfectionService.infect(enemy, player, 1);
       }
       if (!enemies.isEmpty() && now % 40L == 0L) {
          LivingEntity target = enemies.get(player.getRandom().nextInt(enemies.size()));
-         level.addFreshEntity(new ConceptSwordEntity(level, player, target, 35.0F));
+         ConceptSwordEntity sword = new ConceptSwordEntity(level, player, target, 35.0F);
+         sword.setPos(domainAnchor.getX(), domainAnchor.getY() + 2.5, domainAnchor.getZ());
+         sword.shoot(target.getX() - sword.getX(), target.getY() + target.getBbHeight() * 0.5 - sword.getY(), target.getZ() - sword.getZ(), 1.6F, 1.5F);
+         level.addFreshEntity(sword);
       }
    }
 
@@ -378,11 +489,14 @@ public final class ServantCardPaleRiderSkills {
       proxy.moveTo(player.getX() + 2.0, player.getY(), player.getZ(), player.getYRot(), 0.0F);
       if (!level.addFreshEntity(proxy)) return null;
       player.getPersistentData().putUUID(DOMAIN_PROXY_TAG, proxy.getUUID());
+      rebindDomainEffects(player, level, proxy);
       return proxy;
    }
 
    private static void ensureCalamityHorsemen(ServerPlayer player, ServerLevel level) {
       List<ApocalypseHorsemanEntity> existing = ownedHorsemen(player, level).stream().filter(entity -> !entity.isPaleRiderProxy()).toList();
+      LivingEntity anchor = getDomainAnchor(player);
+      if (anchor == null) return;
       for (ApocalypseHorsemanEntity.Calamity calamity : ApocalypseHorsemanEntity.Calamity.values()) {
          List<ApocalypseHorsemanEntity> matching = existing.stream().filter(entity -> entity.getCalamity() == calamity).toList();
          if (!matching.isEmpty()) {
@@ -392,11 +506,11 @@ public final class ServantCardPaleRiderSkills {
          ApocalypseHorsemanEntity horseman = ModEntities.APOCALYPSE_HORSEMAN.get().create(level);
          if (horseman == null) continue;
          double angle = Math.PI * 2.0 * calamity.ordinal() / 3.0;
-         double x = player.getX() + Math.cos(angle) * 5.0;
-         double z = player.getZ() + Math.sin(angle) * 5.0;
+         double x = anchor.getX() + Math.cos(angle) * 5.0;
+         double z = anchor.getZ() + Math.sin(angle) * 5.0;
          horseman.setPaleRiderOwner(player);
          horseman.setCalamity(calamity);
-         horseman.moveTo(x, player.getY(), z, player.getYRot(), 0.0F);
+         horseman.moveTo(x, anchor.getY(), z, anchor.getYRot(), 0.0F);
          level.addFreshEntity(horseman);
       }
    }
@@ -421,16 +535,28 @@ public final class ServantCardPaleRiderSkills {
       return proxy;
    }
 
-   public static LivingEntity getDomainFormationLeader(ServerPlayer player) {
+   public static LivingEntity getDomainAnchor(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return null;
       return getPossessedHost(player) == null ? player : getDomainProxy(player, level);
    }
 
+   public static LivingEntity getDomainFormationLeader(ServerPlayer player) {
+      return getDomainAnchor(player);
+   }
+
    private static void removeDomainProxy(ServerPlayer player, ServerLevel level) {
+      boolean removed = false;
       for (ApocalypseHorsemanEntity proxy : ownedHorsemen(player, level).stream().filter(ApocalypseHorsemanEntity::isPaleRiderProxy).toList()) {
          discardHorsemanAndMount(proxy);
+         removed = true;
       }
       player.getPersistentData().remove(DOMAIN_PROXY_TAG);
+      if (removed) rebindDomainEffects(player, level, player);
+   }
+
+   private static void rebindDomainEffects(ServerPlayer player, ServerLevel level, LivingEntity anchor) {
+      if (isUnderworldActive(player)) VFXServerEffects.spawn(level, "pale_rider_underworld_sustain", anchor, 64.0);
+      if (isCalamityActive(player)) VFXServerEffects.spawn(level, "pale_rider_calamity_sustain", anchor, 40.0);
    }
 
    private static void cleanupCalamityHorsemen(ServerPlayer player, ServerLevel level) {
@@ -453,11 +579,11 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static List<ApocalypseHorsemanEntity> ownedHorsemen(ServerPlayer player, ServerLevel level) {
-      return level.getEntitiesOfClass(ApocalypseHorsemanEntity.class, dimensionBounds(level), entity -> player.getUUID().equals(entity.getPaleRiderOwnerUuid()));
+      return PaleRiderEntityIndex.owned(level, player.getUUID(), ApocalypseHorsemanEntity.class, entity -> player.getUUID().equals(entity.getPaleRiderOwnerUuid()));
    }
 
    private static List<ApocalypseHorseEntity> ownedHorses(ServerPlayer player, ServerLevel level) {
-      return level.getEntitiesOfClass(ApocalypseHorseEntity.class, dimensionBounds(level), entity -> player.getUUID().equals(entity.getPaleRiderOwnerUuid()));
+      return PaleRiderEntityIndex.owned(level, player.getUUID(), ApocalypseHorseEntity.class, entity -> player.getUUID().equals(entity.getPaleRiderOwnerUuid()));
    }
 
    private static Mob findStoredHost(ServerPlayer player) {
@@ -479,14 +605,12 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static List<LivingEntity> controlled(ServerLevel level, UUID owner) {
-      return level.getEntitiesOfClass(LivingEntity.class, dimensionBounds(level), entity -> isControlledBy(entity, owner));
+      return PaleRiderEntityIndex.controlled(level, owner, entity -> isControlledBy(entity, owner));
    }
 
-   private static AABB dimensionBounds(ServerLevel level) {
-      return new AABB(-3.0E7, level.getMinBuildHeight(), -3.0E7, 3.0E7, level.getMaxBuildHeight(), 3.0E7);
+   private static int countControlled(ServerLevel level, UUID owner) {
+      return PaleRiderEntityIndex.controlledCount(level, owner, entity -> isControlledBy(entity, owner));
    }
-
-   private static int countControlled(ServerLevel level, UUID owner) { return controlled(level, owner).size(); }
    private static float clampInput(float value) { return Math.max(-1.0F, Math.min(1.0F, value)); }
 
    private static boolean isControlledBy(LivingEntity entity, UUID owner) {

@@ -77,8 +77,10 @@ public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
             return;
          }
          this.updateHorsemanName();
-         if (owner instanceof PaleRiderEntity rider) rider.spawnHorsemanParticles(this);
-         else if (this.level() instanceof ServerLevel serverLevel) this.spawnBodyParticles(serverLevel);
+         if (this.tickCount % 4 == Math.floorMod(this.getId(), 4)) {
+            if (owner instanceof PaleRiderEntity rider) rider.spawnHorsemanParticles(this);
+            else if (this.level() instanceof ServerLevel serverLevel) this.spawnBodyParticles(serverLevel);
+         }
       }
    }
 

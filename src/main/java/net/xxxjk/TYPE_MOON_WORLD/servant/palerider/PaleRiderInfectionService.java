@@ -31,6 +31,7 @@ public final class PaleRiderInfectionService {
    public static final String TAG_CALAMITY_EXIT_CLEANSE = "PaleRiderInfectionCalamityExitCleanse";
    private static final String TAG_LAST_SERVICE_TICK = "PaleRiderInfectionLastServiceTick";
    private static final String TAG_NEXT_CONTROLLED_ATTACK = "PaleRiderControlledNextAttack";
+   private static final String TAG_NEXT_CONTROLLED_TARGET_SCAN = "PaleRiderControlledNextTargetScan";
 
    private PaleRiderInfectionService() {
    }
@@ -100,6 +101,9 @@ public final class PaleRiderInfectionService {
          return;
       }
       boolean controlled = isControlled(target);
+      if (controlled) {
+         PaleRiderEntityIndex.registerControlled(owner.getUUID(), target);
+      }
       if (target.tickCount % InfectionRules.DAMAGE_INTERVAL_TICKS == Math.floorMod(target.getId(), InfectionRules.DAMAGE_INTERVAL_TICKS)) {
          if (!controlled) {
             target.hurt(owner.damageSources().source(PaleRiderDamageTypes.INFECTION, owner), InfectionRules.damagePerSecond(level));
@@ -234,6 +238,9 @@ public final class PaleRiderInfectionService {
 
    private static void beginControl(Mob mob, LivingEntity owner) {
       CompoundTag data = mob.getPersistentData();
+      if (data.hasUUID(TAG_OWNER) && !owner.getUUID().equals(data.getUUID(TAG_OWNER))) {
+         PaleRiderEntityIndex.unregisterControlled(data.getUUID(TAG_OWNER), mob);
+      }
       if (!data.getBoolean(TAG_CONTROLLED)) {
          data.putBoolean(TAG_PREVIOUS_NO_AI, mob.isNoAi());
       }
@@ -241,6 +248,7 @@ public final class PaleRiderInfectionService {
       data.putInt(TAG_LEVEL, InfectionRules.MAX_LEVEL);
       data.putUUID(TAG_OWNER, owner.getUUID());
       data.putLong(TAG_UNTIL, mob.level().getGameTime() + InfectionRules.DURATION_TICKS);
+      PaleRiderEntityIndex.registerControlled(owner.getUUID(), mob);
       mob.addEffect(new MobEffectInstance(ModMobEffects.PALE_RIDER_INFECTION, InfectionRules.DURATION_TICKS,
          InfectionRules.MAX_LEVEL - 1, false, true, true));
       mob.setNoAi(false);
@@ -285,10 +293,19 @@ public final class PaleRiderInfectionService {
             else mob.getNavigation().stop();
             return;
          }
-         LivingEntity nearbyTarget = level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(24.0),
-            candidate -> candidate != mob && candidate != cardOwner && candidate.isAlive()
-               && !arePaleRiderAllies(cardOwner, candidate) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate))
-            .stream().min((left, right) -> Double.compare(left.distanceToSqr(mob), right.distanceToSqr(mob))).orElse(null);
+         LivingEntity nearbyTarget = isValidCommandTarget(mob, cardOwner, mob.getTarget()) ? mob.getTarget() : null;
+         if (nearbyTarget == null) {
+            long nextScan = mob.getPersistentData().getLong(TAG_NEXT_CONTROLLED_TARGET_SCAN);
+            if (now < nextScan) {
+               mob.setAggressive(false);
+               return;
+            }
+            mob.getPersistentData().putLong(TAG_NEXT_CONTROLLED_TARGET_SCAN, now + 10L + Math.floorMod(mob.getId(), 5));
+            nearbyTarget = level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(24.0),
+               candidate -> candidate != mob && candidate != cardOwner && candidate.isAlive()
+                  && !arePaleRiderAllies(cardOwner, candidate) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate))
+               .stream().min((left, right) -> Double.compare(left.distanceToSqr(mob), right.distanceToSqr(mob))).orElse(null);
+         }
          if (nearbyTarget != null) {
             mob.setTarget(nearbyTarget);
             mob.setAggressive(true);
@@ -337,16 +354,20 @@ public final class PaleRiderInfectionService {
    }
 
    private static boolean isValidCommandTarget(Mob mob, LivingEntity owner, LivingEntity target) {
-      return target != null && target != mob && target.isAlive() && !arePaleRiderAllies(owner, target);
+      return target != null && target != mob && target.isAlive() && !arePaleRiderAllies(owner, target)
+         && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target);
    }
 
    private static void endControl(LivingEntity target) {
       CompoundTag data = target.getPersistentData();
       boolean wasControlled = data.getBoolean(TAG_CONTROLLED);
       boolean previousNoAi = data.getBoolean(TAG_PREVIOUS_NO_AI);
+      UUID owner = data.hasUUID(TAG_OWNER) ? data.getUUID(TAG_OWNER) : null;
       data.remove(TAG_CONTROLLED);
       data.remove(TAG_PREVIOUS_NO_AI);
       data.remove(TAG_NEXT_CONTROLLED_ATTACK);
+      data.remove(TAG_NEXT_CONTROLLED_TARGET_SCAN);
+      PaleRiderEntityIndex.unregisterControlled(owner, target);
       if (wasControlled && target instanceof Mob mob) {
          mob.setNoAi(previousNoAi);
          mob.setTarget(null);

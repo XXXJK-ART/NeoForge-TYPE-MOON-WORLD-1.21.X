@@ -8,6 +8,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
@@ -36,23 +37,28 @@ public final class PaleRiderCorruptionService {
    }
 
    public static void tickDomain(LivingEntity rider, ServerLevel level) {
-      BlockPos center = rider.blockPosition();
-      BlockPos previousCenter = BlockPos.of(rider.getPersistentData().getLong(TAG_CORRUPTION_CENTER));
+      tickDomain(rider, rider, level);
+   }
+
+   public static void tickDomain(LivingEntity stateOwner, LivingEntity domainAnchor, ServerLevel level) {
+      BlockPos center = domainAnchor.blockPosition();
+      BlockPos previousCenter = BlockPos.of(stateOwner.getPersistentData().getLong(TAG_CORRUPTION_CENTER));
       if (previousCenter.distSqr(center) > 16.0) {
-         rider.getPersistentData().putInt(TAG_CORRUPTION_INDEX, 0);
-         rider.getPersistentData().putLong(TAG_CORRUPTION_CENTER, center.asLong());
+         stateOwner.getPersistentData().putInt(TAG_CORRUPTION_INDEX, 0);
+         stateOwner.getPersistentData().putLong(TAG_CORRUPTION_CENTER, center.asLong());
       }
-      int index = rider.getPersistentData().getInt(TAG_CORRUPTION_INDEX);
+      int index = stateOwner.getPersistentData().getInt(TAG_CORRUPTION_INDEX);
       for (int count = 0; count < COLUMNS_PER_TICK && index < COLUMN_COUNT; count++, index++) {
          corruptColumn(level, center, index);
       }
-      rider.getPersistentData().putInt(TAG_CORRUPTION_INDEX, index);
+      stateOwner.getPersistentData().putInt(TAG_CORRUPTION_INDEX, index);
    }
 
    public static void tickFootsteps(LivingEntity entity) {
       if (!(entity.level() instanceof ServerLevel level) || entity.tickCount % 4 != Math.floorMod(entity.getId(), 4)) return;
       LivingEntity owner = ownerOf(level, entity);
-      if (owner == null || !isCalamityActive(owner) || entity.distanceToSqr(owner) > CALAMITY_RADIUS_SQR) return;
+      LivingEntity domainAnchor = owner == null ? null : domainAnchor(owner);
+      if (owner == null || domainAnchor == null || !isCalamityActive(owner) || entity.distanceToSqr(domainAnchor) > CALAMITY_RADIUS_SQR) return;
       BlockPos below = entity.blockPosition().below();
       BlockState state = level.getBlockState(below);
       if (!canCorrupt(level, below, state) || state.isAir() || state.is(Blocks.SOUL_SAND)) return;
@@ -71,6 +77,13 @@ public final class PaleRiderCorruptionService {
       return owner instanceof net.minecraft.server.level.ServerPlayer player
          && PaleRiderInfectionService.isPaleRiderCardPlayer(player)
          && player.getPersistentData().getBoolean("PaleRiderCardCalamityActive");
+   }
+
+   private static LivingEntity domainAnchor(LivingEntity owner) {
+      if (owner instanceof net.minecraft.server.level.ServerPlayer player && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
+         return ServantCardPaleRiderSkills.getDomainAnchor(player);
+      }
+      return owner;
    }
 
    private static void corruptColumn(ServerLevel level, BlockPos center, int index) {

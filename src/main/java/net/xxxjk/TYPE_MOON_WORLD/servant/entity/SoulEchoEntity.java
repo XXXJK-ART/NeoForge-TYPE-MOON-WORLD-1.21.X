@@ -5,7 +5,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -14,7 +16,9 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.SoulSnapshot;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills;
 
 public final class SoulEchoEntity extends OwnedPaleRiderMob {
    private static final EntityDataAccessor<String> SOURCE_TYPE = SynchedEntityData.defineId(SoulEchoEntity.class, EntityDataSerializers.STRING);
@@ -69,13 +73,21 @@ public final class SoulEchoEntity extends OwnedPaleRiderMob {
          this.discard();
          return;
       }
-      PaleRiderEntity owner = this.getPaleRiderOwner();
-      if (owner == null || !owner.isAlive() || !owner.isUnderworldActive() && !owner.isPossessing(this)) {
+      LivingEntity owner = this.getPaleRiderLivingOwner();
+      boolean active = owner instanceof PaleRiderEntity rider ? rider.isUnderworldActive() || rider.isPossessing(this)
+         : owner instanceof ServerPlayer player && PaleRiderInfectionService.isPaleRiderCardPlayer(player)
+            && (ServantCardPaleRiderSkills.isUnderworldActive(player) || player.getVehicle() == this);
+      if (owner == null || !owner.isAlive() || !active) {
+         if (owner instanceof ServerPlayer player && this.snapshot != null) {
+            ServantCardPaleRiderSkills.returnManifestedSoul(player, this);
+         }
          this.discard();
          return;
       }
       if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())) {
-         this.setTarget(owner.findPaleRiderEnemy(50.0));
+         LivingEntity target = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(50.0)
+            : owner instanceof ServerPlayer player ? ServantCardPaleRiderSkills.findSoulEchoTarget(player, this) : null;
+         this.setTarget(target);
       }
    }
 

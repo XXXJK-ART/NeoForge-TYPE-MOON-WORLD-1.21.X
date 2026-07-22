@@ -13,11 +13,13 @@ import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderEntityIndex;
 
 public final class PaleRiderCrowEntity extends Parrot {
    private static final String TAG_OWNER = "PaleRiderOwner";
    private UUID ownerUuid;
    private long nextAttackTick;
+   private long nextTargetScanTick;
    private boolean domainSpawned;
 
    public PaleRiderCrowEntity(EntityType<? extends Parrot> type, Level level) {
@@ -92,7 +94,15 @@ public final class PaleRiderCrowEntity extends Parrot {
    }
 
    public void setPaleRiderOwner(LivingEntity owner) {
-      this.ownerUuid = owner == null ? null : owner.getUUID();
+      UUID previous = this.ownerUuid;
+      UUID next = owner == null ? null : owner.getUUID();
+      if (previous != null && !previous.equals(next)) {
+         PaleRiderEntityIndex.unregisterOwned(previous, this);
+      }
+      this.ownerUuid = next;
+      if (this.ownerUuid != null) {
+         PaleRiderEntityIndex.registerOwned(this.ownerUuid, this);
+      }
    }
 
    public UUID getPaleRiderOwnerUuid() {
@@ -125,7 +135,12 @@ public final class PaleRiderCrowEntity extends Parrot {
 
    private LivingEntity findEnemy(LivingEntity owner, double radius) {
       if (owner instanceof PaleRiderEntity rider) return rider.findPaleRiderEnemy(radius);
-      if (this.getTarget() != null && this.getTarget().isAlive() && !PaleRiderInfectionService.arePaleRiderAllies(owner, this.getTarget())) return this.getTarget();
+      if (this.getTarget() != null && this.getTarget().isAlive()
+         && !PaleRiderInfectionService.arePaleRiderAllies(owner, this.getTarget())
+         && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(this.getTarget())) return this.getTarget();
+      long now = this.level().getGameTime();
+      if (now < this.nextTargetScanTick) return null;
+      this.nextTargetScanTick = now + 10L + Math.floorMod(this.getId(), 5);
       return this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius),
          target -> target != this && target != owner && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(owner, target)
@@ -151,5 +166,16 @@ public final class PaleRiderCrowEntity extends Parrot {
       this.ownerUuid = tag.hasUUID(TAG_OWNER) ? tag.getUUID(TAG_OWNER) : null;
       this.domainSpawned = tag.getBoolean("DomainSpawned");
       this.setSilent(true);
+      if (this.ownerUuid != null) {
+         PaleRiderEntityIndex.registerOwned(this.ownerUuid, this);
+      }
+   }
+
+   @Override
+   public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
+      if (this.ownerUuid != null) {
+         PaleRiderEntityIndex.unregisterOwned(this.ownerUuid, this);
+      }
+      super.remove(reason);
    }
 }

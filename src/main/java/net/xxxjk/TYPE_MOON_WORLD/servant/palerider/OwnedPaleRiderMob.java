@@ -22,7 +22,15 @@ public abstract class OwnedPaleRiderMob extends PathfinderMob {
    }
 
    public void setPaleRiderOwner(LivingEntity owner) {
-      this.ownerUuid = owner == null ? null : owner.getUUID();
+      UUID previous = this.ownerUuid;
+      UUID next = owner == null ? null : owner.getUUID();
+      if (previous != null && !previous.equals(next)) {
+         PaleRiderEntityIndex.unregisterOwned(previous, this);
+      }
+      this.ownerUuid = next;
+      if (this.ownerUuid != null) {
+         PaleRiderEntityIndex.registerOwned(this.ownerUuid, this);
+      }
    }
 
    @Nullable
@@ -78,5 +86,16 @@ public abstract class OwnedPaleRiderMob extends PathfinderMob {
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
       this.ownerUuid = tag.hasUUID(TAG_OWNER) ? tag.getUUID(TAG_OWNER) : null;
+      if (this.ownerUuid != null) {
+         PaleRiderEntityIndex.registerOwned(this.ownerUuid, this);
+      }
+   }
+
+   @Override
+   public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
+      if (this.ownerUuid != null) {
+         PaleRiderEntityIndex.unregisterOwned(this.ownerUuid, this);
+      }
+      super.remove(reason);
    }
 }

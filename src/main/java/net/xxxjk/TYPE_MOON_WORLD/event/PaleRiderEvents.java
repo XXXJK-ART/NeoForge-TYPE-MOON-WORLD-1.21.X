@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,6 +17,8 @@ import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -27,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class PaleRiderEvents {
@@ -42,8 +46,13 @@ public final class PaleRiderEvents {
          PaleRiderInfectionService.tick(living);
       }
       if (event.getEntity() instanceof LivingEntity living && !living.level().isClientSide()) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper.cleanupExpiredPenalties(living);
-         net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService.tickFootsteps(living);
+         if (PaleRiderCombatHelper.hasExpiredPenaltyMarkers(living)) {
+            PaleRiderCombatHelper.cleanupExpiredPenalties(living);
+         }
+         if (living instanceof OwnedPaleRiderMob || living instanceof PaleRiderCrowEntity
+            || living.getPersistentData().getBoolean(PaleRiderInfectionService.TAG_CONTROLLED)) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService.tickFootsteps(living);
+         }
       }
       if (event.getEntity() instanceof Mob mob && !mob.level().isClientSide()
          && PaleRiderInfectionService.isStationaryAnchor(mob)) {
@@ -160,43 +169,67 @@ public final class PaleRiderEvents {
       if (event.isCanceled() || !(event.getEntity().level() instanceof ServerLevel level)) {
          return;
       }
-      PaleRiderEntity owner = null;
-      if (PaleRiderInfectionService.isInfected(event.getEntity())
-         && PaleRiderInfectionService.getOwner(level, event.getEntity()) instanceof PaleRiderEntity infectionOwner) {
-         owner = infectionOwner;
+      if (event.getEntity() instanceof ServerPlayer deadPlayer
+         && PaleRiderInfectionService.isPaleRiderCardPlayer(deadPlayer)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.returnAllLivingSouls(deadPlayer, level);
       }
+      LivingEntity owner = PaleRiderInfectionService.isInfected(event.getEntity())
+         ? validOwner(PaleRiderInfectionService.getOwner(level, event.getEntity())) : null;
       if (owner == null) {
          owner = resolveOwner(level, event.getSource().getEntity());
       }
       if (owner == null) {
          owner = resolveOwner(level, event.getSource().getDirectEntity());
       }
-      if (owner != null && owner.isAlive()) {
-         owner.captureSoul(event.getEntity());
+      if (owner instanceof PaleRiderEntity rider && rider.isAlive()) rider.captureSoul(event.getEntity());
+      else if (owner instanceof ServerPlayer player && player.isAlive()) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.captureSoul(player, event.getEntity());
       }
    }
 
-   private static PaleRiderEntity resolveOwner(ServerLevel level, Entity source) {
-      if (source instanceof PaleRiderEntity rider) {
-         return rider;
+   @SubscribeEvent
+   public static void onPlayerChangedDimension(PlayerChangedDimensionEvent event) {
+      if (!(event.getEntity() instanceof ServerPlayer player) || player.getServer() == null
+         || !PaleRiderInfectionService.isPaleRiderCardPlayer(player)) return;
+      ServerLevel previousLevel = player.getServer().getLevel(event.getFrom());
+      if (previousLevel != null) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.returnAllLivingSouls(player, previousLevel);
       }
+   }
+
+   @SubscribeEvent
+   public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level
+         && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.returnAllLivingSouls(player, level);
+      }
+   }
+
+   private static LivingEntity resolveOwner(ServerLevel level, Entity source) {
+      LivingEntity directOwner = source instanceof LivingEntity living ? validOwner(living) : null;
+      if (directOwner != null) return directOwner;
       if (source instanceof OwnedPaleRiderMob owned) {
-         return owned.getPaleRiderOwner();
+         return validOwner(owned.getPaleRiderLivingOwner());
       }
       if (source instanceof PaleRiderCrowEntity crow) {
-         return crow.getPaleRiderOwner();
+         return validOwner(crow.getPaleRiderLivingOwner());
       }
       if (source instanceof Projectile projectile && projectile.getOwner() != source) {
-         PaleRiderEntity projectileOwner = resolveOwner(level, projectile.getOwner());
+         LivingEntity projectileOwner = resolveOwner(level, projectile.getOwner());
          if (projectileOwner != null) {
             return projectileOwner;
          }
       }
       if (source != null && source.getPersistentData().getBoolean(PaleRiderInfectionService.TAG_CONTROLLED)
          && source.getPersistentData().hasUUID(PaleRiderInfectionService.TAG_OWNER)
-         && level.getEntity(source.getPersistentData().getUUID(PaleRiderInfectionService.TAG_OWNER)) instanceof PaleRiderEntity rider) {
-         return rider;
+         && level.getEntity(source.getPersistentData().getUUID(PaleRiderInfectionService.TAG_OWNER)) instanceof LivingEntity owner) {
+         return validOwner(owner);
       }
       return null;
+   }
+
+   private static LivingEntity validOwner(LivingEntity owner) {
+      if (owner instanceof PaleRiderEntity) return owner;
+      return owner instanceof ServerPlayer player && PaleRiderInfectionService.isPaleRiderCardPlayer(player) ? player : null;
    }
 }
