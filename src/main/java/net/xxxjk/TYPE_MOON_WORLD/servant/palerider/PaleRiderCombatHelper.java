@@ -70,17 +70,18 @@ public final class PaleRiderCombatHelper {
    }
 
    private static void tickPhaseAi(PaleRiderEntity rider, ServerLevel level, long now) {
-      LivingEntity master = rider.getMaster();
-      if (master != null) {
-         LivingEntity threat = master.getLastHurtByMob();
-         if (threat != null && threat.isAlive() && !rider.isAlliedTo(threat)) rider.setTarget(threat);
-      } else if (rider.getLastHurtByMob() == null) {
+      LivingEntity attacker = rider.getLastHurtByMob();
+      if (attacker == null || !attacker.isAlive() || attacker.isAlliedTo(rider) || rider.isAlliedTo(attacker)
+         || EntityUtils.isImmunePlayerTarget(attacker)) {
          rider.setTarget(null);
          return;
       }
+      rider.setTarget(attacker);
       LivingEntity target = rider.findPaleRiderEnemy(64.0);
-      if (target == null) return;
-      rider.setTarget(target);
+      if (target == null) {
+         rider.setTarget(null);
+         return;
+      }
       double ratio = rider.getHealth() / Math.max(1.0F, rider.getMaxHealth());
       int desiredRats = ratio > 0.8 ? 3 : ratio > 0.6 ? 8 : 100;
       int interval = ratio > 0.8 ? 240 : ratio > 0.6 ? 160 : 40;

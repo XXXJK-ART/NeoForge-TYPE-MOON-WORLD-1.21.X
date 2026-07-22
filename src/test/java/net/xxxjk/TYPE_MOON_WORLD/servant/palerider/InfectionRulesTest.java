@@ -23,4 +23,16 @@ class InfectionRulesTest {
          assertEquals(control[level - 1], InfectionRules.controlChance(level), 1.0E-9);
       }
    }
+
+   @Test
+   void ordinaryCreaturesAreControlledQuickly() {
+      double[] modded = {0.60, 0.85, 0.95, 1.00, 1.00};
+      double[] vanilla = {0.80, 0.95, 1.00, 1.00, 1.00};
+      for (int level = 1; level <= 5; level++) {
+         assertEquals(modded[level - 1], InfectionRules.ordinaryControlChance(level, false), 1.0E-9);
+         assertEquals(vanilla[level - 1], InfectionRules.ordinaryControlChance(level, true), 1.0E-9);
+      }
+      assertEquals(1.0, InfectionRules.ordinaryControlChance(3, true), 1.0E-9);
+      assertEquals(1.0, InfectionRules.ordinaryControlChance(4, false), 1.0E-9);
+   }
 }

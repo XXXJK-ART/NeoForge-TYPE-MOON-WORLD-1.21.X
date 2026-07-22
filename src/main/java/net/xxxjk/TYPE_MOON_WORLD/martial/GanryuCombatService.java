@@ -294,7 +294,7 @@ public final class GanryuCombatService {
 
    private static void perform(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, GanryuMove move, float stancePower) {
       if (!isUnlocked(vars, move)) return;
-      if (move == GanryuMove.HIGH_JUMP && !player.onGround()) return;
+      if (move == GanryuMove.HIGH_JUMP && !MartialHighJumpService.tryConsume(player)) return;
       long now = player.level().getGameTime();
       int recovery = recoveryTicks(move.recoveryTicks(), vars.body_technique);
       player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);

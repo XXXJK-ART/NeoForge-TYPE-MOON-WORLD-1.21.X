@@ -66,7 +66,7 @@ public final class SoulEchoEntity extends OwnedPaleRiderMob {
          this.discard();
          return;
       }
-      if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner)) {
+      if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())) {
          this.setTarget(owner.findPaleRiderEnemy(50.0));
       }
    }

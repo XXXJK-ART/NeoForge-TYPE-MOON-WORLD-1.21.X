@@ -97,13 +97,10 @@ public final class PaleRiderEntity extends ServantEntity {
 
    public LivingEntity findPaleRiderEnemy(double radius) {
       LivingEntity current = this.getTarget();
-      if (current != null && current.isAlive() && !current.isAlliedTo(this) && !EntityUtils.isImmunePlayerTarget(current)) {
+      if (current != null && current.isAlive() && !current.isAlliedTo(this) && !this.isAlliedTo(current) && !EntityUtils.isImmunePlayerTarget(current)) {
          return current;
       }
-      if (!(this.level() instanceof ServerLevel level)) return null;
-      return level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius),
-         living -> living != this && living.isAlive() && !living.isAlliedTo(this) && !this.isAlliedTo(living) && !EntityUtils.isImmunePlayerTarget(living))
-         .stream().min((left, right) -> Double.compare(left.distanceToSqr(this), right.distanceToSqr(this))).orElse(null);
+      return null;
    }
 
    public boolean captureSoul(LivingEntity defeated) {

@@ -254,7 +254,7 @@ public final class BajiquanCombatService {
 
    private static void perform(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, BajiquanMove move, boolean comboCancel) {
       if (!isUnlocked(vars, move)) return;
-      if (move == BajiquanMove.HIGH_JUMP && !hasGroundSupport(player)) return;
+      if (move == BajiquanMove.HIGH_JUMP && !MartialHighJumpService.tryConsume(player)) return;
       ServerLevel level = player.serverLevel();
       CompoundTag data = player.getPersistentData();
       long now = level.getGameTime();
@@ -568,12 +568,6 @@ public final class BajiquanCombatService {
    private static Vec3 look(ServerPlayer player) {
       Vec3 dir = player.getLookAngle().multiply(1.0, 0.0, 1.0);
       return dir.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : dir.normalize();
-   }
-
-   private static boolean hasGroundSupport(ServerPlayer player) {
-      if (!player.onGround()) return false;
-      var supportPos = player.getOnPos();
-      return !player.level().getBlockState(supportPos).getCollisionShape(player.level(), supportPos).isEmpty();
    }
 
    private static void clearAggro(ServerPlayer player) {

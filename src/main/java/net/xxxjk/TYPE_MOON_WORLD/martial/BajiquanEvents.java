@@ -32,6 +32,7 @@ public final class BajiquanEvents {
    @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (event.getEntity() instanceof ServerPlayer player) {
+         MartialHighJumpService.tick(player);
          BajiquanCombatService.tickPlayer(player);
          GanryuCombatService.tickPlayer(player);
       }

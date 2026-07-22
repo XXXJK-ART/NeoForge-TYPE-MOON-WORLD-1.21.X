@@ -69,7 +69,7 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
          return;
       }
       this.syncCasualties();
-      if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner)) {
+      if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())) {
          this.setTarget(owner.findPaleRiderEnemy(48.0));
       }
       if (this.tickCount % 10 == Math.floorMod(this.getId(), 10)) {
@@ -96,7 +96,7 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
          return false;
       }
       PaleRiderEntity owner = this.getPaleRiderOwner();
-      if (owner == null || living.isAlliedTo(owner)) {
+      if (owner == null || living.isAlliedTo(owner) || owner.isAlliedTo(living)) {
          return false;
       }
       this.lastBiteTick = now;
