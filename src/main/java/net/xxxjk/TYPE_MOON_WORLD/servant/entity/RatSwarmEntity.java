@@ -62,15 +62,29 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
 
    @Override
    protected void customServerAiStep() {
-      super.customServerAiStep();
-      PaleRiderEntity owner = this.getPaleRiderOwner();
+      LivingEntity owner = this.getPaleRiderLivingOwner();
       if (owner == null || !owner.isAlive()) {
          this.discard();
          return;
       }
+      if (PaleRiderInfectionService.isStationaryAnchor(this)) {
+         PaleRiderInfectionService.holdStationaryAnchor(this);
+         return;
+      }
+      super.customServerAiStep();
+      if (owner instanceof net.minecraft.server.level.ServerPlayer player
+         && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
+         int command = player.getPersistentData().getInt("PaleRiderCardCommand");
+         if (command != 2) {
+            this.setTarget(null);
+            if (command == 1) this.getNavigation().stop();
+            else if (command == 3) this.getNavigation().moveTo(player, 1.05);
+            return;
+         }
+      }
       this.syncCasualties();
       if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())) {
-         this.setTarget(owner.findPaleRiderEnemy(48.0));
+         this.setTarget(findEnemy(owner, 48.0));
       }
       if (this.tickCount % 10 == Math.floorMod(this.getId(), 10)) {
          this.tryMergeNearby();
@@ -95,7 +109,7 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
       if (now - this.lastBiteTick < 40L) {
          return false;
       }
-      PaleRiderEntity owner = this.getPaleRiderOwner();
+      LivingEntity owner = this.getPaleRiderLivingOwner();
       if (owner == null || living.isAlliedTo(owner) || owner.isAlliedTo(living)) {
          return false;
       }
@@ -103,6 +117,15 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
       living.hurt(owner.damageSources().source(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.RAT_BITE, this, owner), this.getRatCount() * 0.5F);
       PaleRiderInfectionService.infect(living, owner, 1);
       return true;
+   }
+
+   private LivingEntity findEnemy(LivingEntity owner, double radius) {
+      if (owner instanceof PaleRiderEntity rider) return rider.findPaleRiderEnemy(radius);
+      return this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius),
+         target -> target != this && target != owner && target.isAlive()
+            && !PaleRiderInfectionService.arePaleRiderAllies(owner, target)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target))
+         .stream().min((left, right) -> Double.compare(left.distanceToSqr(this), right.distanceToSqr(this))).orElse(null);
    }
 
    private void syncCasualties() {
@@ -121,11 +144,13 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
    }
 
    private void tryMergeNearby() {
-      if (!(this.level() instanceof ServerLevel level) || this.getHealth() >= RatSwarmRules.MAX_HEALTH) {
+      if (PaleRiderInfectionService.isStationaryAnchor(this)
+         || !(this.level() instanceof ServerLevel level) || this.getHealth() >= RatSwarmRules.MAX_HEALTH) {
          return;
       }
       List<RatSwarmEntity> nearby = level.getEntitiesOfClass(RatSwarmEntity.class, this.getBoundingBox().inflate(0.8),
-         other -> other != this && other.isAlive() && this.getPaleRiderOwnerUuid() != null && this.getPaleRiderOwnerUuid().equals(other.getPaleRiderOwnerUuid()));
+         other -> other != this && other.isAlive() && !PaleRiderInfectionService.isStationaryAnchor(other)
+            && this.getPaleRiderOwnerUuid() != null && this.getPaleRiderOwnerUuid().equals(other.getPaleRiderOwnerUuid()));
       if (nearby.isEmpty()) {
          return;
       }

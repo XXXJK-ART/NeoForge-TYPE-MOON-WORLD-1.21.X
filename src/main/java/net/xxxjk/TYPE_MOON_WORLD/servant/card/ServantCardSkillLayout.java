@@ -176,13 +176,13 @@ public final class ServantCardSkillLayout {
             case 0 -> new ServantCardSkillAction("Plague Spawn", "pale_rider_spawn", 10.0, 40);
             case 1 -> new ServantCardSkillAction("Possession", "pale_rider_possession", 18.0, 80);
             case 2 -> new ServantCardSkillAction("Command", "pale_rider_command", 0.0, 20);
-            case 3 -> new ServantCardSkillAction("Perfect Concealment", "pale_rider_stealth", 12.0, 80);
+            case 3 -> new ServantCardSkillAction("Perfect Concealment", "pale_rider_stealth", 12.0, 100);
             case 4 -> new ServantCardSkillAction("Ash Transfer", "pale_rider_transfer", 20.0, 100);
             case 5 -> new ServantCardSkillAction("Plague Rush", "pale_rider_plague_rush", 12.0, 140);
             case 6 -> new ServantCardSkillAction("Ash Step", "pale_rider_ash_step", 8.0, 100);
             case 7 -> new ServantCardSkillAction("Death Pulse", "pale_rider_death_pulse", 18.0, 200);
-            case 8 -> new ServantCardSkillAction("Underworld", "pale_rider_underworld", 150.0, 2400);
-            case 9 -> new ServantCardSkillAction("Four Calamities", "pale_rider_calamity", 300.0, 3600);
+            case 8 -> new ServantCardSkillAction("Guidance of the Underworld", "pale_rider_underworld", 150.0, 2400);
+            case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", 300.0, 3600);
             default -> null;
          };
          default -> null;

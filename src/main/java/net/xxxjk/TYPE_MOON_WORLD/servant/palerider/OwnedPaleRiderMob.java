@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import org.jetbrains.annotations.Nullable;
@@ -20,8 +21,8 @@ public abstract class OwnedPaleRiderMob extends PathfinderMob {
       this.setPersistenceRequired();
    }
 
-   public void setPaleRiderOwner(PaleRiderEntity owner) {
-      this.ownerUuid = owner.getUUID();
+   public void setPaleRiderOwner(LivingEntity owner) {
+      this.ownerUuid = owner == null ? null : owner.getUUID();
    }
 
    @Nullable
@@ -37,16 +38,22 @@ public abstract class OwnedPaleRiderMob extends PathfinderMob {
       return level.getEntity(this.ownerUuid) instanceof PaleRiderEntity owner ? owner : null;
    }
 
+   @Nullable
+   public LivingEntity getPaleRiderLivingOwner() {
+      if (this.ownerUuid == null || !(this.level() instanceof ServerLevel level)) return null;
+      return level.getEntity(this.ownerUuid) instanceof LivingEntity owner ? owner : null;
+   }
+
    @Override
    public boolean isAlliedTo(Entity other) {
       if (super.isAlliedTo(other)) {
          return true;
       }
-      PaleRiderEntity owner = this.getPaleRiderOwner();
+      LivingEntity owner = this.getPaleRiderLivingOwner();
       if (owner == null) {
          return false;
       }
-      return other == owner || owner.isAlliedTo(other)
+      return other == owner || owner.isAlliedTo(other) || other.isAlliedTo(owner)
          || other instanceof OwnedPaleRiderMob owned && this.ownerUuid != null && this.ownerUuid.equals(owned.ownerUuid)
          || other.getPersistentData().hasUUID(PaleRiderInfectionService.TAG_OWNER)
             && this.ownerUuid != null

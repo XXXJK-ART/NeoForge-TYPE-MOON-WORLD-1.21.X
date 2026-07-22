@@ -25,17 +25,17 @@ public final class PaleRiderCorruptionService {
    private PaleRiderCorruptionService() {
    }
 
-   public static void begin(PaleRiderEntity rider) {
+   public static void begin(LivingEntity rider) {
       rider.getPersistentData().putInt(TAG_CORRUPTION_INDEX, 0);
       rider.getPersistentData().putLong(TAG_CORRUPTION_CENTER, rider.blockPosition().asLong());
    }
 
-   public static void end(PaleRiderEntity rider) {
+   public static void end(LivingEntity rider) {
       rider.getPersistentData().remove(TAG_CORRUPTION_INDEX);
       rider.getPersistentData().remove(TAG_CORRUPTION_CENTER);
    }
 
-   public static void tickDomain(PaleRiderEntity rider, ServerLevel level) {
+   public static void tickDomain(LivingEntity rider, ServerLevel level) {
       BlockPos center = rider.blockPosition();
       BlockPos previousCenter = BlockPos.of(rider.getPersistentData().getLong(TAG_CORRUPTION_CENTER));
       if (previousCenter.distSqr(center) > 16.0) {
@@ -51,20 +51,26 @@ public final class PaleRiderCorruptionService {
 
    public static void tickFootsteps(LivingEntity entity) {
       if (!(entity.level() instanceof ServerLevel level) || entity.tickCount % 4 != Math.floorMod(entity.getId(), 4)) return;
-      PaleRiderEntity owner = ownerOf(level, entity);
-      if (owner == null || !owner.isCalamityActive() || entity.distanceToSqr(owner) > CALAMITY_RADIUS_SQR) return;
+      LivingEntity owner = ownerOf(level, entity);
+      if (owner == null || !isCalamityActive(owner) || entity.distanceToSqr(owner) > CALAMITY_RADIUS_SQR) return;
       BlockPos below = entity.blockPosition().below();
       BlockState state = level.getBlockState(below);
       if (!canCorrupt(level, below, state) || state.isAir() || state.is(Blocks.SOUL_SAND)) return;
       if (!state.getCollisionShape(level, below).isEmpty()) level.setBlock(below, Blocks.SOUL_SAND.defaultBlockState(), Block.UPDATE_ALL);
    }
 
-   private static PaleRiderEntity ownerOf(ServerLevel level, LivingEntity entity) {
-      if (entity instanceof ApocalypseHorseEntity horse) return horse.getPaleRiderOwner();
-      if (entity instanceof RatSwarmEntity swarm) return swarm.getPaleRiderOwner();
-      if (PaleRiderInfectionService.isInfected(entity)
-         && PaleRiderInfectionService.getOwner(level, entity) instanceof PaleRiderEntity rider) return rider;
+   private static LivingEntity ownerOf(ServerLevel level, LivingEntity entity) {
+      if (entity instanceof ApocalypseHorseEntity horse) return horse.getPaleRiderLivingOwner();
+      if (entity instanceof RatSwarmEntity swarm) return swarm.getPaleRiderLivingOwner();
+      if (PaleRiderInfectionService.isInfected(entity)) return PaleRiderInfectionService.getOwner(level, entity);
       return null;
+   }
+
+   private static boolean isCalamityActive(LivingEntity owner) {
+      if (owner instanceof PaleRiderEntity rider) return rider.isCalamityActive();
+      return owner instanceof net.minecraft.server.level.ServerPlayer player
+         && PaleRiderInfectionService.isPaleRiderCardPlayer(player)
+         && player.getPersistentData().getBoolean("PaleRiderCardCalamityActive");
    }
 
    private static void corruptColumn(ServerLevel level, BlockPos center, int index) {

@@ -23,7 +23,7 @@ public final class ConceptSwordEntity extends ThrowableItemProjectile {
       super(type, level);
    }
 
-   public ConceptSwordEntity(Level level, PaleRiderEntity owner, LivingEntity target, float damage) {
+   public ConceptSwordEntity(Level level, LivingEntity owner, LivingEntity target, float damage) {
       this(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CONCEPT_SWORD.get(), level);
       this.ownerUuid = owner.getUUID();
       this.damage = damage;
@@ -41,8 +41,9 @@ public final class ConceptSwordEntity extends ThrowableItemProjectile {
    protected void onHitEntity(EntityHitResult result) {
       super.onHitEntity(result);
       Entity owner = this.getOwner();
-      if (result.getEntity() instanceof LivingEntity living && owner instanceof PaleRiderEntity paleRider && !living.isAlliedTo(paleRider)) {
-         living.hurt(paleRider.damageSources().source(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD, this, paleRider), this.damage);
+      if (result.getEntity() instanceof LivingEntity living && owner instanceof LivingEntity livingOwner
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.arePaleRiderAllies(living, livingOwner)) {
+         living.hurt(livingOwner.damageSources().source(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD, this, livingOwner), this.damage);
       }
       this.discard();
    }

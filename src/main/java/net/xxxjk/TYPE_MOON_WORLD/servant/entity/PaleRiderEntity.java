@@ -67,8 +67,11 @@ public final class PaleRiderEntity extends ServantEntity {
    @Override
    public void tick() {
       super.tick();
-      if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()
-         && !this.getPersistentData().getBoolean("PaleRiderCardProxy")) {
+      if (!this.level().isClientSide() && this.getPersistentData().getBoolean("PaleRiderCardProxy")) {
+         this.discard();
+         return;
+      }
+      if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()) {
          level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 0.9, this.getZ(), 7, 0.28, 0.85, 0.28, 0.015);
          level.sendParticles(new DustParticleOptions(new Vector3f(0.025F, 0.025F, 0.03F), 1.5F),
             this.getX(), this.getY() + 0.9, this.getZ(), 8, 0.3, 0.9, 0.3, 0.01);
@@ -101,11 +104,6 @@ public final class PaleRiderEntity extends ServantEntity {
    public LivingEntity getMaster() {
       if (this.masterUuid == null || !(this.level() instanceof ServerLevel level)) return null;
       return level.getEntity(this.masterUuid) instanceof LivingEntity living ? living : null;
-   }
-
-   public void setCardOwner(LivingEntity owner) {
-      this.masterUuid = owner == null ? null : owner.getUUID();
-      this.getPersistentData().putBoolean("PaleRiderCardProxy", true);
    }
 
    public LivingEntity findPaleRiderEnemy(double radius) {

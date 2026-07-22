@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -27,6 +30,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class PaleRiderEvents {
+   private static final Map<DamageContainer, Boolean> REDIRECTED_CARD_DAMAGE = Collections.synchronizedMap(new WeakHashMap<>());
+
    private PaleRiderEvents() {
    }
 
@@ -39,6 +44,10 @@ public final class PaleRiderEvents {
       if (event.getEntity() instanceof LivingEntity living && !living.level().isClientSide()) {
          net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper.cleanupExpiredPenalties(living);
          net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService.tickFootsteps(living);
+      }
+      if (event.getEntity() instanceof Mob mob && !mob.level().isClientSide()
+         && PaleRiderInfectionService.isStationaryAnchor(mob)) {
+         PaleRiderInfectionService.holdStationaryAnchor(mob);
       }
    }
 
@@ -55,6 +64,11 @@ public final class PaleRiderEvents {
    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
    public static void onInfectionDamageStart(LivingIncomingDamageEvent event) {
       if (!net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) return;
+      if (PaleRiderInfectionService.isPaleRiderCardPlayer(event.getEntity())) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return;
+      }
       if (net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(event.getEntity())) {
          event.setCanceled(true);
          event.setAmount(0.0F);
@@ -71,7 +85,8 @@ public final class PaleRiderEvents {
    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
    public static void onInfectionDamageEnd(LivingIncomingDamageEvent event) {
       if (!net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) return;
-      if (net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(event.getEntity())) {
+      if (PaleRiderInfectionService.isPaleRiderCardPlayer(event.getEntity())
+         || net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(event.getEntity())) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          return;
@@ -107,9 +122,17 @@ public final class PaleRiderEvents {
       var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || !"pale_rider".equals(vars.servant_card_id)) return;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.redirectPossessedDamage(player, event.getSource(), event.getAmount())) {
+         REDIRECTED_CARD_DAMAGE.put(event.getContainer(), Boolean.TRUE);
          event.setAmount(0.0F);
          event.setCanceled(true);
       }
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+   public static void onPossessedCardDamageFinal(LivingIncomingDamageEvent event) {
+      if (REDIRECTED_CARD_DAMAGE.remove(event.getContainer()) == null) return;
+      event.setAmount(0.0F);
+      event.setCanceled(true);
    }
 
    @SubscribeEvent(priority = EventPriority.LOWEST)

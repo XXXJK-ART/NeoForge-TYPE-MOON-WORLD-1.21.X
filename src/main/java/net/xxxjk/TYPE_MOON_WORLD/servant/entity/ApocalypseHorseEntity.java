@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -11,10 +12,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService;
 import org.joml.Vector3f;
 
 public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
+   private static final String STATIC_X_TAG = "PaleRiderStaticMountX";
+   private static final String STATIC_Z_TAG = "PaleRiderStaticMountZ";
+
    public ApocalypseHorseEntity(EntityType<? extends ApocalypseHorseEntity> type, Level level) {
       super(type, level);
       this.setNoAi(true);
@@ -37,13 +44,20 @@ public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
    public void tick() {
       super.tick();
       if (!(this.level() instanceof ServerLevel level)) return;
-      PaleRiderEntity owner = this.getPaleRiderOwner();
-      if (owner == null || !owner.hasAnyDomain()) {
+      LivingEntity owner = this.getPaleRiderLivingOwner();
+      boolean active = owner instanceof PaleRiderEntity rider ? rider.hasAnyDomain()
+         : owner instanceof net.minecraft.server.level.ServerPlayer player && PaleRiderInfectionService.isPaleRiderCardPlayer(player)
+            && (player.getPersistentData().getBoolean("PaleRiderCardCalamityActive") || player.getPersistentData().getBoolean("PaleRiderCardUnderworldActive"));
+      if (owner == null || !active) {
          this.discard();
          return;
       }
-      if (!this.getPassengers().isEmpty()) {
-         LivingEntity target = owner.findPaleRiderEnemy(64.0);
+      if (owner instanceof ServerPlayer player && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
+         this.tickCardFormation(player);
+      } else if (!this.getPassengers().isEmpty()) {
+         LivingEntity target = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(64.0) :
+            level.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(64.0), e -> e != owner && e.isAlive()
+               && !PaleRiderInfectionService.arePaleRiderAllies(owner, e)).stream().findFirst().orElse(null);
          if (target != null) {
             this.setNoAi(false);
             Vec3 destination = formationDestination(owner, target, this.getFirstPassenger());
@@ -55,7 +69,83 @@ public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + 0.2, this.getZ(), 4, 0.45, 0.08, 0.45, 0.01);
    }
 
-   private static Vec3 formationDestination(PaleRiderEntity owner, LivingEntity target, net.minecraft.world.entity.Entity passenger) {
+   private void tickCardFormation(ServerPlayer player) {
+      if (this.getFirstPassenger() == player) {
+         this.setNoAi(true);
+         this.getNavigation().stop();
+         this.applyPlayerInput(player);
+         return;
+      }
+      if (!(this.getFirstPassenger() instanceof ApocalypseHorsemanEntity horseman)) return;
+      if (horseman.isPaleRiderProxy()) {
+         this.setNoAi(true);
+         this.getNavigation().stop();
+         if (!this.getPersistentData().contains(STATIC_X_TAG)) {
+            this.getPersistentData().putDouble(STATIC_X_TAG, this.getX());
+            this.getPersistentData().putDouble(STATIC_Z_TAG, this.getZ());
+         }
+         double anchorX = this.getPersistentData().getDouble(STATIC_X_TAG);
+         double anchorZ = this.getPersistentData().getDouble(STATIC_Z_TAG);
+         if (this.distanceToSqr(anchorX, this.getY(), anchorZ) > 1.0E-4) this.teleportTo(anchorX, this.getY(), anchorZ);
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+         this.hasImpulse = true;
+         return;
+      }
+      LivingEntity leader = ServantCardPaleRiderSkills.getDomainFormationLeader(player);
+      if (leader == null || !leader.isAlive()) {
+         this.setNoAi(true);
+         this.getNavigation().stop();
+         this.setDeltaMovement(Vec3.ZERO);
+         return;
+      }
+      Vec3 destination = cardFormationDestination(leader, horseman);
+      if (this.distanceToSqr(destination) > 24.0 * 24.0) {
+         this.teleportTo(destination.x, destination.y, destination.z);
+         this.getNavigation().stop();
+      } else if (this.distanceToSqr(destination) > 2.0 * 2.0) {
+         this.setNoAi(false);
+         this.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.15);
+      } else {
+         this.getNavigation().stop();
+         this.setDeltaMovement(this.getDeltaMovement().multiply(0.35, 1.0, 0.35));
+      }
+   }
+
+   private void applyPlayerInput(ServerPlayer player) {
+      float forwardInput = player.zza;
+      float strafeInput = player.xxa;
+      this.setYRot(player.getYRot());
+      this.yBodyRot = this.getYRot();
+      if (Math.abs(forwardInput) < 0.01F && Math.abs(strafeInput) < 0.01F) {
+         double vertical = ((LivingEntityInputAccessor)player).typemoonworld$isJumping() && this.onGround() ? 0.42 : this.getDeltaMovement().y;
+         this.setDeltaMovement(this.getDeltaMovement().x * 0.35, vertical, this.getDeltaMovement().z * 0.35);
+         return;
+      }
+      double angle = Math.toRadians(player.getYRot());
+      Vec3 forward = new Vec3(-Math.sin(angle), 0.0, Math.cos(angle));
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 movement = forward.scale(forwardInput).add(right.scale(strafeInput));
+      if (movement.lengthSqr() > 1.0) movement = movement.normalize();
+      double speed = forwardInput < 0.0F ? 0.22 : 0.4;
+      double vertical = ((LivingEntityInputAccessor)player).typemoonworld$isJumping() && this.onGround() ? 0.42 : this.getDeltaMovement().y;
+      this.setDeltaMovement(movement.x * speed, vertical, movement.z * speed);
+      this.hasImpulse = true;
+   }
+
+   private static Vec3 cardFormationDestination(LivingEntity leader, ApocalypseHorsemanEntity horseman) {
+      double angle = Math.toRadians(leader.getYRot());
+      Vec3 forward = new Vec3(-Math.sin(angle), 0.0, Math.cos(angle));
+      Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+      double sideOffset = switch (horseman.getCalamity()) {
+         case SWORD -> -4.2;
+         case FAMINE -> 0.0;
+         case BEAST -> 4.2;
+      };
+      double rearOffset = horseman.getCalamity() == ApocalypseHorsemanEntity.Calamity.FAMINE ? 4.6 : 2.8;
+      return leader.position().add(side.scale(sideOffset)).subtract(forward.scale(rearOffset));
+   }
+
+   private static Vec3 formationDestination(LivingEntity owner, LivingEntity target, net.minecraft.world.entity.Entity passenger) {
       if (!(passenger instanceof ApocalypseHorsemanEntity horseman)) return target.position();
       Vec3 forward = target.position().subtract(owner.position()).multiply(1.0, 0.0, 1.0);
       if (forward.lengthSqr() < 1.0E-4) forward = new Vec3(0.0, 0.0, 1.0);

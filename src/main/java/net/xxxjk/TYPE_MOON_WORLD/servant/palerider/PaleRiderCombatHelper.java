@@ -61,34 +61,6 @@ public final class PaleRiderCombatHelper {
    private PaleRiderCombatHelper() {
    }
 
-   public static void startUnderworldForCard(PaleRiderEntity rider) {
-      if (rider != null && rider.level() instanceof ServerLevel level && !rider.isUnderworldActive()) {
-         startUnderworld(rider, level, level.getGameTime());
-      }
-   }
-
-   public static void stopUnderworldForCard(PaleRiderEntity rider) {
-      if (rider != null && rider.level() instanceof ServerLevel level && rider.isUnderworldActive()) {
-         rider.getPersistentData().remove(TAG_UNDERWORLD_ACTIVE);
-         rider.getPersistentData().remove(TAG_UNDERWORLD_UNTIL);
-         rider.returnAllLivingSouls();
-         updateSoulSpeed(rider, 0);
-         VFXServerEffects.spawn(level, "pale_rider_underworld_end", rider, 64.0);
-      }
-   }
-
-   public static void startCalamityForCard(PaleRiderEntity rider) {
-      if (rider != null && rider.level() instanceof ServerLevel level && !rider.isCalamityActive()) {
-         startCalamity(rider, level, level.getGameTime());
-      }
-   }
-
-   public static void stopCalamityForCard(PaleRiderEntity rider) {
-      if (rider != null && rider.level() instanceof ServerLevel level && rider.isCalamityActive()) {
-         endCalamity(rider, level);
-      }
-   }
-
    public static void tick(PaleRiderEntity rider) {
       if (!(rider.level() instanceof ServerLevel level)) return;
       long now = level.getGameTime();

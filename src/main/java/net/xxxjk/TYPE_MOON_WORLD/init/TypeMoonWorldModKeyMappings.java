@@ -19,7 +19,9 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
 import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
+import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
@@ -205,6 +207,16 @@ public class TypeMoonWorldModKeyMappings {
             && "oda_nobunaga".equals(vars.servant_card_id)
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+         }
+      }
+
+      @SubscribeEvent
+      public static void onPaleRiderMovementInput(MovementInputUpdateEvent event) {
+         if (!(event.getEntity() instanceof Player player) || !PaleRiderClientState.possessing || !player.isPassenger()) return;
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id)) {
+            // Shift is sent through the possession packet as downward input; do not let vanilla dismount first.
+            event.getInput().shiftKeyDown = false;
          }
       }
 
@@ -611,12 +623,13 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
-         if ("pale_rider".equals(vars.servant_card_id) && Minecraft.getInstance().player != null) {
+         if ("pale_rider".equals(vars.servant_card_id) && Minecraft.getInstance().player != null && PaleRiderClientState.possessing) {
             float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == 1 ? -1.0F : 0.0F);
             float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
-            float vertical = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 ? -1.0F : 0.0F);
+            boolean descend = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
+            float vertical = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1 ? 1.0F : 0.0F) + (descend ? -1.0F : 0.0F);
             PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical,
-               Minecraft.getInstance().player.getYRot(), Minecraft.getInstance().player.getXRot(), Minecraft.getInstance().options.keyAttack.isDown()), new CustomPacketPayload[0]);
+               Minecraft.getInstance().player.getYRot(), Minecraft.getInstance().player.getXRot()), new CustomPacketPayload[0]);
          }
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
             if (isHoldServantCardSkill(vars, slot)) {

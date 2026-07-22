@@ -42,13 +42,27 @@ public final class PaleRiderCrowEntity extends Parrot {
 
    @Override
    protected void customServerAiStep() {
-      super.customServerAiStep();
-      PaleRiderEntity owner = this.getPaleRiderOwner();
+      LivingEntity owner = this.getPaleRiderLivingOwner();
       if (owner == null || !owner.isAlive()) {
          this.discard();
          return;
       }
-      LivingEntity target = owner.findPaleRiderEnemy(64.0);
+      if (PaleRiderInfectionService.isStationaryAnchor(this)) {
+         PaleRiderInfectionService.holdStationaryAnchor(this);
+         return;
+      }
+      super.customServerAiStep();
+      if (owner instanceof net.minecraft.server.level.ServerPlayer player
+         && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
+         int command = player.getPersistentData().getInt("PaleRiderCardCommand");
+         if (command != 2) {
+            this.setTarget(null);
+            if (command == 1) this.getNavigation().stop();
+            else if (command == 3) this.getNavigation().moveTo(player.getX(), player.getY() + 2.5, player.getZ(), 1.0);
+            return;
+         }
+      }
+      LivingEntity target = findEnemy(owner, 64.0);
       if (target == null) {
          this.setTarget(null);
          Vec3 perch = this.gatheringPosition(owner);
@@ -69,7 +83,7 @@ public final class PaleRiderCrowEntity extends Parrot {
       }
    }
 
-   private Vec3 gatheringPosition(PaleRiderEntity owner) {
+   private Vec3 gatheringPosition(LivingEntity owner) {
       int hash = this.getUUID().hashCode() & Integer.MAX_VALUE;
       double angle = Math.toRadians(hash % 360);
       double radius = 3.0 + (hash / 360 % 4) * 0.9;
@@ -77,8 +91,8 @@ public final class PaleRiderCrowEntity extends Parrot {
       return owner.position().add(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
    }
 
-   public void setPaleRiderOwner(PaleRiderEntity owner) {
-      this.ownerUuid = owner.getUUID();
+   public void setPaleRiderOwner(LivingEntity owner) {
+      this.ownerUuid = owner == null ? null : owner.getUUID();
    }
 
    public UUID getPaleRiderOwnerUuid() {
@@ -88,6 +102,11 @@ public final class PaleRiderCrowEntity extends Parrot {
    public PaleRiderEntity getPaleRiderOwner() {
       if (this.ownerUuid == null || !(this.level() instanceof ServerLevel level)) return null;
       return level.getEntity(this.ownerUuid) instanceof PaleRiderEntity rider ? rider : null;
+   }
+
+   public LivingEntity getPaleRiderLivingOwner() {
+      if (this.ownerUuid == null || !(this.level() instanceof ServerLevel level)) return null;
+      return level.getEntity(this.ownerUuid) instanceof LivingEntity owner ? owner : null;
    }
 
    public void setDomainSpawned(boolean domainSpawned) {
@@ -100,8 +119,18 @@ public final class PaleRiderCrowEntity extends Parrot {
 
    @Override
    public boolean isAlliedTo(Entity other) {
-      PaleRiderEntity owner = this.getPaleRiderOwner();
-      return super.isAlliedTo(other) || owner != null && (other == owner || owner.isAlliedTo(other));
+      LivingEntity owner = this.getPaleRiderLivingOwner();
+      return super.isAlliedTo(other) || owner != null && (other == owner || owner.isAlliedTo(other) || other.isAlliedTo(owner));
+   }
+
+   private LivingEntity findEnemy(LivingEntity owner, double radius) {
+      if (owner instanceof PaleRiderEntity rider) return rider.findPaleRiderEnemy(radius);
+      if (this.getTarget() != null && this.getTarget().isAlive() && !PaleRiderInfectionService.arePaleRiderAllies(owner, this.getTarget())) return this.getTarget();
+      return this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius),
+         target -> target != this && target != owner && target.isAlive()
+            && !PaleRiderInfectionService.arePaleRiderAllies(owner, target)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target))
+         .stream().min((left, right) -> Double.compare(left.distanceToSqr(this), right.distanceToSqr(this))).orElse(null);
    }
 
    @Override

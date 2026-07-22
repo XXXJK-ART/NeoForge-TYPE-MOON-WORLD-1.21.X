@@ -88,12 +88,9 @@ public class ClientPacketHandler {
    public static void openPaleRiderScreen(int kind, List<PaleRiderOpenScreenMessage.Target> targets) {
       if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) return;
       Minecraft mc = Minecraft.getInstance();
-      if (kind == 4 && mc.level != null && targets != null && !targets.isEmpty()) {
-         PaleRiderCameraClient.follow(targets.getFirst().entityId());
-         return;
-      }
-      if (kind == 5) {
-         PaleRiderCameraClient.reset();
+      if (kind == 4 || kind == 5) {
+         PaleRiderClientState.possessing = kind == 4;
+         if (mc.player != null) mc.setCameraEntity(mc.player);
          return;
       }
       if (mc.player != null) mc.setScreen(new PaleRiderScreen(kind, targets));

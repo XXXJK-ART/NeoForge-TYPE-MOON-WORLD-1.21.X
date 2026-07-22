@@ -25,6 +25,7 @@ public final class PaleRiderInfectionService {
    public static final String TAG_UNTIL = "PaleRiderInfectionUntil";
    public static final String TAG_IMMUNE_UNTIL = "PaleRiderInfectionImmuneUntil";
    public static final String TAG_CONTROLLED = "PaleRiderControlled";
+   public static final String TAG_STATIONARY_ANCHOR = "PaleRiderStationaryAnchor";
    public static final String TAG_PREVIOUS_NO_AI = "PaleRiderPreviousNoAi";
    public static final String TAG_WAS_IN_CALAMITY = "PaleRiderInfectionWasInCalamity";
    public static final String TAG_CALAMITY_EXIT_CLEANSE = "PaleRiderInfectionCalamityExitCleanse";
@@ -36,6 +37,9 @@ public final class PaleRiderInfectionService {
 
    public static boolean infect(LivingEntity target, LivingEntity owner, int addedLevels) {
       if (target == null || owner == null || !target.isAlive() || target == owner || target.isAlliedTo(owner)) {
+         return false;
+      }
+      if (isPaleRiderCardPlayer(target)) {
          return false;
       }
       long now = target.level().getGameTime();
@@ -57,6 +61,12 @@ public final class PaleRiderInfectionService {
    }
 
    public static void tick(LivingEntity target) {
+      if (isPaleRiderCardPlayer(target)) {
+         if (target.getPersistentData().contains(TAG_LEVEL) || target.hasEffect(ModMobEffects.PALE_RIDER_INFECTION)) {
+            cleanse(target, false);
+         }
+         return;
+      }
       int level = getLevel(target);
       if (!(target.level() instanceof ServerLevel serverLevel)) {
          return;
@@ -138,35 +148,77 @@ public final class PaleRiderInfectionService {
       return getLevel(target) > 0;
    }
 
+   public static boolean isPaleRiderCardPlayer(LivingEntity target) {
+      if (!(target instanceof Player player)) return false;
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id);
+   }
+
    public static boolean isControlled(Entity entity) {
       return entity != null && entity.getPersistentData().getBoolean(TAG_CONTROLLED)
          && entity.getPersistentData().hasUUID(TAG_OWNER);
    }
 
+   public static boolean isStationaryAnchor(Entity entity) {
+      return entity != null && entity.getPersistentData().getBoolean(TAG_STATIONARY_ANCHOR);
+   }
+
+   public static void markStationaryAnchor(Mob mob) {
+      if (mob == null) return;
+      CompoundTag data = mob.getPersistentData();
+      data.putBoolean(TAG_STATIONARY_ANCHOR, true);
+      data.putDouble(TAG_STATIONARY_ANCHOR + "X", mob.getX());
+      data.putDouble(TAG_STATIONARY_ANCHOR + "Y", mob.getY());
+      data.putDouble(TAG_STATIONARY_ANCHOR + "Z", mob.getZ());
+      mob.setNoGravity(true);
+      holdStationaryAnchor(mob);
+   }
+
+   public static void holdStationaryAnchor(Mob mob) {
+      if (!isStationaryAnchor(mob)) return;
+      CompoundTag data = mob.getPersistentData();
+      double x = data.getDouble(TAG_STATIONARY_ANCHOR + "X");
+      double y = data.getDouble(TAG_STATIONARY_ANCHOR + "Y");
+      double z = data.getDouble(TAG_STATIONARY_ANCHOR + "Z");
+      mob.setTarget(null);
+      mob.setAggressive(false);
+      mob.getNavigation().stop();
+      mob.setDeltaMovement(Vec3.ZERO);
+      mob.setNoGravity(true);
+      if (mob.distanceToSqr(x, y, z) > 1.0E-6) mob.moveTo(x, y, z, mob.getYRot(), mob.getXRot());
+   }
+
    public static LivingEntity getCommandTarget(Mob mob) {
       if (!(mob.level() instanceof ServerLevel level)) return null;
       LivingEntity owner = getOwner(level, mob);
+      if (owner instanceof net.minecraft.server.level.ServerPlayer player && isPaleRiderCardPlayer(player)) {
+         if (player.getPersistentData().getInt("PaleRiderCardCommand") != 2) return null;
+         return level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(24.0),
+            candidate -> candidate != mob && candidate != player && candidate.isAlive()
+               && !arePaleRiderAllies(player, candidate) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate))
+            .stream().min((left, right) -> Double.compare(left.distanceToSqr(mob), right.distanceToSqr(mob))).orElse(null);
+      }
       if (!(owner instanceof Mob ownerMob)) return null;
       LivingEntity target = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(96.0) : ownerMob.getTarget();
       return isValidCommandTarget(mob, owner, target) ? target : null;
    }
 
-   public static boolean isInfectedBy(LivingEntity target, PaleRiderEntity owner) {
+   public static boolean isInfectedBy(LivingEntity target, LivingEntity owner) {
       CompoundTag data = target.getPersistentData();
       return isInfected(target) && data.hasUUID(TAG_OWNER) && owner.getUUID().equals(data.getUUID(TAG_OWNER));
    }
 
-   public static void forceControl(Mob mob, PaleRiderEntity owner) {
+   public static void forceControl(Mob mob, LivingEntity owner) {
       if (mob != null && owner != null && canControl(mob)) beginControl(mob, owner);
    }
 
    public static boolean arePaleRiderAllies(Entity first, Entity second) {
       if (first == null || second == null) return false;
-      PaleRiderEntity firstOwner = getPaleRiderController(first);
+      LivingEntity firstOwner = getPaleRiderController(first);
       if (firstOwner != null && (second == firstOwner || firstOwner.isAlliedTo(second) || second.isAlliedTo(firstOwner))) {
          return true;
       }
-      PaleRiderEntity secondOwner = getPaleRiderController(second);
+      LivingEntity secondOwner = getPaleRiderController(second);
       return secondOwner != null && (first == secondOwner || secondOwner.isAlliedTo(first) || first.isAlliedTo(secondOwner));
    }
 
@@ -206,11 +258,14 @@ public final class PaleRiderInfectionService {
             mob.getX(), mob.getY() + mob.getBbHeight() * 0.65, mob.getZ(), 3, mob.getBbWidth() * 0.4, mob.getBbHeight() * 0.4, mob.getBbWidth() * 0.4, 0.01);
       }
 
+      if (isStationaryAnchor(mob)) {
+         holdStationaryAnchor(mob);
+         return;
+      }
+
       if (mob.getPersistentData().getBoolean("PaleRiderPossessed")) return;
 
-      if (owner instanceof PaleRiderEntity cardProxy
-         && cardProxy.getPersistentData().getBoolean("PaleRiderCardProxy")
-         && cardProxy.getMaster() instanceof net.minecraft.server.level.ServerPlayer cardOwner) {
+      if (owner instanceof net.minecraft.server.level.ServerPlayer cardOwner && isPaleRiderCardPlayer(cardOwner)) {
          int command = cardOwner.getPersistentData().getInt("PaleRiderCardCommand");
          if (command == 0) {
             mob.setTarget(null);
@@ -232,9 +287,14 @@ public final class PaleRiderInfectionService {
          }
          LivingEntity nearbyTarget = level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(24.0),
             candidate -> candidate != mob && candidate != cardOwner && candidate.isAlive()
-               && !cardProxy.isAlliedTo(candidate) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate))
+               && !arePaleRiderAllies(cardOwner, candidate) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate))
             .stream().min((left, right) -> Double.compare(left.distanceToSqr(mob), right.distanceToSqr(mob))).orElse(null);
-         if (nearbyTarget != null) cardProxy.lockCombatTarget(nearbyTarget);
+         if (nearbyTarget != null) {
+            mob.setTarget(nearbyTarget);
+            mob.setAggressive(true);
+            mob.getNavigation().moveTo(nearbyTarget, 1.0);
+         }
+         return;
       }
 
       LivingEntity commandTarget = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(96.0)
@@ -319,13 +379,13 @@ public final class PaleRiderInfectionService {
       return true;
    }
 
-   private static PaleRiderEntity getPaleRiderController(Entity entity) {
+   private static LivingEntity getPaleRiderController(Entity entity) {
       if (entity instanceof PaleRiderEntity rider) return rider;
-      if (entity instanceof OwnedPaleRiderMob owned) return owned.getPaleRiderOwner();
-      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity crow) return crow.getPaleRiderOwner();
+      if (entity instanceof OwnedPaleRiderMob owned) return owned.getPaleRiderLivingOwner();
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity crow) return crow.getPaleRiderLivingOwner();
       if (isControlled(entity) && entity.level() instanceof ServerLevel level
-         && level.getEntity(entity.getPersistentData().getUUID(TAG_OWNER)) instanceof PaleRiderEntity rider) {
-         return rider;
+         && level.getEntity(entity.getPersistentData().getUUID(TAG_OWNER)) instanceof LivingEntity owner) {
+         return owner;
       }
       return null;
    }
