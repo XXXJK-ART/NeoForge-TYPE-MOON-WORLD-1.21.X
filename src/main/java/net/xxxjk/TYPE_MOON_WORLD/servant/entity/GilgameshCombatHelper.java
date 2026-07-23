@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -184,7 +185,7 @@ public final class GilgameshCombatHelper {
       double distance = entity.distanceTo(target);
       entity.setFlyingMode(true);
       entity.getNavigation().stop(); entity.fallDistance = 0.0F;
-      double desiredY = Math.max(target.getY() + 5.0, entity.level().getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, entity.blockPosition()).getY() + 6.0);
+      double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
       Vec3 away = entity.position().subtract(target.position()).multiply(1, 0, 1);
       if (away.lengthSqr() < 1.0E-4) away = new Vec3(1, 0, 0);
       away = away.normalize();

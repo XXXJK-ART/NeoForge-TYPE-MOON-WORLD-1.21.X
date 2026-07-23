@@ -46,6 +46,17 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.EffectsApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.ClientExtensionRegistryImpl;
+import net.xxxjk.TYPE_MOON_WORLD.api.GemApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MasterProfileApiRegistry;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanPoseMessage;
@@ -97,6 +108,12 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SetTimeAlterMultiplierMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardReleaseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSelectMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderCommandMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSpawnModeMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantMasterContractMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
@@ -104,7 +121,11 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
+import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
+import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
@@ -122,6 +143,7 @@ public class TYPE_MOON_WORLD {
    private static volatile long serverTickCounter = 0L;
 
    public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
+      TypeMoonWorldApi.install(new InternalApiProvider());
       modEventBus.addListener(this::registerNetworking);
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
       NeoForge.EVENT_BUS.register(this);
@@ -140,13 +162,27 @@ public class TYPE_MOON_WORLD {
       modEventBus.addListener(this::addCreative);
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
       modEventBus.addListener(this::commonSetup);
+      modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
       event.enqueueWork(
          () -> {
             MagicModularRegistry.ensureInitialized();
+            MagicDefinitionRegistry.bootstrapBuiltins();
             ServantSkillRegistry.ensureInitialized();
+            ServantAddonRegistry.ensureInitialized();
+            MagicModularRegistry.freeze();
+            ServantSkillRegistry.freeze();
+            ServantAddonRegistry.freeze();
+            CardActionRegistry.freeze();
+            MagicDefinitionRegistry.freeze();
+            MagicPresetRegistry.freeze();
+            ClientExtensionRegistryImpl.freeze();
+            GemApiRegistry.freeze();
+            MasterProfileApiRegistry.freeze();
+            ExtensionApiRegistry.freeze();
+            EffectsApiRegistry.freeze();
             Regions.register(new GemRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_region"), 2));
             ResourceKey<Biome> gemBiome = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_biome"));
             SurfaceRuleManager.addSurfaceRules(
@@ -222,9 +258,16 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardHoldActionMessage.TYPE, ServantCardHoldActionMessage.STREAM_CODEC, ServantCardHoldActionMessage::handleData);
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);
+      registrar.playToServer(PaleRiderSelectMessage.TYPE, PaleRiderSelectMessage.STREAM_CODEC, PaleRiderSelectMessage::handleData);
+      registrar.playToServer(PaleRiderCommandMessage.TYPE, PaleRiderCommandMessage.STREAM_CODEC, PaleRiderCommandMessage::handleData);
+      registrar.playToServer(PaleRiderSpawnModeMessage.TYPE, PaleRiderSpawnModeMessage.STREAM_CODEC, PaleRiderSpawnModeMessage::handleData);
+      registrar.playToClient(PaleRiderOpenScreenMessage.TYPE, PaleRiderOpenScreenMessage.STREAM_CODEC, PaleRiderOpenScreenMessage::handleData);
+      registrar.playToServer(PaleRiderPossessionInputMessage.TYPE, PaleRiderPossessionInputMessage.STREAM_CODEC, PaleRiderPossessionInputMessage::handleData);
+      registrar.playToClient(PaleRiderStateMessage.TYPE, PaleRiderStateMessage.STREAM_CODEC, PaleRiderStateMessage::handleData);
       registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
       registrar.playToServer(MasterCommandSpellMessage.TYPE, MasterCommandSpellMessage.STREAM_CODEC, MasterCommandSpellMessage::handleData);
       registrar.playToServer(MasterCommandSpellPoseMessage.TYPE, MasterCommandSpellPoseMessage.STREAM_CODEC, MasterCommandSpellPoseMessage::handleData);
+      registrar.playToServer(CustomCommandSpellMessage.TYPE, CustomCommandSpellMessage.STREAM_CODEC, CustomCommandSpellMessage::handleData);
       registrar.playToServer(EnkiduTransfigurationPointMessage.TYPE, EnkiduTransfigurationPointMessage.STREAM_CODEC, EnkiduTransfigurationPointMessage::handleData);
       registrar.playToServer(EnkiduTransfigurationSetMessage.TYPE, EnkiduTransfigurationSetMessage.STREAM_CODEC, EnkiduTransfigurationSetMessage::handleData);
       registrar.playToServer(MedeaCraftSelectionMessage.TYPE, MedeaCraftSelectionMessage.STREAM_CODEC, MedeaCraftSelectionMessage::handleData);
@@ -275,6 +318,7 @@ public class TYPE_MOON_WORLD {
       );
       registrar.playToClient(OpenLeylineSurveyMapMessage.TYPE, OpenLeylineSurveyMapMessage.STREAM_CODEC, OpenLeylineSurveyMapMessage::handleData);
       registrar.playToClient(VFXSpawnEffectMessage.TYPE, VFXSpawnEffectMessage.STREAM_CODEC, VFXSpawnEffectMessage::handleData);
+      registrar.playToClient(DefinitionSnapshotMessage.TYPE, DefinitionSnapshotMessage.STREAM_CODEC, DefinitionSnapshotMessage::handleData);
       networkingRegistered = true;
    }
 

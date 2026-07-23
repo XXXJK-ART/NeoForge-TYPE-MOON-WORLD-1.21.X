@@ -134,6 +134,7 @@ public final class BaptismRiteEventHandler {
       }
       chance = Math.max(0.0, Math.min(0.95, chance));
       cleanse(target, proficiency);
+      net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       target.invulnerableTime = 0;
       target.hurt(player.damageSources().source(BAPTISM_DAMAGE, player), damage);
       target.invulnerableTime = 0;

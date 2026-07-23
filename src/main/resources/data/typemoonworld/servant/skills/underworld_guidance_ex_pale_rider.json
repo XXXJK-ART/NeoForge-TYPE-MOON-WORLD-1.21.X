@@ -1,0 +1,12 @@
+{
+  "id": "underworld_guidance_ex_pale_rider",
+  "display_name": "Guidance of the Underworld EX",
+  "display_name_zh": "冥界的引导 EX",
+  "type": "active",
+  "mp_cost": 150,
+  "cooldown_ticks": 2400,
+  "duration_ticks": 1200,
+  "effects": [],
+  "description": "Manifests up to fifty captured souls in a moving fifty-block underworld.",
+  "description_zh": "在随本体移动的五十格冥界中实体化至多五十个已捕获灵魂。"
+}

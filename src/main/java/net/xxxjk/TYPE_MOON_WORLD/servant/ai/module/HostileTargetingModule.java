@@ -45,7 +45,7 @@ public final class HostileTargetingModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       boolean laguzActive = CuChulainnCombatHelper.isLaguzActive(entity);
-      double profileRange = Math.max(16.0, context.behaviorProfile().aggressionRange());
+      double profileRange = context.aiConfig() == null ? Math.max(16.0, context.behaviorProfile().aggressionRange()) : Math.max(16.0, context.aiConfig().movement().followDistance() * 4.0);
       boolean emiyaArcher = EmiyaArcherEntity.SERVANT_KEY.equals(entity.getServantId());
       boolean clairvoyanceActive = emiyaArcher && entity.getPersistentData().getBoolean("ClairvoyanceActive");
       double cap = laguzActive ? MAX_LAGUZ_TARGET_SCAN_RANGE : MAX_TARGET_SCAN_RANGE;

@@ -1,0 +1,31 @@
+{
+  "duration":6.0,
+  "notes":"Dense moving Underworld shell and continual death weather.",
+  "environment":[
+    {"type":"world_desaturation","color":"#FFD2D4D7","start":0.0,"end":6.0,"fade_in":0.15,"fade_out":0.8,"intensity":1.0,"radius":50.0},
+    {"type":"world_darkness","color":"#FF555A60","start":0.0,"end":6.0,"fade_in":0.2,"fade_out":0.8,"intensity":0.86,"radius":50.0},
+    {"type":"screen_tint","color":"#8A111318","start":0.0,"end":6.0,"fade_in":0.2,"fade_out":0.7,"intensity":0.5,"radius":50.0}
+  ],
+  "emitters":[
+    {
+      "start_time":0.0,"end_time":6.0,"rate":2800,"particle_lifetime":1.4,"size_variance":0.5,"lifetime_variance":0.35,
+      "position_variance":0.04,"velocity":[0.0,0.025,0.0],"velocity_variance":0.05,"max_vanilla_particles_per_tick":10,
+      "binding":{"mode":"entity_yaw","offset":[0.0,1.0,0.0],"rotate_with_entity":false},
+      "component":{"type":"sphere","radius":50.0,"sample_count":680},
+      "color_over_life":[{"t":0.0,"color":"#CCE0E2E5"},{"t":0.55,"color":"#AA555A61"},{"t":1.0,"color":"#00101215"}],
+      "size_over_life":[{"t":0.0,"size":0.09},{"t":0.5,"size":0.34},{"t":1.0,"size":0.03}],
+      "blend":"TRANSLUCENT","particle_role":"PALE_RIDER_UNDERWORLD_BOUNDARY","enable_trail":true,
+      "vanilla_particles":[{"type":"ash","count":4,"spread":[18.0,8.0,18.0],"offset":[0.0,3.0,0.0],"speed":0.025,"chance":0.9}]
+    },
+    {
+      "start_time":0.0,"end_time":6.0,"rate":2400,"particle_lifetime":1.8,"size_variance":0.65,"lifetime_variance":0.4,
+      "position_variance":0.25,"velocity":[0.0,0.14,0.0],"velocity_variance":0.16,"max_vanilla_particles_per_tick":12,
+      "binding":{"mode":"entity_yaw","offset":[0.0,0.4,0.0],"rotate_with_entity":false},
+      "component":{"type":"ellipsoid","radius_x":23.0,"radius_y":8.0,"radius_z":23.0,"sample_count":520},
+      "color_over_life":[{"t":0.0,"color":"#D0D6D8DB"},{"t":0.5,"color":"#AA20242A"},{"t":1.0,"color":"#00000000"}],
+      "size_over_life":[{"t":0.0,"size":0.07},{"t":0.55,"size":0.28},{"t":1.0,"size":0.02}],
+      "blend":"ADDITIVE","particle_role":"PALE_RIDER_UNDERWORLD_SOUL_STORM","enable_trail":true,
+      "vanilla_particles":[{"type":"soul","count":2,"spread":[12.0,5.0,12.0],"offset":[0.0,1.0,0.0],"speed":0.035,"chance":0.9},{"type":"sculk_soul","count":2,"spread":[11.0,4.0,11.0],"offset":[0.0,0.5,0.0],"speed":0.025,"chance":0.75},{"type":"large_smoke","count":2,"spread":[12.0,4.0,12.0],"offset":[0.0,0.5,0.0],"speed":0.02,"chance":0.8}]
+    }
+  ]
+}

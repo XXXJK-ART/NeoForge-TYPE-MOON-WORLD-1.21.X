@@ -1,0 +1,15 @@
+{
+  "id": "enuma_elish_ea",
+  "display_name": "Enuma Elish",
+  "display_name_zh": "天地乖离开辟之星",
+  "type": "anti_world",
+  "rank": "EX",
+  "mp_cost": 120,
+  "over_charge_supported": true,
+  "over_charge_levels": 5,
+  "base_damage_multiplier": 4.0,
+  "range": 64.0,
+  "effects": [],
+  "special_attack_conditions": [],
+  "class_restrictions": []
+}

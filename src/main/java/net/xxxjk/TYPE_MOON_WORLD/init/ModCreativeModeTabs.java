@@ -50,6 +50,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_GAWAIN);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
+                        output.accept(ModItems.SERVANT_CARD_PALE_RIDER);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
@@ -345,6 +346,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                         output.accept(ModItems.PARACELSUS_SPAWN_EGG);
+                        output.accept(ModItems.PALE_RIDER_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

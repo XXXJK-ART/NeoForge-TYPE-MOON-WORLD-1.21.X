@@ -13,4 +13,16 @@ public record ServantAiContext(
    ServantBehaviorProfile behaviorProfile,
    long gameTick
 ) {
+   public ServantAiDefinition aiConfig() {
+      ServantAiDefinition configured = ServantAiDefinitionRegistry.get(this.definition.aiConfigId());
+      if (configured != null) return configured;
+      net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.tryParse(this.definition.aiConfigId());
+      net.xxxjk.typemoonworld.api.AiTacticProfile profile = net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry.ai(id);
+      if (profile == null) return null;
+      return new ServantAiDefinition(id.toString(),
+         new ServantAiDefinition.Movement(profile.followDistance(), profile.followDistance(), false),
+         new ServantAiDefinition.Combat(profile.attackDistance(), profile.retreatHealthRatio(), 1.0, profile.retreatHealthRatio(), 1.0),
+         new ServantAiDefinition.Social(200, 0.1), new ServantAiDefinition.Command(0.8, 0.005),
+         new ServantAiDefinition.Environment(java.util.List.of(), java.util.List.of(), "any"));
+   }
 }

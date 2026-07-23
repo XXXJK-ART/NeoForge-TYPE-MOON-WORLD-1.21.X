@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.particles.ParticleTypes;
@@ -14,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -55,6 +58,7 @@ public final class GanryuCombatService {
    private static final String TAG_LAST_SEQUENCE = "TypeMoonGanryuLastSequence";
    private static final String TAG_DOWN_UNTIL = "TypeMoonGanryuDownUntil";
    private static final String TAG_MARTIAL_DAMAGE = "TypeMoonGanryuDamage";
+   private static final String TAG_BASIC_ATTACK = "TypeMoonGanryuBasicAttack";
    private static final String TAG_PENDING_TARGET = "TypeMoonGanryuPendingTarget";
    private static final String TAG_PENDING_STRIKES = "TypeMoonGanryuPendingStrikes";
    private static final String TAG_PENDING_NEXT = "TypeMoonGanryuPendingNext";
@@ -193,11 +197,56 @@ public final class GanryuCombatService {
          move = count == 1 ? GanryuMove.STONE_FLOWER : count == 2 ? GanryuMove.SPARROW_THRUST : GanryuMove.SPRING_BUD;
       }
       if (!isUnlocked(vars, move)) {
+         if (usesBasicAttack(vars.ganryu_proficiency)) {
+            performBasicAttack(player);
+            return;
+         }
          player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.move_locked"), true);
          return;
       }
       data.putLong(TAG_LAST_SEQUENCE, now);
       perform(player, vars, move, 0.0F);
+   }
+
+   private static void performBasicAttack(ServerPlayer player) {
+      LivingEntity target = findTarget(player, GanryuMove.STONE_FLOWER.range());
+      if (target == null) return;
+      CompoundTag data = player.getPersistentData();
+      boolean useOffhandBlade = player.getMainHandItem().isEmpty() && isAllowedBlade(player.getOffhandItem());
+      ItemStack offhandBlade = useOffhandBlade ? player.getOffhandItem() : ItemStack.EMPTY;
+      List<AppliedAttributeModifier> temporaryModifiers = useOffhandBlade
+         ? applyMainHandModifiers(player, offhandBlade)
+         : List.of();
+      if (useOffhandBlade) {
+         player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+         player.setItemInHand(InteractionHand.MAIN_HAND, offhandBlade);
+      }
+      data.putBoolean(TAG_BASIC_ATTACK, true);
+      data.putBoolean(TAG_MARTIAL_DAMAGE, true);
+      try {
+         player.attack(target);
+      } finally {
+         data.remove(TAG_BASIC_ATTACK);
+         data.remove(TAG_MARTIAL_DAMAGE);
+         if (useOffhandBlade) {
+            ItemStack attackedBlade = player.getMainHandItem();
+            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            player.setItemInHand(InteractionHand.OFF_HAND, attackedBlade);
+            temporaryModifiers.forEach(AppliedAttributeModifier::remove);
+         }
+      }
+   }
+
+   private static List<AppliedAttributeModifier> applyMainHandModifiers(ServerPlayer player, ItemStack blade) {
+      List<AppliedAttributeModifier> applied = new ArrayList<>();
+      blade.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+         AttributeInstance instance = player.getAttribute(attribute);
+         if (instance != null && instance.getModifier(modifier.id()) == null) {
+            instance.addTransientModifier(modifier);
+            applied.add(new AppliedAttributeModifier(instance, modifier));
+         }
+      });
+      return applied;
    }
 
    private static void beginStance(ServerPlayer player, long now) {
@@ -245,7 +294,7 @@ public final class GanryuCombatService {
 
    private static void perform(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, GanryuMove move, float stancePower) {
       if (!isUnlocked(vars, move)) return;
-      if (move == GanryuMove.HIGH_JUMP && !player.onGround()) return;
+      if (move == GanryuMove.HIGH_JUMP && !MartialHighJumpService.tryConsume(player)) return;
       long now = player.level().getGameTime();
       int recovery = recoveryTicks(move.recoveryTicks(), vars.body_technique);
       player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
@@ -423,6 +472,10 @@ public final class GanryuCombatService {
       return Math.floorMod(current, stages) + 1;
    }
 
+   static boolean usesBasicAttack(double proficiency) {
+      return proficiency + 1.0E-6 < GanryuMove.STONE_FLOWER.requiredProficiency();
+   }
+
    public static void addProficiency(ServerPlayer player, double amount) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       double before = vars.ganryu_proficiency;
@@ -448,6 +501,12 @@ public final class GanryuCombatService {
 
    public static boolean isMartialDamage(ServerPlayer player) {
       return player != null && player.getPersistentData().getBoolean(TAG_MARTIAL_DAMAGE);
+   }
+
+   public static boolean consumeBasicAttackAward(ServerPlayer player) {
+      if (player == null || !player.getPersistentData().getBoolean(TAG_BASIC_ATTACK)) return false;
+      player.getPersistentData().remove(TAG_BASIC_ATTACK);
+      return true;
    }
 
    public static boolean isSparring(ServerPlayer player) {
@@ -538,5 +597,11 @@ public final class GanryuCombatService {
    private static void sendPose(ServerPlayer player, GanryuMove move, int ticks) {
       PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new GanryuPoseMessage(player.getUUID(), move, ticks),
          new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+   }
+
+   private record AppliedAttributeModifier(AttributeInstance instance, AttributeModifier modifier) {
+      private void remove() {
+         this.instance.removeModifier(this.modifier);
+      }
    }
 }

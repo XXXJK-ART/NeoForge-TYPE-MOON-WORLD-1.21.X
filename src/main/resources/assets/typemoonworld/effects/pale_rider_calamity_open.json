@@ -1,0 +1,32 @@
+{
+  "duration":3.0,
+  "notes":"Twenty-five-block Four Calamities shell with violent monochrome death weather.",
+  "environment":[
+    {"type":"world_desaturation","color":"#FFE5E6E8","start":0.0,"end":3.0,"fade_in":0.1,"fade_out":0.0,"intensity":1.0,"radius":25.0},
+    {"type":"world_darkness","color":"#FF30343A","start":0.0,"end":3.0,"fade_in":0.12,"fade_out":0.0,"intensity":0.98,"radius":25.0},
+    {"type":"screen_tint","color":"#B5080A0D","start":0.0,"end":3.0,"fade_in":0.15,"fade_out":0.15,"intensity":0.78,"radius":25.0}
+  ],
+  "emitters":[
+    {
+      "start_time":0.0,"end_time":3.0,"rate":5200,"particle_lifetime":1.2,"size_variance":0.6,"lifetime_variance":0.3,
+      "position_variance":0.03,"velocity":[0.0,0.03,0.0],"velocity_variance":0.08,"max_vanilla_particles_per_tick":16,
+      "binding":{"mode":"entity_yaw","offset":[0.0,1.0,0.0],"rotate_with_entity":false},
+      "component":{"type":"sphere","radius":1.0,"sample_count":900},
+      "color_over_life":[{"t":0.0,"color":"#FFF0F1F2"},{"t":0.42,"color":"#DD6B6E74"},{"t":0.72,"color":"#CC22262B"},{"t":1.0,"color":"#00000000"}],
+      "size_over_life":[{"t":0.0,"size":0.12},{"t":0.48,"size":0.5},{"t":1.0,"size":0.04}],
+      "transform_over_life":[{"t":0.0,"scale":[0.25,0.25,0.25]},{"t":1.0,"scale":[25.0,25.0,25.0],"easing":"ease_out_cubic"}],
+      "blend":"ADDITIVE","particle_role":"PALE_RIDER_CALAMITY_SHELL","enable_trail":true,
+      "vanilla_particles":[{"type":"ash","count":5,"spread":[7.0,4.0,7.0],"offset":[0.0,2.0,0.0],"speed":0.04,"chance":1.0},{"type":"sculk_soul","count":3,"spread":[6.0,3.0,6.0],"offset":[0.0,1.0,0.0],"speed":0.035,"chance":0.85},{"type":"large_smoke","count":3,"spread":[6.0,3.0,6.0],"offset":[0.0,0.5,0.0],"speed":0.025,"chance":0.9}]
+    },
+    {
+      "start_time":0.3,"end_time":3.0,"rate":4000,"particle_lifetime":0.9,"size_variance":0.55,"lifetime_variance":0.28,
+      "position_variance":0.12,"velocity":[0.0,0.18,0.0],"velocity_variance":0.2,"max_vanilla_particles_per_tick":12,
+      "binding":{"mode":"entity_yaw","offset":[0.0,0.3,0.0],"rotate_with_entity":false},
+      "component":{"type":"ellipsoid","radius_x":11.0,"radius_y":7.0,"radius_z":11.0,"sample_count":600},
+      "color_over_life":[{"t":0.0,"color":"#EEE2E3E5"},{"t":0.5,"color":"#CC181B20"},{"t":1.0,"color":"#00000000"}],
+      "size_over_life":[{"t":0.0,"size":0.08},{"t":0.5,"size":0.34},{"t":1.0,"size":0.02}],
+      "blend":"TRANSLUCENT","particle_role":"PALE_RIDER_CALAMITY_DEATH_STORM","enable_trail":true,
+      "vanilla_particles":[{"type":"soul","count":3,"spread":[8.0,4.0,8.0],"offset":[0.0,0.8,0.0],"speed":0.04,"chance":0.9},{"type":"sculk_soul","count":2,"spread":[7.0,4.0,7.0],"offset":[0.0,0.5,0.0],"speed":0.035,"chance":0.9}]
+    }
+  ]
+}

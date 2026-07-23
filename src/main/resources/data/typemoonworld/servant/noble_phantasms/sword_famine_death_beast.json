@@ -1,0 +1,14 @@
+{
+  "id": "sword_famine_death_beast",
+  "display_name": "Sword, Famine, Death, Beast",
+  "display_name_zh": "剑、饥馑、死、兽",
+  "rank": "A",
+  "type": "anti_army",
+  "mp_cost": 150,
+  "cooldown_ticks": 2400,
+  "windup_ticks": 60,
+  "duration_ticks": 0,
+  "effects": [],
+  "description": "A moving plague domain sustained for 20 MP per second while an infected enemy remains inside.",
+  "description_zh": "以每秒20点魔力维持、随苍白骑士移动，并要求范围内持续存在感染敌人的瘟疫结界。"
+}

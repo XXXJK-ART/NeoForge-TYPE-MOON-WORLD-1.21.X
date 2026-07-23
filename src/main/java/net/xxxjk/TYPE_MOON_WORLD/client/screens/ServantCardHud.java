@@ -24,6 +24,7 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
+import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
@@ -107,6 +108,7 @@ public class ServantCardHud {
          0.62F
       );
       drawFlightStatus(gui, minecraft, vars, x, y + 58);
+      drawPaleRiderStatus(gui, minecraft, vars, x, y + 58);
       drawCooldownGrid(gui, minecraft, vars, 5, 78);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
@@ -198,6 +200,16 @@ public class ServantCardHud {
       long cd = Math.max(0L, vars.servant_card_oda_flight_cooldown_until - now);
       Component text = Component.translatable("hud.typemoonworld.servant_card.flight", vars.servant_card_flight_mode, ticksToSeconds((int)Math.min(Integer.MAX_VALUE, high)), ticksToSeconds((int)Math.min(Integer.MAX_VALUE, cd)));
       drawScaledString(gui, minecraft, text, x, y, 0xFFBFE8FF, 0.54F);
+   }
+
+   private static void drawPaleRiderStatus(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      if (!"pale_rider".equals(vars.servant_card_id)) return;
+      Component text = Component.translatable("hud.typemoonworld.servant_card.pale_rider_status",
+         PaleRiderClientState.controlledCount,
+         PaleRiderClientState.possessing ? "P" : "-",
+         PaleRiderClientState.underworld ? "U" : "-",
+         PaleRiderClientState.calamity ? "C" : "-");
+      drawScaledString(gui, minecraft, text, x, y, 0xFFC8C8D0, 0.54F);
    }
 
    private static boolean isSurvivalLike(Minecraft minecraft) {

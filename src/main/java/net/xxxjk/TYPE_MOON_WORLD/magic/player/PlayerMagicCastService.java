@@ -9,8 +9,15 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.nbt.CompoundTag;
+import net.xxxjk.typemoonworld.api.ExecutionResult;
+import net.xxxjk.typemoonworld.api.MagicCastContext;
+import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -71,18 +78,50 @@ public final class PlayerMagicCastService {
          return;
       }
 
+      var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
+      if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, entry.magicId)) {
+         displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
+         return;
+      }
+      if (dynamicDefinition != null && vars.player_mana < dynamicDefinition.manaCost()) {
+         displayClientMessage(entity, "message.typemoonworld.magic.insufficient_mana");
+         return;
+      }
+
       // Bajiquan uses its server-owned input state machine and never enters a magic executor.
       if ("bajiquan".equals(entry.magicId) || "ganryu".equals(entry.magicId)) return;
 
+      ResourceLocation publicMagicId = ResourceLocation.tryParse(entry.magicId);
+      MagicCastContext publicContext = new MagicCastContext(
+         entity instanceof LivingEntity living ? living : null,
+         null,
+         entity.level(),
+         entry.magicId,
+         entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy(),
+         "crest".equals(entry.sourceType),
+         vars.magic_proficiencies.getOrDefault(entry.magicId, 0.0));
+      if (publicMagicId != null && NeoForge.EVENT_BUS.post(new MagicCastEvent.Pre(publicMagicId, publicContext)).isCanceled()) {
+         return;
+      }
       MagicExecutionResult result = MagicModularRegistry.execute(
          new MagicExecutionContext(entity, vars, entry.magicId, "crest".equals(entry.sourceType))
       );
+      if (publicMagicId != null) {
+         NeoForge.EVENT_BUS.post(new MagicCastEvent.Post(publicMagicId, publicContext,
+            result.handled() ? new ExecutionResult(true, result.success(), result.manaCost(), result.cooldownTicks()) : ExecutionResult.NOT_HANDLED));
+      }
       if (!result.handled() || !result.success()) {
          if (fullSyncNeeded) {
             vars.syncPlayerVariables(entity);
          }
 
          return;
+      }
+
+      if (result.manaCost() > 0.0) {
+         vars.player_mana = Math.max(0.0, vars.player_mana - result.manaCost());
+      } else if (dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
+         vars.player_mana = Math.max(0.0, vars.player_mana - dynamicDefinition.manaCost());
       }
 
       applyPostCastState(entity, vars, entry.magicId);
@@ -97,6 +136,9 @@ public final class PlayerMagicCastService {
 
    private static void applyPostCastState(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       double cooldown = DEFAULT_COOLDOWN;
+      if (MagicDefinitionRegistry.contains(magicId)) {
+         cooldown = MagicDefinitionRegistry.get(magicId).cooldownTicks();
+      }
       if ("jewel_random_shoot".equals(magicId)) {
          cooldown = Math.max(1.0, JEWEL_BASE_COOLDOWN - vars.proficiency_jewel_magic_shoot * 0.2);
          vars.proficiency_jewel_magic_shoot = Math.min(100.0, vars.proficiency_jewel_magic_shoot + 0.1);
@@ -108,6 +150,10 @@ public final class PlayerMagicCastService {
 
       if (entity instanceof LivingEntity living) {
          cooldown = MercurySwordMagicAmplifier.amplifyCooldown(living, cooldown);
+      }
+      var definition = MagicDefinitionRegistry.get(magicId);
+      if (definition != null && definition.cooldownTicks() > 0) {
+         cooldown = definition.cooldownTicks();
       }
       vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
    }

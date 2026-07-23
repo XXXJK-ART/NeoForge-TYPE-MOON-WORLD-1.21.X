@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import net.minecraft.world.phys.AABB;
 
 class BajiquanProgressionTest {
    @Test void moveThresholdsMatchDesign() {
@@ -42,6 +43,21 @@ class BajiquanProgressionTest {
       assertEquals(0.38, BodyTrainingService.resistanceReduction(20), 1.0E-9);
       assertTrue(BodyTrainingService.resistanceReduction(Integer.MAX_VALUE) <= BodyTrainingService.MAX_DAMAGE_REDUCTION);
       assertEquals(15.0, BajiquanCombatService.scaledDamage(3.0F, 20, 100.0), 1.0E-6);
+   }
+
+   @Test void servantCardBodyTrainingSnapshotRoundTrips() {
+      var original = new BodyTrainingService.BodyTrainingData(321, 7, 20, 13, 9, 11);
+      var restored = BodyTrainingService.readSnapshot(BodyTrainingService.writeSnapshot(original));
+      assertEquals(original, restored);
+   }
+
+   @Test void martialHighJumpSupportProbeOnlyChecksBelowFeet() {
+      AABB player = new AABB(10.0, 64.0, 10.0, 10.6, 65.8, 10.6);
+      AABB support = MartialHighJumpService.supportBox(player);
+      assertEquals(63.92, support.minY, 1.0E-9);
+      assertEquals(64.01, support.maxY, 1.0E-9);
+      assertTrue(support.minX > player.minX && support.maxX < player.maxX);
+      assertEquals(player.minY, support.maxY - 0.01, 1.0E-9);
    }
 
    @Test void legalComboCancelsAreExplicit() {

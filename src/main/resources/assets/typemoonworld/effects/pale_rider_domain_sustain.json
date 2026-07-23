@@ -1,0 +1,57 @@
+{
+  "duration": 10.0,
+  "notes": "Long-lived Pale Rider domain environment loop; respawned every five seconds while either domain remains active.",
+  "environment": [
+    {
+      "type": "world_desaturation",
+      "color": "#FFBFC3C8",
+      "start": 0.0,
+      "end": 10.0,
+      "fade_in": 0.25,
+      "fade_out": 0.75,
+      "intensity": 1.0,
+      "radius": 52.0
+    },
+    {
+      "type": "world_darkness",
+      "color": "#FF72767B",
+      "start": 0.0,
+      "end": 10.0,
+      "fade_in": 0.3,
+      "fade_out": 0.8,
+      "intensity": 0.7,
+      "radius": 52.0
+    }
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 10.0,
+      "rate": 90,
+      "particle_lifetime": 1.5,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.3,
+      "position_variance": 0.2,
+      "velocity": [0.0, -0.05, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 5.0, 0.0], "rotate_with_entity": false},
+      "component": {"type": "ellipsoid", "radius_x": 16.0, "radius_y": 4.0, "radius_z": 16.0, "sample_count": 90},
+      "color_over_life": [
+        {"t": 0.0, "color": "#00999CA0"},
+        {"t": 0.25, "color": "#88999CA0"},
+        {"t": 1.0, "color": "#00000000"}
+      ],
+      "size_over_life": [
+        {"t": 0.0, "size": 0.04},
+        {"t": 0.5, "size": 0.14},
+        {"t": 1.0, "size": 0.02}
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "PALE_RIDER_DOMAIN_DUST",
+      "vanilla_particles": [
+        {"type": "ash", "count": 1, "spread": [8.0, 3.0, 8.0], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.3}
+      ]
+    }
+  ]
+}

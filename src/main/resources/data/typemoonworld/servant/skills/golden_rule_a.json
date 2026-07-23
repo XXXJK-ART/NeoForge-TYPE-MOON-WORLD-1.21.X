@@ -1,0 +1,10 @@
+{
+  "id": "golden_rule_a",
+  "display_name": "golden rule a",
+  "display_name_zh": "golden rule a",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

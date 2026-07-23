@@ -53,6 +53,11 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.LiShuwenRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ParacelsusRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RatSwarmRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PaleRiderCrowRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SoulEchoRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ApocalypseHorseRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ConceptSwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ParacelsusSpiritCannonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
@@ -78,6 +83,11 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
 
 @EventBusSubscriber(
    modid = "typemoonworld",
@@ -163,6 +173,11 @@ public class TypeMoonWorldClientEvents {
    @SubscribeEvent
    public static void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
       event.registerReloadListener(new ServantDefinitionLoader());
+      event.registerReloadListener(new ServantCardDefinitionLoader());
+      event.registerReloadListener(new MagicDefinitionLoader());
+      event.registerReloadListener(new ServantSkillDefinitionLoader());
+      event.registerReloadListener(new ServantNoblePhantasmDefinitionLoader());
+      event.registerReloadListener(new ServantAiDefinitionLoader());
    }
 
    @SubscribeEvent
@@ -212,6 +227,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MYSTERIOUS_SWORDSMAN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysteriousSwordsmanRenderer::new);
       event.registerEntityRenderer(ModEntities.TOHSAKA_RIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.TohsakaRinRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
+      event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), SasakiKojiroRenderer::new);
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), CuChulainnRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA.get(), MedeaRenderer::new);
@@ -225,6 +241,13 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), ParacelsusRenderer::new);
+      event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.RAT_SWARM.get(), RatSwarmRenderer::new);
+      event.registerEntityRenderer(ModEntities.PALE_RIDER_CROW.get(), PaleRiderCrowRenderer::new);
+      event.registerEntityRenderer(ModEntities.SOUL_ECHO.get(), SoulEchoRenderer::new);
+      event.registerEntityRenderer(ModEntities.APOCALYPSE_HORSEMAN.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.APOCALYPSE_HORSE.get(), ApocalypseHorseRenderer::new);
+      event.registerEntityRenderer(ModEntities.CONCEPT_SWORD.get(), ConceptSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.PARACELSUS_SPIRIT_CANNON.get(), ParacelsusSpiritCannonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);

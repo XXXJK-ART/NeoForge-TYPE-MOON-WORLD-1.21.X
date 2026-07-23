@@ -46,6 +46,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.MYSTERIOUS_SWORDSMAN.get(), MysteriousSwordsmanEntity.createAttributes().build());
       event.put(ModEntities.TOHSAKA_RIN.get(), TohsakaRinEntity.createAttributes().build());
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.GENERIC_SERVANT.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CU_CHULAINN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDEA.get(), ServantEntity.createAttributes().build());
@@ -59,6 +60,12 @@ public class ModEventBusEvents {
       event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PARACELSUS.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.PALE_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.RAT_SWARM.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity.createAttributes().build());
+      event.put(ModEntities.PALE_RIDER_CROW.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity.createAttributes().build());
+      event.put(ModEntities.SOUL_ECHO.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity.createAttributes().build());
+      event.put(ModEntities.APOCALYPSE_HORSEMAN.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity.createAttributes().build());
+      event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
    }

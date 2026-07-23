@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.neoforged.neoforge.client.event.ViewportEvent;
@@ -27,7 +28,11 @@ public final class VFXEnvironmentManager {
    }
 
    public static void add(VFXEnvironmentDefinition definition, double x, double y, double z) {
-      ACTIVE.add(new ActiveEnvironment(definition, x, y, z));
+      add(definition, x, y, z, null);
+   }
+
+   public static void add(VFXEnvironmentDefinition definition, double x, double y, double z, UUID targetUuid) {
+      ACTIVE.add(new ActiveEnvironment(definition, x, y, z, targetUuid));
    }
 
    public static void clear() {
@@ -101,7 +106,7 @@ public final class VFXEnvironmentManager {
          if (!"screen_tint".equals(active.definition.type())) {
             continue;
          }
-         float alpha = active.alpha();
+         float alpha = active.spatialAlpha();
          int color = active.definition.color();
          int argb = ((Math.min(255, Math.round(alpha * 255.0F)) & 255) << 24) | (color & 0x00FFFFFF);
          overlay = blendOver(overlay, argb);
@@ -151,7 +156,7 @@ public final class VFXEnvironmentManager {
          if (!active.isWorldFog()) {
             continue;
          }
-         float currentAlpha = active.alpha();
+         float currentAlpha = active.spatialAlpha();
          if (currentAlpha <= 0.0F) {
             continue;
          }
@@ -168,6 +173,16 @@ public final class VFXEnvironmentManager {
          alpha = nextAlpha;
       }
       return new FogMix(red, green, blue, Math.min(0.92F, alpha));
+   }
+
+   public static float desaturationStrength() {
+      float strength = 0.0F;
+      for (ActiveEnvironment active : ACTIVE) {
+         if ("world_desaturation".equals(active.definition.type())) {
+            strength = Math.max(strength, active.spatialAlpha());
+         }
+      }
+      return strength;
    }
 
    private static float lerp(float from, float to, float alpha) {
@@ -201,13 +216,38 @@ public final class VFXEnvironmentManager {
       private final double x;
       private final double y;
       private final double z;
+      private final UUID targetUuid;
       private int ageTicks;
 
-      private ActiveEnvironment(VFXEnvironmentDefinition definition, double x, double y, double z) {
+      private ActiveEnvironment(VFXEnvironmentDefinition definition, double x, double y, double z, UUID targetUuid) {
          this.definition = definition;
          this.x = x;
          this.y = y;
          this.z = z;
+         this.targetUuid = targetUuid;
+      }
+
+      private float spatialAlpha() {
+         float alpha = this.alpha();
+         Minecraft minecraft = Minecraft.getInstance();
+         if (alpha <= 0.0F || minecraft.player == null || this.definition.radius() <= 0.0F) {
+            return alpha;
+         }
+         double centerX = this.x;
+         double centerY = this.y;
+         double centerZ = this.z;
+         if (this.targetUuid != null && minecraft.level != null) {
+            for (net.minecraft.world.entity.Entity entity : minecraft.level.entitiesForRendering()) {
+               if (this.targetUuid.equals(entity.getUUID())) {
+                  centerX = entity.getX();
+                  centerY = entity.getY();
+                  centerZ = entity.getZ();
+                  break;
+               }
+            }
+         }
+         double distance = minecraft.player.position().distanceTo(new net.minecraft.world.phys.Vec3(centerX, centerY, centerZ));
+         return distance <= this.definition.radius() ? alpha : 0.0F;
       }
 
       private boolean tick() {

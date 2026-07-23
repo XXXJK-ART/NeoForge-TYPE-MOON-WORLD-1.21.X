@@ -62,7 +62,7 @@ public class BajiquanMasterEntity extends PathfinderMob {
    public static AttributeSupplier.Builder createAttributes() {
       return createMobAttributes().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.MOVEMENT_SPEED, 0.30)
          .add(Attributes.ATTACK_DAMAGE, 7.0).add(Attributes.ARMOR, 8.0).add(Attributes.FOLLOW_RANGE, 28.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, 0.7);
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.7).add(Attributes.SCALE, NpcScaleHelper.DEFAULT_RANDOM_SCALE);
    }
 
    @Nullable

@@ -1,6 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.vfx.data;
 
-public record VFXEnvironmentDefinition(String type, int color, float startTime, float endTime, float fadeIn, float fadeOut, float intensity) {
+public record VFXEnvironmentDefinition(String type, int color, float startTime, float endTime, float fadeIn, float fadeOut, float intensity, float radius) {
    public float duration() {
       return Math.max(0.001F, this.endTime);
    }

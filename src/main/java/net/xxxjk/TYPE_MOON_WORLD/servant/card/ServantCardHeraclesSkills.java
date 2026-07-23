@@ -244,6 +244,37 @@ public final class ServantCardHeraclesSkills {
       level.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 10, 0.45, 0.35, 0.45, 0.12);
    }
 
+   public static void performBasicSweep(ServerPlayer player) {
+      if (!player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())
+         || !(player.level() instanceof ServerLevel level)
+         || player.getAttackStrengthScale(0.5F) < 0.9F) {
+         return;
+      }
+      player.resetAttackStrengthTicker();
+      Vec3 look = PlayerNoblePhantasmHelper.horizontalLook(player);
+      float damage = (float)player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+      AABB area = player.getBoundingBox().inflate(4.2, 1.5, 4.2).move(look.scale(0.65));
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
+         entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
+            && !entity.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(entity))) {
+         Vec3 offset = target.position().subtract(player.position());
+         if (offset.horizontalDistanceSqr() > 17.64 || !player.hasLineOfSight(target)) continue;
+         target.invulnerableTime = 0;
+         target.hurt(player.damageSources().playerAttack(player), damage);
+         target.invulnerableTime = 0;
+         Vec3 push = new Vec3(offset.x, 0.0, offset.z);
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize();
+            target.push(push.x * 0.55, 0.1, push.z * 0.55);
+            target.hurtMarked = true;
+         }
+      }
+      Vec3 center = player.position().add(look.scale(1.8)).add(0.0, player.getBbHeight() * 0.55, 0.0);
+      level.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 5, 0.8, 0.35, 0.8, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 18, 1.25, 0.45, 1.25, 0.12);
+      level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.25F, 0.62F);
+   }
+
    public static void triggerHeraclesBlockAttack(ServerPlayer player, BlockPos pos) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || !"heracles".equals(vars.servant_card_id) || !(player.level() instanceof ServerLevel level)) {

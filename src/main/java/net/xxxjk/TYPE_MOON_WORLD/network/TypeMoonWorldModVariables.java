@@ -44,6 +44,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries.Keys;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -64,6 +65,12 @@ public class TypeMoonWorldModVariables {
    public static final Supplier<AttachmentType<TypeMoonWorldModVariables.ReinforcementData>> REINFORCEMENT_DATA = ATTACHMENT_TYPES.register(
       "reinforcement_data", () -> AttachmentType.serializable(TypeMoonWorldModVariables.ReinforcementData::new).build()
    );
+
+   private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
+      if (player != null && payload != null && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
+         PacketDistributor.sendToPlayer(player, payload);
+      }
+   }
 
    @EventBusSubscriber
    public static class EventBusVariableHandlers {
@@ -175,6 +182,8 @@ public class TypeMoonWorldModVariables {
          clone.body_speed = original.body_speed;
          clone.body_resistance = original.body_resistance;
          clone.body_technique = original.body_technique;
+         clone.servant_card_saved_body_training = original.servant_card_saved_body_training == null
+            ? new CompoundTag() : original.servant_card_saved_body_training.copy();
          clone.has_unlimited_blade_works = original.has_unlimited_blade_works;
          clone.is_magus = original.is_magus;
          clone.origin_bullet_sealed = !event.isWasDeath() && original.origin_bullet_sealed;
@@ -211,6 +220,7 @@ public class TypeMoonWorldModVariables {
          }
 
          clone.learned_magics = new ArrayList<>(original.learned_magics);
+         clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
          clone.analyzed_items = new ArrayList<>();
 
          for (ItemStack stack : original.analyzed_items) {
@@ -330,6 +340,9 @@ public class TypeMoonWorldModVariables {
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
+         if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player) {
+            BodyTrainingService.restoreFromServantCard(player, clone);
+         }
       }
    }
 
@@ -619,6 +632,7 @@ public class TypeMoonWorldModVariables {
       public Map<String, Integer> crest_practice_count = new HashMap<>();
       public boolean is_mystic_eyes_active = false;
       public List<String> learned_magics = new ArrayList<>();
+      public Map<String, Double> magic_proficiencies = new HashMap<>();
       public boolean is_chanting_ubw = false;
       public int ubw_chant_progress = 0;
       public int ubw_chant_timer = 0;
@@ -662,6 +676,7 @@ public class TypeMoonWorldModVariables {
       public long servant_card_np_cooldown_end = 0L;
       public CompoundTag servant_card_saved_armor = new CompoundTag();
       public CompoundTag servant_card_saved_hands = new CompoundTag();
+      public CompoundTag servant_card_saved_body_training = new CompoundTag();
       public boolean servant_card_flying = false;
       public int servant_card_flight_mode = 0;
       public long servant_card_high_flight_until = 0L;
@@ -1688,6 +1703,8 @@ public class TypeMoonWorldModVariables {
          nbt.putLong("servant_card_np_cooldown_end", this.servant_card_np_cooldown_end);
          nbt.put("servant_card_saved_armor", this.servant_card_saved_armor == null ? new CompoundTag() : this.servant_card_saved_armor.copy());
          nbt.put("servant_card_saved_hands", this.servant_card_saved_hands == null ? new CompoundTag() : this.servant_card_saved_hands.copy());
+         nbt.put("servant_card_saved_body_training", this.servant_card_saved_body_training == null
+            ? new CompoundTag() : this.servant_card_saved_body_training.copy());
          nbt.putBoolean("servant_card_flying", this.servant_card_flying);
          nbt.putInt("servant_card_flight_mode", this.servant_card_flight_mode);
          nbt.putLong("servant_card_high_flight_until", this.servant_card_high_flight_until);
@@ -1795,6 +1812,11 @@ public class TypeMoonWorldModVariables {
          }
 
          nbt.put("learned_magics", learnedList);
+         CompoundTag dynamicProficiency = new CompoundTag();
+         for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
+            dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
+         }
+         nbt.put("magic_proficiencies", dynamicProficiency);
          if (!this.projection_selected_item.isEmpty()) {
             nbt.put("projection_selected_item", this.projection_selected_item.save(lookupProvider));
          }
@@ -2021,6 +2043,8 @@ public class TypeMoonWorldModVariables {
          this.servant_card_np_cooldown_end = nbt.contains("servant_card_np_cooldown_end") ? nbt.getLong("servant_card_np_cooldown_end") : 0L;
          this.servant_card_saved_armor = nbt.contains("servant_card_saved_armor", 10) ? nbt.getCompound("servant_card_saved_armor").copy() : new CompoundTag();
          this.servant_card_saved_hands = nbt.contains("servant_card_saved_hands", 10) ? nbt.getCompound("servant_card_saved_hands").copy() : new CompoundTag();
+         this.servant_card_saved_body_training = nbt.contains("servant_card_saved_body_training", 10)
+            ? nbt.getCompound("servant_card_saved_body_training").copy() : new CompoundTag();
          this.servant_card_flying = nbt.getBoolean("servant_card_flying");
          this.servant_card_flight_mode = nbt.contains("servant_card_flight_mode") ? nbt.getInt("servant_card_flight_mode") : (this.servant_card_flying ? 1 : 0);
          this.servant_card_high_flight_until = nbt.contains("servant_card_high_flight_until") ? nbt.getLong("servant_card_high_flight_until") : 0L;
@@ -2143,6 +2167,13 @@ public class TypeMoonWorldModVariables {
 
             for (int i = 0; i < learnedList.size(); i++) {
                this.learned_magics.add(learnedList.getString(i));
+            }
+         }
+         this.magic_proficiencies.clear();
+         if (nbt.contains("magic_proficiencies", 10)) {
+            CompoundTag dynamicProficiency = nbt.getCompound("magic_proficiencies");
+            for (String key : dynamicProficiency.getAllKeys()) {
+               this.magic_proficiencies.put(key, Math.max(0.0, Math.min(100.0, dynamicProficiency.getDouble(key))));
             }
          }
 
@@ -2318,36 +2349,32 @@ public class TypeMoonWorldModVariables {
          this.gravity_magic_mode = Math.max(-2, Math.min(2, this.gravity_magic_mode));
          this.gandr_machine_gun_mode = Math.max(0, Math.min(1, this.gandr_machine_gun_mode));
          if (entity instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(
-               serverPlayer,
-               new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(this.serializeNBT(serverPlayer.registryAccess())),
-               new CustomPacketPayload[0]
-            );
+            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(this.serializeNBT(serverPlayer.registryAccess())));
          }
       }
 
       public void syncRuntimeSelection(Entity entity) {
          if (entity instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new TypeMoonWorldModVariables.RuntimeSelectionSyncMessage(this), new CustomPacketPayload[0]);
+            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.RuntimeSelectionSyncMessage(this));
          }
       }
 
       public void syncModeState(Entity entity) {
          if (entity instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new TypeMoonWorldModVariables.ModeStateSyncMessage(this), new CustomPacketPayload[0]);
+            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ModeStateSyncMessage(this));
          }
       }
 
       public void syncMana(Entity entity) {
          if (entity instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new TypeMoonWorldModVariables.ManaSyncMessage(this), new CustomPacketPayload[0]);
+            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ManaSyncMessage(this));
          }
       }
 
       public void syncProficiency(Entity entity) {
          if (this.crest_cast_context) {
             if (entity instanceof ServerPlayer serverPlayer) {
-               PacketDistributor.sendToPlayer(serverPlayer, new TypeMoonWorldModVariables.ProficiencySyncMessage(this), new CustomPacketPayload[0]);
+               sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ProficiencySyncMessage(this));
             }
          } else {
             boolean autoUnlocked = this.tryAutoUnlockJewelMachineGun(entity) | this.tryAutoUnlockGandrMachineGun(entity);
@@ -2355,7 +2382,7 @@ public class TypeMoonWorldModVariables {
                this.syncPlayerVariables(entity);
             } else {
                if (entity instanceof ServerPlayer serverPlayer) {
-                  PacketDistributor.sendToPlayer(serverPlayer, new TypeMoonWorldModVariables.ProficiencySyncMessage(this), new CustomPacketPayload[0]);
+                  sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ProficiencySyncMessage(this));
                }
             }
          }
@@ -2363,10 +2390,9 @@ public class TypeMoonWorldModVariables {
 
       public void syncProjectionDelta(Entity entity, int action, CompoundTag payload) {
          if (entity instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(
+            sendIfSupported(
                serverPlayer,
-               new TypeMoonWorldModVariables.ProjectionDeltaSyncMessage(action, payload == null ? new CompoundTag() : payload),
-               new CustomPacketPayload[0]
+               new TypeMoonWorldModVariables.ProjectionDeltaSyncMessage(action, payload == null ? new CompoundTag() : payload)
             );
          }
       }

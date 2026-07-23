@@ -62,7 +62,8 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
 
    @Nullable
    private ServantDefinition parseDefinition(String fallbackId, JsonObject json) {
-      String id = json.has("id") ? json.get("id").getAsString() : fallbackId;
+      String rawId = json.has("id") ? json.get("id").getAsString() : fallbackId;
+      String id = normalizeId(fallbackId, rawId);
       String displayName = json.has("display_name") ? json.get("display_name").getAsString() : id;
       String displayNameZh = json.has("display_name_zh") ? json.get("display_name_zh").getAsString() : displayName;
 
@@ -275,5 +276,13 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
 
    private boolean getBooleanOrDefault(JsonObject json, String key, boolean defaultValue) {
       return json.has(key) && json.get(key).getAsBoolean();
+   }
+
+   private String normalizeId(String fallbackId, String rawId) {
+      if (rawId == null || rawId.isBlank()) return fallbackId;
+      if (rawId.contains(":")) return rawId;
+      int separator = fallbackId.indexOf(':');
+      String namespace = separator > 0 ? fallbackId.substring(0, separator) : "typemoonworld";
+      return "typemoonworld".equals(namespace) ? rawId : namespace + ":" + rawId;
    }
 }

@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.jewel;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemQuality;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.api.GemApiRegistry;
 
 public final class GemCompatibilityService {
    private static final Set<String> WHITELIST = Set.of("gravity_magic", "reinforcement", "projection", "gander");
@@ -11,7 +12,7 @@ public final class GemCompatibilityService {
    }
 
    public static boolean isWhitelistedMagic(String magicId) {
-      return WHITELIST.contains(magicId);
+      return WHITELIST.contains(magicId) || GemApiRegistry.hasCustom(net.minecraft.resources.ResourceLocation.tryParse(magicId));
    }
 
    public static Set<String> getWhitelistedMagics() {
@@ -19,6 +20,12 @@ public final class GemCompatibilityService {
    }
 
    public static int calculateEngraveSuccessChance(GemQuality quality, GemType type, String magicId, double magicProficiency) {
+      var id = net.minecraft.resources.ResourceLocation.tryParse(magicId);
+      if (GemApiRegistry.hasCustom(id)) {
+         return GemApiRegistry.calculate(id,
+            net.xxxjk.typemoonworld.api.GemType.valueOf(type.name()),
+            net.xxxjk.typemoonworld.api.GemQuality.valueOf(quality.name()), magicProficiency);
+      }
       int base = switch (quality) {
          case POOR -> 60;
          case NORMAL -> 80;

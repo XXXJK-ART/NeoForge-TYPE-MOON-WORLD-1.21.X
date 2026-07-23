@@ -95,6 +95,8 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_VOICE_NP_SHORT = register("okita_voice_np_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_UBW_SHORT = register("emiya_archer_voice_ubw_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_HAJUN_SHORT = register("oda_nobunaga_voice_hajun_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PALE_RIDER_VOICE_ATTACK = register("pale_rider_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> PALE_RIDER_VOICE_FOUR_CALAMITIES = register("pale_rider_voice_four_calamities");
 
    private ModSounds() {
    }

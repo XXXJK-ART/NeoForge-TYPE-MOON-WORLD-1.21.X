@@ -1,0 +1,132 @@
+{
+  "duration": 3.0,
+  "notes": "Pale Rider domain opening: ash gate, silent charge trail and spherical conceptual overwrite.",
+  "environment": [
+    {
+      "type": "world_desaturation",
+      "color": "#FFBFC3C8",
+      "start": 0.0,
+      "end": 3.0,
+      "fade_in": 0.18,
+      "fade_out": 0.0,
+      "intensity": 1.0,
+      "radius": 52.0
+    },
+    {
+      "type": "world_darkness",
+      "color": "#FF74787D",
+      "start": 0.0,
+      "end": 3.0,
+      "fade_in": 0.25,
+      "fade_out": 0.0,
+      "intensity": 0.72,
+      "radius": 52.0
+    }
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.8,
+      "rate": 900,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.25,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 0.8, 1.6], "rotate_with_entity": true},
+      "component": {"type": "circle", "radius": 1.0, "segments": 180},
+      "color_over_life": [
+        {"t": 0.0, "color": "#00FFFFFF"},
+        {"t": 0.25, "color": "#CCBFC3C8"},
+        {"t": 0.7, "color": "#AA35383C"},
+        {"t": 1.0, "color": "#00000000"}
+      ],
+      "size_over_life": [
+        {"t": 0.0, "size": 0.08},
+        {"t": 0.45, "size": 0.42},
+        {"t": 1.0, "size": 0.05}
+      ],
+      "transform_over_life": [
+        {"t": 0.0, "scale": [0.15, 1.8, 0.15]},
+        {"t": 1.0, "scale": [2.5, 2.8, 2.5], "easing": "ease_out_cubic"}
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "PALE_RIDER_ASH_GATE",
+      "vanilla_particles": [
+        {"type": "ash", "count": 2, "spread": [0.8, 1.2, 0.3], "offset": [0.0, 0.2, 0.0], "speed": 0.02, "chance": 0.8}
+      ]
+    },
+    {
+      "start_time": 0.8,
+      "end_time": 2.0,
+      "rate": 1500,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 0.4, -0.6], "rotate_with_entity": true},
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(random() - 0.5) * (0.8 + t * 2.0)",
+        "expr_y": "random() * 1.2",
+        "expr_z": "-t * 14.0 + sin(t * 24.0) * 0.3",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        {"t": 0.0, "color": "#DDE8E8E4"},
+        {"t": 0.45, "color": "#AA8A8D91"},
+        {"t": 1.0, "color": "#0017191C"}
+      ],
+      "size_over_life": [
+        {"t": 0.0, "size": 0.13},
+        {"t": 0.5, "size": 0.32},
+        {"t": 1.0, "size": 0.03}
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "PALE_RIDER_END_TRACE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        {"type": "soul_fire_flame", "count": 1, "spread": [0.45, 0.1, 0.45], "offset": [0.0, -0.3, 0.0], "speed": 0.01, "chance": 0.35}
+      ]
+    },
+    {
+      "start_time": 2.0,
+      "end_time": 3.0,
+      "rate": 1700,
+      "particle_lifetime": 0.82,
+      "size_variance": 0.3,
+      "lifetime_variance": 0.15,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 1.0, 0.0], "rotate_with_entity": false},
+      "component": {"type": "sphere", "radius": 1.0, "sample_count": 260},
+      "color_over_life": [
+        {"t": 0.0, "color": "#00FFFFFF"},
+        {"t": 0.18, "color": "#EED9DADD"},
+        {"t": 0.72, "color": "#77808084"},
+        {"t": 1.0, "color": "#00000000"}
+      ],
+      "size_over_life": [
+        {"t": 0.0, "size": 0.18},
+        {"t": 0.45, "size": 0.62},
+        {"t": 1.0, "size": 0.06}
+      ],
+      "transform_over_life": [
+        {"t": 0.0, "scale": [0.2, 0.2, 0.2]},
+        {"t": 1.0, "scale": [28.0, 28.0, 28.0], "easing": "ease_out_cubic"}
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "PALE_RIDER_SILENT_SPHERE"
+    }
+  ]
+}

@@ -5,7 +5,9 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.IMagicAddonEntrypoint;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.IMagicExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.IMagicRegistry;
@@ -15,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 public final class MagicModularRegistry implements IMagicRegistry {
    private static final Map<String, MagicModularRegistry.RegisteredMagic> REGISTRY = new ConcurrentHashMap<>();
    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
+   private static final AtomicBoolean FROZEN = new AtomicBoolean(false);
    private static final MagicModularRegistry INSTANCE = new MagicModularRegistry();
 
    private MagicModularRegistry() {
@@ -27,8 +30,16 @@ public final class MagicModularRegistry implements IMagicRegistry {
       }
    }
 
+   public static void freeze() {
+      ensureInitialized();
+      FROZEN.set(true);
+   }
+
    public static MagicExecutionResult execute(MagicExecutionContext context) {
       if (context != null && context.magicId() != null && !context.magicId().isEmpty()) {
+         if (!MagicDefinitionRegistry.meetsAttributeRequirements(context.vars(), context.magicId())) {
+            return MagicExecutionResult.FAILED;
+         }
          MagicModularRegistry.RegisteredMagic registered = REGISTRY.get(context.magicId());
          if (registered != null && registered.executor != null) {
             try {
@@ -62,7 +73,7 @@ public final class MagicModularRegistry implements IMagicRegistry {
 
    @Override
    public boolean register(String magicId, IMagicExecutor executor, String providerId) {
-      if (isValidMagicId(magicId) && executor != null) {
+      if (!FROZEN.get() && isValidMagicId(magicId) && executor != null) {
          String normalizedProvider = providerId != null && !providerId.isBlank() ? providerId : "unknown";
          MagicModularRegistry.RegisteredMagic previous = REGISTRY.putIfAbsent(magicId, new MagicModularRegistry.RegisteredMagic(executor, normalizedProvider));
          if (previous != null) {
@@ -96,7 +107,7 @@ public final class MagicModularRegistry implements IMagicRegistry {
    }
 
    private static boolean isValidMagicId(String magicId) {
-      return magicId != null && !magicId.isEmpty() && magicId.matches("[a-z0-9_]+");
+      return magicId != null && !magicId.isEmpty() && (magicId.matches("[a-z0-9_]+") || ResourceLocation.tryParse(magicId) != null);
    }
 
    private static void loadAddonEntrypoints() {

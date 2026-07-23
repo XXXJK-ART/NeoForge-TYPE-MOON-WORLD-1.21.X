@@ -69,6 +69,14 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ConceptSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariLightColumnEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
@@ -318,6 +326,10 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<HeraclesEntity>> HERACLES = ENTITY_TYPES.register(
       "heracles", () -> Builder.of(HeraclesEntity::new, MobCategory.CREATURE).sized(1.0F, 3.0F).build("heracles")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<GenericServantEntity>> GENERIC_SERVANT = ENTITY_TYPES.register(
+      "generic_servant", () -> Builder.of(GenericServantEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).build("generic_servant")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<SasakiKojiroEntity>> SASAKI_KOJIRO = ENTITY_TYPES.register(
       "sasaki_kojiro", () -> Builder.of(SasakiKojiroEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("sasaki_kojiro")
    );
@@ -392,6 +404,29 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ParacelsusEntity>> PARACELSUS = ENTITY_TYPES.register(
       "paracelsus", () -> Builder.of(ParacelsusEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("paracelsus")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<PaleRiderEntity>> PALE_RIDER = ENTITY_TYPES.register(
+      "pale_rider", () -> Builder.of(PaleRiderEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("pale_rider")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<RatSwarmEntity>> RAT_SWARM = ENTITY_TYPES.register(
+      "rat_swarm", () -> Builder.of(RatSwarmEntity::new, MobCategory.CREATURE).sized(1.6F, 0.65F).clientTrackingRange(48).updateInterval(2).build("rat_swarm")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<PaleRiderCrowEntity>> PALE_RIDER_CROW = ENTITY_TYPES.register(
+      "pale_rider_crow", () -> Builder.of(PaleRiderCrowEntity::new, MobCategory.CREATURE).sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(2).build("pale_rider_crow")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<SoulEchoEntity>> SOUL_ECHO = ENTITY_TYPES.register(
+      "soul_echo", () -> Builder.of(SoulEchoEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("soul_echo")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ApocalypseHorsemanEntity>> APOCALYPSE_HORSEMAN = ENTITY_TYPES.register(
+      "apocalypse_horseman", () -> Builder.of(ApocalypseHorsemanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("apocalypse_horseman")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ApocalypseHorseEntity>> APOCALYPSE_HORSE = ENTITY_TYPES.register(
+      "apocalypse_horse", () -> Builder.of(ApocalypseHorseEntity::new, MobCategory.CREATURE).sized(1.4F, 1.6F).clientTrackingRange(64).build("apocalypse_horse")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ConceptSwordEntity>> CONCEPT_SWORD = ENTITY_TYPES.register(
+      "concept_sword",
+      () -> Builder.<ConceptSwordEntity>of((entityType, level) -> new ConceptSwordEntity(entityType, level), MobCategory.MISC)
+         .sized(0.35F, 0.35F).clientTrackingRange(64).updateInterval(1).build("concept_sword")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ParacelsusSpiritCannonEntity>> PARACELSUS_SPIRIT_CANNON = ENTITY_TYPES.register(
       "paracelsus_spirit_cannon",

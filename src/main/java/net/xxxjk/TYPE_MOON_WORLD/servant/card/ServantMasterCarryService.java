@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -50,6 +51,7 @@ public final class ServantMasterCarryService {
          || !(event.getTarget() instanceof ServerPlayer master) || !servant.isCrouching()) return;
       if (!isCarryPair(servant, master) || servant.isPassenger() || !servant.getPassengers().isEmpty() || master.isPassenger()) return;
       if (master.startRiding(servant, true)) {
+         syncPassengers(servant, master);
          servant.getPersistentData().putUUID(CARRYING_TAG, master.getUUID());
          master.getPersistentData().putUUID(CARRIED_BY_TAG, servant.getUUID());
          master.fallDistance = 0.0F;
@@ -125,6 +127,7 @@ public final class ServantMasterCarryService {
    private static void finishDismount(ServerPlayer servant, ServerPlayer master) {
       if (master == null) return;
       if (master.isPassenger()) master.stopRiding();
+      if (servant != null) syncPassengers(servant, master);
       if (servant != null && servant.level() == master.level()) {
          double yaw = Math.toRadians(servant.getYRot());
          Vec3 right = new Vec3(-Math.cos(yaw), 0.0, -Math.sin(yaw));
@@ -136,5 +139,11 @@ public final class ServantMasterCarryService {
       }
       master.getPersistentData().remove(CARRIED_BY_TAG);
       master.fallDistance = 0.0F;
+   }
+
+   private static void syncPassengers(ServerPlayer servant, ServerPlayer master) {
+      ClientboundSetPassengersPacket packet = new ClientboundSetPassengersPacket(servant);
+      servant.connection.send(packet);
+      master.connection.send(packet);
    }
 }

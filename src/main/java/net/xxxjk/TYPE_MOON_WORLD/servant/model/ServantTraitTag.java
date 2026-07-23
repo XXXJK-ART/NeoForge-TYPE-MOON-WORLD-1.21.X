@@ -59,7 +59,13 @@ public enum ServantTraitTag {
    STAR_BORN("star_born"),
    CELESTIAL("celestial"),
    WITCH("witch"),
-   EA_SPECIAL("ea_special");
+   EA_SPECIAL("ea_special"),
+   GENDERLESS("genderless"),
+   CONCEPTUAL_EXISTENCE("conceptual_existence"),
+   APOCALYPSE_HORSEMAN("apocalypse_horseman"),
+   PLAGUE("plague"),
+   FALSE_RIDER("false_rider"),
+   SYSTEM_SERVANT("system_servant");
 
    private final String key;
 

@@ -1,0 +1,17 @@
+{
+  "duration":3.0,
+  "environment":[
+    {"type":"world_desaturation","color":"#FFE5E6E8","start":0.0,"end":3.0,"fade_in":0.0,"fade_out":2.8,"intensity":1.0,"radius":25.0},
+    {"type":"world_darkness","color":"#FF3C4148","start":0.0,"end":3.0,"fade_in":0.0,"fade_out":2.7,"intensity":0.86,"radius":25.0}
+  ],
+  "emitters":[{
+    "start_time":0.0,"end_time":3.0,"rate":4600,"particle_lifetime":2.0,"size_variance":0.7,"lifetime_variance":0.45,
+    "position_variance":0.16,"velocity":[0.0,-0.24,0.0],"velocity_variance":0.15,"max_vanilla_particles_per_tick":18,
+    "binding":{"mode":"entity_yaw","offset":[0.0,10.0,0.0],"rotate_with_entity":false},
+    "component":{"type":"ellipsoid","radius_x":12.0,"radius_y":5.0,"radius_z":12.0,"sample_count":800},
+    "color_over_life":[{"t":0.0,"color":"#F5EFF0F1"},{"t":0.55,"color":"#BB555A61"},{"t":1.0,"color":"#00000000"}],
+    "size_over_life":[{"t":0.0,"size":0.09},{"t":0.48,"size":0.4},{"t":1.0,"size":0.03}],
+    "blend":"TRANSLUCENT","particle_role":"PALE_RIDER_CALAMITY_ASHFALL","enable_trail":true,
+    "vanilla_particles":[{"type":"ash","count":7,"spread":[10.0,4.0,10.0],"offset":[0.0,0.0,0.0],"speed":0.06,"chance":1.0},{"type":"sculk_soul","count":3,"spread":[8.0,3.0,8.0],"offset":[0.0,-3.0,0.0],"speed":0.03,"chance":0.85}]
+  }]
+}

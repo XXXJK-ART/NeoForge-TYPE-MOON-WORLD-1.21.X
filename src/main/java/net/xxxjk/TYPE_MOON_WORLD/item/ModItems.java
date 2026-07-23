@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.item;
 
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -40,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessChainDaggerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RuleBreakerItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GenericServantSummonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardReleaseItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantMasterContractItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
@@ -209,6 +211,16 @@ public class ModItems {
             () -> new CommandSpellItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SERVANT_CARD_RELEASE = ITEMS.register("servant_card_release",
             () -> new ServantCardReleaseItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> SERVANT_CARD_GENERIC = ITEMS.register("servant_card",
+            () -> new ServantCardItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(), ""));
+    public static final DeferredItem<Item> MASTER_CARD_GENERIC = ITEMS.register("master_card",
+            () -> new MasterCardItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(), ""));
+    public static final DeferredItem<Item> SERVANT_SUMMON_GENERIC = ITEMS.register("servant_summon",
+            () -> new GenericServantSummonItem(new Item.Properties().rarity(Rarity.RARE).fireResistant()));
+    public static final DeferredItem<Item> SERVANT_ARMOR_GENERIC_HEAD = registerServantArmor("", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_ARMOR_GENERIC_CHEST = registerServantArmor("", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_ARMOR_GENERIC_LEGS = registerServantArmor("", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_ARMOR_GENERIC_FEET = registerServantArmor("", net.minecraft.world.entity.EquipmentSlot.FEET);
 
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_RIN = registerMasterCard("tohsaka_rin");
     public static final DeferredItem<Item> MASTER_CARD_EMIYA_KIRITSUGU = registerMasterCard("emiya_kiritsugu");
@@ -275,6 +287,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN = registerServantCard("gawain");
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS = registerServantCard("paracelsus");
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
+    public static final DeferredItem<Item> SERVANT_CARD_PALE_RIDER = registerServantCard("pale_rider");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -321,7 +334,8 @@ public class ModItems {
     }
 
     private static DeferredItem<Item> registerServantArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {
-        return ITEMS.register("servant_card_" + servantId + "_" + slot.getName(),
+        String name = servantId.isBlank() ? "servant_armor_generic_" + slot.getName() : "servant_card_" + servantId + "_" + slot.getName();
+        return ITEMS.register(name,
                 () -> new ServantCardArmorItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE).fireResistant(), servantId, slot));
     }
 
@@ -867,6 +881,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LI_SHUWEN, 0x1A1A1A, 0xD8D0C8));
     public static final DeferredItem<Item> PARACELSUS_SPAWN_EGG = ITEMS.register("paracelsus_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PARACELSUS, 0xA9E7FF, 0xFFD36A));
+    public static final DeferredItem<Item> PALE_RIDER_SPAWN_EGG = ITEMS.register("pale_rider_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PALE_RIDER, 0x17191C, 0xC7CBD1));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {
@@ -893,9 +909,18 @@ public class ModItems {
     }
 
     public static Item getServantCardArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {
+        if (servantId != null && servantId.indexOf(':') >= 0) {
+            return switch (slot) {
+                case HEAD -> SERVANT_ARMOR_GENERIC_HEAD.get();
+                case LEGS -> SERVANT_ARMOR_GENERIC_LEGS.get();
+                case FEET -> SERVANT_ARMOR_GENERIC_FEET.get();
+                default -> SERVANT_ARMOR_GENERIC_CHEST.get();
+            };
+        }
         boolean head = slot == net.minecraft.world.entity.EquipmentSlot.HEAD;
         boolean legs = slot == net.minecraft.world.entity.EquipmentSlot.LEGS;
         return switch (servantId == null ? "" : servantId) {
+            case "pale_rider" -> Items.AIR;
             case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
             case "artoria_pendragon" -> (legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
             case "sasaki_kojiro" -> (legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();

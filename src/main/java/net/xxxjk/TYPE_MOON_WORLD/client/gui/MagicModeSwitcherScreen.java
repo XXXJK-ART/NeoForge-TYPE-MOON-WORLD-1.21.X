@@ -17,6 +17,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.api.ClientExtensionRegistryImpl;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import org.lwjgl.glfw.GLFW;
 
 public class MagicModeSwitcherScreen extends Screen {
@@ -158,6 +160,18 @@ public class MagicModeSwitcherScreen extends Screen {
       super.init();
       Minecraft mc = this.minecraft;
       if (mc != null) {
+         Player player = mc.player;
+         if (player != null) {
+            var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            var entry = vars.getCurrentRuntimeWheelEntry();
+            ResourceLocation id = entry == null ? null : ResourceLocation.tryParse(entry.magicId);
+            if (id != null) {
+               var extension = ClientExtensionRegistryImpl.get(id);
+               if (extension != null) { extension.open(this); return; }
+               var controls = ExtensionApiRegistry.controls(id);
+               if (!controls.isEmpty()) { mc.setScreen(new GenericMagicOptionsScreen(this, id, controls)); }
+            }
+         }
       }
    }
 

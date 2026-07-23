@@ -19,7 +19,9 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
 import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
+import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
@@ -45,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
@@ -188,6 +191,12 @@ public class TypeMoonWorldModKeyMappings {
          if (!event.isAttack()) {
             return;
          }
+         if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
+            return;
+         }
          if (player.isCrouching() && vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardActionMessage(-1), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -198,6 +207,18 @@ public class TypeMoonWorldModKeyMappings {
             && "oda_nobunaga".equals(vars.servant_card_id)
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+         }
+      }
+
+      @SubscribeEvent
+      public static void onPaleRiderMovementInput(MovementInputUpdateEvent event) {
+         if (!(event.getEntity() instanceof Player player) || !player.isPassenger()) return;
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id)
+            && (PaleRiderClientState.possessing
+               || player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity)) {
+            // Shift descends while possessing and must not dismount the domain horse.
+            event.getInput().shiftKeyDown = false;
          }
       }
 
@@ -604,6 +625,14 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
+         if ("pale_rider".equals(vars.servant_card_id) && Minecraft.getInstance().player != null && PaleRiderClientState.possessing) {
+            float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == 1 ? -1.0F : 0.0F);
+            float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
+            boolean descend = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
+            float vertical = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1 ? 1.0F : 0.0F) + (descend ? -1.0F : 0.0F);
+            PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical,
+               Minecraft.getInstance().player.getYRot(), Minecraft.getInstance().player.getXRot()), new CustomPacketPayload[0]);
+         }
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
             if (isHoldServantCardSkill(vars, slot)) {
                boolean down = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].isDown();

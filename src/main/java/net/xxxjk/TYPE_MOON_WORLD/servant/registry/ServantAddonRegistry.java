@@ -9,6 +9,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonEntrypoint;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonRegistry;
@@ -24,7 +25,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 public final class ServantAddonRegistry implements IServantAddonRegistry {
    private static final ServantAddonRegistry INSTANCE = new ServantAddonRegistry();
    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
+   private static final AtomicBoolean FROZEN = new AtomicBoolean(false);
    private static final Map<String, RegisteredDefinition> DEFINITIONS = new ConcurrentHashMap<>();
+   private static final Map<String, String> DECLARED_DEFINITIONS = new ConcurrentHashMap<>();
    private static final Map<String, RegisteredCombatAction> COMBAT_ACTIONS = new ConcurrentHashMap<>();
    private static final Map<String, RegisteredNoblePhantasm> NOBLE_PHANTASMS = new ConcurrentHashMap<>();
    private static final Map<String, RegisteredLifecycleHandler> LIFECYCLE_HANDLERS = new ConcurrentHashMap<>();
@@ -36,6 +39,37 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
       if (INITIALIZED.compareAndSet(false, true)) {
          loadAddonEntrypoints();
       }
+   }
+
+   public static void freeze() {
+      ensureInitialized();
+      FROZEN.set(true);
+   }
+
+   public static boolean registerExternalDefinition(String id, ServantDefinition definition, String providerId) {
+      ensureInitialized();
+      return definition != null && id != null && id.equals(definition.id()) && INSTANCE.registerDefinition(definition, providerId);
+   }
+
+   public static boolean declareExternalDefinition(String id, String providerId) {
+      ensureInitialized();
+      if (FROZEN.get() || !isValidId(id)) return false;
+      return DECLARED_DEFINITIONS.putIfAbsent(id, normalizeProvider(providerId)) == null;
+   }
+
+   public static boolean registerExternalCombatAction(String id, IServantCombatActionExecutor executor, String providerId) {
+      ensureInitialized();
+      return INSTANCE.registerCombatAction(id, executor, providerId);
+   }
+
+   public static boolean registerExternalNoblePhantasm(String id, IServantNoblePhantasmExecutor executor, String providerId) {
+      ensureInitialized();
+      return INSTANCE.registerNoblePhantasm(id, executor, providerId);
+   }
+
+   public static boolean registerExternalLifecycle(String id, IServantLifecycleHandler handler, String providerId) {
+      ensureInitialized();
+      return INSTANCE.registerLifecycleHandler(id, handler, providerId);
    }
 
    public static Map<String, ServantDefinition> addonDefinitions() {
@@ -173,7 +207,7 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
 
    @Override
    public boolean registerDefinition(ServantDefinition definition, String providerId) {
-      if (definition == null || !isValidId(definition.id())) {
+      if (FROZEN.get() || definition == null || !isValidId(definition.id())) {
          return false;
       }
       String provider = normalizeProvider(providerId);
@@ -193,7 +227,7 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
 
    @Override
    public boolean registerCombatAction(String actionId, IServantCombatActionExecutor executor, String providerId) {
-      if (!isValidId(actionId) || executor == null) {
+      if (FROZEN.get() || !isValidId(actionId) || executor == null) {
          return false;
       }
       String provider = normalizeProvider(providerId);
@@ -213,7 +247,7 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
 
    @Override
    public boolean registerNoblePhantasm(String noblePhantasmId, IServantNoblePhantasmExecutor executor, String providerId) {
-      if (!isValidId(noblePhantasmId) || executor == null) {
+      if (FROZEN.get() || !isValidId(noblePhantasmId) || executor == null) {
          return false;
       }
       String provider = normalizeProvider(providerId);
@@ -233,7 +267,7 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
 
    @Override
    public boolean registerLifecycleHandler(String handlerId, IServantLifecycleHandler handler, String providerId) {
-      if (!isValidId(handlerId) || handler == null) {
+      if (FROZEN.get() || !isValidId(handlerId) || handler == null) {
          return false;
       }
       String provider = normalizeProvider(providerId);
@@ -267,7 +301,7 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
    }
 
    private static boolean isValidId(String id) {
-      return id != null && !id.isBlank() && id.matches("[a-z0-9_]+");
+      return id != null && !id.isBlank() && (id.matches("[a-z0-9_]+") || ResourceLocation.tryParse(id) != null);
    }
 
    private static String normalizeProvider(String providerId) {

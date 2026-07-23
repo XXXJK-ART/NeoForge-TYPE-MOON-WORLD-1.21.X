@@ -82,6 +82,17 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.PARACELSUS_VOICE_ATTACK.get());
+      } else if (isPaleRider(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) {
+            return;
+         }
+         playVoice(servant, "attack", 300, 1.15F, 0.92F, ModSounds.PALE_RIDER_VOICE_ATTACK.get());
+      }
+   }
+
+   public static void tryPlayPaleRiderFourCalamities(ServantEntity servant) {
+      if (isPaleRider(servant)) {
+         playVoiceForced(servant, "pale_rider_four_calamities", 1.4F, 0.94F, ModSounds.PALE_RIDER_VOICE_FOUR_CALAMITIES.get());
       }
    }
 
@@ -370,6 +381,10 @@ public final class ServantVoiceHelper {
 
    private static boolean isSasakiKojiro(ServantEntity servant) {
       return servant != null && SasakiKojiroEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isPaleRider(ServantEntity servant) {
+      return servant != null && PaleRiderEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isHeracles(ServantEntity servant) {

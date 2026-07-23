@@ -9,4 +9,8 @@ public class HeraclesEntity extends ServantEntity {
    public HeraclesEntity(EntityType<HeraclesEntity> entityType, Level level) {
       super(entityType, level, SERVANT_KEY);
    }
+
+   @Override
+   public void knockback(double strength, double x, double z) {
+   }
 }

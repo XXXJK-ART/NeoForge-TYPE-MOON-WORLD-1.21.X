@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 
 public final class MagicDisplayMetadata {
    public static final String CATEGORY_ALL = "all";
@@ -29,7 +30,7 @@ public final class MagicDisplayMetadata {
    }
 
    public static boolean canEnterMagicCrest(String magicId) {
-      return magicId != null && !CREST_FORBIDDEN_MAGICS.contains(magicId);
+      return magicId != null && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
    }
 
    public static boolean isSpecialMagic(String magicId) {
@@ -56,6 +57,8 @@ public final class MagicDisplayMetadata {
          return CATEGORY_SPECIAL;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
          return CATEGORY_ELEMENTAL;
+      } else if (MagicDefinitionRegistry.contains(magicId)) {
+         return MagicDefinitionRegistry.get(magicId).category().getPath();
       } else {
          return CATEGORY_BASIC;
       }

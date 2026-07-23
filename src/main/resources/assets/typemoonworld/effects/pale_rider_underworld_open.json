@@ -1,0 +1,32 @@
+{
+  "duration": 3.0,
+  "notes": "Fifty-block Underworld manifestation with a dense ash shell and death-filled interior.",
+  "environment": [
+    {"type":"world_desaturation","color":"#FFD2D4D7","start":0.0,"end":3.0,"fade_in":0.15,"fade_out":0.0,"intensity":1.0,"radius":50.0},
+    {"type":"world_darkness","color":"#FF555A60","start":0.0,"end":3.0,"fade_in":0.2,"fade_out":0.0,"intensity":0.88,"radius":50.0},
+    {"type":"screen_tint","color":"#AA111318","start":0.0,"end":3.0,"fade_in":0.25,"fade_out":0.2,"intensity":0.62,"radius":50.0}
+  ],
+  "emitters": [
+    {
+      "start_time":0.0,"end_time":3.0,"rate":4200,"particle_lifetime":1.2,"size_variance":0.5,"lifetime_variance":0.25,
+      "position_variance":0.03,"velocity":[0.0,0.015,0.0],"velocity_variance":0.04,"max_vanilla_particles_per_tick":12,
+      "binding":{"mode":"entity_yaw","offset":[0.0,1.0,0.0],"rotate_with_entity":false},
+      "component":{"type":"sphere","radius":1.0,"sample_count":720},
+      "color_over_life":[{"t":0.0,"color":"#F0E7E9EC"},{"t":0.5,"color":"#CC666B72"},{"t":1.0,"color":"#00101012"}],
+      "size_over_life":[{"t":0.0,"size":0.12},{"t":0.45,"size":0.42},{"t":1.0,"size":0.04}],
+      "transform_over_life":[{"t":0.0,"scale":[0.3,0.3,0.3]},{"t":1.0,"scale":[50.0,50.0,50.0],"easing":"ease_out_cubic"}],
+      "blend":"TRANSLUCENT","particle_role":"PALE_RIDER_UNDERWORLD_SHELL","enable_trail":true,
+      "vanilla_particles":[{"type":"ash","count":4,"spread":[8.0,5.0,8.0],"offset":[0.0,2.0,0.0],"speed":0.03,"chance":0.9},{"type":"soul","count":2,"spread":[6.0,3.0,6.0],"offset":[0.0,1.0,0.0],"speed":0.03,"chance":0.65}]
+    },
+    {
+      "start_time":0.15,"end_time":3.0,"rate":3200,"particle_lifetime":1.0,"size_variance":0.55,"lifetime_variance":0.3,
+      "position_variance":0.18,"velocity":[0.0,0.12,0.0],"velocity_variance":0.18,"max_vanilla_particles_per_tick":10,
+      "binding":{"mode":"entity_yaw","offset":[0.0,0.4,0.0],"rotate_with_entity":false},
+      "component":{"type":"ellipsoid","radius_x":22.0,"radius_y":7.0,"radius_z":22.0,"sample_count":500},
+      "color_over_life":[{"t":0.0,"color":"#BBD9DADD"},{"t":0.45,"color":"#AA262A30"},{"t":1.0,"color":"#00000000"}],
+      "size_over_life":[{"t":0.0,"size":0.08},{"t":0.55,"size":0.3},{"t":1.0,"size":0.03}],
+      "blend":"ADDITIVE","particle_role":"PALE_RIDER_UNDERWORLD_DEAD","enable_trail":true,
+      "vanilla_particles":[{"type":"sculk_soul","count":2,"spread":[10.0,4.0,10.0],"offset":[0.0,1.0,0.0],"speed":0.02,"chance":0.7},{"type":"large_smoke","count":2,"spread":[9.0,3.0,9.0],"offset":[0.0,0.5,0.0],"speed":0.02,"chance":0.7}]
+    }
+  ]
+}

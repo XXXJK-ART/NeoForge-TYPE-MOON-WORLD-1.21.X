@@ -62,11 +62,17 @@ public final class ServantCardMedusaSkills {
    private static final String MEDUSA_BELLEROPHON_SHOCKWAVE_DONE_TAG = "ServantCardMedusaBellerophonShockwaveDone";
    private static final String MEDUSA_BELLEROPHON_HIT_UNTIL_TAG = "ServantCardMedusaBellerophonHitUntil";
    private static final String MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG = "ServantCardMedusaPegasusCollisionHitUntil";
+   private static final String MEDUSA_PEGASUS_FORWARD_HOLD_TAG = "ServantCardMedusaPegasusForwardHold";
+   private static final String MEDUSA_PEGASUS_COAST_TICKS_TAG = "ServantCardMedusaPegasusCoastTicks";
    private static final int MEDUSA_BELLEROPHON_WINDUP_TICKS = 20;
    private static final int MEDUSA_BELLEROPHON_CHARGE_TICKS = 18;
    private static final int MEDUSA_BELLEROPHON_RIDE_EXTENSION_TICKS = 400;
    private static final double MEDUSA_BELLEROPHON_CHARGE_DISTANCE = 10.0;
    private static final double MEDUSA_BELLEROPHON_RIDE_SPEED = 1.9;
+   private static final int MEDUSA_PEGASUS_MAX_ACCEL_TICKS = 80;
+   private static final int MEDUSA_PEGASUS_COAST_TICKS = 14;
+   private static final double MEDUSA_PEGASUS_MIN_FORWARD_SPEED = 0.75;
+   private static final double MEDUSA_PEGASUS_MAX_FORWARD_SPEED = 3.2;
    static final double MEDUSA_BLOODFORT_RADIUS = 25.0;
    private static final DustParticleOptions MEDUSA_BLOODFORT_PARTICLE = new DustParticleOptions(new Vector3f(0.95F, 0.22F, 0.35F), 1.1F);
    private static final DustParticleOptions MEDUSA_BLOODFORT_SIGIL_PARTICLE = new DustParticleOptions(new Vector3f(0.86F, 0.08F, 0.12F), 1.25F);
@@ -134,6 +140,8 @@ public final class ServantCardMedusaSkills {
       data.remove(MEDUSA_BELLEROPHON_SHOCKWAVE_DONE_TAG);
       data.remove(MEDUSA_BELLEROPHON_HIT_UNTIL_TAG);
       data.remove(MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG);
+      data.remove(MEDUSA_PEGASUS_FORWARD_HOLD_TAG);
+      data.remove(MEDUSA_PEGASUS_COAST_TICKS_TAG);
    }
 
    private static void tickMedusaMysticEyes(ServerPlayer player, long now) {
@@ -445,8 +453,28 @@ public final class ServantCardMedusaSkills {
       double forwardInput = Math.abs(player.zza) < 0.05F ? 0.0 : player.zza;
       boolean ascending = ((LivingEntityInputAccessor)player).typemoonworld$isJumping();
       boolean descending = player.isShiftKeyDown();
-      if (strafe == 0.0 && forwardInput == 0.0 && !ascending && !descending) {
-         return Vec3.ZERO;
+      CompoundTag data = player.getPersistentData();
+      boolean accelerating = forwardInput > 0.0;
+      double speed;
+      if (accelerating) {
+         int heldTicks = Math.min(MEDUSA_PEGASUS_MAX_ACCEL_TICKS, data.getInt(MEDUSA_PEGASUS_FORWARD_HOLD_TAG) + 1);
+         data.putInt(MEDUSA_PEGASUS_FORWARD_HOLD_TAG, heldTicks);
+         data.putInt(MEDUSA_PEGASUS_COAST_TICKS_TAG, MEDUSA_PEGASUS_COAST_TICKS);
+         speed = Mth.lerp(heldTicks / (double)MEDUSA_PEGASUS_MAX_ACCEL_TICKS,
+            MEDUSA_PEGASUS_MIN_FORWARD_SPEED, MEDUSA_PEGASUS_MAX_FORWARD_SPEED);
+         if (charging) speed = Math.max(speed, MEDUSA_BELLEROPHON_RIDE_SPEED);
+      } else {
+         data.remove(MEDUSA_PEGASUS_FORWARD_HOLD_TAG);
+         int coastTicks = data.getInt(MEDUSA_PEGASUS_COAST_TICKS_TAG);
+         if (strafe == 0.0 && forwardInput == 0.0 && coastTicks > 0) {
+            data.putInt(MEDUSA_PEGASUS_COAST_TICKS_TAG, coastTicks - 1);
+            Vec3 inertia = pegasus.getDeltaMovement().multiply(0.88, 0.82, 0.88);
+            double vertical = ascending && !descending ? 0.8 : descending && !ascending ? -0.8 : inertia.y;
+            return new Vec3(inertia.x, Mth.clamp(vertical, -0.8, 0.8), inertia.z);
+         }
+         data.remove(MEDUSA_PEGASUS_COAST_TICKS_TAG);
+         if (strafe == 0.0 && forwardInput == 0.0 && !ascending && !descending) return Vec3.ZERO;
+         speed = forwardInput < 0.0 ? 1.05 : 1.35;
       }
 
       float yaw = player.getYRot() * (float)(Math.PI / 180.0F);
@@ -459,7 +487,6 @@ public final class ServantCardMedusaSkills {
          horizontal = horizontal.normalize();
       }
 
-      double speed = MEDUSA_BELLEROPHON_RIDE_SPEED;
       double vertical = 0.0;
       if (ascending && !descending) {
          vertical = 0.8;
@@ -554,6 +581,8 @@ public final class ServantCardMedusaSkills {
       data.remove(MEDUSA_BELLEROPHON_TARGET_Y_TAG);
       data.remove(MEDUSA_BELLEROPHON_TARGET_Z_TAG);
       data.remove(MEDUSA_BELLEROPHON_SHOCKWAVE_DONE_TAG);
+      data.remove(MEDUSA_PEGASUS_FORWARD_HOLD_TAG);
+      data.remove(MEDUSA_PEGASUS_COAST_TICKS_TAG);
    }
 
    private static void clearMedusaEyes(ServerPlayer player) {

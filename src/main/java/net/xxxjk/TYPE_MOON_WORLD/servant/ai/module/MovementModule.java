@@ -35,8 +35,9 @@ public final class MovementModule implements ServantAiModule {
          return;
       }
 
-      int wanderInterval = Math.max(50, (int)(WANDER_INTERVAL - context.behaviorProfile().aggressionRange()));
-      int wanderRange = Math.max(WANDER_RANGE, (int)Math.round(context.behaviorProfile().attackCommitDistance() * 2.0));
+      var ai = context.aiConfig();
+      int wanderInterval = ai == null ? Math.max(50, (int)(WANDER_INTERVAL - context.behaviorProfile().aggressionRange())) : Math.max(50, (int)(WANDER_INTERVAL + ai.movement().wanderRadius() * 2.0));
+      int wanderRange = ai == null ? Math.max(WANDER_RANGE, (int)Math.round(context.behaviorProfile().attackCommitDistance() * 2.0)) : Math.max(WANDER_RANGE, (int)Math.round(ai.movement().wanderRadius()));
       double wanderSpeed = switch (entity.getCombatDisposition()) {
          case CAUTIOUS -> 0.55;
          case FRENZIED -> 0.75;

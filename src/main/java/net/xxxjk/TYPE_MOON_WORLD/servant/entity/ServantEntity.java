@@ -85,7 +85,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final double COMBAT_HEAL_TARGET_RANGE_SQR = 24.0 * 24.0;
    private static final float NATURAL_REGEN_HEALTH_RATIO_PER_SECOND = 0.005F;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-   private final String servantId;
+   private String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.STRING
    );
@@ -142,6 +142,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    protected ServantEntity(EntityType<? extends ServantEntity> entityType, Level level, String servantId) {
       super(entityType, level);
       this.servantId = servantId == null ? "" : servantId;
+      this.entityData.set(SERVANT_ID, this.servantId);
       this.setPathfindingMalus(PathType.WATER, -1.0F);
       this.setPersistenceRequired();
    }
@@ -1031,7 +1032,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
       String loadedId = tag.getString("ServantId");
-      this.entityData.set(SERVANT_ID, this.servantId);
+      this.setServantId(loadedId == null || loadedId.isEmpty() ? this.servantId : loadedId);
       this.xpReward = tag.getInt("Xp");
       this.entityData.set(OBEDIENCE_AXIS, tag.getInt("ObedienceAxis"));
       this.entityData.set(PRINCIPLE_AXIS, tag.getInt("PrincipleAxis"));
@@ -1053,11 +1054,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    // ======================== Getters / Setters ========================
 
    public String getServantId() {
-      return this.servantId;
+      String synced = this.entityData.get(SERVANT_ID);
+      return synced == null || synced.isEmpty() ? this.servantId : synced;
    }
 
    @Deprecated(forRemoval = false)
    public void setServantId(String id) {
+      this.servantId = id == null ? "" : id;
       this.entityData.set(SERVANT_ID, this.servantId);
       this.cachedDefinition = null;
       /* 立即从 ServantDataRegistry 重新查找定义 */      if (!this.servantId.isEmpty()) {

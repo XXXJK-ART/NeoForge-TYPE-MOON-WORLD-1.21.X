@@ -13,7 +13,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -253,6 +255,43 @@ public final class ServantCardArtoriaSkills {
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 2.2, 0.18, dir.z * 2.2));
       player.hurtMarked = true;
       ServantCardSkillUtils.hitForwardArc(player, dir, 6.0, 26.0F);
+   }
+
+   public static void performManaBurstBeam(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return;
+      Vec3 start = player.getEyePosition().add(player.getLookAngle().normalize().scale(0.8));
+      Vec3 direction = player.getLookAngle().normalize();
+      if (direction.lengthSqr() < 1.0E-4) direction = new Vec3(0.0, 0.0, 1.0);
+      Vec3 maximumEnd = start.add(direction.scale(32.0));
+      HitResult blockHit = level.clip(new ClipContext(start, maximumEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+      Vec3 end = blockHit.getType() == HitResult.Type.MISS ? maximumEnd : blockHit.getLocation();
+      double length = start.distanceTo(end);
+      AABB corridor = new AABB(start, end).inflate(2.0);
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, corridor,
+         entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
+            && !entity.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(entity))) {
+         Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+         double projected = Mth.clamp(center.subtract(start).dot(direction), 0.0, length);
+         Vec3 nearest = start.add(direction.scale(projected));
+         double hitRadius = 1.6 + target.getBbWidth() * 0.5;
+         if (center.distanceToSqr(nearest) > hitRadius * hitRadius) continue;
+         target.invulnerableTime = 0;
+         target.hurt(player.damageSources().magic(), 200.0F);
+         target.invulnerableTime = 0;
+         target.push(direction.x * 0.7, Math.max(0.08, direction.y * 0.35), direction.z * 0.7);
+         target.hurtMarked = true;
+      }
+      for (double distance = 0.0; distance <= length; distance += 0.65) {
+         Vec3 point = start.add(direction.scale(distance));
+         level.sendParticles(ParticleTypes.END_ROD, point.x, point.y, point.z, 2, 0.12, 0.12, 0.12, 0.01);
+         if (((int)(distance * 10.0)) % 13 == 0) {
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, point.x, point.y, point.z, 3, 0.18, 0.18, 0.18, 0.025);
+         }
+      }
+      level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, end.x, end.y, end.z, 28, 0.65, 0.65, 0.65, 0.06);
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.25F, 1.55F);
+      level.playSound(null, net.minecraft.core.BlockPos.containing(end), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F, 1.65F);
    }
 
    private static void spawnManaBurstActivationFx(ServerPlayer player) {

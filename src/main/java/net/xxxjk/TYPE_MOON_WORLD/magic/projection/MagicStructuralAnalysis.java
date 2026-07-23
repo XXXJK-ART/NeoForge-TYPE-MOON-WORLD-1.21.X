@@ -97,7 +97,7 @@ public class MagicStructuralAnalysis {
    private static void analyzeItem(
       ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack target, boolean swordAttributeActive, boolean crestAnalysisCast
    ) {
-      if (target.getItem() instanceof AvalonItem) {
+      if (isDivineConstruct(target)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.cannot_analyze_divine"), true);
       } else {
          boolean isTempleStone = target.getItem() instanceof TempleStoneSwordAxeItem;
@@ -114,6 +114,13 @@ public class MagicStructuralAnalysis {
             analyzeNormalItem(player, vars, target, swordAttributeActive, crestAnalysisCast);
          }
       }
+   }
+
+   public static boolean isDivineConstruct(ItemStack stack) {
+      return stack != null && !stack.isEmpty() && (stack.getItem() instanceof AvalonItem
+         || stack.is(ModItems.EXCALIBUR.get())
+         || stack.is(ModItems.EXCALIBUR_GALLATIN.get())
+         || stack.is(ModItems.GILGAMESH_EA.get()));
    }
 
    private static boolean tryHandleSpecialAnalysis(

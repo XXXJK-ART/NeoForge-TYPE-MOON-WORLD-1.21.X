@@ -58,6 +58,7 @@ public final class MagicHealing {
       }
 
       target.heal(heal);
+      net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       if (proficiency >= 25.0) {
          removeBleedingEffects(target);
       }
@@ -82,6 +83,7 @@ public final class MagicHealing {
          heal = Math.max(1, heal / 2);
       }
       target.heal(heal);
+      net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       if (clamped >= 25.0) {
          removeBleedingEffects(target);
       }

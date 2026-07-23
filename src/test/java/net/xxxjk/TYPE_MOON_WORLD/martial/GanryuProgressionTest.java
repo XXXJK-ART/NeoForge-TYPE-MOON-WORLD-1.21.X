@@ -36,6 +36,12 @@ class GanryuProgressionTest {
       assertEquals(1, GanryuCombatService.nextSequenceStage(1, 2, true));
    }
 
+   @Test void basicAttacksBridgeTheInitialProficiencyGap() {
+      assertTrue(GanryuCombatService.usesBasicAttack(0.0));
+      assertTrue(GanryuCombatService.usesBasicAttack(0.49));
+      assertFalse(GanryuCombatService.usesBasicAttack(0.5));
+   }
+
    @Test void techniqueReducesRecoveryByAtMostThirtyEightPercent() {
       assertEquals(10, GanryuCombatService.recoveryTicks(10, 0));
       assertEquals(7, GanryuCombatService.recoveryTicks(10, 20));

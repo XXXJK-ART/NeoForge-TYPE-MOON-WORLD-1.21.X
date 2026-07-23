@@ -31,7 +31,7 @@ public final class VFXClientRuntime {
          return;
       }
       for (VFXEnvironmentDefinition environment : definition.environments()) {
-         VFXEnvironmentManager.add(environment, x, y, z);
+         VFXEnvironmentManager.add(environment, x, y, z, null);
       }
       List<VFXEmitter> emitters = definition.createEmitters((float)x, (float)y, (float)z, seed);
       if (targetEntityId >= 0) {
@@ -73,7 +73,7 @@ public final class VFXClientRuntime {
          originZ = target.getZ();
       }
       for (VFXEnvironmentDefinition environment : definition.environments()) {
-         VFXEnvironmentManager.add(environment, originX, originY, originZ);
+         VFXEnvironmentManager.add(environment, originX, originY, originZ, targetEntityUuid.orElse(null));
       }
       List<VFXEmitter> emitters = definition.createEmitters((float)originX, (float)originY, (float)originZ, seed);
       if (direction.isPresent() && target == null) {

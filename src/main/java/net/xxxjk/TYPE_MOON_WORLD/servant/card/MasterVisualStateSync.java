@@ -7,6 +7,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterVisualStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -20,7 +21,11 @@ public final class MasterVisualStateSync {
       if (player == null || vars == null) {
          return;
       }
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, build(player, vars), new CustomPacketPayload[0]);
+      try {
+         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, build(player, vars));
+      } catch (UnsupportedOperationException ignored) {
+         // Mock and compatibility connections may not negotiate this visual-only payload.
+      }
    }
 
    public static void broadcast(ServerPlayer player) {
@@ -33,9 +38,10 @@ public final class MasterVisualStateSync {
    public static void onStartTracking(PlayerEvent.StartTracking event) {
       if (event.getEntity() instanceof ServerPlayer tracker) {
          Entity target = event.getTarget();
-         if (target instanceof ServerPlayer targetPlayer) {
+         if (target instanceof ServerPlayer targetPlayer
+            && NetworkRegistry.hasChannel(tracker.connection, MasterVisualStateMessage.TYPE.id())) {
             TypeMoonWorldModVariables.PlayerVariables vars = targetPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            PacketDistributor.sendToPlayer(tracker, build(targetPlayer, vars), new CustomPacketPayload[0]);
+            PacketDistributor.sendToPlayer(tracker, build(targetPlayer, vars));
          }
       }
    }
@@ -57,11 +63,14 @@ public final class MasterVisualStateSync {
    @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
-         PacketDistributor.sendToPlayersTrackingEntity(
-            player,
-            new MasterVisualStateMessage(player.getUUID(), false, 0, "default", false),
-            new CustomPacketPayload[0]
-         );
+         try {
+            PacketDistributor.sendToPlayersTrackingEntity(
+               player,
+               new MasterVisualStateMessage(player.getUUID(), false, 0, "default", false)
+            );
+         } catch (UnsupportedOperationException ignored) {
+            // Visual cleanup is irrelevant for connections that do not support the payload.
+         }
       }
    }
 

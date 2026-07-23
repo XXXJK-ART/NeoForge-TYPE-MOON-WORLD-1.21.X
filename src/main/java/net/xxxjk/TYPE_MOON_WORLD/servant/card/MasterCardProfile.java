@@ -18,6 +18,11 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.api.MasterProfileApiRegistry;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
+import net.xxxjk.typemoonworld.api.event.MasterProfileEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 public final class MasterCardProfile {
    private static final int KIRITSUGU_ORIGIN_BULLET_STOCK = 6;
@@ -52,6 +57,10 @@ public final class MasterCardProfile {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master_card.unknown"), true);
          return false;
       }
+      ResourceLocation publicProfileId = masterId != null && masterId.indexOf(':') >= 0
+         ? ResourceLocation.tryParse(masterId)
+         : ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, masterId == null || masterId.isBlank() ? "unknown" : masterId);
+      if (NeoForge.EVENT_BUS.post(new MasterProfileEvent.Pre(player, publicProfileId)).isCanceled()) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master.servant_cannot_master"), true);
@@ -101,6 +110,7 @@ public final class MasterCardProfile {
          serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 24, 0.5, 0.7, 0.5, 0.04);
          serverLevel.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1.0, player.getZ(), 32, 0.6, 0.7, 0.6, 0.08);
       }
+      NeoForge.EVENT_BUS.post(new MasterProfileEvent.Post(player, publicProfileId));
       return true;
    }
 
@@ -125,6 +135,19 @@ public final class MasterCardProfile {
    }
 
    private static Profile profile(String masterId) {
+      ResourceLocation externalId = ResourceLocation.tryParse(masterId);
+      MasterProfileApiRegistry.Entry external = MasterProfileApiRegistry.get(externalId);
+      if (external != null) {
+         var data = external.data();
+         return new Profile(masterId, data.commandSpellStyle(), data.maximumMana(), data.regenerationAmount(),
+            data.regenerationIntervalTicks(), Attributes.NONE, vars -> { }, player -> external.initializer().initialize(
+               new net.xxxjk.typemoonworld.api.MasterProfileContext(
+                  player, data,
+                  TypeMoonWorldApi.addon(data.id().getNamespace()).magics().mana(player),
+                  TypeMoonWorldApi.addon(data.id().getNamespace()).magics().knowledge(player),
+                  TypeMoonWorldApi.master(player)
+               )));
+      }
       return switch (masterId) {
          case "tohsaka_rin" -> new Profile(masterId, "rin", 1000.0, 8.0, 4, Attributes.FIVE_ELEMENTS, vars -> {
             learnBajiquan(vars, 60.0);
@@ -397,6 +420,9 @@ public final class MasterCardProfile {
    }
 
    private static ItemStack createCardStack(String masterId) {
+      if (MasterProfileApiRegistry.get(ResourceLocation.tryParse(masterId)) != null) {
+         return net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem.create(ModItems.MASTER_CARD_GENERIC.get(), masterId);
+      }
       Item item = switch (masterId == null ? "" : masterId) {
          case "tohsaka_rin" -> ModItems.MASTER_CARD_TOHSAKA_RIN.get();
          case "emiya_kiritsugu" -> ModItems.MASTER_CARD_EMIYA_KIRITSUGU.get();

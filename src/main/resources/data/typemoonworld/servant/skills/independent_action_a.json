@@ -1,0 +1,10 @@
+{
+  "id": "independent_action_a",
+  "display_name": "independent action a",
+  "display_name_zh": "independent action a",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

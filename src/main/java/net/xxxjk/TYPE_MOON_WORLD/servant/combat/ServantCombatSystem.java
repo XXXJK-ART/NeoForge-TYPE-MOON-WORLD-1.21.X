@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -160,7 +161,7 @@ public final class ServantCombatSystem {
 
       long now = servant.level().getGameTime();
       CompoundTag data = servant.getPersistentData();
-      if (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant)) {
+      if (!PaleRiderDamageTypes.isInfection(source) && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
          event.setCanceled(true);
          spawnGuardFx(servant, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return;
@@ -173,7 +174,7 @@ public final class ServantCombatSystem {
       }
 
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
-         if (tryAutoDodge(servant, source, params, now)) {
+         if (!PaleRiderDamageTypes.isInfection(source) && tryAutoDodge(servant, source, params, now)) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount((float)Math.min(event.getAmount(), event.getAmount() * 0.5F));
             } else {

@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 
 public final class MagicClassification {
    private static final Map<String, MagicClassification.ManaCostType> MAGIC_COST_TYPES = Map.ofEntries(
@@ -57,7 +58,7 @@ public final class MagicClassification {
    }
 
    public static boolean isKnownMagic(String magicId) {
-      return magicId != null && MAGIC_COST_TYPES.containsKey(magicId);
+      return magicId != null && (MAGIC_COST_TYPES.containsKey(magicId) || MagicDefinitionRegistry.contains(magicId));
    }
 
    public static MagicClassification.ManaCostType getManaCostType(String magicId) {
@@ -65,10 +66,17 @@ public final class MagicClassification {
    }
 
    public static Set<String> getAllMagicIds() {
-      return ALL_MAGIC_IDS;
+      java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(ALL_MAGIC_IDS);
+      ids.addAll(MagicDefinitionRegistry.ids());
+      return java.util.Collections.unmodifiableSet(ids);
    }
 
    public static MagicClassification.MagicSchoolType getSchoolType(String magicId) {
+      if (MagicDefinitionRegistry.contains(magicId)) {
+         String school = MagicDefinitionRegistry.get(magicId).school().getPath();
+         if ("nordic".equals(school)) return MagicSchoolType.NORDIC;
+         if ("church".equals(school)) return MagicSchoolType.CHURCH;
+      }
       return MAGIC_SCHOOL_TYPES.getOrDefault(magicId, MagicClassification.MagicSchoolType.NONE);
    }
 

@@ -44,7 +44,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
    public static AttributeSupplier.Builder createAttributes() {
       return createMobAttributes().add(Attributes.MAX_HEALTH, 30.0).add(Attributes.MOVEMENT_SPEED, 0.27)
          .add(Attributes.ATTACK_DAMAGE, 4.0).add(Attributes.ARMOR, 2.0).add(Attributes.FOLLOW_RANGE, 24.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, 0.12);
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.12).add(Attributes.SCALE, NpcScaleHelper.DEFAULT_RANDOM_SCALE);
    }
 
    @Override protected void customServerAiStep() {

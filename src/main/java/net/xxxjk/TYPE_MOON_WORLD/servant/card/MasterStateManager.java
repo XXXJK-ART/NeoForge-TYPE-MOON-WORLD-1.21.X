@@ -6,6 +6,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.NeoForge;
+import net.xxxjk.typemoonworld.api.event.ServantContractEvent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.RelativeMovement;
@@ -169,12 +171,14 @@ public final class MasterStateManager {
          servant.displayClientMessage(Component.translatable("message.typemoonworld.master.contract_occupied"), true);
          return false;
       }
+      if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
       masterVars.master_servant_uuid = servant.getUUID().toString();
       servantVars.servant_card_master_uuid = master.getUUID().toString();
       masterVars.syncPlayerVariables(master);
       servantVars.syncPlayerVariables(servant);
       servant.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.master_bound", master.getGameProfile().getName()), true);
       master.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.servant_bound", servant.getGameProfile().getName()), true);
+      NeoForge.EVENT_BUS.post(new ServantContractEvent.Post(master, servant));
       return true;
    }
 

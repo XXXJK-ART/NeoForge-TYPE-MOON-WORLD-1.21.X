@@ -29,7 +29,8 @@ public class TohsakaRinEntity extends MysticMagicianEntity {
          .add(Attributes.ATTACK_DAMAGE, 5.0)
          .add(Attributes.ARMOR, 6.0)
          .add(Attributes.FOLLOW_RANGE, 40.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, 0.2);
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.2)
+         .add(Attributes.SCALE, FIXED_SCALE);
    }
 
    @Override public void tick() {

@@ -1,0 +1,12 @@
+{
+  "id": "innocent_world_ex_pale_rider",
+  "display_name": "Innocent World EX",
+  "display_name_zh": "无辜的世界 EX",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [],
+  "description": "A fifteen-block fear aura weakens enemies and may freeze them when combat begins.",
+  "description_zh": "十五格恐惧光环削弱敌人，并可能在战斗开始时将其定身。"
+}
