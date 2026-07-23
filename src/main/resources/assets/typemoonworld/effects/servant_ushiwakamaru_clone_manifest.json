@@ -1,0 +1,18 @@
+{
+  "duration": 0.8,
+  "notes": "Translucent indigo-emerald reveal attached to each real Eight Boat clone.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.68, "rate": 480, "particle_lifetime": 0.42,
+      "size_variance": 0.4, "lifetime_variance": 0.18, "position_variance": 0.045,
+      "velocity": [0.0, 0.1, 0.0], "velocity_variance": 0.08,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.05, 0.0], "rotate_with_entity": true},
+      "component": {"type": "ellipsoid", "radius_x": 0.5, "radius_y": 1.05, "radius_z": 0.38, "sample_count": 96},
+      "transform_over_life": [{"t": 0.0, "scale": [0.2, 0.2, 0.2]}, {"t": 0.42, "scale": [1.22, 1.22, 1.22], "easing": "ease_out_back"}, {"t": 1.0, "scale": [0.9, 0.9, 0.9]}],
+      "color_over_life": [{"t": 0.0, "color": "#006688DD"}, {"t": 0.3, "color": "#886688DD"}, {"t": 0.62, "color": "#7788FF44"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.035}, {"t": 0.42, "size": 0.14}, {"t": 1.0, "size": 0.015}],
+      "blend": "TRANSLUCENT", "particle_role": "USHIWAKAMARU_REAL_CLONE_REVEAL",
+      "vanilla_particles": [{"type": "poof", "count": 1, "spread": [0.3, 0.6, 0.3], "offset": [0.0, 0.2, 0.0], "speed": 0.04, "chance": 0.2}]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "duration": 1.45,
+  "notes": "Houmaru Spider Slayer: roaring blade core, five-block sound rings and a broad final exorcising slash.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.68, "rate": 920, "particle_lifetime": 0.45,
+      "size_variance": 0.34, "lifetime_variance": 0.16, "position_variance": 0.025,
+      "velocity": [0.0, 0.08, 0.0], "velocity_variance": 0.08,
+      "binding": {"mode": "entity_yaw", "offset": [0.22, -0.1, 0.55], "rotate_with_entity": true},
+      "component": {"type": "helix", "radius": 0.22, "turns": 6.0, "height": 2.4, "segments": 132},
+      "transform_over_life": [{"t": 0.0, "pos": [0.0, -1.2, 0.0], "scale": [0.35, 0.35, 0.35]}, {"t": 0.45, "pos": [0.0, -1.05, 0.2], "scale": [1.5, 1.0, 1.5], "easing": "ease_out_back"}, {"t": 1.0, "pos": [0.0, -0.8, 0.5], "scale": [2.0, 0.9, 2.0]}],
+      "color_over_life": [{"t": 0.0, "color": "#0088FF44"}, {"t": 0.25, "color": "#FF88FF88"}, {"t": 0.58, "color": "#FF6688DD"}, {"t": 0.8, "color": "#FFEEFFFF"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.045}, {"t": 0.42, "size": 0.28}, {"t": 1.0, "size": 0.025}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_HOUMARU_ROAR", "enable_trail": true
+    },
+    {
+      "start_time": 0.22, "end_time": 1.28, "rate": 760, "particle_lifetime": 0.55,
+      "size_variance": 0.28, "lifetime_variance": 0.15, "position_variance": 0.02,
+      "velocity": [0.0, 0.025, 0.0], "velocity_variance": 0.03,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.45, 0.0], "rotate_with_entity": true},
+      "component": {"type": "circle", "radius": 1.0, "segments": 160},
+      "transform_over_life": [{"t": 0.0, "scale": [0.25, 0.25, 0.25]}, {"t": 0.52, "scale": [3.0, 3.0, 3.0], "easing": "ease_out_cubic"}, {"t": 1.0, "scale": [5.2, 5.2, 5.2]}],
+      "color_over_life": [{"t": 0.0, "color": "#AA88FF44"}, {"t": 0.45, "color": "#88EEFFFF"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.05}, {"t": 0.38, "size": 0.22}, {"t": 1.0, "size": 0.02}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_SONIC_RING",
+      "vanilla_particles": [{"type": "sculk_soul", "count": 1, "spread": [1.8, 0.25, 1.8], "offset": [0.0, 0.3, 0.0], "speed": 0.055, "chance": 0.18}]
+    },
+    {
+      "start_time": 0.48, "end_time": 1.25, "rate": 1080, "particle_lifetime": 0.52,
+      "size_variance": 0.34, "lifetime_variance": 0.17, "position_variance": 0.028,
+      "velocity": [0.0, 0.035, 0.4], "velocity_variance": 0.1,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 0.0, 1.4], "rotate_with_entity": true},
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "(t - 0.5) * 10.0", "expr_y": "sin(t * 3.14159) * 3.3 - 0.7", "expr_z": "sin(t * 6.28318) * 0.6", "t_start": 0.0, "t_end": 1.0, "segments": 220},
+      "transform_over_life": [{"t": 0.0, "scale": [0.25, 0.25, 0.25]}, {"t": 0.42, "scale": [1.15, 1.15, 1.15], "easing": "ease_out_back"}, {"t": 1.0, "scale": [1.0, 1.0, 1.0]}],
+      "color_over_life": [{"t": 0.0, "color": "#00FFFFFF"}, {"t": 0.18, "color": "#FFFFFFFF"}, {"t": 0.48, "color": "#FF88FF88"}, {"t": 0.75, "color": "#DD6688DD"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.06}, {"t": 0.34, "size": 0.42}, {"t": 1.0, "size": 0.025}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_SPIDER_SLAYER_FINAL_ARC", "enable_trail": true,
+      "vanilla_particles": [{"type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.8, 1.2], "speed": 0.0, "chance": 0.3}]
+    }
+  ],
+  "environment": [{"type": "screen_tint", "color": "#1088FF88", "start": 0.22, "end": 1.2, "fade_in": 0.1, "fade_out": 0.35, "intensity": 0.22, "radius": 20.0}]
+}

@@ -107,6 +107,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -757,6 +759,19 @@ public class CommonEvents {
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
+      if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
+         if (UshiwakamaruCombatHelper.tryAbsorbShieldDamage(ushiwakamaru, event.getSource(), event.getAmount())) {
+            event.setAmount(0.0F);
+            event.setCanceled(true);
+            return;
+         }
+         if (!UshiwakamaruCombatHelper.isGuaranteedHit(event.getSource(), currentTick)
+            && UshiwakamaruCombatHelper.trySwallowDodge(ushiwakamaru, event.getSource())) {
+            event.setAmount(0.0F);
+            event.setCanceled(true);
+            return;
+         }
+      }
       if (invisibleAirBypass && servant instanceof CursedArmHassanEntity hassan && CursedArmHassanCombatHelper.tryDodge(hassan, event.getSource())) {
          event.setCanceled(true);
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
@@ -777,6 +792,10 @@ public class CommonEvents {
          }
       }
       damage = event.getAmount();
+      if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
+         event.setAmount(UshiwakamaruCombatHelper.applyRidingDamageReduction(ushiwakamaru, event.getSource(), event.getAmount()));
+         damage = event.getAmount();
+      }
       if (servant instanceof EnkiduEntity enkidu) {
          event.setAmount(EnkiduCombatHelper.applyPerfectFormPassiveDamageReduction(enkidu, event));
          damage = event.getAmount();

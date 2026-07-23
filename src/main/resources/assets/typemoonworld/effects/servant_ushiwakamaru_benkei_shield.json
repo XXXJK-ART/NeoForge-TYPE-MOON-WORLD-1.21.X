@@ -1,0 +1,29 @@
+{
+  "duration": 1.5,
+  "notes": "Benkei Immovable Ground: translucent emerald shield wall and grounded guardian halo.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 1.35, "rate": 820, "particle_lifetime": 0.62,
+      "size_variance": 0.32, "lifetime_variance": 0.18, "position_variance": 0.025,
+      "velocity": [0.0, 0.015, 0.0], "velocity_variance": 0.025,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.55, 1.4], "rotate_with_entity": true},
+      "component": {"type": "ruled_surface", "start_a": [-1.55, 0.0, 0.0], "end_a": [1.55, 0.0, 0.0], "start_b": [-1.2, 2.8, 0.0], "end_b": [1.2, 2.8, 0.0], "u_segments": 34, "v_segments": 18},
+      "transform_over_life": [{"t": 0.0, "scale": [0.18, 0.18, 0.18]}, {"t": 0.35, "scale": [1.08, 1.08, 1.08], "easing": "ease_out_back"}, {"t": 1.0, "scale": [1.0, 1.0, 1.0]}],
+      "color_over_life": [{"t": 0.0, "color": "#2288FF44"}, {"t": 0.3, "color": "#9988FF88"}, {"t": 0.72, "color": "#6688FF44"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.055}, {"t": 0.4, "size": 0.18}, {"t": 1.0, "size": 0.03}],
+      "blend": "TRANSLUCENT", "particle_role": "USHIWAKAMARU_BENKEI_WALL",
+      "vanilla_particles": [{"type": "end_rod", "count": 1, "spread": [0.8, 0.7, 0.08], "offset": [0.0, 1.2, 0.0], "speed": 0.02, "chance": 0.22}]
+    },
+    {
+      "start_time": 0.04, "end_time": 1.4, "rate": 560, "particle_lifetime": 0.66,
+      "size_variance": 0.26, "lifetime_variance": 0.16, "position_variance": 0.02,
+      "velocity": [0.0, 0.02, 0.0], "velocity_variance": 0.025,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -1.0, 0.0], "rotate_with_entity": true},
+      "component": {"type": "circle", "radius": 1.0, "segments": 128},
+      "transform_over_life": [{"t": 0.0, "scale": [0.3, 0.3, 0.3]}, {"t": 0.5, "scale": [2.0, 2.0, 2.0], "easing": "ease_out_cubic"}, {"t": 1.0, "scale": [1.8, 1.8, 1.8]}],
+      "color_over_life": [{"t": 0.0, "color": "#AA88FF44"}, {"t": 0.55, "color": "#6688FF88"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.04}, {"t": 0.42, "size": 0.14}, {"t": 1.0, "size": 0.018}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_IMMOVABLE_HALO"
+    }
+  ]
+}

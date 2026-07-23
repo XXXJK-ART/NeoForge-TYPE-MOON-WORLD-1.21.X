@@ -168,6 +168,11 @@ public final class PaleRiderInfectionService {
       return entity != null && entity.getPersistentData().getBoolean(TAG_STATIONARY_ANCHOR);
    }
 
+   public static boolean isForbiddenPossessionHost(Entity entity) {
+      return entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity
+         || entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
+   }
+
    public static void markStationaryAnchor(Mob mob) {
       if (mob == null) return;
       CompoundTag data = mob.getPersistentData();

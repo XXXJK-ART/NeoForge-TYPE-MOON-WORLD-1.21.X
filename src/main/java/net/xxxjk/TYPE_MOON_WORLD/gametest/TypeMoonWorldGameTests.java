@@ -13,9 +13,14 @@ import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 @GameTestHolder("typemoonworld")
 @PrefixGameTestTemplate(false)
@@ -39,6 +44,85 @@ public final class TypeMoonWorldGameTests {
       var entity = TypeMoonWorldApi.addon("typemoonworld").servants().summon(helper.getLevel(), id, helper.absolutePos(new BlockPos(2, 2, 2)));
       helper.assertTrue(entity != null && entity.isAlive(), "generic servant summon failed");
       helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void ushiwakamaruRiderSummonInitializesDedicatedEntity(GameTestHelper helper) {
+      var id = ResourceLocation.fromNamespaceAndPath("typemoonworld", "ushiwakamaru_rider");
+      var entity = TypeMoonWorldApi.addon("typemoonworld").servants().summon(helper.getLevel(), id, helper.absolutePos(new BlockPos(2, 2, 2)));
+      helper.assertTrue(entity instanceof UshiwakamaruRiderEntity, "Rider summon did not use dedicated entity");
+      var rider = (UshiwakamaruRiderEntity) entity;
+      helper.assertTrue(rider.getMainHandItem().is(ModItems.SPIDER_CUTTER.get()), "Rider did not equip Spider Cutter");
+      helper.assertTrue(rider.getCombatPhase() == 1 && rider.getMaxHealth() > 0.0F, "Rider attributes were not initialized");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void ushiwakamaruEightBoatClonesMatchOwnerAndAcquireTargets(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var id = ResourceLocation.fromNamespaceAndPath("typemoonworld", "ushiwakamaru_rider");
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level, id, helper.absolutePos(new BlockPos(2, 2, 2)));
+      helper.assertTrue(summoned instanceof UshiwakamaruRiderEntity, "Rider summon did not use dedicated entity");
+      var rider = (UshiwakamaruRiderEntity)summoned;
+      rider.setCombatPhase(3);
+      rider.setCurrentMp(100.0);
+
+      var firstTarget = EntityType.ZOMBIE.create(level);
+      var secondTarget = EntityType.ZOMBIE.create(level);
+      helper.assertTrue(firstTarget != null && secondTarget != null, "Could not create clone targets");
+      firstTarget.setNoAi(true);
+      secondTarget.setNoAi(true);
+      firstTarget.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
+      secondTarget.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
+      firstTarget.setHealth(1000.0F);
+      secondTarget.setHealth(1000.0F);
+      firstTarget.moveTo(rider.getX() + 10.0, rider.getY(), rider.getZ(), 0.0F, 0.0F);
+      secondTarget.moveTo(rider.getX() - 10.0, rider.getY(), rider.getZ(), 0.0F, 0.0F);
+      level.addFreshEntity(firstTarget);
+      level.addFreshEntity(secondTarget);
+      rider.setTarget(firstTarget);
+
+      helper.runAfterDelay(10, () -> {
+         helper.assertTrue(rider.getPersistentData().hasUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET),
+            "Eight-Boat Leap did not retain its original target UUID; mp=" + rider.getCurrentMp()
+               + ", phase=" + rider.getCombatPhase() + ", target=" + rider.getTarget()
+               + ", until=" + rider.getPersistentData().getLong("UshiwakamaruEightBoatUntil")
+               + ", last=" + rider.getPersistentData().getLong("UshiwakamaruLastEightBoat"));
+         helper.assertTrue(firstTarget.isAlive(), "Eight-Boat original target died before the cleanup check");
+         helper.assertTrue(level.getEntity(firstTarget.getUUID()) == firstTarget,
+            "Eight-Boat original target was missing from the level UUID index");
+         var clones = level.getEntitiesOfClass(UshiwakamaruRiderEntity.class,
+            new AABB(rider.blockPosition()).inflate(32.0), UshiwakamaruRiderEntity::isClone);
+         helper.assertTrue(clones.size() == 7, "Eight-Boat Leap did not create exactly seven clones; found " + clones.size());
+         var targetIds = new java.util.HashSet<java.util.UUID>();
+         for (var clone : clones) {
+            if (clone.getTarget() != null) targetIds.add(clone.getTarget().getUUID());
+         }
+         helper.assertTrue(targetIds.size() >= 2, "Clones did not acquire targets independently; locked targets: " + targetIds.size());
+         for (var clone : clones) {
+            helper.assertTrue(Math.abs(clone.getMaxHealth() - rider.getMaxHealth()) < 0.001F,
+               "Clone max health does not match the owner");
+            helper.assertTrue(Math.abs(clone.getAttributeValue(Attributes.ATTACK_DAMAGE)
+               - rider.getAttributeValue(Attributes.ATTACK_DAMAGE)) < 0.001,
+               "Clone attack damage does not match the owner");
+            helper.assertTrue(Math.abs(clone.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()
+               - rider.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()) < 0.001,
+               "Clone base movement speed does not match the owner");
+            helper.assertTrue(clone.getAttributeValue(Attributes.MOVEMENT_SPEED)
+               > clone.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue() * 2.5,
+               "Clone did not retain Riding and Eight-Boat Leap movement bonuses: "
+                  + clone.getAttributeValue(Attributes.MOVEMENT_SPEED) + " / "
+                  + clone.getAttribute(Attributes.MOVEMENT_SPEED).getModifiers());
+            helper.assertTrue(Math.abs(clone.getCurrentMp() - 80.0) < 0.001,
+               "Clone consumed MP by entering the active-skill AI path");
+            if (clone.getTarget() != null) targetIds.add(clone.getTarget().getUUID());
+         }
+         firstTarget.kill();
+      });
+      helper.runAfterDelay(16, () -> {
+         var clones = level.getEntitiesOfClass(UshiwakamaruRiderEntity.class,
+            new AABB(rider.blockPosition()).inflate(32.0), UshiwakamaruRiderEntity::isClone);
+         helper.assertTrue(clones.isEmpty(), "Eight-Boat clones remained after the original target died");
+         helper.succeed();
+      });
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
    public static void serverSnapshotContainsAllSections(GameTestHelper helper) {

@@ -57,6 +57,11 @@ public final class ServantCardTransformManager {
    }
 
    public static boolean transform(ServerPlayer player, String servantId) {
+      if (servantId != null && ("ushiwakamaru_rider".equals(servantId)
+         || "typemoonworld:ushiwakamaru_rider".equals(servantId))) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.npc_only"), true);
+         return false;
+      }
       ServantDefinition definition = ServantDataRegistry.get(servantId);
       if (definition == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.unknown", servantId), true);

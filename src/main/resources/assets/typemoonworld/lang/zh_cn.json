@@ -1767,7 +1767,7 @@
     "screen.typemoonworld.pale_rider.possession": "附身目标",
     "screen.typemoonworld.pale_rider.command": "苍白骑士指令",
     "screen.typemoonworld.pale_rider.rat_swarm": "老鼠群",
-    "screen.typemoonworld.pale_rider.crow": "乌鸦",
+    "screen.typemoonworld.pale_rider.crow": "乌鸦群（5只）",
     "screen.typemoonworld.pale_rider.single_rat": "单只老鼠（传送点）",
     "screen.typemoonworld.pale_rider.single_crow": "飞行乌鸦（传送点）",
     "screen.typemoonworld.pale_rider.entity": "受控生物 #%s",
@@ -1793,6 +1793,19 @@
     "item.typemoonworld.servant_armor_generic_head": "从者卡头部护甲",
     "item.typemoonworld.servant_armor_generic_chest": "从者卡胸甲",
     "item.typemoonworld.servant_armor_generic_legs": "从者卡腿甲",
-    "item.typemoonworld.servant_armor_generic_feet": "从者卡靴子"
+    "item.typemoonworld.servant_armor_generic_feet": "从者卡靴子",
+    "entity.typemoonworld.ushiwakamaru_rider": "牛若丸（Rider）",
+    "item.typemoonworld.ushiwakamaru_rider_spawn_egg": "牛若丸（Rider）刷怪蛋",
+    "item.typemoonworld.spider_cutter": "蜘蛛切",
+    "skill.typemoonworld.tengu_strategy_a": "天狗的兵法 A",
+    "skill.typemoonworld.swallow_technique_b": "燕之神技 B",
+    "skill.typemoonworld.charisma_c_plus": "领导力 C+",
+    "skill.typemoonworld.jizaiten_eye_six_secret": "自在天眼·六韬看破",
+    "skill.typemoonworld.usumidori_heaven_blade": "薄绿·天刃缩步",
+    "skill.typemoonworld.benkei_immovable_ground": "弁庆·不动立地",
+    "skill.typemoonworld.dan_no_ura_eight_boat_leap": "坛之浦·八艘跳",
+    "skill.typemoonworld.houmaru_spider_slayer": "吼丸·蜘蛛杀",
+    "noble_phantasm.typemoonworld.shana_oh_wandering_tales": "遮那王流离谭",
+    "message.typemoonworld.servant_card.npc_only": "该从者仅作为 NPC 提供。"
 }
 

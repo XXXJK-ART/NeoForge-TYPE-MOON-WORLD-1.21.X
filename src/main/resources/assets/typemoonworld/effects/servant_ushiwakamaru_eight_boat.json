@@ -1,0 +1,38 @@
+{
+  "duration": 1.75,
+  "notes": "Dan-no-ura Eight Boat Leap: eight crossing sword paths and moon-white foothold fragments around the real clone formation.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 1.45, "rate": 980, "particle_lifetime": 0.5,
+      "size_variance": 0.36, "lifetime_variance": 0.2, "position_variance": 0.045,
+      "velocity": [0.0, 0.05, 0.25], "velocity_variance": 0.12,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.2, 0.0], "rotate_with_entity": true},
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "sin(t * 25.132 + time * 7.0) * (1.0 + 3.4 * t)", "expr_y": "0.2 + sin(t * 12.566) * 1.4 + t * 1.8", "expr_z": "cos(t * 25.132 + time * 7.0) * (1.0 + 3.4 * t)", "t_start": 0.0, "t_end": 1.0, "segments": 224},
+      "color_over_life": [{"t": 0.0, "color": "#DD6688DD"}, {"t": 0.4, "color": "#FFEEFFFF"}, {"t": 0.72, "color": "#CC88FF44"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.045}, {"t": 0.4, "size": 0.21}, {"t": 1.0, "size": 0.02}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_EIGHT_CROSSING_SLASHES", "enable_trail": true,
+      "vanilla_particles": [{"type": "sweep_attack", "count": 1, "spread": [1.8, 0.7, 1.8], "offset": [0.0, 0.8, 0.0], "speed": 0.03, "chance": 0.18}]
+    },
+    {
+      "start_time": 0.12, "end_time": 1.65, "rate": 420, "particle_lifetime": 0.58,
+      "size_variance": 0.5, "lifetime_variance": 0.24, "position_variance": 0.12,
+      "velocity": [0.0, 0.32, 0.0], "velocity_variance": 0.2,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.9, 0.0], "rotate_with_entity": true},
+      "component": {"type": "sphere", "radius": 3.6, "sample_count": 128},
+      "color_over_life": [{"t": 0.0, "color": "#AAEEFFFF"}, {"t": 0.55, "color": "#55FFFFFF"}, {"t": 1.0, "color": "#00EEFFFF"}],
+      "size_over_life": [{"t": 0.0, "size": 0.055}, {"t": 0.4, "size": 0.16}, {"t": 1.0, "size": 0.018}],
+      "visibility_condition": "random() > 0.55", "blend": "TRANSLUCENT", "particle_role": "USHIWAKAMARU_FOOTHOLD_SHARDS",
+      "vanilla_particles": [{"type": "snowflake", "count": 1, "spread": [1.5, 0.25, 1.5], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.25}]
+    },
+    {
+      "start_time": 1.25, "end_time": 1.72, "rate": 360, "particle_lifetime": 0.48,
+      "size_variance": 0.4, "lifetime_variance": 0.2, "position_variance": 0.12,
+      "velocity": [0.0, -0.06, 0.0], "velocity_variance": 0.08,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 0.5, 0.0], "rotate_with_entity": true},
+      "component": {"type": "sphere", "radius": 3.8, "sample_count": 120},
+      "color_over_life": [{"t": 0.0, "color": "#99FF88AA"}, {"t": 1.0, "color": "#00FF88AA"}],
+      "size_over_life": [{"t": 0.0, "size": 0.05}, {"t": 0.45, "size": 0.12}, {"t": 1.0, "size": 0.012}],
+      "visibility_condition": "random() > 0.62", "blend": "TRANSLUCENT", "particle_role": "USHIWAKAMARU_EIGHT_BOAT_PETALS"
+    }
+  ]
+}

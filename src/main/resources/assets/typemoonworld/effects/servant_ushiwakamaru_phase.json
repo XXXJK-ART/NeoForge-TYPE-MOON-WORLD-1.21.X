@@ -1,0 +1,28 @@
+{
+  "duration": 1.1,
+  "notes": "One-way combat phase transition: moon-white ring, indigo resolve and falling sakura afterglow.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.92, "rate": 620, "particle_lifetime": 0.5,
+      "size_variance": 0.32, "lifetime_variance": 0.18, "position_variance": 0.025,
+      "velocity": [0.0, 0.06, 0.0], "velocity_variance": 0.06,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.95, 0.0], "rotate_with_entity": true},
+      "component": {"type": "circle", "radius": 1.0, "segments": 128},
+      "transform_over_life": [{"t": 0.0, "scale": [0.25, 0.25, 0.25]}, {"t": 0.48, "scale": [2.4, 2.4, 2.4], "easing": "ease_out_back"}, {"t": 1.0, "scale": [3.2, 3.2, 3.2]}],
+      "color_over_life": [{"t": 0.0, "color": "#FFEEFFFF"}, {"t": 0.48, "color": "#CC6688DD"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.045}, {"t": 0.38, "size": 0.2}, {"t": 1.0, "size": 0.02}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_PHASE_RING",
+      "vanilla_particles": [{"type": "end_rod", "count": 1, "spread": [0.6, 0.8, 0.6], "offset": [0.0, 0.8, 0.0], "speed": 0.035, "chance": 0.28}]
+    },
+    {
+      "start_time": 0.18, "end_time": 1.08, "rate": 280, "particle_lifetime": 0.66,
+      "size_variance": 0.48, "lifetime_variance": 0.25, "position_variance": 0.12,
+      "velocity": [0.0, -0.16, 0.0], "velocity_variance": 0.1,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, 0.7, 0.0], "rotate_with_entity": true},
+      "component": {"type": "sphere", "radius": 1.5, "sample_count": 96},
+      "color_over_life": [{"t": 0.0, "color": "#AAFF88AA"}, {"t": 0.58, "color": "#55FF88AA"}, {"t": 1.0, "color": "#00FF88AA"}],
+      "size_over_life": [{"t": 0.0, "size": 0.045}, {"t": 0.5, "size": 0.11}, {"t": 1.0, "size": 0.012}],
+      "visibility_condition": "random() > 0.62", "blend": "TRANSLUCENT", "particle_role": "USHIWAKAMARU_PHASE_PETALS"
+    }
+  ]
+}

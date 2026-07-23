@@ -247,6 +247,7 @@ public final class PaleRiderCombatHelper {
       if (rider.hasPossessedHost()) return;
       Mob infectedHost = level.getEntitiesOfClass(Mob.class, rider.getBoundingBox().inflate(96.0),
          mob -> mob != rider && mob.isAlive() && !(mob instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)
+            && !PaleRiderInfectionService.isForbiddenPossessionHost(mob)
             && !mob.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES)
             && PaleRiderInfectionService.isInfectedBy(mob, rider))
          .stream().min((left, right) -> Double.compare(left.distanceToSqr(rider), right.distanceToSqr(rider))).orElse(null);

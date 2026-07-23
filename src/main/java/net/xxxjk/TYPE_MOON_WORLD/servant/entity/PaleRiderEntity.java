@@ -214,6 +214,7 @@ public final class PaleRiderEntity extends ServantEntity {
 
    public boolean beginPossession(Mob host) {
       if (host == null || host == this || !host.isAlive() || host instanceof ServantEntity
+         || PaleRiderInfectionService.isForbiddenPossessionHost(host)
          || host.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES)) return false;
       if (this.possessedHostUuid != null && this.possessedHostUuid.equals(host.getUUID()) && this.getVehicle() == host) return true;
       this.endPossession();
@@ -227,7 +228,8 @@ public final class PaleRiderEntity extends ServantEntity {
    public void tickPossession() {
       if (this.possessedHostUuid == null || !(this.level() instanceof ServerLevel level)) return;
       Entity hostEntity = level.getEntity(this.possessedHostUuid);
-      if (!(hostEntity instanceof Mob host) || !host.isAlive() || this.getVehicle() != host) {
+      if (!(hostEntity instanceof Mob host) || !host.isAlive() || this.getVehicle() != host
+         || PaleRiderInfectionService.isForbiddenPossessionHost(host)) {
          this.endPossession();
          return;
       }

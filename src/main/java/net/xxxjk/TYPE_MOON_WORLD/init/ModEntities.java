@@ -68,6 +68,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
@@ -389,6 +390,9 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<OdaNobunagaEntity>> ODA_NOBUNAGA = ENTITY_TYPES.register(
       "oda_nobunaga", () -> Builder.of(OdaNobunagaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("oda_nobunaga")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<UshiwakamaruRiderEntity>> USHIWAKAMARU_RIDER = ENTITY_TYPES.register(
+      "ushiwakamaru_rider", () -> Builder.of(UshiwakamaruRiderEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ushiwakamaru_rider")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
       "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")

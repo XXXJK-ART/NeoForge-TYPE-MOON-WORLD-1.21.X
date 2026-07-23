@@ -97,6 +97,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_HAJUN_SHORT = register("oda_nobunaga_voice_hajun_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> PALE_RIDER_VOICE_ATTACK = register("pale_rider_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> PALE_RIDER_VOICE_FOUR_CALAMITIES = register("pale_rider_voice_four_calamities");
+   public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_ATTACK = register("ushiwakamaru_rider_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_FAIL = register("ushiwakamaru_rider_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_VICTORY = register("ushiwakamaru_rider_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_NP = register("ushiwakamaru_rider_voice_np");
 
    private ModSounds() {
    }

@@ -188,6 +188,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.HESHIKIRI_HASEBE);
+                        output.accept(ModItems.SPIDER_CUTTER);
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
@@ -341,6 +342,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
+                        output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);

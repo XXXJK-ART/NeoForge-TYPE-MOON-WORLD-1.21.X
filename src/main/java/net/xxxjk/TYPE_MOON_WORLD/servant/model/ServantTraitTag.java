@@ -55,6 +55,7 @@ public enum ServantTraitTag {
    BALANCED("balanced"),
 
    ROMAN("roman"),
+   GENJI("genji"),
    ROUND_TABLE("round_table"),
    STAR_BORN("star_born"),
    CELESTIAL("celestial"),

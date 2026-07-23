@@ -236,6 +236,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
+      event.registerEntityRenderer(ModEntities.USHIWAKAMARU_RIDER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.UshiwakamaruRiderRenderer::new);
       event.registerEntityRenderer(ModEntities.ENKIDU.get(), EnkiduRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH.get(), GilgameshRenderer::new);
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);

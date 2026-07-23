@@ -1603,7 +1603,7 @@
     "screen.typemoonworld.pale_rider.possession": "Possession Target",
     "screen.typemoonworld.pale_rider.command": "Pale Rider Command",
     "screen.typemoonworld.pale_rider.rat_swarm": "Rat Swarm",
-    "screen.typemoonworld.pale_rider.crow": "Crow",
+    "screen.typemoonworld.pale_rider.crow": "Crow Flock (5)",
     "screen.typemoonworld.pale_rider.single_rat": "Single Rat (Anchor)",
     "screen.typemoonworld.pale_rider.single_crow": "Hovering Crow (Anchor)",
     "screen.typemoonworld.pale_rider.entity": "Controlled Entity #%s",
@@ -1629,5 +1629,18 @@
     "item.typemoonworld.servant_armor_generic_head": "Servant Card Head",
     "item.typemoonworld.servant_armor_generic_chest": "Servant Card Chest",
     "item.typemoonworld.servant_armor_generic_legs": "Servant Card Legs",
-    "item.typemoonworld.servant_armor_generic_feet": "Servant Card Feet"
+    "item.typemoonworld.servant_armor_generic_feet": "Servant Card Feet",
+    "entity.typemoonworld.ushiwakamaru_rider": "Ushiwakamaru (Rider)",
+    "item.typemoonworld.ushiwakamaru_rider_spawn_egg": "Ushiwakamaru (Rider) Spawn Egg",
+    "item.typemoonworld.spider_cutter": "Spider Cutter",
+    "skill.typemoonworld.tengu_strategy_a": "Tengu Strategy A",
+    "skill.typemoonworld.swallow_technique_b": "Swallow Technique B",
+    "skill.typemoonworld.charisma_c_plus": "Charisma C+",
+    "skill.typemoonworld.jizaiten_eye_six_secret": "Six Secret Sight",
+    "skill.typemoonworld.usumidori_heaven_blade": "Usumidori: Heaven Blade",
+    "skill.typemoonworld.benkei_immovable_ground": "Benkei: Immovable Ground",
+    "skill.typemoonworld.dan_no_ura_eight_boat_leap": "Dan-no-ura: Eight-Boat Leap",
+    "skill.typemoonworld.houmaru_spider_slayer": "Houmaru: Spider Slayer",
+    "noble_phantasm.typemoonworld.shana_oh_wandering_tales": "Shana-oh Wandering Tales",
+    "message.typemoonworld.servant_card.npc_only": "This servant is available as an NPC only."
 }

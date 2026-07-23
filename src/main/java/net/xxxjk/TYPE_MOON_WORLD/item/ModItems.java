@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SpiderCutterItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.JapaneseSwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
@@ -803,6 +804,21 @@ public class ModItems {
                                             1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+
+    public static final DeferredItem<Item> SPIDER_CUTTER = ITEMS.register("spider_cutter",
+            () -> new SpiderCutterItem(new Item.Properties().durability(SpiderCutterItem.DURABILITY).fireResistant().rarity(Rarity.RARE)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "spider_cutter_damage"),
+                                            SpiderCutterItem.ATTACK_DAMAGE, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "spider_cutter_speed"),
+                                            SpiderCutterItem.ATTACK_SPEED, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
     public static final DeferredItem<Item> THOMPSON_CONTENDER = ITEMS.register("thompson_contender",
             () -> new ThompsonContenderItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
@@ -871,6 +887,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARTORIA_PENDRAGON, 0x1E4FAF, 0xF4D35E));
     public static final DeferredItem<Item> ODA_NOBUNAGA_SPAWN_EGG = ITEMS.register("oda_nobunaga_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ODA_NOBUNAGA, 0xB01818, 0xF4C430));
+    public static final DeferredItem<Item> USHIWAKAMARU_RIDER_SPAWN_EGG = ITEMS.register("ushiwakamaru_rider_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.USHIWAKAMARU_RIDER, 0x4A1E38, 0xE9C9D5));
     public static final DeferredItem<Item> ENKIDU_SPAWN_EGG = ITEMS.register("enkidu_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
     public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",

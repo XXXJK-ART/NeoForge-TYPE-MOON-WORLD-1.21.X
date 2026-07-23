@@ -61,7 +61,7 @@ public final class ServantCardPaleRiderSkills {
    public static final String DOMAIN_PROXY_TAG = "PaleRiderCardDomainProxyUuid";
    private static final String SOUL_LIBRARY_TAG = "PaleRiderCardSoulLibrary";
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
-   private static final int MAX_CONTROLLED = 128;
+   private static final int MAX_CONTROLLED = 200;
 
    private ServantCardPaleRiderSkills() {}
 
@@ -157,7 +157,9 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean spawn(ServerPlayer player, int mode) {
-      if (!(player.level() instanceof ServerLevel level) || countControlled(level, player.getUUID()) >= MAX_CONTROLLED) return false;
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      int spawnCount = mode == 1 ? 5 : 1;
+      if (countControlled(level, player.getUUID()) + spawnCount > MAX_CONTROLLED) return false;
       if (mode == 0 || mode == 2) {
          RatSwarmEntity swarm = ModEntities.RAT_SWARM.get().create(level);
          if (swarm == null) return false;
@@ -167,14 +169,30 @@ public final class ServantCardPaleRiderSkills {
          if (mode == 2) PaleRiderInfectionService.markStationaryAnchor(swarm);
          level.addFreshEntity(swarm);
          PaleRiderInfectionService.forceControl(swarm, player);
+      } else if (mode == 1 || mode == 3) {
+         List<PaleRiderCrowEntity> spawned = new java.util.ArrayList<>(spawnCount);
+         for (int index = 0; index < spawnCount; index++) {
+            PaleRiderCrowEntity crow = ModEntities.PALE_RIDER_CROW.get().create(level);
+            if (crow == null) {
+               spawned.forEach(Entity::discard);
+               return false;
+            }
+            double angle = Math.PI * 2.0 * index / spawnCount;
+            double radius = spawnCount == 1 ? 0.0 : 1.25;
+            crow.moveTo(player.getX() + Math.cos(angle) * radius, player.getY() + 1.5,
+               player.getZ() + Math.sin(angle) * radius, player.getYRot(), 0.0F);
+            crow.setPaleRiderOwner(player);
+            if (mode == 3) PaleRiderInfectionService.markStationaryAnchor(crow);
+            if (!level.addFreshEntity(crow)) {
+               crow.discard();
+               spawned.forEach(Entity::discard);
+               return false;
+            }
+            spawned.add(crow);
+            PaleRiderInfectionService.forceControl(crow, player);
+         }
       } else {
-         PaleRiderCrowEntity crow = ModEntities.PALE_RIDER_CROW.get().create(level);
-         if (crow == null) return false;
-         crow.moveTo(player.getX(), player.getY() + 1.5, player.getZ(), player.getYRot(), 0.0F);
-         crow.setPaleRiderOwner(player);
-         if (mode == 3) PaleRiderInfectionService.markStationaryAnchor(crow);
-         level.addFreshEntity(crow);
-         PaleRiderInfectionService.forceControl(crow, player);
+         return false;
       }
       return true;
    }
@@ -186,6 +204,7 @@ public final class ServantCardPaleRiderSkills {
          return true;
       }
       sendIfSupported(player, new PaleRiderOpenScreenMessage(2, controlledMobs(player).stream()
+         .filter(mob -> !PaleRiderInfectionService.isForbiddenPossessionHost(mob))
          .map(mob -> new PaleRiderOpenScreenMessage.Target(mob.getId(), mob.blockPosition().getX(), mob.blockPosition().getZ(), mob.getDisplayName().getString())).toList()));
       return true;
    }
@@ -193,7 +212,8 @@ public final class ServantCardPaleRiderSkills {
    public static boolean possess(ServerPlayer player, int entityId) {
       if (!(player.level() instanceof ServerLevel level)) return false;
       Entity entity = level.getEntity(entityId);
-      if (!(entity instanceof Mob mob) || !isControlledBy(mob, player.getUUID())) return false;
+      if (!(entity instanceof Mob mob) || PaleRiderInfectionService.isForbiddenPossessionHost(mob)
+         || !isControlledBy(mob, player.getUUID())) return false;
       releasePossession(player);
       if (!player.startRiding(mob, true)) return false;
       mob.getPersistentData().putBoolean("PaleRiderPossessed", true);
@@ -623,13 +643,14 @@ public final class ServantCardPaleRiderSkills {
    private static Mob findStoredHost(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level) || !player.getPersistentData().hasUUID(HOST_TAG)) return null;
       Entity entity = level.getEntity(player.getPersistentData().getUUID(HOST_TAG));
-      return entity instanceof Mob mob && mob.isAlive() && isControlledBy(mob, player.getUUID()) ? mob : null;
+      return entity instanceof Mob mob && mob.isAlive() && !PaleRiderInfectionService.isForbiddenPossessionHost(mob)
+         && isControlledBy(mob, player.getUUID()) ? mob : null;
    }
 
    private static Mob possessNearestControlled(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return null;
       Mob nearest = controlledMobs(player).stream()
-         .filter(mob -> mob.isAlive())
+         .filter(mob -> mob.isAlive() && !PaleRiderInfectionService.isForbiddenPossessionHost(mob))
          .min((left, right) -> Double.compare(left.distanceToSqr(player), right.distanceToSqr(player)))
          .orElse(null);
       if (nearest == null) return null;

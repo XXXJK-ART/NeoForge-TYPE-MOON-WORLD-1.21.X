@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -174,7 +176,11 @@ public final class ServantCombatSystem {
       }
 
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
-         if (!PaleRiderDamageTypes.isInfection(source) && tryAutoDodge(servant, source, params, now)) {
+         boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
+            && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
+         boolean guaranteedHit = UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
+         if (!PaleRiderDamageTypes.isInfection(source) && !ushiwakamaruMelee && !guaranteedHit
+            && tryAutoDodge(servant, source, params, now)) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount((float)Math.min(event.getAmount(), event.getAmount() * 0.5F));
             } else {
