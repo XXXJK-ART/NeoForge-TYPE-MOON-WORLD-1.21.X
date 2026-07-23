@@ -1,0 +1,7 @@
+{
+  "movement": {"follow_distance": 24.0, "wander_radius": 6.0, "likes_high_places": true},
+  "combat": {"preferred_attack_distance": 16.0, "retreat_health_ratio": 0.2, "melee_preference": 0.2, "berserk_health_ratio": 0.15, "berserk_damage_multiplier": 1.25},
+  "social": {"talk_interval": 240, "greeting_probability": 0.08},
+  "command": {"base_obedience_rate": 0.65, "favor_multiplier": 0.006},
+  "environment": {"liked_biomes": [], "disliked_biomes": [], "preferred_weather": "any"}
+}

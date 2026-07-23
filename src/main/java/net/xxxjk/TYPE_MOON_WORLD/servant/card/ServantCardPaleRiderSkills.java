@@ -18,6 +18,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
@@ -50,6 +51,11 @@ public final class ServantCardPaleRiderSkills {
    private static final String STEALTH_UNTIL_TAG = "PaleRiderCardPerfectStealthUntil";
    public static final String SPAWN_MODE_TAG = "PaleRiderCardSpawnMode";
    public static final String COMMAND_TAG = "PaleRiderCardCommand";
+   public static final int COMMAND_FREE = 0;
+   public static final int COMMAND_HOLD = 1;
+   public static final int COMMAND_ATTACK = 2;
+   public static final int COMMAND_GATHER = 3;
+   public static final int COMMAND_LETHAL = 4;
    public static final String UNDERWORLD_TAG = "PaleRiderCardUnderworldActive";
    public static final String CALAMITY_TAG = "PaleRiderCardCalamityActive";
    public static final String DOMAIN_PROXY_TAG = "PaleRiderCardDomainProxyUuid";
@@ -93,7 +99,7 @@ public final class ServantCardPaleRiderSkills {
       player.getPersistentData().remove(LAST_CALAMITY_TICK_TAG);
       player.removeEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY);
       player.noPhysics = false;
-      PacketDistributor.sendToPlayer(player, new PaleRiderOpenScreenMessage(5, List.of()), new CustomPacketPayload[0]);
+      sendIfSupported(player, new PaleRiderOpenScreenMessage(5, List.of()));
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -102,7 +108,10 @@ public final class ServantCardPaleRiderSkills {
       tickPerfectConcealment(player);
       Mob host = findStoredHost(player);
       if (host == null) {
-         if (player.getPersistentData().hasUUID(HOST_TAG)) releasePossession(player);
+         if (player.getPersistentData().hasUUID(HOST_TAG)) {
+            host = possessNearestControlled(player);
+            if (host == null) releasePossession(player);
+         }
          player.noPhysics = false;
          ServantCardConcealmentHelper.apply(player, 40);
          if (!player.getPersistentData().getBoolean(STEALTH_TAG) && player.tickCount % 4 == 0 && player.level() instanceof ServerLevel level) {
@@ -122,6 +131,10 @@ public final class ServantCardPaleRiderSkills {
          tickDomainMounts(player, level);
          LivingEntity domainAnchor = getDomainAnchor(player);
          if (domainAnchor != null) {
+            if (isUnderworldActive(player) && player.tickCount % 10 == 0) {
+               // Refill vacant domain slots from the strongest remaining stored souls.
+               manifestStoredSouls(player, level, domainAnchor);
+            }
             if (isUnderworldActive(player) && player.tickCount % 80 == 0) {
                VFXServerEffects.spawn(level, "pale_rider_underworld_sustain", domainAnchor, 64.0);
             }
@@ -131,15 +144,15 @@ public final class ServantCardPaleRiderSkills {
             }
          }
          if (player.tickCount % 20 == 0) {
-            PacketDistributor.sendToPlayer(player, new PaleRiderStateMessage(countControlled(level, player.getUUID()), host != null,
-               isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG)), new CustomPacketPayload[0]);
+            sendIfSupported(player, new PaleRiderStateMessage(countControlled(level, player.getUUID()), host != null,
+               isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG)));
          }
       }
       if (player.tickCount % 5 == 0) vars.syncPlayerVariables(player);
    }
 
    public static boolean spawnMenu(ServerPlayer player, boolean crouching) {
-      PacketDistributor.sendToPlayer(player, new PaleRiderOpenScreenMessage(crouching ? 1 : 0, List.of()), new CustomPacketPayload[0]);
+      sendIfSupported(player, new PaleRiderOpenScreenMessage(crouching ? 1 : 0, List.of()));
       return true;
    }
 
@@ -169,11 +182,11 @@ public final class ServantCardPaleRiderSkills {
    public static boolean openPossession(ServerPlayer player) {
       if (findStoredHost(player) != null) {
          releasePossession(player);
-         PacketDistributor.sendToPlayer(player, new PaleRiderOpenScreenMessage(5, List.of()), new CustomPacketPayload[0]);
+         sendIfSupported(player, new PaleRiderOpenScreenMessage(5, List.of()));
          return true;
       }
-      PacketDistributor.sendToPlayer(player, new PaleRiderOpenScreenMessage(2, controlledMobs(player).stream()
-         .map(mob -> new PaleRiderOpenScreenMessage.Target(mob.getId(), mob.blockPosition().getX(), mob.blockPosition().getZ(), mob.getDisplayName().getString())).toList()), new CustomPacketPayload[0]);
+      sendIfSupported(player, new PaleRiderOpenScreenMessage(2, controlledMobs(player).stream()
+         .map(mob -> new PaleRiderOpenScreenMessage.Target(mob.getId(), mob.blockPosition().getX(), mob.blockPosition().getZ(), mob.getDisplayName().getString())).toList()));
       return true;
    }
 
@@ -238,12 +251,18 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean openCommand(ServerPlayer player) {
-      PacketDistributor.sendToPlayer(player, new PaleRiderOpenScreenMessage(3, List.of()), new CustomPacketPayload[0]);
+      sendIfSupported(player, new PaleRiderOpenScreenMessage(3, List.of()));
       return true;
    }
 
+   private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
+      if (NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
+         PacketDistributor.sendToPlayer(player, payload);
+      }
+   }
+
    public static void setCommand(ServerPlayer player, int command) {
-      player.getPersistentData().putInt(COMMAND_TAG, Math.max(0, Math.min(3, command)));
+      player.getPersistentData().putInt(COMMAND_TAG, Math.max(COMMAND_FREE, Math.min(COMMAND_LETHAL, command)));
    }
 
    public static void togglePerfectConcealment(ServerPlayer player) {
@@ -395,8 +414,16 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static void manifestStoredSouls(ServerPlayer player, ServerLevel level, LivingEntity anchor) {
-      int slots = Math.max(0, 50 - ownedSoulEchoes(player, level).size());
       SoulLibrary library = loadSoulLibrary(player);
+      List<SoulEchoEntity> active = ownedSoulEchoes(player, level);
+      if (active.size() > 50) {
+         for (SoulEchoEntity excess : active.subList(50, active.size())) {
+            if (excess.isAlive() && excess.getSnapshot() != null) library.add(excess.getSnapshot());
+            excess.discard();
+         }
+         active = active.subList(0, 50);
+      }
+      int slots = Math.max(0, 50 - active.size());
       List<SoulSnapshot> souls = library.takeStrongest(slots);
       int index = 0;
       for (SoulSnapshot soul : souls) {
@@ -465,8 +492,15 @@ public final class ServantCardPaleRiderSkills {
          return;
       }
 
-      ownedHorses(player, level).stream().filter(horse -> horse.getPassengers().isEmpty()).forEach(Entity::discard);
-      if (getPossessedHost(player) != null) {
+      boolean possessing = getPossessedHost(player) != null;
+      List<ApocalypseHorseEntity> horses = ownedHorses(player, level);
+      if (!possessing && !(player.getVehicle() instanceof ApocalypseHorseEntity)) {
+         horses.stream().filter(horse -> horse.getPassengers().isEmpty() && horse.distanceToSqr(player) <= 16.0)
+            .min((left, right) -> Double.compare(left.distanceToSqr(player), right.distanceToSqr(player)))
+            .ifPresent(horse -> player.startRiding(horse, true));
+      }
+      horses.stream().filter(horse -> horse.getPassengers().isEmpty()).forEach(Entity::discard);
+      if (possessing) {
          ApocalypseHorsemanEntity proxy = ensureDomainProxy(player, level);
          if (proxy != null) ensureHorse(player, proxy, level);
       } else {
@@ -590,6 +624,23 @@ public final class ServantCardPaleRiderSkills {
       if (!(player.level() instanceof ServerLevel level) || !player.getPersistentData().hasUUID(HOST_TAG)) return null;
       Entity entity = level.getEntity(player.getPersistentData().getUUID(HOST_TAG));
       return entity instanceof Mob mob && mob.isAlive() && isControlledBy(mob, player.getUUID()) ? mob : null;
+   }
+
+   private static Mob possessNearestControlled(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return null;
+      Mob nearest = controlledMobs(player).stream()
+         .filter(mob -> mob.isAlive())
+         .min((left, right) -> Double.compare(left.distanceToSqr(player), right.distanceToSqr(player)))
+         .orElse(null);
+      if (nearest == null) return null;
+      UUID old = player.getPersistentData().hasUUID(HOST_TAG) ? player.getPersistentData().getUUID(HOST_TAG) : null;
+      if (old != null && level.getEntity(old) instanceof Mob oldMob) oldMob.getPersistentData().remove("PaleRiderPossessed");
+      player.stopRiding();
+      if (!player.startRiding(nearest, true)) return null;
+      nearest.getPersistentData().putBoolean("PaleRiderPossessed", true);
+      nearest.getPersistentData().putDouble("PaleRiderPossessionBaseY", nearest.getY());
+      player.getPersistentData().putUUID(HOST_TAG, nearest.getUUID());
+      return nearest;
    }
 
    private static Mob getPossessedHost(ServerPlayer player) {

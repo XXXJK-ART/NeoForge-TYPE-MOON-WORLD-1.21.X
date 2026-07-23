@@ -17,7 +17,11 @@ public class ServantMasterContractItem extends Item {
    @Override
    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand hand) {
       if (!player.level().isClientSide && player instanceof ServerPlayer actor && target instanceof ServerPlayer other) {
-         return MasterStateManager.bindByContract(actor, other) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+         boolean success = MasterStateManager.bindByContract(actor, other);
+         if (success && !actor.getAbilities().instabuild) {
+            stack.shrink(1);
+         }
+         return success ? InteractionResult.SUCCESS : InteractionResult.FAIL;
       }
       return InteractionResult.sidedSuccess(player.level().isClientSide);
    }

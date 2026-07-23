@@ -8,6 +8,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantCardArmorRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardRegistry;
@@ -35,6 +38,19 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
 
    public String servantId() {
       return this.servantId;
+   }
+
+   public String servantId(ItemStack stack) {
+      if (this.servantId != null && !this.servantId.isBlank()) return this.servantId;
+      CustomData data = stack == null ? null : stack.get(DataComponents.CUSTOM_DATA);
+      return data == null ? "" : data.copyTag().getString("tmw_servant_id");
+   }
+
+   public static ItemStack create(ItemStack stack, String servantId) {
+      CompoundTag tag = new CompoundTag();
+      tag.putString("tmw_servant_id", servantId == null ? "" : servantId);
+      stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+      return stack;
    }
 
    public boolean hasRealArmorModel() {

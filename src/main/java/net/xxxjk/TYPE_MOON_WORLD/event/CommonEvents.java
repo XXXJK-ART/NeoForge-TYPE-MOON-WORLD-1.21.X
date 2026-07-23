@@ -40,12 +40,14 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
@@ -91,6 +93,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
@@ -144,6 +152,11 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onAddReloadListeners(AddReloadListenerEvent event) {
       event.addListener(new ServantDefinitionLoader());
+      event.addListener(new ServantCardDefinitionLoader());
+      event.addListener(new MagicDefinitionLoader());
+      event.addListener(new ServantSkillDefinitionLoader());
+      event.addListener(new ServantNoblePhantasmDefinitionLoader());
+      event.addListener(new ServantAiDefinitionLoader());
    }
 
    @SubscribeEvent
@@ -667,6 +680,16 @@ public class CommonEvents {
    public static void onMobEffectRemoved(Remove event) {
       restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
       clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
+   }
+
+   @SubscribeEvent
+   public static void onDefinitionSnapshotLogin(PlayerLoggedInEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) DefinitionSnapshotService.send(player);
+   }
+
+   @SubscribeEvent
+   public static void onDefinitionSnapshotReload(OnDatapackSyncEvent event) {
+      event.getRelevantPlayers().forEach(DefinitionSnapshotService::send);
    }
 
    @SubscribeEvent

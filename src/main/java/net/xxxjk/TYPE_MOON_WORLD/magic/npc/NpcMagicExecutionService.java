@@ -4,6 +4,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
+import net.xxxjk.typemoonworld.api.ExecutionResult;
 
 public final class NpcMagicExecutionService {
    private NpcMagicExecutionService() {
@@ -11,6 +15,9 @@ public final class NpcMagicExecutionService {
 
    public static boolean hasCastableMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       if (vars != null && magicId != null && !magicId.isEmpty()) {
+         var definition = MagicDefinitionRegistry.get(magicId);
+         if (definition != null && !definition.npcAllowed()) return false;
+         if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          for (int slot = 0; slot < 12; slot++) {
             TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
             if (entry != null && !entry.isEmpty() && magicId.equals(entry.magicId) && vars.isWheelSlotEntryCastable(entry)) {
@@ -33,7 +40,17 @@ public final class NpcMagicExecutionService {
       long gameTime
    ) {
       String magicId = slot == null ? "" : slot.magicId;
-      CompoundTag payload = slot == null || slot.presetPayload == null ? new CompoundTag() : slot.presetPayload;
+      CompoundTag rawPayload = slot == null || slot.presetPayload == null ? new CompoundTag() : slot.presetPayload;
+      CompoundTag payload = MagicPresetRegistry.normalize(magicId, rawPayload).payload();
+      // Addon executors are checked before the legacy compatibility table. This keeps
+      // the NPC and player paths on the same callback implementation.
+      if (MagicDefinitionRegistry.contains(magicId)) {
+         var definition = MagicDefinitionRegistry.get(magicId);
+         if (definition != null && !definition.npcAllowed()) return false;
+         if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
+         ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
+         if (external.handled()) return external.success();
+      }
       return switch (magicId) {
          case "gander" -> NpcMagicCastBridge.castGander(caster, target, vars, payload, effectiveProficiency);
          case "gandr_machine_gun" -> NpcMagicCastBridge.castGandrMachineGun(caster, target, vars, payload, effectiveProficiency);
@@ -60,6 +77,8 @@ public final class NpcMagicExecutionService {
    }
 
    public static int getGlobalCooldownAfterCast(String magicId, CompoundTag payload) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      if (definition != null) return Math.max(0, definition.npcGlobalCooldown());
       return switch (magicId) {
          case "gander" -> 16;
          case "gandr_machine_gun" -> NpcMagicCastBridge.isBarrageMode(payload) ? 30 : 14;
@@ -82,6 +101,8 @@ public final class NpcMagicExecutionService {
    }
 
    public static int getPerMagicCooldown(String magicId, CompoundTag payload) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      if (definition != null) return Math.max(0, definition.npcCooldown());
       return switch (magicId) {
          case "gander" -> 18;
          case "gandr_machine_gun" -> NpcMagicCastBridge.isBarrageMode(payload) ? 54 : 30;

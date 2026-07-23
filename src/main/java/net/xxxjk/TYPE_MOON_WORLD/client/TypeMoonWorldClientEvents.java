@@ -83,6 +83,11 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
 
 @EventBusSubscriber(
    modid = "typemoonworld",
@@ -168,6 +173,11 @@ public class TypeMoonWorldClientEvents {
    @SubscribeEvent
    public static void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
       event.registerReloadListener(new ServantDefinitionLoader());
+      event.registerReloadListener(new ServantCardDefinitionLoader());
+      event.registerReloadListener(new MagicDefinitionLoader());
+      event.registerReloadListener(new ServantSkillDefinitionLoader());
+      event.registerReloadListener(new ServantNoblePhantasmDefinitionLoader());
+      event.registerReloadListener(new ServantAiDefinitionLoader());
    }
 
    @SubscribeEvent
@@ -217,6 +227,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MYSTERIOUS_SWORDSMAN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysteriousSwordsmanRenderer::new);
       event.registerEntityRenderer(ModEntities.TOHSAKA_RIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.TohsakaRinRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
+      event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), SasakiKojiroRenderer::new);
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), CuChulainnRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA.get(), MedeaRenderer::new);

@@ -1,0 +1,10 @@
+{
+  "id": "divinity_b",
+  "display_name": "divinity b",
+  "display_name_zh": "divinity b",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

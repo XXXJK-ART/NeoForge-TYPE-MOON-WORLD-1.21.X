@@ -1,0 +1,7 @@
+{
+  "parent": "typemoonworld:item/template/card_3d",
+  "textures": {
+    "front": "typemoonworld:item/card_faces_3d/servant/emiya_archer_card",
+    "back": "typemoonworld:item/servant_card_backs/saber"
+  }
+}

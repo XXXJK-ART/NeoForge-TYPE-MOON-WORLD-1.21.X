@@ -32,6 +32,7 @@ public final class PaleRiderInfectionService {
    private static final String TAG_LAST_SERVICE_TICK = "PaleRiderInfectionLastServiceTick";
    private static final String TAG_NEXT_CONTROLLED_ATTACK = "PaleRiderControlledNextAttack";
    private static final String TAG_NEXT_CONTROLLED_TARGET_SCAN = "PaleRiderControlledNextTargetScan";
+   private static final String TAG_LETHAL_NEXT_TICK = "PaleRiderLethalNextTick";
 
    private PaleRiderInfectionService() {
    }
@@ -271,6 +272,26 @@ public final class PaleRiderInfectionService {
          return;
       }
 
+      if (owner instanceof net.minecraft.server.level.ServerPlayer cardOwner
+         && isPaleRiderCardPlayer(cardOwner)
+         && cardOwner.getPersistentData().getInt("PaleRiderCardCommand") == 4
+         && !(mob instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity)
+         && !(mob instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity)) {
+         long next = mob.getPersistentData().getLong(TAG_LETHAL_NEXT_TICK);
+         if (now >= next) {
+            mob.getPersistentData().putLong(TAG_LETHAL_NEXT_TICK, now + 10L);
+            float damage = Math.max(2.0F, mob.getMaxHealth() * 0.08F);
+            mob.invulnerableTime = 0;
+            if (mob.hurt(cardOwner.damageSources().source(PaleRiderDamageTypes.INFECTION, cardOwner), damage)
+               && mob.isDeadOrDying()) {
+               var vars = cardOwner.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 100.0);
+               vars.syncMana(cardOwner);
+            }
+         }
+         return;
+      }
+
       if (mob.getPersistentData().getBoolean("PaleRiderPossessed")) return;
 
       if (owner instanceof net.minecraft.server.level.ServerPlayer cardOwner && isPaleRiderCardPlayer(cardOwner)) {
@@ -367,6 +388,7 @@ public final class PaleRiderInfectionService {
       data.remove(TAG_PREVIOUS_NO_AI);
       data.remove(TAG_NEXT_CONTROLLED_ATTACK);
       data.remove(TAG_NEXT_CONTROLLED_TARGET_SCAN);
+      data.remove(TAG_LETHAL_NEXT_TICK);
       PaleRiderEntityIndex.unregisterControlled(owner, target);
       if (wasControlled && target instanceof Mob mob) {
          mob.setNoAi(previousNoAi);

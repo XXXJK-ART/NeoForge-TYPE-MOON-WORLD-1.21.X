@@ -46,6 +46,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.MYSTERIOUS_SWORDSMAN.get(), MysteriousSwordsmanEntity.createAttributes().build());
       event.put(ModEntities.TOHSAKA_RIN.get(), TohsakaRinEntity.createAttributes().build());
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.GENERIC_SERVANT.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CU_CHULAINN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDEA.get(), ServantEntity.createAttributes().build());

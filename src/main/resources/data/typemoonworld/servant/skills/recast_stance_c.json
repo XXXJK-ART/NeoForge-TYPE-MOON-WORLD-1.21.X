@@ -1,0 +1,10 @@
+{
+  "id": "recast_stance_c",
+  "display_name": "recast stance c",
+  "display_name_zh": "recast stance c",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

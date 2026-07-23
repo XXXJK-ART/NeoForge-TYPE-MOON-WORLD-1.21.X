@@ -37,6 +37,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.StructureProjectionBuildHandler;
+import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
@@ -139,7 +141,10 @@ public final class GemEngravingService {
             case "reinforcement" -> castReinforcement(player, gemStack);
             case "gravity_magic" -> castGravity(player, gemStack);
             case "gander" -> castGander(player, gemStack);
-            default -> false;
+            default -> {
+               TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               yield MagicModularRegistry.execute(new MagicExecutionContext(player, vars, magicId, false)).success();
+            }
          };
          if (!success) {
             return GemEngravingService.CastResult.FAILED;

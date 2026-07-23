@@ -49,7 +49,7 @@
         "-Dforge.logging.console.level\u003dinfo",
         "-Dforge.enabledGameTestNamespaces\u003dtypemoonworld",
         "-Dneoforge.enableGameTest\u003dtrue",
-        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathClient\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\build\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathClient\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.5.3.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
@@ -109,7 +109,7 @@
         "jdk.naming.dns/com.sun.jndi.dns\u003djava.naming",
         "-Dforge.logging.markers\u003dREGISTRIES",
         "-Dforge.logging.console.level\u003dinfo",
-        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathData\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\build\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathData\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.5.3.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
@@ -161,7 +161,7 @@
         "-Dforge.enabledGameTestNamespaces\u003dtypemoonworld",
         "-Dneoforge.enableGameTest\u003dtrue",
         "-Dneoforge.gameTestServer\u003dtrue",
-        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathGameTestServer\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\build\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathGameTestServer\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.5.3.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
@@ -217,7 +217,7 @@
         "-XX:HeapDumpPath\u003dMojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump",
         "-Dforge.logging.markers\u003dREGISTRIES",
         "-Dforge.logging.console.level\u003dinfo",
-        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathJunit\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\build\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathJunit\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.5.3.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
@@ -268,7 +268,7 @@
         "-Dforge.logging.markers\u003dREGISTRIES",
         "-Dforge.logging.console.level\u003dinfo",
         "-Dforge.enabledGameTestNamespaces\u003dtypemoonworld",
-        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\.gradle\\configuration\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathServer\\classpath.txt",
+        "-DlegacyClassPath.file\u003dH:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\build\\neoForm\\neoFormJoined1.21.1-20240808.144430\\steps\\writeMinecraftClasspathServer\\classpath.txt",
         "-DignoreList\u003dmixinextras-neoforge-0.5.3.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],

@@ -5,6 +5,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonEntrypoint;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantSkillExecutor;
@@ -15,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 public final class ServantSkillRegistry implements IServantSkillRegistry {
    private static final Map<String, RegisteredSkill> REGISTRY = new ConcurrentHashMap<>();
    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
+   private static final AtomicBoolean FROZEN = new AtomicBoolean(false);
    private static final ServantSkillRegistry INSTANCE = new ServantSkillRegistry();
 
    private ServantSkillRegistry() {
@@ -29,6 +31,16 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
          ParacelsusServantSkills.registerBuiltin(INSTANCE);
          loadAddonEntrypoints();
       }
+   }
+
+   public static void freeze() {
+      ensureInitialized();
+      FROZEN.set(true);
+   }
+
+   public static boolean registerExternal(String skillId, IServantSkillExecutor executor, String providerId) {
+      ensureInitialized();
+      return INSTANCE.register(skillId, executor, providerId);
    }
 
    public static ServantExecutionResult execute(String skillId, ServantExecutionContext context) {
@@ -56,7 +68,7 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
 
    @Override
    public boolean register(String skillId, IServantSkillExecutor executor, String providerId) {
-      if (!isValidSkillId(skillId) || executor == null) {
+      if (FROZEN.get() || !isValidSkillId(skillId) || executor == null) {
          return false;
       }
 
@@ -93,7 +105,7 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
    }
 
    private static boolean isValidSkillId(String skillId) {
-      return skillId != null && !skillId.isEmpty() && skillId.matches("[a-z0-9_]+");
+      return skillId != null && !skillId.isEmpty() && (skillId.matches("[a-z0-9_]+") || ResourceLocation.tryParse(skillId) != null);
    }
 
    private static void loadAddonEntrypoints() {

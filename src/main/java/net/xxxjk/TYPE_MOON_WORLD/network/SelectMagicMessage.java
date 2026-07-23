@@ -12,10 +12,10 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 
 public record SelectMagicMessage(String magicId, boolean add) implements CustomPacketPayload {
    private static final int MAX_MAGIC_ID_LENGTH = 64;
-   private static final Set<String> ALLOWED_MAGIC_IDS = MagicClassification.getAllMagicIds();
    private static final Set<String> KNOWLEDGE_ONLY_MAGIC_IDS = Set.of("jewel_magic_shoot", "jewel_magic_release");
    public static final Type<SelectMagicMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "select_magic"));
    public static final StreamCodec<RegistryFriendlyByteBuf, SelectMagicMessage> STREAM_CODEC = StreamCodec.of((buffer, message) -> {
@@ -36,7 +36,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
                   if (isValidMagicId(message.magicId)) {
-                     if (message.add && KNOWLEDGE_ONLY_MAGIC_IDS.contains(message.magicId)) {
+                     if (message.add && (KNOWLEDGE_ONLY_MAGIC_IDS.contains(message.magicId) || MagicDefinitionRegistry.isKnowledgeOnly(message.magicId))) {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
                      } else {
                         boolean isLearned = vars.learned_magics.contains(message.magicId);
@@ -97,6 +97,8 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
    }
 
    private static boolean isValidMagicId(String magicId) {
-      return magicId != null && !magicId.isEmpty() && magicId.length() <= 64 && magicId.matches("[a-z0-9_]+") && ALLOWED_MAGIC_IDS.contains(magicId);
+      return magicId != null && !magicId.isEmpty() && magicId.length() <= 64
+         && (magicId.matches("[a-z0-9_]+") || net.minecraft.resources.ResourceLocation.tryParse(magicId) != null)
+         && MagicClassification.isKnownMagic(magicId) && MagicDefinitionRegistry.isWheelSelectable(magicId);
    }
 }

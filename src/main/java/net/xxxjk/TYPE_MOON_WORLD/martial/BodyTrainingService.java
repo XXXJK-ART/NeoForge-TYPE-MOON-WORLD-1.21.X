@@ -8,6 +8,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.neoforged.neoforge.common.NeoForge;
+import net.xxxjk.typemoonworld.api.event.BodyTrainingEvent;
 
 public final class BodyTrainingService {
    public static final int MAX_TOTAL_POINTS = 80;
@@ -50,6 +52,7 @@ public final class BodyTrainingService {
       if (amount <= 0) return;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed || vars.master_card_active) return;
+      if (NeoForge.EVENT_BUS.post(new BodyTrainingEvent.Award(player, amount)).isCanceled()) return;
       int cost = nextPointCost(vars);
       if (cost <= 0) return;
       vars.body_training_xp += amount;
@@ -61,11 +64,13 @@ public final class BodyTrainingService {
          player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.body.point_gained"), true);
       }
       if (changed || player.tickCount % 20 == 0) vars.syncPlayerVariables(player);
+      if (changed) NeoForge.EVENT_BUS.post(new BodyTrainingEvent.Changed(player));
    }
 
    public static boolean allocate(ServerPlayer player, String stat) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.body_training_points <= 0 || allocatedPoints(vars) >= MAX_TOTAL_POINTS) return false;
+      if (NeoForge.EVENT_BUS.post(new BodyTrainingEvent.Allocate(player, stat == null ? "" : stat)).isCanceled()) return false;
       boolean applied = switch (stat == null ? "" : stat) {
          case "strength" -> increment(() -> vars.body_strength, v -> vars.body_strength = v);
          case "speed" -> increment(() -> vars.body_speed, v -> vars.body_speed = v);
@@ -77,6 +82,7 @@ public final class BodyTrainingService {
          vars.body_training_points--;
          applyAttributes(player, vars);
          vars.syncPlayerVariables(player);
+         NeoForge.EVENT_BUS.post(new BodyTrainingEvent.Changed(player));
       }
       return applied;
    }

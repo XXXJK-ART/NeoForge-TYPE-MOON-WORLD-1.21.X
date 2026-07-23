@@ -212,10 +212,12 @@ public class TypeMoonWorldModKeyMappings {
 
       @SubscribeEvent
       public static void onPaleRiderMovementInput(MovementInputUpdateEvent event) {
-         if (!(event.getEntity() instanceof Player player) || !PaleRiderClientState.possessing || !player.isPassenger()) return;
+         if (!(event.getEntity() instanceof Player player) || !player.isPassenger()) return;
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id)) {
-            // Shift is sent through the possession packet as downward input; do not let vanilla dismount first.
+         if (vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id)
+            && (PaleRiderClientState.possessing
+               || player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity)) {
+            // Shift descends while possessing and must not dismount the domain horse.
             event.getInput().shiftKeyDown = false;
          }
       }

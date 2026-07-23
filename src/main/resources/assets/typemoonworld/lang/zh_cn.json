@@ -600,6 +600,7 @@
     "message.typemoonworld.magic.emerald_winter_river.need_gem":  "需要2个满魔力绿宝石",
     "message.typemoonworld.magic.jewel.mode_change":  "宝石模式切换: %s",
     "message.typemoonworld.magic.learned":  "习得魔术: %s",
+    "message.typemoonworld.magic.missing_attribute":  "你的魔术属性不满足该魔术的要求.",
     "message.typemoonworld.magic.not_enough_mana":  "魔力不足",
     "message.typemoonworld.magic.gravity.applied":  "重力已施加到 %s：%s(持续 %s 秒).",
     "message.typemoonworld.magic.gravity.mode_changed":  "重力档位已设为：%s",
@@ -1777,6 +1778,7 @@
     "screen.typemoonworld.pale_rider.command.hold": "原地不动",
     "screen.typemoonworld.pale_rider.command.attack": "攻击周围",
     "screen.typemoonworld.pale_rider.command.gather": "聚到本体",
+    "screen.typemoonworld.pale_rider.command.lethal": "感染致死",
     "hud.typemoonworld.servant_card.pale_rider_status": "控制:%s  附身:%s  结界:%s  四灾:%s",
     "effect.typemoonworld.pale_rider_infection": "感染",
     "effect.typemoonworld.pale_rider_fear": "恐惧",
@@ -1785,6 +1787,12 @@
     "death.attack.pale_rider_famine": "%1$s在苍白骑士的领域中饥竭而死",
     "death.attack.pale_rider_concept_sword": "%1$s被概念剑贯穿",
     "death.attack.pale_rider_concept_death": "%1$s被死亡的概念抹除",
-    "message.typemoonworld.pale_rider.contract": "苍白骑士沉默地接受了契约。"
+    "message.typemoonworld.pale_rider.contract": "苍白骑士沉默地接受了契约。",
+    "item.typemoonworld.servant_summon": "从者召唤",
+    "item.typemoonworld.master_card": "御主卡",
+    "item.typemoonworld.servant_armor_generic_head": "从者卡头部护甲",
+    "item.typemoonworld.servant_armor_generic_chest": "从者卡胸甲",
+    "item.typemoonworld.servant_armor_generic_legs": "从者卡腿甲",
+    "item.typemoonworld.servant_armor_generic_feet": "从者卡靴子"
 }
 

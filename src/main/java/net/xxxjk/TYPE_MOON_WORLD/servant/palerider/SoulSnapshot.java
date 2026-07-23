@@ -5,7 +5,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -101,12 +105,34 @@ public record SoulSnapshot(
       );
    }
 
+   @SuppressWarnings("unchecked")
+   public static SoulSnapshot fromEntityType(String entityType, SoulKind kind) {
+      ResourceLocation id = ResourceLocation.tryParse(entityType);
+      EntityType<?> type = id == null ? EntityType.ZOMBIE : BuiltInRegistries.ENTITY_TYPE.getOptional(id).orElse(EntityType.ZOMBIE);
+      EntityDimensions dimensions = type.getDimensions();
+      AttributeSupplier attributes = DefaultAttributes.hasSupplier(type)
+         ? DefaultAttributes.getSupplier((EntityType<? extends LivingEntity>)type) : null;
+      return new SoulSnapshot(UUID.randomUUID(), BuiltInRegistries.ENTITY_TYPE.getKey(type).toString(),
+         type.getDescription().getString(), kind, "", "", dimensions.width(), dimensions.height(),
+         defaultAttribute(attributes, Attributes.MAX_HEALTH, 20.0),
+         defaultAttribute(attributes, Attributes.ATTACK_DAMAGE, 2.0),
+         defaultAttribute(attributes, Attributes.MOVEMENT_SPEED, 0.23),
+         defaultAttribute(attributes, Attributes.ARMOR, 0.0),
+         defaultAttribute(attributes, Attributes.ARMOR_TOUGHNESS, 0.0),
+         defaultAttribute(attributes, Attributes.KNOCKBACK_RESISTANCE, 0.0));
+   }
+
    public double threat() {
       return this.maxHealth * 0.8 + this.attackDamage * 6.0 + this.armor * 2.0 + this.armorToughness * 2.5;
    }
 
    private static double attribute(LivingEntity entity, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double fallback) {
       return entity.getAttribute(attribute) == null ? fallback : entity.getAttributeValue(attribute);
+   }
+
+   private static double defaultAttribute(AttributeSupplier attributes,
+      net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double fallback) {
+      return attributes != null && attributes.hasAttribute(attribute) ? attributes.getBaseValue(attribute) : fallback;
    }
 
    public enum SoulKind {

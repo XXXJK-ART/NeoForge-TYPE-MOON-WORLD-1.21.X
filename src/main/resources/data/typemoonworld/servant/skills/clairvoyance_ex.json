@@ -1,0 +1,10 @@
+{
+  "id": "clairvoyance_ex",
+  "display_name": "clairvoyance ex",
+  "display_name_zh": "clairvoyance ex",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

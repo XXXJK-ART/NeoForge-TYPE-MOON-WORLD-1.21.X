@@ -1,0 +1,12 @@
+{
+  "display_name": "Test Servant",
+  "display_name_zh": "测试从者",
+  "class_type": "saber",
+  "faction": "human",
+  "traits": ["servant", "humanoid"],
+  "parameters": {"endurance":"C","strength":"C","agility":"C","magic":"C","luck":"C"},
+  "model": {"geometry":"tmw_test_addon:geo/test.geo.json","texture":"tmw_test_addon:textures/entity/test.png","animation":"tmw_test_addon:animations/test.animation.json"},
+  "skills": ["test_skill"],
+  "noble_phantasm": "test_np",
+  "ai_config": "tmw_test_addon:default"
+}

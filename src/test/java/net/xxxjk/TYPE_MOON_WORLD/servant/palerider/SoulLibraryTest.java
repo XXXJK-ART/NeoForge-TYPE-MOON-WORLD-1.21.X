@@ -31,6 +31,33 @@ class SoulLibraryTest {
       assertEquals(1, loaded.size());
    }
 
+   @Test
+   void compactsSameTypeAndPersistsItsCount() {
+      SoulLibrary library = new SoulLibrary();
+      SoulSnapshot zombie = snapshot(SoulSnapshot.SoulKind.CREATURE);
+      for (int i = 0; i < 50; i++) assertTrue(library.add(zombie));
+
+      CompoundTag saved = library.save();
+      assertEquals(1, saved.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).size());
+      assertEquals(50, saved.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).getInt("Count"));
+      assertFalse(saved.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).contains("MaxHealth"));
+
+      SoulLibrary loaded = new SoulLibrary();
+      loaded.load(saved);
+      assertEquals(50, loaded.size());
+      assertEquals(50, loaded.takeStrongest(50).size());
+      assertEquals(0, loaded.size());
+   }
+
+   @Test
+   void enforcesOneThousandSoulCapacity() {
+      SoulLibrary library = new SoulLibrary();
+      SoulSnapshot zombie = snapshot(SoulSnapshot.SoulKind.CREATURE);
+      for (int i = 0; i < SoulLibrary.MAX_SOULS; i++) assertTrue(library.add(zombie));
+      assertFalse(library.add(zombie));
+      assertEquals(1000, library.size());
+   }
+
    private static SoulSnapshot snapshot(SoulSnapshot.SoulKind kind) {
       return new SoulSnapshot(UUID.randomUUID(), "minecraft:zombie", "Soul", kind, "", "", 0.6F, 1.8F,
          20.0, 3.0, 0.23, 0.0, 0.0, 0.0);

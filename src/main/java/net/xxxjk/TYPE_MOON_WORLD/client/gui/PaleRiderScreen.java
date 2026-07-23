@@ -58,8 +58,8 @@ public final class PaleRiderScreen extends Screen {
          return;
       }
 
-      String[] labels = {"free", "hold", "attack", "gather"};
-      int[] colors = {GuiUtils.ARCANE_VALID, GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_DANGER, PALE_ACCENT};
+      String[] labels = {"free", "hold", "attack", "gather", "lethal"};
+      int[] colors = {GuiUtils.ARCANE_VALID, GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_DANGER, PALE_ACCENT, 0xFFD64B5A};
       for (int i = 0; i < labels.length; i++) {
          int command = i;
          int x = startX + i % columns * (buttonWidth + gap);
@@ -90,7 +90,7 @@ public final class PaleRiderScreen extends Screen {
    }
 
    private void renderChoicePanel(GuiGraphics gui) {
-      int panelHeight = this.choiceCount() > 2 ? 112 : 82;
+      int panelHeight = this.choiceCount() > 4 ? 142 : this.choiceCount() > 2 ? 112 : 82;
       int panelX = (this.width - PANEL_WIDTH) / 2;
       int panelY = (this.height - panelHeight) / 2 - 8;
       GuiUtils.renderArcaneWindow(gui, panelX, panelY, PANEL_WIDTH, panelHeight, PALE_ACCENT);
@@ -246,7 +246,7 @@ public final class PaleRiderScreen extends Screen {
    }
 
    private int choiceCount() {
-      return this.kind == 1 ? 2 : 4;
+      return this.kind == 1 ? 2 : this.kind == 3 ? 5 : 4;
    }
 
    private void selectSpawn(int mode) {

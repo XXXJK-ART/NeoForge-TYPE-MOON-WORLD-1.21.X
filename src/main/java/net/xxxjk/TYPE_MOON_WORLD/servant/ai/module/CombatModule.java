@@ -393,7 +393,9 @@ public final class CombatModule implements ServantAiModule {
                ServantNoblePhantasmExecutor.activateNp(
                   paracelsus,
                   sharedTarget,
-                  new ServantNoblePhantasmDefinition(
+                  java.util.Objects.requireNonNullElseGet(
+                     net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDataRegistry.get(context.definition().noblePhantasmId()),
+                     () -> new ServantNoblePhantasmDefinition(
                      context.definition().noblePhantasmId(),
                      "",
                      "",
@@ -407,7 +409,7 @@ public final class CombatModule implements ServantAiModule {
                      java.util.List.of(),
                      java.util.List.of(),
                      java.util.List.of()
-                  ),
+                  )),
                   1
                );
                return;

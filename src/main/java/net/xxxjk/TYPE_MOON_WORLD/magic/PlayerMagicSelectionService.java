@@ -125,6 +125,11 @@ public final class PlayerMagicSelectionService {
 
    public static CompoundTag normalizePresetPayload(String magicId, CompoundTag payload) {
       CompoundTag normalized = payload == null ? new CompoundTag() : payload.copy();
+      net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.CompoundResult external =
+         net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.normalize(magicId, normalized);
+      if (external.handler() != null) {
+         return external.payload();
+      }
       if ("projection".equals(magicId)) {
          return TypeMoonWorldModVariables.PlayerVariables.normalizeProjectionPresetPayload(normalized);
       }

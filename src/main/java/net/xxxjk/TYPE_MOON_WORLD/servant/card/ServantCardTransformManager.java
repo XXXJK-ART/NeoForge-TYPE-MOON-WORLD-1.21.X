@@ -32,6 +32,11 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.neoforged.neoforge.common.NeoForge;
+import net.xxxjk.typemoonworld.api.event.ServantTransformEvent;
+import net.xxxjk.typemoonworld.api.event.ServantActionEvent;
+import net.xxxjk.typemoonworld.api.ExecutionResult;
+import net.xxxjk.typemoonworld.api.ServantContext;
 
 public final class ServantCardTransformManager {
    public static final String DEATH_RULE_KEY = "fate_card_death_release";
@@ -57,6 +62,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.unknown", servantId), true);
          return false;
       }
+      ResourceLocation publicId = publicServantId(servantId);
+      if (NeoForge.EVENT_BUS.post(new ServantTransformEvent.Pre(player, publicId)).isCanceled()) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
          release(player, false);
@@ -120,6 +127,7 @@ public final class ServantCardTransformManager {
       }
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.transformed", definition.displayName()), true);
+      NeoForge.EVENT_BUS.post(new ServantTransformEvent.Post(player, publicId));
       return true;
    }
 
@@ -128,6 +136,7 @@ public final class ServantCardTransformManager {
       if (!vars.servant_card_transformed) {
          return false;
       }
+      ResourceLocation releasedId = publicServantId(vars.servant_card_id);
       removeAttributes(player);
       ServantCardFlightController.stop(player, vars, false);
       ServantCardDefenseHandler.clear(player);
@@ -184,7 +193,14 @@ public final class ServantCardTransformManager {
       }
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.released"), true);
+      NeoForge.EVENT_BUS.post(new ServantTransformEvent.End(player, releasedId));
       return true;
+   }
+
+   private static ResourceLocation publicServantId(String servantId) {
+      ResourceLocation parsed = servantId != null && servantId.indexOf(':') >= 0 ? ResourceLocation.tryParse(servantId) : null;
+      return parsed != null ? parsed : ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+         servantId == null || servantId.isBlank() ? "unknown" : servantId);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -371,6 +387,22 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master_carry.skill_blocked"), true);
          return false;
       }
+      String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servant_card_id, slot);
+      ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
+      ServantContext externalContext = new ServantContext(player, null, vars.servant_card_id, player.level(), 0.0, true, player.level().getGameTime());
+      if (parsedActionId != null && NeoForge.EVENT_BUS.post(new ServantActionEvent.Pre(
+         slot == 9 ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext)).isCanceled()) return false;
+      net.xxxjk.typemoonworld.api.ExecutionResult external = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.executeSlot(
+         player, vars.servant_card_id, slot, player.isCrouching(), player.level().getGameTime()
+      );
+      if (external.handled()) {
+         if (external.success() && external.resourceCost() > 0.0) {
+            if (!ServantCardManaService.consume(player, vars, external.resourceCost())) return false;
+         }
+         if (parsedActionId != null) NeoForge.EVENT_BUS.post(new ServantActionEvent.Post(
+            slot == 9 ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext, external));
+         return external.success();
+      }
       ServantCardSkillAction action = actionFor(vars.servant_card_id, slot, player.isCrouching());
       if (action == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
@@ -549,6 +581,10 @@ public final class ServantCardTransformManager {
    }
 
    public static String skillTranslationKey(String servantId, int slot, boolean crouching) {
+      String externalKey = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.translationKey(servantId, slot);
+      if (!externalKey.isBlank()) {
+         return externalKey;
+      }
       ServantCardSkillAction action = actionFor(servantId, slot, crouching);
       return action == null ? "" : skillTranslationKey(action);
    }
@@ -686,13 +722,13 @@ public final class ServantCardTransformManager {
          return;
       }
       if (servantCardHasHeadArmor(servantId)) {
-         player.setItemSlot(EquipmentSlot.HEAD, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.HEAD)), false, false));
+         player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
       } else {
          player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
       }
-      player.setItemSlot(EquipmentSlot.CHEST, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.CHEST)), false, false));
+      player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
       if (servantCardHasLegArmor(servantId)) {
-         player.setItemSlot(EquipmentSlot.LEGS, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.LEGS)), false, false));
+         player.setItemSlot(EquipmentSlot.LEGS, generatedArmor(servantId, EquipmentSlot.LEGS));
       } else {
          player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
       }
@@ -703,6 +739,14 @@ public final class ServantCardTransformManager {
          || "cursed_arm_hassan".equals(servantId)
          || "li_shuwen".equals(servantId)
          || "oda_nobunaga".equals(servantId);
+   }
+
+   private static ItemStack generatedArmor(String servantId, EquipmentSlot slot) {
+      ItemStack stack = new ItemStack(ModItems.getServantCardArmor(servantId, slot));
+      if (servantId != null && servantId.indexOf(':') >= 0 && stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem) {
+         net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem.create(stack, servantId);
+      }
+      return markGeneratedItem(stack, false, false);
    }
 
    private static boolean servantCardHasLegArmor(String servantId) {

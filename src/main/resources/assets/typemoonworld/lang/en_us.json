@@ -592,6 +592,7 @@
     "message.typemoonworld.magic.emerald_winter_river.need_gem":  "Requires 2 Full Mana Emeralds",
     "message.typemoonworld.magic.jewel.mode_change":  "Jewel Mode Switch: %s",
     "message.typemoonworld.magic.learned":  "Learned Magic: %s",
+    "message.typemoonworld.magic.missing_attribute":  "Your magic attributes do not meet this magic's requirements.",
     "message.typemoonworld.magic.not_enough_mana":  "Not enough mana",
     "message.typemoonworld.crest.origin_invalidated":  "Crest source %1$s is invalidated. Removed %2$s plundered entries.",
     "message.typemoonworld.crest.preset_runtime_locked":  "Crest magic presets are locked. Configure them when equipping slots in Magic Knowledge.",
@@ -1613,6 +1614,7 @@
     "screen.typemoonworld.pale_rider.command.hold": "Hold Position",
     "screen.typemoonworld.pale_rider.command.attack": "Attack Nearby",
     "screen.typemoonworld.pale_rider.command.gather": "Gather at Body",
+    "screen.typemoonworld.pale_rider.command.lethal": "Lethal Infection",
     "hud.typemoonworld.servant_card.pale_rider_status": "Controlled:%s  Possession:%s  Domain:%s  Calamity:%s",
     "effect.typemoonworld.pale_rider_infection": "Infection",
     "effect.typemoonworld.pale_rider_fear": "Fear",
@@ -1621,5 +1623,11 @@
     "death.attack.pale_rider_famine": "%1$s starved in Pale Rider's domain",
     "death.attack.pale_rider_concept_sword": "%1$s was pierced by a conceptual sword",
     "death.attack.pale_rider_concept_death": "%1$s was erased by Death",
-    "message.typemoonworld.pale_rider.contract": "Pale Rider silently accepts the contract."
+    "message.typemoonworld.pale_rider.contract": "Pale Rider silently accepts the contract.",
+    "item.typemoonworld.servant_summon": "Servant Summon",
+    "item.typemoonworld.master_card": "Master Card",
+    "item.typemoonworld.servant_armor_generic_head": "Servant Card Head",
+    "item.typemoonworld.servant_armor_generic_chest": "Servant Card Chest",
+    "item.typemoonworld.servant_armor_generic_legs": "Servant Card Legs",
+    "item.typemoonworld.servant_armor_generic_feet": "Servant Card Feet"
 }

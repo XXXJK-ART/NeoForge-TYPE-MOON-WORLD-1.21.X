@@ -44,6 +44,16 @@ public class MagicProjection {
          InteractionHand handToUse = findAvailableHand(player);
          if (handToUse != null) {
             ItemStack target = vars.projection_selected_item;
+            if (!target.isEmpty() && target.has(DataComponents.CUSTOM_DATA)) {
+               CompoundTag custom = ((CustomData)target.get(DataComponents.CUSTOM_DATA)).copyTag();
+               ResourceLocation executorId = ResourceLocation.tryParse(custom.getString("tmw_projection_executor"));
+               if (executorId != null && net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry.hasProjectionItem(executorId)
+                     && net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry.projectionItem(executorId,
+                        new net.xxxjk.typemoonworld.api.ProjectionItemContext(player, (net.minecraft.server.level.ServerLevel)player.level(), player.blockPosition(), target, vars.player_mana))) {
+                  vars.syncPlayerVariables(player);
+                  return;
+               }
+            }
             ItemStack autoAnalyzeCandidate = ItemStack.EMPTY;
             if (target.isEmpty() && ubwAdaptiveProjection) {
                ItemStack dynamicTarget = findProjectionTargetLikeAnalysis(player);

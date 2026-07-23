@@ -1,0 +1,10 @@
+{
+  "id": "collector_ex",
+  "display_name": "collector ex",
+  "display_name_zh": "collector ex",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

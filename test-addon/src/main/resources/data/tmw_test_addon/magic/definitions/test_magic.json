@@ -1,0 +1,1 @@
+{"name_key":"magic.tmw_test_addon.test.name","category":"typemoonworld:basic","school":"tmw_test_addon:test","mana_cost":2,"cooldown_ticks":10,"learnable":true,"wheel_selectable":true,"crest_allowed":true,"npc_allowed":true,"knowledge_only":false,"npc_global_cooldown":12,"npc_cooldown":20,"required_attributes":["typemoonworld:imaginary_number"]}

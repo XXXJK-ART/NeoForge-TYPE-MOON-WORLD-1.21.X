@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 
 public final class ServantCardRegistry {
    public static final List<Entry> ENTRIES = List.of(
@@ -34,7 +35,20 @@ public final class ServantCardRegistry {
             }
          }
       }
+      if (servantId != null) {
+         var definition = ServantDataRegistry.get(servantId);
+         if (definition == null && servantId.indexOf(':') >= 0) definition = ServantDataRegistry.get(servantId.substring(servantId.indexOf(':') + 1));
+         if (definition != null) return new Entry(servantId, definition.displayName(), definition.displayNameZh(), true);
+      }
       return null;
+   }
+
+   /** Includes data-defined addon servants in addition to legacy built-in entries. */
+   public static java.util.List<Entry> all() {
+      java.util.LinkedHashMap<String, Entry> merged = new java.util.LinkedHashMap<>();
+      ENTRIES.forEach(entry -> merged.put(entry.servantId(), entry));
+      ServantDataRegistry.getAll().forEach((id, definition) -> merged.putIfAbsent(id, new Entry(id, definition.displayName(), definition.displayNameZh(), true)));
+      return java.util.List.copyOf(merged.values());
    }
 
    public static String cardItemId(String servantId) {

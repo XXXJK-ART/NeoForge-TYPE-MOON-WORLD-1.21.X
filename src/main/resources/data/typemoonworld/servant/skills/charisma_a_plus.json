@@ -1,0 +1,10 @@
+{
+  "id": "charisma_a_plus",
+  "display_name": "charisma a plus",
+  "display_name_zh": "charisma a plus",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}
