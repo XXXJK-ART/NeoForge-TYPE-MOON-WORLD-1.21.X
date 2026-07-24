@@ -78,9 +78,9 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       cannon.ownerUuid = owner.getUUID();
       cannon.orbitAroundTarget = orbitAroundTarget;
       cannon.entityData.set(LIFE_TICKS, Math.max(40, lifeTicks));
-      cannon.entityData.set(SHOTS_LEFT, Math.max(2, lifeTicks / 45));
+      cannon.entityData.set(SHOTS_LEFT, Math.max(2, lifeTicks / 50));
       cannon.entityData.set(TARGET_ID, target != null && target.isAlive() ? target.getId() : -1);
-      cannon.shootDelay = 4;
+      cannon.shootDelay = 5;
       cannon.setPos(initialPosition(owner, target, orbitAroundTarget));
       cannon.setFacing(orbitAroundTarget && target != null ? target.position().subtract(owner.position()) : owner.getLookAngle());
       return cannon;
@@ -94,11 +94,11 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       cannon.guardianY = pos.y;
       cannon.guardianZ = pos.z;
       cannon.entityData.set(LIFE_TICKS, Math.max(40, lifeTicks));
-      cannon.entityData.set(SHOTS_LEFT, Math.max(20, lifeTicks / 18));
+      cannon.entityData.set(SHOTS_LEFT, Math.max(20, lifeTicks / 20));
       cannon.entityData.set(TARGET_ID, -1);
       cannon.entityData.set(ELEMENT_MODE, Mth.clamp(element, 0, 3));
       cannon.entityData.set(HEALTH, 50.0F);
-      cannon.shootDelay = 8;
+      cannon.shootDelay = 9;
       cannon.noTargetTicks = 0;
       cannon.setPos(pos.x, pos.y, pos.z);
       cannon.setFacing(owner.getLookAngle());
@@ -112,7 +112,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       if (target != null && target.isAlive()) {
          this.entityData.set(TARGET_ID, target.getId());
       }
-      this.shootDelay = Math.min(this.shootDelay, 4);
+      this.shootDelay = Math.min(this.shootDelay, 5);
    }
 
    public boolean isOwnedBy(UUID ownerId) {
@@ -187,13 +187,13 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       }
 
       if (target == null) {
-         this.shootDelay = 8;
+         this.shootDelay = 9;
          return;
       }
 
       this.fireShot(level, owner, target);
       this.entityData.set(SHOTS_LEFT, this.entityData.get(SHOTS_LEFT) - 1);
-      this.shootDelay = 18;
+      this.shootDelay = 20;
    }
 
    @Override
@@ -305,7 +305,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       float baseDamage = this.guardianMode ? 9.0F : 8.0F;
       float damage = baseDamage + (owner instanceof ParacelsusEntity paracelsus ? (float)(paracelsus.getCurrentMp() * 0.03) : 0.0F);
       if (owner instanceof ParacelsusEntity || isParacelsusCardOwner(owner)) {
-         damage *= 0.5F;
+         damage = ParacelsusBalanceRules.reduceDamage(damage * 0.5F);
       }
       target.hurt(owner.damageSources().magic(), damage);
       target.invulnerableTime = 0;

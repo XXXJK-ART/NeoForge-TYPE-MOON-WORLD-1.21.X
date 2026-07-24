@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -35,6 +36,8 @@ public final class UshiwakamaruCombatHelper {
    private static final String TAG_LAST_BENKEI = "UshiwakamaruLastBenkei";
    private static final String TAG_LAST_EIGHT_BOAT = "UshiwakamaruLastEightBoat";
    private static final String TAG_LAST_SPIDER_SLAYER = "UshiwakamaruLastSpiderSlayer";
+   private static final String TAG_LAST_MOONLIT_STEP = "UshiwakamaruLastMoonlitStep";
+   private static final String TAG_LAST_SWEEPING_THRUST = "UshiwakamaruLastSweepingThrust";
    private static final String TAG_LAST_BASIC_ATTACK = "UshiwakamaruLastBasicAttack";
    private static final String TAG_EIGHT_BOAT_UNTIL = "UshiwakamaruEightBoatUntil";
    private static final String TAG_EIGHT_BOAT_NEXT_DASH = "UshiwakamaruEightBoatNextDash";
@@ -52,6 +55,8 @@ public final class UshiwakamaruCombatHelper {
    private static final int EIGHT_BOAT_COOLDOWN = 20 * 20;
    private static final int EIGHT_BOAT_DURATION = 15 * 20;
    private static final int SPIDER_SLAYER_COOLDOWN = 20 * 20;
+   private static final int MOONLIT_STEP_COOLDOWN = 7 * 20;
+   private static final int SWEEPING_THRUST_COOLDOWN = 6 * 20;
    private static final int BASIC_ATTACK_COOLDOWN = 16;
    private static final int CLONE_COUNT = 7;
 
@@ -102,6 +107,8 @@ public final class UshiwakamaruCombatHelper {
       if (trySixSecret(entity, level, enemies, allies, now)) return;
       if (tryCharisma(entity, level, allies, now)) return;
       if (phase >= 2 && tryUsumidori(entity, level, target, distance, now)) return;
+      if (tryMoonlitStep(entity, level, target, distance, now)) return;
+      if (trySweepingThrust(entity, level, target, distance, now)) return;
 
       if (distance <= 3.1 && ready(entity.getPersistentData(), TAG_LAST_BASIC_ATTACK, now, BASIC_ATTACK_COOLDOWN)) {
          entity.getPersistentData().putLong(TAG_LAST_BASIC_ATTACK, now);
@@ -300,6 +307,127 @@ public final class UshiwakamaruCombatHelper {
       return true;
    }
 
+   private static boolean tryMoonlitStep(UshiwakamaruRiderEntity entity, ServerLevel level, LivingEntity target, double distance, long now) {
+      CompoundTag data = entity.getPersistentData();
+      if (distance < 4.0 || distance > 12.0 || !entity.hasLineOfSight(target) || entity.getCurrentMp() < 6.0
+         || !ready(data, TAG_LAST_MOONLIT_STEP, now, MOONLIT_STEP_COOLDOWN)) {
+         return false;
+      }
+      Vec3 destination = findTeleportNearTarget(entity, target, level);
+      if (destination == null) {
+         return false;
+      }
+
+      Vec3 start = entity.position();
+      entity.setCurrentMp(entity.getCurrentMp() - 6.0);
+      data.putLong(TAG_LAST_MOONLIT_STEP, now);
+      level.sendParticles(ParticleTypes.REVERSE_PORTAL, start.x, start.y + entity.getBbHeight() * 0.5, start.z,
+         18, 0.28, 0.45, 0.28, 0.08);
+      entity.teleportTo(destination.x, destination.y, destination.z);
+      entity.getNavigation().stop();
+      entity.setDeltaMovement(Vec3.ZERO);
+      entity.fallDistance = 0.0F;
+      entity.setTarget(target);
+      entity.faceToward(target.position());
+      entity.triggerDashAnimation();
+      dealMeleeDamage(entity, target, (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2 + 6.0));
+      Vec3 direction = target.position().subtract(entity.position());
+      VFXServerEffects.spawnOriented(level, "servant_ushiwakamaru_slash",
+         entity.position().add(0.0, entity.getBbHeight() * 0.48, 0.0), direction, 96.0);
+      level.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55,
+         target.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + 0.8, entity.getZ(),
+         14, 0.3, 0.45, 0.3, 0.04);
+      level.playSound(null, entity.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 0.8F, 1.55F);
+      ServantVoiceHelper.tryPlayAttack(entity);
+      return true;
+   }
+
+   private static boolean trySweepingThrust(UshiwakamaruRiderEntity entity, ServerLevel level, LivingEntity target, double distance, long now) {
+      CompoundTag data = entity.getPersistentData();
+      if (distance > 4.6 || entity.getCurrentMp() < 8.0
+         || !ready(data, TAG_LAST_SWEEPING_THRUST, now, SWEEPING_THRUST_COOLDOWN)) {
+         return false;
+      }
+      Vec3 direction = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (direction.lengthSqr() < 1.0E-4) {
+         direction = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      if (direction.lengthSqr() < 1.0E-4) {
+         return false;
+      }
+      Vec3 thrustDirection = direction.normalize();
+      Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
+      Vec3 end = origin.add(thrustDirection.scale(5.0));
+      AABB area = new AABB(origin, end).inflate(1.35, 1.25, 1.35);
+      List<LivingEntity> victims = level.getEntitiesOfClass(LivingEntity.class, area,
+         living -> EntityUtils.isValidCombatTarget(entity, living) && isInsideThrust(entity, living, thrustDirection));
+      if (victims.isEmpty()) {
+         return false;
+      }
+
+      entity.setCurrentMp(entity.getCurrentMp() - 8.0);
+      data.putLong(TAG_LAST_SWEEPING_THRUST, now);
+      entity.faceToward(target.position());
+      entity.triggerSlashAnimation();
+      entity.setDeltaMovement(thrustDirection.x * 1.05, Math.max(0.12, entity.getDeltaMovement().y), thrustDirection.z * 1.05);
+      entity.hurtMarked = true;
+      float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
+      for (LivingEntity victim : victims) {
+         dealMeleeDamage(entity, victim, damage);
+         victim.push(thrustDirection.x * 0.7, 0.1, thrustDirection.z * 0.7);
+         victim.hurtMarked = true;
+      }
+      VFXServerEffects.spawnOriented(level, "servant_ushiwakamaru_slash", origin, thrustDirection, 96.0);
+      for (int step = 1; step <= 8; step++) {
+         Vec3 point = origin.add(thrustDirection.scale(step * 0.58));
+         level.sendParticles(step % 3 == 0 ? ParticleTypes.SWEEP_ATTACK : ParticleTypes.END_ROD,
+            point.x, point.y, point.z, 1, 0.05, 0.05, 0.05, 0.0);
+      }
+      level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 0.95F, 1.65F);
+      ServantVoiceHelper.tryPlayAttack(entity);
+      return true;
+   }
+
+   private static Vec3 findTeleportNearTarget(UshiwakamaruRiderEntity entity, LivingEntity target, ServerLevel level) {
+      Vec3 targetForward = target.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (targetForward.lengthSqr() < 1.0E-4) {
+         targetForward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      }
+      if (targetForward.lengthSqr() < 1.0E-4) targetForward = new Vec3(0.0, 0.0, 1.0);
+      targetForward = targetForward.normalize();
+      Vec3 side = new Vec3(-targetForward.z, 0.0, targetForward.x);
+      Vec3[] candidates = {
+         target.position().subtract(targetForward.scale(1.35)),
+         target.position().add(side.scale(1.45)),
+         target.position().subtract(side.scale(1.45)),
+         target.position().add(targetForward.scale(1.35))
+      };
+      for (Vec3 candidate : candidates) {
+         Vec3 destination = new Vec3(candidate.x, target.getY(), candidate.z);
+         BlockPos blockPos = BlockPos.containing(destination);
+         if (level.isInWorldBounds(blockPos)
+            && level.noCollision(entity, entity.getBoundingBox().move(destination.subtract(entity.position())))) {
+            return destination;
+         }
+      }
+      return null;
+   }
+
+   private static boolean isInsideThrust(UshiwakamaruRiderEntity entity, LivingEntity target, Vec3 direction) {
+      Vec3 offset = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      double forward = offset.dot(direction);
+      Vec3 lateral = offset.subtract(direction.scale(forward));
+      return forward >= -0.35 && forward <= 5.2 && lateral.lengthSqr() <= 2.25
+         && Math.abs(target.getY() - entity.getY()) <= 2.5;
+   }
+
+   private static void dealMeleeDamage(UshiwakamaruRiderEntity entity, LivingEntity target, float damage) {
+      target.invulnerableTime = 0;
+      target.hurt(entity.damageSources().mobAttack(entity), damage);
+      target.invulnerableTime = 0;
+   }
+
    private static boolean tryBenkeiShield(UshiwakamaruRiderEntity entity, ServerLevel level, LivingEntity target, long now) {
       CompoundTag data = entity.getPersistentData();
       if (data.getLong(UshiwakamaruRiderEntity.TAG_SHIELD_EXPIRES) > now || entity.getCurrentMp() < 20.0
@@ -494,18 +622,21 @@ public final class UshiwakamaruCombatHelper {
    }
 
    private static void spawnShieldParticles(UshiwakamaruRiderEntity entity, ServerLevel level) {
-      Vec3 forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
-      if (forward.lengthSqr() < 1.0E-4) forward = new Vec3(0.0, 0.0, 1.0);
-      forward = forward.normalize();
-      Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
-      Vec3 center = entity.position().add(forward.scale(1.25)).add(0.0, 1.0, 0.0);
-      for (int i = -3; i <= 3; i++) {
-         for (int j = -2; j <= 2; j++) {
-            if ((i + j + entity.tickCount) % 3 != 0) continue;
-            Vec3 point = center.add(side.scale(i * 0.27)).add(0.0, j * 0.28, 0.0);
+      Vec3 center = entity.position().add(0.0, 0.08, 0.0);
+      double radius = 2.05;
+      int phase = entity.tickCount % 3;
+      for (int latitude = 0; latitude < 3; latitude++) {
+         double elevation = latitude * Math.PI / 6.0;
+         double horizontalRadius = Math.cos(elevation) * radius;
+         double height = Math.sin(elevation) * radius;
+         for (int azimuth = 0; azimuth < 12; azimuth++) {
+            if ((latitude * 4 + azimuth) % 3 != phase) continue;
+            double angle = Math.PI * 2.0 * azimuth / 12.0 + entity.tickCount * 0.025;
+            Vec3 point = center.add(Math.cos(angle) * horizontalRadius, height, Math.sin(angle) * horizontalRadius);
             level.sendParticles(ParticleTypes.END_ROD, point.x, point.y, point.z, 1, 0.02, 0.02, 0.02, 0.0);
          }
       }
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + radius, center.z, 1, 0.02, 0.02, 0.02, 0.0);
    }
 
    private static void applyRidingMobility(UshiwakamaruRiderEntity entity) {

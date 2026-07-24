@@ -25,7 +25,8 @@ class UshiwakamaruCombatRulesTest {
 
    @Test
    void shieldAbsorbsOverflowWithoutReturningIt() {
-      var hit = UshiwakamaruCombatRules.absorbShieldHit(2000.0F, 2500.0F);
+      assertEquals(1000.0F, UshiwakamaruCombatRules.SHIELD_MAX_HP);
+      var hit = UshiwakamaruCombatRules.absorbShieldHit(UshiwakamaruCombatRules.SHIELD_MAX_HP, 1250.0F);
       assertEquals(0.0F, hit.remainingShieldHp());
       assertTrue(hit.broken());
    }

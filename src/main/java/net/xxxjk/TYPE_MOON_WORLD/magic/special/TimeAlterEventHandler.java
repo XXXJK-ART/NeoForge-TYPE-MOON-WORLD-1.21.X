@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.special;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -16,8 +17,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.TimeAlterVisualStateMessage;
 import org.joml.Vector3f;
 
 @EventBusSubscriber(modid = "typemoonworld")
@@ -59,6 +64,22 @@ public final class TimeAlterEventHandler {
       player.getPersistentData().putInt(TAG_MODE, mode);
       player.getPersistentData().putDouble(TAG_MULTIPLIER, multiplier);
       applyModifiers(player, mode, multiplier);
+      broadcastVisualState(player, true, mode, Math.max(1, durationTicks));
+   }
+
+   @SubscribeEvent
+   public static void onStartTracking(PlayerEvent.StartTracking event) {
+      if (!(event.getEntity() instanceof ServerPlayer tracker) || !(event.getTarget() instanceof ServerPlayer target) || !isActive(target)) {
+         return;
+      }
+      if (NetworkRegistry.hasChannel(tracker.connection, TimeAlterVisualStateMessage.TYPE.id())) {
+         long remaining = target.getPersistentData().getLong(TAG_ACTIVE_UNTIL) - target.level().getGameTime();
+         PacketDistributor.sendToPlayer(
+            tracker,
+            new TimeAlterVisualStateMessage(target.getUUID(), true, target.getPersistentData().getInt(TAG_MODE), (int)Math.min(Integer.MAX_VALUE, remaining)),
+            new CustomPacketPayload[0]
+         );
+      }
    }
 
    @SubscribeEvent
@@ -91,10 +112,12 @@ public final class TimeAlterEventHandler {
 
    private static void finish(ServerPlayer player) {
       double multiplier = player.getPersistentData().getDouble(TAG_MULTIPLIER);
+      int mode = player.getPersistentData().getInt(TAG_MODE);
       removeModifiers(player);
       player.getPersistentData().remove(TAG_ACTIVE_UNTIL);
       player.getPersistentData().remove(TAG_MODE);
       player.getPersistentData().remove(TAG_MULTIPLIER);
+      broadcastVisualState(player, false, mode, 0);
 
       float damage = (float)(multiplier * 3.0 + 2.0 * Math.pow(Math.max(0.0, multiplier - 1.0), 2.0));
       if (hasAvalon(player)) {
@@ -107,6 +130,18 @@ public final class TimeAlterEventHandler {
 
       player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 0.7F, 0.8F);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.release", String.format("%.1f", damage)), true);
+   }
+
+   private static void broadcastVisualState(ServerPlayer player, boolean active, int mode, int remainingTicks) {
+      try {
+         PacketDistributor.sendToPlayersTrackingEntityAndSelf(
+            player,
+            new TimeAlterVisualStateMessage(player.getUUID(), active, mode, Math.max(0, remainingTicks)),
+            new CustomPacketPayload[0]
+         );
+      } catch (UnsupportedOperationException ignored) {
+         // Visual-only state may be unavailable on test or compatibility connections.
+      }
    }
 
    private static void clearLegacyRecoveryState(ServerPlayer player) {

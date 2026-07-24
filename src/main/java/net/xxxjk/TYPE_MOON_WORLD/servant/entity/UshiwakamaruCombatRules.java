@@ -1,7 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 public final class UshiwakamaruCombatRules {
-   public static final float SHIELD_MAX_HP = 2000.0F;
+   public static final float SHIELD_MAX_HP = 1000.0F;
 
    private UshiwakamaruCombatRules() {
    }

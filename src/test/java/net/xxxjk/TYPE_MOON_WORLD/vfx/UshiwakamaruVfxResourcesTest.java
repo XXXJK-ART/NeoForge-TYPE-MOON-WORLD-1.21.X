@@ -9,9 +9,11 @@ import com.google.gson.JsonObject;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.component.geometry.HemisphereGeometry;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.EffectLibrary;
 import org.junit.jupiter.api.Test;
 
@@ -65,6 +67,18 @@ class UshiwakamaruVfxResourcesTest {
                () -> "Invalid VFX runtime definition " + effectId
             );
          }
+      }
+   }
+
+   @Test
+   void shieldHemisphereOnlySamplesTheUpperHalf() {
+      var particles = new ArrayList<VFXParticle>();
+      new HemisphereGeometry(2.0F, 96).update(0.0F, 0.0F, particles);
+      try {
+         assertTrue(particles.stream().allMatch(particle -> particle.position.y >= 0.0F));
+         assertTrue(particles.stream().anyMatch(particle -> particle.position.y >= 1.99F));
+      } finally {
+         particles.forEach(VFXParticle::release);
       }
    }
 }

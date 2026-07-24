@@ -9,6 +9,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.xxxjk.typemoonworld.api.event.BodyTrainingEvent;
 
 public final class BodyTrainingService {
@@ -49,7 +50,7 @@ public final class BodyTrainingService {
    }
 
    public static void award(ServerPlayer player, int amount) {
-      if (amount <= 0) return;
+      if (player instanceof FakePlayer || amount <= 0) return;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed || vars.master_card_active) return;
       if (NeoForge.EVENT_BUS.post(new BodyTrainingEvent.Award(player, amount)).isCanceled()) return;

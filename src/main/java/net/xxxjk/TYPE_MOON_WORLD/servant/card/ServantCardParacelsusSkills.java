@@ -73,7 +73,7 @@ public final class ServantCardParacelsusSkills {
    private static final int DIAMOND_SHIELD_MAX_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_INVULN_TICKS = 60;
    private static final double SPIRIT_MP_COST = 4.5;
-   private static final long SPIRIT_INTERVAL = 18L;
+   private static final long SPIRIT_INTERVAL = 20L;
    private static final DustParticleOptions FIRE = new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.28F), 1.2F);
    private static final DustParticleOptions WATER = new DustParticleOptions(new Vector3f(0.28F, 0.55F, 1.0F), 1.2F);
    private static final DustParticleOptions EARTH = new DustParticleOptions(new Vector3f(0.35F, 0.95F, 0.35F), 1.2F);
@@ -1074,7 +1074,8 @@ public final class ServantCardParacelsusSkills {
 
    private static double applyWorkshopDamage(ServerPlayer player, double baseDamage) {
       double halved = baseDamage * 0.5;
-      return isInsideWorkshop(player) ? halved * 1.18 : halved;
+      double currentDamage = isInsideWorkshop(player) ? halved * 1.18 : halved;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.reduceDamage(currentDamage);
    }
 
    private static void spawnWorkshopHighlight(ServerLevel level, Vec3 center, double radius, boolean burst) {

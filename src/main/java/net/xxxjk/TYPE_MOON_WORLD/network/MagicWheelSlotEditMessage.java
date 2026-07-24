@@ -14,7 +14,6 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
-import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 
 public record MagicWheelSlotEditMessage(
    int action,
@@ -122,7 +121,7 @@ public record MagicWheelSlotEditMessage(
             );
             entry.sourceType = sourceType;
             entry.magicId = magicId;
-            entry.presetPayload = MagicPresetRegistry.normalize(magicId, message.presetPayload).payload();
+            entry.presetPayload = PlayerMagicSelectionService.normalizePresetPayload(magicId, message.presetPayload);
             if ("projection".equals(magicId)) {
                entry.presetPayload = TypeMoonWorldModVariables.PlayerVariables.normalizeProjectionPresetPayload(entry.presetPayload);
             }
@@ -160,7 +159,7 @@ public record MagicWheelSlotEditMessage(
                entry.crestEntryId = "";
             }
 
-            entry.presetPayload = MagicPresetRegistry.normalize(magicId, entry.presetPayload).payload();
+            entry.presetPayload = PlayerMagicSelectionService.normalizePresetPayload(magicId, entry.presetPayload);
             vars.setWheelSlotEntry(message.wheelIndex, message.slotIndex, entry);
          }
       }

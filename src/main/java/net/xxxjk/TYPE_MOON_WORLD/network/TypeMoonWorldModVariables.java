@@ -35,6 +35,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone;
@@ -67,7 +68,8 @@ public class TypeMoonWorldModVariables {
    );
 
    private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
-      if (player != null && payload != null && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
+      if (player != null && !(player instanceof FakePlayer) && payload != null
+         && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
          PacketDistributor.sendToPlayer(player, payload);
       }
    }

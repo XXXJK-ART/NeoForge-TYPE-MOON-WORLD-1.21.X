@@ -1651,6 +1651,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             case 2 -> Component.translatable("gui.typemoonworld.overlay.gravity.mode.ultra_heavy.short").getString();
          };
          return base + " " + targetName + "/" + modeName;
+      } else if ("time_alter".equals(entry.id)) {
+         int mode = payload.contains("time_alter_mode") ? payload.getInt("time_alter_mode") : 0;
+         String modeName = Component.translatable(mode == 1
+            ? "gui.typemoonworld.overlay.time_alter.mode.stagnate.short"
+            : "gui.typemoonworld.overlay.time_alter.mode.accel.short").getString();
+         int multiplier = payload.contains("time_alter_multiplier") ? Math.max(1, payload.getInt("time_alter_multiplier")) : 4;
+         return mode == 1 ? base + " " + modeName : base + " " + modeName + " x" + multiplier;
       } else if ("gandr_machine_gun".equals(entry.id)) {
          int mode = payload.contains("gandr_machine_gun_mode") ? payload.getInt("gandr_machine_gun_mode") : 0;
          String modeName = mode == 1
@@ -1694,6 +1701,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          || "gandr_machine_gun".equals(magicId)
          || "projection".equals(magicId)
          || "healing_magic".equals(magicId)
+         || "time_alter".equals(magicId)
          || PlayerMagicSelectionService.isElementalMagic(magicId);
    }
 
@@ -1722,6 +1730,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "gravity_magic" -> "gravity_target";
          case "gandr_machine_gun" -> "gandr_mode";
          case "healing_magic" -> "healing_target";
+         case "time_alter" -> "time_alter_mode";
          case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> "element_mode";
          case "projection" -> "projection_source";
          default -> null;
@@ -1745,7 +1754,26 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       List<Magical_attributes_Screen.PresetOption> options = new ArrayList<>();
       TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
       String magicId = entry.id;
-      if ("reinforcement".equals(magicId) && "reinforcement_target".equals(stageId)) {
+      if ("time_alter".equals(magicId) && "time_alter_mode".equals(stageId)) {
+         CompoundTag accel = new CompoundTag();
+         accel.putInt("time_alter_mode", 0);
+         options.add(new Magical_attributes_Screen.PresetOption(
+            Component.translatable("gui.typemoonworld.overlay.time_alter.mode.accel.short"), accel, "time_alter_multiplier", false
+         ));
+         CompoundTag stagnate = new CompoundTag();
+         stagnate.putInt("time_alter_mode", 1);
+         options.add(new Magical_attributes_Screen.PresetOption(
+            Component.translatable("gui.typemoonworld.overlay.time_alter.mode.stagnate.short"), stagnate
+         ));
+         return options;
+      } else if ("time_alter".equals(magicId) && "time_alter_multiplier".equals(stageId)) {
+         for (int multiplier = 1; multiplier <= 10; multiplier++) {
+            CompoundTag patch = new CompoundTag();
+            patch.putInt("time_alter_multiplier", multiplier);
+            options.add(new Magical_attributes_Screen.PresetOption(Component.literal("x" + multiplier), patch));
+         }
+         return options;
+      } else if ("reinforcement".equals(magicId) && "reinforcement_target".equals(stageId)) {
          CompoundTag self = new CompoundTag();
          self.putInt("reinforcement_target", 0);
          options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.self"), self, "reinforcement_mode", false));
@@ -1929,6 +1957,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("healing_magic".equals(magicId)) {
          CompoundTag payload = new CompoundTag();
          payload.putInt("healing_target", Mth.clamp(vars.healing_magic_target, 0, 1));
+         return payload;
+      } else if ("time_alter".equals(magicId)) {
+         CompoundTag payload = new CompoundTag();
+         payload.putInt("time_alter_mode", Mth.clamp(vars.time_alter_mode, 0, 1));
+         payload.putInt("time_alter_multiplier", Math.max(1, vars.time_alter_multiplier));
          return payload;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
          CompoundTag payload = new CompoundTag();
