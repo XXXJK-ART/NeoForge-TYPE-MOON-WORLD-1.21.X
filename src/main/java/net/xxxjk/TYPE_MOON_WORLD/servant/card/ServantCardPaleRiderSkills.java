@@ -61,7 +61,6 @@ public final class ServantCardPaleRiderSkills {
    public static final String DOMAIN_PROXY_TAG = "PaleRiderCardDomainProxyUuid";
    private static final String SOUL_LIBRARY_TAG = "PaleRiderCardSoulLibrary";
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
-   private static final int MAX_CONTROLLED = 200;
 
    private ServantCardPaleRiderSkills() {}
 
@@ -113,7 +112,7 @@ public final class ServantCardPaleRiderSkills {
             if (host == null) releasePossession(player);
          }
          player.noPhysics = false;
-         ServantCardConcealmentHelper.apply(player, 40);
+         ServantCardConcealmentHelper.maintain(player, 40);
          if (!player.getPersistentData().getBoolean(STEALTH_TAG) && player.tickCount % 4 == 0 && player.level() instanceof ServerLevel level) {
             level.sendParticles(ParticleTypes.SQUID_INK, player.getX(), player.getY() + 0.8, player.getZ(), 5, 0.22, 0.7, 0.22, 0.01);
             level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.9, player.getZ(), 3, 0.25, 0.7, 0.25, 0.01);
@@ -124,7 +123,7 @@ public final class ServantCardPaleRiderSkills {
             return;
          }
          player.noPhysics = false;
-         player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.INVISIBILITY, 40, 0, false, false, false));
+         ServantCardConcealmentHelper.maintain(player, 40);
       }
 
       if (player.level() instanceof ServerLevel level) {
@@ -148,7 +147,7 @@ public final class ServantCardPaleRiderSkills {
                isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG)));
          }
       }
-      if (player.tickCount % 5 == 0) vars.syncPlayerVariables(player);
+      if (player.tickCount % 5 == 0) vars.syncServantCardRuntime(player);
    }
 
    public static boolean spawnMenu(ServerPlayer player, boolean crouching) {
@@ -159,7 +158,7 @@ public final class ServantCardPaleRiderSkills {
    public static boolean spawn(ServerPlayer player, int mode) {
       if (!(player.level() instanceof ServerLevel level)) return false;
       int spawnCount = mode == 1 ? 5 : 1;
-      if (countControlled(level, player.getUUID()) + spawnCount > MAX_CONTROLLED) return false;
+      if (!PaleRiderInfectionService.hasControlCapacity(player, spawnCount)) return false;
       if (mode == 0 || mode == 2) {
          RatSwarmEntity swarm = ModEntities.RAT_SWARM.get().create(level);
          if (swarm == null) return false;
@@ -420,10 +419,19 @@ public final class ServantCardPaleRiderSkills {
       if (!(player.level() instanceof ServerLevel level)) return null;
       LivingEntity anchor = getDomainAnchor(player);
       if (anchor == null) return null;
-      return level.getEntitiesOfClass(LivingEntity.class, anchor.getBoundingBox().inflate(50.0), target -> target != player
-         && target != echo && target.isAlive() && !PaleRiderInfectionService.arePaleRiderAllies(player, target)
-         && !EntityUtils.isImmunePlayerTarget(target)).stream()
-         .min((left, right) -> Double.compare(left.distanceToSqr(echo), right.distanceToSqr(echo))).orElse(null);
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, anchor.getBoundingBox().inflate(50.0),
+         candidate -> candidate != player && candidate != echo && candidate.isAlive()
+            && !PaleRiderInfectionService.arePaleRiderAllies(player, candidate)
+            && !EntityUtils.isImmunePlayerTarget(candidate))) {
+         double distance = target.distanceToSqr(echo);
+         if (distance < nearestDistance) {
+            nearest = target;
+            nearestDistance = distance;
+         }
+      }
+      return nearest;
    }
 
    private static void tickPerfectConcealment(ServerPlayer player) {
@@ -434,17 +442,23 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static void manifestStoredSouls(ServerPlayer player, ServerLevel level, LivingEntity anchor) {
-      SoulLibrary library = loadSoulLibrary(player);
       List<SoulEchoEntity> active = ownedSoulEchoes(player, level);
-      if (active.size() > 50) {
-         for (SoulEchoEntity excess : active.subList(50, active.size())) {
-            if (excess.isAlive() && excess.getSnapshot() != null) library.add(excess.getSnapshot());
+      if (active.size() == SoulLibrary.MAX_MANIFESTED_SOULS) return;
+      SoulLibrary library = loadSoulLibrary(player);
+      boolean changed = false;
+      if (active.size() > SoulLibrary.MAX_MANIFESTED_SOULS) {
+         for (SoulEchoEntity excess : active.subList(SoulLibrary.MAX_MANIFESTED_SOULS, active.size())) {
+            if (excess.isAlive() && excess.getSnapshot() != null) changed |= library.add(excess.getSnapshot());
             excess.discard();
          }
-         active = active.subList(0, 50);
+         active = active.subList(0, SoulLibrary.MAX_MANIFESTED_SOULS);
       }
-      int slots = Math.max(0, 50 - active.size());
+      int slots = Math.max(0, SoulLibrary.MAX_MANIFESTED_SOULS - active.size());
       List<SoulSnapshot> souls = library.takeStrongest(slots);
+      if (souls.isEmpty()) {
+         if (changed) saveSoulLibrary(player, library);
+         return;
+      }
       int index = 0;
       for (SoulSnapshot soul : souls) {
          SoulEchoEntity echo = ModEntities.SOUL_ECHO.get().create(level);
@@ -681,7 +695,8 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static int countControlled(ServerLevel level, UUID owner) {
-      return PaleRiderEntityIndex.controlledCount(level, owner, entity -> isControlledBy(entity, owner));
+      return PaleRiderEntityIndex.controlledCount(level, owner, entity -> isControlledBy(entity, owner)
+         && (PaleRiderInfectionService.isControlled(entity) || entity instanceof RatSwarmEntity || entity instanceof PaleRiderCrowEntity));
    }
    private static float clampInput(float value) { return Math.max(-1.0F, Math.min(1.0F, value)); }
 

@@ -57,11 +57,6 @@ public final class ServantCardTransformManager {
    }
 
    public static boolean transform(ServerPlayer player, String servantId) {
-      if (servantId != null && ("ushiwakamaru_rider".equals(servantId)
-         || "typemoonworld:ushiwakamaru_rider".equals(servantId))) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.npc_only"), true);
-         return false;
-      }
       ServantDefinition definition = ServantDataRegistry.get(servantId);
       if (definition == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.unknown", servantId), true);
@@ -146,6 +141,7 @@ public final class ServantCardTransformManager {
       ServantCardFlightController.stop(player, vars, false);
       ServantCardDefenseHandler.clear(player);
       stopActiveNoblePhantasmVoices(player);
+      if ("ushiwakamaru_rider".equals(vars.servant_card_id)) ServantCardUshiwakamaruSkills.clear(player, vars);
       restoreArmor(player, vars);
       if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
@@ -235,7 +231,7 @@ public final class ServantCardTransformManager {
       ServantCardTraitService.tick(player);
       tickCurrentServant(player, vars);
       if (timersChanged && player.tickCount % 5 == 0) {
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
       }
    }
 
@@ -261,6 +257,7 @@ public final class ServantCardTransformManager {
             ServantCardEmiyaSkills.tickEmiyaUbwSupport(player, vars);
             ServantCardEmiyaSkills.tickEmiyaEquipmentAndCounter(player, vars);
          }
+         case "ushiwakamaru_rider" -> ServantCardUshiwakamaruSkills.tick(player, vars);
          default -> {
          }
       }
@@ -283,9 +280,16 @@ public final class ServantCardTransformManager {
    }
 
    public static void normalizeFood(ServerPlayer player) {
-      player.getFoodData().setFoodLevel(SERVANT_CARD_NEUTRAL_FOOD);
-      player.getFoodData().setSaturation(0.0F);
-      player.getFoodData().setExhaustion(0.0F);
+      var food = player.getFoodData();
+      if (food.getFoodLevel() != SERVANT_CARD_NEUTRAL_FOOD) {
+         food.setFoodLevel(SERVANT_CARD_NEUTRAL_FOOD);
+      }
+      if (food.getSaturationLevel() != 0.0F) {
+         food.setSaturation(0.0F);
+      }
+      if (food.getExhaustionLevel() != 0.0F) {
+         food.setExhaustion(0.0F);
+      }
    }
 
    public static void prepareVanishingEquipment(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -395,8 +399,9 @@ public final class ServantCardTransformManager {
       String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servant_card_id, slot);
       ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
       ServantContext externalContext = new ServantContext(player, null, vars.servant_card_id, player.level(), 0.0, true, player.level().getGameTime());
+      boolean noblePhantasmAction = isNoblePhantasmAction(vars.servant_card_id, slot);
       if (parsedActionId != null && NeoForge.EVENT_BUS.post(new ServantActionEvent.Pre(
-         slot == 9 ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext)).isCanceled()) return false;
+         noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext)).isCanceled()) return false;
       net.xxxjk.typemoonworld.api.ExecutionResult external = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.executeSlot(
          player, vars.servant_card_id, slot, player.isCrouching(), player.level().getGameTime()
       );
@@ -405,7 +410,7 @@ public final class ServantCardTransformManager {
             if (!ServantCardManaService.consume(player, vars, external.resourceCost())) return false;
          }
          if (parsedActionId != null) NeoForge.EVENT_BUS.post(new ServantActionEvent.Post(
-            slot == 9 ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext, external));
+            noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext, external));
          return external.success();
       }
       ServantCardSkillAction action = actionFor(vars.servant_card_id, slot, player.isCrouching());
@@ -413,8 +418,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
       }
-      boolean npSlot = slot == 9 && !"gilgamesh".equals(vars.servant_card_id);
-      boolean np = npSlot;
+      boolean npSlot = usesSharedNoblePhantasmCooldown(vars.servant_card_id, slot);
+      boolean np = noblePhantasmAction;
       boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
       if (np && "emiya_archer".equals(vars.servant_card_id) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
          if (!unlimited && vars.servant_card_np_cooldown > 0) {
@@ -494,6 +499,17 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_no_workshop"), true);
          return false;
       }
+      if ("ushiwakamaru_moonlit_step".equals(action.effectId()) && !ServantCardUshiwakamaruSkills.hasMoonlitTarget(player)
+         || "ushiwakamaru_usumidori".equals(action.effectId()) && !ServantCardUshiwakamaruSkills.hasUsumidoriTarget(player)
+         || "ushiwakamaru_eight_boat".equals(action.effectId()) && !ServantCardUshiwakamaruSkills.hasEightBoatTarget(player)
+         || "ushiwakamaru_spider_slayer".equals(action.effectId()) && !ServantCardUshiwakamaruSkills.hasSpiderSlayerTargets(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
+      if ("ushiwakamaru_eagle_drop".equals(action.effectId()) && player.onGround()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.must_be_airborne"), true);
+         return false;
+      }
       if (ServantCardActionPreconditions.requiresLookTarget(action.effectId())
          && ServantCardSkillUtils.findLookTarget(player, ServantCardActionPreconditions.targetRangeFor(action.effectId()), 1.8) == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
@@ -511,7 +527,7 @@ public final class ServantCardTransformManager {
       if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId()) && !"oda_charged_matchlock".equals(action.effectId())) {
          ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
       }
-      int cooldownTicks = effectiveCooldownTicks(action, np);
+      int cooldownTicks = effectiveCooldownTicks(action, npSlot);
       if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
@@ -743,7 +759,8 @@ public final class ServantCardTransformManager {
       return "medusa".equals(servantId)
          || "cursed_arm_hassan".equals(servantId)
          || "li_shuwen".equals(servantId)
-         || "oda_nobunaga".equals(servantId);
+         || "oda_nobunaga".equals(servantId)
+         || "ushiwakamaru_rider".equals(servantId);
    }
 
    private static ItemStack generatedArmor(String servantId, EquipmentSlot slot) {
@@ -759,7 +776,13 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean tickJumpRecovery(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.servant_card_jump_charges >= 4) {
+      boolean eightBoatActive = ServantCardUshiwakamaruSkills.isEightBoatActive(player);
+      int maxCharges = ServantCardUshiwakamaruRules.jumpLimit(eightBoatActive);
+      if (vars.servant_card_jump_charges > maxCharges) {
+         vars.servant_card_jump_charges = ServantCardUshiwakamaruRules.clampJumpCharges(
+            vars.servant_card_jump_charges, eightBoatActive);
+      }
+      if (vars.servant_card_jump_charges >= maxCharges) {
          vars.servant_card_jump_recovery_ticks = 0;
          vars.servant_card_jump_recovery_end = 0L;
          return false;
@@ -784,18 +807,20 @@ public final class ServantCardTransformManager {
       if (vars.servant_card_jump_recovery_ticks > 0) {
          return true;
       }
-      vars.servant_card_jump_charges = Math.min(4, vars.servant_card_jump_charges + 1);
+      vars.servant_card_jump_charges = Math.min(maxCharges, vars.servant_card_jump_charges + 1);
       vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
-      vars.servant_card_jump_recovery_end = vars.servant_card_jump_charges >= 4 ? 0L : now + vars.servant_card_jump_recovery_ticks;
+      vars.servant_card_jump_recovery_end = vars.servant_card_jump_charges >= maxCharges ? 0L : now + vars.servant_card_jump_recovery_ticks;
       return true;
    }
 
    private static boolean hasJumpRecoverySupport(ServerPlayer player) {
-      if (!player.onGround()) {
-         return false;
+      boolean supported = false;
+      if (player.onGround()) {
+         BlockPos supportPos = player.getOnPos();
+         supported = !player.level().getBlockState(supportPos).getCollisionShape(player.level(), supportPos).isEmpty();
       }
-      BlockPos supportPos = player.getOnPos();
-      return !player.level().getBlockState(supportPos).getCollisionShape(player.level(), supportPos).isEmpty();
+      return ServantCardUshiwakamaruRules.canRecoverJump(
+         ServantCardUshiwakamaruSkills.isEightBoatActive(player), supported);
    }
 
    private static boolean tickSkillCooldowns(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -1176,9 +1201,33 @@ public final class ServantCardTransformManager {
          case "pale_rider_death_pulse" -> { if (!ServantCardPaleRiderSkills.deathPulse(player)) return false; }
          case "pale_rider_underworld" -> { if (!ServantCardPaleRiderSkills.toggleUnderworld(player)) return false; }
          case "pale_rider_calamity" -> { if (!ServantCardPaleRiderSkills.toggleCalamity(player)) return false; }
+         case "ushiwakamaru_tengu_strategy" -> ServantCardUshiwakamaruSkills.performTenguStrategy(player);
+         case "ushiwakamaru_charisma" -> ServantCardUshiwakamaruSkills.performCharisma(player);
+         case "ushiwakamaru_moonlit_step" -> ServantCardUshiwakamaruSkills.performMoonlitStep(player);
+         case "ushiwakamaru_sweeping_thrust" -> ServantCardUshiwakamaruSkills.performSweepingThrust(player);
+         case "ushiwakamaru_eagle_drop" -> ServantCardUshiwakamaruSkills.performEagleDrop(player);
+         case "ushiwakamaru_six_secret" -> ServantCardUshiwakamaruSkills.performSixSecret(player);
+         case "ushiwakamaru_usumidori" -> ServantCardUshiwakamaruSkills.performUsumidori(player);
+         case "ushiwakamaru_benkei" -> ServantCardUshiwakamaruSkills.performBenkei(player);
+         case "ushiwakamaru_spider_slayer" -> { if (!ServantCardUshiwakamaruSkills.performSpiderSlayer(player)) return false; }
+         case "ushiwakamaru_eight_boat" -> { if (!ServantCardUshiwakamaruSkills.performEightBoat(player, vars)) return false; }
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;
+   }
+
+   static boolean isNoblePhantasmAction(String servantId, int slot) {
+      return isUshiwakamaruNoblePhantasmSlot(servantId, slot)
+         || slot == 9 && !"gilgamesh".equals(servantId);
+   }
+
+   static boolean isUshiwakamaruNoblePhantasmSlot(String servantId, int slot) {
+      return "ushiwakamaru_rider".equals(servantId) && slot >= 5 && slot <= 9;
+   }
+
+   static boolean usesSharedNoblePhantasmCooldown(String servantId, int slot) {
+      return slot == 9 && !"gilgamesh".equals(servantId)
+         && !isUshiwakamaruNoblePhantasmSlot(servantId, slot);
    }
 
 }

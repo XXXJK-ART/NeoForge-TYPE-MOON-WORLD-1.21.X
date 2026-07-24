@@ -39,8 +39,8 @@ public final class UshiwakamaruCombatHelper {
    private static final String TAG_LAST_MOONLIT_STEP = "UshiwakamaruLastMoonlitStep";
    private static final String TAG_LAST_SWEEPING_THRUST = "UshiwakamaruLastSweepingThrust";
    private static final String TAG_LAST_BASIC_ATTACK = "UshiwakamaruLastBasicAttack";
-   private static final String TAG_EIGHT_BOAT_UNTIL = "UshiwakamaruEightBoatUntil";
-   private static final String TAG_EIGHT_BOAT_NEXT_DASH = "UshiwakamaruEightBoatNextDash";
+   public static final String TAG_EIGHT_BOAT_UNTIL = "UshiwakamaruEightBoatUntil";
+   public static final String TAG_EIGHT_BOAT_NEXT_DASH = "UshiwakamaruEightBoatNextDash";
    private static final String TAG_CHARISMA_UNTIL = "UshiwakamaruCharismaUntil";
    private static final String TAG_SIX_SECRET_UNTIL = "UshiwakamaruSixSecretUntil";
    private static final String TAG_TENGU_VFX_ACTIVE = "UshiwakamaruTenguVfxActive";
@@ -96,8 +96,9 @@ public final class UshiwakamaruCombatHelper {
          return;
       }
 
-      List<LivingEntity> enemies = nearbyEnemies(entity, 20.0);
-      int allies = nearbyAllies(entity, 15.0).size();
+      boolean scanCombatArea = ((entity.tickCount + entity.getId()) & 1) == 0;
+      List<LivingEntity> enemies = scanCombatArea ? nearbyEnemies(entity, 20.0) : List.of();
+      int allies = scanCombatArea ? nearbyAllies(entity, 15.0).size() : 0;
       int phase = entity.getCombatPhase();
       double distance = entity.distanceTo(target);
 
@@ -145,7 +146,9 @@ public final class UshiwakamaruCombatHelper {
          entity.setEightBoatTarget(null);
       }
       if (data.getLong(UshiwakamaruRiderEntity.TAG_SHIELD_EXPIRES) > now) {
-         spawnShieldParticles(entity, level);
+         if ((entity.tickCount & 3) == 0) {
+            spawnShieldParticles(entity, level);
+         }
       } else {
          data.remove(UshiwakamaruRiderEntity.TAG_SHIELD_EXPIRES);
          data.remove(UshiwakamaruRiderEntity.TAG_SHIELD_HP);
@@ -547,7 +550,13 @@ public final class UshiwakamaruCombatHelper {
 
    private static void tickClone(UshiwakamaruRiderEntity clone, ServerLevel level) {
       LivingEntity target = resolveCloneTarget(clone, level);
-      if (target == null) return;
+      if (target == null) {
+         LivingEntity owner = clone.getOwnerEntity();
+         if (owner instanceof net.minecraft.server.level.ServerPlayer) {
+            followPlayerOwner(clone, owner, level.getGameTime());
+         }
+         return;
+      }
       clone.setTarget(target);
       clone.getLookControl().setLookAt(target, 50.0F, 50.0F);
       long now = level.getGameTime();
@@ -565,6 +574,25 @@ public final class UshiwakamaruCombatHelper {
             clone.setDeltaMovement(motion.x, Math.max(1.26, motion.y), motion.z);
             clone.hurtMarked = true;
          }
+      }
+   }
+
+   private static void followPlayerOwner(UshiwakamaruRiderEntity clone, LivingEntity owner, long now) {
+      clone.setTarget(null);
+      clone.setEightBoatTarget(null);
+      clone.getPersistentData().remove(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET);
+      clone.getLookControl().setLookAt(owner, 30.0F, 30.0F);
+      applyRidingMobility(clone);
+      if (clone.distanceToSqr(owner) > 9.0) {
+         ServantNavigationHelper.moveToTargetThrottled(clone, owner, 1.35, now, 5, 0.45,
+            "UshiwakamaruCloneOwnerPath");
+         if (clone.horizontalCollision || owner.getY() > clone.getY() + 1.0) {
+            Vec3 motion = clone.getDeltaMovement();
+            clone.setDeltaMovement(motion.x, Math.max(1.0, motion.y), motion.z);
+            clone.hurtMarked = true;
+         }
+      } else {
+         clone.getNavigation().stop();
       }
    }
 
@@ -587,7 +615,8 @@ public final class UshiwakamaruCombatHelper {
          }
       }
       for (UshiwakamaruRiderEntity clone : spawnedClones) {
-         clone.setTarget(resolveCloneTarget(clone, level));
+         LivingEntity ownerTarget = owner.getTarget();
+         clone.setTarget(EntityUtils.isValidCombatTarget(clone, ownerTarget) ? ownerTarget : resolveCloneTarget(clone, level));
       }
       owner.getPersistentData().put(UshiwakamaruRiderEntity.TAG_CLONE_UUIDS, cloneUuids);
    }
@@ -595,6 +624,15 @@ public final class UshiwakamaruCombatHelper {
    private static LivingEntity resolveCloneTarget(UshiwakamaruRiderEntity clone, ServerLevel level) {
       LivingEntity current = clone.getTarget();
       if (EntityUtils.isValidCombatTarget(clone, current)) return current;
+      Entity ownerEntity = clone.getOwnerEntity();
+      if (ownerEntity instanceof UshiwakamaruRiderEntity owner) {
+         LivingEntity ownerTarget = owner.getTarget();
+         if (EntityUtils.isValidCombatTarget(clone, ownerTarget)) return ownerTarget;
+      }
+      if (clone.getPersistentData().hasUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET)) {
+         Entity storedTarget = level.getEntity(clone.getPersistentData().getUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET));
+         if (storedTarget instanceof LivingEntity living && EntityUtils.isValidCombatTarget(clone, living)) return living;
+      }
       List<LivingEntity> enemies = nearbyEnemies(clone, 20.0);
       if (enemies.isEmpty()) return null;
 

@@ -5,6 +5,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -80,9 +81,10 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
       if (this.isClone()) {
          UshiwakamaruCombatHelper.tickPersistentState(this);
          LivingEntity owner = this.getOwnerEntity();
+         boolean playerOwned = owner instanceof ServerPlayer;
          if (level.getGameTime() >= this.getPersistentData().getLong(TAG_CLONE_EXPIRES)
-            || !(owner instanceof UshiwakamaruRiderEntity rider) || !rider.isAlive()
-            || !UshiwakamaruCombatHelper.isEightBoatTargetAlive(rider)) {
+            || owner == null || !owner.isAlive()
+            || !playerOwned && !UshiwakamaruCombatHelper.isEightBoatTargetAlive(this)) {
             this.discard();
          } else if (this.isAlive()) {
             UshiwakamaruCombatHelper.tick(this);
@@ -178,11 +180,27 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
    }
 
    public void initClone(UshiwakamaruRiderEntity owner, long expiresAt) {
+      this.initClone(owner, owner.getTarget(), expiresAt);
+   }
+
+   public void initClone(LivingEntity owner, @Nullable LivingEntity target, long expiresAt) {
       this.setClone(true);
       this.getPersistentData().putUUID(TAG_CLONE_OWNER, owner.getUUID());
       this.getPersistentData().putLong(TAG_CLONE_EXPIRES, expiresAt);
-      this.setCombatPhase(owner.getCombatPhase());
-      this.setCurrentMp(owner.getCurrentMp());
+      this.getPersistentData().putLong(UshiwakamaruCombatHelper.TAG_EIGHT_BOAT_UNTIL, expiresAt);
+      this.getPersistentData().putLong(UshiwakamaruCombatHelper.TAG_EIGHT_BOAT_NEXT_DASH, this.level().getGameTime());
+      if (target != null) {
+         this.getPersistentData().putUUID(TAG_EIGHT_BOAT_TARGET, target.getUUID());
+         this.setEightBoatTarget(target);
+         this.setTarget(target);
+      }
+      if (owner instanceof UshiwakamaruRiderEntity rider) {
+         this.setCombatPhase(rider.getCombatPhase());
+         this.setCurrentMp(rider.getCurrentMp());
+      } else {
+         this.setCombatPhase(3);
+         this.setCurrentMp(0.0);
+      }
       copyBaseAttribute(owner, Attributes.MAX_HEALTH);
       copyBaseAttribute(owner, Attributes.ATTACK_DAMAGE);
       copyBaseAttribute(owner, Attributes.MOVEMENT_SPEED);
@@ -209,22 +227,22 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
       this.eightBoatTarget = target;
    }
 
-   private void copyBaseAttribute(UshiwakamaruRiderEntity owner,
+   private void copyBaseAttribute(LivingEntity owner,
                                   net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute) {
       var source = owner.getAttribute(attribute);
       var destination = this.getAttribute(attribute);
       if (source != null && destination != null) {
-         destination.setBaseValue(source.getBaseValue());
+         destination.setBaseValue(owner instanceof ServerPlayer ? owner.getAttributeValue(attribute) : source.getBaseValue());
       }
    }
 
-   private void copyPersistentInt(UshiwakamaruRiderEntity owner, String key) {
+   private void copyPersistentInt(LivingEntity owner, String key) {
       if (owner.getPersistentData().contains(key)) {
          this.getPersistentData().putInt(key, owner.getPersistentData().getInt(key));
       }
    }
 
-   private void copyPersistentFloat(UshiwakamaruRiderEntity owner, String key) {
+   private void copyPersistentFloat(LivingEntity owner, String key) {
       if (owner.getPersistentData().contains(key)) {
          this.getPersistentData().putFloat(key, owner.getPersistentData().getFloat(key));
       }

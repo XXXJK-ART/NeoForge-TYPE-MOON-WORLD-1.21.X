@@ -13,6 +13,7 @@ class InfectionRulesTest {
       assertEquals(600, InfectionRules.DURATION_TICKS);
       assertEquals(600, InfectionRules.IMMUNITY_TICKS);
       assertEquals(20, InfectionRules.DAMAGE_INTERVAL_TICKS);
+      assertEquals(120, PaleRiderInfectionService.MAX_CONTROLLED);
    }
 
    @Test
@@ -22,6 +23,28 @@ class InfectionRulesTest {
       for (int level = 1; level <= 5; level++) {
          assertEquals(spread[level - 1], InfectionRules.spreadChance(level), 1.0E-9);
          assertEquals(control[level - 1], InfectionRules.controlChance(level), 1.0E-9);
+      }
+   }
+
+   @Test
+   void slowerScansPreserveLongTermSpreadChance() {
+      for (int level = 1; level <= 5; level++) {
+         double chance = InfectionRules.spreadChance(level);
+         assertEquals(1.0 - (1.0 - chance) * (1.0 - chance),
+            InfectionRules.spreadChanceForInterval(level, 2), 1.0E-9);
+      }
+   }
+
+   @Test
+   void serviceTicksAreEvenlyStaggeredByEntityId() {
+      for (int offset = 0; offset < InfectionRules.DAMAGE_INTERVAL_TICKS; offset++) {
+         int scheduled = 0;
+         for (int entityId = 0; entityId < InfectionRules.DAMAGE_INTERVAL_TICKS; entityId++) {
+            if (InfectionRules.isScheduled(entityId, 1000L + offset, InfectionRules.DAMAGE_INTERVAL_TICKS)) {
+               scheduled++;
+            }
+         }
+         assertEquals(1, scheduled);
       }
    }
 

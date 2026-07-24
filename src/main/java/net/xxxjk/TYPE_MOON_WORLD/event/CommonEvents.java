@@ -63,6 +63,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
@@ -133,7 +134,7 @@ public class CommonEvents {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed || vars.master_active) {
+      if (vars.master_active && !vars.servant_card_transformed) {
          ServantCardTransformManager.normalizeFood(serverPlayer);
       }
    }
@@ -393,6 +394,7 @@ public class CommonEvents {
             event.setCanceled(true);
          } else {
             if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) {
+               tryRedirectMedusaPegasusDamage(event.getEntity(), event);
                return;
             }
             if (event.getSource().getEntity() instanceof LivingEntity attackerWithPetrify
@@ -421,6 +423,9 @@ public class CommonEvents {
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
+            if (tryRedirectMedusaPegasusDamage(event.getEntity(), event)) {
+               return;
+            }
             handleContenderBulletDamage(event, directEntity);
             if (event.getSource().getEntity() instanceof LivingEntity attacker) {
                event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
@@ -691,6 +696,7 @@ public class CommonEvents {
 
    @SubscribeEvent
    public static void onDefinitionSnapshotReload(OnDatapackSyncEvent event) {
+      DefinitionSnapshotService.invalidate();
       event.getRelevantPlayers().forEach(DefinitionSnapshotService::send);
    }
 
@@ -1491,6 +1497,21 @@ public class CommonEvents {
          return false;
       }
       return false;
+   }
+
+   private static boolean tryRedirectMedusaPegasusDamage(LivingEntity rider, LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F
+         || !(rider.getVehicle() instanceof MedusaPegasusEntity pegasus)
+         || !pegasus.isAlive()
+         || pegasus.getSummoner() != rider) {
+         return false;
+      }
+
+      float redirectedDamage = event.getAmount();
+      event.setCanceled(true);
+      event.setAmount(0.0F);
+      pegasus.hurt(event.getSource(), redirectedDamage);
+      return true;
    }
 
    private static void handleContenderBulletDamage(LivingIncomingDamageEvent event, Entity directEntity) {

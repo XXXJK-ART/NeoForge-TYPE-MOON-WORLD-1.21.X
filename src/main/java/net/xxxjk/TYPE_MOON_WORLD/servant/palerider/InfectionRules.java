@@ -5,6 +5,10 @@ public final class InfectionRules {
    public static final int DURATION_TICKS = 30 * 20;
    public static final int IMMUNITY_TICKS = 30 * 20;
    public static final int DAMAGE_INTERVAL_TICKS = 20;
+   public static final int SPREAD_INTERVAL_TICKS = 40;
+   public static final int CONTROLLED_AI_INTERVAL_TICKS = 8;
+   public static final int CONTROLLED_PARTICLE_INTERVAL_TICKS = 40;
+   public static final int EFFECT_REFRESH_THRESHOLD_TICKS = 10 * 20;
    private static final double[] SPREAD = {0.20, 0.30, 0.40, 0.50, 0.60};
    private static final double[] CONTROL = {0.10, 0.25, 0.40, 0.60, 0.80};
    private static final double[] ORDINARY_CONTROL = {0.60, 0.85, 0.95, 1.00, 1.00};
@@ -21,6 +25,15 @@ public final class InfectionRules {
 
    public static double spreadChance(int level) {
       return SPREAD[clampLevel(level) - 1];
+   }
+
+   public static double spreadChanceForInterval(int level, int damageIntervals) {
+      double missChance = 1.0 - spreadChance(level);
+      return 1.0 - Math.pow(missChance, Math.max(1, damageIntervals));
+   }
+
+   public static boolean isScheduled(int entityId, long gameTime, int interval) {
+      return Math.floorMod(gameTime + entityId, Math.max(1, interval)) == 0;
    }
 
    public static double controlChance(int level) {

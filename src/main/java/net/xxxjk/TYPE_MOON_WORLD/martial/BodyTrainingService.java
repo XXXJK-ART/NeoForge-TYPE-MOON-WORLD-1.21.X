@@ -22,6 +22,7 @@ public final class BodyTrainingService {
    private static final ResourceLocation SPEED_ID = id("body_training_speed");
    private static final ResourceLocation JUMP_ID = id("body_training_jump");
    private static final String SNAPSHOT_STORED = "Stored";
+   private static final String NEXT_AWARD_SYNC_TAG = "TypeMoonBodyTrainingNextAwardSync";
 
    private BodyTrainingService() {}
 
@@ -64,7 +65,11 @@ public final class BodyTrainingService {
          changed = true;
          player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.body.point_gained"), true);
       }
-      if (changed || player.tickCount % 20 == 0) vars.syncPlayerVariables(player);
+      long now = player.level().getGameTime();
+      if (changed || now >= player.getPersistentData().getLong(NEXT_AWARD_SYNC_TAG)) {
+         player.getPersistentData().putLong(NEXT_AWARD_SYNC_TAG, now + 100L);
+         vars.syncPlayerVariables(player);
+      }
       if (changed) NeoForge.EVENT_BUS.post(new BodyTrainingEvent.Changed(player));
    }
 

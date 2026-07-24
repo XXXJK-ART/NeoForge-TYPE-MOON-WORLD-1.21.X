@@ -20,6 +20,7 @@ public final class PaleRiderCorruptionService {
    private static final String TAG_CORRUPTION_CENTER = "PaleRiderCorruptionCenter";
    private static final int COLUMN_COUNT = 1964;
    private static final int COLUMNS_PER_TICK = 2;
+   private static final int FOOTSTEP_INTERVAL_TICKS = 10;
    private static final int VERTICAL_RADIUS = 25;
    private static final double GOLDEN_ANGLE = Math.PI * (3.0 - Math.sqrt(5.0));
 
@@ -55,14 +56,15 @@ public final class PaleRiderCorruptionService {
    }
 
    public static void tickFootsteps(LivingEntity entity) {
-      if (!(entity.level() instanceof ServerLevel level) || entity.tickCount % 4 != Math.floorMod(entity.getId(), 4)) return;
+      if (!(entity.level() instanceof ServerLevel level)
+         || !InfectionRules.isScheduled(entity.getId(), level.getGameTime(), FOOTSTEP_INTERVAL_TICKS)) return;
       LivingEntity owner = ownerOf(level, entity);
       LivingEntity domainAnchor = owner == null ? null : domainAnchor(owner);
       if (owner == null || domainAnchor == null || !isCalamityActive(owner) || entity.distanceToSqr(domainAnchor) > CALAMITY_RADIUS_SQR) return;
       BlockPos below = entity.blockPosition().below();
       BlockState state = level.getBlockState(below);
       if (!canCorrupt(level, below, state) || state.isAir() || state.is(Blocks.SOUL_SAND)) return;
-      if (!state.getCollisionShape(level, below).isEmpty()) level.setBlock(below, Blocks.SOUL_SAND.defaultBlockState(), Block.UPDATE_ALL);
+      if (!state.getCollisionShape(level, below).isEmpty()) level.setBlock(below, Blocks.SOUL_SAND.defaultBlockState(), Block.UPDATE_CLIENTS);
    }
 
    private static LivingEntity ownerOf(ServerLevel level, LivingEntity entity) {
@@ -106,14 +108,14 @@ public final class PaleRiderCorruptionService {
       BlockState state = level.getBlockState(pos);
       if (!canCorrupt(level, pos, state)) return;
       if (state.is(Blocks.GRASS_BLOCK)) {
-         level.setBlock(pos, Blocks.COARSE_DIRT.defaultBlockState(), Block.UPDATE_ALL);
+         level.setBlock(pos, Blocks.COARSE_DIRT.defaultBlockState(), Block.UPDATE_CLIENTS);
          return;
       }
       if (isPlant(state)) {
          BlockState replacement = ((pos.asLong() ^ level.getSeed()) & 7L) == 0L
             ? Blocks.WITHER_ROSE.defaultBlockState()
             : Blocks.DEAD_BUSH.defaultBlockState();
-         if (replacement.canSurvive(level, pos)) level.setBlock(pos, replacement, Block.UPDATE_ALL);
+         if (replacement.canSurvive(level, pos)) level.setBlock(pos, replacement, Block.UPDATE_CLIENTS);
          else level.removeBlock(pos, false);
          return;
       }

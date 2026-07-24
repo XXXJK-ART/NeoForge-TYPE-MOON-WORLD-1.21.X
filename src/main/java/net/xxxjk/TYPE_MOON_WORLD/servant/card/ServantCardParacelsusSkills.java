@@ -525,7 +525,7 @@ public final class ServantCardParacelsusSkills {
    private static void syncParacelsusStocks(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.servant_card_paracelsus_stone_stock = getPhilosopherStoneStock(player);
       vars.servant_card_paracelsus_diamond_shield_stock = getDiamondShieldStock(player);
-      vars.syncPlayerVariables(player);
+      vars.syncServantCardRuntime(player);
    }
 
    public static boolean openElementalGuardianScreen(ServerPlayer player) {
@@ -548,7 +548,7 @@ public final class ServantCardParacelsusSkills {
       level.sendParticles(AETHER, pos.x, pos.y, pos.z, 32, 0.35, 0.35, 0.35, 0.02);
       level.sendParticles(ParticleTypes.ENCHANT, pos.x, pos.y, pos.z, 40, 0.45, 0.45, 0.45, 0.03);
       level.playSound(null, BlockPos.containing(pos), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.85F, 1.35F);
-      vars.syncPlayerVariables(player);
+      vars.syncMana(player);
       return true;
    }
 
@@ -568,7 +568,7 @@ public final class ServantCardParacelsusSkills {
       }
       if (isInsideWorkshop(player) && player.tickCount % 10 == 0) {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 5.5);
-         vars.syncPlayerVariables(player);
+         vars.syncMana(player);
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 25, 0, false, false, false));
       }
    }

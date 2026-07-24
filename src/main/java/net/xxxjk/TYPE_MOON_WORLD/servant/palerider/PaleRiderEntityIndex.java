@@ -47,7 +47,24 @@ public final class PaleRiderEntityIndex {
    }
 
    public static int controlledCount(ServerLevel level, UUID owner, Predicate<LivingEntity> predicate) {
-      return controlled(level, owner, predicate).size();
+      Set<UUID> entityIds = CONTROLLED_BY_OWNER.get(owner);
+      if (entityIds == null || entityIds.isEmpty()) {
+         return 0;
+      }
+      int count = 0;
+      Iterator<UUID> iterator = entityIds.iterator();
+      while (iterator.hasNext()) {
+         Entity entity = level.getEntity(iterator.next());
+         if (entity == null || !entity.isAlive()) {
+            iterator.remove();
+         } else if (entity instanceof LivingEntity living && (predicate == null || predicate.test(living))) {
+            count++;
+         }
+      }
+      if (entityIds.isEmpty()) {
+         CONTROLLED_BY_OWNER.remove(owner);
+      }
+      return count;
    }
 
    private static void register(Map<UUID, Set<UUID>> index, UUID owner, Entity entity) {

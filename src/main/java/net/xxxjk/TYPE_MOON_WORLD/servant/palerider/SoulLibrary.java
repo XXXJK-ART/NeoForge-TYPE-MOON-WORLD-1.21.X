@@ -2,7 +2,6 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.palerider;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +16,9 @@ import net.minecraft.nbt.Tag;
  */
 public final class SoulLibrary {
    public static final int MAX_SOULS = 1000;
+   public static final int MAX_MANIFESTED_SOULS = 50;
    private final Map<String, Entry> entries = new LinkedHashMap<>();
-   private final Map<UUID, String> manifested = new HashMap<>();
+   private int totalCount;
 
    public boolean add(SoulSnapshot snapshot) {
       if (snapshot == null || snapshot.kind() == SoulSnapshot.SoulKind.SERVANT || size() >= MAX_SOULS) return false;
@@ -31,27 +31,22 @@ public final class SoulLibrary {
          if (snapshot.threat() > entry.template.threat()) entry.template = snapshot;
          entry.count++;
       }
+      this.totalCount++;
       return true;
    }
 
-   public boolean remove(UUID id) {
-      // takeStrongest already removed this soul from the stored count.
-      return this.manifested.remove(id) != null;
-   }
-
    public int size() {
-      int total = 0;
-      for (Entry entry : this.entries.values()) total += entry.count;
-      return total;
+      return this.totalCount;
    }
 
    public void clear() {
       this.entries.clear();
-      this.manifested.clear();
+      this.totalCount = 0;
    }
 
    public List<SoulSnapshot> takeStrongest(int limit) {
       int remaining = Math.max(0, Math.min(limit, size()));
+      if (remaining == 0) return List.of();
       List<SoulSnapshot> selected = new ArrayList<>(remaining);
       List<Entry> sorted = this.entries.values().stream()
          .sorted(Comparator.comparingDouble((Entry entry) -> entry.template.threat()).reversed())
@@ -61,9 +56,9 @@ public final class SoulLibrary {
          for (int i = 0; i < amount; i++) {
             SoulSnapshot snapshot = copyWithNewId(entry.template);
             selected.add(snapshot);
-            this.manifested.put(snapshot.id(), key(snapshot));
          }
          entry.count -= amount;
+         this.totalCount -= amount;
          remaining -= amount;
          if (remaining == 0) break;
       }
@@ -109,17 +104,19 @@ public final class SoulLibrary {
             }
          }
          if (snapshot.kind() == SoulSnapshot.SoulKind.SERVANT) continue;
+         int available = MAX_SOULS - this.totalCount;
+         if (available <= 0) break;
          int count = tag.contains("Count", Tag.TAG_INT) ? tag.getInt("Count") : 1;
-         count = Math.max(1, Math.min(MAX_SOULS - size(), count));
-         if (count <= 0) break;
+         count = Math.max(1, Math.min(available, count));
          String key = key(snapshot);
          Entry existing = this.entries.get(key);
          if (existing == null) this.entries.put(key, new Entry(snapshot, count));
          else {
-            existing.count = Math.min(MAX_SOULS - size() + existing.count, existing.count + count);
+            existing.count += count;
             if (snapshot.threat() > existing.template.threat()) existing.template = snapshot;
          }
-         if (size() >= MAX_SOULS) break;
+         this.totalCount += count;
+         if (this.totalCount >= MAX_SOULS) break;
       }
    }
 

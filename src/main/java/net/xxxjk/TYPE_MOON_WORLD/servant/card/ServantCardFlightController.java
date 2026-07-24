@@ -31,7 +31,7 @@ public final class ServantCardFlightController {
       }
       if (toggle) {
          toggleFlight(player, vars);
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
          return;
       }
       double clampedForward = Mth.clamp(forward, -1.0, 1.0);
@@ -78,7 +78,7 @@ public final class ServantCardFlightController {
             vars.servant_card_oda_flight_cooldown_until = now + HIGH_FLIGHT_EXHAUSTED_COOLDOWN;
             vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + HIGH_FLIGHT_RECHARGE_INTERVAL;
          }
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.high_flight_expired"), true);
       }
       if ("oda_nobunaga".equals(vars.servant_card_id) && ServantCardOdaNobunagaSkills.tickMountFlight(player, vars)) {
@@ -139,7 +139,7 @@ public final class ServantCardFlightController {
          vars.servant_card_flight_strafe = 0.0;
          vars.servant_card_flight_vertical = 0.0;
          if (sync) {
-            vars.syncPlayerVariables(player);
+            vars.syncServantCardRuntime(player);
          }
       }
    }
@@ -209,7 +209,7 @@ public final class ServantCardFlightController {
       long now = level.getGameTime();
       if (vars.servant_card_oda_flight_ticks > HIGH_FLIGHT_MAX_TICKS) {
          vars.servant_card_oda_flight_ticks = HIGH_FLIGHT_MAX_TICKS;
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
       }
       if (vars.servant_card_oda_flight_ticks >= HIGH_FLIGHT_MAX_TICKS) {
          vars.servant_card_oda_flight_recharge_at = 0L;
@@ -230,7 +230,7 @@ public final class ServantCardFlightController {
          vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_ticks >= HIGH_FLIGHT_MAX_TICKS
             ? 0L
             : now + HIGH_FLIGHT_RECHARGE_INTERVAL;
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
       }
    }
 

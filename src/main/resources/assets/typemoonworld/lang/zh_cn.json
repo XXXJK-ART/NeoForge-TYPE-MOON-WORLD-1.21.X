@@ -1806,6 +1806,22 @@
     "skill.typemoonworld.dan_no_ura_eight_boat_leap": "坛之浦·八艘跳",
     "skill.typemoonworld.houmaru_spider_slayer": "吼丸·蜘蛛杀",
     "noble_phantasm.typemoonworld.shana_oh_wandering_tales": "遮那王流离谭",
+    "item.typemoonworld.servant_card_ushiwakamaru_rider": "牛若丸（Rider）",
+    "item.typemoonworld.servant_card_ushiwakamaru_rider_head": "牛若丸从者卡头盔",
+    "item.typemoonworld.servant_card_ushiwakamaru_rider_chest": "牛若丸从者卡胸甲",
+    "item.typemoonworld.servant_card_ushiwakamaru_rider_legs": "牛若丸从者卡护腿",
+    "skill.typemoonworld.servant_card.ushiwakamaru_tengu_strategy": "天狗的兵法",
+    "skill.typemoonworld.servant_card.ushiwakamaru_charisma": "领导力",
+    "skill.typemoonworld.servant_card.ushiwakamaru_moonlit_step": "月影缩步",
+    "skill.typemoonworld.servant_card.ushiwakamaru_sweeping_thrust": "扫阵突刺",
+    "skill.typemoonworld.servant_card.ushiwakamaru_eagle_drop": "鞍马流·鹫落",
+    "skill.typemoonworld.servant_card.ushiwakamaru_six_secret": "自在天眼·六韬看破",
+    "skill.typemoonworld.servant_card.ushiwakamaru_usumidori": "薄绿·天刃缩步",
+    "skill.typemoonworld.servant_card.ushiwakamaru_benkei": "弁庆·不动立地",
+    "skill.typemoonworld.servant_card.ushiwakamaru_spider_slayer": "吼丸·蜘蛛杀",
+    "skill.typemoonworld.servant_card.ushiwakamaru_eight_boat": "坛之浦·八艘跳",
+    "passive.typemoonworld.servant_card.ushiwakamaru_swallow": "燕之迅捷 B",
+    "message.typemoonworld.servant_card.must_be_airborne": "该技能只能在空中使用。",
     "message.typemoonworld.servant_card.npc_only": "该从者仅作为 NPC 提供。"
 }
 

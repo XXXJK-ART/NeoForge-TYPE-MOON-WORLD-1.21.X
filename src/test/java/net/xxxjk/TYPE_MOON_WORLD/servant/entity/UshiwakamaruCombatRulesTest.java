@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,10 @@ class UshiwakamaruCombatRulesTest {
    }
 
    @Test
-   void riderIsNpcOnlyAndNotExposedAsServantCard() {
-      assertTrue(ServantCardRegistry.byId("ushiwakamaru_rider") == null);
-      assertTrue(ServantCardRegistry.byId("typemoonworld:ushiwakamaru_rider") == null);
+   void riderIsExposedAsARealArmorServantCard() {
+      var card = ServantCardRegistry.byId("ushiwakamaru_rider");
+      assertNotNull(card);
+      assertEquals("牛若丸（Rider）", card.zhName());
+      assertTrue(card.hasRealArmor());
    }
 }

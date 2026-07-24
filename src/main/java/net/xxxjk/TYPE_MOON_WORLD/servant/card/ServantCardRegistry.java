@@ -21,16 +21,14 @@ public final class ServantCardRegistry {
       new Entry("gawain", "Gawain", "高文", true),
       new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", true),
       new Entry("li_shuwen", "Li Shuwen", "李书文", true),
-      new Entry("pale_rider", "Pale Rider", "苍白骑士", false)
+      new Entry("pale_rider", "Pale Rider", "苍白骑士", false),
+      new Entry("ushiwakamaru_rider", "Ushiwakamaru (Rider)", "牛若丸（Rider）", true)
    );
 
    private ServantCardRegistry() {
    }
 
    public static Entry byId(String servantId) {
-      if (isNpcOnly(servantId)) {
-         return null;
-      }
       if (servantId != null) {
          for (Entry entry : ENTRIES) {
             if (entry.servantId().equals(servantId)) {
@@ -51,18 +49,9 @@ public final class ServantCardRegistry {
       java.util.LinkedHashMap<String, Entry> merged = new java.util.LinkedHashMap<>();
       ENTRIES.forEach(entry -> merged.put(entry.servantId(), entry));
       ServantDataRegistry.getAll().forEach((id, definition) -> {
-         if (!isNpcOnly(id)) {
-            merged.putIfAbsent(id, new Entry(id, definition.displayName(), definition.displayNameZh(), true));
-         }
+         merged.putIfAbsent(id, new Entry(id, definition.displayName(), definition.displayNameZh(), true));
       });
       return java.util.List.copyOf(merged.values());
-   }
-
-   private static boolean isNpcOnly(String servantId) {
-      if (servantId == null) return false;
-      int separator = servantId.indexOf(':');
-      String path = separator >= 0 ? servantId.substring(separator + 1) : servantId;
-      return "ushiwakamaru_rider".equals(path);
    }
 
    public static String cardItemId(String servantId) {

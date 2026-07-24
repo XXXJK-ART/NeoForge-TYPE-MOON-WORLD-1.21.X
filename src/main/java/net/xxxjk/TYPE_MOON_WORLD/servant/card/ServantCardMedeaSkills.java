@@ -560,7 +560,7 @@ public final class ServantCardMedeaSkills {
       CompoundTag data = player.getPersistentData();
       if (changed || now - data.getLong(LAST_STOCK_SYNC_TAG) >= 40L) {
          data.putLong(LAST_STOCK_SYNC_TAG, now);
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
       }
    }
 
@@ -620,7 +620,7 @@ public final class ServantCardMedeaSkills {
       }
       if (isInsideMedeaWorkshop(player) && player.tickCount % 10 == 0) {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 5.0);
-         vars.syncPlayerVariables(player);
+         vars.syncMana(player);
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 25, 0, false, false, false));
       }
    }

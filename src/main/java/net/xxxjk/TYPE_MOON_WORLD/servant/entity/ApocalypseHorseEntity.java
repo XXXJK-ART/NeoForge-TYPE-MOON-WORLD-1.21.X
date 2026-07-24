@@ -22,6 +22,7 @@ import org.joml.Vector3f;
 public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
    private static final String STATIC_X_TAG = "PaleRiderStaticMountX";
    private static final String STATIC_Z_TAG = "PaleRiderStaticMountZ";
+   private long nextNavigationTick;
 
    public ApocalypseHorseEntity(EntityType<? extends ApocalypseHorseEntity> type, Level level) {
       super(type, level);
@@ -62,13 +63,15 @@ public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
          if (target != null) {
             this.setNoAi(false);
             Vec3 destination = formationDestination(owner, target, this.getFirstPassenger());
-            this.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.15);
+            if (this.canRefreshNavigation(10)) {
+               this.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.15);
+            }
          }
       }
-      if (this.tickCount % 4 == Math.floorMod(this.getId(), 4)) {
+      if (this.tickCount % 8 == Math.floorMod(this.getId(), 8)) {
          level.sendParticles(new DustParticleOptions(new Vector3f(0.15F, 0.55F, 1.0F), 1.2F),
-            this.getX(), this.getY() + 0.2, this.getZ(), 8, 0.55, 0.15, 0.55, 0.02);
-         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + 0.2, this.getZ(), 4, 0.45, 0.08, 0.45, 0.01);
+            this.getX(), this.getY() + 0.2, this.getZ(), 4, 0.55, 0.15, 0.55, 0.02);
+         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + 0.2, this.getZ(), 2, 0.45, 0.08, 0.45, 0.01);
       }
    }
 
@@ -106,11 +109,20 @@ public final class ApocalypseHorseEntity extends OwnedPaleRiderMob {
          this.getNavigation().stop();
       } else if (this.distanceToSqr(destination) > 2.0 * 2.0) {
          this.setNoAi(false);
-         this.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.15);
+         if (this.canRefreshNavigation(10)) {
+            this.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.15);
+         }
       } else {
          this.getNavigation().stop();
          this.setDeltaMovement(this.getDeltaMovement().multiply(0.35, 1.0, 0.35));
       }
+   }
+
+   private boolean canRefreshNavigation(int interval) {
+      long now = this.level().getGameTime();
+      if (now < this.nextNavigationTick) return false;
+      this.nextNavigationTick = now + interval + Math.floorMod(this.getId(), 5);
+      return true;
    }
 
    @Override

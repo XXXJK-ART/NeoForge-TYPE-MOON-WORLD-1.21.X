@@ -89,7 +89,9 @@ public final class TimeAlterEventHandler {
       }
       long activeUntil = player.getPersistentData().getLong(TAG_ACTIVE_UNTIL);
       if (activeUntil <= 0L) {
-         removeModifiers(player);
+         if (hasAnyTimeAlterModifier(player)) {
+            removeModifiers(player);
+         }
          return;
       }
 
@@ -178,16 +180,38 @@ public final class TimeAlterEventHandler {
       if (attribute == null) {
          return;
       }
-      attribute.removeModifier(id);
-      if (Math.abs(amount) > 1.0E-6) {
-         attribute.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+      AttributeModifier existing = attribute.getModifier(id);
+      if (Math.abs(amount) <= 1.0E-6) {
+         if (existing != null) {
+            attribute.removeModifier(id);
+         }
+         return;
       }
+      if (existing != null
+         && existing.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+         && Math.abs(existing.amount() - amount) <= 1.0E-6) {
+         return;
+      }
+      if (existing != null) {
+         attribute.removeModifier(id);
+      }
+      attribute.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
    }
 
    private static void removeModifier(AttributeInstance attribute, ResourceLocation id) {
-      if (attribute != null) {
+      if (attribute != null && attribute.getModifier(id) != null) {
          attribute.removeModifier(id);
       }
+   }
+
+   private static boolean hasAnyTimeAlterModifier(ServerPlayer player) {
+      return hasModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_MODIFIER)
+         || hasModifier(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK_SPEED_MODIFIER)
+         || hasModifier(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_MODIFIER);
+   }
+
+   private static boolean hasModifier(AttributeInstance attribute, ResourceLocation id) {
+      return attribute != null && attribute.getModifier(id) != null;
    }
 
    private static boolean hasAvalon(ServerPlayer player) {

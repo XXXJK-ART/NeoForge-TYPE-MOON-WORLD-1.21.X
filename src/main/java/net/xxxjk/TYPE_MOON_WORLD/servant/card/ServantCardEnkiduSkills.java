@@ -900,7 +900,7 @@ public final class ServantCardEnkiduSkills {
       data.putDouble("TypeMoonCombatPoise", Math.min(ServantCombatFormulas.poiseMax(params), data.getDouble("TypeMoonCombatPoise") + ServantCombatFormulas.poiseRegenPerSecond(params)));
       if (player.tickCount % 40 == 0) {
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + 0.35, player.getZ(), 8, 0.28, 0.16, 0.28, 0.035);
-         vars.syncPlayerVariables(player);
+         vars.syncMana(player);
       }
    }
 

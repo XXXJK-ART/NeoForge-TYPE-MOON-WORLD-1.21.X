@@ -309,6 +309,11 @@ public class TYPE_MOON_WORLD {
          TypeMoonWorldModVariables.ManaSyncMessage::handleData
       );
       registrar.playToClient(
+         TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage.TYPE,
+         TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage::handleData
+      );
+      registrar.playToClient(
          TypeMoonWorldModVariables.ProficiencySyncMessage.TYPE,
          TypeMoonWorldModVariables.ProficiencySyncMessage.STREAM_CODEC,
          TypeMoonWorldModVariables.ProficiencySyncMessage::handleData
@@ -357,12 +362,14 @@ public class TYPE_MOON_WORLD {
    public void onServerStarting(ServerStartingEvent event) {
       scheduledWork.clear();
       serverTickCounter = 0L;
+      net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService.invalidate();
    }
 
    @SubscribeEvent
    public void onServerStopping(ServerStoppingEvent event) {
       scheduledWork.clear();
       serverTickCounter = 0L;
+      net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService.invalidate();
    }
 
    private record NetworkMessage<T extends CustomPacketPayload>(StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {

@@ -54,10 +54,6 @@ public final class PaleRiderEvents {
             net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService.tickFootsteps(living);
          }
       }
-      if (event.getEntity() instanceof Mob mob && !mob.level().isClientSide()
-         && PaleRiderInfectionService.isStationaryAnchor(mob)) {
-         PaleRiderInfectionService.holdStationaryAnchor(mob);
-      }
    }
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)

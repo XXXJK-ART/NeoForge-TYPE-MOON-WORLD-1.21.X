@@ -36,8 +36,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, value = Dist.CLIENT)
 public final class TimeAlterVisualClient {
    private static final int HISTORY_DELAY_TICKS = 10;
-   private static final int AFTERIMAGE_LIFETIME_TICKS = 20;
-   private static final int AFTERIMAGE_INTERVAL_TICKS = 4;
+   private static final int AFTERIMAGE_LIFETIME_TICKS = 40;
+   private static final int AFTERIMAGE_INTERVAL_TICKS = 1;
    private static final double MOVEMENT_EPSILON_SQR = 0.0025;
    private static final ResourceLocation WHITE_TEXTURE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
    private static final Map<UUID, ActiveState> ACTIVE = new HashMap<>();
