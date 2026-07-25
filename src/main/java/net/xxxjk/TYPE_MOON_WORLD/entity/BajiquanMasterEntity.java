@@ -20,6 +20,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -31,10 +37,11 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanNpcCombatController;
+import net.xxxjk.TYPE_MOON_WORLD.martial.NpcActionPose;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.Nullable;
 
-public class BajiquanMasterEntity extends PathfinderMob {
+public class BajiquanMasterEntity extends HumanNpcEntity implements NpcActionPose {
    private static final String TAG_PLAYER = "DuelPlayer";
    private static final String TAG_START = "DuelStart";
    private static final String TAG_ACTIVE = "DuelActive";
@@ -46,17 +53,37 @@ public class BajiquanMasterEntity extends PathfinderMob {
    private static final String TAG_DOJO_BOUND = "DojoBound";
    private static final String TAG_RETALIATION_TARGET = "RetaliationTarget";
    private static final String TAG_RETALIATION_UNTIL = "RetaliationUntil";
+   private static final EntityDataAccessor<Integer> ACTION_POSE = SynchedEntityData.defineId(BajiquanMasterEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> ACTION_TICKS = SynchedEntityData.defineId(BajiquanMasterEntity.class, EntityDataSerializers.INT);
 
    public BajiquanMasterEntity(EntityType<? extends PathfinderMob> type, Level level) {
       super(type, level);
       this.setPersistenceRequired();
    }
 
+   @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+      super.defineSynchedData(builder);
+      builder.define(ACTION_POSE, 0);
+      builder.define(ACTION_TICKS, 0);
+   }
+   @Override public void tick() {
+      super.tick();
+      if (this.entityData.get(ACTION_TICKS) > 0) {
+         this.entityData.set(ACTION_TICKS, this.entityData.get(ACTION_TICKS) - 1);
+         if (this.entityData.get(ACTION_TICKS) <= 0) this.entityData.set(ACTION_POSE, 0);
+      }
+   }
+   @Override public int getNpcActionPose() { return this.entityData.get(ACTION_POSE); }
+   @Override public int getNpcActionPoseTicks() { return this.entityData.get(ACTION_TICKS); }
+   @Override public void triggerNpcActionPose(int pose, int ticks) { this.entityData.set(ACTION_POSE, Math.max(0, pose)); this.entityData.set(ACTION_TICKS, Math.max(0, ticks)); }
+
    @Override protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(1, BajiquanNpcCombatController.combatGoal(this, this::combatProficiency, false));
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 10.0F));
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+      this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false, monster -> !hasDuel()));
    }
 
    public static AttributeSupplier.Builder createAttributes() {

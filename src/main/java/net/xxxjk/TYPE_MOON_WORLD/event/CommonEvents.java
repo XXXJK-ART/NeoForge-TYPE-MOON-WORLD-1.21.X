@@ -69,6 +69,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.HumanNpcEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
@@ -1360,6 +1361,11 @@ public class CommonEvents {
                return hasTrackedServants(this.mob.level()) && super.canContinueToUse();
             }
          }
+      );
+      monster.targetSelector.addGoal(
+         5,
+         new NearestAttackableTargetGoal<HumanNpcEntity>(monster, HumanNpcEntity.class, 20, true, false,
+            human -> human instanceof HumanNpcEntity npc && npc.isAlive())
       );
    }
 

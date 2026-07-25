@@ -10,7 +10,6 @@ class TimeAlterRateMathTest {
       double rate = TimeAlterRateMath.effectiveActionRate(MagicTimeAlter.MODE_ACCEL, 4.0);
       assertEquals(4.0, rate, 1.0E-9);
       assertEquals(3.0, TimeAlterRateMath.linearModifierAmount(rate), 1.0E-9);
-      assertEquals(15.0, TimeAlterRateMath.gravityModifierAmount(rate), 1.0E-9);
    }
 
    @Test
@@ -23,7 +22,6 @@ class TimeAlterRateMathTest {
       double rate = TimeAlterRateMath.effectiveActionRate(MagicTimeAlter.MODE_STAGNATE, 0.25);
       assertEquals(0.25, rate, 1.0E-9);
       assertEquals(-0.75, TimeAlterRateMath.linearModifierAmount(rate), 1.0E-9);
-      assertEquals(-0.9375, TimeAlterRateMath.gravityModifierAmount(rate), 1.0E-9);
    }
 
    @Test

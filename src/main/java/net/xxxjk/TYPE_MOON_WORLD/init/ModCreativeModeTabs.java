@@ -338,6 +338,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);
                         output.accept(ModItems.MYSTERIOUS_SWORDSMAN_SPAWN_EGG);
                         output.accept(ModItems.KENDO_MASTER_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_MASTER_TENNEN_SPAWN_EGG);
                         output.accept(ModItems.KENDO_APPRENTICE_SPAWN_EGG);
                         output.accept(ModItems.RONIN_SPAWN_EGG);
                         output.accept(ModItems.SHINSENGUMI_SPAWN_EGG);

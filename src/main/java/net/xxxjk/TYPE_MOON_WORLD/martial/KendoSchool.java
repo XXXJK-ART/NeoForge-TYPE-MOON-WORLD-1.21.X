@@ -18,7 +18,7 @@ public enum KendoSchool {
    }
 
    public String id() { return id; }
-   public String displayName() { return displayName; }
+   public String displayName() { return this == HOKUSHIN ? "\u5317\u8fb0\u4e00\u5200\u6d41" : "\u5929\u7136\u7406\u5fc3\u6d41"; }
    public double preMasterCap() { return preMasterCap; }
 
    public boolean learned(TypeMoonWorldModVariables.PlayerVariables vars) {

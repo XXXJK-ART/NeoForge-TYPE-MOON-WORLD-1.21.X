@@ -20,6 +20,12 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 /** Distance-aware martial decisions shared by the master, apprentices, and Rin's close defense. */
 public final class BajiquanNpcCombatController {
+   public static final int POSE_PUNCH = 1;
+   public static final int POSE_KICK = 2;
+   public static final int POSE_ELBOW = 3;
+   public static final int POSE_SHOULDER = 4;
+   public static final int POSE_TREMOR = 5;
+   public static final int POSE_PUSH = 6;
    private static final String TAG_NEXT_SKILL = "TypeMoonBajiquanNpcNextSkill";
    private static final String TAG_NEXT_DASH = "TypeMoonBajiquanNpcNextDash";
    private static final String TAG_NEXT_PATH = "TypeMoonBajiquanNpcNextPath";
@@ -147,6 +153,16 @@ public final class BajiquanNpcCombatController {
 
    private static void triggerPose(PathfinderMob npc, MoveType move) {
       npc.swing(InteractionHand.MAIN_HAND, true);
+      if (npc instanceof NpcActionPose action) {
+         int pose = switch (move) {
+            case KICK -> POSE_KICK;
+            case TREMOR -> POSE_TREMOR;
+            case PUSH -> POSE_PUSH;
+            case FLURRY -> POSE_ELBOW;
+            default -> POSE_PUNCH;
+         };
+         action.triggerNpcActionPose(pose, move == MoveType.TREMOR ? 12 : 9);
+      }
       if (npc instanceof MysticMagicianEntity magician) {
          int pose = switch (move) {
             case KICK -> MysticMagicianEntity.MELEE_POSE_WHIP_KICK;

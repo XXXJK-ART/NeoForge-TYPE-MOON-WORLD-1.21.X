@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.martial;
 
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -21,12 +22,12 @@ import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import org.joml.Vector3f;
 
 public final class BajiquanCombatService {
    public static final String MAGIC_ID = "bajiquan";
@@ -61,15 +62,19 @@ public final class BajiquanCombatService {
    private static final String TAG_PURSUIT_STAGE = "TypeMoonBajiquanPursuitStage";
    private static final String TAG_FA_JIN_FOLLOWUPS = "TypeMoonBajiquanFaJinFollowups";
    private static final String TAG_PALM_FROM_FLURRY = "TypeMoonBajiquanPalmFromFlurry";
+   private static final String TAG_CHAIN_TARGET = "TypeMoonBajiquanChainTarget";
    private static final String TAG_MARTIAL_DAMAGE = "TypeMoonBajiquanDamage";
    private static final String TAG_KNEE_AIR_UNTIL = "TypeMoonBajiquanKneeAirUntil";
    private static final String TAG_KNEE_LANDING_UNTIL = "TypeMoonBajiquanKneeLandingUntil";
    private static final String TAG_KNEE_PENDING = "TypeMoonBajiquanKneePending";
    private static final String[] COMBO_STATE_KEYS = {
       TAG_HISTORY, TAG_HISTORY_TICK, TAG_A_COUNT, TAG_DOWN_A_COUNT, TAG_B_COUNT, TAG_DOWN_B_COUNT,
-      TAG_PUNCH_FROM_KICK, TAG_SHOULDER_PURSUIT, TAG_PURSUIT_STAGE, TAG_FA_JIN_FOLLOWUPS, TAG_PALM_FROM_FLURRY
+      TAG_PUNCH_FROM_KICK, TAG_SHOULDER_PURSUIT, TAG_PURSUIT_STAGE, TAG_FA_JIN_FOLLOWUPS,
+      TAG_PALM_FROM_FLURRY, TAG_CHAIN_TARGET
    };
    private static final int COMBO_WINDOW = 12;
+   private static final DustParticleOptions CHAIN_DUST = new DustParticleOptions(new Vector3f(0.18F, 0.72F, 0.45F), 1.0F);
+   private static final DustParticleOptions IMPACT_DUST = new DustParticleOptions(new Vector3f(0.48F, 1.0F, 0.66F), 1.15F);
    // Full-body training plus 100% proficiency targets roughly two thirds of Li Shuwen's martial output.
    private static final float FULL_BODY_DAMAGE_BONUS = 9.0F;
    private static final float FULL_PROFICIENCY_DAMAGE_BONUS = 3.0F;
@@ -144,7 +149,10 @@ public final class BajiquanCombatService {
          }
          return;
       }
-      if (input == INPUT_B && tryUkemi(player, vars)) return;
+      if (input == INPUT_B && tryUkemi(player, vars)) {
+         spawnUkemiFx(player);
+         return;
+      }
 
       if (data.contains(TAG_LAST_INPUT_TICK) && data.getLong(TAG_LAST_INPUT_TICK) == now) return;
       data.putLong(TAG_LAST_INPUT_TICK, now);
@@ -226,7 +234,7 @@ public final class BajiquanCombatService {
             data.putBoolean(TAG_PUNCH_FROM_KICK, true);
             return BajiquanMove.PUNCH;
          }
-         if (data.getLong(TAG_KNEE_LANDING_UNTIL) >= now || last.equals(BajiquanMove.KNEE.id()) || last.equals(BajiquanMove.DOWN_KICK.id())) return BajiquanMove.FLURRY;
+         if (data.getLong(TAG_KNEE_LANDING_UNTIL) >= now || last.equals(BajiquanMove.DOWN_KICK.id())) return BajiquanMove.FLURRY;
          if (last.equals(BajiquanMove.CHOP.id())) return BajiquanMove.ELBOW;
          int count = cycle(data, TAG_A_COUNT, 3);
          return count == 1 ? BajiquanMove.PUNCH : count == 2 ? BajiquanMove.ELBOW : BajiquanMove.FLURRY;
@@ -293,14 +301,23 @@ public final class BajiquanCombatService {
             hit(player, target, scaledDamage(vars, move.damage()), 2.2, 0.25, 12);
          }
       } else {
+         boolean pursuit = data.getInt(TAG_PURSUIT_STAGE) > 0 && (move == BajiquanMove.PUNCH || move == BajiquanMove.PUSH);
+         boolean pushKick = move == BajiquanMove.RIGHT_KICK && previous.equals(BajiquanMove.PUSH.id());
+         if (move == BajiquanMove.ELBOW) lungeForward(player, 0.30);
          LivingEntity target = move == BajiquanMove.FA_JIN
             ? findStoredTarget(player, move.range(), true)
             : move == BajiquanMove.PUNCH && data.getInt(TAG_FA_JIN_FOLLOWUPS) > 0
                ? findStoredTarget(player, 8.0, false)
-               : findTarget(player, move.range());
+               : pursuit || pushKick
+                  ? findChainTarget(player, 8.0)
+                  : findTarget(player, move.range());
          if (target != null) {
-            if (move == BajiquanMove.SHOULDER || move == BajiquanMove.KNEE || move == BajiquanMove.PALM || move == BajiquanMove.PUSH) {
-               dashToward(player, target, move == BajiquanMove.SHOULDER ? 1.0 : 0.55);
+            if (move == BajiquanMove.SHOULDER || move == BajiquanMove.KNEE || move == BajiquanMove.PALM
+               || move == BajiquanMove.PUSH || move == BajiquanMove.FLURRY || pushKick || pursuit) {
+               double speed = move == BajiquanMove.SHOULDER ? 1.0
+                  : pushKick || pursuit ? 0.85
+                  : move == BajiquanMove.FLURRY ? 0.50 : 0.55;
+               dashToward(player, target, speed);
             }
             if (move == BajiquanMove.FA_JIN || move == BajiquanMove.PUNCH && data.getInt(TAG_FA_JIN_FOLLOWUPS) > 0) dashToward(player, target, 0.75);
             float damage = move.damage();
@@ -327,13 +344,16 @@ public final class BajiquanCombatService {
                player.hurtMarked = true;
             }
             if (move == BajiquanMove.FA_JIN) data.putString(TAG_OFF_BALANCE_TARGET, target.getUUID().toString());
+            if (move == BajiquanMove.SHOULDER || move == BajiquanMove.PUSH) {
+               data.putString(TAG_CHAIN_TARGET, target.getUUID().toString());
+            }
          }
       }
       if (move == BajiquanMove.DOUBLE_PALM) {
          player.addEffect(new MobEffectInstance(ModMobEffects.STAGGER, 12, 0, false, false, true));
       }
       spawnMoveFx(level, player, move);
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new BajiquanPoseMessage(player.getUUID(), move, Math.min(20, move.recoveryTicks())), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      if (comboCancel) spawnComboFx(level, player, move, data.getInt(TAG_PURSUIT_STAGE));
    }
 
    static float scaledDamage(TypeMoonWorldModVariables.PlayerVariables vars, float baseDamage) {
@@ -436,6 +456,7 @@ public final class BajiquanCombatService {
       if (data.getLong(TAG_CLAMP_UNTIL) >= now) {
          attacker.addEffect(new MobEffectInstance(ModMobEffects.STAGGER, 12, 0, false, true, true));
          damage[0] = 0.0F;
+         spawnDefenseFx(player, attacker, true);
          addProficiency(player, isSparring(player) ? 0.25 : 0.05);
          return true;
       }
@@ -446,6 +467,9 @@ public final class BajiquanCombatService {
       damage[0] = perfect ? 0.0F : damage[0] * 0.25F;
       attacker.addEffect(new MobEffectInstance(ModMobEffects.OFF_BALANCE, 25, 0, false, true, true));
       data.putString(TAG_OFF_BALANCE_TARGET, attacker.getUUID().toString());
+      data.putString(TAG_LAST_MOVE, BajiquanMove.PARRY.id());
+      data.putLong(TAG_LAST_MOVE_TICK, now);
+      spawnDefenseFx(player, attacker, false);
       addProficiency(player, isSparring(player) ? 0.25 : 0.05);
       return perfect;
    }
@@ -540,7 +564,16 @@ public final class BajiquanCombatService {
    }
 
    private static LivingEntity findStoredTarget(ServerPlayer player, double range, boolean requireOffBalance) {
-      String rawId = player.getPersistentData().getString(TAG_OFF_BALANCE_TARGET);
+      return findTaggedTarget(player, TAG_OFF_BALANCE_TARGET, range, requireOffBalance);
+   }
+
+   private static LivingEntity findChainTarget(ServerPlayer player, double range) {
+      LivingEntity stored = findTaggedTarget(player, TAG_CHAIN_TARGET, range, false);
+      return stored != null ? stored : findTarget(player, range);
+   }
+
+   private static LivingEntity findTaggedTarget(ServerPlayer player, String tag, double range, boolean requireOffBalance) {
+      String rawId = player.getPersistentData().getString(tag);
       if (rawId.isEmpty()) return null;
       try {
          if (!(player.serverLevel().getEntity(java.util.UUID.fromString(rawId)) instanceof LivingEntity target)) return null;
@@ -565,6 +598,12 @@ public final class BajiquanCombatService {
       }
    }
 
+   private static void lungeForward(ServerPlayer player, double speed) {
+      Vec3 direction = look(player);
+      player.setDeltaMovement(player.getDeltaMovement().add(direction.x * speed, 0.03, direction.z * speed));
+      player.hurtMarked = true;
+   }
+
    private static Vec3 look(ServerPlayer player) {
       Vec3 dir = player.getLookAngle().multiply(1.0, 0.0, 1.0);
       return dir.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : dir.normalize();
@@ -584,6 +623,35 @@ public final class BajiquanCombatService {
          pos.x, pos.y, pos.z, move == BajiquanMove.TREMOR || move == BajiquanMove.CHARGED_TREMOR ? 18 : 1, 0.45, 0.18, 0.45, 0.03);
       level.playSound(null, player.blockPosition(), move.damage() >= 10.0F ? SoundEvents.PLAYER_ATTACK_CRIT : SoundEvents.PLAYER_ATTACK_STRONG,
          SoundSource.PLAYERS, 0.75F, move.damage() >= 10.0F ? 0.65F : 0.9F);
+   }
+
+   private static void spawnComboFx(ServerLevel level, ServerPlayer player, BajiquanMove move, int pursuitStage) {
+      Vec3 pos = player.position().add(look(player).scale(0.85)).add(0.0, 1.0, 0.0);
+      boolean finisher = move == BajiquanMove.FINISHER_KICK || move == BajiquanMove.DOUBLE_PALM
+         || move == BajiquanMove.FIERCE_TIGER || pursuitStage >= 4;
+      level.sendParticles(finisher ? IMPACT_DUST : CHAIN_DUST, pos.x, pos.y, pos.z,
+         finisher ? 14 : 6, finisher ? 0.42 : 0.24, finisher ? 0.34 : 0.18, finisher ? 0.42 : 0.24, 0.025);
+      if (finisher) level.sendParticles(ParticleTypes.CRIT, pos.x, pos.y, pos.z, 5, 0.3, 0.25, 0.3, 0.08);
+      float pitch = Mth.clamp(1.15F + Math.min(4, Math.max(0, pursuitStage)) * 0.08F, 1.15F, 1.5F);
+      level.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, finisher ? 0.45F : 0.28F, pitch);
+   }
+
+   private static void spawnDefenseFx(ServerPlayer player, LivingEntity attacker, boolean clamp) {
+      ServerLevel level = player.serverLevel();
+      Vec3 center = player.position().add(attacker.position()).scale(0.5).add(0.0, 1.0, 0.0);
+      level.sendParticles(clamp ? IMPACT_DUST : CHAIN_DUST, center.x, center.y, center.z,
+         clamp ? 14 : 10, 0.3, 0.34, 0.3, 0.035);
+      level.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, clamp ? 3 : 6, 0.24, 0.22, 0.24, 0.06);
+      level.playSound(null, player.blockPosition(), clamp ? SoundEvents.SHIELD_BLOCK : SoundEvents.PLAYER_ATTACK_NODAMAGE,
+         SoundSource.PLAYERS, 0.65F, clamp ? 0.8F : 1.25F);
+   }
+
+   private static void spawnUkemiFx(ServerPlayer player) {
+      ServerLevel level = player.serverLevel();
+      Vec3 pos = player.position().add(0.0, 0.55, 0.0);
+      level.sendParticles(CHAIN_DUST, pos.x, pos.y, pos.z, 9, 0.34, 0.16, 0.34, 0.025);
+      level.sendParticles(ParticleTypes.CLOUD, pos.x, pos.y, pos.z, 5, 0.25, 0.08, 0.25, 0.015);
+      level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.2F);
    }
 
    private static void appendHistory(CompoundTag data, String token, long now) {
@@ -611,6 +679,7 @@ public final class BajiquanCombatService {
       data.putBoolean(TAG_PUNCH_FROM_KICK, false);
       data.remove(TAG_LAST_MOVE);
       data.remove(TAG_OFF_BALANCE_TARGET);
+      data.remove(TAG_CHAIN_TARGET);
    }
 
    private static CompoundTag saveComboState(CompoundTag data) {

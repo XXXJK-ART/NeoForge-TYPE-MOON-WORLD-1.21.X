@@ -27,6 +27,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ThompsonContenderRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.TimeAlterEventHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.FirearmPoseMessage;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -115,17 +116,32 @@ public class ThompsonContenderItem extends Item implements GeoItem {
             player.displayClientMessage(Component.translatable("message.typemoonworld.thompson_contender.no_ammo"), true);
             return false;
          }
+         if (TimeAlterEventHandler.isActive(player)) {
+            fire(player, loadedKind == ORIGIN);
+            applyFireCooldown(player, gun);
+            player.displayClientMessage(Component.translatable("item.typemoonworld.thompson_contender.empty"), true);
+            return true;
+         }
          LOADED_ROUNDS.put(player.getUUID(), loadedKind);
          player.level().playSound(null, player.blockPosition(), SoundEvents.CROSSBOW_LOADING_END.value(), SoundSource.PLAYERS, 0.8F, 1.1F);
          player.displayClientMessage(Component.translatable("message.typemoonworld.thompson_contender.loaded", bulletName(loadedKind)), true);
          return true;
       }
 
-      LOADED_ROUNDS.remove(player.getUUID());
-      fire(player, loaded == ORIGIN);
-      player.getCooldowns().addCooldown(gun.getItem(), 14);
-      player.displayClientMessage(Component.translatable("item.typemoonworld.thompson_contender.empty"), true);
-      return true;
+       LOADED_ROUNDS.remove(player.getUUID());
+       fire(player, loaded == ORIGIN);
+       applyFireCooldown(player, gun);
+       player.displayClientMessage(Component.translatable("item.typemoonworld.thompson_contender.empty"), true);
+       return true;
+   }
+
+   private static void applyFireCooldown(ServerPlayer player, ItemStack gun) {
+      int cooldownTicks = 14;
+      if (TimeAlterEventHandler.isActive(player)) {
+         double actionRate = TimeAlterEventHandler.getEffectiveActionRate(player);
+         cooldownTicks = Math.max(1, (int)Math.ceil(cooldownTicks / actionRate));
+      }
+      player.getCooldowns().addCooldown(gun.getItem(), cooldownTicks);
    }
 
    private static Component bulletName(int kind) {

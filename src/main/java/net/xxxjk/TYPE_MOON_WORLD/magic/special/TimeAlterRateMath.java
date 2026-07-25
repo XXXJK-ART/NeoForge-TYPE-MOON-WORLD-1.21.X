@@ -21,11 +21,6 @@ public final class TimeAlterRateMath {
       return sanitizeRate(actionRate) - 1.0;
    }
 
-   public static double gravityModifierAmount(double actionRate) {
-      double rate = sanitizeRate(actionRate);
-      return rate * rate - 1.0;
-   }
-
    public static UseAdvance advanceItemUse(double accumulatedProgress, double actionRate) {
       double progress = Math.max(0.0, accumulatedProgress) + sanitizeRate(actionRate);
       int elapsedUseTicks = Math.max(0, (int)Math.floor(progress + 1.0E-9));

@@ -39,8 +39,8 @@ public final class TimeAlterEventHandler {
    private static final String TAG_STRAIN_UNTIL = "TypeMoonTimeAlterStrainUntil";
    private static final ResourceLocation SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_speed");
    private static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_attack_speed");
-   private static final ResourceLocation JUMP_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_jump");
-   private static final ResourceLocation GRAVITY_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_gravity");
+   private static final ResourceLocation LEGACY_JUMP_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_jump");
+   private static final ResourceLocation LEGACY_GRAVITY_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_gravity");
    private static final ResourceLocation BLOCK_BREAK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_block_break_speed");
    private static final ResourceLocation FLYING_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_flying_speed");
    private static final ResourceKey<DamageType> BACKLASH_DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_backlash"));
@@ -231,18 +231,16 @@ public final class TimeAlterEventHandler {
       double linearAmount = TimeAlterRateMath.linearModifierAmount(actionRate);
       updateModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_MODIFIER, linearAmount);
       updateModifier(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK_SPEED_MODIFIER, linearAmount);
-      updateModifier(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_MODIFIER, linearAmount);
-      updateModifier(player.getAttribute(Attributes.GRAVITY), GRAVITY_MODIFIER, TimeAlterRateMath.gravityModifierAmount(actionRate));
-      updateModifier(player.getAttribute(Attributes.BLOCK_BREAK_SPEED), BLOCK_BREAK_SPEED_MODIFIER, linearAmount);
+       updateModifier(player.getAttribute(Attributes.BLOCK_BREAK_SPEED), BLOCK_BREAK_SPEED_MODIFIER, linearAmount);
       updateModifier(player.getAttribute(Attributes.FLYING_SPEED), FLYING_SPEED_MODIFIER, linearAmount);
    }
 
    private static void removeModifiers(ServerPlayer player) {
-      removeModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_MODIFIER);
-      removeModifier(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK_SPEED_MODIFIER);
-      removeModifier(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_MODIFIER);
-      removeModifier(player.getAttribute(Attributes.GRAVITY), GRAVITY_MODIFIER);
-      removeModifier(player.getAttribute(Attributes.BLOCK_BREAK_SPEED), BLOCK_BREAK_SPEED_MODIFIER);
+       removeModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_MODIFIER);
+       removeModifier(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK_SPEED_MODIFIER);
+       removeModifier(player.getAttribute(Attributes.JUMP_STRENGTH), LEGACY_JUMP_MODIFIER);
+       removeModifier(player.getAttribute(Attributes.GRAVITY), LEGACY_GRAVITY_MODIFIER);
+       removeModifier(player.getAttribute(Attributes.BLOCK_BREAK_SPEED), BLOCK_BREAK_SPEED_MODIFIER);
       removeModifier(player.getAttribute(Attributes.FLYING_SPEED), FLYING_SPEED_MODIFIER);
    }
 
@@ -277,9 +275,9 @@ public final class TimeAlterEventHandler {
    private static boolean hasAnyTimeAlterModifier(ServerPlayer player) {
       return hasModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_MODIFIER)
          || hasModifier(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK_SPEED_MODIFIER)
-         || hasModifier(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_MODIFIER)
-         || hasModifier(player.getAttribute(Attributes.GRAVITY), GRAVITY_MODIFIER)
-         || hasModifier(player.getAttribute(Attributes.BLOCK_BREAK_SPEED), BLOCK_BREAK_SPEED_MODIFIER)
+          || hasModifier(player.getAttribute(Attributes.JUMP_STRENGTH), LEGACY_JUMP_MODIFIER)
+          || hasModifier(player.getAttribute(Attributes.GRAVITY), LEGACY_GRAVITY_MODIFIER)
+          || hasModifier(player.getAttribute(Attributes.BLOCK_BREAK_SPEED), BLOCK_BREAK_SPEED_MODIFIER)
          || hasModifier(player.getAttribute(Attributes.FLYING_SPEED), FLYING_SPEED_MODIFIER);
    }
 
