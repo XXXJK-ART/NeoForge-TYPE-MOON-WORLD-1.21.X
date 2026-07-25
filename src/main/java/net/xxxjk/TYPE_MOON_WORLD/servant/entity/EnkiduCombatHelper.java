@@ -100,6 +100,7 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_LAST_FLIGHT_FX = "EnkiduEnumaLastFlightFx";
    private static final String TAG_FLIGHT_UNTIL = "EnkiduFlightUntil";
    private static final String TAG_LAND_UNTIL = "EnkiduLandUntil";
+   private static final String TAG_FLIGHT_WAS_AIRBORNE = "EnkiduFlightWasAirborne";
    private static final String TAG_NEXT_FLIGHT_TOGGLE = "EnkiduNextFlightToggle";
    private static final String TAG_UNREACHABLE_TICKS = "EnkiduUnreachableTicks";
    private static final String TAG_ENUMA_IMPACT_X = "EnkiduEnumaImpactX";
@@ -554,8 +555,21 @@ public final class EnkiduCombatHelper {
 
    private static void updateFlight(EnkiduEntity entity, LivingEntity target, long now) {
       CompoundTag data = entity.getPersistentData();
+      if (data.getLong(TAG_FLIGHT_UNTIL) > now) {
+         if (!entity.onGround()) {
+            data.putBoolean(TAG_FLIGHT_WAS_AIRBORNE, true);
+         } else if (data.getBoolean(TAG_FLIGHT_WAS_AIRBORNE)) {
+            entity.setNoGravity(false);
+            data.remove(TAG_FLIGHT_WAS_AIRBORNE);
+            data.remove(TAG_FLIGHT_UNTIL);
+            data.remove(TAG_NEXT_FLIGHT_TOGGLE);
+            data.putLong(TAG_LAND_UNTIL, now + 80L);
+            return;
+         }
+      }
       if (data.getLong(TAG_LAND_UNTIL) > now || target == null || !target.isAlive()) {
          entity.setNoGravity(false);
+         data.remove(TAG_FLIGHT_WAS_AIRBORNE);
          data.remove(TAG_FLIGHT_UNTIL);
          data.remove(TAG_NEXT_FLIGHT_TOGGLE);
          return;
@@ -569,6 +583,7 @@ public final class EnkiduCombatHelper {
       boolean shouldFly = !lowHealthNeedsEarth && !closeMelee && targetClearlyHigh;
       if (closeMelee || !shouldFly || (target.onGround() && verticalGap <= 1.25)) {
          entity.setNoGravity(false);
+         data.remove(TAG_FLIGHT_WAS_AIRBORNE);
          data.remove(TAG_FLIGHT_UNTIL);
          data.putLong(TAG_LAND_UNTIL, now + 80L);
          data.remove(TAG_NEXT_FLIGHT_TOGGLE);

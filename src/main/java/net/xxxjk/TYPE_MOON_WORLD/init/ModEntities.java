@@ -42,6 +42,10 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.KendoApprenticeEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.KendoMasterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
@@ -244,6 +248,18 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MysteriousSwordsmanEntity>> MYSTERIOUS_SWORDSMAN = ENTITY_TYPES.register(
       "mysterious_swordsman", () -> Builder.of(MysteriousSwordsmanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("mysterious_swordsman")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<KendoMasterEntity>> KENDO_MASTER = ENTITY_TYPES.register(
+      "kendo_master", () -> Builder.of(KendoMasterEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("kendo_master")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<KendoApprenticeEntity>> KENDO_APPRENTICE = ENTITY_TYPES.register(
+      "kendo_apprentice", () -> Builder.of(KendoApprenticeEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("kendo_apprentice")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<RoninEntity>> RONIN = ENTITY_TYPES.register(
+      "ronin", () -> Builder.of(RoninEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("ronin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ShinsengumiEntity>> SHINSENGUMI = ENTITY_TYPES.register(
+      "shinsengumi", () -> Builder.of(ShinsengumiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("shinsengumi")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<TohsakaRinEntity>> TOHSAKA_RIN = ENTITY_TYPES.register(
       "tohsaka_rin", () -> Builder.of(TohsakaRinEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("tohsaka_rin")

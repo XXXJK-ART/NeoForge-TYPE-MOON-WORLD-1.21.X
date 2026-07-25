@@ -94,8 +94,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_APOCALYPSE);
                         output.accept(ModItems.RELIC_APOCALYPSE_PAGE);
                         output.accept(ModItems.RELIC_FIRST_SNAKE_SKIN);
-                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
-                        output.accept(ModItems.GANRYU_MANUAL);
                         output.accept(ModItems.RELIC_VALKYRIE_ARROWHEAD);
                         output.accept(ModItems.RELIC_BRONZE_MIRROR);
                         output.accept(ModItems.RELIC_ROUND_TABLE_FRAGMENT);
@@ -116,6 +114,10 @@ public class ModCreativeModeTabs {
                     //添加创造栏物品
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
+                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
+                        output.accept(ModItems.GANRYU_MANUAL);
+                        output.accept(ModItems.HOKUSHIN_MANUAL);
+                        output.accept(ModItems.TENNEN_MANUAL);
                         output.accept(ModItems.SPARRING_INVITATION);
                         output.accept(ModItems.HOLY_SHROUD);
                         output.accept(ModItems.CLAW_OF_CHAOS);
@@ -335,6 +337,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.BAJIQUAN_MASTER_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);
                         output.accept(ModItems.MYSTERIOUS_SWORDSMAN_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_MASTER_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_APPRENTICE_SPAWN_EGG);
+                        output.accept(ModItems.RONIN_SPAWN_EGG);
+                        output.accept(ModItems.SHINSENGUMI_SPAWN_EGG);
                         output.accept(ModItems.TOHSAKA_RIN_SPAWN_EGG);
                         output.accept(ModItems.HERACLES_SPAWN_EGG);
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);

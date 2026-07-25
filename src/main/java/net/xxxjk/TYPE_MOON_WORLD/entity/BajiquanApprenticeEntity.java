@@ -51,7 +51,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       this.ensureRandomName();
-      if (!this.getPersistentData().contains(TAG_PROFICIENCY)) this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
+      if (!this.getPersistentData().contains(TAG_PROFICIENCY)) this.getPersistentData().putInt(TAG_PROFICIENCY, 20 + this.random.nextInt(71));
    }
 
    @Override public boolean hurt(DamageSource source, float amount) {
@@ -77,7 +77,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       NpcScaleHelper.ensureRandomScale(this);
       this.setFemale(this.random.nextBoolean());
       this.ensureRandomName();
-      this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
+      this.getPersistentData().putInt(TAG_PROFICIENCY, 20 + this.random.nextInt(71));
       if (type != MobSpawnType.NATURAL && type != MobSpawnType.CHUNK_GENERATION) {
          this.setPersistenceRequired();
       }

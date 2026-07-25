@@ -409,7 +409,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       int variant = this.random.nextInt(6);
       this.setSkinVariant(variant);
       if (!this.hasCustomName()) {
-         MysticMagicianEntity.GeneratedName generated = generateRandomEuropeanName(this.random, isFemaleVariant(variant));
+         MysticMagicianEntity.GeneratedName generated = generateRandomName(this.random, isFemaleVariant(variant));
          this.setCustomName(
             Component.translatable("entity.typemoonworld.mystic_magician.generated_name", generated.english(), generated.chinese())
          );
@@ -540,6 +540,24 @@ public class MysticMagicianEntity extends PathfinderMob {
             this.setTarget(nearestThreat);
          }
       }
+   }
+
+   private static MysticMagicianEntity.GeneratedName generateRandomName(RandomSource random, boolean femaleVariant) {
+      return switch (random.nextInt(3)) {
+         case 1 -> generateRandomChineseName(random, femaleVariant);
+         case 2 -> generateRandomJapaneseName(random, femaleVariant);
+         default -> generateRandomEuropeanName(random, femaleVariant);
+      };
+   }
+
+   private static MysticMagicianEntity.GeneratedName generateRandomChineseName(RandomSource random, boolean femaleVariant) {
+      String name = ChineseNpcNameGenerator.apprentice(random, femaleVariant);
+      return new MysticMagicianEntity.GeneratedName(name, name);
+   }
+
+   private static MysticMagicianEntity.GeneratedName generateRandomJapaneseName(RandomSource random, boolean femaleVariant) {
+      String name = JapaneseNpcNameGenerator.apprentice(random, femaleVariant);
+      return new MysticMagicianEntity.GeneratedName(name, name);
    }
 
    private static MysticMagicianEntity.GeneratedName generateRandomEuropeanName(RandomSource random, boolean femaleVariant) {

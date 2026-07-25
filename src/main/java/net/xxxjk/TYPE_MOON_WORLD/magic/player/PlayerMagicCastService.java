@@ -89,7 +89,8 @@ public final class PlayerMagicCastService {
       }
 
       // Bajiquan uses its server-owned input state machine and never enters a magic executor.
-      if ("bajiquan".equals(entry.magicId) || "ganryu".equals(entry.magicId)) return;
+      if ("bajiquan".equals(entry.magicId) || "ganryu".equals(entry.magicId)
+         || "hokushin_ittoryu".equals(entry.magicId) || "tennen_rishin_ryu".equals(entry.magicId)) return;
 
       ResourceLocation publicMagicId = ResourceLocation.tryParse(entry.magicId);
       MagicCastContext publicContext = new MagicCastContext(

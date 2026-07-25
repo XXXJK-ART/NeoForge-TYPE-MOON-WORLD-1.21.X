@@ -15,7 +15,7 @@ import net.minecraft.nbt.Tag;
  * souls are expanded to snapshots only while the domain is being populated.
  */
 public final class SoulLibrary {
-   public static final int MAX_SOULS = 1000;
+   public static final int MAX_SOULS = 100;
    public static final int MAX_MANIFESTED_SOULS = 50;
    private final Map<String, Entry> entries = new LinkedHashMap<>();
    private int totalCount;

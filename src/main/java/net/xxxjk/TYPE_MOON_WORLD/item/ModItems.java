@@ -239,6 +239,12 @@ public class ModItems {
             () -> new BajiquanManualItem(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> GANRYU_MANUAL = ITEMS.register("ganryu_manual",
             () -> new GanryuManualItem(new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> HOKUSHIN_MANUAL = ITEMS.register("hokushin_manual",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.KendoManualItem(new Item.Properties().rarity(Rarity.RARE),
+                    net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool.HOKUSHIN));
+    public static final DeferredItem<Item> TENNEN_MANUAL = ITEMS.register("tennen_manual",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.KendoManualItem(new Item.Properties().rarity(Rarity.RARE),
+                    net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool.TENNEN));
     public static final DeferredItem<Item> SPARRING_INVITATION = ITEMS.register("sparring_invitation",
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> RELIC_VALKYRIE_ARROWHEAD = registerSimpleItem("relic_valkyrie_arrowhead");
@@ -866,6 +872,14 @@ public class ModItems {
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.BAJIQUAN_APPRENTICE, 0x3B5E39, 0xE2D2B4, new Item.Properties()));
     public static final DeferredItem<Item> MYSTERIOUS_SWORDSMAN_SPAWN_EGG = ITEMS.register("mysterious_swordsman_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTERIOUS_SWORDSMAN, 0x26365A, 0xD7C6A5, new Item.Properties()));
+    public static final DeferredItem<Item> KENDO_MASTER_SPAWN_EGG = ITEMS.register("kendo_master_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.KENDO_MASTER, 0x51362A, 0xD8C59A, new Item.Properties()));
+    public static final DeferredItem<Item> KENDO_APPRENTICE_SPAWN_EGG = ITEMS.register("kendo_apprentice_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.KENDO_APPRENTICE, 0x4B6A73, 0xE2D2B4, new Item.Properties()));
+    public static final DeferredItem<Item> RONIN_SPAWN_EGG = ITEMS.register("ronin_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.RONIN, 0x3A2D29, 0xB68D6F, new Item.Properties()));
+    public static final DeferredItem<Item> SHINSENGUMI_SPAWN_EGG = ITEMS.register("shinsengumi_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SHINSENGUMI, 0x25466A, 0xD7C6A5, new Item.Properties()));
     public static final DeferredItem<Item> TOHSAKA_RIN_SPAWN_EGG = ITEMS.register("tohsaka_rin_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.TOHSAKA_RIN, 0x8B1126, 0xE8D8C5, new Item.Properties()));
 

@@ -30,6 +30,7 @@ public final class ServantCardHeraclesSkills {
    private static final String HERACLES_FORCE_LANDING_IMPACT_TAG = "ServantCardHeraclesForceLandingImpact";
    private static final String HERACLES_LAST_SPRINT_COLLISION_BREAK_TAG = "ServantCardHeraclesLastSprintCollisionBreak";
    private static final double HERACLES_LANDING_IMPACT_MIN_DROP = 5.0;
+   private static final int HERACLES_BASIC_SWEEP_COOLDOWN_TICKS = 8;
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
    private static final String GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG = "GodHandHighDamageReviveUntil";
 
@@ -245,12 +246,13 @@ public final class ServantCardHeraclesSkills {
    }
 
    public static void performBasicSweep(ServerPlayer player) {
-      if (!player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())
+      var weapon = player.getMainHandItem();
+      if (!weapon.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())
          || !(player.level() instanceof ServerLevel level)
-         || player.getAttackStrengthScale(0.5F) < 0.9F) {
+         || player.getCooldowns().isOnCooldown(weapon.getItem())) {
          return;
       }
-      player.resetAttackStrengthTicker();
+      player.getCooldowns().addCooldown(weapon.getItem(), HERACLES_BASIC_SWEEP_COOLDOWN_TICKS);
       Vec3 look = PlayerNoblePhantasmHelper.horizontalLook(player);
       float damage = (float)player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
       AABB area = player.getBoundingBox().inflate(4.2, 1.5, 4.2).move(look.scale(0.65));

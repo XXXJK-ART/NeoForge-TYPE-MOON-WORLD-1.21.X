@@ -171,6 +171,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
       this.addMagic("bajiquan", "key.typemoonworld.magic.bajiquan.short", "martial", 0xFF2EB872);
       this.addMagic("ganryu", "key.typemoonworld.magic.ganryu.short", "martial", 0xFF7893A8);
+      this.addMagic("hokushin_ittoryu", "key.typemoonworld.magic.hokushin_ittoryu.short", "martial", 0xFFB06A4C);
+      this.addMagic("tennen_rishin_ryu", "key.typemoonworld.magic.tennen_rishin_ryu.short", "martial", 0xFF4C8AB0);
    }
 
    private void addMagic(String id, String nameKey, String category, int color) {
@@ -1225,6 +1227,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "time_alter" -> vars.proficiency_time_alter;
          case "bajiquan" -> vars.bajiquan_proficiency;
          case "ganryu" -> vars.ganryu_proficiency;
+         case "hokushin_ittoryu" -> vars.hokushin_proficiency;
+         case "tennen_rishin_ryu" -> vars.tennen_proficiency;
          default -> -1.0;
       };
    }

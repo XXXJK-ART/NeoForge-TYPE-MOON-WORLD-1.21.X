@@ -814,13 +814,8 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean hasJumpRecoverySupport(ServerPlayer player) {
-      boolean supported = false;
-      if (player.onGround()) {
-         BlockPos supportPos = player.getOnPos();
-         supported = !player.level().getBlockState(supportPos).getCollisionShape(player.level(), supportPos).isEmpty();
-      }
       return ServantCardUshiwakamaruRules.canRecoverJump(
-         ServantCardUshiwakamaruSkills.isEightBoatActive(player), supported);
+         ServantCardUshiwakamaruSkills.isEightBoatActive(player), player.onGround());
    }
 
    private static boolean tickSkillCooldowns(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -994,7 +989,7 @@ public final class ServantCardTransformManager {
          case "mana_burst" -> ServantCardArtoriaSkills.performManaBurst(player);
          case "charisma" -> ServantCardArtoriaSkills.performCharisma(player);
          case "strategy" -> ServantCardOdaNobunagaSkills.performOdaStrategy(player);
-         case "stealth" -> ServantCardCommonSkills.performPresenceConcealment(player, id);
+         case "stealth" -> ServantCardCommonSkills.performPresenceConcealment(player, vars.servant_card_id);
          case "circle_realm" -> ServantCardLiShuwenSkills.performCircleRealm(player);
          case "berkana" -> ServantCardCommonSkills.performBerkana(player);
          case "perfect_form" -> ServantCardEnkiduSkills.performEnkiduPerfectForm(player);

@@ -19,6 +19,9 @@ import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
@@ -168,5 +171,31 @@ public final class TypeMoonWorldGameTests {
       helper.assertTrue(attributes.has(MagicAttributes.IMAGINARY_NUMBER), "imaginary-number attribute was not exposed");
       helper.assertTrue(attributes.attributes().contains(MagicAttributes.IMAGINARY_NUMBER), "attribute snapshot was incomplete");
       helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 60)
+   public static void heraclesCardPrimaryAttackDealsDamage(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(TypeMoonWorldApi.servantForm(player).transform(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "heracles")), "Heracles transform failed");
+      helper.assertTrue(player.getMainHandItem().is(ModItems.TEMPLE_STONE_SWORD_AXE.get()), "Heracles weapon was not equipped");
+      BlockPos playerPos = helper.absolutePos(new BlockPos(1, 2, 2));
+      player.teleportTo(playerPos.getX() + 0.5, playerPos.getY(), playerPos.getZ() + 0.5);
+      player.setYRot(-90.0F);
+      var target = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(3, 2, 2));
+      target.setHealth(target.getMaxHealth());
+      float before = target.getHealth();
+      helper.runAfterDelay(1, () -> {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.performBasicSweep(player);
+         float afterFirst = target.getHealth();
+         helper.assertTrue(player.getAttributeValue(Attributes.ATTACK_DAMAGE) > 0.0,
+            "Heracles attack attribute was not positive");
+         helper.assertTrue(afterFirst < before,
+            "Heracles primary sweep dealt no damage; attack=" + player.getAttributeValue(Attributes.ATTACK_DAMAGE));
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.performBasicSweep(player);
+         helper.assertTrue(target.getHealth() == afterFirst,
+            "Heracles primary sweep ignored its 8-tick cooldown");
+         helper.succeed();
+      });
    }
 }

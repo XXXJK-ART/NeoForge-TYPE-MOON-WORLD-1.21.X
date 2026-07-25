@@ -46,6 +46,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    private static final int SLOT_TOOL_X = 25;
    private static final int SLOT_TOOL_Y = 74;
    private static final int SLOT_SIZE = 18;
+   private static final int MAGIC_VISIBLE_ROWS = 4;
    private static final int COLOR_BORDER_LIGHT = GuiUtils.ARCANE_CYAN;
    private static final int COLOR_SLOT_INNER = 0xD015191F;
    private static final int COLOR_TEXT = GuiUtils.ARCANE_TEXT;
@@ -68,6 +69,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    private final List<String> projectionStructureCandidates = new ArrayList<>();
    private int projectionItemCursor = 0;
    private int projectionStructureCursor = 0;
+   private int magicScrollOffset = 0;
 
    public GemCarvingTableScreen(GemCarvingTableMenu menu, Inventory playerInventory, Component title) {
       super(menu, playerInventory, title);
@@ -78,10 +80,11 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    protected void init() {
       super.init();
       this.magicButtons.clear();
+      this.magicScrollOffset = 0;
       List<String> availableMagics = this.getAvailableMagics();
       int buttonX = this.leftPos + SECTION_MAGIC_X + 3;
       int buttonY = this.topPos + SECTION_MAGIC_Y + 14;
-      int buttonWidth = SECTION_MAGIC_W - 6;
+      int buttonWidth = SECTION_MAGIC_W - 10;
       int buttonHeight = ENGRAVE_BUTTON_H;
 
       for (String magicId : availableMagics) {
@@ -91,7 +94,6 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
          });
          this.addRenderableWidget(button);
          this.magicButtons.add(new GemCarvingTableScreen.MagicButtonEntry(magicId, button));
-         buttonY += 20;
       }
 
       this.selectedMagicId = availableMagics.isEmpty() ? null : availableMagics.get(0);
@@ -164,7 +166,14 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    private void updateUiState() {
       this.rebuildProjectionCandidates();
 
-      for (GemCarvingTableScreen.MagicButtonEntry entry : this.magicButtons) {
+      for (int index = 0; index < this.magicButtons.size(); index++) {
+         GemCarvingTableScreen.MagicButtonEntry entry = this.magicButtons.get(index);
+         boolean visible = index >= this.magicScrollOffset && index < this.magicScrollOffset + MAGIC_VISIBLE_ROWS;
+         entry.button.visible = visible;
+         entry.button.active = visible;
+         if (visible) {
+            entry.button.setY(this.topPos + SECTION_MAGIC_Y + 14 + (index - this.magicScrollOffset) * 20);
+         }
          boolean selected = entry.magicId.equals(this.selectedMagicId);
          if (entry.button instanceof NeonButton neonButton) {
             neonButton.setSelected(selected);
@@ -232,6 +241,34 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
             magics.add("gander");
          }
 
+         if (hasLearnedMagic(vars, "healing_magic")) {
+            magics.add("healing_magic");
+         }
+
+         if (hasLearnedMagic(vars, "suggestion_magic")) {
+            magics.add("suggestion_magic");
+         }
+
+         if (hasLearnedMagic(vars, "binding_magic")) {
+            magics.add("binding_magic");
+         }
+
+         if (hasLearnedMagic(vars, "fire_magic")) {
+            magics.add("fire_magic");
+         }
+
+         if (hasLearnedMagic(vars, "water_magic")) {
+            magics.add("water_magic");
+         }
+
+         if (hasLearnedMagic(vars, "wind_magic")) {
+            magics.add("wind_magic");
+         }
+
+         if (hasLearnedMagic(vars, "earth_magic")) {
+            magics.add("earth_magic");
+         }
+
          return magics;
       } else {
          return magics;
@@ -278,8 +315,39 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
       this.drawSection(guiGraphics, x + SECTION_MAGIC_X, y + SECTION_MAGIC_Y, SECTION_MAGIC_W, SECTION_MAGIC_H);
       this.drawSection(guiGraphics, x + SECTION_CTRL_X, y + SECTION_CTRL_Y, SECTION_CTRL_W, SECTION_CTRL_H);
       this.drawSection(guiGraphics, x + SECTION_INV_X, y + SECTION_INV_Y, SECTION_INV_W, SECTION_INV_H);
+      this.renderMagicScrollbar(guiGraphics);
       GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_GEM_X, y + SLOT_GEM_Y, SLOT_SIZE, GuiUtils.ARCANE_CYAN, true);
       GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_TOOL_X, y + SLOT_TOOL_Y, SLOT_SIZE, GuiUtils.ARCANE_GOLD, true);
+   }
+
+   private void renderMagicScrollbar(GuiGraphics guiGraphics) {
+      int count = this.magicButtons.size();
+      if (count <= MAGIC_VISIBLE_ROWS) {
+         return;
+      }
+      int trackX = this.leftPos + SECTION_MAGIC_X + SECTION_MAGIC_W - 5;
+      int trackY = this.topPos + SECTION_MAGIC_Y + 14;
+      int trackHeight = MAGIC_VISIBLE_ROWS * 20 - 2;
+      int thumbHeight = Math.max(12, trackHeight * MAGIC_VISIBLE_ROWS / count);
+      int maxOffset = count - MAGIC_VISIBLE_ROWS;
+      int thumbY = trackY + (trackHeight - thumbHeight) * this.magicScrollOffset / maxOffset;
+      guiGraphics.fill(trackX, trackY, trackX + 2, trackY + trackHeight, 0x804A5563);
+      guiGraphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, COLOR_BORDER_LIGHT);
+   }
+
+   @Override
+   public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+      int x = this.leftPos + SECTION_MAGIC_X;
+      int y = this.topPos + SECTION_MAGIC_Y;
+      if (mouseX >= x && mouseX < x + SECTION_MAGIC_W && mouseY >= y && mouseY < y + SECTION_MAGIC_H
+         && this.magicButtons.size() > MAGIC_VISIBLE_ROWS && scrollY != 0.0) {
+         int maxOffset = this.magicButtons.size() - MAGIC_VISIBLE_ROWS;
+         int direction = scrollY < 0.0 ? 1 : -1;
+         this.magicScrollOffset = Math.max(0, Math.min(maxOffset, this.magicScrollOffset + direction));
+         this.updateUiState();
+         return true;
+      }
+      return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
    }
 
    private void drawPanel(GuiGraphics guiGraphics, int x, int y, int w, int h) {

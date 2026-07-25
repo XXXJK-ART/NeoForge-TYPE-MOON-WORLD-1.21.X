@@ -177,6 +177,12 @@ public class TypeMoonWorldModVariables {
          clone.ganryu_learned = original.ganryu_learned;
          clone.ganryu_proficiency = original.ganryu_proficiency;
          clone.ganryu_tsubame_unlocked = original.ganryu_tsubame_unlocked;
+         clone.hokushin_learned = original.hokushin_learned;
+         clone.hokushin_proficiency = original.hokushin_proficiency;
+         clone.hokushin_master_defeated = original.hokushin_master_defeated;
+         clone.tennen_learned = original.tennen_learned;
+         clone.tennen_proficiency = original.tennen_proficiency;
+         clone.tennen_master_defeated = original.tennen_master_defeated;
          clone.martial_ukemi_learned = original.martial_ukemi_learned;
          clone.body_training_xp = original.body_training_xp;
          clone.body_training_points = original.body_training_points;
@@ -812,7 +818,7 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -866,6 +872,12 @@ public class TypeMoonWorldModVariables {
       public boolean ganryu_learned = false;
       public double ganryu_proficiency = 0.0;
       public boolean ganryu_tsubame_unlocked = false;
+      public boolean hokushin_learned = false;
+      public double hokushin_proficiency = 0.0;
+      public boolean hokushin_master_defeated = false;
+      public boolean tennen_learned = false;
+      public double tennen_proficiency = 0.0;
+      public boolean tennen_master_defeated = false;
       public boolean martial_ukemi_learned = false;
       public int body_training_xp = 0;
       public int body_training_points = 0;
@@ -1903,6 +1915,12 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("ganryu_learned", this.ganryu_learned);
          nbt.putDouble("ganryu_proficiency", this.ganryu_proficiency);
          nbt.putBoolean("ganryu_tsubame_unlocked", this.ganryu_tsubame_unlocked);
+         nbt.putBoolean("hokushin_learned", this.hokushin_learned);
+         nbt.putDouble("hokushin_proficiency", this.hokushin_proficiency);
+         nbt.putBoolean("hokushin_master_defeated", this.hokushin_master_defeated);
+         nbt.putBoolean("tennen_learned", this.tennen_learned);
+         nbt.putDouble("tennen_proficiency", this.tennen_proficiency);
+         nbt.putBoolean("tennen_master_defeated", this.tennen_master_defeated);
          nbt.putBoolean("martial_ukemi_learned", this.martial_ukemi_learned);
          nbt.putInt("body_training_xp", this.body_training_xp);
          nbt.putInt("body_training_points", this.body_training_points);
@@ -2158,6 +2176,12 @@ public class TypeMoonWorldModVariables {
          this.ganryu_learned = nbt.getBoolean("ganryu_learned");
          this.ganryu_proficiency = Mth.clamp(nbt.getDouble("ganryu_proficiency"), 0.0, 100.0);
          this.ganryu_tsubame_unlocked = nbt.getBoolean("ganryu_tsubame_unlocked");
+         this.hokushin_learned = nbt.getBoolean("hokushin_learned");
+         this.hokushin_proficiency = Mth.clamp(nbt.getDouble("hokushin_proficiency"), 0.0, 100.0);
+         this.hokushin_master_defeated = nbt.getBoolean("hokushin_master_defeated");
+         this.tennen_learned = nbt.getBoolean("tennen_learned");
+         this.tennen_proficiency = Mth.clamp(nbt.getDouble("tennen_proficiency"), 0.0, 100.0);
+         this.tennen_master_defeated = nbt.getBoolean("tennen_master_defeated");
          this.martial_ukemi_learned = nbt.getBoolean("martial_ukemi_learned")
             || this.bajiquan_proficiency >= 30.0 || this.ganryu_proficiency >= 50.0;
          this.body_training_xp = Math.max(0, nbt.getInt("body_training_xp"));

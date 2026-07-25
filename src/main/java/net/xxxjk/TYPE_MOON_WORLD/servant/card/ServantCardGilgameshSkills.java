@@ -248,7 +248,15 @@ public final class ServantCardGilgameshSkills {
    public static void performClairvoyance(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return;
       List<Integer> ids = new ArrayList<>();
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(100), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) { living.removeEffect(MobEffects.INVISIBILITY); ids.add(living.getId()); }
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         player.getBoundingBox().inflate(100),
+         e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e) && !player.isAlliedTo(e) && !e.isAlliedTo(player)
+      )) {
+         living.removeEffect(MobEffects.INVISIBILITY);
+         living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
+         ids.add(living.getId());
+      }
       PacketDistributor.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200), new CustomPacketPayload[0]);
    }
 

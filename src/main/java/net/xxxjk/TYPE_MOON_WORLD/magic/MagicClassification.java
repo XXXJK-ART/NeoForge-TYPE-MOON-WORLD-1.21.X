@@ -46,6 +46,8 @@ public final class MagicClassification {
       Map.entry("sword_barrel_full_open", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("bajiquan", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("ganryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
+      ,Map.entry("hokushin_ittoryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
+      ,Map.entry("tennen_rishin_ryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
    );
    private static final Set<String> ALL_MAGIC_IDS = Collections.unmodifiableSet(MAGIC_COST_TYPES.keySet());
    private static final Map<String, MagicClassification.MagicSchoolType> MAGIC_SCHOOL_TYPES = Map.ofEntries(

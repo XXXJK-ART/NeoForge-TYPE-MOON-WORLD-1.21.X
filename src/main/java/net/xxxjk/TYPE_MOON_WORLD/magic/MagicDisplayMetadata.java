@@ -16,7 +16,7 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_NORDIC = "nordic";
    public static final String CATEGORY_MARTIAL = "martial";
    private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite");
-   private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of("baptism_rite", "bajiquan", "ganryu");
+   private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of("baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
 
    private MagicDisplayMetadata() {
    }
@@ -26,7 +26,7 @@ public final class MagicDisplayMetadata {
    }
 
    public static boolean isMartialMagic(String magicId) {
-      return "bajiquan".equals(magicId) || "ganryu".equals(magicId);
+      return "bajiquan".equals(magicId) || "ganryu".equals(magicId) || "hokushin_ittoryu".equals(magicId) || "tennen_rishin_ryu".equals(magicId);
    }
 
    public static boolean canEnterMagicCrest(String magicId) {

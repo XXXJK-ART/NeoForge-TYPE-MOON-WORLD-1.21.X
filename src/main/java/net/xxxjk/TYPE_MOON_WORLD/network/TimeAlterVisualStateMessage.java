@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.TimeAlterVisualClient;
 import org.jetbrains.annotations.NotNull;
 
-public record TimeAlterVisualStateMessage(UUID playerId, boolean active, int mode, int remainingTicks) implements CustomPacketPayload {
+public record TimeAlterVisualStateMessage(UUID playerId, boolean active, int mode, int remainingTicks, double actionRate) implements CustomPacketPayload {
    public static final Type<TimeAlterVisualStateMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "time_alter_visual_state")
    );
@@ -32,17 +32,18 @@ public record TimeAlterVisualStateMessage(UUID playerId, boolean active, int mod
       buffer.writeBoolean(message.active);
       buffer.writeVarInt(message.mode);
       buffer.writeVarInt(Math.max(0, message.remainingTicks));
+      buffer.writeDouble(message.actionRate);
    }
 
    private static TimeAlterVisualStateMessage read(RegistryFriendlyByteBuf buffer) {
-      return new TimeAlterVisualStateMessage(buffer.readUUID(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt());
+      return new TimeAlterVisualStateMessage(buffer.readUUID(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
    }
 
    public static void handleData(TimeAlterVisualStateMessage message, IPayloadContext context) {
       if (context.flow() == PacketFlow.CLIENTBOUND) {
          context.enqueueWork(() -> {
             if (FMLEnvironment.dist == Dist.CLIENT) {
-               TimeAlterVisualClient.applyState(message.playerId, message.active, message.mode, message.remainingTicks);
+               TimeAlterVisualClient.applyState(message.playerId, message.active, message.mode, message.remainingTicks, message.actionRate);
             }
          });
       }

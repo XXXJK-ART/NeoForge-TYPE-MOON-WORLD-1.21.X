@@ -82,7 +82,9 @@ public final class GilgameshCombatHelper {
          data.putFloat("MagicResistanceDamageReduction", 0.20F);
          data.putFloat("GilgameshCommandObedienceMin", 0.20F);
          data.putFloat("GilgameshCommandObedienceMax", 0.60F);
+         data.putBoolean("ClairvoyanceExActive", true);
       }
+      tickClairvoyance(entity, level, data);
       updateMonotonicPhase(entity);
       if (entity.tickCount % 20 == 0) {
          entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
@@ -153,6 +155,20 @@ public final class GilgameshCombatHelper {
       double ratio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
       if (ratio <= 0.40) ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.DECISIVE);
       else if (ratio <= 0.60) ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.NORMAL);
+   }
+
+   private static void tickClairvoyance(GilgameshEntity entity, ServerLevel level, CompoundTag data) {
+      if (!data.getBoolean("ClairvoyanceExActive") || entity.tickCount % 20 != 0) {
+         return;
+      }
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(100.0),
+         target -> target != entity && target.isAlive() && !target.isAlliedTo(entity) && !entity.isAlliedTo(target)
+      )) {
+         living.removeEffect(MobEffects.INVISIBILITY);
+         living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
+      }
    }
 
    public static boolean isFlying(GilgameshEntity entity) {

@@ -6,7 +6,11 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.api.GemApiRegistry;
 
 public final class GemCompatibilityService {
-   private static final Set<String> WHITELIST = Set.of("gravity_magic", "reinforcement", "projection", "gander");
+   private static final Set<String> WHITELIST = Set.of(
+      "gravity_magic", "reinforcement", "projection", "gander",
+      "healing_magic", "suggestion_magic", "binding_magic",
+      "fire_magic", "water_magic", "wind_magic", "earth_magic"
+   );
 
    private GemCompatibilityService() {
    }
@@ -44,6 +48,10 @@ public final class GemCompatibilityService {
          case "reinforcement" -> -10;
          case "gravity_magic" -> 0;
          case "gander" -> -5;
+         case "healing_magic" -> -5;
+         case "suggestion_magic" -> -12;
+         case "binding_magic" -> -10;
+         case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> -8;
          default -> -30;
       };
    }
@@ -123,6 +131,52 @@ public final class GemCompatibilityService {
                   throw new MatchException(null, null);
             }
          }
+         case "healing_magic" -> switch (type) {
+            case EMERALD -> 12;
+            case WHITE_GEMSTONE -> 8;
+            case SAPPHIRE -> 4;
+            case BLACK_SHARD -> -12;
+            case RUBY -> -5;
+            default -> 0;
+         };
+         case "suggestion_magic" -> switch (type) {
+            case CYAN -> 10;
+            case WHITE_GEMSTONE -> 6;
+            case BLACK_SHARD -> 4;
+            case RUBY -> -5;
+            default -> 0;
+         };
+         case "binding_magic" -> switch (type) {
+            case TOPAZ -> 10;
+            case SAPPHIRE -> 6;
+            case EMERALD -> 3;
+            case CYAN -> -5;
+            default -> 0;
+         };
+         case "fire_magic" -> switch (type) {
+            case RUBY -> 15;
+            case TOPAZ -> 5;
+            case SAPPHIRE -> -12;
+            default -> 0;
+         };
+         case "water_magic" -> switch (type) {
+            case SAPPHIRE -> 15;
+            case EMERALD -> 5;
+            case RUBY -> -12;
+            default -> 0;
+         };
+         case "wind_magic" -> switch (type) {
+            case CYAN -> 15;
+            case WHITE_GEMSTONE -> 5;
+            case TOPAZ -> -5;
+            default -> 0;
+         };
+         case "earth_magic" -> switch (type) {
+            case TOPAZ -> 12;
+            case EMERALD -> 8;
+            case CYAN -> -5;
+            default -> 0;
+         };
          default -> -10;
       };
    }

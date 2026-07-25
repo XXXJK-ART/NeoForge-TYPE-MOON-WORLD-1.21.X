@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardFlightController {
+   private static final String FLIGHT_WAS_AIRBORNE_TAG = "ServantCardFlightWasAirborne";
    private static final double MP_PER_TICK = 0.28;
    private static final int MODE_OFF = 0;
    private static final int MODE_NORMAL = 1;
@@ -60,6 +61,13 @@ public final class ServantCardFlightController {
          if (!vars.servant_card_transformed || !canFly(vars.servant_card_id)) {
             stop(player, vars, false);
          }
+         return;
+      }
+      boolean grounded = player.getVehicle() != null ? player.getVehicle().onGround() : player.onGround();
+      if (!grounded) {
+         player.getPersistentData().putBoolean(FLIGHT_WAS_AIRBORNE_TAG, true);
+      } else if (player.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE_TAG)) {
+         stop(player, vars, true);
          return;
       }
       long now = player.level().getGameTime();
@@ -121,6 +129,7 @@ public final class ServantCardFlightController {
    }
 
    public static void stop(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, boolean sync) {
+      player.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
       if ("oda_nobunaga".equals(vars.servant_card_id)) {
          if (vars.servant_card_flight_mode == MODE_HIGH) {
             beginHighFlightRecharge(player, vars);
@@ -155,6 +164,7 @@ public final class ServantCardFlightController {
       }
       long now = player.level().getGameTime();
       if (!vars.servant_card_flying) {
+         player.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
          if ("oda_nobunaga".equals(vars.servant_card_id) && !ServantCardOdaNobunagaSkills.startMountFlight(player, vars)) {
             return;
          }

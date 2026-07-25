@@ -20,7 +20,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.neoforged.neoforge.common.Tags;
 
 public final class PaleRiderInfectionService {
-   public static final int MAX_CONTROLLED = 120;
+   public static final int MAX_CONTROLLED = 100;
    public static final String TAG_LEVEL = "PaleRiderInfectionLevel";
    public static final String TAG_OWNER = "PaleRiderInfectionOwner";
    public static final String TAG_UNTIL = "PaleRiderInfectionUntil";
@@ -57,14 +57,15 @@ public final class PaleRiderInfectionService {
       boolean sameOwner = data.hasUUID(TAG_OWNER) && owner.getUUID().equals(data.getUUID(TAG_OWNER));
       long remaining = data.getLong(TAG_UNTIL) - now;
       if (next == previous && sameOwner && remaining > InfectionRules.EFFECT_REFRESH_THRESHOLD_TICKS) {
+         retainInfectionEffectOnly(target);
          return false;
       }
       data.putInt(TAG_LEVEL, next);
       data.putUUID(TAG_OWNER, owner.getUUID());
       data.putLong(TAG_UNTIL, now + InfectionRules.DURATION_TICKS);
+      retainInfectionEffectOnly(target);
       boolean forceEffectRefresh = next > previous || !sameOwner;
       refreshEffect(target, ModMobEffects.PALE_RIDER_INFECTION, next - 1, forceEffectRefresh);
-      refreshEffect(target, MobEffects.MOVEMENT_SLOWDOWN, 0, forceEffectRefresh);
       if (next > previous && canControl(target) && target.getRandom().nextDouble() < controlChance(target, next)) {
          beginControl((Mob)target, owner);
       }
@@ -485,6 +486,14 @@ public final class PaleRiderInfectionService {
       if (force || current == null || current.getAmplifier() != amplifier
          || current.getDuration() <= InfectionRules.EFFECT_REFRESH_THRESHOLD_TICKS) {
          target.addEffect(new MobEffectInstance(effect, InfectionRules.DURATION_TICKS, amplifier, false, true, true));
+      }
+   }
+
+   private static void retainInfectionEffectOnly(LivingEntity target) {
+      MobEffectInstance infection = target.getEffect(ModMobEffects.PALE_RIDER_INFECTION);
+      target.removeAllEffects();
+      if (infection != null) {
+         target.addEffect(infection);
       }
    }
 

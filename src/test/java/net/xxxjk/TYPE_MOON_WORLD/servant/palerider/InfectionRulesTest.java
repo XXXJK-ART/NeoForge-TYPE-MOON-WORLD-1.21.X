@@ -10,10 +10,10 @@ class InfectionRulesTest {
       assertEquals(1, InfectionRules.clampLevel(-1));
       assertEquals(3, InfectionRules.clampLevel(3));
       assertEquals(5, InfectionRules.clampLevel(20));
-      assertEquals(600, InfectionRules.DURATION_TICKS);
+      assertEquals(100, InfectionRules.DURATION_TICKS);
       assertEquals(600, InfectionRules.IMMUNITY_TICKS);
       assertEquals(20, InfectionRules.DAMAGE_INTERVAL_TICKS);
-      assertEquals(120, PaleRiderInfectionService.MAX_CONTROLLED);
+      assertEquals(100, PaleRiderInfectionService.MAX_CONTROLLED);
    }
 
    @Test
@@ -62,7 +62,7 @@ class InfectionRulesTest {
 
    @Test
    void damageScalesWithInfectionLevel() {
-      float[] damage = {5.0F, 10.0F, 15.0F, 20.0F, 25.0F};
+      float[] damage = {1.0F, 5.0F, 10.0F, 15.0F, 20.0F};
       for (int level = 1; level <= 5; level++) {
          assertEquals(damage[level - 1], InfectionRules.damagePerSecond(level), 0.0F);
       }

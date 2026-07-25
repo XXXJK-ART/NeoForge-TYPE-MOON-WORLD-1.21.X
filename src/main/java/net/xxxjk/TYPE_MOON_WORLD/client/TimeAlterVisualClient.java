@@ -30,18 +30,21 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.TimeAlterRateMath;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, value = Dist.CLIENT)
 public final class TimeAlterVisualClient {
-   private static final int HISTORY_DELAY_TICKS = 10;
+   private static final int HISTORY_DELAY_TICKS = 2;
    private static final int AFTERIMAGE_LIFETIME_TICKS = 40;
    private static final int AFTERIMAGE_INTERVAL_TICKS = 1;
    private static final double MOVEMENT_EPSILON_SQR = 0.0025;
    private static final ResourceLocation WHITE_TEXTURE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
    private static final Map<UUID, ActiveState> ACTIVE = new HashMap<>();
    private static final Map<UUID, ArrayDeque<PoseSample>> HISTORY = new HashMap<>();
+   private static final Map<UUID, Double> CLIENT_ITEM_USE_PROGRESS = new HashMap<>();
    private static final List<Afterimage> AFTERIMAGES = new ArrayList<>();
    private static PlayerModel<AbstractClientPlayer> ghostModel;
    private static long clientTick;
@@ -49,17 +52,64 @@ public final class TimeAlterVisualClient {
    private TimeAlterVisualClient() {
    }
 
-   public static void applyState(UUID playerId, boolean active, int mode, int remainingTicks) {
+   public static void applyState(UUID playerId, boolean active, int mode, int remainingTicks, double actionRate) {
       if (playerId == null) {
          return;
       }
       if (!active || remainingTicks <= 0) {
          ACTIVE.remove(playerId);
          HISTORY.remove(playerId);
+         CLIENT_ITEM_USE_PROGRESS.remove(playerId);
          return;
       }
-      ACTIVE.put(playerId, new ActiveState(mode, clientTick + Math.max(1, remainingTicks)));
+      ACTIVE.put(
+         playerId,
+         new ActiveState(mode, TimeAlterRateMath.effectiveActionRate(mode, actionRate), clientTick + Math.max(1, remainingTicks))
+      );
       HISTORY.remove(playerId);
+   }
+
+   public static double getEffectiveActionRate(UUID playerId) {
+      ActiveState state = ACTIVE.get(playerId);
+      return state != null && state.expiresAtTick > clientTick ? state.actionRate : 1.0;
+   }
+
+   @SubscribeEvent
+   public static void onItemUseStart(LivingEntityUseItemEvent.Start event) {
+      if (event.getEntity() instanceof AbstractClientPlayer player) {
+         CLIENT_ITEM_USE_PROGRESS.remove(player.getUUID());
+      }
+   }
+
+   @SubscribeEvent
+   public static void onItemUseTick(LivingEntityUseItemEvent.Tick event) {
+      if (!(event.getEntity() instanceof AbstractClientPlayer player)) {
+         return;
+      }
+      double actionRate = getEffectiveActionRate(player.getUUID());
+      if (Math.abs(actionRate - 1.0) <= 1.0E-6) {
+         CLIENT_ITEM_USE_PROGRESS.remove(player.getUUID());
+         return;
+      }
+      TimeAlterRateMath.UseAdvance advance = TimeAlterRateMath.advanceItemUse(
+         CLIENT_ITEM_USE_PROGRESS.getOrDefault(player.getUUID(), 0.0), actionRate
+      );
+      CLIENT_ITEM_USE_PROGRESS.put(player.getUUID(), advance.remainingProgress());
+      event.setDuration(TimeAlterRateMath.durationBeforeVanillaDecrement(event.getDuration(), advance.elapsedUseTicks()));
+   }
+
+   @SubscribeEvent
+   public static void onItemUseStop(LivingEntityUseItemEvent.Stop event) {
+      if (event.getEntity() instanceof AbstractClientPlayer player) {
+         CLIENT_ITEM_USE_PROGRESS.remove(player.getUUID());
+      }
+   }
+
+   @SubscribeEvent
+   public static void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
+      if (event.getEntity() instanceof AbstractClientPlayer player) {
+         CLIENT_ITEM_USE_PROGRESS.remove(player.getUUID());
+      }
    }
 
    @SubscribeEvent
@@ -70,6 +120,7 @@ public final class TimeAlterVisualClient {
       if (minecraft.level == null) {
          ACTIVE.clear();
          HISTORY.clear();
+         CLIENT_ITEM_USE_PROGRESS.clear();
          AFTERIMAGES.clear();
          return;
       }
@@ -79,6 +130,7 @@ public final class TimeAlterVisualClient {
          Map.Entry<UUID, ActiveState> entry = iterator.next();
          if (entry.getValue().expiresAtTick <= clientTick) {
             HISTORY.remove(entry.getKey());
+            CLIENT_ITEM_USE_PROGRESS.remove(entry.getKey());
             iterator.remove();
             continue;
          }
@@ -221,7 +273,7 @@ public final class TimeAlterVisualClient {
       model.leftLeg.visible = true;
    }
 
-   private record ActiveState(int mode, long expiresAtTick) {
+   private record ActiveState(int mode, double actionRate, long expiresAtTick) {
    }
 
    private record PoseSample(double x, double y, double z, float bodyYaw, HumanoidPose pose) {

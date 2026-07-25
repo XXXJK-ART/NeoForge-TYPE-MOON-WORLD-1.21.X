@@ -370,10 +370,13 @@ public final class ServantCardEnkiduSkills {
          List<Integer> ids = new ArrayList<>();
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(100.0), e -> {
             if (!e.isAlive() || e == player) return false;
-            if (e instanceof ServerPlayer other) return !other.isSpectator();
-            return !EntityUtils.isImmunePlayerTarget(e);
+            if (e instanceof ServerPlayer other) {
+               return !other.isSpectator() && !EntityUtils.isImmunePlayerTarget(e) && !player.isAlliedTo(e) && !e.isAlliedTo(player);
+            }
+            return !EntityUtils.isImmunePlayerTarget(e) && !player.isAlliedTo(e) && !e.isAlliedTo(player);
          })) {
             living.removeEffect(MobEffects.INVISIBILITY);
+            living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
             ids.add(living.getId());
          }
          PacketDistributor.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200), new CustomPacketPayload[0]);

@@ -27,6 +27,8 @@ public class MedeaEntity extends ServantEntity {
    private static final EntityDataAccessor<Boolean> BARRIER_ACTIVE = SynchedEntityData.defineId(MedeaEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> TEMPORARY_FOCUS_ITEM = SynchedEntityData.defineId(MedeaEntity.class, EntityDataSerializers.INT);
    private static final String TAG_BARRIER_HP = "MedeaBarrierHp";
+   private static final String TAG_FLIGHT_WAS_AIRBORNE = "MedeaFlightWasAirborne";
+   private static final String TAG_FLIGHT_LANDED_UNTIL = "MedeaFlightLandedUntil";
 
    public MedeaEntity(EntityType<MedeaEntity> entityType, Level level) {
       super(entityType, level, SERVANT_KEY);
@@ -105,6 +107,13 @@ public class MedeaEntity extends ServantEntity {
    protected void customServerAiStep() {
       super.customServerAiStep();
       if (this.isFlyingMode()) {
+         if (!this.onGround()) {
+            this.getPersistentData().putBoolean(TAG_FLIGHT_WAS_AIRBORNE, true);
+         } else if (this.getPersistentData().getBoolean(TAG_FLIGHT_WAS_AIRBORNE)) {
+            this.setFlyingMode(false);
+            this.getPersistentData().putLong(TAG_FLIGHT_LANDED_UNTIL, this.level().getGameTime() + 80L);
+            return;
+         }
          this.setNoGravity(true);
          this.fallDistance = 0.0F;
       } else if (!this.isSpiritualDissolving()) {
@@ -169,10 +178,14 @@ public class MedeaEntity extends ServantEntity {
    }
 
    public void setFlyingMode(boolean flying) {
+      if (flying && !this.level().isClientSide() && this.getPersistentData().getLong(TAG_FLIGHT_LANDED_UNTIL) > this.level().getGameTime()) {
+         return;
+      }
       this.entityData.set(FLYING_MODE, flying);
       if (!this.level().isClientSide()) {
          this.setNoGravity(flying);
          if (!flying) {
+            this.getPersistentData().remove(TAG_FLIGHT_WAS_AIRBORNE);
             this.setDeltaMovement(this.getDeltaMovement().multiply(1.0, 0.35, 1.0));
          }
       }

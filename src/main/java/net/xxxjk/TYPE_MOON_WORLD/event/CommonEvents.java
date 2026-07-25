@@ -485,7 +485,11 @@ public class CommonEvents {
                if (vars.master_active && player.getHealth() - event.getAmount() <= 0.0F) {
                   ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
                   if (servant != null) {
-                     MasterServantLinkService.breakLink(player, servant, true);
+                     MasterServantLinkService.breakLink(player, servant, false);
+                  } else {
+                     vars.master_servant_uuid = "";
+                     MasterServantLinkService.clearSnapshot(vars);
+                     vars.syncPlayerVariables(player);
                   }
                }
             }
@@ -1061,7 +1065,14 @@ public class CommonEvents {
                ServantCardTransformManager.prepareVanishingEquipment(player, vars);
             }
             if (vars.master_active) {
-               MasterStateManager.release(player);
+               ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
+               if (servant != null) {
+                  MasterServantLinkService.breakLink(player, servant, false);
+               } else {
+                  vars.master_servant_uuid = "";
+                  MasterServantLinkService.clearSnapshot(vars);
+                  vars.syncPlayerVariables(player);
+               }
             }
          }
 

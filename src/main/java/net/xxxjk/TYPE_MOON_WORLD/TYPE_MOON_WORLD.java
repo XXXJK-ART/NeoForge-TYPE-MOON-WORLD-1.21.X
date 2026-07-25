@@ -62,6 +62,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.KendoInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
@@ -225,6 +226,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);
+      registrar.playToServer(KendoInputMessage.TYPE, KendoInputMessage.STREAM_CODEC, KendoInputMessage::handleData);
       registrar.playToServer(BodyTrainingPointMessage.TYPE, BodyTrainingPointMessage.STREAM_CODEC, BodyTrainingPointMessage::handleData);
       registrar.playToServer(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
       registrar.playToServer(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);

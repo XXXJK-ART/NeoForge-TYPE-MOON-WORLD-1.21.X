@@ -18,6 +18,10 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.KendoApprenticeEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.KendoMasterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.minecraft.world.entity.SpawnPlacementTypes;
@@ -44,6 +48,10 @@ public class ModEventBusEvents {
       event.put(ModEntities.BAJIQUAN_MASTER.get(), BajiquanMasterEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_APPRENTICE.get(), BajiquanApprenticeEntity.createAttributes().build());
       event.put(ModEntities.MYSTERIOUS_SWORDSMAN.get(), MysteriousSwordsmanEntity.createAttributes().build());
+      event.put(ModEntities.KENDO_MASTER.get(), KendoMasterEntity.createAttributes().build());
+      event.put(ModEntities.KENDO_APPRENTICE.get(), KendoApprenticeEntity.createAttributes().build());
+      event.put(ModEntities.RONIN.get(), KendoApprenticeEntity.createAttributes().build());
+      event.put(ModEntities.SHINSENGUMI.get(), KendoApprenticeEntity.createAttributes().build());
       event.put(ModEntities.TOHSAKA_RIN.get(), TohsakaRinEntity.createAttributes().build());
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GENERIC_SERVANT.get(), ServantEntity.createAttributes().build());
@@ -77,6 +85,9 @@ public class ModEventBusEvents {
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
       event.register(ModEntities.BAJIQUAN_APPRENTICE.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.RONIN.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
    }

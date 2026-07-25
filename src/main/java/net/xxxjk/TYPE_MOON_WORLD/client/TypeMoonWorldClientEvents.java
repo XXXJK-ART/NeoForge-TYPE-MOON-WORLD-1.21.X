@@ -225,6 +225,10 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.BAJIQUAN_MASTER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.BajiquanMasterRenderer::new);
       event.registerEntityRenderer(ModEntities.BAJIQUAN_APPRENTICE.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.BajiquanApprenticeRenderer::new);
       event.registerEntityRenderer(ModEntities.MYSTERIOUS_SWORDSMAN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysteriousSwordsmanRenderer::new);
+      event.registerEntityRenderer(ModEntities.KENDO_MASTER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.KendoMasterRenderer::new);
+      event.registerEntityRenderer(ModEntities.KENDO_APPRENTICE.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.KendoApprenticeRenderer::new);
+      event.registerEntityRenderer(ModEntities.RONIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.RoninRenderer::new);
+      event.registerEntityRenderer(ModEntities.SHINSENGUMI.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShinsengumiRenderer::new);
       event.registerEntityRenderer(ModEntities.TOHSAKA_RIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.TohsakaRinRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
       event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);

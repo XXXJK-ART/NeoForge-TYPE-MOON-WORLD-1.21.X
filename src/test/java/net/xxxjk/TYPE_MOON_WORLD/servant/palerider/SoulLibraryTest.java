@@ -50,14 +50,14 @@ class SoulLibraryTest {
    }
 
    @Test
-   void enforcesCompactThousandSoulCapacity() {
+   void enforcesCompactHundredSoulCapacity() {
       SoulLibrary library = new SoulLibrary();
       SoulSnapshot zombie = snapshot(SoulSnapshot.SoulKind.CREATURE);
       for (int i = 0; i < SoulLibrary.MAX_SOULS; i++) assertTrue(library.add(zombie));
       assertFalse(library.add(zombie));
-      assertEquals(1000, library.size());
+      assertEquals(100, library.size());
       assertEquals(1, library.save().getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).size());
-      assertEquals(1000, library.save().getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).getInt("Count"));
+      assertEquals(100, library.save().getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).getInt("Count"));
       assertEquals(50, SoulLibrary.MAX_MANIFESTED_SOULS);
    }
 
