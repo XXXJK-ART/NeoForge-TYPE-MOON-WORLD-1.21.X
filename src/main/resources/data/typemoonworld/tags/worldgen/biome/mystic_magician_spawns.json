@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:dark_forest",
+    "minecraft:swamp",
+    "minecraft:mangrove_swamp",
+    "minecraft:old_growth_spruce_taiga",
+    "minecraft:old_growth_pine_taiga",
+    "minecraft:wooded_badlands",
+    "minecraft:jagged_peaks",
+    "minecraft:stony_peaks",
+    "minecraft:frozen_peaks",
+    "minecraft:windswept_gravelly_hills"
+  ]
+}

@@ -81,11 +81,11 @@ public final class MasterStateManager {
 
    public static boolean release(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.master_active) {
-         return false;
-      }
       if (vars.master_card_active) {
          return releaseMasterCardProfile(player, vars);
+      }
+      if (!vars.master_active) {
+         return false;
       }
       ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
       if (boundServant != null) {

@@ -17,6 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -39,12 +40,10 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
    }
 
    public ContenderBulletEntity(Level level, LivingEntity owner, boolean originBullet) {
-      super(ModEntities.CONTENDER_BULLET.get(), level);
+      super(ModEntities.CONTENDER_BULLET.get(), owner, level);
       this.setNoGravity(true);
-      if (owner != null) {
-         this.setOwner(owner);
-      }
       this.entityData.set(ORIGIN_BULLET, originBullet);
+      this.setItem(new ItemStack(originBullet ? ModItems.ORIGIN_BULLET.get() : ModItems.BULLET.get()));
    }
 
    @Override
@@ -56,7 +55,8 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
 
    @Override
    protected Item getDefaultItem() {
-      return this.isOriginBullet() ? ModItems.ORIGIN_BULLET.get() : ModItems.BULLET.get();
+      // Called while Entity is still constructing, before this.entityData is assigned.
+      return ModItems.BULLET.get();
    }
 
    public boolean isOriginBullet() {

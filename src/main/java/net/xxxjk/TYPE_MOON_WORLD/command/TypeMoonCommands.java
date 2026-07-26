@@ -54,6 +54,8 @@ public class TypeMoonCommands {
    private static final String TIME_ALTER_MAGIC_ID = "time_alter";
    private static final String SPIRITUAL_HEALING_MAGIC_ID = "spiritual_healing";
    private static final String BAPTISM_RITE_MAGIC_ID = "baptism_rite";
+   private static final String BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID = "black_key_fire_engraving";
+   private static final String STIGMA_MAGIC_ID = "stigma";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
    private static final int SAMPLE_COORD_RANGE = 2000000;
    private static final double ACCEPT_MEAN_MIN = 9.0;
@@ -117,6 +119,8 @@ public class TypeMoonCommands {
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
+      BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID,
+      STIGMA_MAGIC_ID,
       "bajiquan",
       "ganryu",
       KendoCombatService.HOKUSHIN_ID,

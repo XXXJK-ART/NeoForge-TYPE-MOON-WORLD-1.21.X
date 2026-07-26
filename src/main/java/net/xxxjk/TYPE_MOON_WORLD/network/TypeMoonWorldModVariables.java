@@ -53,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import org.jetbrains.annotations.NotNull;
 
 public class TypeMoonWorldModVariables {
@@ -79,7 +80,11 @@ public class TypeMoonWorldModVariables {
       @SubscribeEvent
       public static void onPlayerLoggedInSyncPlayerVariables(PlayerLoggedInEvent event) {
          if (event.getEntity() instanceof ServerPlayer player) {
-            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).syncPlayerVariables(event.getEntity());
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.master_card_active && !vars.master_active) {
+               MasterStateManager.release(player);
+            }
+            vars.syncPlayerVariables(event.getEntity());
          }
       }
 
@@ -341,6 +346,8 @@ public class TypeMoonWorldModVariables {
          }
 
          if (original.master_card_active) {
+            clone.master_active = true;
+            clone.master_servant_uuid = original.master_servant_uuid;
             clone.master_card_active = original.master_card_active;
             clone.master_card_id = original.master_card_id;
             clone.master_card_saved_variables = original.master_card_saved_variables.copy();
@@ -349,6 +356,9 @@ public class TypeMoonWorldModVariables {
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
          if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player) {
+            if (clone.master_card_active) {
+               MasterStateManager.release(player);
+            }
             BodyTrainingService.restoreFromServantCard(player, clone);
          }
       }

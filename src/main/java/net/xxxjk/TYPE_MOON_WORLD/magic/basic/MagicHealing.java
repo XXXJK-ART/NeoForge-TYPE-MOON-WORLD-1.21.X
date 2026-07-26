@@ -71,6 +71,10 @@ public final class MagicHealing {
    }
 
    public static boolean healDirect(LivingEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {
+      return healDirect(caster, target, proficiency);
+   }
+
+   public static boolean healDirect(LivingEntity caster, LivingEntity target, double proficiency) {
       if (caster == null || target == null || !target.isAlive()) {
          return false;
       }

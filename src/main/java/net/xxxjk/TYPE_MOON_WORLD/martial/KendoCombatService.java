@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -175,6 +176,12 @@ public final class KendoCombatService {
          return;
       }
       if (input != INPUT_A || now < player.getPersistentData().getLong(TAG_RECOVERY)) return;
+      if (usesBasicAttack(school, school.proficiency(vars))) {
+         player.getPersistentData().putInt(TAG_A_COUNT, 0);
+         player.getPersistentData().putInt(TAG_DOWN_A_COUNT, 0);
+         performBasicAttack(player);
+         return;
+      }
       if (school == KendoSchool.TENNEN && player.getPersistentData().getBoolean(TAG_STANCE) && down) {
          if (now < player.getPersistentData().getLong(TAG_THREE_THRUST_COOLDOWN)) return;
          player.getPersistentData().remove(TAG_STANCE);
@@ -197,6 +204,29 @@ public final class KendoCombatService {
       else player.displayClientMessage(Component.translatable("message.typemoonworld.kendo.move_locked"), true);
    }
 
+   static boolean usesBasicAttack(KendoSchool school, double proficiency) {
+      return school != null && proficiency + 1.0E-6 < requiredProficiency(school, KendoMove.PRIMARY_ONE);
+   }
+
+   private static void performBasicAttack(ServerPlayer player) {
+      LivingEntity target = target(player, KendoMove.PRIMARY_ONE);
+      if (target == null) return;
+      player.getPersistentData().putLong(TAG_RECOVERY, player.level().getGameTime() + 8L);
+      target.invulnerableTime = 0;
+      player.getPersistentData().putBoolean(TAG_MARTIAL_DAMAGE, true);
+      try {
+         target.hurt(player.damageSources().playerAttack(player),
+            (float)Math.max(3.0, player.getAttributeValue(Attributes.ATTACK_DAMAGE)));
+      } finally {
+         player.getPersistentData().remove(TAG_MARTIAL_DAMAGE);
+      }
+      ItemStack blade = GanryuCombatService.activeBlade(player);
+      if (blade.isDamageableItem() && !player.getAbilities().instabuild) {
+         EquipmentSlot slot = blade == player.getMainHandItem() ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+         blade.hurtAndBreak(1, player, slot);
+      }
+   }
+
    private static int next(ServerPlayer player, String key, int max) {
       int value = player.getPersistentData().getInt(key) % max + 1;
       player.getPersistentData().putInt(key, value);
@@ -204,6 +234,7 @@ public final class KendoCombatService {
    }
 
    private static void perform(ServerPlayer player, KendoSchool school, TypeMoonWorldModVariables.PlayerVariables vars, KendoMove move) {
+      if (move == KendoMove.HIGH_JUMP && !MartialHighJumpService.tryConsume(player)) return;
       long now = player.level().getGameTime();
       int recoveryTicks = recovery(move, vars.body_technique);
       if (school == KendoSchool.TENNEN && isUnlocked(vars, school, KendoMove.RAY)) recoveryTicks = Math.max(3, recoveryTicks - 3);

@@ -27,12 +27,13 @@ import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 
 @EventBusSubscriber(
    modid = "typemoonworld",
@@ -45,6 +46,11 @@ public class ModEventBusEvents {
       event.put(ModEntities.MERLIN.get(), MerlinEntity.createAttributes().build());
       event.put(ModEntities.STONE_MAN.get(), StoneManEntity.createAttributes().build());
       event.put(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.THE_DEAD.get(), DeadApostleEntity.attributes(20.0, 3.0, 2.0, 0.23).build());
+      event.put(ModEntities.GHOUL.get(), DeadApostleEntity.attributes(40.0, 6.0, 4.0, 0.24).build());
+      event.put(ModEntities.LIVING_DEAD.get(), DeadApostleEntity.attributes(100.0, 18.0, 12.0, 0.32).build());
+      event.put(ModEntities.NIGHT_KIN.get(), DeadApostleEntity.attributes(150.0, 24.0, 16.0, 0.36).build());
+      event.put(ModEntities.CHURCH_EXECUTOR.get(), ChurchExecutorEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_MASTER.get(), BajiquanMasterEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_APPRENTICE.get(), BajiquanApprenticeEntity.createAttributes().build());
       event.put(ModEntities.MYSTERIOUS_SWORDSMAN.get(), MysteriousSwordsmanEntity.createAttributes().build());
@@ -84,8 +90,20 @@ public class ModEventBusEvents {
       event.register(ModEntities.MYSTIC_MAGICIAN.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
-      event.register(ModEntities.BAJIQUAN_APPRENTICE.get(), SpawnPlacementTypes.ON_GROUND,
-         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+      event.register(ModEntities.THE_DEAD.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkDeadApostleSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.GHOUL.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkDeadApostleSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.LIVING_DEAD.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkDeadApostleSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.NIGHT_KIN.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkDeadApostleSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.CHURCH_EXECUTOR.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkChurchSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
       event.register(ModEntities.RONIN.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
@@ -96,7 +114,28 @@ public class ModEventBusEvents {
       EntityType<T> type, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random
    ) {
       return level.getDifficulty() != Difficulty.PEACEFUL
-         && (MobSpawnType.ignoresLightRequirements(spawnType) || Monster.isDarkEnoughToSpawn(level, pos, random))
+         && Mob.checkMobSpawnRules(type, level, spawnType, pos, random);
+   }
+
+   private static <T extends Mob> boolean checkDeadApostleSpawnRules(
+      EntityType<T> type, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random
+   ) {
+      boolean city = level.getBiome(pos).is(net.minecraft.resources.ResourceKey.create(
+         net.minecraft.core.registries.Registries.BIOME,
+         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("typemoonworld", "city")));
+      return level.getDifficulty() != Difficulty.PEACEFUL
+         && (type != ModEntities.NIGHT_KIN.get() || city || random.nextInt(4) == 0)
+         && (MobSpawnType.ignoresLightRequirements(spawnType)
+            || net.minecraft.world.entity.monster.Monster.isDarkEnoughToSpawn(level, pos, random))
+         && Mob.checkMobSpawnRules(type, level, spawnType, pos, random);
+   }
+
+   private static <T extends Mob> boolean checkChurchSpawnRules(
+      EntityType<T> type, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random
+   ) {
+      return level.getDifficulty() != Difficulty.PEACEFUL
+         && (MobSpawnType.ignoresLightRequirements(spawnType)
+            || net.minecraft.world.entity.monster.Monster.isDarkEnoughToSpawn(level, pos, random))
          && Mob.checkMobSpawnRules(type, level, spawnType, pos, random);
    }
 }

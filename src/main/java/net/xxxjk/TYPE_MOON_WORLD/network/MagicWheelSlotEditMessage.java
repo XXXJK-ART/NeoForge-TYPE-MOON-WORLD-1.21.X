@@ -170,6 +170,8 @@ public record MagicWheelSlotEditMessage(
    }
 
    private static boolean isKnowledgeOnlyMagic(String magicId) {
-      return "jewel_magic_shoot".equals(magicId) || "jewel_magic_release".equals(magicId);
+      return "jewel_magic_shoot".equals(magicId)
+         || "jewel_magic_release".equals(magicId)
+         || net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry.isKnowledgeOnly(magicId);
    }
 }

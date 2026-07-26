@@ -61,6 +61,13 @@ public final class MasterVisualStateSync {
    }
 
    @SubscribeEvent
+   public static void onPlayerRespawned(PlayerEvent.PlayerRespawnEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+         broadcast(player);
+      }
+   }
+
+   @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          try {

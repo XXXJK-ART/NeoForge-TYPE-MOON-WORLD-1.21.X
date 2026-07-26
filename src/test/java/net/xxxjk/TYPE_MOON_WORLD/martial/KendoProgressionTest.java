@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class KendoProgressionTest {
@@ -16,5 +18,15 @@ class KendoProgressionTest {
       assertEquals(50.0, KendoSchool.HOKUSHIN.preMasterCap());
       assertEquals(80.0, KendoSchool.TENNEN.preMasterCap());
       assertEquals(100.0, KendoCombatService.requiredProficiency(KendoSchool.TENNEN, KendoMove.PERFECT_SWORD));
+   }
+
+   @Test
+   void basicAttackIsUsedUntilEachSchoolsFirstMoveUnlocks() {
+      assertTrue(KendoCombatService.usesBasicAttack(KendoSchool.HOKUSHIN, 0.0));
+      assertTrue(KendoCombatService.usesBasicAttack(KendoSchool.HOKUSHIN, 0.99));
+      assertFalse(KendoCombatService.usesBasicAttack(KendoSchool.HOKUSHIN, 1.0));
+      assertTrue(KendoCombatService.usesBasicAttack(KendoSchool.TENNEN, 0.0));
+      assertTrue(KendoCombatService.usesBasicAttack(KendoSchool.TENNEN, 9.99));
+      assertFalse(KendoCombatService.usesBasicAttack(KendoSchool.TENNEN, 10.0));
    }
 }

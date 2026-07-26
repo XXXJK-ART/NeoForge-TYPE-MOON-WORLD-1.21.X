@@ -22,6 +22,9 @@ import net.xxxjk.typemoonworld.api.MagicAttributes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
@@ -39,6 +42,30 @@ public final class TypeMoonWorldGameTests {
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
    public static void magicDefinitionsLoad(GameTestHelper helper) {
       helper.assertTrue(!MagicDefinitionRegistry.ids().isEmpty(), "magic definitions were not loaded");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void contenderBulletsConstructAfterSyncedDataInitialization(GameTestHelper helper) {
+      var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 2, 2));
+      var normal = new ContenderBulletEntity(helper.getLevel(), owner, false);
+      var origin = new ContenderBulletEntity(helper.getLevel(), owner, true);
+      helper.assertTrue(!normal.isOriginBullet() && normal.getItem().is(ModItems.BULLET.get()),
+         "normal Contender bullet was not initialized safely");
+      helper.assertTrue(origin.isOriginBullet() && origin.getItem().is(ModItems.ORIGIN_BULLET.get()),
+         "Origin Bullet item did not match its synchronized kind");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void deadApostlesReceivePersistentBodyScale(GameTestHelper helper) {
+      var dead = ModEntities.THE_DEAD.get().create(helper.getLevel());
+      helper.assertTrue(dead != null, "could not create The Dead");
+      dead.finalizeSpawn(helper.getLevel(), helper.getLevel().getCurrentDifficultyAt(helper.absolutePos(new BlockPos(2, 2, 2))),
+         net.minecraft.world.entity.MobSpawnType.SPAWN_EGG, null);
+      double scale = dead.getAttributeValue(Attributes.SCALE);
+      helper.assertTrue(scale >= DeadApostleEntity.MIN_BODY_SCALE && scale <= DeadApostleEntity.MAX_BODY_SCALE,
+         "dead apostle body scale was outside the configured range: " + scale);
+      helper.assertTrue(dead.getPersistentData().getBoolean("TypeMoonNpcRandomScaleV1"),
+         "dead apostle body scale was not marked as initialized for persistence");
       helper.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20)

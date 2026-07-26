@@ -10,6 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BlackKeyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
@@ -89,6 +90,11 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwChantRippleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.GhoulEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.LivingDeadEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NightKinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.TheDeadEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -174,6 +180,11 @@ public class ModEntities {
          .updateInterval(1)
          .build("gander_projectile")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<BlackKeyProjectileEntity>> BLACK_KEY_PROJECTILE = ENTITY_TYPES.register(
+      "black_key_projectile",
+      () -> Builder.<BlackKeyProjectileEntity>of(BlackKeyProjectileEntity::new, MobCategory.MISC)
+         .sized(0.22F, 0.22F).clientTrackingRange(12).updateInterval(1).build("black_key_projectile")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<MagicBulletProjectileEntity>> MAGIC_BULLET_PROJECTILE = ENTITY_TYPES.register(
       "magic_bullet_projectile",
       () -> Builder.<MagicBulletProjectileEntity>of(
@@ -239,6 +250,21 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN = ENTITY_TYPES.register(
       "mystic_magician", () -> Builder.of(MysticMagicianEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<TheDeadEntity>> THE_DEAD = ENTITY_TYPES.register(
+      "the_dead", () -> Builder.of(TheDeadEntity::new, MobCategory.MONSTER).sized(0.6F, 1.95F).build("the_dead")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GhoulEntity>> GHOUL = ENTITY_TYPES.register(
+      "ghoul", () -> Builder.of(GhoulEntity::new, MobCategory.MONSTER).sized(0.6F, 1.95F).build("ghoul")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<LivingDeadEntity>> LIVING_DEAD = ENTITY_TYPES.register(
+      "living_dead", () -> Builder.of(LivingDeadEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("living_dead")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NightKinEntity>> NIGHT_KIN = ENTITY_TYPES.register(
+      "night_kin", () -> Builder.of(NightKinEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("night_kin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ChurchExecutorEntity>> CHURCH_EXECUTOR = ENTITY_TYPES.register(
+      "church_executor", () -> Builder.of(ChurchExecutorEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("church_executor")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<BajiquanMasterEntity>> BAJIQUAN_MASTER = ENTITY_TYPES.register(
       "bajiquan_master", () -> Builder.of(BajiquanMasterEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("bajiquan_master")

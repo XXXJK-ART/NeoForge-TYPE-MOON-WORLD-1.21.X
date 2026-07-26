@@ -715,6 +715,25 @@ public class MysticMagicianEntity extends HumanNpcEntity {
       };
    }
 
+   public static String generateChurchNameChinese(RandomSource random, boolean femaleVariant) {
+      GeneratedName generated = random.nextBoolean()
+         ? generateRandomJapaneseName(random, femaleVariant)
+         : generateRandomEuropeanName(random, femaleVariant);
+      return generated.chinese();
+   }
+
+   public static String generateCulturalNameChinese(RandomSource random, int culture, boolean femaleVariant) {
+      return switch (Math.floorMod(culture, 3)) {
+         case 0 -> generateRandomChineseName(random, femaleVariant).chinese();
+         case 1 -> generateRandomJapaneseName(random, femaleVariant).chinese();
+         default -> {
+            int firstNameIndex = pickGivenNameIndex(random, femaleVariant);
+            int surnameIndex = random.nextInt(EUROPEAN_SURNAMES_ZH.length);
+            yield EUROPEAN_GIVEN_NAMES_ZH[firstNameIndex] + NAME_SEPARATOR + EUROPEAN_SURNAMES_ZH[surnameIndex];
+         }
+      };
+   }
+
    private static MysticMagicianEntity.GeneratedName generateRandomChineseName(RandomSource random, boolean femaleVariant) {
       String name = ChineseNpcNameGenerator.apprentice(random, femaleVariant);
       return new MysticMagicianEntity.GeneratedName(name, name);

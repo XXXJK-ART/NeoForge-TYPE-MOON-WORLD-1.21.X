@@ -177,6 +177,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
                         output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
                         output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
+                        output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING);
+                        output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING);
+                        output.accept(ModItems.MAGIC_BOOK_STIGMA);
+                        output.accept(ModItems.MAGIC_PAGE_STIGMA);
 
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
@@ -214,6 +218,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.PARACELSUS_SWORD);
                         output.accept(ModItems.MERCURY_SWORD);
                         output.accept(ModItems.THOMPSON_CONTENDER);
+                        output.accept(ModItems.BLACK_KEY);
                         output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
@@ -334,6 +339,11 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MERLIN_SPAWN_EGG);
                         output.accept(ModItems.STONE_MAN_SPAWN_EGG);
                         output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
+                        output.accept(ModItems.THE_DEAD_SPAWN_EGG);
+                        output.accept(ModItems.GHOUL_SPAWN_EGG);
+                        output.accept(ModItems.LIVING_DEAD_SPAWN_EGG);
+                        output.accept(ModItems.NIGHT_KIN_SPAWN_EGG);
+                        output.accept(ModItems.CHURCH_EXECUTOR_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_MASTER_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);
                         output.accept(ModItems.MYSTERIOUS_SWORDSMAN_SPAWN_EGG);

@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.basic;
 
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -55,6 +56,14 @@ public final class MagicBinding {
    }
 
    public static boolean applyBinding(LivingEntity caster, LivingEntity target, double proficiency) {
+      return applyBinding(caster, target, proficiency, living -> true);
+   }
+
+   public static boolean applyBinding(LivingEntity caster, LivingEntity target, double proficiency,
+                                      Predicate<LivingEntity> targetFilter) {
+      if (caster == null || target == null || !target.isAlive() || targetFilter == null || !targetFilter.test(target)) {
+         return false;
+      }
       double p = BasicMagecraftHelper.clampProficiency(proficiency);
       int amplifier = p >= 25.0 ? 1 : 0;
       int duration = durationTicks(p);
@@ -62,7 +71,8 @@ public final class MagicBinding {
       if (p >= 70.0 && caster.level() instanceof ServerLevel level) {
          double radius = areaRadius(p);
          AABB box = target.getBoundingBox().inflate(radius, 2.0, radius);
-         List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive() && !EntityUtils.isImmunePlayerTarget(e));
+         List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box,
+            e -> e != caster && e.isAlive() && !EntityUtils.isImmunePlayerTarget(e) && targetFilter.test(e));
          for (LivingEntity living : targets) {
             applySingle(living, duration, amplifier);
             any = true;

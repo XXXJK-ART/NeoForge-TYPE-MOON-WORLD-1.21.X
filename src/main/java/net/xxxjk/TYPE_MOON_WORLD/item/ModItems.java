@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChiselItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CommandSpellItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DirkSmallKnifeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomStartAttributesItem;
@@ -590,6 +591,14 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "baptism_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_book_black_key_fire_engraving",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "black_key_fire_engraving"));
+    public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_page_black_key_fire_engraving",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "black_key_fire_engraving"));
+    public static final DeferredItem<Item> MAGIC_BOOK_STIGMA = ITEMS.register("magic_book_stigma",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "stigma"));
+    public static final DeferredItem<Item> MAGIC_PAGE_STIGMA = ITEMS.register("magic_page_stigma",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "stigma"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
@@ -831,6 +840,8 @@ public class ModItems {
                             .build())));
     public static final DeferredItem<Item> THOMPSON_CONTENDER = ITEMS.register("thompson_contender",
             () -> new ThompsonContenderItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> BLACK_KEY = ITEMS.register("black_key",
+            () -> new BlackKeyItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -865,6 +876,16 @@ public class ModItems {
 
     public static final DeferredItem<Item> MYSTIC_MAGICIAN_SPAWN_EGG = ITEMS.register("mystic_magician_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN, 0x000000, 0xC00000, new Item.Properties()));
+    public static final DeferredItem<Item> THE_DEAD_SPAWN_EGG = ITEMS.register("the_dead_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.THE_DEAD, 0x5C5C5C, 0x262626, new Item.Properties()));
+    public static final DeferredItem<Item> GHOUL_SPAWN_EGG = ITEMS.register("ghoul_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GHOUL, 0x66705B, 0x2B3028, new Item.Properties()));
+    public static final DeferredItem<Item> LIVING_DEAD_SPAWN_EGG = ITEMS.register("living_dead_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LIVING_DEAD, 0x6E7375, 0xA5A09A, new Item.Properties()));
+    public static final DeferredItem<Item> NIGHT_KIN_SPAWN_EGG = ITEMS.register("night_kin_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NIGHT_KIN, 0x272733, 0x8C2636, new Item.Properties()));
+    public static final DeferredItem<Item> CHURCH_EXECUTOR_SPAWN_EGG = ITEMS.register("church_executor_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CHURCH_EXECUTOR, 0x202020, 0xD0D0D0, new Item.Properties()));
 
     public static final DeferredItem<Item> BAJIQUAN_MASTER_SPAWN_EGG = ITEMS.register("bajiquan_master_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.BAJIQUAN_MASTER, 0x27331F, 0xD8C59A, new Item.Properties()));

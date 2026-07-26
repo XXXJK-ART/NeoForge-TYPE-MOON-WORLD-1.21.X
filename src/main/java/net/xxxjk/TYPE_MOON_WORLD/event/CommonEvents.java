@@ -1264,7 +1264,12 @@ public class CommonEvents {
 
    @SubscribeEvent
    public static void onLivingDrops(LivingDropsEvent event) {
-      if (event.getEntity() instanceof Player) {
+      if (event.getEntity() instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.master_card_active) {
+            event.getDrops().clear();
+            return;
+         }
          event.getDrops().removeIf(drop -> ServantCardTransformManager.shouldDeleteBoundDrop(drop.getItem()));
       }
    }

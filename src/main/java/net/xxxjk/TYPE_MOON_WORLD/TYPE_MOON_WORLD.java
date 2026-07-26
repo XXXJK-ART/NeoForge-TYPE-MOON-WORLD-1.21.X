@@ -129,6 +129,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
+import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
@@ -186,6 +187,7 @@ public class TYPE_MOON_WORLD {
             ExtensionApiRegistry.freeze();
             EffectsApiRegistry.freeze();
             Regions.register(new GemRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_region"), 2));
+            Regions.register(new CityRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "city_region"), 1));
             ResourceKey<Biome> gemBiome = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_biome"));
             SurfaceRuleManager.addSurfaceRules(
                RuleCategory.OVERWORLD,

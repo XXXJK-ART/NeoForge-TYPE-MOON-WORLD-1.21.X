@@ -16,7 +16,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -64,7 +63,9 @@ public final class KendoDojoWorldEvents {
       KendoSavedData saved = level.getDataStorage().computeIfAbsent(KendoSavedData.FACTORY, "typemoonworld_kendo_dojos");
       if (!saved.initialized.add(id)) return true;
       KendoSchool school = key == TENNEN ? KendoSchool.TENNEN : KendoSchool.HOKUSHIN;
-      BlockPos center = new BlockPos((box.minX() + box.maxX()) / 2, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (box.minX() + box.maxX()) / 2, (box.minZ() + box.maxZ()) / 2), (box.minZ() + box.maxZ()) / 2);
+      int centerX = (box.minX() + box.maxX()) / 2;
+      int centerZ = (box.minZ() + box.maxZ()) / 2;
+      BlockPos center = findIndoorSpawn(level, box, centerX, centerZ);
       KendoMasterEntity master = ModEntities.KENDO_MASTER.get().create(level);
       if (master != null) { master.setSchool(school); master.setDojoHome(center); master.moveTo(center.getX() + .5, center.getY(), center.getZ() + .5, 0, 0); level.addFreshEntity(master); }
       int count = 1 + level.random.nextInt(4);
@@ -72,14 +73,40 @@ public final class KendoDojoWorldEvents {
          KendoApprenticeEntity apprentice = ModEntities.KENDO_APPRENTICE.get().create(level);
          if (apprentice == null) continue;
          apprentice.setFemale(level.random.nextBoolean()); apprentice.setProficiency(20 + level.random.nextInt(61));
-         BlockPos spawn = new BlockPos(MthClamp(center.getX() + level.random.nextInt(9) - 4, box.minX(), box.maxX()), center.getY(), MthClamp(center.getZ() + level.random.nextInt(9) - 4, box.minZ(), box.maxZ()));
+         int x = MthClamp(centerX + level.random.nextInt(17) - 8, box.minX(), box.maxX());
+         int z = MthClamp(centerZ + level.random.nextInt(17) - 8, box.minZ(), box.maxZ());
+         BlockPos spawn = findIndoorSpawn(level, box, x, z);
          apprentice.moveTo(spawn.getX() + .5, spawn.getY(), spawn.getZ() + .5, level.random.nextFloat() * 360, 0); apprentice.finalizeSpawn(level, level.getCurrentDifficultyAt(spawn), MobSpawnType.STRUCTURE, null); apprentice.setSchool(school); apprentice.setProficiency(20 + level.random.nextInt(61)); level.addFreshEntity(apprentice);
       }
       if (school == KendoSchool.TENNEN) {
          ShinsengumiEntity shinsengumi = ModEntities.SHINSENGUMI.get().create(level);
-         if (shinsengumi != null) { shinsengumi.setProficiency(70 + level.random.nextInt(31)); shinsengumi.moveTo(center.getX() + 1.5, center.getY(), center.getZ() + .5, 0, 0); level.addFreshEntity(shinsengumi); }
+         if (shinsengumi != null) {
+            shinsengumi.setProficiency(70 + level.random.nextInt(31));
+            BlockPos spawn = findIndoorSpawn(level, box, centerX + 2, centerZ);
+            shinsengumi.moveTo(spawn.getX() + .5, spawn.getY(), spawn.getZ() + .5, 0, 0);
+            level.addFreshEntity(shinsengumi);
+         }
       }
       saved.setDirty(); return true;
+   }
+   private static BlockPos findIndoorSpawn(ServerLevel level, BoundingBox box, int centerX, int centerZ) {
+      int maxRadius = Math.min(10, Math.max(box.getXSpan(), box.getZSpan()) / 2);
+      for (int radius = 0; radius <= maxRadius; radius++) {
+         for (int x = centerX - radius; x <= centerX + radius; x++) {
+            for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+               if (Math.max(Math.abs(x - centerX), Math.abs(z - centerZ)) != radius) continue;
+               if (x < box.minX() || x > box.maxX() || z < box.minZ() || z > box.maxZ()) continue;
+               for (int y = box.minY() + 1; y <= box.maxY() - 2; y++) {
+                  BlockPos feet = new BlockPos(x, y, z);
+                  if (!level.getBlockState(feet.below()).getCollisionShape(level, feet.below()).isEmpty()
+                     && level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+                     && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()) return feet;
+               }
+            }
+         }
+      }
+      return new BlockPos(MthClamp(centerX, box.minX(), box.maxX()), box.minY() + 1,
+         MthClamp(centerZ, box.minZ(), box.maxZ()));
    }
    private static int MthClamp(int value, int min, int max) { return Math.max(min, Math.min(max, value)); }
    private static final class KendoSavedData extends SavedData {

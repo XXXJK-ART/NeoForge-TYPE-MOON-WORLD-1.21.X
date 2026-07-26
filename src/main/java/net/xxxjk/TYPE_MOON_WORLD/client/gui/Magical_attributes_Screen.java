@@ -166,6 +166,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("earth_magic", "magic.typemoonworld.earth_magic.name", "elemental", -7119279);
       this.addMagic("time_alter", "magic.typemoonworld.time_alter.name", "special", -11096625);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
+      this.addMagic("black_key_fire_engraving", "key.typemoonworld.magic.black_key_fire_engraving.short", "church", -865972);
+      this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
@@ -2206,7 +2208,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private static boolean isKnowledgeOnlyMagic(String magicId) {
-      return "jewel_magic_shoot".equals(magicId) || "jewel_magic_release".equals(magicId);
+      return "jewel_magic_shoot".equals(magicId)
+         || "jewel_magic_release".equals(magicId)
+         || net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry.isKnowledgeOnly(magicId);
    }
 
    private void renderEntityInInventoryFollowsAngle(GuiGraphics guiGraphics, int x, int y, float angleXComponent, float angleYComponent, LivingEntity entity) {

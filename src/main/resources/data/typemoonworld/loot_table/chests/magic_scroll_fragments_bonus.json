@@ -28,7 +28,9 @@
         { "type": "minecraft:item", "name": "typemoonworld:magic_page_earth" },
         { "type": "minecraft:item", "name": "typemoonworld:magic_page_time_alter" },
         { "type": "minecraft:item", "name": "typemoonworld:magic_page_spiritual_healing" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_baptism_rite" }
+        { "type": "minecraft:item", "name": "typemoonworld:magic_page_baptism_rite" },
+        { "type": "minecraft:item", "name": "typemoonworld:magic_page_black_key_fire_engraving" },
+        { "type": "minecraft:item", "name": "typemoonworld:magic_page_stigma" }
       ]
     },
     {
@@ -48,7 +50,9 @@
         { "type": "minecraft:item", "name": "typemoonworld:magic_book_earth" },
         { "type": "minecraft:item", "name": "typemoonworld:magic_book_time_alter" },
         { "type": "minecraft:item", "name": "typemoonworld:magic_book_spiritual_healing" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_baptism_rite" }
+        { "type": "minecraft:item", "name": "typemoonworld:magic_book_baptism_rite" },
+        { "type": "minecraft:item", "name": "typemoonworld:magic_book_black_key_fire_engraving" },
+        { "type": "minecraft:item", "name": "typemoonworld:magic_book_stigma" }
       ]
     }
   ]
