@@ -716,6 +716,9 @@ public final class ServantCardOdaNobunagaSkills {
             movedData.putDouble(HAJUN_FIELD_RETURN_Y, data.getDouble(HAJUN_FIELD_RETURN_Y));
             movedData.putDouble(HAJUN_FIELD_RETURN_Z, data.getDouble(HAJUN_FIELD_RETURN_Z));
             startOdaHajunLocalField(movedPlayer, hajunLevel);
+            TypeMoonWorldModVariables.PlayerVariables movedVars = movedPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            movedVars.syncPlayerVariables(movedPlayer);
+            movedVars.syncServantCardRuntime(movedPlayer);
          }
       });
    }
@@ -894,9 +897,16 @@ public final class ServantCardOdaNobunagaSkills {
       for (RedSkeletonHajunEntity skeleton : level.getEntitiesOfClass(RedSkeletonHajunEntity.class, player.getBoundingBox().inflate(96.0))) {
          skeleton.discard();
       }
+      ServerPlayer syncPlayer = player;
       if (player.isAlive() && ModDimensions.isHajunDimension(level.dimension().location())) {
-         player.changeDimension(new DimensionTransition(returnLevel, returnPos, Vec3.ZERO, player.getYRot(), player.getXRot(), DimensionTransition.DO_NOTHING));
+         Entity moved = player.changeDimension(new DimensionTransition(returnLevel, returnPos, Vec3.ZERO, player.getYRot(), player.getXRot(), DimensionTransition.DO_NOTHING));
+         if (moved instanceof ServerPlayer movedPlayer) {
+            syncPlayer = movedPlayer;
+         }
       }
+      TypeMoonWorldModVariables.PlayerVariables vars = syncPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.syncPlayerVariables(syncPlayer);
+      vars.syncServantCardRuntime(syncPlayer);
    }
 
    private static void returnOdaHajunTargets(UUID ownerId, ServerLevel sourceLevel, ServerLevel fallbackLevel) {
@@ -1098,12 +1108,12 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static boolean isOnCooldown(ServerPlayer player, String tag) {
-      return !ServantCardUnlimitedMode.isEnabled(player) && player.getPersistentData().getInt(tag) > player.tickCount;
+      return !ServantCardUnlimitedMode.isEnabled(player) && player.getPersistentData().getLong(tag) > player.level().getGameTime();
    }
 
    private static void setCooldown(ServerPlayer player, String tag, int ticks) {
       if (ServantCardUnlimitedMode.isEnabled(player)) return;
-      player.getPersistentData().putInt(tag, player.tickCount + Math.max(1, ticks));
+      player.getPersistentData().putLong(tag, player.level().getGameTime() + Math.max(1, ticks));
    }
 
    private static void shootMatchlockBullet(ServerLevel level, LivingEntity owner, Vec3 pos, Vec3 direction, float damage, float speed, int kind) {

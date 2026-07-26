@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWaterElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWindElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.MagicBrokenPhantasm;
 import net.xxxjk.TYPE_MOON_WORLD.magic.church.MagicBaptismRite;
+import net.xxxjk.TYPE_MOON_WORLD.magic.church.MagicBlackKeyFireEngraving;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.cyan.MagicCyanThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.cyan.MagicCyanWind;
@@ -101,6 +102,8 @@ public final class BuiltinMagicExecutors {
       registry.register("time_alter", ctx -> toResult(MagicTimeAlter.execute(ctx.entity())), "typemoonworld_core");
       registry.register("spiritual_healing", ctx -> toResult(MagicSpiritualHealing.execute(ctx.entity())), "typemoonworld_core");
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("black_key_fire_engraving", ctx -> toResult(MagicBlackKeyFireEngraving.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("stigma", ctx -> MagicExecutionResult.SUCCESS, "typemoonworld_core");
    }
 
    private static MagicExecutionResult executeKnowledgeOnly(MagicExecutionContext context) {

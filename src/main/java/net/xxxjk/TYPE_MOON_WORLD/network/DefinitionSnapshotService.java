@@ -21,12 +21,22 @@ import net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry;
 
 public final class DefinitionSnapshotService {
    private static long revision;
+   private static String cachedSnapshot;
    private static final GsonBuilder GSON = new GsonBuilder();
    private DefinitionSnapshotService() { }
+
+   public static void invalidate() {
+      cachedSnapshot = null;
+   }
+
    public static void send(ServerPlayer player) {
       if (player == null || !NetworkRegistry.hasChannel(player.connection, DefinitionSnapshotMessage.TYPE.id())) return;
       try {
-         PacketDistributor.sendToPlayer(player, new DefinitionSnapshotMessage(++revision, build()));
+         if (cachedSnapshot == null) {
+            cachedSnapshot = build();
+            revision++;
+         }
+         PacketDistributor.sendToPlayer(player, new DefinitionSnapshotMessage(revision, cachedSnapshot));
       } catch (UnsupportedOperationException exception) {
          // The negotiated channel can disappear while a player disconnects or changes protocol state.
          TYPE_MOON_WORLD.LOGGER.debug("Skipped definition snapshot for unsupported connection {}", player.getGameProfile().getName());

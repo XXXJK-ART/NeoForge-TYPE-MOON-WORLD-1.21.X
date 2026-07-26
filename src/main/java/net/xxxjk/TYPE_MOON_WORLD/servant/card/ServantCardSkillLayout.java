@@ -185,6 +185,19 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", 300.0, 3600);
             default -> null;
          };
+         case "ushiwakamaru_rider" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
+            case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);
+            case 2 -> new ServantCardSkillAction("Moonlit Step", "ushiwakamaru_moonlit_step", 6.0, 140);
+            case 3 -> new ServantCardSkillAction("Sweeping Thrust", "ushiwakamaru_sweeping_thrust", 8.0, 120);
+            case 4 -> new ServantCardSkillAction("Kurama Style: Eagle Drop", "ushiwakamaru_eagle_drop", 15.0, 200);
+            case 5 -> new ServantCardSkillAction("Jizaiten Eye: Six Secret Insight", "ushiwakamaru_six_secret", 50.0, 600);
+            case 6 -> new ServantCardSkillAction("Usumidori: Heaven-Blade Step", "ushiwakamaru_usumidori", 50.0, 600);
+            case 7 -> new ServantCardSkillAction("Benkei: Immovable Ground", "ushiwakamaru_benkei", 100.0, 600);
+            case 8 -> new ServantCardSkillAction("Houmaru: Spider Slayer", "ushiwakamaru_spider_slayer", 50.0, 600);
+            case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 150.0, 600);
+            default -> null;
+         };
          default -> null;
       };
    }

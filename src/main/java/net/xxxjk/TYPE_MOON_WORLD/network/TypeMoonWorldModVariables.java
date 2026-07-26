@@ -35,6 +35,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone;
@@ -52,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import org.jetbrains.annotations.NotNull;
 
 public class TypeMoonWorldModVariables {
@@ -67,7 +69,8 @@ public class TypeMoonWorldModVariables {
    );
 
    private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
-      if (player != null && payload != null && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
+      if (player != null && !(player instanceof FakePlayer) && payload != null
+         && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
          PacketDistributor.sendToPlayer(player, payload);
       }
    }
@@ -77,7 +80,11 @@ public class TypeMoonWorldModVariables {
       @SubscribeEvent
       public static void onPlayerLoggedInSyncPlayerVariables(PlayerLoggedInEvent event) {
          if (event.getEntity() instanceof ServerPlayer player) {
-            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).syncPlayerVariables(event.getEntity());
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.master_card_active && !vars.master_active) {
+               MasterStateManager.release(player);
+            }
+            vars.syncPlayerVariables(event.getEntity());
          }
       }
 
@@ -175,6 +182,12 @@ public class TypeMoonWorldModVariables {
          clone.ganryu_learned = original.ganryu_learned;
          clone.ganryu_proficiency = original.ganryu_proficiency;
          clone.ganryu_tsubame_unlocked = original.ganryu_tsubame_unlocked;
+         clone.hokushin_learned = original.hokushin_learned;
+         clone.hokushin_proficiency = original.hokushin_proficiency;
+         clone.hokushin_master_defeated = original.hokushin_master_defeated;
+         clone.tennen_learned = original.tennen_learned;
+         clone.tennen_proficiency = original.tennen_proficiency;
+         clone.tennen_master_defeated = original.tennen_master_defeated;
          clone.martial_ukemi_learned = original.martial_ukemi_learned;
          clone.body_training_xp = original.body_training_xp;
          clone.body_training_points = original.body_training_points;
@@ -333,6 +346,8 @@ public class TypeMoonWorldModVariables {
          }
 
          if (original.master_card_active) {
+            clone.master_active = true;
+            clone.master_servant_uuid = original.master_servant_uuid;
             clone.master_card_active = original.master_card_active;
             clone.master_card_id = original.master_card_id;
             clone.master_card_saved_variables = original.master_card_saved_variables.copy();
@@ -341,6 +356,9 @@ public class TypeMoonWorldModVariables {
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
          if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player) {
+            if (clone.master_card_active) {
+               MasterStateManager.release(player);
+            }
             BodyTrainingService.restoreFromServantCard(player, clone);
          }
       }
@@ -357,7 +375,12 @@ public class TypeMoonWorldModVariables {
       double servant_card_max_mana,
       double servant_card_mana_regen,
       double master_servant_link_partner_mana,
-      double master_servant_link_partner_max_mana
+      double master_servant_link_partner_max_mana,
+      double master_servant_link_partner_hp,
+      double master_servant_link_partner_max_hp,
+      String master_servant_link_state,
+      double master_servant_link_decay,
+      boolean master_servant_link_drawing_mana
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ManaSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_sync")
@@ -375,6 +398,11 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.servant_card_mana_regen);
             buffer.writeDouble(message.master_servant_link_partner_mana);
             buffer.writeDouble(message.master_servant_link_partner_max_mana);
+            buffer.writeDouble(message.master_servant_link_partner_hp);
+            buffer.writeDouble(message.master_servant_link_partner_max_hp);
+            buffer.writeUtf(message.master_servant_link_state == null ? "none" : message.master_servant_link_state, 48);
+            buffer.writeDouble(message.master_servant_link_decay);
+            buffer.writeBoolean(message.master_servant_link_drawing_mana);
          },
          buffer -> new TypeMoonWorldModVariables.ManaSyncMessage(
             buffer.readDouble(),
@@ -387,7 +415,12 @@ public class TypeMoonWorldModVariables {
             buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
-            buffer.readDouble()
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readUtf(48),
+            buffer.readDouble(),
+            buffer.readBoolean()
          )
       );
 
@@ -403,7 +436,12 @@ public class TypeMoonWorldModVariables {
             vars.servant_card_max_mana,
             vars.servant_card_mana_regen,
             vars.master_servant_link_partner_mana,
-            vars.master_servant_link_partner_max_mana
+            vars.master_servant_link_partner_max_mana,
+            vars.master_servant_link_partner_hp,
+            vars.master_servant_link_partner_max_hp,
+            vars.master_servant_link_state,
+            vars.master_servant_link_decay,
+            vars.master_servant_link_drawing_mana
          );
       }
 
@@ -429,6 +467,235 @@ public class TypeMoonWorldModVariables {
                   vars.servant_card_mana_regen = message.servant_card_mana_regen;
                   vars.master_servant_link_partner_mana = message.master_servant_link_partner_mana;
                   vars.master_servant_link_partner_max_mana = message.master_servant_link_partner_max_mana;
+                  vars.master_servant_link_partner_hp = message.master_servant_link_partner_hp;
+                  vars.master_servant_link_partner_max_hp = message.master_servant_link_partner_max_hp;
+                  vars.master_servant_link_state = message.master_servant_link_state == null ? "none" : message.master_servant_link_state;
+                  vars.master_servant_link_decay = message.master_servant_link_decay;
+                  vars.master_servant_link_drawing_mana = message.master_servant_link_drawing_mana;
+               }
+            );
+         }
+      }
+   }
+
+   public record ServantCardRuntimeSyncMessage(
+      boolean transformed,
+      String cardId,
+      String masterUuid,
+      double mana,
+      double maxMana,
+      double manaRegen,
+      int jumpCharges,
+      int jumpRecoveryTicks,
+      long jumpRecoveryEnd,
+      String skillCooldowns,
+      String skillCooldownEnds,
+      int npCooldown,
+      long npCooldownEnd,
+      boolean flying,
+      int flightMode,
+      long highFlightUntil,
+      long highFlightCooldownUntil,
+      int odaFlightTicks,
+      long odaFlightCooldownUntil,
+      long odaFlightRechargeAt,
+      double flightForward,
+      double flightStrafe,
+      double flightVertical,
+      int flightToggleCooldown,
+      int actionMode,
+      int transformCooldown,
+      int releaseCooldown,
+      boolean deathRelease,
+      int medeaDragonfangStock,
+      int medeaManaCharmStock,
+      int medeaHealCharmStock,
+      int paracelsusStoneStock,
+      int paracelsusDiamondShieldStock,
+      String enkiduPoints,
+      boolean medusaMysticEyesActive,
+      boolean hassanCloakBroken,
+      int hassanZabaniyaAnimationUntil
+   ) implements CustomPacketPayload {
+      private static final int MAX_CARD_ID_LENGTH = 96;
+      private static final int MAX_UUID_LENGTH = 64;
+      private static final int MAX_COOLDOWN_LENGTH = 2048;
+      private static final int MAX_POINTS_LENGTH = 128;
+      public static final Type<TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage> TYPE = new Type<>(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "servant_card_runtime_sync")
+      );
+      public static final StreamCodec<RegistryFriendlyByteBuf, TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage> STREAM_CODEC = StreamCodec.of(
+         (buffer, message) -> {
+            buffer.writeBoolean(message.transformed);
+            buffer.writeUtf(message.cardId == null ? "" : message.cardId, MAX_CARD_ID_LENGTH);
+            buffer.writeUtf(message.masterUuid == null ? "" : message.masterUuid, MAX_UUID_LENGTH);
+            buffer.writeDouble(message.mana);
+            buffer.writeDouble(message.maxMana);
+            buffer.writeDouble(message.manaRegen);
+            buffer.writeVarInt(message.jumpCharges);
+            buffer.writeVarInt(message.jumpRecoveryTicks);
+            buffer.writeLong(message.jumpRecoveryEnd);
+            buffer.writeUtf(message.skillCooldowns == null ? "" : message.skillCooldowns, MAX_COOLDOWN_LENGTH);
+            buffer.writeUtf(message.skillCooldownEnds == null ? "" : message.skillCooldownEnds, MAX_COOLDOWN_LENGTH);
+            buffer.writeVarInt(message.npCooldown);
+            buffer.writeLong(message.npCooldownEnd);
+            buffer.writeBoolean(message.flying);
+            buffer.writeVarInt(message.flightMode);
+            buffer.writeLong(message.highFlightUntil);
+            buffer.writeLong(message.highFlightCooldownUntil);
+            buffer.writeVarInt(message.odaFlightTicks);
+            buffer.writeLong(message.odaFlightCooldownUntil);
+            buffer.writeLong(message.odaFlightRechargeAt);
+            buffer.writeDouble(message.flightForward);
+            buffer.writeDouble(message.flightStrafe);
+            buffer.writeDouble(message.flightVertical);
+            buffer.writeVarInt(message.flightToggleCooldown);
+            buffer.writeVarInt(message.actionMode);
+            buffer.writeVarInt(message.transformCooldown);
+            buffer.writeVarInt(message.releaseCooldown);
+            buffer.writeBoolean(message.deathRelease);
+            buffer.writeVarInt(message.medeaDragonfangStock);
+            buffer.writeVarInt(message.medeaManaCharmStock);
+            buffer.writeVarInt(message.medeaHealCharmStock);
+            buffer.writeVarInt(message.paracelsusStoneStock);
+            buffer.writeVarInt(message.paracelsusDiamondShieldStock);
+            buffer.writeUtf(message.enkiduPoints == null ? "" : message.enkiduPoints, MAX_POINTS_LENGTH);
+            buffer.writeBoolean(message.medusaMysticEyesActive);
+            buffer.writeBoolean(message.hassanCloakBroken);
+            buffer.writeVarInt(message.hassanZabaniyaAnimationUntil);
+         },
+         buffer -> new TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage(
+            buffer.readBoolean(),
+            buffer.readUtf(MAX_CARD_ID_LENGTH),
+            buffer.readUtf(MAX_UUID_LENGTH),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readLong(),
+            buffer.readUtf(MAX_COOLDOWN_LENGTH),
+            buffer.readUtf(MAX_COOLDOWN_LENGTH),
+            buffer.readVarInt(),
+            buffer.readLong(),
+            buffer.readBoolean(),
+            buffer.readVarInt(),
+            buffer.readLong(),
+            buffer.readLong(),
+            buffer.readVarInt(),
+            buffer.readLong(),
+            buffer.readLong(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readBoolean(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readUtf(MAX_POINTS_LENGTH),
+            buffer.readBoolean(),
+            buffer.readBoolean(),
+            buffer.readVarInt()
+         )
+      );
+
+      public ServantCardRuntimeSyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
+         this(
+            vars.servant_card_transformed,
+            vars.servant_card_id,
+            vars.servant_card_master_uuid,
+            vars.servant_card_mana,
+            vars.servant_card_max_mana,
+            vars.servant_card_mana_regen,
+            vars.servant_card_jump_charges,
+            vars.servant_card_jump_recovery_ticks,
+            vars.servant_card_jump_recovery_end,
+            vars.servant_card_skill_cooldowns,
+            vars.servant_card_skill_cooldown_ends,
+            vars.servant_card_np_cooldown,
+            vars.servant_card_np_cooldown_end,
+            vars.servant_card_flying,
+            vars.servant_card_flight_mode,
+            vars.servant_card_high_flight_until,
+            vars.servant_card_high_flight_cooldown_until,
+            vars.servant_card_oda_flight_ticks,
+            vars.servant_card_oda_flight_cooldown_until,
+            vars.servant_card_oda_flight_recharge_at,
+            vars.servant_card_flight_forward,
+            vars.servant_card_flight_strafe,
+            vars.servant_card_flight_vertical,
+            vars.servant_card_flight_toggle_cooldown,
+            vars.servant_card_action_mode,
+            vars.servant_card_transform_cooldown,
+            vars.servant_card_release_cooldown,
+            vars.servant_card_death_release,
+            vars.servant_card_medea_dragonfang_stock,
+            vars.servant_card_medea_mana_charm_stock,
+            vars.servant_card_medea_heal_charm_stock,
+            vars.servant_card_paracelsus_stone_stock,
+            vars.servant_card_paracelsus_diamond_shield_stock,
+            vars.servant_card_enkidu_transfiguration_points,
+            vars.servant_card_medusa_mystic_eyes_active,
+            vars.servant_card_hassan_cloak_broken,
+            vars.servant_card_hassan_zabaniya_animation_until
+         );
+      }
+
+      @NotNull
+      public Type<TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage> type() {
+         return TYPE;
+      }
+
+      public static void handleData(TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage message, IPayloadContext context) {
+         if (context.flow() == PacketFlow.CLIENTBOUND) {
+            context.enqueueWork(
+               () -> {
+                  TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)context.player()
+                     .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                  vars.servant_card_transformed = message.transformed;
+                  vars.servant_card_id = message.cardId == null ? "" : message.cardId;
+                  vars.servant_card_master_uuid = message.masterUuid == null ? "" : message.masterUuid;
+                  vars.servant_card_mana = message.mana;
+                  vars.servant_card_max_mana = message.maxMana;
+                  vars.servant_card_mana_regen = message.manaRegen;
+                  int maxJumpCharges = "ushiwakamaru_rider".equals(vars.servant_card_id) ? 8 : 4;
+                  vars.servant_card_jump_charges = Mth.clamp(message.jumpCharges, 0, maxJumpCharges);
+                  vars.servant_card_jump_recovery_ticks = Math.max(0, message.jumpRecoveryTicks);
+                  vars.servant_card_jump_recovery_end = Math.max(0L, message.jumpRecoveryEnd);
+                  vars.servant_card_skill_cooldowns = message.skillCooldowns == null ? "" : message.skillCooldowns;
+                  vars.servant_card_skill_cooldown_ends = message.skillCooldownEnds == null ? "" : message.skillCooldownEnds;
+                  vars.servant_card_np_cooldown = Math.max(0, message.npCooldown);
+                  vars.servant_card_np_cooldown_end = Math.max(0L, message.npCooldownEnd);
+                  vars.servant_card_flying = message.flying;
+                  vars.servant_card_flight_mode = Mth.clamp(message.flightMode, 0, 2);
+                  vars.servant_card_high_flight_until = Math.max(0L, message.highFlightUntil);
+                  vars.servant_card_high_flight_cooldown_until = Math.max(0L, message.highFlightCooldownUntil);
+                  vars.servant_card_oda_flight_ticks = Mth.clamp(message.odaFlightTicks, 0, 100);
+                  vars.servant_card_oda_flight_cooldown_until = Math.max(0L, message.odaFlightCooldownUntil);
+                  vars.servant_card_oda_flight_recharge_at = Math.max(0L, message.odaFlightRechargeAt);
+                  vars.servant_card_flight_forward = Mth.clamp(message.flightForward, -1.0, 1.0);
+                  vars.servant_card_flight_strafe = Mth.clamp(message.flightStrafe, -1.0, 1.0);
+                  vars.servant_card_flight_vertical = Mth.clamp(message.flightVertical, -1.0, 1.0);
+                  vars.servant_card_flight_toggle_cooldown = Math.max(0, message.flightToggleCooldown);
+                  vars.servant_card_action_mode = Math.max(0, message.actionMode);
+                  vars.servant_card_transform_cooldown = Math.max(0, message.transformCooldown);
+                  vars.servant_card_release_cooldown = Math.max(0, message.releaseCooldown);
+                  vars.servant_card_death_release = message.deathRelease;
+                  vars.servant_card_medea_dragonfang_stock = Math.max(0, message.medeaDragonfangStock);
+                  vars.servant_card_medea_mana_charm_stock = Math.max(0, message.medeaManaCharmStock);
+                  vars.servant_card_medea_heal_charm_stock = Math.max(0, message.medeaHealCharmStock);
+                  vars.servant_card_paracelsus_stone_stock = Math.max(0, message.paracelsusStoneStock);
+                  vars.servant_card_paracelsus_diamond_shield_stock = Math.max(0, message.paracelsusDiamondShieldStock);
+                  vars.servant_card_enkidu_transfiguration_points = message.enkiduPoints == null ? "" : message.enkiduPoints;
+                  vars.servant_card_medusa_mystic_eyes_active = message.medusaMysticEyesActive;
+                  vars.servant_card_hassan_cloak_broken = message.hassanCloakBroken;
+                  vars.servant_card_hassan_zabaniya_animation_until = Math.max(0, message.hassanZabaniyaAnimationUntil);
                }
             );
          }
@@ -561,7 +828,7 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -615,6 +882,12 @@ public class TypeMoonWorldModVariables {
       public boolean ganryu_learned = false;
       public double ganryu_proficiency = 0.0;
       public boolean ganryu_tsubame_unlocked = false;
+      public boolean hokushin_learned = false;
+      public double hokushin_proficiency = 0.0;
+      public boolean hokushin_master_defeated = false;
+      public boolean tennen_learned = false;
+      public double tennen_proficiency = 0.0;
+      public boolean tennen_master_defeated = false;
       public boolean martial_ukemi_learned = false;
       public int body_training_xp = 0;
       public int body_training_points = 0;
@@ -1652,6 +1925,12 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("ganryu_learned", this.ganryu_learned);
          nbt.putDouble("ganryu_proficiency", this.ganryu_proficiency);
          nbt.putBoolean("ganryu_tsubame_unlocked", this.ganryu_tsubame_unlocked);
+         nbt.putBoolean("hokushin_learned", this.hokushin_learned);
+         nbt.putDouble("hokushin_proficiency", this.hokushin_proficiency);
+         nbt.putBoolean("hokushin_master_defeated", this.hokushin_master_defeated);
+         nbt.putBoolean("tennen_learned", this.tennen_learned);
+         nbt.putDouble("tennen_proficiency", this.tennen_proficiency);
+         nbt.putBoolean("tennen_master_defeated", this.tennen_master_defeated);
          nbt.putBoolean("martial_ukemi_learned", this.martial_ukemi_learned);
          nbt.putInt("body_training_xp", this.body_training_xp);
          nbt.putInt("body_training_points", this.body_training_points);
@@ -1907,6 +2186,12 @@ public class TypeMoonWorldModVariables {
          this.ganryu_learned = nbt.getBoolean("ganryu_learned");
          this.ganryu_proficiency = Mth.clamp(nbt.getDouble("ganryu_proficiency"), 0.0, 100.0);
          this.ganryu_tsubame_unlocked = nbt.getBoolean("ganryu_tsubame_unlocked");
+         this.hokushin_learned = nbt.getBoolean("hokushin_learned");
+         this.hokushin_proficiency = Mth.clamp(nbt.getDouble("hokushin_proficiency"), 0.0, 100.0);
+         this.hokushin_master_defeated = nbt.getBoolean("hokushin_master_defeated");
+         this.tennen_learned = nbt.getBoolean("tennen_learned");
+         this.tennen_proficiency = Mth.clamp(nbt.getDouble("tennen_proficiency"), 0.0, 100.0);
+         this.tennen_master_defeated = nbt.getBoolean("tennen_master_defeated");
          this.martial_ukemi_learned = nbt.getBoolean("martial_ukemi_learned")
             || this.bajiquan_proficiency >= 30.0 || this.ganryu_proficiency >= 50.0;
          this.body_training_xp = Math.max(0, nbt.getInt("body_training_xp"));
@@ -2368,6 +2653,12 @@ public class TypeMoonWorldModVariables {
       public void syncMana(Entity entity) {
          if (entity instanceof ServerPlayer serverPlayer) {
             sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ManaSyncMessage(this));
+         }
+      }
+
+      public void syncServantCardRuntime(Entity entity) {
+         if (entity instanceof ServerPlayer serverPlayer) {
+            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage(this));
          }
       }
 

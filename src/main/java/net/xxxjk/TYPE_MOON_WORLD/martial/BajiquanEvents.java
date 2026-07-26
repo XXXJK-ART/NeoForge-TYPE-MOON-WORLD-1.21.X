@@ -35,6 +35,7 @@ public final class BajiquanEvents {
          MartialHighJumpService.tick(player);
          BajiquanCombatService.tickPlayer(player);
          GanryuCombatService.tickPlayer(player);
+         KendoCombatService.tickPlayer(player);
       }
    }
 
@@ -135,6 +136,12 @@ public final class BajiquanEvents {
 
    @SubscribeEvent
    public static void onDamage(LivingIncomingDamageEvent event) {
+      if (event.getEntity() instanceof ServerPlayer kendoDefender
+         && (KendoCombatService.isKendoInvulnerable(kendoDefender)
+            || KendoCombatService.tryCloudDragonEvasion(kendoDefender))) {
+         event.setCanceled(true);
+         return;
+      }
       if (event.getSource().getEntity() instanceof LivingEntity controlledAttacker
          && event.getSource().getDirectEntity() == controlledAttacker
          && (controlledAttacker.hasEffect(ModMobEffects.STAGGER) || controlledAttacker.hasEffect(ModMobEffects.OFF_BALANCE))) {

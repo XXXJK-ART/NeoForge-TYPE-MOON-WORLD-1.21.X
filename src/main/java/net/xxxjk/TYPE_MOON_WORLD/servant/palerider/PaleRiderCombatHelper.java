@@ -50,6 +50,7 @@ public final class PaleRiderCombatHelper {
    private static final String TAG_NEXT_ASH_STEP = "PaleRiderNextAshStep";
    private static final String TAG_NEXT_PLAGUE_RUSH = "PaleRiderNextPlagueRush";
    private static final String TAG_NEXT_DEATH_PULSE = "PaleRiderNextDeathPulse";
+   private static final String TAG_NEXT_POSSESSION_SCAN = "PaleRiderNextPossessionScan";
    private static final String TAG_MINOR_SKILL_LOCK_UNTIL = "PaleRiderMinorSkillLockUntil";
    private static final String TAG_MINOR_SKILL_DAMAGE = "PaleRiderMinorSkillDamage";
    private static final ResourceLocationId SPEED_ID = new ResourceLocationId("underworld_soul_speed");
@@ -245,8 +246,12 @@ public final class PaleRiderCombatHelper {
 
    private static void ensurePossession(PaleRiderEntity rider, ServerLevel level) {
       if (rider.hasPossessedHost()) return;
+      long now = level.getGameTime();
+      if (now < rider.getPersistentData().getLong(TAG_NEXT_POSSESSION_SCAN)) return;
+      rider.getPersistentData().putLong(TAG_NEXT_POSSESSION_SCAN, now + 40L + Math.floorMod(rider.getId(), 10));
       Mob infectedHost = level.getEntitiesOfClass(Mob.class, rider.getBoundingBox().inflate(96.0),
          mob -> mob != rider && mob.isAlive() && !(mob instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)
+            && !PaleRiderInfectionService.isForbiddenPossessionHost(mob)
             && !mob.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES)
             && PaleRiderInfectionService.isInfectedBy(mob, rider))
          .stream().min((left, right) -> Double.compare(left.distanceToSqr(rider), right.distanceToSqr(rider))).orElse(null);
@@ -263,7 +268,7 @@ public final class PaleRiderCombatHelper {
       rider.getPersistentData().remove(TAG_UNDERWORLD_UNTIL);
       rider.getPersistentData().putLong(TAG_UNDERWORLD_COOLDOWN, now + 2400L);
       VFXServerEffects.spawn(level, "pale_rider_underworld_open", rider, 64.0);
-      int slots = Math.max(0, 50 - countOwned(level, rider, SoulEchoEntity.class));
+      int slots = Math.max(0, SoulLibrary.MAX_MANIFESTED_SOULS - countOwned(level, rider, SoulEchoEntity.class));
       List<SoulSnapshot> souls = rider.getSoulLibrary().takeStrongest(slots);
       int index = 0;
       for (SoulSnapshot soul : souls) {
@@ -306,7 +311,7 @@ public final class PaleRiderCombatHelper {
          rider.getPersistentData().putLong(TAG_LAST_SOUL_REGEN, now);
          rider.setCurrentMp(Math.min(rider.getMaxMp(), rider.getCurrentMp() + tiers));
       }
-      if (now % 10L == 0L) spawnDomainShell(level, rider.position(), 50.0, false);
+      if (InfectionRules.isScheduled(rider.getId(), now, 40)) spawnDomainShell(level, rider.position(), 50.0, false);
    }
 
    private static void startCalamity(PaleRiderEntity rider, ServerLevel level, long now) {
@@ -444,9 +449,6 @@ public final class PaleRiderCombatHelper {
    }
 
    private static void tickAuraAndInfections(PaleRiderEntity rider, ServerLevel level) {
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, rider.getBoundingBox().inflate(64.0), LivingEntity::isAlive)) {
-         if (PaleRiderInfectionService.isInfected(living)) PaleRiderInfectionService.tick(living);
-      }
       for (LivingEntity enemy : enemies(rider, level, 15.0)) {
          applyTimedAttackPenalty(enemy, FEAR_ATTACK_ID, -0.15, level.getGameTime() + 30L);
          String key = "PaleRiderFearChecked_" + rider.getUUID();
@@ -462,6 +464,7 @@ public final class PaleRiderCombatHelper {
    }
 
    private static void spawnPlagueAnimals(PaleRiderEntity rider, ServerLevel level, boolean domain) {
+      if (!PaleRiderInfectionService.hasControlCapacity(rider, 1)) return;
       RatSwarmEntity swarm = ModEntities.RAT_SWARM.get().create(level);
       Vec3 offset = new Vec3(rider.getRandom().nextDouble() * 4.0 - 2.0, 0.0, rider.getRandom().nextDouble() * 4.0 - 2.0);
       if (swarm != null) {
@@ -471,7 +474,8 @@ public final class PaleRiderCombatHelper {
          swarm.setSwarmHealth(RatSwarmRules.MAX_HEALTH);
          level.addFreshEntity(swarm);
       }
-      if (!PaleRiderCombatRules.canSpawnCrow(countOwnedCrows(level, rider))) return;
+      if (!PaleRiderInfectionService.hasControlCapacity(rider, 1)
+         || !PaleRiderCombatRules.canSpawnCrow(countOwnedCrows(level, rider))) return;
       PaleRiderCrowEntity crow = ModEntities.PALE_RIDER_CROW.get().create(level);
       if (crow == null) return;
       crow.moveTo(rider.getX() - offset.z, rider.getY() + 2.0, rider.getZ() + offset.x, rider.getYRot(), 0.0F);
@@ -488,8 +492,12 @@ public final class PaleRiderCombatHelper {
    private static void applyTimedAttackPenalty(LivingEntity target, net.minecraft.resources.ResourceLocation id, double amount, long until) {
       AttributeInstance attack = target.getAttribute(Attributes.ATTACK_DAMAGE);
       if (attack == null) return;
-      attack.removeModifier(id);
-      attack.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+      AttributeModifier current = attack.getModifier(id);
+      if (current == null || Math.abs(current.amount() - amount) > 1.0E-6
+         || current.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+         if (current != null) attack.removeModifier(id);
+         attack.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+      }
       target.getPersistentData().putLong("PaleRiderPenaltyUntil_" + id.getPath(), until);
    }
 
@@ -526,8 +534,17 @@ public final class PaleRiderCombatHelper {
       AttributeInstance speed = rider.getAttribute(Attributes.MOVEMENT_SPEED);
       if (speed == null) return;
       net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, SPEED_ID.path);
-      speed.removeModifier(id);
-      if (tiers > 0) speed.addTransientModifier(new AttributeModifier(id, tiers * 0.05, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+      double amount = tiers * 0.05;
+      AttributeModifier current = speed.getModifier(id);
+      if (tiers <= 0) {
+         if (current != null) speed.removeModifier(id);
+         return;
+      }
+      if (current == null || Math.abs(current.amount() - amount) > 1.0E-6
+         || current.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+         if (current != null) speed.removeModifier(id);
+         speed.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+      }
    }
 
    public static void cleanupAll(PaleRiderEntity rider, boolean returnSouls) {
@@ -541,6 +558,7 @@ public final class PaleRiderCombatHelper {
       rider.getPersistentData().remove(TAG_UNDERWORLD_UNTIL);
       rider.getPersistentData().remove(TAG_UNDERWORLD_ACTIVE);
       rider.getPersistentData().remove(TAG_CALAMITY_ACTIVE);
+      rider.getPersistentData().remove(TAG_NEXT_POSSESSION_SCAN);
       PaleRiderCorruptionService.end(rider);
       updateSoulSpeed(rider, 0);
    }
@@ -568,14 +586,14 @@ public final class PaleRiderCombatHelper {
 
    private static void spawnDomainShell(ServerLevel level, Vec3 center, double radius, boolean inner) {
       DustParticleOptions shellDust = new DustParticleOptions(new Vector3f(inner ? 0.24F : 0.68F, inner ? 0.24F : 0.7F, inner ? 0.26F : 0.74F), inner ? 1.15F : 0.9F);
-      int shellSamples = inner ? 120 : 180;
+      int shellSamples = inner ? 40 : 64;
       for (int index = 0; index < shellSamples; index++) {
          double theta = level.getRandom().nextDouble() * Math.PI * 2.0;
          double phi = Math.acos(2.0 * level.getRandom().nextDouble() - 1.0);
          level.sendParticles(shellDust, center.x + radius * Math.sin(phi) * Math.cos(theta), center.y + radius * Math.cos(phi),
             center.z + radius * Math.sin(phi) * Math.sin(theta), 1, 0.0, 0.0, 0.0, 0.0);
       }
-      int deathSamples = inner ? 48 : 72;
+      int deathSamples = inner ? 16 : 24;
       for (int index = 0; index < deathSamples; index++) {
          double theta = level.getRandom().nextDouble() * Math.PI * 2.0;
          double distance = radius * Math.sqrt(level.getRandom().nextDouble()) * 0.92;

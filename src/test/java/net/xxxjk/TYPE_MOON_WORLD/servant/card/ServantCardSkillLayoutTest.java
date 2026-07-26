@@ -26,4 +26,34 @@ class ServantCardSkillLayoutTest {
       assertEquals(120.0, paracelsus.mpCost());
       assertEquals(400, paracelsus.cooldownTicks());
    }
+
+   @Test
+   void ushiwakamaruSkillsMatchTheRequestedLayout() {
+      double[] costs = {25.0, 15.0, 6.0, 8.0, 15.0, 50.0, 50.0, 100.0, 50.0, 150.0};
+      int[] cooldowns = {400, 600, 140, 120, 200, 600, 600, 600, 600, 600};
+      for (int slot = 0; slot < 10; slot++) {
+         ServantCardSkillAction action = ServantCardSkillLayout.actionFor("ushiwakamaru_rider", slot, false);
+         assertNotNull(action);
+         assertEquals(costs[slot], action.mpCost(), "slot " + slot + " MP");
+         assertEquals(cooldowns[slot], action.cooldownTicks(), "slot " + slot + " cooldown");
+      }
+   }
+
+   @Test
+   void ushiwakamaruHasFiveIndependentNoblePhantasmSlots() {
+      for (int slot = 5; slot <= 9; slot++) {
+         assertEquals(true, ServantCardTransformManager.isNoblePhantasmAction("ushiwakamaru_rider", slot));
+         assertEquals(false, ServantCardTransformManager.usesSharedNoblePhantasmCooldown("ushiwakamaru_rider", slot));
+      }
+      assertEquals(false, ServantCardTransformManager.isNoblePhantasmAction("ushiwakamaru_rider", 4));
+   }
+
+   @Test
+   void onlyEightBoatUsesUshiwakamaruNoblePhantasmVoice() {
+      assertEquals(false, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_six_secret"));
+      assertEquals(false, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_usumidori"));
+      assertEquals(false, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_benkei"));
+      assertEquals(false, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_spider_slayer"));
+      assertEquals(true, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_eight_boat"));
+   }
 }

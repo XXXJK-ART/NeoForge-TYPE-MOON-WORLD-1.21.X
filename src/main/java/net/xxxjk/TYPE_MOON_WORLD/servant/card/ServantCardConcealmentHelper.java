@@ -23,6 +23,14 @@ final class ServantCardConcealmentHelper {
       clearEnemyAggro(player);
    }
 
+   static void maintain(ServerPlayer player, int duration) {
+      MobEffectInstance current = player.getEffect(MobEffects.INVISIBILITY);
+      if (current == null || current.getDuration() <= Math.min(20, duration / 2)) {
+         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, duration, 0, false, false, false));
+      }
+      tick(player);
+   }
+
    static void tick(ServerPlayer player) {
       if (!player.hasEffect(MobEffects.INVISIBILITY) || player.tickCount % AGGRO_CLEAR_INTERVAL != 0) return;
       clearEnemyAggro(player);

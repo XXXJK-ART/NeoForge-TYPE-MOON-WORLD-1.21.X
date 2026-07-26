@@ -32,6 +32,7 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private long lastBiteTick;
    private long nextTargetScanTick;
+   private long nextNavigationTick;
 
    public RatSwarmEntity(EntityType<? extends RatSwarmEntity> type, Level level) {
       super(type, level);
@@ -79,7 +80,7 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
          if (command != 2) {
             this.setTarget(null);
             if (command == 1) this.getNavigation().stop();
-            else if (command == 3) this.getNavigation().moveTo(player, 1.05);
+            else if (command == 3 && this.canRefreshNavigation(20)) this.getNavigation().moveTo(player, 1.05);
             return;
          }
       }
@@ -169,6 +170,13 @@ public final class RatSwarmEntity extends OwnedPaleRiderMob implements GeoEntity
       } else {
          other.setSwarmHealth(result.remainderHealth());
       }
+   }
+
+   private boolean canRefreshNavigation(int interval) {
+      long now = this.level().getGameTime();
+      if (now < this.nextNavigationTick) return false;
+      this.nextNavigationTick = now + interval + Math.floorMod(this.getId(), 5);
+      return true;
    }
 
    public void setSwarmHealth(float health) {

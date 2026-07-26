@@ -25,6 +25,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
@@ -52,6 +54,8 @@ public class TypeMoonCommands {
    private static final String TIME_ALTER_MAGIC_ID = "time_alter";
    private static final String SPIRITUAL_HEALING_MAGIC_ID = "spiritual_healing";
    private static final String BAPTISM_RITE_MAGIC_ID = "baptism_rite";
+   private static final String BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID = "black_key_fire_engraving";
+   private static final String STIGMA_MAGIC_ID = "stigma";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
    private static final int SAMPLE_COORD_RANGE = 2000000;
    private static final double ACCEPT_MEAN_MIN = 9.0;
@@ -83,7 +87,9 @@ public class TypeMoonCommands {
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
       "bajiquan",
-      "ganryu"
+      "ganryu",
+      KendoCombatService.HOKUSHIN_ID,
+      KendoCombatService.TENNEN_ID
    };
    private static final String[] ALL_MAGICS = new String[]{
       BASIC_JEWEL_MAGIC_ID,
@@ -113,8 +119,12 @@ public class TypeMoonCommands {
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
+      BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID,
+      STIGMA_MAGIC_ID,
       "bajiquan",
-      "ganryu"
+      "ganryu",
+      KendoCombatService.HOKUSHIN_ID,
+      KendoCombatService.TENNEN_ID
    };
 
    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -345,8 +355,18 @@ public class TypeMoonCommands {
                Commands.literal("martial")
                   .then(Commands.literal("learn").then(Commands.literal("bajiquan").executes(ctx -> setBajiquanLearned(ctx, true))))
                   .then(Commands.literal("learn").then(Commands.literal("ganryu").executes(ctx -> setGanryuLearned(ctx, true))))
+                  .then(Commands.literal("learn")
+                     .then(Commands.literal("hokushin").executes(ctx -> setKendoLearned(ctx, KendoSchool.HOKUSHIN, true)))
+                     .then(Commands.literal(KendoCombatService.HOKUSHIN_ID).executes(ctx -> setKendoLearned(ctx, KendoSchool.HOKUSHIN, true)))
+                     .then(Commands.literal("tennen").executes(ctx -> setKendoLearned(ctx, KendoSchool.TENNEN, true)))
+                     .then(Commands.literal(KendoCombatService.TENNEN_ID).executes(ctx -> setKendoLearned(ctx, KendoSchool.TENNEN, true))))
                   .then(Commands.literal("forget").then(Commands.literal("bajiquan").executes(ctx -> setBajiquanLearned(ctx, false))))
                   .then(Commands.literal("forget").then(Commands.literal("ganryu").executes(ctx -> setGanryuLearned(ctx, false))))
+                  .then(Commands.literal("forget")
+                     .then(Commands.literal("hokushin").executes(ctx -> setKendoLearned(ctx, KendoSchool.HOKUSHIN, false)))
+                     .then(Commands.literal(KendoCombatService.HOKUSHIN_ID).executes(ctx -> setKendoLearned(ctx, KendoSchool.HOKUSHIN, false)))
+                     .then(Commands.literal("tennen").executes(ctx -> setKendoLearned(ctx, KendoSchool.TENNEN, false)))
+                     .then(Commands.literal(KendoCombatService.TENNEN_ID).executes(ctx -> setKendoLearned(ctx, KendoSchool.TENNEN, false))))
             )
             .then(
                Commands.literal("player")
@@ -485,7 +505,7 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan|ganryu"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan|ganryu|hokushin|tennen"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger|tsubame <true|false>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-20>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon servant_card unlimited on|off"), false);
@@ -540,6 +560,12 @@ public class TypeMoonCommands {
          vars.ganryu_learned = false;
          vars.ganryu_proficiency = 0.0;
          vars.ganryu_tsubame_unlocked = false;
+         vars.hokushin_learned = false;
+         vars.hokushin_proficiency = 0.0;
+         vars.hokushin_master_defeated = false;
+         vars.tennen_learned = false;
+         vars.tennen_proficiency = 0.0;
+         vars.tennen_master_defeated = false;
          vars.martial_ukemi_learned = false;
          vars.body_training_xp = 0;
          vars.body_training_points = 0;
@@ -648,6 +674,12 @@ public class TypeMoonCommands {
          vars.ganryu_learned = true;
          vars.ganryu_proficiency = 100.0;
          vars.ganryu_tsubame_unlocked = true;
+         vars.hokushin_learned = true;
+         vars.hokushin_proficiency = 100.0;
+         vars.hokushin_master_defeated = true;
+         vars.tennen_learned = true;
+         vars.tennen_proficiency = 100.0;
+         vars.tennen_master_defeated = true;
          vars.martial_ukemi_learned = true;
          vars.body_training_xp = 0;
          vars.body_training_points = 0;
@@ -1065,6 +1097,12 @@ public class TypeMoonCommands {
                vars.ganryu_proficiency = value;
                if (value >= 50.0) vars.martial_ukemi_learned = true;
                break;
+            case "hokushin_ittoryu":
+               vars.hokushin_proficiency = value;
+               break;
+            case "tennen_rishin_ryu":
+               vars.tennen_proficiency = value;
+               break;
             default:
                validType = false;
          }
@@ -1097,6 +1135,16 @@ public class TypeMoonCommands {
          ServerPlayer player = ctx.getSource().getPlayerOrException();
          if (learned) GanryuCombatService.learn(player); else GanryuCombatService.forget(player);
          ctx.getSource().sendSuccess(() -> Component.literal("ganryu learned = " + learned), true);
+         return 1;
+      } catch (Exception ignored) { return 0; }
+   }
+
+   private static int setKendoLearned(CommandContext<CommandSourceStack> ctx, KendoSchool school, boolean learned) {
+      try {
+         ServerPlayer player = ctx.getSource().getPlayerOrException();
+         if (learned) KendoCombatService.learn(player, school); else KendoCombatService.forget(player, school);
+         String id = school == KendoSchool.HOKUSHIN ? "hokushin" : "tennen";
+         ctx.getSource().sendSuccess(() -> Component.literal(id + " learned = " + learned), true);
          return 1;
       } catch (Exception ignored) { return 0; }
    }

@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -62,6 +63,12 @@ public final class BaptismRiteEventHandler {
       return player != null && player.getPersistentData().getLong(TAG_UNTIL) > player.level().getGameTime();
    }
 
+   public static void interrupt(ServerPlayer player) {
+      if (!isChanting(player)) return;
+      clear(player);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.interrupted"), true);
+   }
+
    public static void start(ServerPlayer player, UUID targetId, double proficiency, int chantTicks) {
       long now = player.level().getGameTime();
       player.getPersistentData().putLong(TAG_STARTED, now);
@@ -107,7 +114,18 @@ public final class BaptismRiteEventHandler {
          return;
       }
 
-      float damage = (float)(30.0 + BasicMagecraftHelper.clampProficiency(proficiency) / 100.0 * 170.0);
+      float damage = applyRite(player, target, proficiency);
+      if (damage <= 0.0F) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.lost_target"), true);
+         return;
+      }
+      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.finish", target.getDisplayName(), String.format("%.1f", damage)), true);
+   }
+
+   public static float applyRite(LivingEntity caster, LivingEntity target, double proficiency) {
+      if (caster == null || target == null || !target.isAlive() || !MagicBaptismRite.isValidRiteTarget(target)) return 0.0F;
+      double clamped = BasicMagecraftHelper.clampProficiency(proficiency);
+      float damage = (float)(30.0 + clamped / 100.0 * 170.0);
       double chance = 0.30 + BasicMagecraftHelper.clampProficiency(proficiency) / 100.0 * 0.55;
       if (isUndeadLike(target)) {
          damage *= proficiency >= 75.0 ? 2.5F : 2.0F;
@@ -136,15 +154,16 @@ public final class BaptismRiteEventHandler {
       cleanse(target, proficiency);
       net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       target.invulnerableTime = 0;
-      target.hurt(player.damageSources().source(BAPTISM_DAMAGE, player), damage);
+      target.hurt(caster.damageSources().source(BAPTISM_DAMAGE, caster), damage);
       target.invulnerableTime = 0;
-      boolean sublimated = target.isAlive() && !(target instanceof ServerPlayer) && player.getRandom().nextDouble() < chance;
+      boolean sublimated = target.isAlive() && !(target instanceof ServerPlayer) && caster.getRandom().nextDouble() < chance;
       if (sublimated) {
-         target.hurt(player.damageSources().source(BAPTISM_DAMAGE, player), Math.max(target.getMaxHealth() * 2.0F, damage));
+         target.hurt(caster.damageSources().source(BAPTISM_DAMAGE, caster), Math.max(target.getMaxHealth() * 2.0F, damage));
       }
-      spawnFinishParticles(player, target, proficiency);
-      target.level().playSound(null, target.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.9F, 1.45F);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.finish", target.getDisplayName(), String.format("%.1f", damage)), true);
+      spawnFinishParticles(caster, target, proficiency);
+      SoundSource soundSource = caster instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+      target.level().playSound(null, target.blockPosition(), SoundEvents.BEACON_ACTIVATE, soundSource, 0.9F, 1.45F);
+      return damage;
    }
 
    private static LivingEntity resolveTarget(ServerPlayer player) {
@@ -182,15 +201,16 @@ public final class BaptismRiteEventHandler {
       }
    }
 
-   private static void spawnFinishParticles(ServerPlayer player, LivingEntity target, double proficiency) {
-      if (player.level() instanceof ServerLevel level) {
+   private static void spawnFinishParticles(LivingEntity caster, LivingEntity target, double proficiency) {
+      if (caster.level() instanceof ServerLevel level) {
          level.sendParticles(GOLD, target.getX(), target.getY() + target.getBbHeight() * 0.65, target.getZ(), proficiency >= 75.0 ? 80 : 48, 0.55, 0.8, 0.55, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.75, target.getZ(), 24, 0.45, 0.75, 0.45, 0.04);
       }
    }
 
    private static boolean isUndeadLike(LivingEntity target) {
-      return target instanceof Zombie
+      return target.getType().is(EntityTypeTags.UNDEAD)
+         || target instanceof Zombie
          || target instanceof Skeleton
          || target instanceof Stray
          || target instanceof Husk

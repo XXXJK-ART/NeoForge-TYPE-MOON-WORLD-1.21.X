@@ -1,0 +1,16 @@
+{
+  "duration": 0.7,
+  "notes": "Swallow Technique dodge: three moon-white swallow arcs peel away from the attacker.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.52, "rate": 660, "particle_lifetime": 0.34,
+      "size_variance": 0.3, "lifetime_variance": 0.16, "position_variance": 0.025,
+      "velocity": [0.0, 0.08, -0.3], "velocity_variance": 0.08,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.1, 0.0], "rotate_with_entity": true},
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "(t - 0.5) * 3.2", "expr_y": "0.45 + sin(t * 3.14159) * 0.7 + 0.18 * sin(t * 18.849)", "expr_z": "-0.3 - sin(t * 3.14159) * 0.8", "t_start": 0.0, "t_end": 1.0, "segments": 108},
+      "color_over_life": [{"t": 0.0, "color": "#CCEEFFFF"}, {"t": 0.5, "color": "#77FFFFFF"}, {"t": 1.0, "color": "#00EEFFFF"}],
+      "size_over_life": [{"t": 0.0, "size": 0.035}, {"t": 0.42, "size": 0.12}, {"t": 1.0, "size": 0.012}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_SWALLOW_ARCS", "enable_trail": true
+    }
+  ]
+}

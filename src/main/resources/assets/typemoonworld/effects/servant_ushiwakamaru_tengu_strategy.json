@@ -1,0 +1,27 @@
+{
+  "duration": 1.25,
+  "notes": "Tengu Strategy: emerald spiral wind and feather-like curves shown once when combat begins.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 1.0, "rate": 620, "particle_lifetime": 0.55,
+      "size_variance": 0.38, "lifetime_variance": 0.2, "position_variance": 0.04,
+      "velocity": [0.0, 0.12, 0.0], "velocity_variance": 0.08,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.95, 0.0], "rotate_with_entity": true},
+      "component": {"type": "helix", "radius": 0.85, "turns": 4.0, "height": 2.5, "segments": 128},
+      "color_over_life": [{"t": 0.0, "color": "#CC88FF44"}, {"t": 0.55, "color": "#6688FF44"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.035}, {"t": 0.45, "size": 0.13}, {"t": 1.0, "size": 0.015}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_TENGU_WIND", "enable_trail": true,
+      "vanilla_particles": [{"type": "gust", "count": 1, "spread": [0.45, 0.6, 0.45], "offset": [0.0, 0.7, 0.0], "speed": 0.04, "chance": 0.18}]
+    },
+    {
+      "start_time": 0.1, "end_time": 1.15, "rate": 260, "particle_lifetime": 0.62,
+      "size_variance": 0.45, "lifetime_variance": 0.22, "position_variance": 0.08,
+      "velocity": [0.0, 0.2, 0.0], "velocity_variance": 0.12,
+      "binding": {"mode": "entity_yaw", "offset": [0.0, -0.6, 0.0], "rotate_with_entity": true},
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "cos(t * 18.849 + time * 8.0) * (0.4 + t * 0.8)", "expr_y": "t * 1.8", "expr_z": "sin(t * 18.849 + time * 8.0) * (0.4 + t * 0.8)", "t_start": 0.0, "t_end": 1.0, "segments": 84},
+      "color_over_life": [{"t": 0.0, "color": "#8888FF44"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.08}, {"t": 0.5, "size": 0.035}, {"t": 1.0, "size": 0.01}],
+      "blend": "TRANSLUCENT", "particle_role": "USHIWAKAMARU_TENGU_FEATHERS", "enable_trail": true
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#typemoonworld:dead_apostle_secondary_spawns",
+  "spawners": [
+    {"type": "typemoonworld:the_dead", "weight": 8, "minCount": 1, "maxCount": 3},
+    {"type": "typemoonworld:ghoul", "weight": 4, "minCount": 1, "maxCount": 2},
+    {"type": "typemoonworld:living_dead", "weight": 1, "minCount": 1, "maxCount": 1},
+    {"type": "typemoonworld:night_kin", "weight": 1, "minCount": 1, "maxCount": 1}
+  ]
+}

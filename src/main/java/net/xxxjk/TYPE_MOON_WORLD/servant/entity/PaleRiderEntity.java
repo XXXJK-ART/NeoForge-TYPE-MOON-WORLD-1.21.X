@@ -72,11 +72,11 @@ public final class PaleRiderEntity extends ServantEntity {
          return;
       }
       if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()
-         && this.tickCount % 4 == Math.floorMod(this.getId(), 4)) {
-         level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 0.9, this.getZ(), 7, 0.28, 0.85, 0.28, 0.015);
+         && this.tickCount % 8 == Math.floorMod(this.getId(), 8)) {
+         level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 0.9, this.getZ(), 4, 0.28, 0.85, 0.28, 0.015);
          level.sendParticles(new DustParticleOptions(new Vector3f(0.025F, 0.025F, 0.03F), 1.5F),
-            this.getX(), this.getY() + 0.9, this.getZ(), 8, 0.3, 0.9, 0.3, 0.01);
-         level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 1.1, this.getZ(), 4, 0.3, 0.8, 0.3, 0.015);
+            this.getX(), this.getY() + 0.9, this.getZ(), 5, 0.3, 0.9, 0.3, 0.01);
+         level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 1.1, this.getZ(), 2, 0.3, 0.8, 0.3, 0.015);
       }
    }
 
@@ -208,26 +208,33 @@ public final class PaleRiderEntity extends ServantEntity {
          case FAMINE -> new Vector3f(0.45F, 0.025F, 0.02F);
          case BEAST -> new Vector3f(0.035F, 0.035F, 0.035F);
       };
-      level.sendParticles(new DustParticleOptions(color, 1.5F), horseman.getX(), horseman.getY() + 0.9, horseman.getZ(), 10, 0.3, 0.9, 0.3, 0.015);
-      level.sendParticles(ParticleTypes.ASH, horseman.getX(), horseman.getY() + 1.0, horseman.getZ(), 4, 0.25, 0.8, 0.25, 0.01);
+      level.sendParticles(new DustParticleOptions(color, 1.5F), horseman.getX(), horseman.getY() + 0.9, horseman.getZ(), 5, 0.3, 0.9, 0.3, 0.015);
+      level.sendParticles(ParticleTypes.ASH, horseman.getX(), horseman.getY() + 1.0, horseman.getZ(), 2, 0.25, 0.8, 0.25, 0.01);
    }
 
    public boolean beginPossession(Mob host) {
       if (host == null || host == this || !host.isAlive() || host instanceof ServantEntity
+         || PaleRiderInfectionService.isForbiddenPossessionHost(host)
          || host.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES)) return false;
+      if (!(host instanceof SoulEchoEntity) && !PaleRiderInfectionService.isControlled(host)
+         && !PaleRiderInfectionService.hasControlCapacity(this, 1)) return false;
       if (this.possessedHostUuid != null && this.possessedHostUuid.equals(host.getUUID()) && this.getVehicle() == host) return true;
       this.endPossession();
       if (!this.startRiding(host, true)) return false;
       this.possessedHostUuid = host.getUUID();
       host.getPersistentData().putBoolean("PaleRiderPossessed", true);
-      if (!(host instanceof SoulEchoEntity)) PaleRiderInfectionService.forceControl(host, this);
+      if (!(host instanceof SoulEchoEntity) && !PaleRiderInfectionService.forceControl(host, this)) {
+         this.endPossession();
+         return false;
+      }
       return true;
    }
 
    public void tickPossession() {
       if (this.possessedHostUuid == null || !(this.level() instanceof ServerLevel level)) return;
       Entity hostEntity = level.getEntity(this.possessedHostUuid);
-      if (!(hostEntity instanceof Mob host) || !host.isAlive() || this.getVehicle() != host) {
+      if (!(hostEntity instanceof Mob host) || !host.isAlive() || this.getVehicle() != host
+         || PaleRiderInfectionService.isForbiddenPossessionHost(host)) {
          this.endPossession();
          return;
       }

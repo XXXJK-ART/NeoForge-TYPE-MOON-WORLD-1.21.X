@@ -158,8 +158,10 @@ public final class PlayerMagicSelectionService {
          normalized.putInt("gandr_machine_gun_mode", clamp(normalized.getInt("gandr_machine_gun_mode"), 0, 1));
       } else if ("healing_magic".equals(magicId) && normalized.contains("healing_target")) {
          normalized.putInt("healing_target", clamp(normalized.getInt("healing_target"), 0, 1));
-      } else if ("time_alter".equals(magicId) && normalized.contains("time_alter_mode")) {
-         normalized.putInt("time_alter_mode", clamp(normalized.getInt("time_alter_mode"), 0, 1));
+      } else if ("time_alter".equals(magicId)) {
+         if (normalized.contains("time_alter_mode")) {
+            normalized.putInt("time_alter_mode", clamp(normalized.getInt("time_alter_mode"), 0, 1));
+         }
          if (normalized.contains("time_alter_multiplier")) {
             normalized.putInt("time_alter_multiplier", Math.max(1, normalized.getInt("time_alter_multiplier")));
          }

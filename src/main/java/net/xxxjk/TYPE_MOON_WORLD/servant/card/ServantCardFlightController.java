@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardFlightController {
+   private static final String FLIGHT_WAS_AIRBORNE_TAG = "ServantCardFlightWasAirborne";
    private static final double MP_PER_TICK = 0.28;
    private static final int MODE_OFF = 0;
    private static final int MODE_NORMAL = 1;
@@ -31,7 +32,7 @@ public final class ServantCardFlightController {
       }
       if (toggle) {
          toggleFlight(player, vars);
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
          return;
       }
       double clampedForward = Mth.clamp(forward, -1.0, 1.0);
@@ -62,6 +63,13 @@ public final class ServantCardFlightController {
          }
          return;
       }
+      boolean grounded = player.getVehicle() != null ? player.getVehicle().onGround() : player.onGround();
+      if (!grounded) {
+         player.getPersistentData().putBoolean(FLIGHT_WAS_AIRBORNE_TAG, true);
+      } else if (player.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE_TAG)) {
+         stop(player, vars, true);
+         return;
+      }
       long now = player.level().getGameTime();
       if (vars.servant_card_flight_mode == MODE_HIGH) {
          vars.servant_card_high_flight_until = now + vars.servant_card_oda_flight_ticks;
@@ -78,7 +86,7 @@ public final class ServantCardFlightController {
             vars.servant_card_oda_flight_cooldown_until = now + HIGH_FLIGHT_EXHAUSTED_COOLDOWN;
             vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_cooldown_until + HIGH_FLIGHT_RECHARGE_INTERVAL;
          }
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.high_flight_expired"), true);
       }
       if ("oda_nobunaga".equals(vars.servant_card_id) && ServantCardOdaNobunagaSkills.tickMountFlight(player, vars)) {
@@ -121,6 +129,7 @@ public final class ServantCardFlightController {
    }
 
    public static void stop(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, boolean sync) {
+      player.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
       if ("oda_nobunaga".equals(vars.servant_card_id)) {
          if (vars.servant_card_flight_mode == MODE_HIGH) {
             beginHighFlightRecharge(player, vars);
@@ -139,7 +148,7 @@ public final class ServantCardFlightController {
          vars.servant_card_flight_strafe = 0.0;
          vars.servant_card_flight_vertical = 0.0;
          if (sync) {
-            vars.syncPlayerVariables(player);
+            vars.syncServantCardRuntime(player);
          }
       }
    }
@@ -155,6 +164,7 @@ public final class ServantCardFlightController {
       }
       long now = player.level().getGameTime();
       if (!vars.servant_card_flying) {
+         player.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
          if ("oda_nobunaga".equals(vars.servant_card_id) && !ServantCardOdaNobunagaSkills.startMountFlight(player, vars)) {
             return;
          }
@@ -209,7 +219,7 @@ public final class ServantCardFlightController {
       long now = level.getGameTime();
       if (vars.servant_card_oda_flight_ticks > HIGH_FLIGHT_MAX_TICKS) {
          vars.servant_card_oda_flight_ticks = HIGH_FLIGHT_MAX_TICKS;
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
       }
       if (vars.servant_card_oda_flight_ticks >= HIGH_FLIGHT_MAX_TICKS) {
          vars.servant_card_oda_flight_recharge_at = 0L;
@@ -230,7 +240,7 @@ public final class ServantCardFlightController {
          vars.servant_card_oda_flight_recharge_at = vars.servant_card_oda_flight_ticks >= HIGH_FLIGHT_MAX_TICKS
             ? 0L
             : now + HIGH_FLIGHT_RECHARGE_INTERVAL;
-         vars.syncPlayerVariables(player);
+         vars.syncServantCardRuntime(player);
       }
    }
 

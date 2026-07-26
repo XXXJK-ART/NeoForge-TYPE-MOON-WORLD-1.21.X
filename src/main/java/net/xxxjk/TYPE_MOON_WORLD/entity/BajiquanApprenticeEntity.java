@@ -18,14 +18,19 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanNpcCombatController;
+import net.xxxjk.TYPE_MOON_WORLD.martial.NpcActionPose;
 import org.jetbrains.annotations.Nullable;
 
-public class BajiquanApprenticeEntity extends PathfinderMob {
+public class BajiquanApprenticeEntity extends HumanNpcEntity implements NpcActionPose {
    private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(BajiquanApprenticeEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Integer> ACTION_POSE = SynchedEntityData.defineId(BajiquanApprenticeEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> ACTION_TICKS = SynchedEntityData.defineId(BajiquanApprenticeEntity.class, EntityDataSerializers.INT);
    private static final String TAG_PROFICIENCY = "TypeMoonBajiquanNpcProficiency";
 
    public BajiquanApprenticeEntity(EntityType<? extends PathfinderMob> type, Level level) { super(type, level); }
@@ -39,6 +44,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, true));
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -51,7 +57,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       this.ensureRandomName();
-      if (!this.getPersistentData().contains(TAG_PROFICIENCY)) this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
+      if (!this.getPersistentData().contains(TAG_PROFICIENCY)) this.getPersistentData().putInt(TAG_PROFICIENCY, 20 + this.random.nextInt(71));
    }
 
    @Override public boolean hurt(DamageSource source, float amount) {
@@ -68,7 +74,19 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(FEMALE, false);
+      builder.define(ACTION_POSE, 0);
+      builder.define(ACTION_TICKS, 0);
    }
+   @Override public void tick() {
+      super.tick();
+      if (this.entityData.get(ACTION_TICKS) > 0) {
+         this.entityData.set(ACTION_TICKS, this.entityData.get(ACTION_TICKS) - 1);
+         if (this.entityData.get(ACTION_TICKS) <= 0) this.entityData.set(ACTION_POSE, 0);
+      }
+   }
+   @Override public int getNpcActionPose() { return this.entityData.get(ACTION_POSE); }
+   @Override public int getNpcActionPoseTicks() { return this.entityData.get(ACTION_TICKS); }
+   @Override public void triggerNpcActionPose(int pose, int ticks) { this.entityData.set(ACTION_POSE, Math.max(0, pose)); this.entityData.set(ACTION_TICKS, Math.max(0, ticks)); }
    public boolean isFemale() { return this.entityData.get(FEMALE); }
    public void setFemale(boolean value) { this.entityData.set(FEMALE, value); }
 
@@ -77,7 +95,7 @@ public class BajiquanApprenticeEntity extends PathfinderMob {
       NpcScaleHelper.ensureRandomScale(this);
       this.setFemale(this.random.nextBoolean());
       this.ensureRandomName();
-      this.getPersistentData().putInt(TAG_PROFICIENCY, 10 + this.random.nextInt(41));
+      this.getPersistentData().putInt(TAG_PROFICIENCY, 20 + this.random.nextInt(71));
       if (type != MobSpawnType.NATURAL && type != MobSpawnType.CHUNK_GENERATION) {
          this.setPersistenceRequired();
       }

@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChiselItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CommandSpellItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DirkSmallKnifeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.Magic_fragmentsItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomStartAttributesItem;
@@ -30,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SpiderCutterItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.JapaneseSwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
@@ -238,6 +240,12 @@ public class ModItems {
             () -> new BajiquanManualItem(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> GANRYU_MANUAL = ITEMS.register("ganryu_manual",
             () -> new GanryuManualItem(new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> HOKUSHIN_MANUAL = ITEMS.register("hokushin_manual",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.KendoManualItem(new Item.Properties().rarity(Rarity.RARE),
+                    net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool.HOKUSHIN));
+    public static final DeferredItem<Item> TENNEN_MANUAL = ITEMS.register("tennen_manual",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.KendoManualItem(new Item.Properties().rarity(Rarity.RARE),
+                    net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool.TENNEN));
     public static final DeferredItem<Item> SPARRING_INVITATION = ITEMS.register("sparring_invitation",
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> RELIC_VALKYRIE_ARROWHEAD = registerSimpleItem("relic_valkyrie_arrowhead");
@@ -288,6 +296,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS = registerServantCard("paracelsus");
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
     public static final DeferredItem<Item> SERVANT_CARD_PALE_RIDER = registerServantCard("pale_rider");
+    public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER = registerServantCard("ushiwakamaru_rider");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -322,6 +331,9 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN_CHEST = registerServantArmor("li_shuwen", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN_LEGS = registerServantArmor("li_shuwen", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN_HEAD = registerServantArmor("li_shuwen", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -579,6 +591,14 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
             () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "baptism_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_book_black_key_fire_engraving",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "black_key_fire_engraving"));
+    public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_page_black_key_fire_engraving",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "black_key_fire_engraving"));
+    public static final DeferredItem<Item> MAGIC_BOOK_STIGMA = ITEMS.register("magic_book_stigma",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "stigma"));
+    public static final DeferredItem<Item> MAGIC_PAGE_STIGMA = ITEMS.register("magic_page_stigma",
+            () -> new RandomMagicScrollItem(new Item.Properties().durability(5), 0.5, (String)null, "stigma"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
@@ -803,8 +823,25 @@ public class ModItems {
                                             1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+
+    public static final DeferredItem<Item> SPIDER_CUTTER = ITEMS.register("spider_cutter",
+            () -> new SpiderCutterItem(new Item.Properties().durability(SpiderCutterItem.DURABILITY).fireResistant().rarity(Rarity.RARE)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "spider_cutter_damage"),
+                                            SpiderCutterItem.ATTACK_DAMAGE, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "spider_cutter_speed"),
+                                            SpiderCutterItem.ATTACK_SPEED, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
     public static final DeferredItem<Item> THOMPSON_CONTENDER = ITEMS.register("thompson_contender",
             () -> new ThompsonContenderItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> BLACK_KEY = ITEMS.register("black_key",
+            () -> new BlackKeyItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -839,6 +876,16 @@ public class ModItems {
 
     public static final DeferredItem<Item> MYSTIC_MAGICIAN_SPAWN_EGG = ITEMS.register("mystic_magician_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN, 0x000000, 0xC00000, new Item.Properties()));
+    public static final DeferredItem<Item> THE_DEAD_SPAWN_EGG = ITEMS.register("the_dead_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.THE_DEAD, 0x5C5C5C, 0x262626, new Item.Properties()));
+    public static final DeferredItem<Item> GHOUL_SPAWN_EGG = ITEMS.register("ghoul_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GHOUL, 0x66705B, 0x2B3028, new Item.Properties()));
+    public static final DeferredItem<Item> LIVING_DEAD_SPAWN_EGG = ITEMS.register("living_dead_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LIVING_DEAD, 0x6E7375, 0xA5A09A, new Item.Properties()));
+    public static final DeferredItem<Item> NIGHT_KIN_SPAWN_EGG = ITEMS.register("night_kin_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NIGHT_KIN, 0x272733, 0x8C2636, new Item.Properties()));
+    public static final DeferredItem<Item> CHURCH_EXECUTOR_SPAWN_EGG = ITEMS.register("church_executor_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CHURCH_EXECUTOR, 0x202020, 0xD0D0D0, new Item.Properties()));
 
     public static final DeferredItem<Item> BAJIQUAN_MASTER_SPAWN_EGG = ITEMS.register("bajiquan_master_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.BAJIQUAN_MASTER, 0x27331F, 0xD8C59A, new Item.Properties()));
@@ -846,6 +893,16 @@ public class ModItems {
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.BAJIQUAN_APPRENTICE, 0x3B5E39, 0xE2D2B4, new Item.Properties()));
     public static final DeferredItem<Item> MYSTERIOUS_SWORDSMAN_SPAWN_EGG = ITEMS.register("mysterious_swordsman_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTERIOUS_SWORDSMAN, 0x26365A, 0xD7C6A5, new Item.Properties()));
+    public static final DeferredItem<Item> KENDO_MASTER_SPAWN_EGG = ITEMS.register("kendo_master_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.KendoMasterSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.KENDO_MASTER, 0x51362A, 0xD8C59A, new Item.Properties(), net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool.HOKUSHIN));
+    public static final DeferredItem<Item> KENDO_MASTER_TENNEN_SPAWN_EGG = ITEMS.register("kendo_master_tennen_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.KendoMasterSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.KENDO_MASTER, 0x25466A, 0xD7C6A5, new Item.Properties(), net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool.TENNEN));
+    public static final DeferredItem<Item> KENDO_APPRENTICE_SPAWN_EGG = ITEMS.register("kendo_apprentice_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.KENDO_APPRENTICE, 0x4B6A73, 0xE2D2B4, new Item.Properties()));
+    public static final DeferredItem<Item> RONIN_SPAWN_EGG = ITEMS.register("ronin_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.RONIN, 0x3A2D29, 0xB68D6F, new Item.Properties()));
+    public static final DeferredItem<Item> SHINSENGUMI_SPAWN_EGG = ITEMS.register("shinsengumi_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SHINSENGUMI, 0x25466A, 0xD7C6A5, new Item.Properties()));
     public static final DeferredItem<Item> TOHSAKA_RIN_SPAWN_EGG = ITEMS.register("tohsaka_rin_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.TOHSAKA_RIN, 0x8B1126, 0xE8D8C5, new Item.Properties()));
 
@@ -871,6 +928,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARTORIA_PENDRAGON, 0x1E4FAF, 0xF4D35E));
     public static final DeferredItem<Item> ODA_NOBUNAGA_SPAWN_EGG = ITEMS.register("oda_nobunaga_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ODA_NOBUNAGA, 0xB01818, 0xF4C430));
+    public static final DeferredItem<Item> USHIWAKAMARU_RIDER_SPAWN_EGG = ITEMS.register("ushiwakamaru_rider_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.USHIWAKAMARU_RIDER, 0x4A1E38, 0xE9C9D5));
     public static final DeferredItem<Item> ENKIDU_SPAWN_EGG = ITEMS.register("enkidu_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
     public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",
@@ -935,6 +994,7 @@ public class ModItems {
             case "gawain" -> (legs ? SERVANT_CARD_GAWAIN_LEGS : SERVANT_CARD_GAWAIN_CHEST).get();
             case "paracelsus" -> (legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
             case "li_shuwen" -> (head ? SERVANT_CARD_LI_SHUWEN_HEAD : legs ? SERVANT_CARD_LI_SHUWEN_LEGS : SERVANT_CARD_LI_SHUWEN_CHEST).get();
+            case "ushiwakamaru_rider" -> (head ? SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD : legs ? SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS : SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

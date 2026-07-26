@@ -20,6 +20,8 @@ import net.minecraft.world.level.Level;
 public class GilgameshEntity extends ServantEntity {
    public static final String SERVANT_KEY = "gilgamesh";
    private static final EntityDataAccessor<Boolean> FLYING_MODE = SynchedEntityData.defineId(GilgameshEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final String FLIGHT_WAS_AIRBORNE_TAG = "GilgameshFlightWasAirborne";
+   private static final String FLIGHT_LANDED_UNTIL_TAG = "GilgameshFlightLandedUntil";
 
    public GilgameshEntity(EntityType<GilgameshEntity> type, Level level) {
       super(type, level, SERVANT_KEY);
@@ -60,6 +62,14 @@ public class GilgameshEntity extends ServantEntity {
       super.customServerAiStep();
       if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
          GilgameshCombatHelper.tick(this);
+         if (this.isFlyingMode()) {
+            if (!this.onGround()) {
+               this.getPersistentData().putBoolean(FLIGHT_WAS_AIRBORNE_TAG, true);
+            } else if (this.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE_TAG)) {
+               this.setFlyingMode(false);
+               this.getPersistentData().putLong(FLIGHT_LANDED_UNTIL_TAG, this.level().getGameTime() + 80L);
+            }
+         }
       }
    }
 
@@ -68,10 +78,14 @@ public class GilgameshEntity extends ServantEntity {
    }
 
    public void setFlyingMode(boolean flying) {
+      if (flying && !this.level().isClientSide() && this.getPersistentData().getLong(FLIGHT_LANDED_UNTIL_TAG) > this.level().getGameTime()) {
+         return;
+      }
       this.entityData.set(FLYING_MODE, flying);
       if (!this.level().isClientSide()) {
          this.setNoGravity(flying);
          if (!flying) {
+            this.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
             this.setDeltaMovement(this.getDeltaMovement().multiply(1.0, 0.35, 1.0));
          }
       }

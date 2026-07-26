@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantNoblePhantasmContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusWorkshopHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
@@ -70,8 +71,8 @@ public final class ParacelsusServantSkills {
    private static final int PHILOSOPHER_STONE_COOLDOWN = 900;
    private static final int NP_COOLDOWN = 900;
    private static final int NP_CHANT_TICKS = 140;
-   private static final int ELEMENTAL_MAGIC_COOLDOWN = 90;
-   private static final int TARGET_CANNON_COOLDOWN = 80;
+   private static final int ELEMENTAL_MAGIC_COOLDOWN = 100;
+   private static final int TARGET_CANNON_COOLDOWN = 90;
    private static final int PHILOSOPHER_STONE_STARTING_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_MAX_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_INVULN_TICKS = 60;
@@ -259,7 +260,7 @@ public final class ParacelsusServantSkills {
       entity.getLookControl().setLookAt(target, 35.0F, 35.0F);
       if (spiritActive
          && entity.distanceTo(target) <= 20.0
-         && now - entity.getPersistentData().getLong(TAG_LAST_ELEMENTAL_STRIKE) >= 30L) {
+         && now - entity.getPersistentData().getLong(TAG_LAST_ELEMENTAL_STRIKE) >= 34L) {
          entity.getPersistentData().putLong(TAG_LAST_ELEMENTAL_STRIKE, now);
          releaseElementalStrike(entity, target, now);
       }
@@ -1018,7 +1019,7 @@ public final class ParacelsusServantSkills {
    }
 
    private static float paracelsusSkillDamage(float baseDamage) {
-      return baseDamage * 0.5F;
+      return ParacelsusBalanceRules.reduceDamage(baseDamage * 0.5F);
    }
 
 }

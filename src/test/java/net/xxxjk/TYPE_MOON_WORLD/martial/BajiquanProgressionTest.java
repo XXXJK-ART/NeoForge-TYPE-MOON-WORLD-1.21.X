@@ -67,7 +67,11 @@ class BajiquanProgressionTest {
       assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.CHARGED_TREMOR, BajiquanMove.DOUBLE_PALM, false));
       assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.KNEE, BajiquanMove.DOWN_KICK, false));
       assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PARRY, BajiquanMove.FA_JIN, false));
+      assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.FA_JIN, BajiquanMove.PUNCH, false));
+      assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PUNCH, BajiquanMove.PUNCH, false));
+      assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PUNCH, BajiquanMove.PUSH, true));
       assertTrue(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PUNCH, BajiquanMove.FIERCE_TIGER, false));
+      assertFalse(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PUNCH, BajiquanMove.PUSH, false));
       assertFalse(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.PALM, BajiquanMove.PUNCH, false));
       assertFalse(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.DOUBLE_PALM, BajiquanMove.PUNCH, false));
       assertFalse(BajiquanComboRules.isLegalRecoveryCancel(BajiquanMove.STOMP, BajiquanMove.PUSH, false));

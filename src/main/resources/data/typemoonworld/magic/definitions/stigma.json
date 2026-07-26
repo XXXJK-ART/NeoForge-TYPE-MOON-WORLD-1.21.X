@@ -1,0 +1,12 @@
+{
+  "name_key": "magic.typemoonworld.stigma.name",
+  "category": "typemoonworld:church",
+  "school": "typemoonworld:church",
+  "mana_cost": 0,
+  "cooldown_ticks": 0,
+  "learnable": true,
+  "wheel_selectable": false,
+  "crest_allowed": false,
+  "npc_allowed": true,
+  "knowledge_only": true
+}

@@ -28,6 +28,7 @@ public final class CommonServantSkills {
       registry.register("true_mind_eye_b", CommonServantSkills::executeTrueMindEyeB, "typemoonworld_core");
       registry.register("projection_magic_c", CommonServantSkills::executeProjectionMagicC, "typemoonworld_core");
       registry.register("clairvoyance_c", CommonServantSkills::executeClairvoyanceC, "typemoonworld_core");
+      registry.register("clairvoyance_ex", CommonServantSkills::executeClairvoyanceEx, "typemoonworld_core");
       registry.register("strategy_b", CommonServantSkills::executeStrategyB, "typemoonworld_core");
       registry.register("tenka_fubu_a", CommonServantSkills::executeTenkaFubuA, "typemoonworld_core");
       registry.register("maou_a", CommonServantSkills::executeMaouA, "typemoonworld_core");
@@ -247,6 +248,17 @@ public final class CommonServantSkills {
       entity.getPersistentData().putBoolean("ClairvoyanceActive", true);
       entity.getPersistentData().putFloat("ClairvoyanceAccuracyBonus", 0.30F);
       entity.getPersistentData().putFloat("ClairvoyanceCritBonus", 0.10F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeClairvoyanceEx(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean("ClairvoyanceExActive", true);
+      entity.getPersistentData().putFloat("ClairvoyanceAccuracyBonus", 0.50F);
+      entity.getPersistentData().putFloat("ClairvoyanceCritBonus", 0.20F);
       return ServantExecutionResult.SUCCESS;
    }
 

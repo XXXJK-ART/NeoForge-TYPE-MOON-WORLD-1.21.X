@@ -228,6 +228,8 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                   requiredMana = 20.0;
                } else if ("gander".equals(magicId)) {
                   requiredMana = 25.0;
+               } else {
+                  requiredMana = getAreaMagicManaCost(magicId, getMagicProficiency(vars, magicId));
                }
 
                return requiredMana > capacity
@@ -403,6 +405,26 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
          case "reinforcement" -> vars.proficiency_reinforcement;
          case "gravity_magic" -> vars.proficiency_gravity_magic;
          case "gander" -> vars.proficiency_gander;
+         case "healing_magic" -> vars.proficiency_healing_magic;
+         case "suggestion_magic" -> vars.proficiency_suggestion_magic;
+         case "binding_magic" -> vars.proficiency_binding_magic;
+         case "fire_magic" -> vars.proficiency_fire_magic;
+         case "water_magic" -> vars.proficiency_water_magic;
+         case "wind_magic" -> vars.proficiency_wind_magic;
+         case "earth_magic" -> vars.proficiency_earth_magic;
+         default -> 0.0;
+      };
+   }
+
+   private static double getAreaMagicManaCost(String magicId, double proficiency) {
+      double p = Math.max(0.0, Math.min(100.0, proficiency));
+      return switch (magicId) {
+         case "healing_magic" -> 12.0 + p * 0.08;
+         case "suggestion_magic" -> 10.0 + p * 0.08;
+         case "binding_magic" -> 12.0 + p * 0.08;
+         case "fire_magic" -> 10.0 + p * 0.12;
+         case "water_magic", "earth_magic" -> 9.0 + p * 0.10;
+         case "wind_magic" -> 8.0 + p * 0.09;
          default -> 0.0;
       };
    }

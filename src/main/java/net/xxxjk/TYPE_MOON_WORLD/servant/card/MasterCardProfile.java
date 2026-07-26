@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
@@ -118,10 +119,12 @@ public final class MasterCardProfile {
       String cardId = vars.master_card_id == null ? "" : vars.master_card_id;
       CompoundTag savedVariables = vars.master_card_saved_variables == null ? new CompoundTag() : vars.master_card_saved_variables.copy();
       CompoundTag savedInventory = vars.master_card_saved_inventory == null ? new CompoundTag() : vars.master_card_saved_inventory.copy();
-      clearPlayerInventory(player);
-      if (!savedVariables.isEmpty()) {
+      boolean hasSnapshot = !savedVariables.isEmpty() && savedInventory.contains("items", 9);
+      if (hasSnapshot) {
+         clearPlayerInventory(player);
          vars.deserializeNBT(player.registryAccess(), savedVariables);
-         BodyTrainingService.clear(player, vars);
+         BodyTrainingService.applyAttributes(player, vars);
+         restoreInventory(player, savedInventory);
       } else {
          vars.master_active = false;
          vars.master_card_active = false;
@@ -129,7 +132,6 @@ public final class MasterCardProfile {
          vars.master_card_saved_variables = new CompoundTag();
          vars.master_card_saved_inventory = new CompoundTag();
       }
-      restoreInventory(player, savedInventory);
       give(player, createCardStack(cardId));
       return true;
    }
@@ -196,13 +198,21 @@ public final class MasterCardProfile {
          });
          case "kotomine_kirei" -> new Profile(masterId, "kirei", 300.0, 5.0, 10, Attributes.NONE, vars -> {
             learnBajiquan(vars, 80.0);
+            learn(vars, "black_key_fire_engraving");
+            vars.magic_proficiencies.put("black_key_fire_engraving", 80.0);
             learn(vars, "baptism_rite");
             vars.proficiency_baptism_rite = Math.max(vars.proficiency_baptism_rite, 85.0);
             learn(vars, "spiritual_healing");
             vars.proficiency_spiritual_healing = Math.max(vars.proficiency_spiritual_healing, 75.0);
             learn(vars, "healing_magic");
             vars.proficiency_healing_magic = Math.max(vars.proficiency_healing_magic, 50.0);
-         }, player -> player.displayClientMessage(Component.translatable("message.typemoonworld.master_card.black_key_placeholder"), false));
+         }, player -> {
+            for (int i = 0; i < 5; i++) {
+               ItemStack blackKeys = new ItemStack(ModItems.BLACK_KEY.get(), 3);
+               BlackKeyItem.setExpanded(blackKeys, true);
+               give(player, blackKeys);
+            }
+         });
          case "luvia" -> new Profile(masterId, "luvia", 1000.0, 9.0, 6, Attributes.EARTH, vars -> {
             learnJewelSuite(vars, 85.0);
             learn(vars, "jewel_machine_gun");
@@ -252,6 +262,7 @@ public final class MasterCardProfile {
 
    private static void resetToProfileState(TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.learned_magics.clear();
+      vars.magic_proficiencies.clear();
       vars.selected_magics.clear();
       vars.selected_magic_runtime_slot_indices.clear();
       vars.selected_magic_display_names.clear();

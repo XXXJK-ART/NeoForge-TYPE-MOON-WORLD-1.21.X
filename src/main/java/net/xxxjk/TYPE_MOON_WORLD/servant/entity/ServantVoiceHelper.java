@@ -87,6 +87,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", 300, 1.15F, 0.92F, ModSounds.PALE_RIDER_VOICE_ATTACK.get());
+      } else if (isUshiwakamaru(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get());
       }
    }
 
@@ -116,6 +121,9 @@ public final class ServantVoiceHelper {
       if (defeated == null || defeated == servant || defeated.isAlliedTo(servant)) {
          return;
       }
+      if (servant instanceof UshiwakamaruRiderEntity rider && rider.isClone()) {
+         return;
+      }
 
       if (isSasakiKojiro(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SASAKI_KOJIRO_VOICE_VICTORY.get());
@@ -143,6 +151,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.LI_SHUWEN_VOICE_VICTORY.get());
       } else if (isParacelsus(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.PARACELSUS_VOICE_VICTORY.get());
+      } else if (isUshiwakamaru(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_VICTORY.get());
       }
    }
 
@@ -173,6 +183,14 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.94F, ModSounds.LI_SHUWEN_VOICE_FAIL.get());
       } else if (isParacelsus(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.PARACELSUS_VOICE_FAIL.get());
+      } else if (isUshiwakamaru(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_FAIL.get());
+      }
+   }
+
+   public static void tryPlayUshiwakamaruNp(UshiwakamaruRiderEntity servant) {
+      if (isUshiwakamaru(servant)) {
+         playVoiceForced(servant, "ushiwakamaru_np", 1.15F, 1.0F, ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get());
       }
    }
 
@@ -385,6 +403,10 @@ public final class ServantVoiceHelper {
 
    private static boolean isPaleRider(ServantEntity servant) {
       return servant != null && PaleRiderEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isUshiwakamaru(ServantEntity servant) {
+      return servant != null && UshiwakamaruRiderEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isHeracles(ServantEntity servant) {

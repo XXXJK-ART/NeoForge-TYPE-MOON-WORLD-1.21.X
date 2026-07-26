@@ -1,0 +1,24 @@
+{
+  "duration": 0.46,
+  "notes": "Ushiwakamaru basic and clone attack: indigo and moon-white sword arcs aimed at the current target.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.28, "rate": 760, "particle_lifetime": 0.32,
+      "size_variance": 0.28, "lifetime_variance": 0.12, "position_variance": 0.018,
+      "velocity": [0.0, 0.02, 0.35], "velocity_variance": 0.05,
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "(t - 0.5) * 3.4", "expr_y": "sin(t * 3.14159) * 1.25 - 0.35", "expr_z": "0.35 + sin(t * 3.14159) * 0.65", "t_start": 0.0, "t_end": 1.0, "segments": 96},
+      "color_over_life": [{"t": 0.0, "color": "#FFEEFFFF"}, {"t": 0.42, "color": "#DD6688DD"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.035}, {"t": 0.35, "size": 0.18}, {"t": 1.0, "size": 0.02}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_BASIC_ARC", "enable_trail": true
+    },
+    {
+      "start_time": 0.05, "end_time": 0.36, "rate": 360, "particle_lifetime": 0.26,
+      "size_variance": 0.3, "lifetime_variance": 0.15, "position_variance": 0.03,
+      "velocity": [0.0, 0.01, 0.7], "velocity_variance": 0.12,
+      "component": {"type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 3.4], "segments": 72},
+      "color_over_life": [{"t": 0.0, "color": "#AAEEFFFF"}, {"t": 1.0, "color": "#00EEFFFF"}],
+      "size_over_life": [{"t": 0.0, "size": 0.045}, {"t": 0.4, "size": 0.11}, {"t": 1.0, "size": 0.015}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_ATTACK_TRAIL", "enable_trail": true
+    }
+  ]
+}

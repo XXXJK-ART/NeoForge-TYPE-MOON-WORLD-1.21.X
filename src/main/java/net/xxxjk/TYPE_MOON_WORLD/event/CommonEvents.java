@@ -63,11 +63,13 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.HumanNpcEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
@@ -107,6 +109,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -131,7 +135,7 @@ public class CommonEvents {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed || vars.master_active) {
+      if (vars.master_active && !vars.servant_card_transformed) {
          ServantCardTransformManager.normalizeFood(serverPlayer);
       }
    }
@@ -391,6 +395,7 @@ public class CommonEvents {
             event.setCanceled(true);
          } else {
             if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) {
+               tryRedirectMedusaPegasusDamage(event.getEntity(), event);
                return;
             }
             if (event.getSource().getEntity() instanceof LivingEntity attackerWithPetrify
@@ -419,6 +424,9 @@ public class CommonEvents {
             } else if (directEntity instanceof CyanWindFieldEntity windField && windField.getOwner() == event.getEntity()) {
                event.setCanceled(true);
             } else {
+            if (tryRedirectMedusaPegasusDamage(event.getEntity(), event)) {
+               return;
+            }
             handleContenderBulletDamage(event, directEntity);
             if (event.getSource().getEntity() instanceof LivingEntity attacker) {
                event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
@@ -478,7 +486,11 @@ public class CommonEvents {
                if (vars.master_active && player.getHealth() - event.getAmount() <= 0.0F) {
                   ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
                   if (servant != null) {
-                     MasterServantLinkService.breakLink(player, servant, true);
+                     MasterServantLinkService.breakLink(player, servant, false);
+                  } else {
+                     vars.master_servant_uuid = "";
+                     MasterServantLinkService.clearSnapshot(vars);
+                     vars.syncPlayerVariables(player);
                   }
                }
             }
@@ -689,6 +701,7 @@ public class CommonEvents {
 
    @SubscribeEvent
    public static void onDefinitionSnapshotReload(OnDatapackSyncEvent event) {
+      DefinitionSnapshotService.invalidate();
       event.getRelevantPlayers().forEach(DefinitionSnapshotService::send);
    }
 
@@ -757,6 +770,19 @@ public class CommonEvents {
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
+      if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
+         if (UshiwakamaruCombatHelper.tryAbsorbShieldDamage(ushiwakamaru, event.getSource(), event.getAmount())) {
+            event.setAmount(0.0F);
+            event.setCanceled(true);
+            return;
+         }
+         if (!UshiwakamaruCombatHelper.isGuaranteedHit(event.getSource(), currentTick)
+            && UshiwakamaruCombatHelper.trySwallowDodge(ushiwakamaru, event.getSource())) {
+            event.setAmount(0.0F);
+            event.setCanceled(true);
+            return;
+         }
+      }
       if (invisibleAirBypass && servant instanceof CursedArmHassanEntity hassan && CursedArmHassanCombatHelper.tryDodge(hassan, event.getSource())) {
          event.setCanceled(true);
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
@@ -777,6 +803,10 @@ public class CommonEvents {
          }
       }
       damage = event.getAmount();
+      if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
+         event.setAmount(UshiwakamaruCombatHelper.applyRidingDamageReduction(ushiwakamaru, event.getSource(), event.getAmount()));
+         damage = event.getAmount();
+      }
       if (servant instanceof EnkiduEntity enkidu) {
          event.setAmount(EnkiduCombatHelper.applyPerfectFormPassiveDamageReduction(enkidu, event));
          damage = event.getAmount();
@@ -1036,7 +1066,14 @@ public class CommonEvents {
                ServantCardTransformManager.prepareVanishingEquipment(player, vars);
             }
             if (vars.master_active) {
-               MasterStateManager.release(player);
+               ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
+               if (servant != null) {
+                  MasterServantLinkService.breakLink(player, servant, false);
+               } else {
+                  vars.master_servant_uuid = "";
+                  MasterServantLinkService.clearSnapshot(vars);
+                  vars.syncPlayerVariables(player);
+               }
             }
          }
 
@@ -1227,7 +1264,12 @@ public class CommonEvents {
 
    @SubscribeEvent
    public static void onLivingDrops(LivingDropsEvent event) {
-      if (event.getEntity() instanceof Player) {
+      if (event.getEntity() instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.master_card_active) {
+            event.getDrops().clear();
+            return;
+         }
          event.getDrops().removeIf(drop -> ServantCardTransformManager.shouldDeleteBoundDrop(drop.getItem()));
       }
    }
@@ -1324,6 +1366,11 @@ public class CommonEvents {
                return hasTrackedServants(this.mob.level()) && super.canContinueToUse();
             }
          }
+      );
+      monster.targetSelector.addGoal(
+         5,
+         new NearestAttackableTargetGoal<HumanNpcEntity>(monster, HumanNpcEntity.class, 20, true, false,
+            human -> human instanceof HumanNpcEntity npc && npc.isAlive())
       );
    }
 
@@ -1472,6 +1519,21 @@ public class CommonEvents {
          return false;
       }
       return false;
+   }
+
+   private static boolean tryRedirectMedusaPegasusDamage(LivingEntity rider, LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F
+         || !(rider.getVehicle() instanceof MedusaPegasusEntity pegasus)
+         || !pegasus.isAlive()
+         || pegasus.getSummoner() != rider) {
+         return false;
+      }
+
+      float redirectedDamage = event.getAmount();
+      event.setCanceled(true);
+      event.setAmount(0.0F);
+      pegasus.hurt(event.getSource(), redirectedDamage);
+      return true;
    }
 
    private static void handleContenderBulletDamage(LivingIncomingDamageEvent event, Entity directEntity) {

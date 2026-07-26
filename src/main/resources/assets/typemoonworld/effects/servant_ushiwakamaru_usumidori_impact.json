@@ -1,0 +1,17 @@
+{
+  "duration": 0.62,
+  "notes": "Usumidori unavoidable hit: moon-shaped indigo slash at the target.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.46, "rate": 1100, "particle_lifetime": 0.38,
+      "size_variance": 0.3, "lifetime_variance": 0.14, "position_variance": 0.022,
+      "velocity": [0.0, 0.04, 0.0], "velocity_variance": 0.06,
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "(t - 0.5) * 5.2", "expr_y": "sin(t * 3.14159) * 2.1 - 0.55", "expr_z": "sin(t * 6.28318) * 0.35", "t_start": 0.0, "t_end": 1.0, "segments": 156},
+      "transform_over_life": [{"t": 0.0, "scale": [0.25, 0.25, 0.25]}, {"t": 0.4, "scale": [1.15, 1.15, 1.15], "easing": "ease_out_back"}, {"t": 1.0, "scale": [0.92, 0.92, 0.92]}],
+      "color_over_life": [{"t": 0.0, "color": "#00EEFFFF"}, {"t": 0.2, "color": "#FFEEFFFF"}, {"t": 0.55, "color": "#FF6688DD"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.04}, {"t": 0.32, "size": 0.3}, {"t": 1.0, "size": 0.025}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_USUMIDORI_CRESCENT", "enable_trail": true,
+      "vanilla_particles": [{"type": "crit", "count": 2, "spread": [0.7, 0.7, 0.7], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.55}]
+    }
+  ]
+}

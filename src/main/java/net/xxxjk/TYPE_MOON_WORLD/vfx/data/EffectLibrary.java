@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.component.field.ScalarNoiseField;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.geometry.ConvexPolyhedronGeometry;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.geometry.CuboidGeometry;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.geometry.EllipsoidGeometry;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.component.geometry.HemisphereGeometry;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.geometry.SphereGeometry;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.surface.BicircleStarTorusSurface;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.surface.EllipticTorusSurface;
@@ -334,6 +335,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          case "spritesheet" -> new SpriteSheetSurface(intValue(json, "frames", 1), floatValue(json, "frame_rate", 12.0F), floatValue(json, "width", 1.0F), floatValue(json, "height", 1.0F), intValue(json, "u_segments", 2), intValue(json, "v_segments", 2));
          case "cuboid" -> new CuboidGeometry(floatValue(json, "width", 1.0F), floatValue(json, "height", 1.0F), floatValue(json, "depth", 1.0F), CuboidGeometry.Mode.valueOf(GsonHelper.getAsString(json, "mode", "EDGES").toUpperCase(Locale.ROOT)), resolution(json, 64));
          case "sphere" -> new SphereGeometry(floatValue(json, "radius", 1.0F), resolution(json, 96));
+         case "hemisphere" -> new HemisphereGeometry(floatValue(json, "radius", 1.0F), resolution(json, 96));
          case "ellipsoid" -> new EllipsoidGeometry(floatValue(json, "radius_x", 1.0F), floatValue(json, "radius_y", 0.7F), floatValue(json, "radius_z", 0.5F), resolution(json, 96));
          case "convex_polyhedron" -> new ConvexPolyhedronGeometry(vecArray(requiredArray(json, "vertices")), resolution(json, 96));
          case "scalar_field" -> new ScalarNoiseField(floatValue(json, "scale", 1.0F), floatValue(json, "amplitude", 1.0F), resolution(json, 64));
@@ -378,6 +380,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          case "spritesheet" -> requireOnly(json, "type", "frames", "frame_rate", "width", "height", "u_segments", "v_segments");
          case "cuboid" -> requireOnly(json, "type", "width", "height", "depth", "mode", "sample_count", "segments", "detail", "density");
          case "sphere" -> requireOnly(json, "type", "radius", "sample_count", "segments", "detail", "density");
+         case "hemisphere" -> requireOnly(json, "type", "radius", "sample_count", "segments", "detail", "density");
          case "ellipsoid" -> requireOnly(json, "type", "radius_x", "radius_y", "radius_z", "sample_count", "segments", "detail", "density");
          case "convex_polyhedron" -> requireOnly(json, "type", "vertices", "sample_count", "segments", "detail", "density");
          case "scalar_field" -> requireOnly(json, "type", "scale", "amplitude", "sample_count", "segments", "detail", "density");

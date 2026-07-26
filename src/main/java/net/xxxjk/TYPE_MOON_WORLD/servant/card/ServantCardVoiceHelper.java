@@ -32,6 +32,7 @@ public final class ServantCardVoiceHelper {
          case "gawain" -> ModSounds.GAWAIN_VOICE_ATTACK.get();
          case "li_shuwen" -> ModSounds.LI_SHUWEN_VOICE_ATTACK.get();
          case "paracelsus" -> ModSounds.PARACELSUS_VOICE_ATTACK.get();
+         case "ushiwakamaru_rider" -> ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -41,7 +42,9 @@ public final class ServantCardVoiceHelper {
       if (!vars.servant_card_transformed || effectId == null) {
          return;
       }
-      SoundEvent sound = switch (effectId) {
+      SoundEvent sound = usesUshiwakamaruNoblePhantasmVoice(effectId)
+         ? ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get()
+         : switch (effectId) {
          case "zabaniya" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA_SHORT.get();
          case "bellerophon" -> ModSounds.MEDUSA_VOICE_BELLEROPHON.get();
          case "rho_aias" -> ModSounds.EMIYA_ARCHER_VOICE_RHO_AIAS.get();
@@ -59,6 +62,10 @@ public final class ServantCardVoiceHelper {
          default -> null;
       };
       play(player, sound, 40);
+   }
+
+   static boolean usesUshiwakamaruNoblePhantasmVoice(String effectId) {
+      return "ushiwakamaru_eight_boat".equals(effectId);
    }
 
    private static void play(ServerPlayer player, SoundEvent sound, int cooldownTicks) {

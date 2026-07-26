@@ -965,15 +965,20 @@ public final class PlayerNoblePhantasmHelper {
 
    private static void applyFixedDamage(ServerPlayer player, LivingEntity target, float damage) {
       float before = target.getHealth();
+      DamageSource source = player.damageSources().playerAttack(player);
       target.invulnerableTime = 0;
-      target.hurt(player.damageSources().playerAttack(player), damage);
+      target.hurt(source, damage);
       target.invulnerableTime = 0;
       if (target.getPersistentData().getBoolean("GodHandActive")) {
          return;
       }
       float desired = Math.max(0.0F, before - damage);
       if (target.getHealth() > desired && target.getHealth() <= before) {
+         boolean lethal = desired <= 0.0F && target.isAlive();
          target.setHealth(desired);
+         if (lethal) {
+            target.die(source);
+         }
       }
    }
 

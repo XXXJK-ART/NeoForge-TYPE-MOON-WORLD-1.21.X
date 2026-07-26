@@ -26,16 +26,22 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatPersonality;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatStyle;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcMagicCastBridge;
+import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianCombatController;
+import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import org.jetbrains.annotations.Nullable;
 
-public class MysticMagicianEntity extends PathfinderMob {
+public class MysticMagicianEntity extends HumanNpcEntity {
    private static final EntityDataAccessor<Integer> SKIN_VARIANT = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> NPC_PERSONALITY = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> NPC_COMBAT_STYLE = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
@@ -46,6 +52,23 @@ public class MysticMagicianEntity extends PathfinderMob {
    private static final EntityDataAccessor<Integer> REINFORCEMENT_VISUAL_MASK = SynchedEntityData.defineId(
       MysticMagicianEntity.class, EntityDataSerializers.INT
    );
+   private static final EntityDataAccessor<Integer> MARTIAL_MASK = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> HOKUSHIN_PROFICIENCY = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Float> TENNEN_PROFICIENCY = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Float> BAJIQUAN_PROFICIENCY = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Boolean> HAS_THOMPSON = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> RANGED_WEAPON_MODE = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final int MARTIAL_HOKUSHIN = 1;
+   private static final int MARTIAL_TENNEN = 1 << 1;
+   private static final int MARTIAL_BAJIQUAN = 1 << 2;
+   private static final String TAG_MARTIAL_INIT = "TypeMoonMagicianMartialInit";
+   private static final String TAG_MARTIAL_MASK = "TypeMoonMagicianMartialMask";
+   private static final String TAG_HOKUSHIN_PROFICIENCY = "TypeMoonMagicianHokushinProficiency";
+   private static final String TAG_TENNEN_PROFICIENCY = "TypeMoonMagicianTennenProficiency";
+   private static final String TAG_BAJIQUAN_PROFICIENCY = "TypeMoonMagicianBajiquanProficiency";
+   private static final String TAG_HAS_THOMPSON = "TypeMoonMagicianHasThompson";
+   private static final String TAG_DUAL_SWORD = "TypeMoonMagicianDualSword";
+   private static final String TAG_SWORD_TYPE = "TypeMoonMagicianSwordType";
    public static final int SKIN_VARIANT_COUNT = 6;
    public static final int MELEE_POSE_NONE = 0;
    public static final int MELEE_POSE_PUNCH = 1;
@@ -279,6 +302,7 @@ public class MysticMagicianEntity extends PathfinderMob {
 
    protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
+      this.goalSelector.addGoal(1, MysticMagicianCombatController.combatGoal(this));
       this.goalSelector.addGoal(1, new MysticMagicianEntity.NpcAwareMeleeAttackGoal(this, 1.18, true));
       this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 0.85));
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -312,6 +336,12 @@ public class MysticMagicianEntity extends PathfinderMob {
       builder.define(MELEE_SKILL_POSE, MELEE_POSE_NONE);
       builder.define(MELEE_SKILL_POSE_TICKS, 0);
       builder.define(REINFORCEMENT_VISUAL_MASK, 0);
+      builder.define(MARTIAL_MASK, 0);
+      builder.define(HOKUSHIN_PROFICIENCY, 0.0F);
+      builder.define(TENNEN_PROFICIENCY, 0.0F);
+      builder.define(BAJIQUAN_PROFICIENCY, 0.0F);
+      builder.define(HAS_THOMPSON, false);
+      builder.define(RANGED_WEAPON_MODE, false);
    }
 
    public int getSkinVariant() {
@@ -347,6 +377,118 @@ public class MysticMagicianEntity extends PathfinderMob {
    public void setCombatTemperament(NpcCombatTemperament temperament) {
       NpcCombatTemperament resolved = temperament == null ? NpcCombatTemperament.STEADY : temperament;
       this.entityData.set(NPC_TEMPERAMENT, resolved.id());
+   }
+
+   public int getMartialMask() {
+      return this.entityData.get(MARTIAL_MASK);
+   }
+
+   public void setMartialMask(int mask) {
+      this.entityData.set(MARTIAL_MASK, mask & (MARTIAL_HOKUSHIN | MARTIAL_TENNEN | MARTIAL_BAJIQUAN));
+   }
+
+   public boolean hasMartialSchool(KendoSchool school) {
+      if (school == KendoSchool.HOKUSHIN) return (getMartialMask() & MARTIAL_HOKUSHIN) != 0;
+      if (school == KendoSchool.TENNEN) return (getMartialMask() & MARTIAL_TENNEN) != 0;
+      return false;
+   }
+
+   public boolean hasSwordSchool() {
+      return (getMartialMask() & (MARTIAL_HOKUSHIN | MARTIAL_TENNEN)) != 0;
+   }
+
+   public boolean hasBajiquan() {
+      return (getMartialMask() & MARTIAL_BAJIQUAN) != 0;
+   }
+
+   public boolean hasThompson() {
+      return this.entityData.get(HAS_THOMPSON);
+   }
+
+   public void setHasThompson(boolean value) {
+      this.entityData.set(HAS_THOMPSON, value);
+   }
+
+   public boolean isRangedWeaponMode() {
+      return this.entityData.get(RANGED_WEAPON_MODE);
+   }
+
+   public void setRangedWeaponMode(boolean value) {
+      this.entityData.set(RANGED_WEAPON_MODE, value && hasThompson());
+   }
+
+   public double getMartialProficiency(KendoSchool school) {
+      if (school == KendoSchool.HOKUSHIN) return this.entityData.get(HOKUSHIN_PROFICIENCY);
+      if (school == KendoSchool.TENNEN) return this.entityData.get(TENNEN_PROFICIENCY);
+      return 0.0;
+   }
+
+   public double getBajiquanProficiency() {
+      return this.entityData.get(BAJIQUAN_PROFICIENCY);
+   }
+
+   public double getMartialProficiency() {
+      return Math.max(getBajiquanProficiency(), Math.max(getMartialProficiency(KendoSchool.HOKUSHIN), getMartialProficiency(KendoSchool.TENNEN)));
+   }
+
+   public boolean hasPhysicalLoadout() {
+      return getMartialMask() != 0 || hasThompson();
+   }
+
+   public void initializeMartialLoadout() {
+      if (level().isClientSide() || getPersistentData().getBoolean(TAG_MARTIAL_INIT)) return;
+      RandomSource random = getRandom();
+      int mask = 0;
+      if (random.nextInt(100) < 30) {
+         int[] schools = new int[]{MARTIAL_HOKUSHIN, MARTIAL_TENNEN, MARTIAL_BAJIQUAN};
+         mask |= schools[random.nextInt(schools.length)];
+         while (mask != (MARTIAL_HOKUSHIN | MARTIAL_TENNEN | MARTIAL_BAJIQUAN) && random.nextInt(100) < 5) {
+            int next = schools[random.nextInt(schools.length)];
+            mask |= next;
+         }
+      }
+      setMartialMask(mask);
+      this.entityData.set(HOKUSHIN_PROFICIENCY, (mask & MARTIAL_HOKUSHIN) != 0 ? 20.0F + random.nextInt(81) : 0.0F);
+      this.entityData.set(TENNEN_PROFICIENCY, (mask & MARTIAL_TENNEN) != 0 ? 20.0F + random.nextInt(81) : 0.0F);
+      this.entityData.set(BAJIQUAN_PROFICIENCY, (mask & MARTIAL_BAJIQUAN) != 0 ? 20.0F + random.nextInt(81) : 0.0F);
+      setHasThompson(random.nextInt(100) < 1);
+      getPersistentData().putBoolean(TAG_DUAL_SWORD, hasSwordSchool() && random.nextInt(100) < 5);
+      getPersistentData().putInt(TAG_SWORD_TYPE, random.nextInt(3));
+      getPersistentData().putBoolean(TAG_MARTIAL_INIT, true);
+      setRangedWeaponMode(false);
+      ensurePhysicalEquipment();
+   }
+
+   public void ensurePhysicalEquipment() {
+      if (level().isClientSide() || !hasPhysicalLoadout()) return;
+      ItemStack sword = swordStack();
+      ItemStack gun = hasThompson() ? ModItems.THOMPSON_CONTENDER.get().getDefaultInstance() : ItemStack.EMPTY;
+      boolean dual = getPersistentData().getBoolean(TAG_DUAL_SWORD) && hasSwordSchool();
+      if (isRangedWeaponMode() && hasThompson()) {
+         setIfDifferent(EquipmentSlot.MAINHAND, gun);
+         setIfDifferent(EquipmentSlot.OFFHAND, hasSwordSchool() ? sword : ItemStack.EMPTY);
+      } else {
+         setIfDifferent(EquipmentSlot.MAINHAND, hasSwordSchool() ? sword : gun);
+         if (dual) setIfDifferent(EquipmentSlot.OFFHAND, sword);
+         else if (hasSwordSchool() && hasThompson()) setIfDifferent(EquipmentSlot.OFFHAND, gun);
+         else setIfDifferent(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+      }
+      setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+   }
+
+   private void setIfDifferent(EquipmentSlot slot, ItemStack stack) {
+      ItemStack current = getItemBySlot(slot);
+      if (!ItemStack.isSameItem(current, stack)) setItemSlot(slot, stack.copy());
+   }
+
+   private ItemStack swordStack() {
+      Item sword = switch (Math.floorMod(getPersistentData().getInt(TAG_SWORD_TYPE), 3)) {
+         case 0 -> ModItems.WAKIZASHI.get();
+         case 1 -> ModItems.KATANA.get();
+         default -> ModItems.NODACHI.get();
+      };
+      return new ItemStack(sword);
    }
 
    public boolean isCastingPoseActive() {
@@ -409,7 +551,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       int variant = this.random.nextInt(6);
       this.setSkinVariant(variant);
       if (!this.hasCustomName()) {
-         MysticMagicianEntity.GeneratedName generated = generateRandomEuropeanName(this.random, isFemaleVariant(variant));
+         MysticMagicianEntity.GeneratedName generated = generateRandomName(this.random, isFemaleVariant(variant));
          this.setCustomName(
             Component.translatable("entity.typemoonworld.mystic_magician.generated_name", generated.english(), generated.chinese())
          );
@@ -419,6 +561,7 @@ public class MysticMagicianEntity extends PathfinderMob {
       this.setCombatPersonality(NpcCombatPersonality.random(this.random));
       this.setCombatTemperament(NpcCombatTemperament.random(this.random));
       NpcMagicCastBridge.onSpawnInitialized(this);
+      initializeMartialLoadout();
       if (spawnType != MobSpawnType.NATURAL && spawnType != MobSpawnType.CHUNK_GENERATION) {
          this.setPersistenceRequired();
       }
@@ -431,6 +574,15 @@ public class MysticMagicianEntity extends PathfinderMob {
       compound.putInt("NpcPersonality", this.getCombatPersonality().id());
       compound.putInt("NpcCombatStyle", this.getCombatStyle().id());
       compound.putInt("NpcTemperament", this.getCombatTemperament().id());
+      compound.putBoolean(TAG_MARTIAL_INIT, getPersistentData().getBoolean(TAG_MARTIAL_INIT));
+      compound.putInt(TAG_MARTIAL_MASK, getMartialMask());
+      compound.putFloat(TAG_HOKUSHIN_PROFICIENCY, (float)getMartialProficiency(KendoSchool.HOKUSHIN));
+      compound.putFloat(TAG_TENNEN_PROFICIENCY, (float)getMartialProficiency(KendoSchool.TENNEN));
+      compound.putFloat(TAG_BAJIQUAN_PROFICIENCY, (float)getBajiquanProficiency());
+      compound.putBoolean(TAG_HAS_THOMPSON, hasThompson());
+      compound.putBoolean(TAG_DUAL_SWORD, getPersistentData().getBoolean(TAG_DUAL_SWORD));
+      compound.putInt(TAG_SWORD_TYPE, getPersistentData().getInt(TAG_SWORD_TYPE));
+      compound.putBoolean("TypeMoonMagicianRangedWeaponMode", isRangedWeaponMode());
    }
 
    public void readAdditionalSaveData(CompoundTag compound) {
@@ -447,11 +599,24 @@ public class MysticMagicianEntity extends PathfinderMob {
       if (compound.contains("NpcTemperament")) {
          this.setCombatTemperament(NpcCombatTemperament.fromId(compound.getInt("NpcTemperament")));
       }
+      if (compound.contains(TAG_MARTIAL_MASK)) {
+         setMartialMask(compound.getInt(TAG_MARTIAL_MASK));
+         this.entityData.set(HOKUSHIN_PROFICIENCY, compound.getFloat(TAG_HOKUSHIN_PROFICIENCY));
+         this.entityData.set(TENNEN_PROFICIENCY, compound.getFloat(TAG_TENNEN_PROFICIENCY));
+         this.entityData.set(BAJIQUAN_PROFICIENCY, compound.getFloat(TAG_BAJIQUAN_PROFICIENCY));
+         setHasThompson(compound.getBoolean(TAG_HAS_THOMPSON));
+         getPersistentData().putBoolean(TAG_MARTIAL_INIT, compound.getBoolean(TAG_MARTIAL_INIT));
+         getPersistentData().putBoolean(TAG_DUAL_SWORD, compound.getBoolean(TAG_DUAL_SWORD));
+         getPersistentData().putInt(TAG_SWORD_TYPE, compound.getInt(TAG_SWORD_TYPE));
+         setRangedWeaponMode(compound.getBoolean("TypeMoonMagicianRangedWeaponMode"));
+      }
    }
 
    protected void customServerAiStep() {
       super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
+      initializeMartialLoadout();
+      ensurePhysicalEquipment();
       if ((Integer)this.entityData.get(CAST_POSE_TICKS) > 0) {
          this.entityData.set(CAST_POSE_TICKS, (Integer)this.entityData.get(CAST_POSE_TICKS) - 1);
       }
@@ -542,6 +707,43 @@ public class MysticMagicianEntity extends PathfinderMob {
       }
    }
 
+   private static MysticMagicianEntity.GeneratedName generateRandomName(RandomSource random, boolean femaleVariant) {
+      return switch (random.nextInt(3)) {
+         case 1 -> generateRandomChineseName(random, femaleVariant);
+         case 2 -> generateRandomJapaneseName(random, femaleVariant);
+         default -> generateRandomEuropeanName(random, femaleVariant);
+      };
+   }
+
+   public static String generateChurchNameChinese(RandomSource random, boolean femaleVariant) {
+      GeneratedName generated = random.nextBoolean()
+         ? generateRandomJapaneseName(random, femaleVariant)
+         : generateRandomEuropeanName(random, femaleVariant);
+      return generated.chinese();
+   }
+
+   public static String generateCulturalNameChinese(RandomSource random, int culture, boolean femaleVariant) {
+      return switch (Math.floorMod(culture, 3)) {
+         case 0 -> generateRandomChineseName(random, femaleVariant).chinese();
+         case 1 -> generateRandomJapaneseName(random, femaleVariant).chinese();
+         default -> {
+            int firstNameIndex = pickGivenNameIndex(random, femaleVariant);
+            int surnameIndex = random.nextInt(EUROPEAN_SURNAMES_ZH.length);
+            yield EUROPEAN_GIVEN_NAMES_ZH[firstNameIndex] + NAME_SEPARATOR + EUROPEAN_SURNAMES_ZH[surnameIndex];
+         }
+      };
+   }
+
+   private static MysticMagicianEntity.GeneratedName generateRandomChineseName(RandomSource random, boolean femaleVariant) {
+      String name = ChineseNpcNameGenerator.apprentice(random, femaleVariant);
+      return new MysticMagicianEntity.GeneratedName(name, name);
+   }
+
+   private static MysticMagicianEntity.GeneratedName generateRandomJapaneseName(RandomSource random, boolean femaleVariant) {
+      String name = JapaneseNpcNameGenerator.apprentice(random, femaleVariant);
+      return new MysticMagicianEntity.GeneratedName(name, name);
+   }
+
    private static MysticMagicianEntity.GeneratedName generateRandomEuropeanName(RandomSource random, boolean femaleVariant) {
       int firstNameIndex = pickGivenNameIndex(random, femaleVariant);
       int surnameIndex = random.nextInt(EUROPEAN_SURNAMES.length);
@@ -605,11 +807,11 @@ public class MysticMagicianEntity extends PathfinderMob {
       }
 
       public boolean canUse() {
-         return NpcMagicCastBridge.shouldUseMeleeGoal(this.magician) && super.canUse();
+         return !this.magician.hasPhysicalLoadout() && NpcMagicCastBridge.shouldUseMeleeGoal(this.magician) && super.canUse();
       }
 
       public boolean canContinueToUse() {
-         return NpcMagicCastBridge.shouldUseMeleeGoal(this.magician) && super.canContinueToUse();
+         return !this.magician.hasPhysicalLoadout() && NpcMagicCastBridge.shouldUseMeleeGoal(this.magician) && super.canContinueToUse();
       }
    }
 }

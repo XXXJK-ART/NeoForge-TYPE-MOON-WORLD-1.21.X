@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#typemoonworld:ronin_spawns",
+  "spawners": [{
+    "type": "typemoonworld:ronin",
+    "weight": 3,
+    "minCount": 1,
+    "maxCount": 2
+  }]
+}

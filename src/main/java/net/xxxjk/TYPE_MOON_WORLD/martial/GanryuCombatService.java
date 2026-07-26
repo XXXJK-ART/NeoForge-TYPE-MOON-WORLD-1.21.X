@@ -26,12 +26,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
-import net.xxxjk.TYPE_MOON_WORLD.network.GanryuPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -54,7 +52,6 @@ public final class GanryuCombatService {
    private static final String TAG_STANCE_POWER = "TypeMoonGanryuStancePower";
    private static final String TAG_STANCE_CHAIN = "TypeMoonGanryuStanceChainUntil";
    private static final String TAG_A_COUNT = "TypeMoonGanryuACount";
-   private static final String TAG_DOWN_A_COUNT = "TypeMoonGanryuDownACount";
    private static final String TAG_LAST_SEQUENCE = "TypeMoonGanryuLastSequence";
    private static final String TAG_DOWN_UNTIL = "TypeMoonGanryuDownUntil";
    private static final String TAG_MARTIAL_DAMAGE = "TypeMoonGanryuDamage";
@@ -182,19 +179,14 @@ public final class GanryuCombatService {
       boolean sequenceExpired = now - data.getLong(TAG_LAST_SEQUENCE) > SEQUENCE_WINDOW;
       if (sequenceExpired) {
          data.putInt(TAG_A_COUNT, 0);
-         data.putInt(TAG_DOWN_A_COUNT, 0);
       }
       GanryuMove move;
       if (up && !player.onGround()) {
          move = GanryuMove.STONE_FLOWER_SECOND;
-      } else if (down) {
-         int count = nextSequenceStage(data.getInt(TAG_DOWN_A_COUNT), 2, sequenceExpired);
-         data.putInt(TAG_DOWN_A_COUNT, count);
-         move = count == 1 ? GanryuMove.SPRING_BUD_SECOND : GanryuMove.SPARROW_THRUST_SECOND;
       } else {
-         int count = nextSequenceStage(data.getInt(TAG_A_COUNT), 3, sequenceExpired);
-         data.putInt(TAG_A_COUNT, count);
-         move = count == 1 ? GanryuMove.STONE_FLOWER : count == 2 ? GanryuMove.SPARROW_THRUST : GanryuMove.SPRING_BUD;
+         int stage = nextComboStage(data.getInt(TAG_A_COUNT), down, sequenceExpired);
+         data.putInt(TAG_A_COUNT, stage);
+         move = comboMove(stage, down);
       }
       if (!isUnlocked(vars, move)) {
          if (usesBasicAttack(vars.ganryu_proficiency)) {
@@ -251,9 +243,11 @@ public final class GanryuCombatService {
 
    private static void beginStance(ServerPlayer player, long now) {
       CompoundTag data = player.getPersistentData();
-      if (!data.contains(TAG_STANCE_START)) data.putLong(TAG_STANCE_START, now);
+      if (!data.contains(TAG_STANCE_START)) {
+         data.putLong(TAG_STANCE_START, now);
+         spawnStanceFx(player.serverLevel(), player, 0.0F);
+      }
       applyStanceSlow(player, true);
-      sendPose(player, GanryuMove.STANCE, 20);
    }
 
    private static void handleStanceAttack(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, boolean down, long now) {
@@ -274,7 +268,7 @@ public final class GanryuCombatService {
          return;
       }
       int stage = data.getInt(TAG_STANCE_STAGE);
-      GanryuMove move = stage == 1 && data.getLong(TAG_STANCE_CHAIN) >= now ? GanryuMove.FLOWER_BUD : GanryuMove.SPARROW_SLASH;
+      GanryuMove move = stanceComboMove(stage, data.getLong(TAG_STANCE_CHAIN), now);
       if (!isUnlocked(vars, move)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.move_locked"), true);
          return;
@@ -316,7 +310,6 @@ public final class GanryuCombatService {
       }
       if (move != GanryuMove.HIGH_JUMP) damageBlade(player);
       spawnMoveFx(player.serverLevel(), player, move);
-      sendPose(player, move, Math.min(40, Math.max(6, move.recoveryTicks())));
    }
 
    private static void performTsubame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingEntity target, float power) {
@@ -333,7 +326,6 @@ public final class GanryuCombatService {
       }
       net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects.spawn(player.serverLevel(), "servant_sasaki_tsubame", player, 96.0);
       damageBlade(player);
-      sendPose(player, GanryuMove.TSUBAME_GAESHI, 40);
    }
 
    private static void queueSparrowSlash(ServerPlayer player, LivingEntity target, float damage) {
@@ -355,7 +347,7 @@ public final class GanryuCombatService {
       } else if (isInStance(player)) {
          applyStanceSlow(player, true);
          if (data.getInt(TAG_STANCE_STAGE) == 1 && data.getLong(TAG_STANCE_CHAIN) < now) resetStanceChain(player, now);
-         if (now >= data.getLong(TAG_RECOVERY) && now % 10L == 0L) sendPose(player, GanryuMove.STANCE, 20);
+         if (now % 20L == 0L) spawnStanceFx(player.serverLevel(), player, chargeRatio(data, now));
       }
       if (data.getInt(TAG_PENDING_STRIKES) <= 0 || data.getLong(TAG_PENDING_NEXT) > now || !data.hasUUID(TAG_PENDING_TARGET)) return;
       LivingEntity target = player.serverLevel().getEntity(data.getUUID(TAG_PENDING_TARGET)) instanceof LivingEntity living ? living : null;
@@ -363,10 +355,13 @@ public final class GanryuCombatService {
          clearPending(data);
          return;
       }
+      int strikesBefore = data.getInt(TAG_PENDING_STRIKES);
       boolean award = !data.getBoolean(TAG_PENDING_AWARDED);
-      boolean hit = hit(player, target, data.getFloat(TAG_PENDING_DAMAGE), GanryuMove.SPARROW_SLASH, award);
-      if (hit && award) data.putBoolean(TAG_PENDING_AWARDED, true);
-      int remaining = data.getInt(TAG_PENDING_STRIKES) - 1;
+      boolean landed = hit(player, target, data.getFloat(TAG_PENDING_DAMAGE), GanryuMove.SPARROW_SLASH, award);
+      if (landed && award) data.putBoolean(TAG_PENDING_AWARDED, true);
+      int strike = 4 - strikesBefore;
+      spawnSparrowStrikeFx(player.serverLevel(), player, target, strike, landed);
+      int remaining = strikesBefore - 1;
       data.putInt(TAG_PENDING_STRIKES, remaining);
       data.putLong(TAG_PENDING_NEXT, now + 3L);
       Vec3 dir = horizontalLook(player);
@@ -420,6 +415,11 @@ public final class GanryuCombatService {
          player.setDeltaMovement(player.getDeltaMovement().add(dir.x * speed, 0.04, dir.z * speed));
          player.hurtMarked = true;
       }
+      if (move == GanryuMove.STONE_FLOWER_SECOND) {
+         Vec3 motion = player.getDeltaMovement();
+         player.setDeltaMovement(motion.x + dir.x * 0.18, Math.min(motion.y, -0.48), motion.z + dir.z * 0.18);
+         player.hurtMarked = true;
+      }
    }
 
    private static LivingEntity findTarget(ServerPlayer player, double range) {
@@ -470,6 +470,21 @@ public final class GanryuCombatService {
    static int nextSequenceStage(int current, int stages, boolean expired) {
       if (stages <= 1 || expired) return 1;
       return Math.floorMod(current, stages) + 1;
+   }
+
+   static int nextComboStage(int current, boolean down, boolean expired) {
+      if (expired || current <= 0) return 1;
+      int stages = down ? 2 : 3;
+      return current >= stages ? 1 : current + 1;
+   }
+
+   static GanryuMove comboMove(int stage, boolean down) {
+      if (down) return stage == 2 ? GanryuMove.SPARROW_THRUST_SECOND : GanryuMove.SPRING_BUD_SECOND;
+      return stage == 2 ? GanryuMove.SPARROW_THRUST : stage == 3 ? GanryuMove.SPRING_BUD : GanryuMove.STONE_FLOWER;
+   }
+
+   static GanryuMove stanceComboMove(int stage, long chainUntil, long now) {
+      return stage == 1 && chainUntil >= now ? GanryuMove.FLOWER_BUD : GanryuMove.SPARROW_SLASH;
    }
 
    static boolean usesBasicAttack(double proficiency) {
@@ -528,7 +543,6 @@ public final class GanryuCombatService {
       data.remove(TAG_STANCE_POWER);
       data.remove(TAG_STANCE_CHAIN);
       applyStanceSlow(player, false);
-      if (hadState) sendPose(player, GanryuMove.STANCE, 0);
    }
 
    public static void clearRuntime(ServerPlayer player) {
@@ -537,7 +551,6 @@ public final class GanryuCombatService {
       clearPending(player.getPersistentData());
       player.getPersistentData().remove(TAG_RECOVERY);
       player.getPersistentData().remove(TAG_A_COUNT);
-      player.getPersistentData().remove(TAG_DOWN_A_COUNT);
       player.getPersistentData().remove(TAG_LAST_SEQUENCE);
       player.getPersistentData().remove(TAG_DOWN_UNTIL);
    }
@@ -587,16 +600,80 @@ public final class GanryuCombatService {
    }
 
    private static void spawnMoveFx(ServerLevel level, ServerPlayer player, GanryuMove move) {
-      Vec3 pos = player.position().add(horizontalLook(player).scale(1.3)).add(0.0, 1.0, 0.0);
-      level.sendParticles(move == GanryuMove.HIGH_JUMP ? ParticleTypes.CLOUD : ParticleTypes.SWEEP_ATTACK,
-         pos.x, pos.y, pos.z, move == GanryuMove.SPARROW_SLASH ? 3 : 1, 0.35, 0.2, 0.35, 0.03);
-      level.playSound(null, player.blockPosition(), move == GanryuMove.TSUBAME_GAESHI ? SoundEvents.ENDER_EYE_DEATH : SoundEvents.PLAYER_ATTACK_SWEEP,
-         SoundSource.PLAYERS, 0.85F, move == GanryuMove.TSUBAME_GAESHI ? 0.7F : 1.0F);
+      Vec3 look = horizontalLook(player);
+      Vec3 pos = player.position().add(look.scale(1.3)).add(0.0, 1.0, 0.0);
+      switch (move) {
+         case HIGH_JUMP -> {
+            level.sendParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.08, player.getZ(), 9, 0.34, 0.04, 0.34, 0.045);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_WEAK, 0.75F, 1.45F);
+         }
+         case STONE_FLOWER -> {
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y - 0.2, pos.z, 1, 0.16, 0.28, 0.16, 0.0);
+            level.sendParticles(ParticleTypes.CRIT, pos.x, pos.y - 0.35, pos.z, 5, 0.14, 0.25, 0.14, 0.035);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_STRONG, 0.82F, 0.82F);
+         }
+         case SPARROW_THRUST -> {
+            spawnThrustLine(level, player, look, 3, 0.0);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_WEAK, 0.78F, 1.42F);
+         }
+         case SPRING_BUD, SPRING_BUD_SECOND -> {
+            double height = move == GanryuMove.SPRING_BUD_SECOND ? 0.62 : 1.0;
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, player.getY() + height, pos.z, 2, 0.42, 0.08, 0.42, 0.0);
+            level.sendParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.08, player.getZ(), move == GanryuMove.SPRING_BUD_SECOND ? 7 : 4,
+               0.28, 0.03, 0.28, 0.035);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_SWEEP, 0.86F, move == GanryuMove.SPRING_BUD_SECOND ? 0.78F : 0.96F);
+         }
+         case SPARROW_THRUST_SECOND, FLOWER_BUD -> {
+            for (int i = 0; i < 3; i++) {
+               level.sendParticles(ParticleTypes.END_ROD, pos.x, player.getY() + 0.45 + i * 0.48, pos.z, 2, 0.12, 0.1, 0.12, 0.012);
+            }
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y + 0.15, pos.z, 1, 0.18, 0.3, 0.18, 0.0);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_CRIT, 0.88F, move == GanryuMove.FLOWER_BUD ? 0.72F : 1.08F);
+         }
+         case STONE_FLOWER_SECOND -> {
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y - 0.45, pos.z, 2, 0.18, 0.36, 0.18, 0.0);
+            level.sendParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.12, player.getZ(), 5, 0.2, 0.08, 0.2, 0.025);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_CRIT, 0.9F, 0.7F);
+         }
+         case SPARROW_SLASH -> {
+            level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 4, 0.16, 0.16, 0.16, 0.015);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_WEAK, 0.68F, 1.55F);
+         }
+         default -> {
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 1, 0.25, 0.18, 0.25, 0.0);
+            playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_SWEEP, 0.82F, 1.0F);
+         }
+      }
    }
 
-   private static void sendPose(ServerPlayer player, GanryuMove move, int ticks) {
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new GanryuPoseMessage(player.getUUID(), move, ticks),
-         new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+   private static void spawnThrustLine(ServerLevel level, ServerPlayer player, Vec3 look, int points, double sideOffset) {
+      Vec3 side = new Vec3(-look.z, 0.0, look.x).scale(sideOffset);
+      for (int i = 0; i < points; i++) {
+         Vec3 point = player.position().add(0.0, 1.05, 0.0).add(look.scale(0.75 + i * 0.55)).add(side);
+         level.sendParticles(ParticleTypes.END_ROD, point.x, point.y, point.z, 1, 0.025, 0.025, 0.025, 0.0);
+      }
+   }
+
+   private static void spawnStanceFx(ServerLevel level, ServerPlayer player, float charge) {
+      int count = charge >= 1.0F ? 5 : 2;
+      level.sendParticles(charge >= 1.0F ? ParticleTypes.END_ROD : ParticleTypes.ENCHANT,
+         player.getX(), player.getY() + 0.75, player.getZ(), count, 0.38, 0.32, 0.38, charge >= 1.0F ? 0.015 : 0.08);
+      if (charge <= 0.0F) playMoveSound(level, player, SoundEvents.PLAYER_ATTACK_WEAK, 0.55F, 0.62F);
+   }
+
+   private static void spawnSparrowStrikeFx(ServerLevel level, ServerPlayer player, LivingEntity target, int strike, boolean landed) {
+      Vec3 look = horizontalLook(player);
+      double side = (strike - 2) * 0.18;
+      spawnThrustLine(level, player, look, 3, side);
+      Vec3 impact = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
+      level.sendParticles(landed ? ParticleTypes.CRIT : ParticleTypes.SMOKE,
+         impact.x, impact.y, impact.z, landed ? 4 : 2, 0.12, 0.16, 0.12, landed ? 0.04 : 0.02);
+      playMoveSound(level, player, landed ? SoundEvents.PLAYER_ATTACK_STRONG : SoundEvents.PLAYER_ATTACK_WEAK,
+         0.62F, 1.18F + strike * 0.12F);
+   }
+
+   private static void playMoveSound(ServerLevel level, ServerPlayer player, net.minecraft.sounds.SoundEvent sound, float volume, float pitch) {
+      level.playSound(null, player.blockPosition(), sound, SoundSource.PLAYERS, volume, pitch);
    }
 
    private record AppliedAttributeModifier(AttributeInstance instance, AttributeModifier modifier) {

@@ -20,6 +20,7 @@ public final class PaleRiderCrowEntity extends Parrot {
    private UUID ownerUuid;
    private long nextAttackTick;
    private long nextTargetScanTick;
+   private long nextNavigationTick;
    private boolean domainSpawned;
 
    public PaleRiderCrowEntity(EntityType<? extends Parrot> type, Level level) {
@@ -56,11 +57,14 @@ public final class PaleRiderCrowEntity extends Parrot {
       super.customServerAiStep();
       if (owner instanceof net.minecraft.server.level.ServerPlayer player
          && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
+         long now = this.level().getGameTime();
          int command = player.getPersistentData().getInt("PaleRiderCardCommand");
          if (command != 2) {
             this.setTarget(null);
             if (command == 1) this.getNavigation().stop();
-            else if (command == 3) this.getNavigation().moveTo(player.getX(), player.getY() + 2.5, player.getZ(), 1.0);
+            else if (command == 3 && this.canRefreshNavigation(now, 20)) {
+               this.getNavigation().moveTo(player.getX(), player.getY() + 2.5, player.getZ(), 1.0);
+            }
             return;
          }
       }
@@ -68,21 +72,29 @@ public final class PaleRiderCrowEntity extends Parrot {
       if (target == null) {
          this.setTarget(null);
          Vec3 perch = this.gatheringPosition(owner);
-         if (this.distanceToSqr(perch) > 2.25) {
+         if (this.distanceToSqr(perch) > 2.25 && this.canRefreshNavigation(this.level().getGameTime(), 20)) {
             this.getNavigation().moveTo(perch.x, perch.y, perch.z, 1.0);
          }
          return;
       }
       this.setTarget(target);
       this.getLookControl().setLookAt(target, 30.0F, 30.0F);
-      this.getNavigation().moveTo(target.getX(), target.getY() + target.getBbHeight() * 0.65, target.getZ(), 1.2);
-      double reach = this.getBbWidth() + target.getBbWidth() + 0.8;
       long now = this.level().getGameTime();
+      if (this.canRefreshNavigation(now, 10)) {
+         this.getNavigation().moveTo(target.getX(), target.getY() + target.getBbHeight() * 0.65, target.getZ(), 1.2);
+      }
+      double reach = this.getBbWidth() + target.getBbWidth() + 0.8;
       if (this.distanceToSqr(target) <= reach * reach && now >= this.nextAttackTick) {
          this.nextAttackTick = now + 30L;
          target.hurt(this.damageSources().mobAttack(this), (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE));
          PaleRiderInfectionService.infect(target, owner, 1);
       }
+   }
+
+   private boolean canRefreshNavigation(long now, int interval) {
+      if (now < this.nextNavigationTick) return false;
+      this.nextNavigationTick = now + interval + Math.floorMod(this.getId(), 5);
+      return true;
    }
 
    private Vec3 gatheringPosition(LivingEntity owner) {

@@ -8,7 +8,8 @@ public final class BajiquanComboRules {
       if (next == BajiquanMove.FIERCE_TIGER || next == BajiquanMove.CLAMP) return true;
       return switch (last) {
          case PUNCH -> next == BajiquanMove.ELBOW || next == BajiquanMove.SHOULDER
-            || next == BajiquanMove.RIGHT_KICK || next == BajiquanMove.FINISHER_KICK;
+            || next == BajiquanMove.RIGHT_KICK || next == BajiquanMove.FINISHER_KICK
+            || next == BajiquanMove.PUNCH || pursuitActive && next == BajiquanMove.PUSH;
          case ELBOW -> next == BajiquanMove.FLURRY;
          case FLURRY -> next == BajiquanMove.PALM || next == BajiquanMove.FINISHER_KICK;
          case PALM -> next == BajiquanMove.SHOULDER || next == BajiquanMove.FINISHER_KICK

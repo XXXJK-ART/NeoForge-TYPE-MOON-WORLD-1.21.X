@@ -13,11 +13,18 @@ public final class MartialUkemiService {
 
    public static void migrate(TypeMoonWorldModVariables.PlayerVariables vars) {
       if (vars != null) vars.martial_ukemi_learned = shouldBeLearned(
-         vars.martial_ukemi_learned, vars.bajiquan_proficiency, vars.ganryu_proficiency);
+         vars.martial_ukemi_learned, vars.bajiquan_proficiency, vars.ganryu_proficiency,
+         vars.hokushin_proficiency, vars.tennen_proficiency);
    }
 
    static boolean shouldBeLearned(boolean alreadyLearned, double bajiquanProficiency, double ganryuProficiency) {
-      return alreadyLearned || bajiquanProficiency >= 30.0 || ganryuProficiency >= 50.0;
+      return shouldBeLearned(alreadyLearned, bajiquanProficiency, ganryuProficiency, 0.0, 0.0);
+   }
+
+   static boolean shouldBeLearned(boolean alreadyLearned, double bajiquanProficiency, double ganryuProficiency,
+      double hokushinProficiency, double tennenProficiency) {
+      return alreadyLearned || bajiquanProficiency >= 30.0 || ganryuProficiency >= 50.0
+         || hokushinProficiency >= 20.0 || tennenProficiency >= 20.0;
    }
 
    public static boolean isLearned(TypeMoonWorldModVariables.PlayerVariables vars) {

@@ -27,11 +27,13 @@ public final class MagicTimeAlter {
       }
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double proficiency = vars.isCurrentSelectionFromCrest(MAGIC_ID) ? 100.0 : vars.proficiency_time_alter;
-      int mode = vars.time_alter_mode == MODE_STAGNATE ? MODE_STAGNATE : MODE_ACCEL;
+      boolean fromCrest = vars.isCurrentSelectionFromCrest(MAGIC_ID);
+      double proficiency = fromCrest ? 100.0 : vars.proficiency_time_alter;
+      CompoundTag preset = fromCrest ? vars.getCurrentCrestPresetPayload() : new CompoundTag();
+      int configuredMode = fromCrest && preset.contains("time_alter_mode") ? preset.getInt("time_alter_mode") : vars.time_alter_mode;
+      int mode = configuredMode == MODE_STAGNATE ? MODE_STAGNATE : MODE_ACCEL;
       double multiplier;
-      if (vars.isCurrentSelectionFromCrest(MAGIC_ID)) {
-         CompoundTag preset = vars.getCurrentCrestPresetPayload();
+      if (fromCrest) {
          multiplier = mode == MODE_ACCEL && preset.contains("time_alter_multiplier")
             ? Math.max(1, preset.getInt("time_alter_multiplier"))
             : mode == MODE_ACCEL ? accelMultiplier(proficiency) : stagnateMultiplier(proficiency);
@@ -60,7 +62,7 @@ public final class MagicTimeAlter {
       player.displayClientMessage(Component.translatable(mode == MODE_ACCEL
          ? "message.typemoonworld.magic.time_alter.accel"
          : "message.typemoonworld.magic.time_alter.stagnate"), true);
-      if (!vars.isCurrentSelectionFromCrest(MAGIC_ID)) {
+      if (!fromCrest) {
          vars.proficiency_time_alter = Math.min(100.0, vars.proficiency_time_alter + (mode == MODE_ACCEL ? 0.16 : 0.18));
          vars.syncProficiency(player);
       }

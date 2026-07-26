@@ -1,0 +1,5 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#typemoonworld:church_executor_spawns",
+  "spawners": [{"type": "typemoonworld:church_executor", "weight": 10, "minCount": 2, "maxCount": 3}]
+}

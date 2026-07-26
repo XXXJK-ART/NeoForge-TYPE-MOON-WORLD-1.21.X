@@ -37,6 +37,8 @@ public final class MagicClassification {
       Map.entry("time_alter", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("spiritual_healing", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("baptism_rite", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("black_key_fire_engraving", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("stigma", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("gander", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("reinforcement", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("reinforcement_self", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
@@ -46,12 +48,16 @@ public final class MagicClassification {
       Map.entry("sword_barrel_full_open", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("bajiquan", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("ganryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
+      ,Map.entry("hokushin_ittoryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
+      ,Map.entry("tennen_rishin_ryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
    );
    private static final Set<String> ALL_MAGIC_IDS = Collections.unmodifiableSet(MAGIC_COST_TYPES.keySet());
    private static final Map<String, MagicClassification.MagicSchoolType> MAGIC_SCHOOL_TYPES = Map.ofEntries(
       Map.entry("gander", MagicClassification.MagicSchoolType.NORDIC),
       Map.entry("gandr_machine_gun", MagicClassification.MagicSchoolType.NORDIC),
       Map.entry("baptism_rite", MagicClassification.MagicSchoolType.CHURCH)
+      ,Map.entry("black_key_fire_engraving", MagicClassification.MagicSchoolType.CHURCH)
+      ,Map.entry("stigma", MagicClassification.MagicSchoolType.CHURCH)
    );
 
    private MagicClassification() {

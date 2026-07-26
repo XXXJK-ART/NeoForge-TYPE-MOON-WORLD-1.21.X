@@ -1,0 +1,50 @@
+{
+  "id": "ushiwakamaru_rider",
+  "display_name": "Ushiwakamaru (Rider)",
+  "display_name_zh": "\u725b\u82e5\u4e38\uff08Rider\uff09",
+  "class_type": "rider",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "human", "female", "rider", "riding", "genji", "sapient", "balanced", "chaotic", "neutral_alignment"],
+  "parameters": {
+    "endurance": "C", "endurance_plus": false,
+    "strength": "D", "strength_plus": false,
+    "agility": "A", "agility_plus": true,
+    "magic": "B", "magic_plus": false,
+    "luck": "A", "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/ushiwakamaru_rider.geo.json",
+    "texture": "typemoonworld:textures/entity/ushiwakamaru_rider.png",
+    "animation": "typemoonworld:animations/ushiwakamaru_rider.animation.json",
+    "animations": {
+      "idle": "animation.ushiwakamaru_rider.standing",
+      "walk": "animation.ushiwakamaru_rider.walk",
+      "slash": "animation.ushiwakamaru_rider.slash",
+      "dash": "animation.ushiwakamaru_rider.dash",
+      "shield": "animation.ushiwakamaru_rider.shield",
+      "command": "animation.ushiwakamaru_rider.command",
+      "six_secret": "animation.ushiwakamaru_rider.six_secret",
+      "eight_boat": "animation.ushiwakamaru_rider.eight_boat",
+      "spider_slayer": "animation.ushiwakamaru_rider.spider_slayer"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
+    "hand_item_offset": {"x": 0.1, "y": -0.8, "z": -0.2},
+    "default_weapon": "typemoonworld:spider_cutter",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["slash", "dash", "shield", "command", "six_secret", "eight_boat", "spider_slayer"]
+  },
+  "skills": [
+    "magic_resistance_b", "riding_a_plus", "tengu_strategy_a", "swallow_technique_b",
+    "charisma_c_plus", "jizaiten_eye_six_secret", "usumidori_heaven_blade",
+    "benkei_immovable_ground", "dan_no_ura_eight_boat_leap", "houmaru_spider_slayer"
+  ],
+  "noble_phantasm": "shana_oh_wandering_tales",
+  "personality": {
+    "obedience": "cooperative", "principle": "orderly", "morality": "neutral",
+    "social": "normal", "combat": "balanced", "starting_favor": 90.0
+  },
+  "ai_config": "ushiwakamaru_rider_ai",
+  "spawn_egg": {"primary": 4853304, "secondary": 15321557}
+}

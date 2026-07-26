@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacement
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.KendoInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
@@ -51,6 +52,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(
@@ -115,6 +118,9 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean ganryuJumpDown = false;
       private static boolean ganryuCrouchDown = false;
       private static boolean ganryuUseDown = false;
+      private static boolean kendoJumpDown = false;
+      private static boolean kendoCrouchDown = false;
+      private static boolean kendoUseDown = false;
       private static long servantLastJumpTapMs = 0L;
       private static int servantFlightInputSendDelay = 0;
       private static int servantFlightInputKeepaliveChecks = 0;
@@ -159,6 +165,18 @@ public class TypeMoonWorldModKeyMappings {
                event.setCanceled(true);
                event.setSwingHand(true);
                return;
+            }
+         }
+         if (isClientKendoActive(player, vars)) {
+            boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
+            int school = "hokushin_ittoryu".equals(PlayerMagicSelectionService.getCurrentMagicId(vars)) ? 0 : 1;
+            if (event.isAttack() && !blockTarget) {
+               PacketDistributor.sendToServer(new KendoInputMessage(school, KendoCombatService.INPUT_A, player.isCrouching(), minecraft.options.keyJump.isDown()));
+               event.setCanceled(true); event.setSwingHand(true); return;
+            }
+            if (event.isUseItem()) {
+               PacketDistributor.sendToServer(new KendoInputMessage(school, KendoCombatService.INPUT_B_START, player.isCrouching(), minecraft.options.keyJump.isDown()));
+               event.setCanceled(true); event.setSwingHand(true); return;
             }
          }
          if (isClientBajiquanActive(player, vars)) {
@@ -289,6 +307,7 @@ public class TypeMoonWorldModKeyMappings {
             boolean crouchDownNow = Minecraft.getInstance().options.keyShift.isDown();
             boolean useDownNow = Minecraft.getInstance().options.keyUse.isDown();
             boolean ganryuActive = isClientGanryuActive(player, vars);
+            boolean kendoActive = isClientKendoActive(player, vars);
             if (ganryuActive && crouchDownNow && !ganryuCrouchDown) {
                PacketDistributor.sendToServer(new GanryuInputMessage(GanryuCombatService.INPUT_DOWN, true, false));
             }
@@ -303,6 +322,14 @@ public class TypeMoonWorldModKeyMappings {
             ganryuJumpDown = ganryuActive && jumpDownNow;
             ganryuCrouchDown = ganryuActive && crouchDownNow;
             ganryuUseDown = ganryuActive && useDownNow;
+            int kendoSchool = vars != null && "hokushin_ittoryu".equals(PlayerMagicSelectionService.getCurrentMagicId(vars)) ? 0 : 1;
+            if (kendoActive && crouchDownNow && !kendoCrouchDown) PacketDistributor.sendToServer(new KendoInputMessage(kendoSchool, KendoCombatService.INPUT_DOWN, true, false));
+            if (kendoActive && jumpDownNow && !kendoJumpDown) PacketDistributor.sendToServer(new KendoInputMessage(kendoSchool, KendoCombatService.INPUT_JUMP, player.isCrouching(), true));
+            if (kendoActive && useDownNow && !kendoUseDown) PacketDistributor.sendToServer(new KendoInputMessage(kendoSchool, KendoCombatService.INPUT_B_START, player.isCrouching(), jumpDownNow));
+            else if ((!kendoActive || !useDownNow) && kendoUseDown) PacketDistributor.sendToServer(new KendoInputMessage(kendoSchool, KendoCombatService.INPUT_B_END, false, false));
+            kendoJumpDown = kendoActive && jumpDownNow;
+            kendoCrouchDown = kendoActive && crouchDownNow;
+            kendoUseDown = kendoActive && useDownNow;
             if (isClientBajiquanActive(player, vars) && crouchDownNow && !bajiquanCrouchDown) {
                PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_DOWN, true, false));
             }
@@ -799,6 +826,18 @@ public class TypeMoonWorldModKeyMappings {
          ItemStack main = player.getMainHandItem();
          ItemStack off = player.getOffhandItem();
          return (GanryuCombatService.isAllowedBlade(main) || GanryuCombatService.isAllowedBlade(off))
+            && (main.isEmpty() || GanryuCombatService.isAllowedBlade(main))
+            && (off.isEmpty() || GanryuCombatService.isAllowedBlade(off));
+      }
+
+      private static boolean isClientKendoActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         if (player == null || vars == null || !vars.is_magic_circuit_open || vars.servant_card_transformed) return false;
+         String id = PlayerMagicSelectionService.getCurrentMagicId(vars);
+         boolean learned = ("hokushin_ittoryu".equals(id) && vars.hokushin_learned)
+            || ("tennen_rishin_ryu".equals(id) && vars.tennen_learned);
+         ItemStack main = player.getMainHandItem();
+         ItemStack off = player.getOffhandItem();
+         return learned && (GanryuCombatService.isAllowedBlade(main) || GanryuCombatService.isAllowedBlade(off))
             && (main.isEmpty() || GanryuCombatService.isAllowedBlade(main))
             && (off.isEmpty() || GanryuCombatService.isAllowedBlade(off));
       }

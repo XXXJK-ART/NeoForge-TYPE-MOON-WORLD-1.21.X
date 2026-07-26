@@ -36,6 +36,25 @@ class GanryuProgressionTest {
       assertEquals(1, GanryuCombatService.nextSequenceStage(1, 2, true));
    }
 
+   @Test void normalAndCrouchingAttacksShareTheirComboStage() {
+      assertEquals(1, GanryuCombatService.nextComboStage(0, false, false));
+      assertEquals(GanryuMove.STONE_FLOWER, GanryuCombatService.comboMove(1, false));
+      assertEquals(2, GanryuCombatService.nextComboStage(1, true, false));
+      assertEquals(GanryuMove.SPARROW_THRUST_SECOND, GanryuCombatService.comboMove(2, true));
+      assertEquals(3, GanryuCombatService.nextComboStage(2, false, false));
+      assertEquals(GanryuMove.SPRING_BUD, GanryuCombatService.comboMove(3, false));
+      assertEquals(1, GanryuCombatService.nextComboStage(2, true, false));
+      assertEquals(GanryuMove.SPRING_BUD_SECOND, GanryuCombatService.comboMove(1, true));
+      assertEquals(1, GanryuCombatService.nextComboStage(2, false, true));
+   }
+
+   @Test void stanceSecondAttackBecomesFlowerBudOnlyInsideItsWindow() {
+      assertEquals(GanryuMove.SPARROW_SLASH, GanryuCombatService.stanceComboMove(0, 0L, 100L));
+      assertEquals(GanryuMove.FLOWER_BUD, GanryuCombatService.stanceComboMove(1, 140L, 120L));
+      assertEquals(GanryuMove.FLOWER_BUD, GanryuCombatService.stanceComboMove(1, 140L, 140L));
+      assertEquals(GanryuMove.SPARROW_SLASH, GanryuCombatService.stanceComboMove(1, 140L, 141L));
+   }
+
    @Test void basicAttacksBridgeTheInitialProficiencyGap() {
       assertTrue(GanryuCombatService.usesBasicAttack(0.0));
       assertTrue(GanryuCombatService.usesBasicAttack(0.49));

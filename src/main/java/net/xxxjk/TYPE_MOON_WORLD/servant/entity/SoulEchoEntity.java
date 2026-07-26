@@ -29,6 +29,7 @@ public final class SoulEchoEntity extends OwnedPaleRiderMob {
    private static final EntityDataAccessor<Float> SOURCE_HEIGHT = SynchedEntityData.defineId(SoulEchoEntity.class, EntityDataSerializers.FLOAT);
    private UUID soulId;
    private SoulSnapshot snapshot;
+   private long nextTargetScanTick;
 
    public SoulEchoEntity(EntityType<? extends SoulEchoEntity> type, Level level) {
       super(type, level);
@@ -85,6 +86,13 @@ public final class SoulEchoEntity extends OwnedPaleRiderMob {
          return;
       }
       if (this.getTarget() == null || !this.getTarget().isAlive() || this.getTarget().isAlliedTo(owner) || owner.isAlliedTo(this.getTarget())) {
+         if (this.getTarget() != null) this.setTarget(null);
+         long now = this.level().getGameTime();
+         if (this.nextTargetScanTick == 0L) {
+            this.nextTargetScanTick = now + Math.floorMod(this.getId(), 20);
+         }
+         if (now < this.nextTargetScanTick) return;
+         this.nextTargetScanTick = now + 20L + Math.floorMod(this.getId(), 10);
          LivingEntity target = owner instanceof PaleRiderEntity rider ? rider.findPaleRiderEnemy(50.0)
             : owner instanceof ServerPlayer player ? ServantCardPaleRiderSkills.findSoulEchoTarget(player, this) : null;
          this.setTarget(target);

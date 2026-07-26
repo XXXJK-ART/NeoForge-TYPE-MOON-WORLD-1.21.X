@@ -5,6 +5,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -104,6 +105,15 @@ public class ParacelsusEntity extends ServantEntity {
          }
       }
       return super.hurt(source, amount);
+   }
+
+   @Override
+   public boolean doHurtTarget(Entity target) {
+      if (!(target instanceof net.minecraft.world.entity.LivingEntity living)) {
+         return false;
+      }
+      float damage = ParacelsusBalanceRules.reduceDamage((float)this.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE));
+      return living.hurt(this.damageSources().mobAttack(this), damage);
    }
 
    @Override

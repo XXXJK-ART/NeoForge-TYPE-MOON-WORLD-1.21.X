@@ -10,6 +10,11 @@
     "typemoonworld:add_magic_scroll_fragments_to_ancient_city",
     "typemoonworld:add_magic_scroll_fragments_to_bastion_treasure",
     "typemoonworld:add_magic_scroll_fragments_to_shipwreck_treasure",
+    "typemoonworld:add_magic_scroll_fragments_to_woodland_mansion",
+    "typemoonworld:add_magic_scroll_fragments_to_end_city_treasure",
+    "typemoonworld:add_magic_scroll_fragments_to_nether_bridge",
+    "typemoonworld:add_magic_scroll_fragments_to_pillager_outpost",
+    "typemoonworld:add_magic_scroll_fragments_to_igloo_chest",
     "typemoonworld:add_magic_scroll_fragments_to_shrine",
     "typemoonworld:add_magic_scroll_fragments_to_graveyard"
   ]

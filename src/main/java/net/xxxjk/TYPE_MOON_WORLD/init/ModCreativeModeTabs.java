@@ -51,6 +51,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
                         output.accept(ModItems.SERVANT_CARD_PALE_RIDER);
+                        output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
@@ -81,6 +82,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS);
                     }).build());
 
     public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
@@ -90,8 +94,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_APOCALYPSE);
                         output.accept(ModItems.RELIC_APOCALYPSE_PAGE);
                         output.accept(ModItems.RELIC_FIRST_SNAKE_SKIN);
-                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
-                        output.accept(ModItems.GANRYU_MANUAL);
                         output.accept(ModItems.RELIC_VALKYRIE_ARROWHEAD);
                         output.accept(ModItems.RELIC_BRONZE_MIRROR);
                         output.accept(ModItems.RELIC_ROUND_TABLE_FRAGMENT);
@@ -112,6 +114,10 @@ public class ModCreativeModeTabs {
                     //添加创造栏物品
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
+                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
+                        output.accept(ModItems.GANRYU_MANUAL);
+                        output.accept(ModItems.HOKUSHIN_MANUAL);
+                        output.accept(ModItems.TENNEN_MANUAL);
                         output.accept(ModItems.SPARRING_INVITATION);
                         output.accept(ModItems.HOLY_SHROUD);
                         output.accept(ModItems.CLAW_OF_CHAOS);
@@ -171,6 +177,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
                         output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
                         output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
+                        output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING);
+                        output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING);
+                        output.accept(ModItems.MAGIC_BOOK_STIGMA);
+                        output.accept(ModItems.MAGIC_PAGE_STIGMA);
 
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
@@ -188,6 +198,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MURAMASA);
                         output.accept(ModItems.TSUMUKARI_MURAMASA);
                         output.accept(ModItems.HESHIKIRI_HASEBE);
+                        output.accept(ModItems.SPIDER_CUTTER);
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
@@ -207,6 +218,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.PARACELSUS_SWORD);
                         output.accept(ModItems.MERCURY_SWORD);
                         output.accept(ModItems.THOMPSON_CONTENDER);
+                        output.accept(ModItems.BLACK_KEY);
                         output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
 
@@ -327,9 +339,19 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MERLIN_SPAWN_EGG);
                         output.accept(ModItems.STONE_MAN_SPAWN_EGG);
                         output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
+                        output.accept(ModItems.THE_DEAD_SPAWN_EGG);
+                        output.accept(ModItems.GHOUL_SPAWN_EGG);
+                        output.accept(ModItems.LIVING_DEAD_SPAWN_EGG);
+                        output.accept(ModItems.NIGHT_KIN_SPAWN_EGG);
+                        output.accept(ModItems.CHURCH_EXECUTOR_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_MASTER_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);
                         output.accept(ModItems.MYSTERIOUS_SWORDSMAN_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_MASTER_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_MASTER_TENNEN_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_APPRENTICE_SPAWN_EGG);
+                        output.accept(ModItems.RONIN_SPAWN_EGG);
+                        output.accept(ModItems.SHINSENGUMI_SPAWN_EGG);
                         output.accept(ModItems.TOHSAKA_RIN_SPAWN_EGG);
                         output.accept(ModItems.HERACLES_SPAWN_EGG);
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
@@ -341,6 +363,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
+                        output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);

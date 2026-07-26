@@ -13,9 +13,20 @@ import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 @GameTestHolder("typemoonworld")
 @PrefixGameTestTemplate(false)
@@ -34,11 +45,114 @@ public final class TypeMoonWorldGameTests {
       helper.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void contenderBulletsConstructAfterSyncedDataInitialization(GameTestHelper helper) {
+      var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 2, 2));
+      var normal = new ContenderBulletEntity(helper.getLevel(), owner, false);
+      var origin = new ContenderBulletEntity(helper.getLevel(), owner, true);
+      helper.assertTrue(!normal.isOriginBullet() && normal.getItem().is(ModItems.BULLET.get()),
+         "normal Contender bullet was not initialized safely");
+      helper.assertTrue(origin.isOriginBullet() && origin.getItem().is(ModItems.ORIGIN_BULLET.get()),
+         "Origin Bullet item did not match its synchronized kind");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void deadApostlesReceivePersistentBodyScale(GameTestHelper helper) {
+      var dead = ModEntities.THE_DEAD.get().create(helper.getLevel());
+      helper.assertTrue(dead != null, "could not create The Dead");
+      dead.finalizeSpawn(helper.getLevel(), helper.getLevel().getCurrentDifficultyAt(helper.absolutePos(new BlockPos(2, 2, 2))),
+         net.minecraft.world.entity.MobSpawnType.SPAWN_EGG, null);
+      double scale = dead.getAttributeValue(Attributes.SCALE);
+      helper.assertTrue(scale >= DeadApostleEntity.MIN_BODY_SCALE && scale <= DeadApostleEntity.MAX_BODY_SCALE,
+         "dead apostle body scale was outside the configured range: " + scale);
+      helper.assertTrue(dead.getPersistentData().getBoolean("TypeMoonNpcRandomScaleV1"),
+         "dead apostle body scale was not marked as initialized for persistence");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
    public static void genericServantSummons(GameTestHelper helper) {
       var id = ResourceLocation.fromNamespaceAndPath("typemoonworld", "artoria_pendragon");
       var entity = TypeMoonWorldApi.addon("typemoonworld").servants().summon(helper.getLevel(), id, helper.absolutePos(new BlockPos(2, 2, 2)));
       helper.assertTrue(entity != null && entity.isAlive(), "generic servant summon failed");
       helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void ushiwakamaruRiderSummonInitializesDedicatedEntity(GameTestHelper helper) {
+      var id = ResourceLocation.fromNamespaceAndPath("typemoonworld", "ushiwakamaru_rider");
+      var entity = TypeMoonWorldApi.addon("typemoonworld").servants().summon(helper.getLevel(), id, helper.absolutePos(new BlockPos(2, 2, 2)));
+      helper.assertTrue(entity instanceof UshiwakamaruRiderEntity, "Rider summon did not use dedicated entity");
+      var rider = (UshiwakamaruRiderEntity) entity;
+      helper.assertTrue(rider.getMainHandItem().is(ModItems.SPIDER_CUTTER.get()), "Rider did not equip Spider Cutter");
+      helper.assertTrue(rider.getCombatPhase() == 1 && rider.getMaxHealth() > 0.0F, "Rider attributes were not initialized");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void ushiwakamaruEightBoatClonesMatchOwnerAndAcquireTargets(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var id = ResourceLocation.fromNamespaceAndPath("typemoonworld", "ushiwakamaru_rider");
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level, id, helper.absolutePos(new BlockPos(2, 2, 2)));
+      helper.assertTrue(summoned instanceof UshiwakamaruRiderEntity, "Rider summon did not use dedicated entity");
+      var rider = (UshiwakamaruRiderEntity)summoned;
+      rider.setCombatPhase(3);
+      rider.setCurrentMp(100.0);
+
+      var firstTarget = EntityType.ZOMBIE.create(level);
+      var secondTarget = EntityType.ZOMBIE.create(level);
+      helper.assertTrue(firstTarget != null && secondTarget != null, "Could not create clone targets");
+      firstTarget.setNoAi(true);
+      secondTarget.setNoAi(true);
+      firstTarget.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
+      secondTarget.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
+      firstTarget.setHealth(1000.0F);
+      secondTarget.setHealth(1000.0F);
+      firstTarget.moveTo(rider.getX() + 10.0, rider.getY(), rider.getZ(), 0.0F, 0.0F);
+      secondTarget.moveTo(rider.getX() - 10.0, rider.getY(), rider.getZ(), 0.0F, 0.0F);
+      level.addFreshEntity(firstTarget);
+      level.addFreshEntity(secondTarget);
+      rider.setTarget(firstTarget);
+
+      helper.runAfterDelay(10, () -> {
+         helper.assertTrue(rider.getPersistentData().hasUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET),
+            "Eight-Boat Leap did not retain its original target UUID; mp=" + rider.getCurrentMp()
+               + ", phase=" + rider.getCombatPhase() + ", target=" + rider.getTarget()
+               + ", until=" + rider.getPersistentData().getLong("UshiwakamaruEightBoatUntil")
+               + ", last=" + rider.getPersistentData().getLong("UshiwakamaruLastEightBoat"));
+         helper.assertTrue(firstTarget.isAlive(), "Eight-Boat original target died before the cleanup check");
+         helper.assertTrue(level.getEntity(firstTarget.getUUID()) == firstTarget,
+            "Eight-Boat original target was missing from the level UUID index");
+         var clones = level.getEntitiesOfClass(UshiwakamaruRiderEntity.class,
+            new AABB(rider.blockPosition()).inflate(32.0), UshiwakamaruRiderEntity::isClone);
+         helper.assertTrue(clones.size() == 7, "Eight-Boat Leap did not create exactly seven clones; found " + clones.size());
+         var targetIds = new java.util.HashSet<java.util.UUID>();
+         for (var clone : clones) {
+            if (clone.getTarget() != null) targetIds.add(clone.getTarget().getUUID());
+         }
+         helper.assertTrue(targetIds.size() >= 2, "Clones did not acquire targets independently; locked targets: " + targetIds.size());
+         for (var clone : clones) {
+            helper.assertTrue(Math.abs(clone.getMaxHealth() - rider.getMaxHealth()) < 0.001F,
+               "Clone max health does not match the owner");
+            helper.assertTrue(Math.abs(clone.getAttributeValue(Attributes.ATTACK_DAMAGE)
+               - rider.getAttributeValue(Attributes.ATTACK_DAMAGE)) < 0.001,
+               "Clone attack damage does not match the owner");
+            helper.assertTrue(Math.abs(clone.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()
+               - rider.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()) < 0.001,
+               "Clone base movement speed does not match the owner");
+            helper.assertTrue(clone.getAttributeValue(Attributes.MOVEMENT_SPEED)
+               > clone.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue() * 2.5,
+               "Clone did not retain Riding and Eight-Boat Leap movement bonuses: "
+                  + clone.getAttributeValue(Attributes.MOVEMENT_SPEED) + " / "
+                  + clone.getAttribute(Attributes.MOVEMENT_SPEED).getModifiers());
+            helper.assertTrue(Math.abs(clone.getCurrentMp() - 80.0) < 0.001,
+               "Clone consumed MP by entering the active-skill AI path");
+            if (clone.getTarget() != null) targetIds.add(clone.getTarget().getUUID());
+         }
+         firstTarget.kill();
+      });
+      helper.runAfterDelay(16, () -> {
+         var clones = level.getEntitiesOfClass(UshiwakamaruRiderEntity.class,
+            new AABB(rider.blockPosition()).inflate(32.0), UshiwakamaruRiderEntity::isClone);
+         helper.assertTrue(clones.isEmpty(), "Eight-Boat clones remained after the original target died");
+         helper.succeed();
+      });
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
    public static void serverSnapshotContainsAllSections(GameTestHelper helper) {
@@ -84,5 +198,31 @@ public final class TypeMoonWorldGameTests {
       helper.assertTrue(attributes.has(MagicAttributes.IMAGINARY_NUMBER), "imaginary-number attribute was not exposed");
       helper.assertTrue(attributes.attributes().contains(MagicAttributes.IMAGINARY_NUMBER), "attribute snapshot was incomplete");
       helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 60)
+   public static void heraclesCardPrimaryAttackDealsDamage(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(TypeMoonWorldApi.servantForm(player).transform(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "heracles")), "Heracles transform failed");
+      helper.assertTrue(player.getMainHandItem().is(ModItems.TEMPLE_STONE_SWORD_AXE.get()), "Heracles weapon was not equipped");
+      BlockPos playerPos = helper.absolutePos(new BlockPos(1, 2, 2));
+      player.teleportTo(playerPos.getX() + 0.5, playerPos.getY(), playerPos.getZ() + 0.5);
+      player.setYRot(-90.0F);
+      var target = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(3, 2, 2));
+      target.setHealth(target.getMaxHealth());
+      float before = target.getHealth();
+      helper.runAfterDelay(1, () -> {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.performBasicSweep(player);
+         float afterFirst = target.getHealth();
+         helper.assertTrue(player.getAttributeValue(Attributes.ATTACK_DAMAGE) > 0.0,
+            "Heracles attack attribute was not positive");
+         helper.assertTrue(afterFirst < before,
+            "Heracles primary sweep dealt no damage; attack=" + player.getAttributeValue(Attributes.ATTACK_DAMAGE));
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.performBasicSweep(player);
+         helper.assertTrue(target.getHealth() == afterFirst,
+            "Heracles primary sweep ignored its 8-tick cooldown");
+         helper.succeed();
+      });
    }
 }

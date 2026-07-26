@@ -497,5 +497,31 @@
     "pale_rider_voice_four_calamities": {
                                "category": "hostile",
                                "sounds": [ "typemoonworld:voice/pale_rider/four_calamities" ]
+                           },
+    "ushiwakamaru_rider_voice_attack": {
+                               "category": "hostile",
+                               "sounds": [
+                                   "typemoonworld:voice/ushiwakamaru_rider/attack1",
+                                   "typemoonworld:voice/ushiwakamaru_rider/attack2",
+                                   "typemoonworld:voice/ushiwakamaru_rider/attack3"
+                               ]
+                           },
+    "ushiwakamaru_rider_voice_fail": {
+                               "category": "hostile",
+                               "sounds": [
+                                   "typemoonworld:voice/ushiwakamaru_rider/fail1",
+                                   "typemoonworld:voice/ushiwakamaru_rider/fail2"
+                               ]
+                           },
+    "ushiwakamaru_rider_voice_victory": {
+                               "category": "hostile",
+                               "sounds": [
+                                   "typemoonworld:voice/ushiwakamaru_rider/victory1",
+                                   "typemoonworld:voice/ushiwakamaru_rider/victory2"
+                               ]
+                           },
+    "ushiwakamaru_rider_voice_np": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/ushiwakamaru_rider/np" ]
                            }
 }

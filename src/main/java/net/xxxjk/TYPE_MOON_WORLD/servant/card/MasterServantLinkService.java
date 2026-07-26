@@ -145,6 +145,12 @@ public final class MasterServantLinkService {
          masterVars.master_servant_backlash_ticks = Math.max(masterVars.master_servant_backlash_ticks, 1200);
          applyMasterBacklash(master, true);
          masterVars.syncPlayerVariables(master);
+         breakLink(master, servant, false);
+      } else {
+         servantVars.servant_card_master_uuid = "";
+         clearSnapshot(servantVars);
+         removeServantPenalties(servant);
+         servantVars.syncPlayerVariables(servant);
       }
    }
 

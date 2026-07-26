@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -559,15 +560,20 @@ public final class GawainCombatHelper {
 
    private static void applyFixedDamageRaw(GawainEntity entity, LivingEntity target, float damage) {
       float before = target.getHealth();
+      DamageSource source = entity.damageSources().mobAttack(entity);
       target.invulnerableTime = 0;
-      target.hurt(entity.damageSources().mobAttack(entity), damage);
+      target.hurt(source, damage);
       target.invulnerableTime = 0;
       if (target.getPersistentData().getBoolean("GodHandActive")) {
          return;
       }
       float desired = Math.max(0.0F, before - damage);
       if (target.getHealth() > desired && target.getHealth() <= before) {
+         boolean lethal = desired <= 0.0F && target.isAlive();
          target.setHealth(desired);
+         if (lethal) {
+            target.die(source);
+         }
       }
    }
 

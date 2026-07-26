@@ -92,6 +92,7 @@ public class FullManaCarvedGemItem extends Item {
       ItemStack stack = player.getItemInHand(hand);
       String engravedMagicId = GemEngravingService.getEngravedMagicId(stack);
       boolean shiftGravitySelfCast = player.isShiftKeyDown() && "gravity_magic".equals(engravedMagicId);
+      boolean shiftHealingSelfCast = player.isShiftKeyDown() && "healing_magic".equals(engravedMagicId);
       if (world.isClientSide) {
          if (shiftGravitySelfCast && FMLEnvironment.dist == Dist.CLIENT) {
             FullManaCarvedGemItem.ClientHandler.openGravitySelector(hand);
@@ -102,6 +103,8 @@ public class FullManaCarvedGemItem extends Item {
          stack = this.normalizeEngravedVariant(serverPlayer, hand, stack);
          if (shiftGravitySelfCast) {
             return InteractionResultHolder.sidedSuccess(stack, false);
+         } else if (shiftHealingSelfCast && GemEngravingService.castHealingSelfFromGem(serverPlayer, hand, stack)) {
+            return InteractionResultHolder.sidedSuccess(serverPlayer.getItemInHand(hand), false);
          } else if (player.isShiftKeyDown()) {
             ItemStack result = GemManaStorageService.withdrawFromGem(serverPlayer, hand, stack, this.emptyGemSupplier.get(), this.type, this.quality);
             return InteractionResultHolder.sidedSuccess(result, false);

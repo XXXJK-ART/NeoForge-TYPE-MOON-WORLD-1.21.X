@@ -73,7 +73,7 @@ public final class ServantCardParacelsusSkills {
    private static final int DIAMOND_SHIELD_MAX_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_INVULN_TICKS = 60;
    private static final double SPIRIT_MP_COST = 4.5;
-   private static final long SPIRIT_INTERVAL = 18L;
+   private static final long SPIRIT_INTERVAL = 20L;
    private static final DustParticleOptions FIRE = new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.28F), 1.2F);
    private static final DustParticleOptions WATER = new DustParticleOptions(new Vector3f(0.28F, 0.55F, 1.0F), 1.2F);
    private static final DustParticleOptions EARTH = new DustParticleOptions(new Vector3f(0.35F, 0.95F, 0.35F), 1.2F);
@@ -525,7 +525,7 @@ public final class ServantCardParacelsusSkills {
    private static void syncParacelsusStocks(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.servant_card_paracelsus_stone_stock = getPhilosopherStoneStock(player);
       vars.servant_card_paracelsus_diamond_shield_stock = getDiamondShieldStock(player);
-      vars.syncPlayerVariables(player);
+      vars.syncServantCardRuntime(player);
    }
 
    public static boolean openElementalGuardianScreen(ServerPlayer player) {
@@ -548,7 +548,7 @@ public final class ServantCardParacelsusSkills {
       level.sendParticles(AETHER, pos.x, pos.y, pos.z, 32, 0.35, 0.35, 0.35, 0.02);
       level.sendParticles(ParticleTypes.ENCHANT, pos.x, pos.y, pos.z, 40, 0.45, 0.45, 0.45, 0.03);
       level.playSound(null, BlockPos.containing(pos), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.85F, 1.35F);
-      vars.syncPlayerVariables(player);
+      vars.syncMana(player);
       return true;
    }
 
@@ -568,7 +568,7 @@ public final class ServantCardParacelsusSkills {
       }
       if (isInsideWorkshop(player) && player.tickCount % 10 == 0) {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 5.5);
-         vars.syncPlayerVariables(player);
+         vars.syncMana(player);
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 25, 0, false, false, false));
       }
    }
@@ -1074,7 +1074,8 @@ public final class ServantCardParacelsusSkills {
 
    private static double applyWorkshopDamage(ServerPlayer player, double baseDamage) {
       double halved = baseDamage * 0.5;
-      return isInsideWorkshop(player) ? halved * 1.18 : halved;
+      double currentDamage = isInsideWorkshop(player) ? halved * 1.18 : halved;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.reduceDamage(currentDamage);
    }
 
    private static void spawnWorkshopHighlight(ServerLevel level, Vec3 center, double radius, boolean burst) {

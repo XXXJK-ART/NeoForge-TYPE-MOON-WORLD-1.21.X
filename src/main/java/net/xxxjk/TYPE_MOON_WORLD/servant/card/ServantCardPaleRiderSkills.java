@@ -61,7 +61,6 @@ public final class ServantCardPaleRiderSkills {
    public static final String DOMAIN_PROXY_TAG = "PaleRiderCardDomainProxyUuid";
    private static final String SOUL_LIBRARY_TAG = "PaleRiderCardSoulLibrary";
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
-   private static final int MAX_CONTROLLED = 128;
 
    private ServantCardPaleRiderSkills() {}
 
@@ -113,7 +112,7 @@ public final class ServantCardPaleRiderSkills {
             if (host == null) releasePossession(player);
          }
          player.noPhysics = false;
-         ServantCardConcealmentHelper.apply(player, 40);
+         ServantCardConcealmentHelper.maintain(player, 40);
          if (!player.getPersistentData().getBoolean(STEALTH_TAG) && player.tickCount % 4 == 0 && player.level() instanceof ServerLevel level) {
             level.sendParticles(ParticleTypes.SQUID_INK, player.getX(), player.getY() + 0.8, player.getZ(), 5, 0.22, 0.7, 0.22, 0.01);
             level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.9, player.getZ(), 3, 0.25, 0.7, 0.25, 0.01);
@@ -124,7 +123,7 @@ public final class ServantCardPaleRiderSkills {
             return;
          }
          player.noPhysics = false;
-         player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.INVISIBILITY, 40, 0, false, false, false));
+         ServantCardConcealmentHelper.maintain(player, 40);
       }
 
       if (player.level() instanceof ServerLevel level) {
@@ -148,7 +147,7 @@ public final class ServantCardPaleRiderSkills {
                isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG)));
          }
       }
-      if (player.tickCount % 5 == 0) vars.syncPlayerVariables(player);
+      if (player.tickCount % 5 == 0) vars.syncServantCardRuntime(player);
    }
 
    public static boolean spawnMenu(ServerPlayer player, boolean crouching) {
@@ -157,7 +156,9 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean spawn(ServerPlayer player, int mode) {
-      if (!(player.level() instanceof ServerLevel level) || countControlled(level, player.getUUID()) >= MAX_CONTROLLED) return false;
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      int spawnCount = mode == 1 ? 5 : 1;
+      if (!PaleRiderInfectionService.hasControlCapacity(player, spawnCount)) return false;
       if (mode == 0 || mode == 2) {
          RatSwarmEntity swarm = ModEntities.RAT_SWARM.get().create(level);
          if (swarm == null) return false;
@@ -167,14 +168,30 @@ public final class ServantCardPaleRiderSkills {
          if (mode == 2) PaleRiderInfectionService.markStationaryAnchor(swarm);
          level.addFreshEntity(swarm);
          PaleRiderInfectionService.forceControl(swarm, player);
+      } else if (mode == 1 || mode == 3) {
+         List<PaleRiderCrowEntity> spawned = new java.util.ArrayList<>(spawnCount);
+         for (int index = 0; index < spawnCount; index++) {
+            PaleRiderCrowEntity crow = ModEntities.PALE_RIDER_CROW.get().create(level);
+            if (crow == null) {
+               spawned.forEach(Entity::discard);
+               return false;
+            }
+            double angle = Math.PI * 2.0 * index / spawnCount;
+            double radius = spawnCount == 1 ? 0.0 : 1.25;
+            crow.moveTo(player.getX() + Math.cos(angle) * radius, player.getY() + 1.5,
+               player.getZ() + Math.sin(angle) * radius, player.getYRot(), 0.0F);
+            crow.setPaleRiderOwner(player);
+            if (mode == 3) PaleRiderInfectionService.markStationaryAnchor(crow);
+            if (!level.addFreshEntity(crow)) {
+               crow.discard();
+               spawned.forEach(Entity::discard);
+               return false;
+            }
+            spawned.add(crow);
+            PaleRiderInfectionService.forceControl(crow, player);
+         }
       } else {
-         PaleRiderCrowEntity crow = ModEntities.PALE_RIDER_CROW.get().create(level);
-         if (crow == null) return false;
-         crow.moveTo(player.getX(), player.getY() + 1.5, player.getZ(), player.getYRot(), 0.0F);
-         crow.setPaleRiderOwner(player);
-         if (mode == 3) PaleRiderInfectionService.markStationaryAnchor(crow);
-         level.addFreshEntity(crow);
-         PaleRiderInfectionService.forceControl(crow, player);
+         return false;
       }
       return true;
    }
@@ -186,6 +203,7 @@ public final class ServantCardPaleRiderSkills {
          return true;
       }
       sendIfSupported(player, new PaleRiderOpenScreenMessage(2, controlledMobs(player).stream()
+         .filter(mob -> !PaleRiderInfectionService.isForbiddenPossessionHost(mob))
          .map(mob -> new PaleRiderOpenScreenMessage.Target(mob.getId(), mob.blockPosition().getX(), mob.blockPosition().getZ(), mob.getDisplayName().getString())).toList()));
       return true;
    }
@@ -193,7 +211,8 @@ public final class ServantCardPaleRiderSkills {
    public static boolean possess(ServerPlayer player, int entityId) {
       if (!(player.level() instanceof ServerLevel level)) return false;
       Entity entity = level.getEntity(entityId);
-      if (!(entity instanceof Mob mob) || !isControlledBy(mob, player.getUUID())) return false;
+      if (!(entity instanceof Mob mob) || PaleRiderInfectionService.isForbiddenPossessionHost(mob)
+         || !isControlledBy(mob, player.getUUID())) return false;
       releasePossession(player);
       if (!player.startRiding(mob, true)) return false;
       mob.getPersistentData().putBoolean("PaleRiderPossessed", true);
@@ -400,10 +419,19 @@ public final class ServantCardPaleRiderSkills {
       if (!(player.level() instanceof ServerLevel level)) return null;
       LivingEntity anchor = getDomainAnchor(player);
       if (anchor == null) return null;
-      return level.getEntitiesOfClass(LivingEntity.class, anchor.getBoundingBox().inflate(50.0), target -> target != player
-         && target != echo && target.isAlive() && !PaleRiderInfectionService.arePaleRiderAllies(player, target)
-         && !EntityUtils.isImmunePlayerTarget(target)).stream()
-         .min((left, right) -> Double.compare(left.distanceToSqr(echo), right.distanceToSqr(echo))).orElse(null);
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, anchor.getBoundingBox().inflate(50.0),
+         candidate -> candidate != player && candidate != echo && candidate.isAlive()
+            && !PaleRiderInfectionService.arePaleRiderAllies(player, candidate)
+            && !EntityUtils.isImmunePlayerTarget(candidate))) {
+         double distance = target.distanceToSqr(echo);
+         if (distance < nearestDistance) {
+            nearest = target;
+            nearestDistance = distance;
+         }
+      }
+      return nearest;
    }
 
    private static void tickPerfectConcealment(ServerPlayer player) {
@@ -414,17 +442,23 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static void manifestStoredSouls(ServerPlayer player, ServerLevel level, LivingEntity anchor) {
-      SoulLibrary library = loadSoulLibrary(player);
       List<SoulEchoEntity> active = ownedSoulEchoes(player, level);
-      if (active.size() > 50) {
-         for (SoulEchoEntity excess : active.subList(50, active.size())) {
-            if (excess.isAlive() && excess.getSnapshot() != null) library.add(excess.getSnapshot());
+      if (active.size() == SoulLibrary.MAX_MANIFESTED_SOULS) return;
+      SoulLibrary library = loadSoulLibrary(player);
+      boolean changed = false;
+      if (active.size() > SoulLibrary.MAX_MANIFESTED_SOULS) {
+         for (SoulEchoEntity excess : active.subList(SoulLibrary.MAX_MANIFESTED_SOULS, active.size())) {
+            if (excess.isAlive() && excess.getSnapshot() != null) changed |= library.add(excess.getSnapshot());
             excess.discard();
          }
-         active = active.subList(0, 50);
+         active = active.subList(0, SoulLibrary.MAX_MANIFESTED_SOULS);
       }
-      int slots = Math.max(0, 50 - active.size());
+      int slots = Math.max(0, SoulLibrary.MAX_MANIFESTED_SOULS - active.size());
       List<SoulSnapshot> souls = library.takeStrongest(slots);
+      if (souls.isEmpty()) {
+         if (changed) saveSoulLibrary(player, library);
+         return;
+      }
       int index = 0;
       for (SoulSnapshot soul : souls) {
          SoulEchoEntity echo = ModEntities.SOUL_ECHO.get().create(level);
@@ -623,13 +657,14 @@ public final class ServantCardPaleRiderSkills {
    private static Mob findStoredHost(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level) || !player.getPersistentData().hasUUID(HOST_TAG)) return null;
       Entity entity = level.getEntity(player.getPersistentData().getUUID(HOST_TAG));
-      return entity instanceof Mob mob && mob.isAlive() && isControlledBy(mob, player.getUUID()) ? mob : null;
+      return entity instanceof Mob mob && mob.isAlive() && !PaleRiderInfectionService.isForbiddenPossessionHost(mob)
+         && isControlledBy(mob, player.getUUID()) ? mob : null;
    }
 
    private static Mob possessNearestControlled(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return null;
       Mob nearest = controlledMobs(player).stream()
-         .filter(mob -> mob.isAlive())
+         .filter(mob -> mob.isAlive() && !PaleRiderInfectionService.isForbiddenPossessionHost(mob))
          .min((left, right) -> Double.compare(left.distanceToSqr(player), right.distanceToSqr(player)))
          .orElse(null);
       if (nearest == null) return null;
@@ -660,7 +695,8 @@ public final class ServantCardPaleRiderSkills {
    }
 
    private static int countControlled(ServerLevel level, UUID owner) {
-      return PaleRiderEntityIndex.controlledCount(level, owner, entity -> isControlledBy(entity, owner));
+      return PaleRiderEntityIndex.controlledCount(level, owner, entity -> isControlledBy(entity, owner)
+         && (PaleRiderInfectionService.isControlled(entity) || entity instanceof RatSwarmEntity || entity instanceof PaleRiderCrowEntity));
    }
    private static float clampInput(float value) { return Math.max(-1.0F, Math.min(1.0F, value)); }
 

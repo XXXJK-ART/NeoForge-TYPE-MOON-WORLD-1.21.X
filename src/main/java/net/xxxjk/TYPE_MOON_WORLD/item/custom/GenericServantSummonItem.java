@@ -15,8 +15,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.BuiltinServantEntityFactory;
 import net.xxxjk.typemoonworld.api.event.ServantSummonEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -55,10 +55,10 @@ public final class GenericServantSummonItem extends Item {
       BlockPos pos = level.getBlockState(clicked).getCollisionShape(level, clicked).isEmpty() ? clicked : clicked.relative(face);
       ServantSummonEvent.Pre pre = NeoForge.EVENT_BUS.post(new ServantSummonEvent.Pre(server, id, pos));
       if (pre.isCanceled()) return InteractionResult.FAIL;
-      var entity = ModEntities.GENERIC_SERVANT.get().create(server);
+      var entity = BuiltinServantEntityFactory.create(server, id);
       if (entity == null) return InteractionResult.FAIL;
-      entity.setServantId(id.toString());
       entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.01, context.getRotation(), 0.0F);
+      entity.finalizeSpawn(server, server.getCurrentDifficultyAt(pos), net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, null);
       if (!server.addFreshEntity(entity)) return InteractionResult.FAIL;
       NeoForge.EVENT_BUS.post(new ServantSummonEvent.Post(server, id, pos, entity));
       if (context.getPlayer() == null || !context.getPlayer().getAbilities().instabuild) stack.shrink(1);

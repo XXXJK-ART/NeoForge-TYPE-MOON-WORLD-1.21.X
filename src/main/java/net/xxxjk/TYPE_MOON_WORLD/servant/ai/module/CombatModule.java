@@ -91,9 +91,9 @@ public final class CombatModule implements ServantAiModule {
       "typemoonworld", "frenzy_atk_boost");
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
-   private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 220;
+   private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 240;
    private static final int PARACELSUS_WANDER_COOLDOWN = 65;
-   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 35;
+   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 40;
    private static final String TAG_PARACELSUS_LAST_AI_MAGIC = "ParacelsusLastAiMagicTick";
 
    private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
@@ -417,7 +417,7 @@ public final class CombatModule implements ServantAiModule {
             if (distance <= 4.0 && entity.isPerformingAction()) {
                return;
             }
-            if (distance <= 4.5 && hasLineOfSight && context.gameTick() % 30 == 0) {
+            if (distance <= 4.5 && hasLineOfSight && context.gameTick() % 34 == 0) {
                entity.triggerAttackSwing();
                entity.doHurtTarget(sharedTarget);
                return;

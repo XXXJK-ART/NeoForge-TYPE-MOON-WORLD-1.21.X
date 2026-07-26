@@ -21,7 +21,8 @@ public final class ServantCardRegistry {
       new Entry("gawain", "Gawain", "高文", true),
       new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", true),
       new Entry("li_shuwen", "Li Shuwen", "李书文", true),
-      new Entry("pale_rider", "Pale Rider", "苍白骑士", false)
+      new Entry("pale_rider", "Pale Rider", "苍白骑士", false),
+      new Entry("ushiwakamaru_rider", "Ushiwakamaru (Rider)", "牛若丸（Rider）", true)
    );
 
    private ServantCardRegistry() {
@@ -47,7 +48,9 @@ public final class ServantCardRegistry {
    public static java.util.List<Entry> all() {
       java.util.LinkedHashMap<String, Entry> merged = new java.util.LinkedHashMap<>();
       ENTRIES.forEach(entry -> merged.put(entry.servantId(), entry));
-      ServantDataRegistry.getAll().forEach((id, definition) -> merged.putIfAbsent(id, new Entry(id, definition.displayName(), definition.displayNameZh(), true)));
+      ServantDataRegistry.getAll().forEach((id, definition) -> {
+         merged.putIfAbsent(id, new Entry(id, definition.displayName(), definition.displayNameZh(), true));
+      });
       return java.util.List.copyOf(merged.values());
    }
 

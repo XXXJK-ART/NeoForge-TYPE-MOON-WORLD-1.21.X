@@ -1,0 +1,13 @@
+{
+  "id": "shana_oh_wandering_tales",
+  "display_name": "Shana-oh Wandering Tales",
+  "display_name_zh": "\u906e\u90a3\u738b\u6d41\u79bb\u8c2d",
+  "rank": "A+",
+  "type": "anti_unit",
+  "mp_cost": 20,
+  "cooldown_ticks": 400,
+  "duration_ticks": 300,
+  "effects": [],
+  "description": "Five legendary techniques of Ushiwakamaru.",
+  "description_zh": "\u725b\u82e5\u4e38\u4e00\u751f\u4f20\u8bf4\u5177\u73b0\u5316\u7684\u4e94\u5927\u5965\u4e49\u3002"
+}

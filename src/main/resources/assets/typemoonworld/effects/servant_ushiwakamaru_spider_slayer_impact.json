@@ -1,0 +1,17 @@
+{
+  "duration": 0.58,
+  "notes": "Compact moon-white and emerald exorcism burst on every Spider Slayer target.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.44, "rate": 760, "particle_lifetime": 0.38,
+      "size_variance": 0.42, "lifetime_variance": 0.2, "position_variance": 0.06,
+      "velocity": [0.0, 0.1, 0.0], "velocity_variance": 0.16,
+      "component": {"type": "sphere", "radius": 1.0, "sample_count": 112},
+      "transform_over_life": [{"t": 0.0, "scale": [0.15, 0.15, 0.15]}, {"t": 0.42, "scale": [1.25, 1.25, 1.25], "easing": "ease_out_cubic"}, {"t": 1.0, "scale": [1.75, 1.75, 1.75]}],
+      "color_over_life": [{"t": 0.0, "color": "#00FFFFFF"}, {"t": 0.2, "color": "#FFFFFFFF"}, {"t": 0.52, "color": "#DD88FF88"}, {"t": 0.78, "color": "#AA6688DD"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.05}, {"t": 0.38, "size": 0.3}, {"t": 1.0, "size": 0.025}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_SPIDER_SLAYER_HIT",
+      "vanilla_particles": [{"type": "enchanted_hit", "count": 2, "spread": [0.55, 0.55, 0.55], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.5}]
+    }
+  ]
+}

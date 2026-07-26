@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -23,16 +24,24 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemQuality;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ElementalMagicHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
@@ -63,6 +72,8 @@ public final class GemEngravingService {
    private static final int GRAVITY_RESULT_MESSAGE_DELAY_TICKS = 12;
    private static final int GANDER_MAX_CHARGE_SECONDS = 5;
    private static final double GANDER_RELEASE_FORWARD_FROM_ANCHOR = 0.08;
+   private static final String TAG_AREA_MAGIC = "TypeMoonAreaMagic";
+   private static final String TAG_AREA_PROFICIENCY = "TypeMoonAreaProficiency";
    private static final DustParticleOptions GANDER_BLACK_DUST = new DustParticleOptions(new Vector3f(0.05F, 0.05F, 0.05F), 1.0F);
    private static final DustParticleOptions GANDER_RED_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.08F, 0.12F), 1.1F);
 
@@ -141,6 +152,8 @@ public final class GemEngravingService {
             case "reinforcement" -> castReinforcement(player, gemStack);
             case "gravity_magic" -> castGravity(player, gemStack);
             case "gander" -> castGander(player, gemStack);
+            case "healing_magic", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic"
+               -> castAreaMagic(player, gemStack, magicId);
             default -> {
                TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                yield MagicModularRegistry.execute(new MagicExecutionContext(player, vars, magicId, false)).success();
@@ -342,6 +355,9 @@ public final class GemEngravingService {
                break;
             case "gravity_magic":
                lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.gravity.self_cast_hint"));
+               break;
+            case "healing_magic":
+               lines.add(Component.translatable("tooltip.typemoonworld.gem.engraved.healing.self_cast_hint"));
          }
 
          double manaCost = getEngravedManaCost(stack);
@@ -416,7 +432,157 @@ public final class GemEngravingService {
          case "reinforcement" -> Component.translatable("magic.typemoonworld.reinforcement.name");
          case "gravity_magic" -> Component.translatable("magic.typemoonworld.gravity_magic.name");
          case "gander" -> Component.translatable("magic.typemoonworld.gander.name");
+         case "healing_magic" -> Component.translatable("magic.typemoonworld.healing_magic.name");
+         case "suggestion_magic" -> Component.translatable("magic.typemoonworld.suggestion_magic.name");
+         case "binding_magic" -> Component.translatable("magic.typemoonworld.binding_magic.name");
+         case "fire_magic" -> Component.translatable("magic.typemoonworld.fire_magic.name");
+         case "water_magic" -> Component.translatable("magic.typemoonworld.water_magic.name");
+         case "wind_magic" -> Component.translatable("magic.typemoonworld.wind_magic.name");
+         case "earth_magic" -> Component.translatable("magic.typemoonworld.earth_magic.name");
          default -> Component.literal(magicId);
+      };
+   }
+
+   public static boolean castHealingSelfFromGem(ServerPlayer player, InteractionHand hand, ItemStack gemStack) {
+      if (!"healing_magic".equals(getEngravedMagicId(gemStack))) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double proficiency = Math.min(100.0, getEngravedMagicProficiency(vars, "healing_magic") * getGemEffectMultiplier(gemStack));
+      if (!MagicHealing.healDirect(player, player, vars, proficiency)) {
+         return false;
+      }
+      consumeHeldGem(player, hand, gemStack);
+      return true;
+   }
+
+   private static boolean castAreaMagic(ServerPlayer player, ItemStack gemStack, String magicId) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      CompoundTag tag = ((CustomData)gemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
+      tag.putString(TAG_AREA_MAGIC, magicId);
+      tag.putFloat(TAG_AREA_PROFICIENCY, (float)getEngravedMagicProficiency(vars, magicId));
+      ItemStack visualGem = gemStack.copy();
+      visualGem.setCount(1);
+      visualGem.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+
+      Vec3 direction = player.getLookAngle().normalize();
+      RubyProjectileEntity projectile = new RubyProjectileEntity(player.level(), player);
+      projectile.setGemType(gemTypeVisualIndex(gemStack));
+      projectile.setVisualScale(getGemEffectMultiplier(gemStack));
+      projectile.setItem(visualGem);
+      projectile.setPos(player.getEyePosition().add(direction.scale(0.35)));
+      projectile.shoot(direction.x, direction.y, direction.z, 1.8F, 0.4F);
+      player.level().addFreshEntity(projectile);
+      player.level().playSound(null, player.blockPosition(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.7F, 0.9F);
+      return true;
+   }
+
+   public static boolean tryResolveAreaMagic(RubyProjectileEntity projectile, Vec3 center) {
+      CustomData customData = projectile.getItem().get(DataComponents.CUSTOM_DATA);
+      if (customData == null) {
+         return false;
+      }
+      CompoundTag tag = customData.copyTag();
+      String magicId = tag.getString(TAG_AREA_MAGIC);
+      if (magicId.isEmpty()) {
+         return false;
+      }
+      resolveAreaMagic(projectile, center, magicId, tag.getFloat(TAG_AREA_PROFICIENCY));
+      return true;
+   }
+
+   private static void resolveAreaMagic(RubyProjectileEntity projectile, Vec3 center, String magicId, double proficiency) {
+      if (!(projectile.getOwner() instanceof LivingEntity caster)) {
+         return;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = caster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      float qualityMultiplier = getGemEffectMultiplier(projectile.getItem());
+      double effectiveProficiency = Math.min(100.0, Math.max(0.0, proficiency) * qualityMultiplier);
+      double radius = (2.5 + Math.max(0.0, Math.min(100.0, proficiency)) * 0.03) * qualityMultiplier;
+      AABB area = new AABB(center, center).inflate(radius);
+      switch (magicId) {
+         case "healing_magic" -> {
+            for (LivingEntity target : caster.level().getEntitiesOfClass(
+               LivingEntity.class, area, target -> target.isAlive() && target.position().distanceToSqr(center) <= radius * radius
+                  && (target == caster || caster.isAlliedTo(target))
+            )) {
+               MagicHealing.healDirect(caster, target, vars, effectiveProficiency);
+            }
+         }
+         case "suggestion_magic" -> {
+            for (LivingEntity target : caster.level().getEntitiesOfClass(
+               LivingEntity.class, area, target -> target != caster && target.isAlive()
+                  && target.position().distanceToSqr(center) <= radius * radius && !EntityUtils.isImmunePlayerTarget(target)
+            )) {
+               MagicSuggestion.applySuggestion(caster, target, effectiveProficiency);
+            }
+         }
+         case "binding_magic" -> MagicBinding.applyArea(caster, center, effectiveProficiency, radius);
+         case "fire_magic" -> releaseFireArea(projectile, caster, area, center, effectiveProficiency, radius, qualityMultiplier);
+         case "water_magic" -> ElementalMagicHelper.spawnField(
+            vars, magicId, caster, BlockPos.containing(center), ElementalMagicFieldEntity.ELEMENT_WATER,
+            ElementalMagicFieldEntity.FORM_WATER_PRISON, (float)radius, 3.0F, 60, 8.0F * qualityMultiplier
+         );
+         case "wind_magic" -> ElementalMagicHelper.spawnField(
+            vars, magicId, caster, BlockPos.containing(center), ElementalMagicFieldEntity.ELEMENT_WIND,
+            ElementalMagicFieldEntity.FORM_WIND_TORNADO, (float)radius, 3.0F, 100, 12.0F * qualityMultiplier
+         );
+         case "earth_magic" -> ElementalMagicHelper.spawnField(
+            vars, magicId, caster, BlockPos.containing(center), ElementalMagicFieldEntity.ELEMENT_EARTH,
+            ElementalMagicFieldEntity.FORM_EARTH_PRISON, (float)radius, 3.0F, 100, 8.0F * qualityMultiplier
+         );
+      }
+   }
+
+   private static void releaseFireArea(
+      RubyProjectileEntity projectile, LivingEntity caster, AABB area, Vec3 center,
+      double proficiency, double radius, float qualityMultiplier
+   ) {
+      float damage = (float)(4.0 + proficiency * 0.06) * qualityMultiplier;
+      int igniteSeconds = 2 + (int)Math.floor(proficiency / 35.0);
+      for (LivingEntity target : caster.level().getEntitiesOfClass(
+         LivingEntity.class, area, target -> target != caster && target.isAlive()
+            && target.position().distanceToSqr(center) <= radius * radius && !EntityUtils.isImmunePlayerTarget(target)
+      )) {
+         target.hurt(caster.damageSources().indirectMagic(projectile, caster), damage);
+         target.igniteForSeconds(igniteSeconds);
+      }
+      if (caster.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 50, radius * 0.45, radius * 0.25, radius * 0.45, 0.08);
+         level.sendParticles(ParticleTypes.LAVA, center.x, center.y, center.z, 12, radius * 0.25, radius * 0.15, radius * 0.25, 0.02);
+         level.playSound(null, BlockPos.containing(center), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.9F, 0.9F);
+      }
+   }
+
+   private static int gemTypeVisualIndex(ItemStack stack) {
+      if (stack.getItem() instanceof FullManaCarvedGemItem gem) {
+         return switch (gem.getType()) {
+            case RUBY -> 0;
+            case SAPPHIRE -> 1;
+            case EMERALD -> 2;
+            case TOPAZ -> 3;
+            case CYAN -> 4;
+            case WHITE_GEMSTONE -> 5;
+            case BLACK_SHARD -> 6;
+         };
+      }
+      return 5;
+   }
+
+   private static float getGemEffectMultiplier(ItemStack stack) {
+      return stack.getItem() instanceof FullManaCarvedGemItem gem ? gem.getQuality().getEffectMultiplier() : 1.0F;
+   }
+
+   private static double getEngravedMagicProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      return switch (magicId) {
+         case "healing_magic" -> vars.proficiency_healing_magic;
+         case "suggestion_magic" -> vars.proficiency_suggestion_magic;
+         case "binding_magic" -> vars.proficiency_binding_magic;
+         case "fire_magic" -> vars.proficiency_fire_magic;
+         case "water_magic" -> vars.proficiency_water_magic;
+         case "wind_magic" -> vars.proficiency_wind_magic;
+         case "earth_magic" -> vars.proficiency_earth_magic;
+         default -> 0.0;
       };
    }
 

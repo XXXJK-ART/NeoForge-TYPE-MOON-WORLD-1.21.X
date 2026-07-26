@@ -167,6 +167,18 @@ public final class ServantCardDefenseHandler {
             }
          }
       }
+      if ("ushiwakamaru_rider".equals(vars.servant_card_id)) {
+         if (ServantCardUshiwakamaruSkills.tryAbsorbShieldDamage(player, event.getSource(), event.getAmount())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+         }
+         if (ServantCardUshiwakamaruSkills.trySwallowDodge(player, event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+         }
+      }
 
       if (!infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {

@@ -27,6 +27,7 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 
 @EventBusSubscriber(modid = "typemoonworld")
@@ -92,6 +93,8 @@ public final class DojoWorldEvents {
       if (!areStructureChunksLoaded(level, box)) return false;
       double cx = (box.minX() + box.maxX()) * 0.5 + 0.5;
       double cz = (box.minZ() + box.maxZ()) * 0.5 + 0.5;
+      int centerX = MthFloor(cx);
+      int centerZ = MthFloor(cz);
       if (!level.getEntitiesOfClass(BajiquanMasterEntity.class,
          new net.minecraft.world.phys.AABB(box.minX() - 8, box.minY() - 8, box.minZ() - 8, box.maxX() + 8, box.maxY() + 16, box.maxZ() + 8)).isEmpty()) {
          saved.markInitialized(dojoId);
@@ -104,6 +107,19 @@ public final class DojoWorldEvents {
          master.setDojoHome(home);
          master.ensureRandomName();
          level.addFreshEntity(master);
+         int apprenticeCount = 1 + level.random.nextInt(4);
+         for (int i = 0; i < apprenticeCount; i++) {
+            BajiquanApprenticeEntity apprentice = ModEntities.BAJIQUAN_APPRENTICE.get().create(level);
+            if (apprentice == null) continue;
+            int x = Math.max(box.minX(), Math.min(box.maxX(), centerX + level.random.nextInt(17) - 8));
+            int z = Math.max(box.minZ(), Math.min(box.maxZ(), centerZ + level.random.nextInt(17) - 8));
+            BlockPos spawn = findSafeHome(level, box, x, z);
+            apprentice.moveTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+               level.random.nextFloat() * 360.0F, 0.0F);
+            apprentice.finalizeSpawn(level, level.getCurrentDifficultyAt(spawn),
+               net.minecraft.world.entity.MobSpawnType.STRUCTURE, null);
+            level.addFreshEntity(apprentice);
+         }
          saved.markInitialized(dojoId);
       }
       return master != null;

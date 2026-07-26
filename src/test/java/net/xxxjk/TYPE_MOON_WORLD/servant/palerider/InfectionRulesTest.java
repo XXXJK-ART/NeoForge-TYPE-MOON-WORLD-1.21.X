@@ -10,9 +10,10 @@ class InfectionRulesTest {
       assertEquals(1, InfectionRules.clampLevel(-1));
       assertEquals(3, InfectionRules.clampLevel(3));
       assertEquals(5, InfectionRules.clampLevel(20));
-      assertEquals(600, InfectionRules.DURATION_TICKS);
+      assertEquals(100, InfectionRules.DURATION_TICKS);
       assertEquals(600, InfectionRules.IMMUNITY_TICKS);
       assertEquals(20, InfectionRules.DAMAGE_INTERVAL_TICKS);
+      assertEquals(100, PaleRiderInfectionService.MAX_CONTROLLED);
    }
 
    @Test
@@ -22,6 +23,28 @@ class InfectionRulesTest {
       for (int level = 1; level <= 5; level++) {
          assertEquals(spread[level - 1], InfectionRules.spreadChance(level), 1.0E-9);
          assertEquals(control[level - 1], InfectionRules.controlChance(level), 1.0E-9);
+      }
+   }
+
+   @Test
+   void slowerScansPreserveLongTermSpreadChance() {
+      for (int level = 1; level <= 5; level++) {
+         double chance = InfectionRules.spreadChance(level);
+         assertEquals(1.0 - (1.0 - chance) * (1.0 - chance),
+            InfectionRules.spreadChanceForInterval(level, 2), 1.0E-9);
+      }
+   }
+
+   @Test
+   void serviceTicksAreEvenlyStaggeredByEntityId() {
+      for (int offset = 0; offset < InfectionRules.DAMAGE_INTERVAL_TICKS; offset++) {
+         int scheduled = 0;
+         for (int entityId = 0; entityId < InfectionRules.DAMAGE_INTERVAL_TICKS; entityId++) {
+            if (InfectionRules.isScheduled(entityId, 1000L + offset, InfectionRules.DAMAGE_INTERVAL_TICKS)) {
+               scheduled++;
+            }
+         }
+         assertEquals(1, scheduled);
       }
    }
 
@@ -39,7 +62,7 @@ class InfectionRulesTest {
 
    @Test
    void damageScalesWithInfectionLevel() {
-      float[] damage = {5.0F, 10.0F, 15.0F, 20.0F, 25.0F};
+      float[] damage = {1.0F, 5.0F, 10.0F, 15.0F, 20.0F};
       for (int level = 1; level <= 5; level++) {
          assertEquals(damage[level - 1], InfectionRules.damagePerSecond(level), 0.0F);
       }

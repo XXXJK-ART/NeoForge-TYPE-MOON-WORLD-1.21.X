@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:the_dead",
+    "typemoonworld:ghoul",
+    "typemoonworld:living_dead",
+    "typemoonworld:night_kin"
+  ]
+}

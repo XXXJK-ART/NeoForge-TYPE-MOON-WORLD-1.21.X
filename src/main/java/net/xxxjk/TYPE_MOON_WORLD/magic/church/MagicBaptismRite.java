@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Skeleton;
@@ -50,7 +51,7 @@ public final class MagicBaptismRite {
       }
 
       UUID targetId = target.getUUID();
-      int chantTicks = proficiency >= 50.0 ? 60 : 40;
+      int chantTicks = chantTicks(proficiency);
       BaptismRiteEventHandler.start(player, targetId, proficiency, chantTicks);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.start", target.getDisplayName()), true);
       vars.proficiency_baptism_rite = Math.min(100.0, vars.proficiency_baptism_rite + 0.16);
@@ -62,12 +63,17 @@ public final class MagicBaptismRite {
       return target instanceof ServantEntity || isUndeadLike(target) || MagicSpiritualHealing.canAffect(target);
    }
 
-   private static double targetRange(double proficiency) {
+   public static double targetRange(double proficiency) {
       return BasicMagecraftHelper.clampProficiency(proficiency) >= 50.0 ? 28.0 : 20.0;
    }
 
+   public static int chantTicks(double proficiency) {
+      return BasicMagecraftHelper.clampProficiency(proficiency) >= 50.0 ? 60 : 40;
+   }
+
    private static boolean isUndeadLike(LivingEntity target) {
-      return target instanceof Zombie
+      return target.getType().is(EntityTypeTags.UNDEAD)
+         || target instanceof Zombie
          || target instanceof Skeleton
          || target instanceof Stray
          || target instanceof Husk

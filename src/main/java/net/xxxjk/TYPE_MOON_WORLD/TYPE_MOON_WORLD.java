@@ -62,6 +62,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.KendoInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
@@ -105,6 +106,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardBasicAttackMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SetTimeAlterMultiplierMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.TimeAlterVisualStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardReleaseMessage;
@@ -127,6 +129,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
+import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
@@ -184,6 +187,7 @@ public class TYPE_MOON_WORLD {
             ExtensionApiRegistry.freeze();
             EffectsApiRegistry.freeze();
             Regions.register(new GemRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_region"), 2));
+            Regions.register(new CityRegion(ResourceLocation.fromNamespaceAndPath("typemoonworld", "city_region"), 1));
             ResourceKey<Biome> gemBiome = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("typemoonworld", "gem_biome"));
             SurfaceRuleManager.addSurfaceRules(
                RuleCategory.OVERWORLD,
@@ -224,6 +228,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);
+      registrar.playToServer(KendoInputMessage.TYPE, KendoInputMessage.STREAM_CODEC, KendoInputMessage::handleData);
       registrar.playToServer(BodyTrainingPointMessage.TYPE, BodyTrainingPointMessage.STREAM_CODEC, BodyTrainingPointMessage::handleData);
       registrar.playToServer(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
       registrar.playToServer(Lose_health_regain_mana_Message.TYPE, Lose_health_regain_mana_Message.STREAM_CODEC, Lose_health_regain_mana_Message::handleData);
@@ -255,6 +260,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardBasicAttackMessage.TYPE, ServantCardBasicAttackMessage.STREAM_CODEC, ServantCardBasicAttackMessage::handleData);
       registrar.playToServer(ServantCardFlightMessage.TYPE, ServantCardFlightMessage.STREAM_CODEC, ServantCardFlightMessage::handleData);
       registrar.playToServer(SetTimeAlterMultiplierMessage.TYPE, SetTimeAlterMultiplierMessage.STREAM_CODEC, SetTimeAlterMultiplierMessage::handleData);
+      registrar.playToClient(TimeAlterVisualStateMessage.TYPE, TimeAlterVisualStateMessage.STREAM_CODEC, TimeAlterVisualStateMessage::handleData);
       registrar.playToServer(ServantCardHoldActionMessage.TYPE, ServantCardHoldActionMessage.STREAM_CODEC, ServantCardHoldActionMessage::handleData);
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);
@@ -307,6 +313,11 @@ public class TYPE_MOON_WORLD {
          TypeMoonWorldModVariables.ManaSyncMessage::handleData
       );
       registrar.playToClient(
+         TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage.TYPE,
+         TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.ServantCardRuntimeSyncMessage::handleData
+      );
+      registrar.playToClient(
          TypeMoonWorldModVariables.ProficiencySyncMessage.TYPE,
          TypeMoonWorldModVariables.ProficiencySyncMessage.STREAM_CODEC,
          TypeMoonWorldModVariables.ProficiencySyncMessage::handleData
@@ -355,12 +366,14 @@ public class TYPE_MOON_WORLD {
    public void onServerStarting(ServerStartingEvent event) {
       scheduledWork.clear();
       serverTickCounter = 0L;
+      net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService.invalidate();
    }
 
    @SubscribeEvent
    public void onServerStopping(ServerStoppingEvent event) {
       scheduledWork.clear();
       serverTickCounter = 0L;
+      net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService.invalidate();
    }
 
    private record NetworkMessage<T extends CustomPacketPayload>(StreamCodec<? extends FriendlyByteBuf, T> reader, IPayloadHandler<T> handler) {

@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -117,6 +118,11 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
    protected void onHit(HitResult result) {
       super.onHit(result);
       if (!this.level().isClientSide) {
+         if (GemEngravingService.tryResolveAreaMagic(this, this.position())) {
+            this.discard();
+            return;
+         }
+
          if (this.getGemType() == 99) {
             this.discard();
             return;
@@ -316,6 +322,10 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
 
    public void tick() {
       super.tick();
+      if (!this.level().isClientSide && this.tickCount > 100 && GemEngravingService.tryResolveAreaMagic(this, this.position())) {
+         this.discard();
+         return;
+      }
       if (!this.level().isClientSide && this.getGemType() == 99 && this.tickCount > 40) {
          this.discard();
       } else {

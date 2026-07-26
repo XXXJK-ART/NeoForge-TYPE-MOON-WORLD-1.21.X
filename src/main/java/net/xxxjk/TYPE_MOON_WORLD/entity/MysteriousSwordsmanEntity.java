@@ -36,7 +36,7 @@ import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class MysteriousSwordsmanEntity extends PathfinderMob implements GeoEntity {
+public class MysteriousSwordsmanEntity extends HumanNpcEntity implements GeoEntity {
    private static final String TAG_PLAYER = "DuelPlayer";
    private static final String TAG_START = "DuelStart";
    private static final String TAG_ACTIVE = "DuelActive";

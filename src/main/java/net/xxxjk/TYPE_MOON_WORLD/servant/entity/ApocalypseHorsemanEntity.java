@@ -76,8 +76,10 @@ public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
             this.discard();
             return;
          }
-         this.updateHorsemanName();
-         if (this.tickCount % 4 == Math.floorMod(this.getId(), 4)) {
+         if (this.getCustomName() == null) {
+            this.updateHorsemanName();
+         }
+         if (this.tickCount % 8 == Math.floorMod(this.getId(), 8)) {
             if (owner instanceof PaleRiderEntity rider) rider.spawnHorsemanParticles(this);
             else if (this.level() instanceof ServerLevel serverLevel) this.spawnBodyParticles(serverLevel);
          }
@@ -90,8 +92,8 @@ public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
          case FAMINE -> new Vector3f(0.45F, 0.025F, 0.02F);
          case BEAST -> new Vector3f(0.035F, 0.035F, 0.035F);
       };
-      level.sendParticles(new DustParticleOptions(color, 1.5F), this.getX(), this.getY() + 0.9, this.getZ(), 10, 0.3, 0.9, 0.3, 0.015);
-      level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 1.0, this.getZ(), 4, 0.25, 0.8, 0.25, 0.01);
+      level.sendParticles(new DustParticleOptions(color, 1.5F), this.getX(), this.getY() + 0.9, this.getZ(), 5, 0.3, 0.9, 0.3, 0.015);
+      level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 1.0, this.getZ(), 2, 0.25, 0.8, 0.25, 0.01);
    }
 
    @Override
@@ -125,8 +127,12 @@ public final class ApocalypseHorsemanEntity extends OwnedPaleRiderMob {
          case FAMINE -> "entity.typemoonworld.horseman.war";
          case BEAST -> "entity.typemoonworld.horseman.famine";
       };
-      this.setCustomName(Component.translatable(key));
-      this.setCustomNameVisible(true);
+      if (this.getCustomName() == null || !this.getCustomName().getString().equals(Component.translatable(key).getString())) {
+         this.setCustomName(Component.translatable(key));
+      }
+      if (!this.isCustomNameVisible()) {
+         this.setCustomNameVisible(true);
+      }
    }
 
    public enum Calamity {

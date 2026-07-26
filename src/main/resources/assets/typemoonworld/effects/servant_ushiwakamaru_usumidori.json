@@ -1,0 +1,25 @@
+{
+  "duration": 0.82,
+  "notes": "Usumidori Heaven Blade: indigo blade outline and emerald shukuchi wake. Local +Z follows the target direction.",
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 0.42, "rate": 920, "particle_lifetime": 0.38,
+      "size_variance": 0.3, "lifetime_variance": 0.14, "position_variance": 0.018,
+      "velocity": [0.0, 0.0, 1.2], "velocity_variance": 0.16,
+      "component": {"type": "line", "start": [0.18, -0.7, 0.1], "end": [0.18, 1.25, 0.25], "segments": 88},
+      "color_over_life": [{"t": 0.0, "color": "#AA4466AA"}, {"t": 0.35, "color": "#FF6688DD"}, {"t": 0.72, "color": "#FFEEFFFF"}, {"t": 1.0, "color": "#006688DD"}],
+      "size_over_life": [{"t": 0.0, "size": 0.04}, {"t": 0.4, "size": 0.2}, {"t": 1.0, "size": 0.018}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_USUMIDORI_BLADE", "enable_trail": true
+    },
+    {
+      "start_time": 0.08, "end_time": 0.72, "rate": 720, "particle_lifetime": 0.46,
+      "size_variance": 0.4, "lifetime_variance": 0.2, "position_variance": 0.06,
+      "velocity": [0.0, 0.035, 2.2], "velocity_variance": 0.35,
+      "component": {"type": "parametric", "mode": "EXPRESSION", "expr_x": "sin(t * 25.132 + time * 18.0) * (0.12 + t * 0.55)", "expr_y": "sin(t * 12.566) * 0.32", "expr_z": "t * 10.0", "t_start": 0.0, "t_end": 1.0, "segments": 144},
+      "color_over_life": [{"t": 0.0, "color": "#CC88FF44"}, {"t": 0.45, "color": "#8888FF88"}, {"t": 1.0, "color": "#0088FF44"}],
+      "size_over_life": [{"t": 0.0, "size": 0.05}, {"t": 0.42, "size": 0.16}, {"t": 1.0, "size": 0.018}],
+      "blend": "ADDITIVE", "particle_role": "USHIWAKAMARU_SHUKUCHI_WAKE", "enable_trail": true,
+      "vanilla_particles": [{"type": "gust", "count": 1, "spread": [0.5, 0.35, 1.2], "offset": [0.0, 0.0, 3.0], "speed": 0.06, "chance": 0.2}]
+    }
+  ]
+}

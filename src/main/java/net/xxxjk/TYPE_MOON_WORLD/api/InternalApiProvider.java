@@ -281,7 +281,7 @@ public final class InternalApiProvider implements ApiProvider {
 
       @Override
       public ItemStack createCard(ResourceLocation servantId) {
-         if (!valid(servantId, this.namespace)) return ItemStack.EMPTY;
+         if (!valid(servantId, this.namespace) || "ushiwakamaru_rider".equals(servantId.getPath())) return ItemStack.EMPTY;
          return ServantCardItem.create(ModItems.SERVANT_CARD_GENERIC.get(), servantId.toString());
       }
 
@@ -296,10 +296,10 @@ public final class InternalApiProvider implements ApiProvider {
          if (level == null || pos == null || !valid(servantId, this.namespace)) return null;
          ServantSummonEvent.Pre pre = NeoForge.EVENT_BUS.post(new ServantSummonEvent.Pre(level, servantId, pos));
          if (pre.isCanceled()) return null;
-         var entity = ModEntities.GENERIC_SERVANT.get().create(level);
+         var entity = net.xxxjk.TYPE_MOON_WORLD.servant.entity.BuiltinServantEntityFactory.create(level, servantId);
          if (entity == null) return null;
-         entity.setServantId(servantId.toString());
          entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);
+         entity.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, null);
          if (!level.addFreshEntity(entity)) return null;
          NeoForge.EVENT_BUS.post(new ServantSummonEvent.Post(level, servantId, pos, entity));
          return entity;
