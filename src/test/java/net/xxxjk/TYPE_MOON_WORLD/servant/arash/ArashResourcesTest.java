@@ -57,6 +57,12 @@ class ArashResourcesTest {
       for (String key : List.of("idle", "walk", "bow_shot", "arrow_rain", "energy_small", "energy_large", "stella_chant", "stella_release")) {
          assertTrue(animations.has("animation.arash." + key), key);
       }
+      JsonObject bowShot = animations.getAsJsonObject("animation.arash.bow_shot");
+      assertEquals(0.25, bowShot.get("animation_length").getAsDouble());
+      JsonObject bowShotBones = bowShot.getAsJsonObject("bones");
+      for (String bone : List.of("body", "right arm", "bone2", "left arm", "bone6")) {
+         assertTrue(bowShotBones.has(bone), "bow shot is missing animated bone " + bone);
+      }
       JsonObject root = animations.getAsJsonObject("animation.arash.idle").getAsJsonObject("bones").getAsJsonObject("bone");
       assertEquals(-3.0, root.getAsJsonArray("position").get(1).getAsDouble());
       assertEquals(0.88, root.getAsJsonArray("scale").get(0).getAsDouble());

@@ -29,7 +29,7 @@ class ArashRulesTest {
       assertEquals(10, ArashCombatRules.ARROW_CAPACITY);
       assertEquals(5.0, ArashCombatRules.ARROW_REFILL_MANA);
       assertEquals(10.0F, ArashCombatRules.NORMAL_ARROW_DAMAGE);
-      assertEquals(4, ArashCombatRules.NORMAL_ARROW_INTERVAL);
+      assertEquals(5, ArashCombatRules.NORMAL_ARROW_INTERVAL);
       assertEquals(50, ArashCombatRules.RAIN_ARROW_COUNT);
       assertEquals(13.2F, ArashCombatRules.RAIN_ARROW_DAMAGE);
       assertEquals(30.0F, ArashCombatRules.SMALL_ENERGY_DAMAGE);

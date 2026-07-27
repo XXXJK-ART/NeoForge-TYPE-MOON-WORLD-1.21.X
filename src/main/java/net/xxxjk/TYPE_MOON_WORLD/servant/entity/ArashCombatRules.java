@@ -16,7 +16,7 @@ public final class ArashCombatRules {
    public static final int ARROW_CAPACITY = 10;
    public static final double ARROW_REFILL_MANA = 5.0;
    public static final float NORMAL_ARROW_DAMAGE = 10.0F;
-   public static final int NORMAL_ARROW_INTERVAL = 4;
+   public static final int NORMAL_ARROW_INTERVAL = 5;
    public static final float RAIN_ARROW_DAMAGE = 13.2F;
    public static final int RAIN_ARROW_COUNT = 50;
    public static final double RAIN_MANA = 8.0;
