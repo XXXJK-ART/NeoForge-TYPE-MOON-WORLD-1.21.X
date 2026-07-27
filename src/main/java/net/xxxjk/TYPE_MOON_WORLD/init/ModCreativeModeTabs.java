@@ -54,6 +54,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_PALE_RIDER);
                         output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN);
+                        output.accept(ModItems.SERVANT_CARD_ARASH);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
@@ -90,6 +91,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_HEAD);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                     }).build());
 
     public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
@@ -218,6 +221,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GAN_JIANG_OVEREDGE);
                         output.accept(ModItems.MO_YE_OVEREDGE);
                         output.accept(ModItems.NAMELESS_BOW);
+                        output.accept(ModItems.ARASH_BOW);
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);
@@ -377,6 +381,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.PALE_RIDER_SPAWN_EGG);
                         output.accept(ModItems.SHADOW_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
+                        output.accept(ModItems.ARASH_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

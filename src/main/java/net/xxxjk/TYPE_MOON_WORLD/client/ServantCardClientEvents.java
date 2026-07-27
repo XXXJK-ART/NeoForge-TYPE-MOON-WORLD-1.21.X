@@ -25,7 +25,7 @@ public final class ServantCardClientEvents {
          return;
       }
       ItemStack using = event.getPlayer().getUseItem();
-      if (!using.is(ModItems.NAMELESS_BOW.get())) {
+      if (!using.is(ModItems.NAMELESS_BOW.get()) && !using.is(ModItems.ARASH_BOW.get())) {
          return;
       }
       int useTicks = event.getPlayer().getTicksUsingItem();

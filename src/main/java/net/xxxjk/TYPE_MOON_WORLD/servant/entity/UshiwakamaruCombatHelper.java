@@ -615,8 +615,7 @@ public final class UshiwakamaruCombatHelper {
          }
       }
       for (UshiwakamaruRiderEntity clone : spawnedClones) {
-         LivingEntity ownerTarget = owner.getTarget();
-         clone.setTarget(EntityUtils.isValidCombatTarget(clone, ownerTarget) ? ownerTarget : resolveCloneTarget(clone, level));
+         clone.setTarget(resolveNearbyCloneTarget(clone, level));
       }
       owner.getPersistentData().put(UshiwakamaruRiderEntity.TAG_CLONE_UUIDS, cloneUuids);
    }
@@ -633,6 +632,10 @@ public final class UshiwakamaruCombatHelper {
          Entity storedTarget = level.getEntity(clone.getPersistentData().getUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET));
          if (storedTarget instanceof LivingEntity living && EntityUtils.isValidCombatTarget(clone, living)) return living;
       }
+      return resolveNearbyCloneTarget(clone, level);
+   }
+
+   private static LivingEntity resolveNearbyCloneTarget(UshiwakamaruRiderEntity clone, ServerLevel level) {
       List<LivingEntity> enemies = nearbyEnemies(clone, 20.0);
       if (enemies.isEmpty()) return null;
 

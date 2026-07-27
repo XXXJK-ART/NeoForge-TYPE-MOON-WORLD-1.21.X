@@ -60,7 +60,7 @@ class ServantCardSkillLayoutTest {
 
    @Test
    void fanaticUsesNineIndependentTechniqueSlotsAndLeavesSlotNineEmpty() {
-      double[] costs = {15.0, 25.0, 20.0, 15.0, 15.0, 10.0, 20.0, 15.0, 30.0};
+      double[] costs = {15.0, 50.0, 40.0, 30.0, 30.0, 20.0, 40.0, 30.0, 60.0};
       int[] cooldowns = {300, 600, 600, 600, 600, 600, 600, 600, 600};
       for (int slot = 0; slot < 9; slot++) {
          ServantCardSkillAction action = ServantCardSkillLayout.actionFor("fanatic_assassin", slot, false);

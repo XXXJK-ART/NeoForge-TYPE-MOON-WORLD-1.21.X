@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -67,6 +68,29 @@ public final class DeferredTerrainDestruction {
       AdvancingDiagonalJob job = new AdvancingDiagonalJob(level, origin, direction, length, width, height, mirrored, completion);
       add(level, job);
       return new AdvancingDiagonalCut(job);
+   }
+   /** Queues an exact, distance-gated rectangular corridor. Cross-section values are block counts. */
+   public static AdvancingCorridor queueAdvancingCorridor(ServerLevel level, Vec3 origin, Vec3 direction,
+                                                           double length, int width, int height, Runnable completion) {
+      CorridorJob job = new CorridorJob(level, origin, direction, length, width, height, completion);
+      add(level, job);
+      return new AdvancingCorridor(job);
+   }
+
+   /** Queues a distance-gated circular tunnel plus a cracked and depressed ground scar around it. */
+   public static AdvancingCylinder queueAdvancingCylinder(ServerLevel level, Vec3 origin, Vec3 direction,
+                                                           double length, int radius, int scarRadius,
+                                                           Runnable completion) {
+      CylinderJob job = new CylinderJob(level, origin, direction, length, radius, scarRadius, completion);
+      add(level, job);
+      return new AdvancingCylinder(job);
+   }
+
+   /** Queues a sphere whose available work expands only when the caller advances its radius. */
+   public static ExpandingSphere queueExpandingSphere(ServerLevel level, Vec3 center, int radius, Runnable completion) {
+      ExpandingSphereJob job = new ExpandingSphereJob(level, center, radius, completion);
+      add(level, job);
+      return new ExpandingSphere(job);
    }
    /** Queues the exact swept volume between two consecutive blade poses. */
    public static void queueSweptBlade(ServerLevel level, Vec3 previousCenter, Vec3 currentCenter,
@@ -123,7 +147,15 @@ public final class DeferredTerrainDestruction {
       boolean valid(BlockPos pos, float maxHardness) {
          if (!level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) return false;
          BlockState state = level.getBlockState(pos); float hardness = state.getDestroySpeed(level, pos);
-         return !state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0 && hardness <= maxHardness && state.getExplosionResistance(level, pos, null) < 1200;
+         return !state.isAir() && !isProtected(state) && hardness >= 0 && hardness <= maxHardness
+            && state.getExplosionResistance(level, pos, null) < 1200;
+      }
+
+      private static boolean isProtected(BlockState state) {
+         return state.is(Blocks.BEDROCK) || state.is(Blocks.NETHER_PORTAL) || state.is(Blocks.END_PORTAL)
+            || state.is(Blocks.END_PORTAL_FRAME) || state.is(Blocks.COMMAND_BLOCK)
+            || state.is(Blocks.CHAIN_COMMAND_BLOCK) || state.is(Blocks.REPEATING_COMMAND_BLOCK)
+            || state.is(Blocks.STRUCTURE_BLOCK) || state.is(Blocks.JIGSAW);
       }
    }
    private static final class SphereJob extends Job {
@@ -165,6 +197,209 @@ public final class DeferredTerrainDestruction {
       @Override boolean ready(){return !done&&along<=Math.floor(targetDistance+1.0E-6);}
       @Override void advance(){double distance=along,n=normal,y=vertical;cursor();double sideOffset=sign*y+n*Math.sqrt(2.0);if(sign<0&&Math.abs(sideOffset-y)/Math.sqrt(2.0)<=width/2)return;BlockPos pos=BlockPos.containing(origin.add(forward.scale(distance)).add(side.scale(sideOffset)).add(0,y,0));if(valid(pos,Float.MAX_VALUE))level.removeBlock(pos,false);}
       void cursor(){int maxNormal=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++normal>maxNormal){normal=-maxNormal;if(++along>Math.ceil(length)&&sealed)done=true;}}}
+   }
+
+   public static final class AdvancingCorridor {
+      private final CorridorJob job;
+      private AdvancingCorridor(CorridorJob job) { this.job = job; }
+      public void advanceTo(double distance) { job.advanceTo(distance); }
+      public void seal() { job.seal(); }
+      public boolean isComplete() { return job.done; }
+   }
+
+   private static final class CorridorJob extends Job {
+      final Vec3 origin, forward, side;
+      final double length;
+      final int width, height, minSide, minY;
+      int along, sideOffset, yOffset;
+      double targetDistance;
+      boolean sealed;
+
+      CorridorJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int width, int height, Runnable completion) {
+         super(level);
+         this.origin = origin;
+         Vec3 flat = new Vec3(direction.x, 0.0, direction.z);
+         this.forward = flat.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : flat.normalize();
+         this.side = new Vec3(-this.forward.z, 0.0, this.forward.x);
+         this.length = Math.max(0.0, length);
+         this.width = Math.max(1, width);
+         this.height = Math.max(1, height);
+         this.minSide = -(this.width / 2);
+         this.minY = -(this.height / 2);
+         this.sideOffset = this.minSide;
+         this.yOffset = this.minY;
+         this.completion = completion;
+      }
+
+      void advanceTo(double distance) { this.targetDistance = Math.max(this.targetDistance, Math.min(this.length, distance)); }
+      void seal() { this.sealed = true; this.targetDistance = this.length; }
+      @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
+      @Override void advance() {
+         int currentAlong = along, currentSide = sideOffset, currentY = yOffset;
+         cursor();
+         Vec3 point = origin.add(forward.scale(currentAlong)).add(side.scale(currentSide)).add(0.0, currentY, 0.0);
+         BlockPos pos = BlockPos.containing(point);
+         if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
+      }
+      void cursor() {
+         if (++yOffset >= minY + height) {
+            yOffset = minY;
+            if (++sideOffset >= minSide + width) {
+               sideOffset = minSide;
+               if (++along > Math.ceil(length) && sealed) done = true;
+            }
+         }
+      }
+   }
+
+   public static final class AdvancingCylinder {
+      private final CylinderJob job;
+      private AdvancingCylinder(CylinderJob job) { this.job = job; }
+      public void advanceTo(double distance) { job.advanceTo(distance); }
+      public void seal() { job.seal(); }
+      public boolean isComplete() { return job.done; }
+   }
+
+   private static final class CylinderJob extends Job {
+      private static final int CORE_PHASE = 0;
+      private static final int SCAR_PHASE = 1;
+      final Vec3 origin, forward, side;
+      final double length;
+      final int radius, radiusSqr, scarRadius;
+      int along, phase, sideOffset, verticalOffset, scarDepth;
+      double targetDistance;
+      boolean sealed;
+
+      CylinderJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int radius, int scarRadius,
+                  Runnable completion) {
+         super(level);
+         this.origin = origin;
+         Vec3 flat = new Vec3(direction.x, 0.0, direction.z);
+         this.forward = flat.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : flat.normalize();
+         this.side = new Vec3(-this.forward.z, 0.0, this.forward.x);
+         this.length = Math.max(0.0, length);
+         this.radius = Math.max(1, radius);
+         this.radiusSqr = this.radius * this.radius;
+         this.scarRadius = Math.max(this.radius, scarRadius);
+         this.sideOffset = -this.radius;
+         this.verticalOffset = -this.radius;
+         this.completion = completion;
+      }
+
+      void advanceTo(double distance) { targetDistance = Math.max(targetDistance, Math.min(length, distance)); }
+      void seal() { sealed = true; targetDistance = length; }
+      @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
+
+      @Override void advance() {
+         if (phase == CORE_PHASE) advanceCore();
+         else advanceScar();
+      }
+
+      private void advanceCore() {
+         int currentSide = sideOffset, currentY = verticalOffset;
+         coreCursor();
+         if (currentSide * currentSide + currentY * currentY > radiusSqr) return;
+         Vec3 point = origin.add(forward.scale(along)).add(side.scale(currentSide)).add(0.0, currentY, 0.0);
+         BlockPos pos = BlockPos.containing(point);
+         if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
+      }
+
+      private void advanceScar() {
+         int currentAlong = along, currentSide = sideOffset, currentDepth = scarDepth;
+         int depth = scarDepthAt(currentAlong, currentSide);
+         scarCursor();
+         if (currentDepth >= depth) return;
+         Vec3 column = origin.add(forward.scale(currentAlong)).add(side.scale(currentSide));
+         int x = Mth.floor(column.x), z = Mth.floor(column.z);
+         int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+         BlockPos pos = new BlockPos(x, surfaceY - currentDepth, z);
+         if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
+      }
+
+      private int scarDepthAt(int distance, int offset) {
+         int absolute = Math.abs(offset);
+         if (absolute <= radius || absolute > scarRadius) return 0;
+         if (absolute <= radius + 3) return radius + 5 - absolute;
+         double wanderingCrack = radius + 4.0 + (scarRadius - radius - 4.0)
+            * (0.5 + 0.5 * Math.sin(distance * 0.087));
+         boolean mainCrack = Math.abs(absolute - wanderingCrack) < 1.15;
+         boolean branch = Math.floorMod(distance, 37) < 6
+            && absolute <= radius + 4 + Math.floorMod(distance, 37) / 2;
+         if (!mainCrack && !branch) return 0;
+         return 1 + Math.floorMod(distance * 31 + offset * 17, 3);
+      }
+
+      private void coreCursor() {
+         if (++verticalOffset > radius) {
+            verticalOffset = -radius;
+            if (++sideOffset > radius) {
+               phase = SCAR_PHASE;
+               sideOffset = -scarRadius;
+               scarDepth = 0;
+            }
+         }
+      }
+
+      private void scarCursor() {
+         if (++scarDepth >= 4) {
+            scarDepth = 0;
+            if (++sideOffset > scarRadius) nextSlice();
+         }
+      }
+
+      private void nextSlice() {
+         along++;
+         phase = CORE_PHASE;
+         sideOffset = -radius;
+         verticalOffset = -radius;
+         if (along > Math.ceil(length) && sealed) done = true;
+      }
+   }
+
+   public static final class ExpandingSphere {
+      private final ExpandingSphereJob job;
+      private ExpandingSphere(ExpandingSphereJob job) { this.job = job; }
+      public void advanceTo(double radius) { job.advanceTo(radius); }
+      public void seal() { job.seal(); }
+      public boolean isComplete() { return job.done; }
+   }
+
+   private static final class ExpandingSphereJob extends Job {
+      final Vec3 center;
+      final int maxRadius;
+      int shell, x, y, z;
+      double targetRadius;
+      boolean sealed;
+
+      ExpandingSphereJob(ServerLevel level, Vec3 center, int radius, Runnable completion) {
+         super(level);
+         this.center = center;
+         this.maxRadius = Math.max(1, radius);
+         this.completion = completion;
+      }
+      void advanceTo(double radius) { targetRadius = Math.max(targetRadius, Math.min(maxRadius, radius)); }
+      void seal() { sealed = true; targetRadius = maxRadius; }
+      @Override boolean ready() { return !done && shell <= Math.floor(targetRadius + 1.0E-6); }
+      @Override void advance() {
+         int cx = x, cy = y, cz = z, currentShell = shell;
+         cursor();
+         if (Math.max(Math.max(Math.abs(cx), Math.abs(cy)), Math.abs(cz)) != currentShell) return;
+         if (cx * cx + cy * cy + cz * cz > maxRadius * maxRadius) return;
+         BlockPos pos = BlockPos.containing(center.x + cx, center.y + cy, center.z + cz);
+         if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
+      }
+      void cursor() {
+         if (++z > shell) {
+            z = -shell;
+            if (++y > shell) {
+               y = -shell;
+               if (++x > shell) {
+                  if (++shell > maxRadius) { if (sealed) done = true; return; }
+                  x = y = z = -shell;
+               }
+            }
+         }
+      }
    }
 
    private static final class SweptBladeJob extends Job {

@@ -1,0 +1,5 @@
+{
+  "id": "magic_resistance_c_arash", "display_name": "Magic Resistance C", "display_name_zh": "对魔力 C",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
+  "effects": [{"effect_type": "magic_resistance", "params": {"rank": "C", "damage_reduction": 0.20, "debuff_resistance": 0.10}}]
+}

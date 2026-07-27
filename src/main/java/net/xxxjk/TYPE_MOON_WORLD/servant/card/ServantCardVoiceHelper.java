@@ -35,6 +35,7 @@ public final class ServantCardVoiceHelper {
          case "li_shuwen" -> ModSounds.LI_SHUWEN_VOICE_ATTACK.get();
          case "paracelsus" -> ModSounds.PARACELSUS_VOICE_ATTACK.get();
          case "ushiwakamaru_rider" -> ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get();
+         case "arash" -> ModSounds.ARASH_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -66,6 +67,7 @@ public final class ServantCardVoiceHelper {
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();
          case "rule_breaker" -> ModSounds.MEDEA_VOICE_RULE_BREAKER_SHORT.get();
          case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
+         case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
          default -> null;
       };

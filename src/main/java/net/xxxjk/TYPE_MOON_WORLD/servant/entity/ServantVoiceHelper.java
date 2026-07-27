@@ -62,6 +62,9 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_ATTACK.get());
+      } else if (isArash(servant)) {
+         if (servant.getRandom().nextFloat() > 0.50F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_ATTACK.get());
       } else if (isArtoria(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
@@ -153,6 +156,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_VICTORY.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
+      } else if (isArash(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_VICTORY.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_VICTORY.get());
       } else if (isOdaNobunaga(servant)) {
@@ -171,6 +176,7 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayFail(ServantEntity servant) {
+      if (isArash(servant) && servant.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_SACRIFICE)) return;
       if (isSasakiKojiro(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.SASAKI_KOJIRO_VOICE_FAIL.get());
       } else if (isHeracles(servant)) {
@@ -189,6 +195,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_FAIL.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
+      } else if (isArash(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_FAIL.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_FAIL.get());
       } else if (isOdaNobunaga(servant)) {
@@ -493,6 +501,10 @@ public final class ServantVoiceHelper {
 
    private static boolean isEmiya(ServantEntity servant) {
       return servant != null && EmiyaArcherEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isArash(ServantEntity servant) {
+      return servant != null && ArashEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isArtoria(ServantEntity servant) {

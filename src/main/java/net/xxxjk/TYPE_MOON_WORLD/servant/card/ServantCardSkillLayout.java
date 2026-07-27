@@ -72,14 +72,14 @@ public final class ServantCardSkillLayout {
          };
          case "fanatic_assassin" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Presence Concealment A-", "fanatic_concealment", 15.0, 300);
-            case 1 -> new ServantCardSkillAction("Delusional Heartbeat", "fanatic_heartbeat", 25.0, 600);
-            case 2 -> new ServantCardSkillAction("Delusional Marrow", "fanatic_marrow", 20.0, 600);
-            case 3 -> new ServantCardSkillAction("Delusional Hair", "fanatic_hair", 15.0, 600);
-            case 4 -> new ServantCardSkillAction("Delusional Temperature", "fanatic_temperature", 15.0, 600);
-            case 5 -> new ServantCardSkillAction("Delusional Nerves", "fanatic_nerves", 10.0, 600);
-            case 6 -> new ServantCardSkillAction("Delusional Computer", "fanatic_computer", 20.0, 600);
-            case 7 -> new ServantCardSkillAction("Delusional Toxin", "fanatic_toxin", 15.0, 600);
-            case 8 -> new ServantCardSkillAction("Delusional Jinn", "fanatic_jinn", 30.0, 600);
+            case 1 -> new ServantCardSkillAction("Delusional Heartbeat", "fanatic_heartbeat", 50.0, 600);
+            case 2 -> new ServantCardSkillAction("Delusional Marrow", "fanatic_marrow", 40.0, 600);
+            case 3 -> new ServantCardSkillAction("Delusional Hair", "fanatic_hair", 30.0, 600);
+            case 4 -> new ServantCardSkillAction("Delusional Temperature", "fanatic_temperature", 30.0, 600);
+            case 5 -> new ServantCardSkillAction("Delusional Nerves", "fanatic_nerves", 20.0, 600);
+            case 6 -> new ServantCardSkillAction("Delusional Computer", "fanatic_computer", 40.0, 600);
+            case 7 -> new ServantCardSkillAction("Delusional Toxin", "fanatic_toxin", 30.0, 600);
+            case 8 -> new ServantCardSkillAction("Delusional Jinn", "fanatic_jinn", 60.0, 600);
             default -> null;
          };
          case "shadow_hassan" -> switch (slot) {
@@ -219,6 +219,13 @@ public final class ServantCardSkillLayout {
             case 7 -> new ServantCardSkillAction("Benkei: Immovable Ground", "ushiwakamaru_benkei", 100.0, 600);
             case 8 -> new ServantCardSkillAction("Houmaru: Spider Slayer", "ushiwakamaru_spider_slayer", 50.0, 600);
             case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 150.0, 600);
+            default -> null;
+         };
+         case "arash" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Arrow Rain", "arash_arrow_rain", 8.0, 160);
+            case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
+            case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
+            case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
             default -> null;
          };
          default -> null;

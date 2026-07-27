@@ -87,7 +87,14 @@ class FanaticAssassinResourcesTest {
       }
       assertTrue(Files.readString(RESOURCES.resolve("data/minecraft/tags/damage_type/bypasses_armor.json"))
          .contains("typemoonworld:fanatic_heartbeat"));
+      assertTrue(Files.readString(RESOURCES.resolve("data/minecraft/tags/damage_type/bypasses_armor.json"))
+         .contains("typemoonworld:fanatic_computer"));
       assertTrue(Files.readString(RESOURCES.resolve("data/minecraft/tags/damage_type/is_explosion.json"))
+         .contains("typemoonworld:fanatic_computer"));
+      assertTrue(Files.isRegularFile(RESOURCES.resolve("data/typemoonworld/damage_type/fanatic_computer_splash.json")));
+      assertTrue(Files.readString(RESOURCES.resolve("data/typemoonworld/tags/damage_type/fanatic_guaranteed_hits.json"))
+         .contains("typemoonworld:fanatic_marrow"));
+      assertTrue(Files.readString(RESOURCES.resolve("data/typemoonworld/tags/damage_type/fanatic_bypasses_defenses.json"))
          .contains("typemoonworld:fanatic_computer"));
    }
 

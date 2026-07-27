@@ -1949,6 +1949,24 @@
     "skill.typemoonworld.servant_card.fanatic_computer": "空想电脑",
     "skill.typemoonworld.servant_card.fanatic_toxin": "妄想毒身",
     "skill.typemoonworld.servant_card.fanatic_jinn": "妄想巡灵",
-    "passive.typemoonworld.servant_card.fanaticism_a": "狂信 A"
+    "passive.typemoonworld.servant_card.fanaticism_a": "狂信 A",
+    "entity.typemoonworld.arash": "阿拉什（Archer）",
+    "entity.typemoonworld.arash_particle_arrow": "阿拉什的粒子箭",
+    "entity.typemoonworld.arash_stella_controller": "流星一条",
+    "item.typemoonworld.arash_bow": "阿拉什之弓",
+    "item.typemoonworld.arash_spawn_egg": "阿拉什（Archer）刷怪蛋",
+    "subtitles.typemoonworld.arash.attack": "阿拉什射出箭矢",
+    "subtitles.typemoonworld.arash.fail": "阿拉什无法继续战斗",
+    "subtitles.typemoonworld.arash.victory": "阿拉什赢得胜利",
+    "subtitles.typemoonworld.arash.stella": "流星一条",
+    "item.typemoonworld.servant_card_arash": "阿拉什（Archer）",
+    "item.typemoonworld.servant_card_arash_chest": "阿拉什从者卡铠甲",
+    "item.typemoonworld.servant_card_arash_legs": "阿拉什从者卡护腿",
+    "skill.typemoonworld.servant_card.arash_arrow_rain": "箭雨",
+    "skill.typemoonworld.servant_card.arash_energy_small": "蓄力箭",
+    "skill.typemoonworld.servant_card.arash_energy_large": "重蓄力箭",
+    "skill.typemoonworld.servant_card.arash_stella": "流星一条",
+    "message.typemoonworld.servant_card.arash_bow_required": "主手必须持有阿拉什的专属弓。",
+    "message.typemoonworld.servant_card.arash_stella_blocked": "当前方向无法安全释放流星一条。"
 }
 

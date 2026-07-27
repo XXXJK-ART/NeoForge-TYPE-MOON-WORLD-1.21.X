@@ -1,0 +1,12 @@
+{
+  "id": "stella_arash",
+  "display_name": "Stella",
+  "display_name_zh": "流星一条",
+  "rank": "B++",
+  "type": "anti_army",
+  "mp_cost": 100,
+  "cooldown_ticks": 0,
+  "range": 2500,
+  "base_damage": 2000,
+  "effects": []
+}

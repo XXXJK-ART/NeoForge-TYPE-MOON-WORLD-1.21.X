@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CursedArmHassanRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DirkProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DragonfangSoldierRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaArcherRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArashRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EnkiduRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ChainsOfHeavenBindingRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ContenderBulletRenderer;
@@ -247,6 +248,9 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA.get(), MedusaRenderer::new);
       event.registerEntityRenderer(ModEntities.CURSED_ARM_HASSAN.get(), CursedArmHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH.get(), ArashRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH_STELLA_CONTROLLER.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
       event.registerEntityRenderer(ModEntities.USHIWAKAMARU_RIDER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.UshiwakamaruRiderRenderer::new);

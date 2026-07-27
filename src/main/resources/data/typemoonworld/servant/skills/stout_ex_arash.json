@@ -1,0 +1,4 @@
+{
+  "id": "stout_ex_arash", "display_name": "Stout EX", "display_name_zh": "健硕 EX",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0, "effects": []
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "typemoonworld:item/servant_card_armor/arash_legs"
+  }
+}

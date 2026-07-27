@@ -124,6 +124,7 @@ public final class ServantCardTransformManager {
       if ("shadow_hassan".equals(servantId)) ServantCardShadowHassanSkills.initialize(player);
       if ("fanatic_assassin".equals(servantId)) ServantCardFanaticAssassinSkills.initialize(player);
       applyAttributes(player, definition.parameters(), servantId);
+      if ("arash".equals(servantId)) ServantCardArashSkills.initialize(player);
       if ("enkidu".equals(servantId)) {
          ServantCardEnkiduSkills.applyCurrentTransfiguration(player);
       }
@@ -264,6 +265,7 @@ public final class ServantCardTransformManager {
             ServantCardEmiyaSkills.tickEmiyaEquipmentAndCounter(player, vars);
          }
          case "ushiwakamaru_rider" -> ServantCardUshiwakamaruSkills.tick(player, vars);
+         case "arash" -> ServantCardArashSkills.tick(player, vars);
          default -> {
          }
       }
@@ -285,6 +287,7 @@ public final class ServantCardTransformManager {
       ServantCardFanaticAssassinSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
+      ServantCardArashSkills.clear(player);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -398,6 +401,9 @@ public final class ServantCardTransformManager {
    public static boolean triggerAction(ServerPlayer player, int slot) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || slot < -1 || slot > 9) {
+         return false;
+      }
+      if (ServantCardArashSkills.isPlayerChanting(player)) {
          return false;
       }
       if (ServantMasterCarryService.isCarryingMaster(player)) {
@@ -527,6 +533,14 @@ public final class ServantCardTransformManager {
          && !ServantCardShadowHassanSkills.hasMeditativeSensitivityTarget(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
+      }
+      if (("arash_arrow_rain".equals(action.effectId()) || "arash_energy_small".equals(action.effectId())
+         || "arash_energy_large".equals(action.effectId())) && !ServantCardArashSkills.hasRequiredBow(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_bow_required"), true);
+         return false;
+      }
+      if ("arash_stella".equals(action.effectId())) {
+         return ServantCardArashSkills.performStellaAction(player, vars, action);
       }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
       ServantCardManaService.ManaSnapshot manaBeforeAction = ServantCardManaService.snapshot(player, vars);
@@ -1018,6 +1032,15 @@ public final class ServantCardTransformManager {
    private static boolean performAction(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServantCardSkillAction action) {
       String id = action.effectId();
       switch (id) {
+         case "arash_arrow_rain" -> {
+            if (!ServantCardArashSkills.performArrowRain(player)) return false;
+         }
+         case "arash_energy_small" -> {
+            if (!ServantCardArashSkills.performSmallEnergyArrow(player)) return false;
+         }
+         case "arash_energy_large" -> {
+            if (!ServantCardArashSkills.performLargeEnergyArrow(player)) return false;
+         }
          case "mana_burst" -> ServantCardArtoriaSkills.performManaBurst(player);
          case "charisma" -> ServantCardArtoriaSkills.performCharisma(player);
          case "strategy" -> ServantCardOdaNobunagaSkills.performOdaStrategy(player);

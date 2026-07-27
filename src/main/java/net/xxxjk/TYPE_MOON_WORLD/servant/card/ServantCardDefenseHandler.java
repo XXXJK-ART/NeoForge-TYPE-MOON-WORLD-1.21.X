@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 
 public final class ServantCardDefenseHandler {
@@ -94,6 +95,7 @@ public final class ServantCardDefenseHandler {
       }
 
       boolean infectionDamage = PaleRiderDamageTypes.isInfection(event.getSource());
+      boolean guaranteedHit = event.getSource().is(FanaticDamageTypes.GUARANTEED_HITS);
 
       ServantParams params = paramsFor(vars);
       if (params == null) {
@@ -109,7 +111,8 @@ public final class ServantCardDefenseHandler {
          player.removeEffect(MobEffects.ABSORPTION);
          player.setAbsorptionAmount(0.0F);
       }
-      if (!infectionDamage && !divineDefenseBroken && !specialNoblePhantasmDamage && now < data.getLong(TAG_INVULN_UNTIL)) {
+      if (!guaranteedHit && !infectionDamage && !divineDefenseBroken && !specialNoblePhantasmDamage
+         && now < data.getLong(TAG_INVULN_UNTIL)) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
@@ -173,14 +176,15 @@ public final class ServantCardDefenseHandler {
             event.setAmount(0.0F);
             return true;
          }
-         if (ServantCardUshiwakamaruSkills.trySwallowDodge(player, event.getSource())) {
+         if (!guaranteedHit && ServantCardUshiwakamaruSkills.trySwallowDodge(player, event.getSource())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return true;
          }
       }
 
-      if (!infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+      if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
+         && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;

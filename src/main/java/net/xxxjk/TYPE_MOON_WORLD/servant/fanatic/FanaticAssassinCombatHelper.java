@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -67,6 +68,8 @@ public final class FanaticAssassinCombatHelper {
    private static final String BUSY_UNTIL = "FanaticBusyUntil";
    private static final String LAST_BASIC = "FanaticLastBasicAttack";
    private static final String RETREATING = "FanaticRetreating";
+   private static final String COMBO_COUNT = "FanaticComboCount";
+   private static final String COMBO_PREVIOUS = "FanaticComboPrevious";
 
    private FanaticAssassinCombatHelper() {
    }
@@ -96,6 +99,7 @@ public final class FanaticAssassinCombatHelper {
       if (target == null || !target.isAlive() || !isValidTarget(entity, target)) {
          entity.setTarget(null);
          entity.getPersistentData().remove(RETREATING);
+         clearCombo(entity);
          return;
       }
       long now = context.gameTick();
@@ -109,6 +113,7 @@ public final class FanaticAssassinCombatHelper {
          retreating = true;
       }
       if (retreating && !FanaticAssassinRules.recoveredFromRetreat(entity.getCurrentMp(), entity.getMaxMp())) {
+         clearCombo(entity);
          if (canCast(entity, "Nerves", FanaticAssassinRules.NERVES_MP, FanaticAssassinRules.NERVES_COOLDOWN, now)) {
             castNerves(entity, now);
          }
@@ -119,6 +124,7 @@ public final class FanaticAssassinCombatHelper {
          entity.getPersistentData().remove(RETREATING);
       }
       if (now < entity.getPersistentData().getLong(BUSY_UNTIL)) return;
+      if (continueCombo(entity, target, now)) return;
 
       double distance = entity.distanceTo(target);
       boolean lineOfSight = entity.getSensing().hasLineOfSight(target) || entity.isNervesActive();
@@ -154,6 +160,7 @@ public final class FanaticAssassinCombatHelper {
          }
       }
       if (decision != FanaticAssassinRules.TechniqueDecision.BASIC) {
+         startCombo(entity, decision);
          return;
       }
 
@@ -170,13 +177,8 @@ public final class FanaticAssassinCombatHelper {
    private static void castHeartbeat(FanaticAssassinEntity entity, LivingEntity target, long now) {
       commit(entity, "Heartbeat", FanaticAssassinRules.HEARTBEAT_MP, now, FanaticAssassinEntity.TECHNIQUE_HEARTBEAT, "heartbeat", 20);
       ServantVoiceHelper.tryPlayFanaticTechnique(entity, FanaticAssassinEntity.TECHNIQUE_HEARTBEAT);
-      float damage = FanaticAssassinRules.HEARTBEAT_DAMAGE;
-      ServantDefinition definition = ServantIdentityHelper.definitionOf(target);
-      if (definition != null) {
-         damage = FanaticAssassinRules.heartbeatDamage(definition.parameters().magic(), definition.parameters().luck());
-      }
       target.invulnerableTime = 0;
-      target.hurt(entity.damageSources().source(FanaticDamageTypes.HEARTBEAT, entity), damage);
+      target.hurt(entity.damageSources().source(FanaticDamageTypes.HEARTBEAT, entity), heartbeatDamageFor(target));
       target.addEffect(new MobEffectInstance(ModMobEffects.FANATIC_WOUNDED, FanaticAssassinRules.WOUNDED_DURATION, 0, false, true, true), entity);
       if (entity.level() instanceof ServerLevel level) {
          spawnHeartbeatFx(level, entity, target);
@@ -250,7 +252,7 @@ public final class FanaticAssassinCombatHelper {
          float splash = FanaticAssassinRules.computerSplashDamage(bystander.position().add(0.0, bystander.getBbHeight() * 0.5, 0.0).distanceTo(center));
          if (splash <= 0.0F) continue;
          bystander.invulnerableTime = 0;
-         bystander.hurt(entity.damageSources().source(FanaticDamageTypes.COMPUTER, entity), splash);
+         bystander.hurt(entity.damageSources().source(FanaticDamageTypes.COMPUTER_SPLASH, entity), splash);
       }
       entity.hurt(entity.damageSources().magic(), FanaticAssassinRules.COMPUTER_BACKLASH);
       if (entity.level() instanceof ServerLevel level) {
@@ -282,10 +284,144 @@ public final class FanaticAssassinCombatHelper {
       spawnJinnSummonFx(level, entity, jinn);
    }
 
+   private static void startCombo(FanaticAssassinEntity entity,
+                                  FanaticAssassinRules.TechniqueDecision opener) {
+      clearCombo(entity);
+      if (!FanaticAssassinRules.shouldAttemptCombo(entity.getRandom().nextFloat())) return;
+      entity.getPersistentData().putInt(COMBO_COUNT, 1);
+      entity.getPersistentData().putString(COMBO_PREVIOUS, opener.name());
+   }
+
+   private static boolean continueCombo(FanaticAssassinEntity entity, LivingEntity target, long now) {
+      if (!entity.getPersistentData().contains(COMBO_COUNT)) return false;
+      int techniquesCast = entity.getPersistentData().getInt(COMBO_COUNT);
+      if (!FanaticAssassinRules.canContinueCombo(techniquesCast)) {
+         clearCombo(entity);
+         return false;
+      }
+
+      FanaticAssassinRules.TechniqueDecision previous;
+      try {
+         previous = FanaticAssassinRules.TechniqueDecision.valueOf(
+            entity.getPersistentData().getString(COMBO_PREVIOUS));
+      } catch (IllegalArgumentException exception) {
+         clearCombo(entity);
+         return false;
+      }
+
+      FanaticAssassinRules.TechniqueDecision next = chooseComboTechnique(entity, target, previous, now);
+      if (next == FanaticAssassinRules.TechniqueDecision.BASIC) {
+         clearCombo(entity);
+         return false;
+      }
+      castComboTechnique(entity, target, next, now);
+      techniquesCast++;
+      if (FanaticAssassinRules.canContinueCombo(techniquesCast)) {
+         entity.getPersistentData().putInt(COMBO_COUNT, techniquesCast);
+         entity.getPersistentData().putString(COMBO_PREVIOUS, next.name());
+      } else {
+         clearCombo(entity);
+      }
+      return true;
+   }
+
+   private static void clearCombo(FanaticAssassinEntity entity) {
+      entity.getPersistentData().remove(COMBO_COUNT);
+      entity.getPersistentData().remove(COMBO_PREVIOUS);
+   }
+
+   private static FanaticAssassinRules.TechniqueDecision chooseComboTechnique(
+      FanaticAssassinEntity entity, LivingEntity target,
+      FanaticAssassinRules.TechniqueDecision previous, long now) {
+      boolean targetAlive = target != null && target.isAlive();
+      double distance = targetAlive ? entity.distanceTo(target) : Double.MAX_VALUE;
+      boolean lineOfSight = targetAlive && (entity.getSensing().hasLineOfSight(target) || entity.isNervesActive());
+      List<LivingEntity> nearbyEnemies = enemiesAround(entity, FanaticAssassinRules.MARROW_RADIUS);
+
+      // Rotate the first choice after the opener so combos vary while still
+      // respecting range, ownership, MP and each technique's independent cooldown.
+      FanaticAssassinRules.TechniqueDecision[] order = switch (previous) {
+         case COMPUTER -> new FanaticAssassinRules.TechniqueDecision[] {
+            FanaticAssassinRules.TechniqueDecision.TOXIN, FanaticAssassinRules.TechniqueDecision.HEARTBEAT,
+            FanaticAssassinRules.TechniqueDecision.MARROW, FanaticAssassinRules.TechniqueDecision.HAIR,
+            FanaticAssassinRules.TechniqueDecision.TEMPERATURE, FanaticAssassinRules.TechniqueDecision.NERVES,
+            FanaticAssassinRules.TechniqueDecision.JINN
+         };
+         case TOXIN -> new FanaticAssassinRules.TechniqueDecision[] {
+            FanaticAssassinRules.TechniqueDecision.HAIR, FanaticAssassinRules.TechniqueDecision.COMPUTER,
+            FanaticAssassinRules.TechniqueDecision.HEARTBEAT, FanaticAssassinRules.TechniqueDecision.MARROW,
+            FanaticAssassinRules.TechniqueDecision.JINN, FanaticAssassinRules.TechniqueDecision.TEMPERATURE,
+            FanaticAssassinRules.TechniqueDecision.NERVES
+         };
+         default -> new FanaticAssassinRules.TechniqueDecision[] {
+            FanaticAssassinRules.TechniqueDecision.COMPUTER, FanaticAssassinRules.TechniqueDecision.HEARTBEAT,
+            FanaticAssassinRules.TechniqueDecision.MARROW, FanaticAssassinRules.TechniqueDecision.HAIR,
+            FanaticAssassinRules.TechniqueDecision.TOXIN, FanaticAssassinRules.TechniqueDecision.JINN,
+            FanaticAssassinRules.TechniqueDecision.TEMPERATURE, FanaticAssassinRules.TechniqueDecision.NERVES
+         };
+      };
+      for (FanaticAssassinRules.TechniqueDecision candidate : order) {
+         if (comboTechniqueAvailable(entity, target, targetAlive, distance, lineOfSight, nearbyEnemies, candidate, now)) {
+            return candidate;
+         }
+      }
+      return FanaticAssassinRules.TechniqueDecision.BASIC;
+   }
+
+   private static boolean comboTechniqueAvailable(FanaticAssassinEntity entity, LivingEntity target,
+                                                   boolean targetAlive,
+                                                   double distance, boolean lineOfSight,
+                                                   List<LivingEntity> nearbyEnemies,
+                                                   FanaticAssassinRules.TechniqueDecision technique, long now) {
+      return switch (technique) {
+         case COMPUTER -> targetAlive && distance <= FanaticAssassinRules.COMPUTER_RANGE
+            && canCast(entity, "Computer", FanaticAssassinRules.COMPUTER_MP, FanaticAssassinRules.COMPUTER_COOLDOWN, now);
+         case HEARTBEAT -> targetAlive && distance <= FanaticAssassinRules.HEARTBEAT_RANGE && lineOfSight
+            && isStrongTarget(target)
+            && canCast(entity, "Heartbeat", FanaticAssassinRules.HEARTBEAT_MP, FanaticAssassinRules.HEARTBEAT_COOLDOWN, now);
+         case MARROW -> !nearbyEnemies.isEmpty()
+            && canCast(entity, "Marrow", FanaticAssassinRules.MARROW_MP, FanaticAssassinRules.MARROW_COOLDOWN, now);
+         case HAIR -> targetAlive && distance <= FanaticAssassinRules.HAIR_RANGE && lineOfSight
+            && canCast(entity, "Hair", FanaticAssassinRules.HAIR_MP, FanaticAssassinRules.HAIR_COOLDOWN, now);
+         case TOXIN -> !entity.isToxinStanceActive()
+            && canCast(entity, "Toxin", FanaticAssassinRules.TOXIN_MP, FanaticAssassinRules.TOXIN_COOLDOWN, now);
+         case JINN -> targetAlive && !hasOwnedJinn(entity)
+            && canCast(entity, "Jinn", FanaticAssassinRules.JINN_MP, FanaticAssassinRules.JINN_COOLDOWN, now);
+         case TEMPERATURE -> !entity.isCrystalArmorActive()
+            && canCast(entity, "Temperature", FanaticAssassinRules.TEMPERATURE_MP, FanaticAssassinRules.TEMPERATURE_COOLDOWN, now);
+         case NERVES -> !entity.isNervesActive()
+            && canCast(entity, "Nerves", FanaticAssassinRules.NERVES_MP, FanaticAssassinRules.NERVES_COOLDOWN, now);
+         default -> false;
+      };
+   }
+
+   private static void castComboTechnique(FanaticAssassinEntity entity, LivingEntity target,
+                                          FanaticAssassinRules.TechniqueDecision technique, long now) {
+      switch (technique) {
+         case COMPUTER -> castComputer(entity, target, now);
+         case HEARTBEAT -> castHeartbeat(entity, target, now);
+         case MARROW -> castMarrow(entity, enemiesAround(entity, FanaticAssassinRules.MARROW_RADIUS), now);
+         case HAIR -> castHair(entity, target, now);
+         case TOXIN -> castToxin(entity, now);
+         case JINN -> castJinn(entity, now);
+         case TEMPERATURE -> castTemperature(entity, now);
+         case NERVES -> castNerves(entity, now);
+         default -> {
+         }
+      }
+   }
+
    public static void applyToxin(LivingEntity entity, LivingEntity target) {
       target.getPersistentData().putUUID(net.xxxjk.TYPE_MOON_WORLD.effect.FanaticToxinEffect.TAG_OWNER, entity.getUUID());
       target.addEffect(new MobEffectInstance(ModMobEffects.FANATIC_TOXIN, FanaticAssassinRules.TOXIN_DURATION, 0, false, true, true), entity);
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, FanaticAssassinRules.TOXIN_DURATION, 0, false, true, true), entity);
+   }
+
+   public static float heartbeatDamageFor(LivingEntity target) {
+      ServantDefinition definition = ServantIdentityHelper.definitionOf(target);
+      return FanaticAssassinRules.heartbeatDamage(
+         MagicResistanceHelper.getMagicResistanceRank(target),
+         definition == null ? null : definition.parameters().luck());
    }
 
    public static boolean hasOwnedJinn(LivingEntity owner) {

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import org.junit.jupiter.api.Test;
 
 class FanaticAssassinRulesTest {
@@ -22,35 +23,38 @@ class FanaticAssassinRulesTest {
 
    @Test
    void mpCostsAndCooldownsMatchTheDesign() {
-      assertEquals(25, FanaticAssassinRules.HEARTBEAT_MP);
-      assertEquals(20, FanaticAssassinRules.MARROW_MP);
-      assertEquals(15, FanaticAssassinRules.HAIR_MP);
-      assertEquals(15, FanaticAssassinRules.TEMPERATURE_MP);
-      assertEquals(10, FanaticAssassinRules.NERVES_MP);
-      assertEquals(20, FanaticAssassinRules.COMPUTER_MP);
-      assertEquals(15, FanaticAssassinRules.TOXIN_MP);
-      assertEquals(30, FanaticAssassinRules.JINN_MP);
-      assertEquals(400, FanaticAssassinRules.HEARTBEAT_COOLDOWN);
-      assertEquals(300, FanaticAssassinRules.MARROW_COOLDOWN);
-      assertEquals(240, FanaticAssassinRules.HAIR_COOLDOWN);
-      assertEquals(360, FanaticAssassinRules.TEMPERATURE_COOLDOWN);
-      assertEquals(400, FanaticAssassinRules.NERVES_COOLDOWN);
-      assertEquals(500, FanaticAssassinRules.COMPUTER_COOLDOWN);
-      assertEquals(400, FanaticAssassinRules.TOXIN_COOLDOWN);
-      assertEquals(800, FanaticAssassinRules.JINN_COOLDOWN);
+      assertEquals(50, FanaticAssassinRules.HEARTBEAT_MP);
+      assertEquals(40, FanaticAssassinRules.MARROW_MP);
+      assertEquals(30, FanaticAssassinRules.HAIR_MP);
+      assertEquals(30, FanaticAssassinRules.TEMPERATURE_MP);
+      assertEquals(20, FanaticAssassinRules.NERVES_MP);
+      assertEquals(40, FanaticAssassinRules.COMPUTER_MP);
+      assertEquals(30, FanaticAssassinRules.TOXIN_MP);
+      assertEquals(60, FanaticAssassinRules.JINN_MP);
+      assertEquals(600, FanaticAssassinRules.HEARTBEAT_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.MARROW_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.HAIR_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.TEMPERATURE_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.NERVES_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.COMPUTER_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.TOXIN_COOLDOWN);
+      assertEquals(600, FanaticAssassinRules.JINN_COOLDOWN);
    }
 
    @Test
-   void heartbeatHalvesAtEitherBThreshold() {
-      assertEquals(250.0F, FanaticAssassinRules.heartbeatDamage(StatRank.C, StatRank.D));
-      assertEquals(125.0F, FanaticAssassinRules.heartbeatDamage(StatRank.B, StatRank.D));
-      assertEquals(125.0F, FanaticAssassinRules.heartbeatDamage(StatRank.C, StatRank.B));
-      assertEquals(125.0F, FanaticAssassinRules.heartbeatDamage(StatRank.A, StatRank.E));
+   void heartbeatUsesMagicResistanceAndLuckInsteadOfTheMagicParameter() {
+      assertEquals(250.0F, FanaticAssassinRules.heartbeatDamage(MagicResistanceRank.C, StatRank.D));
+      assertEquals(125.0F, FanaticAssassinRules.heartbeatDamage(MagicResistanceRank.B, StatRank.D));
+      assertEquals(125.0F, FanaticAssassinRules.heartbeatDamage(MagicResistanceRank.C, StatRank.B));
+      assertEquals(125.0F, FanaticAssassinRules.heartbeatDamage(MagicResistanceRank.A, StatRank.E));
+      assertEquals(250.0F, FanaticAssassinRules.heartbeatDamage(MagicResistanceRank.NONE, null));
    }
 
    @Test
    void areaAndContactBoundariesAreExact() {
       assertEquals(15.0, FanaticAssassinRules.MARROW_RADIUS);
+      assertEquals(150.0F, FanaticAssassinRules.MARROW_DAMAGE);
+      assertEquals(100.0F, FanaticAssassinRules.HAIR_DAMAGE);
       assertEquals(1.8, FanaticAssassinRules.COMPUTER_RANGE);
       assertEquals(150.0F, FanaticAssassinRules.computerSplashDamage(0.0));
       assertEquals(75.0F, FanaticAssassinRules.computerSplashDamage(1.0));
@@ -69,8 +73,9 @@ class FanaticAssassinRulesTest {
    @Test
    void toxinJinnAndFanaticismTimingsAreStable() {
       assertEquals(160, FanaticAssassinRules.TOXIN_DURATION);
-      assertEquals(6.0F, FanaticAssassinRules.TOXIN_DAMAGE_PER_SECOND);
+      assertEquals(10.0F, FanaticAssassinRules.TOXIN_DAMAGE_PER_SECOND);
       assertEquals(200, FanaticAssassinRules.JINN_MAX_HEALTH);
+      assertEquals(30.0F, FanaticAssassinRules.JINN_DAMAGE);
       assertEquals(600, FanaticAssassinRules.JINN_LIFETIME);
       assertEquals(0, FanaticAssassinRules.jinnForm(4.0));
       assertEquals(1, FanaticAssassinRules.jinnForm(4.01));
@@ -78,6 +83,12 @@ class FanaticAssassinRulesTest {
       assertEquals(1200, FanaticAssassinRules.MENTAL_CLEANSE_INTERVAL);
       assertTrue(FanaticAssassinRules.shouldCancelMentalAttack(0.6999F));
       assertFalse(FanaticAssassinRules.shouldCancelMentalAttack(0.70F));
+      assertTrue(FanaticAssassinRules.shouldAttemptCombo(0.2999F));
+      assertFalse(FanaticAssassinRules.shouldAttemptCombo(0.30F));
+      assertEquals(6, FanaticAssassinRules.MAX_COMBO_TECHNIQUES);
+      assertTrue(FanaticAssassinRules.canContinueCombo(1));
+      assertTrue(FanaticAssassinRules.canContinueCombo(5));
+      assertFalse(FanaticAssassinRules.canContinueCombo(6));
    }
 
    @Test

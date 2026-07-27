@@ -1,0 +1,51 @@
+{
+  "id": "arash",
+  "display_name": "Arash (Archer)",
+  "display_name_zh": "阿拉什（Archer）",
+  "class_type": "archer",
+  "faction": "human",
+  "traits": [
+    "servant", "male", "archer", "human", "humanoid", "living_human", "sapient",
+    "chaotic", "balanced", "earth", "seven_knights", "ea_special"
+  ],
+  "parameters": {
+    "endurance": "A", "endurance_plus": false,
+    "strength": "B", "strength_plus": false,
+    "agility": "B", "agility_plus": true,
+    "magic": "E", "magic_plus": false,
+    "luck": "D", "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/arash.geo.json",
+    "texture": "typemoonworld:textures/entity/arash.png",
+    "animation": "typemoonworld:animations/arash.animation.json",
+    "animations": {
+      "idle": "animation.arash.idle",
+      "walk": "animation.arash.walk",
+      "bow_shot": "animation.arash.bow_shot",
+      "arrow_rain": "animation.arash.arrow_rain",
+      "energy_small": "animation.arash.energy_small",
+      "energy_large": "animation.arash.energy_large",
+      "stella_chant": "animation.arash.stella_chant",
+      "stella_release": "animation.arash.stella_release"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.85, "eye_height": 1.67},
+    "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
+    "default_weapon": "typemoonworld:arash_bow",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["bow_shot", "arrow_rain", "energy_small", "energy_large", "stella_chant", "stella_release"]
+  },
+  "skills": [
+    "stout_ex_arash", "clairvoyance_a_arash", "arrow_construction_a",
+    "magic_resistance_c_arash", "independent_action_c"
+  ],
+  "noble_phantasm": "stella_arash",
+  "personality": {
+    "obedience": "cooperative", "principle": "orderly", "morality": "neutral",
+    "social": "normal", "combat": "cautious", "starting_favor": 65.0
+  },
+  "ai_config": "arash_ai",
+  "spawn_egg": {"primary": 3108709, "secondary": 13003570}
+}

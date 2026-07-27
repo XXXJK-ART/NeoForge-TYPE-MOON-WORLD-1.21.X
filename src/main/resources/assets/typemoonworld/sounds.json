@@ -578,5 +578,21 @@
     "fanatic_assassin_voice_computer_temperature": {
       "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.computer_temperature",
       "sounds": ["typemoonworld:voice/fanatic_assassin/computer_temperature"]
+    },
+    "arash_voice_attack": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.attack",
+      "sounds": ["typemoonworld:voice/arash/attack1", "typemoonworld:voice/arash/attack2", "typemoonworld:voice/arash/attack3"]
+    },
+    "arash_voice_fail": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.fail",
+      "sounds": ["typemoonworld:voice/arash/fail1", "typemoonworld:voice/arash/fail2"]
+    },
+    "arash_voice_victory": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.victory",
+      "sounds": ["typemoonworld:voice/arash/victory1", "typemoonworld:voice/arash/victory2"]
+    },
+    "arash_voice_stella": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.stella",
+      "sounds": [{"name": "typemoonworld:voice/arash/stella", "stream": true}]
     }
 }

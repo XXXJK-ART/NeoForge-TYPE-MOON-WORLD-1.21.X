@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -156,6 +157,7 @@ public final class ServantCombatSystem {
          return;
       }
       DamageSource source = event.getSource();
+      boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
       if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
          recordIncomingDamage(servant, event.getAmount());
          return;
@@ -163,7 +165,8 @@ public final class ServantCombatSystem {
 
       long now = servant.level().getGameTime();
       CompoundTag data = servant.getPersistentData();
-      if (!PaleRiderDamageTypes.isInfection(source) && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
+      if (!guaranteedHit && !PaleRiderDamageTypes.isInfection(source)
+         && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
          event.setCanceled(true);
          spawnGuardFx(servant, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return;
@@ -178,8 +181,8 @@ public final class ServantCombatSystem {
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
          boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
-         boolean guaranteedHit = UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
-         if (!PaleRiderDamageTypes.isInfection(source) && !ushiwakamaruMelee && !guaranteedHit
+         boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
+         if (!PaleRiderDamageTypes.isInfection(source) && !ushiwakamaruMelee && !unavoidable
             && tryAutoDodge(servant, source, params, now)) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount((float)Math.min(event.getAmount(), event.getAmount() * 0.5F));

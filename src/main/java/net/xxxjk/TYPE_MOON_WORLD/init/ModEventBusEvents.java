@@ -67,6 +67,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.MEDUSA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CURSED_ARM_HASSAN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.EMIYA_ARCHER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.ARASH.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ARTORIA_PENDRAGON.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.USHIWAKAMARU_RIDER.get(), ServantEntity.createAttributes().build());
@@ -87,6 +88,11 @@ public class ModEventBusEvents {
       event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
+   }
+
+   @SubscribeEvent
+   public static void registerTicketControllers(net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent event) {
+      event.register(net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity.CHUNK_TICKETS);
    }
 
    @SubscribeEvent

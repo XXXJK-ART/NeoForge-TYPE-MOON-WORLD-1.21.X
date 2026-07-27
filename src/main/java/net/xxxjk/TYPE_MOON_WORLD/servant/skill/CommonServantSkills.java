@@ -29,6 +29,10 @@ public final class CommonServantSkills {
       registry.register("projection_magic_c", CommonServantSkills::executeProjectionMagicC, "typemoonworld_core");
       registry.register("clairvoyance_c", CommonServantSkills::executeClairvoyanceC, "typemoonworld_core");
       registry.register("clairvoyance_ex", CommonServantSkills::executeClairvoyanceEx, "typemoonworld_core");
+      registry.register("stout_ex_arash", CommonServantSkills::executeStoutExArash, "typemoonworld_core");
+      registry.register("clairvoyance_a_arash", CommonServantSkills::executeClairvoyanceAArash, "typemoonworld_core");
+      registry.register("arrow_construction_a", CommonServantSkills::executeArrowConstructionA, "typemoonworld_core");
+      registry.register("magic_resistance_c_arash", CommonServantSkills::executeMagicResistanceCArash, "typemoonworld_core");
       registry.register("strategy_b", CommonServantSkills::executeStrategyB, "typemoonworld_core");
       registry.register("tenka_fubu_a", CommonServantSkills::executeTenkaFubuA, "typemoonworld_core");
       registry.register("maou_a", CommonServantSkills::executeMaouA, "typemoonworld_core");
@@ -64,6 +68,37 @@ public final class CommonServantSkills {
 
    private static ServantExecutionResult executeMagicResistanceC(ServantExecutionContext context) {
       return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.15F, 0.10F);
+   }
+
+   private static ServantExecutionResult executeMagicResistanceCArash(ServantExecutionContext context) {
+      return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.20F, 0.10F);
+   }
+
+   private static ServantExecutionResult executeStoutExArash(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) return ServantExecutionResult.FAILED;
+      entity.getPersistentData().putBoolean("StoutExArashActive", true);
+      entity.getPersistentData().putFloat("StoutExDamageMultiplier", 0.85F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeClairvoyanceAArash(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) return ServantExecutionResult.FAILED;
+      entity.getPersistentData().putBoolean("ClairvoyanceAArashActive", true);
+      entity.getPersistentData().putFloat("ClairvoyanceAccuracyBonus", 0.25F);
+      entity.getPersistentData().putFloat("ClairvoyanceFutureSightDodge", 0.10F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeArrowConstructionA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) return ServantExecutionResult.FAILED;
+      entity.getPersistentData().putBoolean("ArrowConstructionAActive", true);
+      entity.getPersistentData().putFloat("BowDamageMultiplier", 1.10F);
+      entity.getPersistentData().putFloat("BowAttackSpeedMultiplier", 1.20F);
+      if (!entity.getPersistentData().contains("ArashVirtualArrows")) entity.getPersistentData().putInt("ArashVirtualArrows", 10);
+      return ServantExecutionResult.SUCCESS;
    }
 
    private static ServantExecutionResult executeRidingAPlus(ServantExecutionContext context) {

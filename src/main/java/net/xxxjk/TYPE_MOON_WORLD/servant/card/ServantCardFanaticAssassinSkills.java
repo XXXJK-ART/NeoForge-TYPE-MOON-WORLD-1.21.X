@@ -22,12 +22,10 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
-import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ServantCardFanaticAssassinSkills {
@@ -102,13 +100,9 @@ public final class ServantCardFanaticAssassinSkills {
       LivingEntity target = lookTarget(player, FanaticAssassinRules.HEARTBEAT_RANGE);
       if (target == null || !player.hasLineOfSight(target)) return false;
       revealForAttack(player);
-      float damage = FanaticAssassinRules.HEARTBEAT_DAMAGE;
-      ServantDefinition definition = ServantIdentityHelper.definitionOf(target);
-      if (definition != null) {
-         damage = FanaticAssassinRules.heartbeatDamage(definition.parameters().magic(), definition.parameters().luck());
-      }
       target.invulnerableTime = 0;
-      target.hurt(player.damageSources().source(FanaticDamageTypes.HEARTBEAT, player), damage);
+      target.hurt(player.damageSources().source(FanaticDamageTypes.HEARTBEAT, player),
+         FanaticAssassinCombatHelper.heartbeatDamageFor(target));
       target.addEffect(new MobEffectInstance(ModMobEffects.FANATIC_WOUNDED,
          FanaticAssassinRules.WOUNDED_DURATION, 0, false, true, true), player);
       if (player.level() instanceof ServerLevel level) {
@@ -191,7 +185,7 @@ public final class ServantCardFanaticAssassinSkills {
             bystander.position().add(0.0, bystander.getBbHeight() * 0.5, 0.0).distanceTo(center));
          if (splash <= 0.0F) continue;
          bystander.invulnerableTime = 0;
-         bystander.hurt(player.damageSources().source(FanaticDamageTypes.COMPUTER, player), splash);
+         bystander.hurt(player.damageSources().source(FanaticDamageTypes.COMPUTER_SPLASH, player), splash);
       }
       player.invulnerableTime = 0;
       player.hurt(player.damageSources().magic(), FanaticAssassinRules.COMPUTER_BACKLASH);

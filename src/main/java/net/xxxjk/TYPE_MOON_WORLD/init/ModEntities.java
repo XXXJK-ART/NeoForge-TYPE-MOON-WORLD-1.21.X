@@ -19,6 +19,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
@@ -64,6 +66,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
@@ -109,6 +112,17 @@ public class ModEntities {
          .clientTrackingRange(192)
          .updateInterval(20)
          .build("vfx_trigger")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArashParticleArrowEntity>> ARASH_PARTICLE_ARROW = ENTITY_TYPES.register(
+      "arash_particle_arrow",
+      () -> Builder.<ArashParticleArrowEntity>of(
+            (entityType, level) -> new ArashParticleArrowEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC)
+         .sized(0.25F, 0.25F).clientTrackingRange(192).updateInterval(1).build("arash_particle_arrow")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArashStellaControllerEntity>> ARASH_STELLA_CONTROLLER = ENTITY_TYPES.register(
+      "arash_stella_controller",
+      () -> Builder.<ArashStellaControllerEntity>of(ArashStellaControllerEntity::new, MobCategory.MISC)
+         .sized(1.0F, 1.0F).clientTrackingRange(256).updateInterval(1).build("arash_stella_controller")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH = ENTITY_TYPES.register(
       "muramasa_slash",
@@ -430,6 +444,10 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArcherEntity>> EMIYA_ARCHER = ENTITY_TYPES.register(
       "emiya_archer", () -> Builder.of(EmiyaArcherEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("emiya_archer")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArashEntity>> ARASH = ENTITY_TYPES.register(
+      "arash", () -> Builder.of(ArashEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.85F).clientTrackingRange(256).updateInterval(1).build("arash")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ArtoriaPendragonEntity>> ARTORIA_PENDRAGON = ENTITY_TYPES.register(
       "artoria_pendragon", () -> Builder.of(ArtoriaPendragonEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("artoria_pendragon")
