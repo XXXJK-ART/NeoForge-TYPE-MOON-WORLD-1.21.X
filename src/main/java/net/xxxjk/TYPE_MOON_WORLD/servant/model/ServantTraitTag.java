@@ -66,7 +66,10 @@ public enum ServantTraitTag {
    APOCALYPSE_HORSEMAN("apocalypse_horseman"),
    PLAGUE("plague"),
    FALSE_RIDER("false_rider"),
-   SYSTEM_SERVANT("system_servant");
+   SYSTEM_SERVANT("system_servant"),
+   HASSAN_ORDER("hassan_order"),
+   FANATIC("fanatic"),
+   DIVINE_TECHNIQUE_MIMIC("divine_technique_mimic");
 
    private final String key;
 

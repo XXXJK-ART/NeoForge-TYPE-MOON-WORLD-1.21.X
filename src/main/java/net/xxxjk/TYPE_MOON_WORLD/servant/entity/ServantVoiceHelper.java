@@ -47,6 +47,16 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_ATTACK.get());
+      } else if (isShadowHassan(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_ATTACK.get());
+      } else if (isFanaticAssassin(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_ATTACK.get());
       } else if (isEmiya(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
@@ -137,6 +147,10 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.MEDUSA_VOICE_VICTORY.get());
       } else if (isCursedArmHassan(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_VICTORY.get());
+      } else if (isShadowHassan(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_VICTORY.get());
+      } else if (isFanaticAssassin(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_VICTORY.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
       } else if (isArtoria(servant)) {
@@ -169,6 +183,10 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDUSA_VOICE_FAIL.get());
       } else if (isCursedArmHassan(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.92F, ModSounds.CURSED_ARM_HASSAN_VOICE_FAIL.get());
+      } else if (isShadowHassan(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.15F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY.get());
+      } else if (isFanaticAssassin(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_FAIL.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
       } else if (isArtoria(servant)) {
@@ -362,6 +380,42 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "li_shuwen_np", 1.05F, 0.96F, ModSounds.LI_SHUWEN_VOICE_NP.get());
    }
 
+   public static void tryPlayShadowHassanCommandAttack(ShadowHassanEntity servant) {
+      if (isShadowHassan(servant)) {
+         playVoice(servant, "command_attack", 240, 1.05F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_COMMAND_ATTACK.get());
+      }
+   }
+
+   public static void tryPlayShadowHassanMeditativeSensitivity(ShadowHassanEntity servant) {
+      if (isShadowHassan(servant)) {
+         playVoiceForced(servant, "meditative_sensitivity", 1.2F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY.get());
+      }
+   }
+
+   public static void tryPlayFanaticEncounter(FanaticAssassinEntity servant) {
+      if (isFanaticAssassin(servant)) {
+         playVoice(servant, "encounter", 400, 1.1F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_ENCOUNTER.get());
+      }
+   }
+
+   public static void tryPlayFanaticTechnique(FanaticAssassinEntity servant, int technique) {
+      if (!isFanaticAssassin(servant)) {
+         return;
+      }
+      SoundEvent sound = switch (technique) {
+         case FanaticAssassinEntity.TECHNIQUE_HEARTBEAT -> ModSounds.FANATIC_ASSASSIN_VOICE_HEARTBEAT.get();
+         case FanaticAssassinEntity.TECHNIQUE_MARROW -> ModSounds.FANATIC_ASSASSIN_VOICE_MARROW.get();
+         case FanaticAssassinEntity.TECHNIQUE_HAIR -> ModSounds.FANATIC_ASSASSIN_VOICE_HAIR.get();
+         case FanaticAssassinEntity.TECHNIQUE_NERVES -> ModSounds.FANATIC_ASSASSIN_VOICE_NERVES.get();
+         case FanaticAssassinEntity.TECHNIQUE_TEMPERATURE, FanaticAssassinEntity.TECHNIQUE_COMPUTER ->
+            ModSounds.FANATIC_ASSASSIN_VOICE_COMPUTER_TEMPERATURE.get();
+         default -> null;
+      };
+      if (sound != null) {
+         playVoiceForced(servant, "fanatic_technique_" + technique, 1.15F, 1.0F, sound);
+      }
+   }
+
    private static void playVoice(ServantEntity servant, String category, int cooldownTicks, float volume, float pitch, SoundEvent sound) {
       if (!(servant.level() instanceof ServerLevel serverLevel) || sound == null) {
          return;
@@ -427,6 +481,14 @@ public final class ServantVoiceHelper {
 
    private static boolean isCursedArmHassan(ServantEntity servant) {
       return servant != null && CursedArmHassanEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isShadowHassan(ServantEntity servant) {
+      return servant != null && ShadowHassanEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isFanaticAssassin(ServantEntity servant) {
+      return servant != null && FanaticAssassinEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isEmiya(ServantEntity servant) {

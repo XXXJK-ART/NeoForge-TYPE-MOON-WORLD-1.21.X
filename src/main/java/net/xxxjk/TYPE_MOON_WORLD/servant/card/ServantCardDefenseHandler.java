@@ -312,7 +312,8 @@ public final class ServantCardDefenseHandler {
    }
 
    public static boolean isSpecialNoblePhantasmDamage(DamageSource source, float originalDamage) {
-      return isArtoriaExcaliburDamage(source)
+      return (source != null && source.is(net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY))
+         || isArtoriaExcaliburDamage(source)
          || isGaeBulgArmyDamage(source)
          || isMajorBrokenPhantasmExplosion(source, originalDamage);
    }

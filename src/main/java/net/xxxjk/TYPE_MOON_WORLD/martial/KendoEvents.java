@@ -31,6 +31,16 @@ public final class KendoEvents {
          if (!allowed) event.setCanceled(true);
       }
 
+      if (!event.isCanceled() && event.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer attacker
+         && event.getAmount() > 0.0F && KendoCombatService.isMartialDamage(attacker)
+         && KendoCombatService.shouldAwardProficiency(attacker)) {
+         KendoSchool school = KendoCombatService.currentSchool(attacker);
+         if (school != null) {
+            double amount = attacker.getPersistentData().getBoolean("TypeMoonKendoSparring") ? 0.25 : 0.05;
+            KendoCombatService.addProficiency(attacker, school, amount);
+         }
+      }
+
       if (!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer defender)
          || !defender.getPersistentData().getBoolean("TypeMoonKendoSparring")) return;
       boolean allowed = defender.getPersistentData().hasUUID("TypeMoonKendoSparringMaster")

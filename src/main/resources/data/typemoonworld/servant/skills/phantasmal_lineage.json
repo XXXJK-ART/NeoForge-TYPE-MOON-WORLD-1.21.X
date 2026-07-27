@@ -1,0 +1,7 @@
+{
+  "id": "phantasmal_lineage",
+  "display_name": "Phantasmal Lineage",
+  "display_name_zh": "\u5e7b\u60f3\u8840\u7edf",
+  "type": "active", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
+  "effects": [{"effect_type": "fanatic_divine_techniques", "params": {"technique_count": 8}}]
+}

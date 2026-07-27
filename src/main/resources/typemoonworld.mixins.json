@@ -13,6 +13,8 @@
     "ItemRendererMixin",
     "client.HumanoidArmorLayerMixin",
     "client.ItemInHandRendererMixin",
+    "client.EntityRenderDispatcherMixin",
+    "client.NeatHealthBarRendererMixin",
     "client.MixinMinecraft",
     "client.PlayerModelMixin",
     "client.PlayerRendererMixin",

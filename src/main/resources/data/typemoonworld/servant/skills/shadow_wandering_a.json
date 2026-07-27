@@ -1,0 +1,10 @@
+{
+  "id": "shadow_wandering_a",
+  "display_name": "Shadow Wandering A",
+  "display_name_zh": "\u5e7d\u5f0b A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 40,
+  "duration_ticks": 0,
+  "effects": [{"effect_type": "shadow_movement", "params": {"instant_death_immunity": true}}]
+}

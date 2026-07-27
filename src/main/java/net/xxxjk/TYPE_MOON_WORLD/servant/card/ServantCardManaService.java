@@ -2,11 +2,15 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 
 public final class ServantCardManaService {
+   public record ManaSnapshot(double servantMana, ServerPlayer master, double masterMana) {
+   }
+
    private ServantCardManaService() {
    }
 
@@ -39,6 +43,9 @@ public final class ServantCardManaService {
          TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          expectedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
       }
+      if (player.hasEffect(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
+         expectedRegen *= 0.5;
+      }
       if (Math.abs(vars.servant_card_mana_regen - expectedRegen) > 1.0E-6) {
          vars.servant_card_mana_regen = expectedRegen;
       }
@@ -70,6 +77,23 @@ public final class ServantCardManaService {
 
    public static boolean consumeNoblePhantasm(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       return consume(player, vars, amount, true, true);
+   }
+
+   public static ManaSnapshot snapshot(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServerPlayer master = getMaster(player, vars);
+      double masterMana = master == null ? 0.0 : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
+      return new ManaSnapshot(vars.servant_card_mana, master, masterMana);
+   }
+
+   public static void restore(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ManaSnapshot snapshot) {
+      vars.servant_card_mana = snapshot.servantMana();
+      vars.syncMana(player);
+      ServerPlayer master = snapshot.master();
+      if (master != null) {
+         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         masterVars.player_mana = snapshot.masterMana();
+         masterVars.syncMana(master);
+      }
    }
 
    private static boolean consume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount, boolean noblePhantasm, boolean sync) {

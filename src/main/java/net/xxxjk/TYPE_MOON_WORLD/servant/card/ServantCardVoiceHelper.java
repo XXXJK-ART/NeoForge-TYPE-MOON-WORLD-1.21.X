@@ -24,6 +24,8 @@ public final class ServantCardVoiceHelper {
          case "medea" -> ModSounds.MEDEA_VOICE_ATTACK.get();
          case "medusa" -> ModSounds.MEDUSA_VOICE_ATTACK.get();
          case "cursed_arm_hassan" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ATTACK.get();
+         case "shadow_hassan" -> ModSounds.SHADOW_HASSAN_VOICE_ATTACK.get();
+         case "fanatic_assassin" -> ModSounds.FANATIC_ASSASSIN_VOICE_ATTACK.get();
          case "emiya_archer" -> ModSounds.EMIYA_ARCHER_VOICE_ATTACK.get();
          case "artoria_pendragon" -> ModSounds.ARTORIA_VOICE_ATTACK.get();
          case "oda_nobunaga" -> ModSounds.ODA_NOBUNAGA_VOICE_ATTACK.get();
@@ -46,6 +48,12 @@ public final class ServantCardVoiceHelper {
          ? ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get()
          : switch (effectId) {
          case "zabaniya" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA_SHORT.get();
+         case "shadow_hassan_meditative_sensitivity" -> ModSounds.SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY.get();
+         case "fanatic_heartbeat" -> ModSounds.FANATIC_ASSASSIN_VOICE_HEARTBEAT.get();
+         case "fanatic_marrow" -> ModSounds.FANATIC_ASSASSIN_VOICE_MARROW.get();
+         case "fanatic_hair" -> ModSounds.FANATIC_ASSASSIN_VOICE_HAIR.get();
+         case "fanatic_temperature", "fanatic_computer" -> ModSounds.FANATIC_ASSASSIN_VOICE_COMPUTER_TEMPERATURE.get();
+         case "fanatic_nerves" -> ModSounds.FANATIC_ASSASSIN_VOICE_NERVES.get();
          case "bellerophon" -> ModSounds.MEDUSA_VOICE_BELLEROPHON.get();
          case "rho_aias" -> ModSounds.EMIYA_ARCHER_VOICE_RHO_AIAS.get();
          case "emiya_spiral" -> ModSounds.EMIYA_ARCHER_VOICE_SPIRAL.get();

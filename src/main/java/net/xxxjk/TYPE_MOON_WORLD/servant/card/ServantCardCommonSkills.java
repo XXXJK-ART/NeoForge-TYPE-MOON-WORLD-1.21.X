@@ -16,7 +16,7 @@ public final class ServantCardCommonSkills {
 
    public static void performPresenceConcealment(ServerPlayer player, String servantId) {
       int duration = "sasaki_kojiro".equals(servantId) ? 600 : 220;
-      player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, duration, 0, false, false, false));
+      ServantCardConcealmentHelper.apply(player, duration);
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 1, false, false, false));
       player.getPersistentData().putInt("ServantCardConcealmentUntil", player.tickCount + duration);
    }

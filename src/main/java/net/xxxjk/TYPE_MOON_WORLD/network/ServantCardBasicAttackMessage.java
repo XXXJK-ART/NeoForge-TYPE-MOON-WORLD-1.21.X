@@ -31,6 +31,10 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
+               if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) return;
+               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(player);
+            }
             if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
                ServantCardHeraclesSkills.performBasicSweep(player);
             } else if (vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id) && message.secondary) {

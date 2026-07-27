@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,5 +56,19 @@ class ServantCardSkillLayoutTest {
       assertEquals(false, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_benkei"));
       assertEquals(false, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_spider_slayer"));
       assertEquals(true, ServantCardVoiceHelper.usesUshiwakamaruNoblePhantasmVoice("ushiwakamaru_eight_boat"));
+   }
+
+   @Test
+   void fanaticUsesNineIndependentTechniqueSlotsAndLeavesSlotNineEmpty() {
+      double[] costs = {15.0, 25.0, 20.0, 15.0, 15.0, 10.0, 20.0, 15.0, 30.0};
+      int[] cooldowns = {300, 600, 600, 600, 600, 600, 600, 600, 600};
+      for (int slot = 0; slot < 9; slot++) {
+         ServantCardSkillAction action = ServantCardSkillLayout.actionFor("fanatic_assassin", slot, false);
+         assertNotNull(action, "slot " + slot);
+         assertEquals(costs[slot], action.mpCost(), "slot " + slot + " MP");
+         assertEquals(cooldowns[slot], action.cooldownTicks(), "slot " + slot + " cooldown");
+      }
+      assertNull(ServantCardSkillLayout.actionFor("fanatic_assassin", 9, false));
+      assertEquals(false, ServantCardTransformManager.isNoblePhantasmAction("fanatic_assassin", 8));
    }
 }

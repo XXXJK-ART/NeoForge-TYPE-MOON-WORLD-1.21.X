@@ -1,0 +1,10 @@
+{
+  "id": "shadow_lantern_a",
+  "display_name": "Shadow Lantern A",
+  "display_name_zh": "\u5f71\u706f\u7b3c A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [{"effect_type": "shadow_mana_recovery", "params": {"mana_per_second": 5.0}}]
+}

@@ -143,5 +143,13 @@ public class KendoMasterEntity extends HumanNpcEntity implements NpcActionPose {
       if (player.getAbilities().instabuild) return;
       invitation.shrink(1);
    }
-   @Override public void addAdditionalSaveData(CompoundTag tag) { super.addAdditionalSaveData(tag); }
+   @Override public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putString(TAG_SCHOOL, school().id());
+   }
+
+   @Override public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      if (tag.contains(TAG_SCHOOL)) setSchool("tennen_rishin_ryu".equals(tag.getString(TAG_SCHOOL)) ? KendoSchool.TENNEN : KendoSchool.HOKUSHIN);
+   }
 }

@@ -44,6 +44,7 @@ public final class KendoCombatService {
    private static final String TAG_ATTACK_ACTIVE_UNTIL = "TypeMoonKendoAttackActiveUntil";
    private static final String TAG_RUN_STREAK = "TypeMoonKendoRunStreak";
    private static final String TAG_LAST_RUN_TICK = "TypeMoonKendoLastRunTick";
+   private static final String TAG_LAST_PROFICIENCY_AWARD_TICK = "TypeMoonKendoLastProficiencyAwardTick";
    private static final String TAG_MARTIAL_DAMAGE = "TypeMoonKendoMartialDamage";
 
    private KendoCombatService() {}
@@ -62,7 +63,23 @@ public final class KendoCombatService {
          && GanryuCombatService.isAllowedBlade(player.getOffhandItem())
          || player.getOffhandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.SPARRING_INVITATION.get())
          && GanryuCombatService.isAllowedBlade(player.getMainHandItem());
-      return invitationAndBlade && isActive(player, school);
+      if (!invitationAndBlade) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return school.learned(vars) && vars.is_magic_circuit_open && !vars.servant_card_transformed
+         && PlayerMagicSelectionService.isCurrentSelection(vars, school.id());
+   }
+
+   public static KendoSchool currentSchool(ServerPlayer player) {
+      if (player == null) return null;
+      return activeSchool(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
+   }
+
+   public static boolean shouldAwardProficiency(ServerPlayer player) {
+      if (player == null) return false;
+      long now = player.level().getGameTime();
+      if (player.getPersistentData().getLong(TAG_LAST_PROFICIENCY_AWARD_TICK) == now) return false;
+      player.getPersistentData().putLong(TAG_LAST_PROFICIENCY_AWARD_TICK, now);
+      return true;
    }
 
    public static boolean isMartialDamage(ServerPlayer player) {

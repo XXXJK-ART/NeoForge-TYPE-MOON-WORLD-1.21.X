@@ -56,8 +56,9 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
    public boolean hasRealArmorModel() {
       ServantCardRegistry.Entry entry = ServantCardRegistry.byId(this.servantId);
       return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
-         case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "heracles",
+         case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
+         case "fanatic_assassin" -> true;
          default -> false;
       };
    }

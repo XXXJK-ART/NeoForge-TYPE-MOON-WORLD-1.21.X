@@ -83,6 +83,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
@@ -166,6 +168,13 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
+         if (event.getEntity() instanceof Projectile projectile && projectile.getOwner() instanceof ServerPlayer owner) {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(owner)) {
+               event.setCanceled(true);
+               return;
+            }
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(owner);
+         }
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
          }
@@ -290,6 +299,7 @@ public class CommonEvents {
       if (!event.getEntity().level().isClientSide) {
          Player player = event.getEntity();
          if (player instanceof ServerPlayer serverPlayer) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
             MagicGander.tick(serverPlayer);
@@ -391,6 +401,14 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getSource().getEntity() instanceof ServerPlayer attacker
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isShadowHassan(attacker)) {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(attacker)) {
+               event.setCanceled(true);
+               return;
+            }
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(attacker);
+         }
          if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
             event.setCanceled(true);
          } else {
@@ -1595,6 +1613,12 @@ public class CommonEvents {
       } else {
          LivingEntity living = event.getEntity();
          MobEffectInstance effectInstance = event.getEffectInstance();
+         if (living instanceof FanaticAssassinEntity
+            && effectInstance != null
+            && effectInstance.getEffect().is(FanaticAssassinCombatHelper.MENTAL_EFFECTS)) {
+            living.removeEffect(effectInstance.getEffect());
+            return;
+         }
          if (living instanceof Mob && effectInstance != null && effectInstance.getEffect() == ModMobEffects.SUGGESTION) {
             trackSuggestedMob(living);
          }

@@ -288,6 +288,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_MEDEA = registerServantCard("medea");
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA = registerServantCard("medusa");
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN = registerServantCard("cursed_arm_hassan");
+    public static final DeferredItem<Item> SERVANT_CARD_SHADOW_HASSAN = registerServantCard("shadow_hassan");
     public static final DeferredItem<Item> SERVANT_CARD_HERACLES = registerServantCard("heracles");
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA = registerServantCard("oda_nobunaga");
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU = registerServantCard("enkidu");
@@ -297,6 +298,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
     public static final DeferredItem<Item> SERVANT_CARD_PALE_RIDER = registerServantCard("pale_rider");
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER = registerServantCard("ushiwakamaru_rider");
+    public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN = registerServantCard("fanatic_assassin");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -313,6 +315,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_CHEST = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_LEGS = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_HEAD = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SHADOW_HASSAN_MASK = registerServantArmor("shadow_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_CHEST = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_LEGS = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_HERACLES_CHEST = registerServantArmor("heracles", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -334,6 +337,8 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_HEAD = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_CHEST = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.CHEST);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -942,6 +947,10 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PARACELSUS, 0xA9E7FF, 0xFFD36A));
     public static final DeferredItem<Item> PALE_RIDER_SPAWN_EGG = ITEMS.register("pale_rider_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PALE_RIDER, 0x17191C, 0xC7CBD1));
+    public static final DeferredItem<Item> SHADOW_HASSAN_SPAWN_EGG = ITEMS.register("shadow_hassan_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SHADOW_HASSAN, 0x080808, 0xE8E4DD));
+    public static final DeferredItem<Item> FANATIC_ASSASSIN_SPAWN_EGG = ITEMS.register("fanatic_assassin_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.FANATIC_ASSASSIN, 0x15151D, 0xB9A7A0));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {
@@ -987,6 +996,7 @@ public class ModItems {
             case "medea" -> (head ? SERVANT_CARD_MEDEA_HEAD : legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();
             case "medusa" -> (head ? SERVANT_CARD_MEDUSA_HEAD : legs ? SERVANT_CARD_MEDUSA_LEGS : SERVANT_CARD_MEDUSA_CHEST).get();
             case "cursed_arm_hassan" -> (head ? SERVANT_CARD_CURSED_ARM_HASSAN_HEAD : SERVANT_CARD_CURSED_ARM_HASSAN_CHEST).get();
+            case "shadow_hassan" -> head ? SHADOW_HASSAN_MASK.get() : net.minecraft.world.item.Items.AIR;
             case "heracles" -> (legs ? SERVANT_CARD_HERACLES_LEGS : SERVANT_CARD_HERACLES_CHEST).get();
             case "oda_nobunaga" -> (head ? SERVANT_CARD_ODA_NOBUNAGA_HEAD : legs ? SERVANT_CARD_ODA_NOBUNAGA_LEGS : SERVANT_CARD_ODA_NOBUNAGA_CHEST).get();
             case "enkidu" -> (legs ? SERVANT_CARD_ENKIDU_LEGS : SERVANT_CARD_ENKIDU_CHEST).get();
@@ -995,6 +1005,8 @@ public class ModItems {
             case "paracelsus" -> (legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
             case "li_shuwen" -> (head ? SERVANT_CARD_LI_SHUWEN_HEAD : legs ? SERVANT_CARD_LI_SHUWEN_LEGS : SERVANT_CARD_LI_SHUWEN_CHEST).get();
             case "ushiwakamaru_rider" -> (head ? SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD : legs ? SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS : SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST).get();
+            case "fanatic_assassin" -> head ? SERVANT_CARD_FANATIC_ASSASSIN_HEAD.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

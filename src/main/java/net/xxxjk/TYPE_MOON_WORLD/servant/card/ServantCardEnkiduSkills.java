@@ -1148,7 +1148,7 @@ public final class ServantCardEnkiduSkills {
          Vec3 spawn = groundSpawn(level, volleyCenter.add(forward.scale(forwardOffset)).add(side.scale(sideOffset)));
          Vec3 aimPoint = targetCenter.add(side.scale((player.getRandom().nextDouble() - 0.5) * 7.0)).add(forward.scale((player.getRandom().nextDouble() - 0.5) * 5.0)).add(0.0, (player.getRandom().nextDouble() - 0.5) * 2.1, 0.0);
          ItemStack stack = AGE_WEAPONS[(i + batch) % AGE_WEAPONS.length].copy();
-         float finalDamage = target != null && hasTrait(target, ServantTraitTag.DIVINE) ? damage + 8.0F : damage;
+         float finalDamage = applyAgeOfBabylonDivinitySpecialAttack(player, target, damage);
          spawnAgeGate(level, spawn, true);
          int delay = 6 + ((batch * count + i) % 4);
          TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, finalDamage, spawn, aimPoint, speed, true));
@@ -1165,8 +1165,20 @@ public final class ServantCardEnkiduSkills {
          ItemStack stack = AGE_WEAPONS[(i + batch) % AGE_WEAPONS.length].copy();
          spawnAgeGate(level, spawn, true);
          int delay = 6 + ((batch * count + i) % 5);
-         TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, damage, spawn, targetCenter, speed, true));
+         float finalDamage = applyAgeOfBabylonDivinitySpecialAttack(player, target, damage);
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, finalDamage, spawn, targetCenter, speed, true));
       }
+   }
+
+   private static float applyAgeOfBabylonDivinitySpecialAttack(ServerPlayer player, LivingEntity target, float damage) {
+      if (target == null || !hasTrait(target, ServantTraitTag.DIVINE)) {
+         return damage;
+      }
+      CompoundTag data = target.getPersistentData();
+      boolean boundByPlayer = data.hasUUID(BOUND_OWNER)
+         && player.getUUID().equals(data.getUUID(BOUND_OWNER))
+         && data.getLong(BOUND_UNTIL) > target.level().getGameTime();
+      return boundByPlayer ? damage + 8.0F : damage;
    }
 
    private static void spawnAgeProjectile(ServerPlayer player, ServerLevel level, LivingEntity target, ItemStack stack, float damage, Vec3 spawn, Vec3 aimPoint, float speed, boolean volley) {

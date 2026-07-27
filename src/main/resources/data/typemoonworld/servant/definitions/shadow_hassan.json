@@ -1,0 +1,72 @@
+{
+  "id": "shadow_hassan",
+  "display_name": "Hassan of the Shadow",
+  "display_name_zh": "\u5e7d\u5f0b\u4e4b\u54c8\u6851",
+  "class_type": "assassin",
+  "faction": "earth",
+  "traits": [
+    "servant",
+    "humanoid",
+    "assassin",
+    "male",
+    "lawful",
+    "evil",
+    "conceptual_existence",
+    "shadow_servant",
+    "true_assassin",
+    "old_man_of_the_mountain"
+  ],
+  "parameters": {
+    "endurance": "C",
+    "endurance_plus": false,
+    "strength": "D",
+    "strength_plus": false,
+    "agility": "C",
+    "agility_plus": false,
+    "magic": "D",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/empty.geo.json",
+    "texture": "typemoonworld:textures/entity/empty.png",
+    "animation": "typemoonworld:animations/empty.animation.json",
+    "animations": {}
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "default_weapon": "",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "shadow_hassan_melee",
+      "shadow_ambush",
+      "shadow_flurry",
+      "shadow_bind",
+      "shadow_reposition"
+    ]
+  },
+  "skills": [
+    "presence_concealment_ex_shadow_hassan",
+    "shadow_lantern_a",
+    "shadow_wandering_a"
+  ],
+  "noble_phantasm": "meditative_sensitivity",
+  "personality": {
+    "obedience": "compliant",
+    "principle": "lawful",
+    "morality": "evil",
+    "social": "hermit",
+    "combat": "cautious",
+    "starting_favor": 100.0
+  },
+  "ai_config": "shadow_hassan_ai",
+  "spawn_egg": {
+    "primary": 526344,
+    "secondary": 15262941
+  }
+}

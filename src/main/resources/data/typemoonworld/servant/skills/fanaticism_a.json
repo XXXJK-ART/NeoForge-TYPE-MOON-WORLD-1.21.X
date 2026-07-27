@@ -1,0 +1,7 @@
+{
+  "id": "fanaticism_a",
+  "display_name": "Fanaticism A",
+  "display_name_zh": "\u72c2\u4fe1 A",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
+  "effects": [{"effect_type": "mental_immunity", "params": {"direct_resist_chance": 0.7, "cleanse_interval": 1200}}]
+}

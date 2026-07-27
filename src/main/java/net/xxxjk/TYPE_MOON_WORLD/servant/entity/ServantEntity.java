@@ -219,6 +219,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void tick() {
       super.tick();
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
       GawainCombatHelper.tickSharedBuffCleanup(this);
@@ -787,6 +788,26 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public void triggerRuneCastAnimation() {
       this.triggerRuneCastAnimation(16);
+   }
+
+   @Override
+   public boolean isInvisibleTo(Player player) {
+      return this.isInvisible() || super.isInvisibleTo(player);
+   }
+
+   @Override
+   public boolean isCustomNameVisible() {
+      return !this.isInvisible() && super.isCustomNameVisible();
+   }
+
+   @Override
+   public boolean isCurrentlyGlowing() {
+      return !this.isInvisible() && super.isCurrentlyGlowing();
+   }
+
+   @Override
+   public boolean displayFireAnimation() {
+      return !this.isInvisible() && super.displayFireAnimation();
    }
 
    public void triggerRuneCastAnimation(int durationTicks) {

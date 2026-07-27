@@ -23,7 +23,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
@@ -44,6 +46,10 @@ public final class HostileTargetingModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      if (entity instanceof FanaticAssassinEntity fanatic) {
+         FanaticAssassinCombatHelper.tickTargeting(fanatic, context);
+         return;
+      }
       boolean laguzActive = CuChulainnCombatHelper.isLaguzActive(entity);
       double profileRange = context.aiConfig() == null ? Math.max(16.0, context.behaviorProfile().aggressionRange()) : Math.max(16.0, context.aiConfig().movement().followDistance() * 4.0);
       boolean emiyaArcher = EmiyaArcherEntity.SERVANT_KEY.equals(entity.getServantId());

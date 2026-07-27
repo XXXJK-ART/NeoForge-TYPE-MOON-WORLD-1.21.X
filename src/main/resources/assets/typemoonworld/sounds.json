@@ -523,5 +523,60 @@
     "ushiwakamaru_rider_voice_np": {
                                "category": "hostile",
                                "sounds": [ "typemoonworld:voice/ushiwakamaru_rider/np" ]
-                           }
+                           },
+    "shadow_hassan_voice_attack": {
+                               "category": "hostile",
+                               "sounds": [
+                                   "typemoonworld:voice/shadow_hassan/attack1",
+                                   "typemoonworld:voice/shadow_hassan/attack2"
+                               ]
+                           },
+    "shadow_hassan_voice_command_attack": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/shadow_hassan/command_attack" ]
+                           },
+    "shadow_hassan_voice_victory": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/shadow_hassan/victory" ]
+                           },
+    "shadow_hassan_voice_meditative_sensitivity": {
+                               "category": "hostile",
+                               "sounds": [ "typemoonworld:voice/shadow_hassan/meditative_sensitivity" ]
+                           },
+    "fanatic_assassin_voice_attack": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.attack",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/attack1", "typemoonworld:voice/fanatic_assassin/attack2"]
+    },
+    "fanatic_assassin_voice_encounter": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.encounter",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/encounter"]
+    },
+    "fanatic_assassin_voice_fail": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.fail",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/fail"]
+    },
+    "fanatic_assassin_voice_victory": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.victory",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/victory"]
+    },
+    "fanatic_assassin_voice_heartbeat": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.heartbeat",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/heartbeat"]
+    },
+    "fanatic_assassin_voice_nerves": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.nerves",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/nerves"]
+    },
+    "fanatic_assassin_voice_marrow": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.marrow",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/marrow"]
+    },
+    "fanatic_assassin_voice_hair": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.hair",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/hair"]
+    },
+    "fanatic_assassin_voice_computer_temperature": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.fanatic_assassin.computer_temperature",
+      "sounds": ["typemoonworld:voice/fanatic_assassin/computer_temperature"]
+    }
 }

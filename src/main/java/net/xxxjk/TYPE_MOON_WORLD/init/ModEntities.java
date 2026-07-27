@@ -76,6 +76,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanDeathShadowEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
@@ -453,6 +457,21 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<PaleRiderEntity>> PALE_RIDER = ENTITY_TYPES.register(
       "pale_rider", () -> Builder.of(PaleRiderEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("pale_rider")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ShadowHassanEntity>> SHADOW_HASSAN = ENTITY_TYPES.register(
+      "shadow_hassan", () -> Builder.of(ShadowHassanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("shadow_hassan")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ShadowHassanDeathShadowEntity>> SHADOW_HASSAN_DEATH_SHADOW = ENTITY_TYPES.register(
+      "shadow_hassan_death_shadow", () -> Builder.<ShadowHassanDeathShadowEntity>of(ShadowHassanDeathShadowEntity::new, MobCategory.MISC)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("shadow_hassan_death_shadow")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<FanaticAssassinEntity>> FANATIC_ASSASSIN = ENTITY_TYPES.register(
+      "fanatic_assassin", () -> Builder.of(FanaticAssassinEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("fanatic_assassin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<FanaticAssassinJinnEntity>> FANATIC_ASSASSIN_JINN = ENTITY_TYPES.register(
+      "fanatic_assassin_jinn", () -> Builder.of(FanaticAssassinJinnEntity::new, MobCategory.CREATURE)
+         .sized(1.1F, 1.5F).clientTrackingRange(64).updateInterval(1).build("fanatic_assassin_jinn")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RatSwarmEntity>> RAT_SWARM = ENTITY_TYPES.register(
       "rat_swarm", () -> Builder.of(RatSwarmEntity::new, MobCategory.CREATURE).sized(1.6F, 0.65F).clientTrackingRange(48).updateInterval(2).build("rat_swarm")

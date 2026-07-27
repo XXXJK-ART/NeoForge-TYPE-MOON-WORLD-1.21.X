@@ -121,6 +121,8 @@ public final class ServantCardTransformManager {
       equipArmor(player, servantId);
       ServantCardLoadoutManager.saveAndEquip(player, vars, servantId);
       if ("pale_rider".equals(servantId)) ServantCardPaleRiderSkills.initialize(player, vars);
+      if ("shadow_hassan".equals(servantId)) ServantCardShadowHassanSkills.initialize(player);
+      if ("fanatic_assassin".equals(servantId)) ServantCardFanaticAssassinSkills.initialize(player);
       applyAttributes(player, definition.parameters(), servantId);
       if ("enkidu".equals(servantId)) {
          ServantCardEnkiduSkills.applyCurrentTransfiguration(player);
@@ -144,6 +146,8 @@ public final class ServantCardTransformManager {
       if ("ushiwakamaru_rider".equals(vars.servant_card_id)) ServantCardUshiwakamaruSkills.clear(player, vars);
       restoreArmor(player, vars);
       if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
+      if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
+      if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
       ServerPlayer linkedMaster = MasterServantLinkService.getLinkedMaster(player, vars);
       if (linkedMaster != null) {
@@ -247,6 +251,8 @@ public final class ServantCardTransformManager {
          case "medusa" -> ServantCardMedusaSkills.tick(player, vars);
          case "sasaki_kojiro" -> ServantCardSasakiKojiroSkills.tick(player);
          case "cursed_arm_hassan" -> ServantCardHassanSkills.tick(player, vars);
+         case "shadow_hassan" -> ServantCardShadowHassanSkills.tick(player, vars);
+         case "fanatic_assassin" -> ServantCardFanaticAssassinSkills.tick(player, vars);
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
          case "pale_rider" -> ServantCardPaleRiderSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
@@ -275,6 +281,8 @@ public final class ServantCardTransformManager {
       ServantCardMedusaSkills.clear(player);
       ServantCardLiShuwenSkills.clear(player);
       ServantCardPaleRiderSkills.clear(player);
+      ServantCardShadowHassanSkills.clear(player);
+      ServantCardFanaticAssassinSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
    }
@@ -515,13 +523,20 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
+      if ("shadow_hassan_meditative_sensitivity".equals(action.effectId())
+         && !ServantCardShadowHassanSkills.hasMeditativeSensitivityTarget(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
+      ServantCardManaService.ManaSnapshot manaBeforeAction = ServantCardManaService.snapshot(player, vars);
       boolean paid = np ? ServantCardManaService.consumeNoblePhantasm(player, vars, mpCost) : ServantCardManaService.consume(player, vars, mpCost);
       if (!paid) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
       if (!performAction(player, vars, action)) {
+         ServantCardManaService.restore(player, vars, manaBeforeAction);
          return false;
       }
       if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId()) && !"oda_charged_matchlock".equals(action.effectId())) {
@@ -619,6 +634,7 @@ public final class ServantCardTransformManager {
       if (!vars.servant_card_transformed || vars.servant_card_jump_charges <= 0) {
          return false;
       }
+      if ("shadow_hassan".equals(vars.servant_card_id) && !ServantCardShadowHassanSkills.canAttack(player)) return false;
       if (PlayerNoblePhantasmHelper.isChargingMovementLocked(player)) {
          return false;
       }
@@ -736,6 +752,20 @@ public final class ServantCardTransformManager {
          }
          return;
       }
+      if ("shadow_hassan".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
+         player.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+         return;
+      }
+      if ("fanatic_assassin".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
+         player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
+         player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+         return;
+      }
       if ("medea".equals(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.HEAD)), false, false));
          player.setItemSlot(EquipmentSlot.CHEST, markGeneratedItem(new ItemStack(ModItems.getServantCardArmor(servantId, EquipmentSlot.CHEST)), false, false));
@@ -761,6 +791,7 @@ public final class ServantCardTransformManager {
          || "li_shuwen".equals(servantId)
          || "oda_nobunaga".equals(servantId)
          || "ushiwakamaru_rider".equals(servantId);
+
    }
 
    private static ItemStack generatedArmor(String servantId, EquipmentSlot slot) {
@@ -772,7 +803,8 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean servantCardHasLegArmor(String servantId) {
-      return !"medea".equals(servantId) && !"cursed_arm_hassan".equals(servantId);
+      return !"medea".equals(servantId) && !"cursed_arm_hassan".equals(servantId)
+         && !"fanatic_assassin".equals(servantId);
    }
 
    private static boolean tickJumpRecovery(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -1196,6 +1228,23 @@ public final class ServantCardTransformManager {
          case "pale_rider_death_pulse" -> { if (!ServantCardPaleRiderSkills.deathPulse(player)) return false; }
          case "pale_rider_underworld" -> { if (!ServantCardPaleRiderSkills.toggleUnderworld(player)) return false; }
          case "pale_rider_calamity" -> { if (!ServantCardPaleRiderSkills.toggleCalamity(player)) return false; }
+         case "shadow_hassan_concealment" -> { if (!ServantCardShadowHassanSkills.toggleConcealment(player)) return false; }
+         case "shadow_hassan_lantern" -> { if (!ServantCardShadowHassanSkills.performShadowLantern(player, vars)) return false; }
+         case "shadow_hassan_wandering" -> { if (!ServantCardShadowHassanSkills.performShadowWandering(player)) return false; }
+         case "shadow_hassan_ambush" -> { if (!ServantCardShadowHassanSkills.performShadowAmbush(player)) return false; }
+         case "shadow_hassan_bind" -> { if (!ServantCardShadowHassanSkills.performShadowBind(player)) return false; }
+         case "shadow_hassan_flurry" -> { if (!ServantCardShadowHassanSkills.performShadowFlurry(player)) return false; }
+         case "shadow_hassan_retreat" -> { if (!ServantCardShadowHassanSkills.performShadowRetreat(player)) return false; }
+         case "shadow_hassan_meditative_sensitivity" -> { if (!ServantCardShadowHassanSkills.performMeditativeSensitivity(player)) return false; }
+         case "fanatic_concealment" -> ServantCardFanaticAssassinSkills.performConcealment(player);
+         case "fanatic_heartbeat" -> { if (!ServantCardFanaticAssassinSkills.performHeartbeat(player)) return false; }
+         case "fanatic_marrow" -> { if (!ServantCardFanaticAssassinSkills.performMarrow(player)) return false; }
+         case "fanatic_hair" -> { if (!ServantCardFanaticAssassinSkills.performHair(player)) return false; }
+         case "fanatic_temperature" -> ServantCardFanaticAssassinSkills.performTemperature(player);
+         case "fanatic_nerves" -> ServantCardFanaticAssassinSkills.performNerves(player);
+         case "fanatic_computer" -> { if (!ServantCardFanaticAssassinSkills.performComputer(player)) return false; }
+         case "fanatic_toxin" -> ServantCardFanaticAssassinSkills.performToxin(player);
+         case "fanatic_jinn" -> { if (!ServantCardFanaticAssassinSkills.performJinn(player)) return false; }
          case "ushiwakamaru_tengu_strategy" -> ServantCardUshiwakamaruSkills.performTenguStrategy(player);
          case "ushiwakamaru_charisma" -> ServantCardUshiwakamaruSkills.performCharisma(player);
          case "ushiwakamaru_moonlit_step" -> ServantCardUshiwakamaruSkills.performMoonlitStep(player);

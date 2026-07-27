@@ -76,6 +76,10 @@ public class ModEventBusEvents {
       event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PARACELSUS.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PALE_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.SHADOW_HASSAN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), Mob.createMobAttributes().build());
+      event.put(ModEntities.FANATIC_ASSASSIN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.FANATIC_ASSASSIN_JINN.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity.createAttributes().build());
       event.put(ModEntities.RAT_SWARM.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity.createAttributes().build());
       event.put(ModEntities.PALE_RIDER_CROW.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity.createAttributes().build());
       event.put(ModEntities.SOUL_ECHO.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity.createAttributes().build());

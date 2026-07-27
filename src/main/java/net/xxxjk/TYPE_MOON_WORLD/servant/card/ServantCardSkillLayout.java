@@ -70,6 +70,29 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Zabaniya", "zabaniya", 80.0, 1400);
             default -> null;
          };
+         case "fanatic_assassin" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Presence Concealment A-", "fanatic_concealment", 15.0, 300);
+            case 1 -> new ServantCardSkillAction("Delusional Heartbeat", "fanatic_heartbeat", 25.0, 600);
+            case 2 -> new ServantCardSkillAction("Delusional Marrow", "fanatic_marrow", 20.0, 600);
+            case 3 -> new ServantCardSkillAction("Delusional Hair", "fanatic_hair", 15.0, 600);
+            case 4 -> new ServantCardSkillAction("Delusional Temperature", "fanatic_temperature", 15.0, 600);
+            case 5 -> new ServantCardSkillAction("Delusional Nerves", "fanatic_nerves", 10.0, 600);
+            case 6 -> new ServantCardSkillAction("Delusional Computer", "fanatic_computer", 20.0, 600);
+            case 7 -> new ServantCardSkillAction("Delusional Toxin", "fanatic_toxin", 15.0, 600);
+            case 8 -> new ServantCardSkillAction("Delusional Jinn", "fanatic_jinn", 30.0, 600);
+            default -> null;
+         };
+         case "shadow_hassan" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Presence Concealment EX", "shadow_hassan_concealment", 0.0, 0);
+            case 1 -> new ServantCardSkillAction("Shadow Lantern A", "shadow_hassan_lantern", 0.0, 200);
+            case 2 -> new ServantCardSkillAction("Shadow Wandering A", "shadow_hassan_wandering", 15.0, 100);
+            case 3 -> new ServantCardSkillAction("Shadow Ambush", "shadow_hassan_ambush", 20.0, 120);
+            case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
+            case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
+            case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
+            case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
+            default -> null;
+         };
          case "emiya_archer" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Twin Flurry", "twin_flurry", 18.0, 20);
             case 0 -> new ServantCardSkillAction("Project Kanshou and Bakuya", "emiya_kb", 10.0, 20);
