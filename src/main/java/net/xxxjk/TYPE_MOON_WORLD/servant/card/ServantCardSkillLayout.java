@@ -152,7 +152,7 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction(crouching ? "大规模王之宝库" : "王之宝库", crouching ? "gilgamesh_grand_vault" : "gilgamesh_vault", crouching ? 80.0 : 34.0, crouching ? 200 : 100);
             case 3 -> new ServantCardSkillAction("环敌王之宝库", "gilgamesh_ring_vault", 55.0, 300);
             case 4 -> new ServantCardSkillAction("解毒的灵药", "gilgamesh_elixir", 45.0, 600);
-            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 100);
+            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 300);
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
             case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);
@@ -226,6 +226,12 @@ public final class ServantCardSkillLayout {
             case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
             case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
             case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
+            default -> null;
+         };
+         case "nightingale" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Nursing of Steel A", "nightingale_steel_nursing", 15.0, 200);
+            case 1 -> new ServantCardSkillAction("Angel's Cry EX", "nightingale_angel_cry", 10.0, 300);
+            case 9 -> new ServantCardSkillAction("Nightingale Pledge", "nightingale_pledge", 50.0, 600);
             default -> null;
          };
          default -> null;

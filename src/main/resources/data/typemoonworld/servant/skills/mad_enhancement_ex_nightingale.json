@@ -1,0 +1,9 @@
+{
+  "id": "mad_enhancement_ex_nightingale",
+  "display_name": "Mad Enhancement EX",
+  "display_name_zh": "狂化 EX",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
+  "effects": [{"effect_type": "mad_enhancement", "params": {"damage_bonus": 0.25, "obedience_penalty": 0.0}}],
+  "description": "All regular damage is multiplied by 1.25.",
+  "description_zh": "所有常规伤害乘以1.25。"
+}

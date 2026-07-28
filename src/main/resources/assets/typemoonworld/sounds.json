@@ -598,5 +598,21 @@
     "arash_voice_stella_short": {
       "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.stella",
       "sounds": [{"name": "typemoonworld:voice/arash/stella_short", "stream": true}]
+    },
+    "nightingale_voice_attack": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.nightingale.attack",
+      "sounds": ["typemoonworld:voice/nightingale/attack1", "typemoonworld:voice/nightingale/attack2", "typemoonworld:voice/nightingale/attack3"]
+    },
+    "nightingale_voice_fail": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.nightingale.fail",
+      "sounds": ["typemoonworld:voice/nightingale/fail1", "typemoonworld:voice/nightingale/fail2"]
+    },
+    "nightingale_voice_victory": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.nightingale.victory",
+      "sounds": ["typemoonworld:voice/nightingale/victory1", "typemoonworld:voice/nightingale/victory2", "typemoonworld:voice/nightingale/victory3", "typemoonworld:voice/nightingale/victory4"]
+    },
+    "nightingale_voice_np": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.nightingale.np",
+      "sounds": [{"name": "typemoonworld:voice/nightingale/np", "stream": true}]
     }
 }

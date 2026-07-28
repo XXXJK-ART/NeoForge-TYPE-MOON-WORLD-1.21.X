@@ -36,6 +36,7 @@ public final class ServantCardVoiceHelper {
          case "paracelsus" -> ModSounds.PARACELSUS_VOICE_ATTACK.get();
          case "ushiwakamaru_rider" -> ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get();
          case "arash" -> ModSounds.ARASH_VOICE_ATTACK.get();
+         case "nightingale" -> ModSounds.NIGHTINGALE_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }

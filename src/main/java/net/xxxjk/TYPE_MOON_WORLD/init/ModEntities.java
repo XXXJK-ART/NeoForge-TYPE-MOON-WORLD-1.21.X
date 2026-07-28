@@ -13,6 +13,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BlackKeyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.NightingaleBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -79,6 +80,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanDeathShadowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
@@ -476,6 +478,9 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<PaleRiderEntity>> PALE_RIDER = ENTITY_TYPES.register(
       "pale_rider", () -> Builder.of(PaleRiderEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("pale_rider")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<NightingaleEntity>> NIGHTINGALE = ENTITY_TYPES.register(
+      "nightingale", () -> Builder.of(NightingaleEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("nightingale")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<ShadowHassanEntity>> SHADOW_HASSAN = ENTITY_TYPES.register(
       "shadow_hassan", () -> Builder.of(ShadowHassanEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).build("shadow_hassan")
    );
@@ -546,6 +551,16 @@ public class ModEntities {
          .clientTrackingRange(32)
          .updateInterval(1)
          .build("contender_bullet")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NightingaleBulletEntity>> NIGHTINGALE_BULLET = ENTITY_TYPES.register(
+      "nightingale_bullet",
+      () -> Builder.<NightingaleBulletEntity>of(
+            (entityType, level) -> new NightingaleBulletEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.12F, 0.12F)
+         .clientTrackingRange(32)
+         .updateInterval(1)
+         .build("nightingale_bullet")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RedSkeletonHajunEntity>> RED_SKELETON_HAJUN = ENTITY_TYPES.register(
       "red_skeleton_hajun",

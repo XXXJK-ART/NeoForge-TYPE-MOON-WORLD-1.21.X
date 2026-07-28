@@ -55,6 +55,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN);
                         output.accept(ModItems.SERVANT_CARD_ARASH);
+                        output.accept(ModItems.SERVANT_CARD_NIGHTINGALE);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
@@ -93,6 +94,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_LEGS);
                     }).build());
 
     public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
@@ -227,6 +230,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.PARACELSUS_SWORD);
                         output.accept(ModItems.MERCURY_SWORD);
                         output.accept(ModItems.THOMPSON_CONTENDER);
+                        output.accept(ModItems.NIGHTINGALE_GUN);
                         output.accept(ModItems.BLACK_KEY);
                         output.accept(ModItems.EXCALIBUR_GALLATIN);
                         output.accept(ModBlocks.MURAMASA_BLOCK);
@@ -379,6 +383,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                         output.accept(ModItems.PARACELSUS_SPAWN_EGG);
                         output.accept(ModItems.PALE_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.NIGHTINGALE_SPAWN_EGG);
                         output.accept(ModItems.SHADOW_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
                         output.accept(ModItems.ARASH_SPAWN_EGG);

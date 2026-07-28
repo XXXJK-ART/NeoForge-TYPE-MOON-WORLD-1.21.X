@@ -1,0 +1,7 @@
+{
+  "id": "angel_cry_ex", "display_name": "Angel's Cry EX", "display_name_zh": "天使的呼声 EX",
+  "type": "active", "mp_cost": 10, "cooldown_ticks": 300, "duration_ticks": 400,
+  "effects": [{"effect_type": "damage_and_speed_buff", "params": {"damage_multiplier": 1.3, "attack_speed_bonus": 0.2, "range": 15.0}}],
+  "description": "Grants 30% damage and 20% attack/action speed for 20 seconds.",
+  "description_zh": "持续20秒，伤害提高30%，攻击与动作速度提高20%。"
+}

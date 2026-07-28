@@ -284,6 +284,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          .add(Attributes.MOVEMENT_SPEED, 0.2)
          .add(Attributes.STEP_HEIGHT, 3.0)
          .add(Attributes.ATTACK_DAMAGE, 5.0)
+         .add(Attributes.ATTACK_SPEED, 4.0)
          .add(Attributes.ARMOR, 4.0)
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
          .add(Attributes.FOLLOW_RANGE, 96.0)

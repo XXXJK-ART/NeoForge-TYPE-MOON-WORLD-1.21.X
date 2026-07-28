@@ -29,6 +29,15 @@ class ServantCardSkillLayoutTest {
    }
 
    @Test
+   void gilgameshDivineShieldMatchesItsFifteenSecondDuration() {
+      ServantCardSkillAction action = ServantCardSkillLayout.actionFor("gilgamesh", 5, false);
+      assertNotNull(action);
+      assertEquals("gilgamesh_divine_shield", action.effectId());
+      assertEquals(30.0, action.mpCost());
+      assertEquals(300, action.cooldownTicks());
+   }
+
+   @Test
    void ushiwakamaruSkillsMatchTheRequestedLayout() {
       double[] costs = {25.0, 15.0, 6.0, 8.0, 15.0, 50.0, 50.0, 100.0, 50.0, 150.0};
       int[] cooldowns = {400, 600, 140, 120, 200, 600, 600, 600, 600, 600};

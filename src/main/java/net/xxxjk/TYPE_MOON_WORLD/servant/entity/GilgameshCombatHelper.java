@@ -11,6 +11,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -25,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
@@ -52,6 +54,10 @@ public final class GilgameshCombatHelper {
    private static final String NEXT_COMBAT_VOICE = "GilgameshNextCombatVoice";
    private static final String NEXT_COMBAT_VOICE_INDEX = "GilgameshNextCombatVoiceIndex";
    private static final String NEXT_PROJECTION_DUEL = "GilgameshNextProjectionDuel";
+   private static final String LAST_DIVINE_SHIELD = "GilgameshLastDivineShield";
+   private static final long DIVINE_SHIELD_COOLDOWN = GilgameshDivineShield.DURATION_TICKS;
+   private static final double DIVINE_SHIELD_MP_COST = 30.0;
+   private static final double DIVINE_SHIELD_DETECTION_RANGE = 24.0;
    private static final long PROJECTION_DUEL_COOLDOWN = 30L * 20L;
    private static final float PROJECTION_DUEL_CHANCE = 0.18F;
    private static final int PROJECTION_DUEL_ROUNDS = 12;
@@ -78,6 +84,8 @@ public final class GilgameshCombatHelper {
       if (!(entity.level() instanceof ServerLevel level)) return;
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
+      GilgameshDivineShield.tick(entity);
+      tryActivateDivineShield(entity, level, data, now);
       if (!data.getBoolean("GilgameshPassivesInitialized")) {
          data.putBoolean("GilgameshPassivesInitialized", true);
          data.putFloat("MagicResistanceDamageReduction", 0.20F);
@@ -170,6 +178,33 @@ public final class GilgameshCombatHelper {
          living.removeEffect(MobEffects.INVISIBILITY);
          living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
       }
+   }
+
+   private static void tryActivateDivineShield(GilgameshEntity entity, ServerLevel level, CompoundTag data, long now) {
+      if (GilgameshDivineShield.isActive(entity) || entity.getCurrentMp() < DIVINE_SHIELD_MP_COST
+         || data.contains(LAST_DIVINE_SHIELD) && now - data.getLong(LAST_DIVINE_SHIELD) < DIVINE_SHIELD_COOLDOWN) {
+         return;
+      }
+      boolean incomingProjectile = !level.getEntitiesOfClass(
+         Projectile.class,
+         entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),
+         projectile -> isIncomingHostileProjectile(entity, projectile)
+      ).isEmpty();
+      if (!incomingProjectile) return;
+
+      entity.setCurrentMp(entity.getCurrentMp() - DIVINE_SHIELD_MP_COST);
+      data.putLong(LAST_DIVINE_SHIELD, now);
+      GilgameshDivineShield.activate(entity);
+   }
+
+   private static boolean isIncomingHostileProjectile(GilgameshEntity entity, Projectile projectile) {
+      if (!projectile.isAlive() || projectile.getOwner() == entity) return false;
+      Entity owner = projectile.getOwner();
+      if (owner != null && (entity.isAlliedTo(owner) || owner.isAlliedTo(entity))) return false;
+
+      Vec3 motion = projectile.getDeltaMovement();
+      Vec3 towardGilgamesh = entity.getBoundingBox().getCenter().subtract(projectile.position());
+      return motion.lengthSqr() < 1.0E-6 || motion.dot(towardGilgamesh) > 0.0;
    }
 
    public static boolean isFlying(GilgameshEntity entity) {

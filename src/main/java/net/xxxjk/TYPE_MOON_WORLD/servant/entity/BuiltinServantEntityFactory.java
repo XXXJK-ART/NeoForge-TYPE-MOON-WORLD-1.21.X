@@ -29,6 +29,10 @@ public final class BuiltinServantEntityFactory {
          && ArashEntity.SERVANT_KEY.equals(servantId.getPath())) {
          return ModEntities.ARASH.get().create(level);
       }
+      if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
+         && NightingaleEntity.SERVANT_KEY.equals(servantId.getPath())) {
+         return ModEntities.NIGHTINGALE.get().create(level);
+      }
       GenericServantEntity generic = ModEntities.GENERIC_SERVANT.get().create(level);
       if (generic != null) {
          generic.setServantId(servantId.toString());

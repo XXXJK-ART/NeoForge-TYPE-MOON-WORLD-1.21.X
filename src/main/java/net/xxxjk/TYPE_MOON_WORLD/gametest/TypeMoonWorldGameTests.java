@@ -34,8 +34,8 @@ public final class TypeMoonWorldGameTests {
       helper.assertTrue(ServantDataRegistry.size() > 0, "servant definitions were not loaded");
       helper.assertTrue(ServantSkillDataRegistry.all().size() >= 80, "skill definitions were not loaded");
       helper.assertTrue(ServantAiDefinitionRegistry.all().size() >= 10, "AI definitions were not loaded");
-      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionRegistry.all().size() == 19,
-         "all 19 servant action profiles were not loaded");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionRegistry.all().size() == 20,
+         "all 20 servant action profiles were not loaded");
       helper.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20)

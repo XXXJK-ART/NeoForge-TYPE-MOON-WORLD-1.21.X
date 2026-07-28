@@ -1,0 +1,10 @@
+{
+  "id": "nightingale_pledge",
+  "display_name": "Nightingale Pledge",
+  "display_name_zh": "我将根绝一切毒物，一切害物",
+  "rank": "C+", "type": "anti_army", "mp_cost": 50, "cooldown_ticks": 600,
+  "windup_ticks": 20, "duration_ticks": 100,
+  "effects": [{"effect_type": "absolute_safety_circle", "params": {"radius": 15.0, "heal": 200.0, "mana": 50.0, "noble_phantasm_damage_multiplier": 0.5}}],
+  "description": "Creates a fixed absolute safety circle after a one-second interruptible chant.",
+  "description_zh": "经过1秒可打断前摇，在固定位置展开半径15格、持续5秒的绝对安全圈。"
+}

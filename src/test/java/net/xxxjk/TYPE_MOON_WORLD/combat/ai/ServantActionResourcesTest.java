@@ -16,7 +16,7 @@ class ServantActionResourcesTest {
    private static final Path ACTIONS = Path.of("src/main/resources/data/typemoonworld/servant/actions");
 
    @Test
-   void allNineteenProfilesDecodeAndExerciseRuntimeFields() throws Exception {
+   void allTwentyProfilesDecodeAndExerciseRuntimeFields() throws Exception {
       Set<String> servants = new HashSet<>();
       try (var paths = Files.list(ACTIONS)) {
          for (Path path : paths.filter(file -> file.toString().endsWith(".json")).toList()) {
@@ -32,10 +32,11 @@ class ServantActionResourcesTest {
             }
          }
       }
-      assertEquals(19, servants.size());
+      assertEquals(20, servants.size());
       assertTrue(servants.contains("arash"));
       assertTrue(servants.contains("artoria_pendragon"));
       assertTrue(servants.contains("gilgamesh"));
+      assertTrue(servants.contains("nightingale"));
    }
 
    @Test

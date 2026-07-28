@@ -47,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GenericServantSummonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardReleaseItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantMasterContractItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NightingaleGunItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
 
@@ -300,6 +301,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER = registerServantCard("ushiwakamaru_rider");
     public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN = registerServantCard("fanatic_assassin");
     public static final DeferredItem<Item> SERVANT_CARD_ARASH = registerServantCard("arash");
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE = registerServantCard("nightingale");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -342,6 +344,8 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_CHEST = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_CHEST = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -850,6 +854,8 @@ public class ModItems {
                             .build())));
     public static final DeferredItem<Item> THOMPSON_CONTENDER = ITEMS.register("thompson_contender",
             () -> new ThompsonContenderItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> NIGHTINGALE_GUN = ITEMS.register("nightingale_gun",
+            () -> new NightingaleGunItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> BLACK_KEY = ITEMS.register("black_key",
             () -> new BlackKeyItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
@@ -952,6 +958,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PARACELSUS, 0xA9E7FF, 0xFFD36A));
     public static final DeferredItem<Item> PALE_RIDER_SPAWN_EGG = ITEMS.register("pale_rider_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PALE_RIDER, 0x17191C, 0xC7CBD1));
+    public static final DeferredItem<Item> NIGHTINGALE_SPAWN_EGG = ITEMS.register("nightingale_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NIGHTINGALE, 0xA73A45, 0xF3E7DC));
     public static final DeferredItem<Item> SHADOW_HASSAN_SPAWN_EGG = ITEMS.register("shadow_hassan_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SHADOW_HASSAN, 0x080808, 0xE8E4DD));
     public static final DeferredItem<Item> FANATIC_ASSASSIN_SPAWN_EGG = ITEMS.register("fanatic_assassin_spawn_egg",
@@ -1015,6 +1023,7 @@ public class ModItems {
             case "fanatic_assassin" -> head ? SERVANT_CARD_FANATIC_ASSASSIN_HEAD.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
+            case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

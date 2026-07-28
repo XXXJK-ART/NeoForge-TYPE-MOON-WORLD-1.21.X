@@ -105,6 +105,9 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get());
+      } else if (isNightingale(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_ATTACK.get());
       }
    }
 
@@ -172,6 +175,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.PARACELSUS_VOICE_VICTORY.get());
       } else if (isUshiwakamaru(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_VICTORY.get());
+      } else if (isNightingale(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_VICTORY.get());
       }
    }
 
@@ -211,6 +216,14 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.PARACELSUS_VOICE_FAIL.get());
       } else if (isUshiwakamaru(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_FAIL.get());
+      } else if (isNightingale(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_FAIL.get());
+      }
+   }
+
+   public static void tryPlayNightingaleNp(ServantEntity servant) {
+      if (isNightingale(servant)) {
+         playVoiceForced(servant, "nightingale_np", 1.15F, 1.0F, ModSounds.NIGHTINGALE_VOICE_NP.get());
       }
    }
 
@@ -529,5 +542,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isParacelsus(ServantEntity servant) {
       return servant != null && ParacelsusEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isNightingale(ServantEntity servant) {
+      return servant != null && NightingaleEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

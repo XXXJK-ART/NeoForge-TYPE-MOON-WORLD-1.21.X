@@ -18,6 +18,7 @@ public enum ServantTraitTag {
    HUMAN("human"),
    HUMANOID("humanoid"),
    LIVING_HUMAN("living_human"),
+   HUMAN_KIND("human_kind"),
    HUMAN_THREAT("human_threat"),
    SAPIENT("sapient"),
 
@@ -60,6 +61,9 @@ public enum ServantTraitTag {
    STAR_BORN("star_born"),
    CELESTIAL("celestial"),
    WITCH("witch"),
+   NURSE("nurse"),
+   LAMP_ANGEL("lamp_angel"),
+   CRIMEAN_ANGEL("crimean_angel"),
    EA_SPECIAL("ea_special"),
    GENDERLESS("genderless"),
    CONCEPTUAL_EXISTENCE("conceptual_existence"),

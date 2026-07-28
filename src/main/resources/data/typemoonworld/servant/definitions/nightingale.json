@@ -1,0 +1,43 @@
+{
+  "id": "nightingale",
+  "display_name": "Florence Nightingale",
+  "display_name_zh": "弗洛伦斯·南丁格尔",
+  "class_type": "berserker",
+  "faction": "human",
+  "traits": ["servant", "female", "berserker", "human", "humanoid", "living_human", "human_kind", "lawful", "good", "nurse", "lamp_angel", "crimean_angel"],
+  "parameters": {
+    "endurance": "A", "endurance_plus": true,
+    "strength": "B", "strength_plus": true,
+    "agility": "B", "agility_plus": true,
+    "magic": "D", "magic_plus": true,
+    "luck": "A", "luck_plus": true
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/nightingale.geo.json",
+    "texture": "typemoonworld:textures/entity/nightingale.png",
+    "animation": "typemoonworld:animations/nightingale.animation.json",
+    "animations": {
+      "idle": "animation.nightingale.idle",
+      "walk": "animation.nightingale.walk",
+      "shoot": "animation.nightingale.shoot",
+      "heal": "animation.nightingale.heal",
+      "buff": "animation.nightingale.buff",
+      "noble_phantasm": "animation.nightingale.noble_phantasm"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
+    "hand_item_offset": {"x": 0.0, "y": -0.75, "z": -0.15},
+    "default_weapon": "typemoonworld:nightingale_gun",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["shoot", "heal", "buff", "noble_phantasm"]
+  },
+  "skills": ["mad_enhancement_ex_nightingale", "steel_nursing_a", "human_understanding_a", "angel_cry_ex"],
+  "noble_phantasm": "nightingale_pledge",
+  "personality": {
+    "obedience": "compliant", "principle": "orderly", "morality": "good",
+    "social": "normal", "combat": "balanced", "starting_favor": 55.0
+  },
+  "ai_config": "nightingale_ai",
+  "spawn_egg": {"primary": 10959429, "secondary": 15984604}
+}

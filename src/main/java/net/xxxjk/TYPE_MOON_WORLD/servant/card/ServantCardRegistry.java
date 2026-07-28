@@ -9,6 +9,7 @@ public final class ServantCardRegistry {
    public static final List<Entry> ENTRIES = List.of(
       new Entry("fanatic_assassin", "Fanatic (Assassin)", "\u72c2\u4fe1\u5b50\uff08Assassin\uff09", true),
       new Entry("arash", "Arash (Archer)", "\u963f\u62c9\u4ec0\uff08Archer\uff09", true),
+      new Entry("nightingale", "Florence Nightingale (Berserker)", "\u5357\u4e01\u683c\u5c14\uff08Berserker\uff09", true),
       new Entry("shadow_hassan", "Hassan of the Shadow", "\u5e7d\u5f0b\u4e4b\u54c8\u6851", false),
       new Entry("gilgamesh", "Gilgamesh", "Gilgamesh", true),
       new Entry("emiya_archer", "Emiya Archer", "卫宫", true),

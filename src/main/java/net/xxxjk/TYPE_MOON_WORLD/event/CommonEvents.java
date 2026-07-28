@@ -76,6 +76,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -83,6 +84,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -801,6 +803,19 @@ public class CommonEvents {
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
+      if (!fanaticDefensePiercing && !originBullet && servant instanceof GilgameshEntity gilgamesh) {
+         GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
+            gilgamesh, event.getSource(), event.getAmount()
+         );
+         if (shieldHit != null) {
+            event.setAmount(shieldHit.remainingDamage());
+            damage = event.getAmount();
+            if (shieldHit.remainingDamage() <= 0.0F) {
+               event.setCanceled(true);
+               return;
+            }
+         }
+      }
       if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
          if (!fanaticDefensePiercing
             && UshiwakamaruCombatHelper.tryAbsorbShieldDamage(ushiwakamaru, event.getSource(), event.getAmount())) {

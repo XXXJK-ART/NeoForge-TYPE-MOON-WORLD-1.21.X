@@ -42,6 +42,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArashRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EnkiduRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ChainsOfHeavenBindingRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ContenderBulletRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NightingaleBulletRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NightingaleRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BlackKeyProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HeraclesRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
@@ -262,6 +264,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), ParacelsusRenderer::new);
       event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.NIGHTINGALE.get(), NightingaleRenderer::new);
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN.get(), ShadowHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), ShadowHassanDeathShadowRenderer::new);
       event.registerEntityRenderer(ModEntities.FANATIC_ASSASSIN.get(), FanaticAssassinRenderer::new);
@@ -276,6 +279,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.CONTENDER_BULLET.get(), ContenderBulletRenderer::new);
+      event.registerEntityRenderer(ModEntities.NIGHTINGALE_BULLET.get(), NightingaleBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.BLACK_KEY_PROJECTILE.get(), BlackKeyProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);
       event.registerEntityRenderer(ModEntities.CHAINS_OF_HEAVEN_BINDING.get(), ChainsOfHeavenBindingRenderer::new);

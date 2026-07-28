@@ -1,0 +1,14 @@
+{
+  "id": "nightingale_ai",
+  "movement": {"follow_distance": 5.0, "wander_radius": 10.0, "likes_high_places": false},
+  "combat": {
+    "preferred_attack_distance": 13.0,
+    "retreat_health_ratio": 0.0,
+    "melee_preference": 0.15,
+    "berserk_health_ratio": 0.0,
+    "berserk_damage_multiplier": 1.0
+  },
+  "social": {"talk_interval": 600, "greeting_probability": 0.1},
+  "command": {"base_obedience_rate": 0.85, "favor_multiplier": 0.0},
+  "environment": {"liked_biomes": [], "disliked_biomes": [], "preferred_weather": "any"}
+}

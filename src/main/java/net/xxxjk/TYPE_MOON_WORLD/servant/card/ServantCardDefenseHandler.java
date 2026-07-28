@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
@@ -129,6 +130,18 @@ public final class ServantCardDefenseHandler {
       }
       if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
          return true;
+      }
+      if ("gilgamesh".equals(vars.servant_card_id)) {
+         GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
+            player, event.getSource(), event.getAmount()
+         );
+         if (shieldHit != null) {
+            event.setAmount(shieldHit.remainingDamage());
+            if (shieldHit.remainingDamage() <= 0.0F) {
+               event.setCanceled(true);
+               return true;
+            }
+         }
       }
       if (!divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
          float projected = player.getHealth() - event.getAmount();
@@ -325,10 +338,7 @@ public final class ServantCardDefenseHandler {
    }
 
    public static boolean isSpecialNoblePhantasmDamage(DamageSource source, float originalDamage) {
-      return (source != null && source.is(net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY))
-         || isArtoriaExcaliburDamage(source)
-         || isGaeBulgArmyDamage(source)
-         || isMajorBrokenPhantasmExplosion(source, originalDamage);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, originalDamage);
    }
 
    private static boolean isPoisonOrWitherDamage(DamageSource source) {

@@ -266,6 +266,7 @@ public final class ServantCardTransformManager {
          }
          case "ushiwakamaru_rider" -> ServantCardUshiwakamaruSkills.tick(player, vars);
          case "arash" -> ServantCardArashSkills.tick(player, vars);
+         case "nightingale" -> ServantCardNightingaleSkills.tick(player, vars);
          default -> {
          }
       }
@@ -288,6 +289,7 @@ public final class ServantCardTransformManager {
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
       ServantCardArashSkills.clear(player);
+      ServantCardNightingaleSkills.clear(player, false);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -404,6 +406,9 @@ public final class ServantCardTransformManager {
          return false;
       }
       if (ServantCardArashSkills.isPlayerChanting(player)) {
+         return false;
+      }
+      if (ServantCardNightingaleSkills.isCasting(player)) {
          return false;
       }
       if (ServantMasterCarryService.isCarryingMaster(player)) {
@@ -542,6 +547,9 @@ public final class ServantCardTransformManager {
       if ("arash_stella".equals(action.effectId())) {
          return ServantCardArashSkills.performStellaAction(player, vars, action);
       }
+      if ("nightingale_pledge".equals(action.effectId())) {
+         return ServantCardNightingaleSkills.performNoblePhantasmAction(player, vars, action);
+      }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
       ServantCardManaService.ManaSnapshot manaBeforeAction = ServantCardManaService.snapshot(player, vars);
       boolean paid = np ? ServantCardManaService.consumeNoblePhantasm(player, vars, mpCost) : ServantCardManaService.consume(player, vars, mpCost);
@@ -590,6 +598,8 @@ public final class ServantCardTransformManager {
          ModSounds.EMIYA_ARCHER_VOICE_UBW.get(),
          ModSounds.EMIYA_ARCHER_VOICE_UBW_SHORT.get()
       );
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
+         player, "nightingale", ModSounds.NIGHTINGALE_VOICE_NP.get(), null);
    }
 
    public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {
@@ -1038,6 +1048,12 @@ public final class ServantCardTransformManager {
    private static boolean performAction(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServantCardSkillAction action) {
       String id = action.effectId();
       switch (id) {
+         case "nightingale_steel_nursing" -> {
+            if (!ServantCardNightingaleSkills.performSteelNursing(player)) return false;
+         }
+         case "nightingale_angel_cry" -> {
+            if (!ServantCardNightingaleSkills.performAngelCry(player)) return false;
+         }
          case "arash_arrow_rain" -> {
             if (!ServantCardArashSkills.performArrowRain(player)) return false;
          }
