@@ -24,6 +24,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
@@ -984,6 +986,9 @@ public final class ServantCombatSystem {
 
    private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
       double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      if (entity instanceof ArashEntity) {
+         return ArashCombatRules.boostedPoiseRecovery(poiseRegen);
+      }
       if (entity instanceof GilgameshEntity) {
          return poiseRegen * 2.0;
       }
@@ -992,6 +997,9 @@ public final class ServantCombatSystem {
 
    private static double adjustedStaminaRegenPerSecond(ServantParams params, ServantEntity entity) {
       double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
+      if (entity instanceof ArashEntity) {
+         return ArashCombatRules.boostedDefenseRecovery(staminaRegen);
+      }
       return entity instanceof GilgameshEntity ? staminaRegen * 1.75 : staminaRegen;
    }
 }

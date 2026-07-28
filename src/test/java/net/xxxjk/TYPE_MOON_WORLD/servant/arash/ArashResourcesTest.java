@@ -39,6 +39,30 @@ class ArashResourcesTest {
    }
 
    @Test
+   void doubledStoutEffectsAreSharedByNpcAndCard() throws Exception {
+      String rules = Files.readString(JAVA.resolve("servant/entity/ArashCombatRules.java"));
+      String npc = Files.readString(JAVA.resolve("servant/entity/ArashEntity.java"));
+      String card = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
+      String npcCombat = Files.readString(JAVA.resolve("servant/combat/ServantCombatSystem.java"));
+      String cardDefense = Files.readString(JAVA.resolve("servant/card/ServantCardDefenseHandler.java"));
+      String commonSkills = Files.readString(JAVA.resolve("servant/skill/CommonServantSkills.java"));
+      assertTrue(rules.contains("STOUT_DAMAGE_MULTIPLIER = 0.70F"));
+      assertTrue(npc.contains("amount *= ArashCombatRules.STOUT_DAMAGE_MULTIPLIER"));
+      assertTrue(card.contains("event.getAmount() * (float)ArashCombatRules.STOUT_DAMAGE_MULTIPLIER"));
+      assertTrue(npcCombat.contains("entity instanceof ArashEntity"));
+      assertTrue(npcCombat.contains("ArashCombatRules.boostedDefenseRecovery"));
+      assertTrue(npcCombat.contains("ArashCombatRules.boostedPoiseRecovery"));
+      assertTrue(cardDefense.contains("\"arash\".equals(vars.servant_card_id)"));
+      assertTrue(cardDefense.contains("ArashCombatRules.boostedDefenseRecovery"));
+      assertTrue(cardDefense.contains("ArashCombatRules.boostedPoiseRecovery"));
+      assertTrue(commonSkills.contains("StoutDefenseRecoveryMultiplier"));
+      assertTrue(commonSkills.contains("StoutPoiseRecoveryMultiplier"));
+      JsonObject skill = json("data/typemoonworld/servant/skills/stout_ex_arash.json");
+      assertTrue(skill.get("description_zh").getAsString().contains("防御恢复效率"));
+      assertTrue(skill.get("description_zh").getAsString().contains("韧度恢复效率"));
+   }
+
+   @Test
    void modelTexturesBowAndAnimationsAreValid() throws Exception {
       JsonObject bodyGeo = json("assets/typemoonworld/geo/arash.geo.json");
       JsonObject bodyDescription = bodyGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject().getAsJsonObject("description");
@@ -63,6 +87,12 @@ class ArashResourcesTest {
       for (String bone : List.of("body", "right arm", "bone2", "left arm", "bone6")) {
          assertTrue(bowShotBones.has(bone), "bow shot is missing animated bone " + bone);
       }
+      assertTrue(animations.getAsJsonObject("animation.arash.arrow_rain").getAsJsonObject("bones")
+         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.1").get(0).getAsDouble() <= -140.0);
+      assertTrue(animations.getAsJsonObject("animation.arash.energy_small").getAsJsonObject("bones")
+         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.08").get(0).getAsDouble() <= -110.0);
+      assertTrue(animations.getAsJsonObject("animation.arash.energy_large").getAsJsonObject("bones")
+         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.14").get(0).getAsDouble() <= -125.0);
       JsonObject root = animations.getAsJsonObject("animation.arash.idle").getAsJsonObject("bones").getAsJsonObject("bone");
       assertEquals(-3.0, root.getAsJsonArray("position").get(1).getAsDouble());
       assertEquals(0.88, root.getAsJsonArray("scale").get(0).getAsDouble());
@@ -80,8 +110,11 @@ class ArashResourcesTest {
       assertEquals("minecraft:item/template_spawn_egg",
          json("assets/typemoonworld/models/item/arash_spawn_egg.json").get("parent").getAsString());
       JsonObject sounds = json("assets/typemoonworld/sounds.json");
-      for (String event : List.of("attack", "fail", "victory", "stella")) assertTrue(sounds.has("arash_voice_" + event), event);
-      for (String file : List.of("attack1.ogg", "attack2.ogg", "attack3.ogg", "fail1.ogg", "fail2.ogg", "victory1.ogg", "victory2.ogg", "stella.ogg")) {
+      for (String event : List.of("attack", "fail", "victory", "stella", "stella_short")) {
+         assertTrue(sounds.has("arash_voice_" + event), event);
+      }
+      for (String file : List.of("attack1.ogg", "attack2.ogg", "attack3.ogg", "fail1.ogg", "fail2.ogg",
+         "victory1.ogg", "victory2.ogg", "stella.ogg", "stella_short.ogg")) {
          byte[] bytes = Files.readAllBytes(RESOURCES.resolve("assets/typemoonworld/sounds/voice/arash/" + file));
          assertTrue(bytes.length > 4, file);
          assertEquals("OggS", new String(bytes, 0, 4, StandardCharsets.US_ASCII), file);
@@ -126,12 +159,28 @@ class ArashResourcesTest {
    @Test
    void stellaImplementationContainsSafetyPersistenceAndTerrainContracts() throws Exception {
       String controller = Files.readString(JAVA.resolve("entity/ArashStellaControllerEntity.java"));
-      assertTrue(controller.contains("STELLA_FLIGHT_TICKS"));
+      int releaseStart = controller.indexOf("private void release(ServerLevel level, LivingEntity caster)");
+      int releaseEnd = controller.indexOf("public void forceReleaseForGameTest()", releaseStart);
+      assertTrue(releaseStart >= 0 && releaseEnd > releaseStart);
+      assertTrue(!controller.substring(releaseStart, releaseEnd).contains("stopChantSound"),
+         "the 38.83 second Stella voice must continue after the 35 second release");
+      assertTrue(controller.contains("profile.flightTicks()"));
       assertTrue(controller.contains("STELLA_PRELOAD_GRACE_TICKS"));
       assertTrue(controller.contains("CHUNK_TICKETS.forceChunk"));
       assertTrue(controller.contains("hasFriendlyInBlastPath"));
       assertTrue(controller.contains("insideWorldBorder"));
       assertTrue(controller.contains("putLongArray(\"Chunks\""));
+      assertTrue(controller.contains("putLongArray(\"ForcedChunks\""));
+      assertTrue(controller.contains("shouldFinishLongStellaVoice"));
+      assertTrue(controller.contains("stopLongChantSound"));
+      assertTrue(controller.contains("playShortStella"));
+      String controls = Files.readString(JAVA.resolve("init/TypeMoonWorldModKeyMappings.java"));
+      String manager = Files.readString(JAVA.resolve("servant/card/ServantCardTransformManager.java"));
+      assertTrue(controls.contains("\"arash\".equals(vars.servant_card_id) && slot == 9"));
+      assertTrue(manager.contains("ServantCardArashSkills.requestPlayerStellaRelease(player)"));
+      String cardSkills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
+      assertTrue(cardSkills.contains("player.setPos(anchorX, anchorY, anchorZ)"));
+      assertTrue(cardSkills.contains("player.setDeltaMovement(Vec3.ZERO)"));
       String terrain = Files.readString(JAVA.resolve("world/terrain/DeferredTerrainDestruction.java"));
       assertTrue(terrain.contains("queueAdvancingCylinder"));
       assertTrue(terrain.contains("currentSide * currentSide + currentY * currentY > radiusSqr"));
@@ -153,12 +202,22 @@ class ArashResourcesTest {
       assertTrue(combat.contains("findTacticalPosition"));
       assertTrue(combat.contains("applyMobileStrafe"));
       assertTrue(!combat.contains("doHurtTarget"));
+      assertTrue(!combat.contains("consumeArrow"));
+      assertTrue(!combat.contains("ARROW_REFILL_MANA"));
+      assertTrue(combat.contains("now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)"));
+      assertTrue(combat.contains("lockAttackFacing"));
+      assertTrue(combat.contains("arash.faceVector(offset)"));
+      String commonSkills = Files.readString(JAVA.resolve("servant/skill/CommonServantSkills.java"));
+      assertTrue(!commonSkills.contains("ArashVirtualArrows"));
    }
 
    @Test
    void playerBowUsesInstantAndTwoStageLoadedChunkArrows() throws Exception {
       String bow = Files.readString(JAVA.resolve("item/custom/ArashBowItem.java"));
       String arrow = Files.readString(JAVA.resolve("entity/ArashParticleArrowEntity.java"));
+      String aim = Files.readString(JAVA.resolve("servant/entity/ArashAimHelper.java"));
+      String combat = Files.readString(JAVA.resolve("servant/entity/ArashCombatHelper.java"));
+      String skills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       String client = Files.readString(JAVA.resolve("client/ServantCardClientEvents.java"));
       assertTrue(bow.contains("fireBasicArrow(serverLevel, player)"));
       assertTrue(bow.contains("CHARGED_ARROW_TICKS = 40"));
@@ -168,6 +227,24 @@ class ArashResourcesTest {
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));
       assertTrue(!arrow.contains("maxLifeTicks"));
       assertTrue(!arrow.contains("tickCount >"));
+      assertTrue(arrow.contains("addFlightParticle(GREEN, this.position())"));
+      assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_GREEN : CHARGED_GREEN, center)"));
+      assertTrue(arrow.contains("addParticle(particle, true"),
+         "Arash arrow trails must bypass the vanilla 32 block particle distance cutoff");
+      assertTrue(arrow.contains("terrainDestructionRadius(this.getVariant())"));
+      assertTrue(arrow.contains("queueExpandingSphere(level, impactPosition, terrainRadius, null)"));
+      assertTrue(arrow.contains("terrain.advanceTo(terrainRadius)"));
+      assertTrue(arrow.contains("terrain.seal()"));
+      assertTrue(bow.contains("ArashAimHelper.autoAimDirection"));
+      assertTrue(skills.contains("EntityUtils.getRayTraceTarget(player, ArashAimHelper.AUTO_AIM_RANGE)"));
+      assertTrue(skills.contains("ArashAimHelper.findTargetNearPoint"));
+      assertTrue(skills.contains("lookedAt.getLocation()"));
+      assertTrue(skills.contains("ArashAimHelper.autoAimDirection"));
+      assertTrue(combat.contains("ArashAimHelper.leadDirection"));
+      assertTrue(combat.contains("ArashAimHelper.predictionOffset"));
+      assertTrue(aim.contains("AUTO_AIM_ANGLE_DEGREES = 8.0"));
+      assertTrue(aim.contains("ARROW_RAIN_ASSIST_RADIUS = 12.0"));
+      assertTrue(aim.contains("target.getDeltaMovement()"));
       assertTrue(client.contains("ModItems.ARASH_BOW"));
       assertTrue(client.contains("float magnification = 2.0F + zoomSteps"));
    }

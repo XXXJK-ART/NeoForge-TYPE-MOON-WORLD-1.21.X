@@ -1967,6 +1967,7 @@
     "skill.typemoonworld.servant_card.arash_energy_large": "重蓄力箭",
     "skill.typemoonworld.servant_card.arash_stella": "流星一条",
     "message.typemoonworld.servant_card.arash_bow_required": "主手必须持有阿拉什的专属弓。",
-    "message.typemoonworld.servant_card.arash_stella_blocked": "当前方向无法安全释放流星一条。"
+    "message.typemoonworld.servant_card.arash_stella_blocked": "当前方向无法安全释放流星一条。",
+    "message.typemoonworld.servant_card.arash_stella_charge_too_short": "流星一条至少需要蓄力10秒。"
 }
 

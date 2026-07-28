@@ -13,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
@@ -58,8 +59,13 @@ public final class ArashStellaControllerEntity extends Entity {
    private Vec3 direction = new Vec3(0.0, 0.0, 1.0);
    private UUID casterId;
    private boolean playerCaster;
+   private boolean playerReleaseRequested;
+   private boolean waitForFullVoice;
+   private int releaseRequestTick = -1;
+   private int playerChargeTicks = ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;
    private String teamName = "";
    private final List<Long> chunks = new ArrayList<>();
+   private final Set<Long> forcedChunks = new HashSet<>();
    private final Set<UUID> allies = new HashSet<>();
    private final Set<UUID> lineHits = new HashSet<>();
    private transient DeferredTerrainDestruction.AdvancingCylinder cylinder;
@@ -98,6 +104,7 @@ public final class ArashStellaControllerEntity extends Entity {
       arash.setCurrentMp(arash.getCurrentMp() - 100.0);
       arash.getPersistentData().putBoolean(ArashEntity.TAG_STELLA_USED, true);
       arash.getPersistentData().putBoolean(ArashEntity.TAG_STELLA_CHANTING, true);
+      arash.faceVector(flat);
       arash.triggerNamedActionAnimation("stella_chant");
       level.addFreshEntity(controller);
       level.playSound(null, arash.blockPosition(), ModSounds.ARASH_VOICE_STELLA.get(), SoundSource.HOSTILE, 1.6F, 1.0F);
@@ -138,7 +145,7 @@ public final class ArashStellaControllerEntity extends Entity {
          living -> living == caster || caster.isAlliedTo(living) || living.isAlliedTo(caster))) {
          allies.add(living.getUUID());
       }
-      chunks.addAll(computeChunks(origin, direction));
+      chunks.addAll(computeChunks(origin, direction, ArashCombatRules.fullStellaProfile()));
    }
 
    @Override
@@ -165,23 +172,82 @@ public final class ArashStellaControllerEntity extends Entity {
       } else if (caster instanceof ArashEntity arash) {
          arash.getNavigation().stop();
          arash.setDeltaMovement(Vec3.ZERO);
+         arash.faceVector(direction);
       }
       spawnChantEffects(level, caster, stageTicks);
-      for (int requested = 0; requested < 2 && preloadIndex < chunks.size(); requested++) {
+      int chunksPerTick = playerCaster && playerReleaseRequested ? 16 : 2;
+      for (int requested = 0; requested < chunksPerTick && preloadIndex < chunks.size(); requested++) {
          long packed = chunks.get(preloadIndex++);
          CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), true, true);
+         forcedChunks.add(packed);
       }
       stageTicks++;
-      if (stageTicks < ArashCombatRules.STELLA_CHANT_TICKS) return;
-      if (preloadIndex < chunks.size()) {
-         if (stageTicks <= ArashCombatRules.STELLA_CHANT_TICKS + ArashCombatRules.STELLA_PRELOAD_GRACE_TICKS) return;
-         abort(level, true);
-         return;
+
+      if (playerCaster) {
+         if (!playerReleaseRequested && stageTicks >= ArashCombatRules.STELLA_VOICE_TICKS) {
+            playerReleaseRequested = true;
+            releaseRequestTick = stageTicks;
+            configurePlayerCharge(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
+         } else if (waitForFullVoice && stageTicks >= ArashCombatRules.STELLA_VOICE_TICKS) {
+            waitForFullVoice = false;
+            configurePlayerCharge(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
+         }
+         if (!playerReleaseRequested || waitForFullVoice) return;
+         if (preloadIndex < chunks.size()) {
+            if (stageTicks <= releaseRequestTick + ArashCombatRules.STELLA_PRELOAD_GRACE_TICKS) return;
+            abort(level, true);
+            return;
+         }
+      } else {
+         if (stageTicks < ArashCombatRules.STELLA_CHANT_TICKS) return;
+         if (preloadIndex < chunks.size()) {
+            if (stageTicks <= ArashCombatRules.STELLA_CHANT_TICKS + ArashCombatRules.STELLA_PRELOAD_GRACE_TICKS) return;
+            abort(level, true);
+            return;
+         }
       }
       release(level, caster);
    }
 
+   public boolean requestPlayerRelease(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level) || !playerCaster || stage != STAGE_CHANT
+         || casterId == null || !casterId.equals(player.getUUID())) return false;
+      if (playerReleaseRequested) return true;
+      if (!ArashCombatRules.canReleasePlayerStella(stageTicks)) {
+         player.displayClientMessage(Component.translatable(
+            "message.typemoonworld.servant_card.arash_stella_charge_too_short"), true);
+         return false;
+      }
+      playerReleaseRequested = true;
+      releaseRequestTick = stageTicks;
+      if (ArashCombatRules.shouldFinishLongStellaVoice(stageTicks)) {
+         waitForFullVoice = true;
+      } else {
+         playerChargeTicks = stageTicks;
+         configurePlayerCharge(playerChargeTicks);
+         stopLongChantSound(level);
+         playShortStella(level, player);
+         if (chunks.isEmpty()) release(level, player);
+      }
+      return true;
+   }
+
+   private void configurePlayerCharge(int chargeTicks) {
+      playerChargeTicks = Math.max(ArashCombatRules.PLAYER_STELLA_MIN_CHARGE_TICKS,
+         Math.min(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS, chargeTicks));
+      List<Long> required = computeChunks(origin, direction, stellaProfile());
+      chunks.clear();
+      for (long packed : required) if (!forcedChunks.contains(packed)) chunks.add(packed);
+      preloadIndex = 0;
+   }
+
+   private ArashCombatRules.StellaProfile stellaProfile() {
+      return playerCaster ? ArashCombatRules.playerStellaProfile(playerChargeTicks)
+         : ArashCombatRules.fullStellaProfile();
+   }
+
    private void release(ServerLevel level, LivingEntity caster) {
+      ArashCombatRules.StellaProfile profile = stellaProfile();
       released = true;
       stage = STAGE_FLIGHT;
       stageTicks = 0;
@@ -193,19 +259,20 @@ public final class ArashStellaControllerEntity extends Entity {
          ServantCardArashSkills.finishPlayerChant(player);
          ServantCardArashSkills.beginPlayerStellaSacrifice(player);
       }
-      stopChantSound(level);
       level.sendParticles(WHITE, origin.x, origin.y, origin.z, 140, 1.2, 1.2, 1.2, 0.28);
       level.sendParticles(GREEN, origin.x, origin.y, origin.z, 220, 1.8, 1.8, 1.8, 0.34);
       level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y, origin.z, 3, 0, 0, 0, 0);
       this.cylinder = DeferredTerrainDestruction.queueAdvancingCylinder(level, origin, direction,
-         ArashCombatRules.STELLA_LENGTH, ArashCombatRules.STELLA_TERRAIN_RADIUS,
-         ArashCombatRules.STELLA_SCAR_RADIUS, null);
+         profile.length(), profile.terrainRadius(), profile.scarRadius(), null);
    }
 
    public void forceReleaseForGameTest() {
       if (this.level() instanceof ServerLevel level && stage == STAGE_CHANT) {
          LivingEntity caster = getCaster(level);
-         if (caster != null && caster.isAlive()) release(level, caster);
+         if (caster != null && caster.isAlive()) {
+            if (playerCaster) configurePlayerCharge(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
+            release(level, caster);
+         }
       }
    }
 
@@ -218,21 +285,21 @@ public final class ArashStellaControllerEntity extends Entity {
    public boolean isInFlight() { return stage == STAGE_FLIGHT; }
 
    private void tickFlight(ServerLevel level) {
+      ArashCombatRules.StellaProfile profile = stellaProfile();
       if (cylinder == null) {
          cylinder = DeferredTerrainDestruction.queueAdvancingCylinder(level, origin, direction,
-            ArashCombatRules.STELLA_LENGTH, ArashCombatRules.STELLA_TERRAIN_RADIUS,
-            ArashCombatRules.STELLA_SCAR_RADIUS, null);
+            profile.length(), profile.terrainRadius(), profile.scarRadius(), null);
       }
-      double previous = ArashCombatRules.stellaDistanceAtTick(stageTicks);
+      double previous = profile.distanceAtTick(stageTicks);
       stageTicks++;
-      double current = ArashCombatRules.stellaDistanceAtTick(stageTicks);
+      double current = profile.distanceAtTick(stageTicks);
       cylinder.advanceTo(current);
       damageSegment(level, previous, current);
       Vec3 point = origin.add(direction.scale(current));
       this.setPos(point.x, point.y, point.z);
       spawnMeteorTrail(level, current);
-      if (stageTicks >= ArashCombatRules.STELLA_FLIGHT_TICKS) {
-         cylinder.advanceTo(ArashCombatRules.STELLA_LENGTH);
+      if (stageTicks >= profile.flightTicks()) {
+         cylinder.advanceTo(profile.length());
          cylinder.seal();
          stage = STAGE_EXPLOSION;
          stageTicks = 0;
@@ -241,14 +308,15 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    private void tickExplosion(ServerLevel level) {
-      Vec3 center = origin.add(direction.scale(ArashCombatRules.STELLA_LENGTH));
+      ArashCombatRules.StellaProfile profile = stellaProfile();
+      Vec3 center = origin.add(direction.scale(profile.length()));
       if (!finalDamageDone) {
          finalDamageDone = true;
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
-            new AABB(center, center).inflate(ArashCombatRules.STELLA_END_RADIUS), this::canDamage)) {
+            new AABB(center, center).inflate(profile.endRadius()), this::canDamage)) {
             if (target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).distanceToSqr(center)
-               <= ArashCombatRules.STELLA_END_RADIUS * ArashCombatRules.STELLA_END_RADIUS) {
-               target.hurt(level.damageSources().thrown(this, getCaster(level)), ArashCombatRules.STELLA_CORE_DAMAGE);
+               <= profile.endRadius() * profile.endRadius()) {
+               target.hurt(level.damageSources().thrown(this, getCaster(level)), profile.coreDamage());
             }
          }
          level.sendParticles(WHITE, center.x, center.y, center.z, 420, 4.0, 4.0, 4.0, 0.6);
@@ -257,28 +325,29 @@ public final class ArashStellaControllerEntity extends Entity {
          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 2.0, 2.0, 2.0, 0.0);
       }
       if (sphere == null) {
-         sphere = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)ArashCombatRules.STELLA_END_RADIUS,
+         sphere = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.round(profile.endRadius()),
             () -> { if (!this.isRemoved() && this.level() instanceof ServerLevel current) finish(current); });
       }
       stageTicks++;
-      sphere.advanceTo(ArashCombatRules.stellaExplosionRadiusAtTick(stageTicks));
-      if (stageTicks >= ArashCombatRules.STELLA_EXPLOSION_TICKS) sphere.seal();
+      sphere.advanceTo(profile.explosionRadiusAtTick(stageTicks));
+      if (stageTicks >= profile.explosionTicks()) sphere.seal();
       if (stageTicks % 2 == 0) {
-         double radius = ArashCombatRules.stellaExplosionRadiusAtTick(stageTicks);
+         double radius = profile.explosionRadiusAtTick(stageTicks);
          spawnSphereShell(level, center, radius);
       }
       if (sphere.isComplete()) finish(level);
    }
 
    private void damageSegment(ServerLevel level, double previous, double current) {
+      ArashCombatRules.StellaProfile profile = stellaProfile();
       Vec3 start = origin.add(direction.scale(Math.max(0.0, previous - 1.0)));
-      Vec3 end = origin.add(direction.scale(Math.min(ArashCombatRules.STELLA_LENGTH, current + 1.0)));
-      AABB area = pathBounds(start, end, ArashCombatRules.STELLA_OUTER_RADIUS);
+      Vec3 end = origin.add(direction.scale(Math.min(profile.length(), current + 1.0)));
+      AABB area = pathBounds(start, end, profile.outerRadius());
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, this::canDamage)) {
          if (lineHits.contains(target.getUUID())) continue;
          double distance = distanceToSegment(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), start, end);
-         float damage = distance <= ArashCombatRules.STELLA_CORE_RADIUS ? ArashCombatRules.STELLA_CORE_DAMAGE
-            : distance <= ArashCombatRules.STELLA_OUTER_RADIUS ? ArashCombatRules.STELLA_OUTER_DAMAGE : 0.0F;
+         float damage = distance <= profile.coreRadius() ? profile.coreDamage()
+            : distance <= profile.outerRadius() ? profile.outerDamage() : 0.0F;
          if (damage > 0.0F) {
             lineHits.add(target.getUUID());
             target.hurt(level.damageSources().thrown(this, getCaster(level)), damage);
@@ -292,7 +361,9 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    private void spawnChantEffects(ServerLevel level, LivingEntity caster, int tick) {
-      double progress = Math.min(1.0, tick / (double)ArashCombatRules.STELLA_CHANT_TICKS);
+      int fullChargeTicks = playerCaster ? ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS
+         : ArashCombatRules.STELLA_CHANT_TICKS;
+      double progress = Math.min(1.0, tick / (double)fullChargeTicks);
       Vec3 feet = caster.position().add(0.0, 0.08, 0.0);
       Vec3 bow = caster.getEyePosition().add(direction.scale(0.9));
       DustParticleOptions lifeColor = progress < 0.42 ? GREEN : progress < 0.78 ? GOLD : WHITE;
@@ -421,7 +492,7 @@ public final class ArashStellaControllerEntity extends Entity {
          if (!released && refund) ServantCardArashSkills.abortPlayerChantTechnical(player);
          else ServantCardArashSkills.abortPlayerChantNoRefund(player);
       }
-      stopChantSound(level);
+      stopAllStellaSounds(level);
       releaseTickets(level);
       this.discard();
    }
@@ -443,15 +514,31 @@ public final class ArashStellaControllerEntity extends Entity {
    private void releaseTickets(ServerLevel level) {
       if (ticketsReleased) return;
       ticketsReleased = true;
-      for (long packed : chunks) CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), false, true);
+      for (long packed : forcedChunks) {
+         CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), false, true);
+      }
    }
 
-   private void stopChantSound(ServerLevel level) {
-      ResourceLocation sound = ResourceLocation.fromNamespaceAndPath("typemoonworld", "arash_voice_stella");
+   private void stopLongChantSound(ServerLevel level) {
+      stopSound(level, ResourceLocation.fromNamespaceAndPath("typemoonworld", "arash_voice_stella"));
+   }
+
+   private void stopAllStellaSounds(ServerLevel level) {
+      stopLongChantSound(level);
+      stopSound(level, ResourceLocation.fromNamespaceAndPath("typemoonworld", "arash_voice_stella_short"));
+   }
+
+   private void stopSound(ServerLevel level, ResourceLocation sound) {
       SoundSource source = playerCaster ? SoundSource.VOICE : SoundSource.HOSTILE;
       for (ServerPlayer player : level.players()) {
          if (player.distanceToSqr(this) <= 256.0 * 256.0) player.connection.send(new ClientboundStopSoundPacket(sound, source));
       }
+   }
+
+   private static void playShortStella(ServerLevel level, ServerPlayer player) {
+      player.playNotifySound(ModSounds.ARASH_VOICE_STELLA_SHORT.get(), SoundSource.VOICE, 1.6F, 1.0F);
+      level.playSound(player, player.blockPosition(), ModSounds.ARASH_VOICE_STELLA_SHORT.get(),
+         SoundSource.VOICE, 1.6F, 1.0F);
    }
 
    private LivingEntity getCaster(ServerLevel level) {
@@ -494,21 +581,22 @@ public final class ArashStellaControllerEntity extends Entity {
       return false;
    }
 
-   private static List<Long> computeChunks(Vec3 origin, Vec3 direction) {
+   private static List<Long> computeChunks(Vec3 origin, Vec3 direction, ArashCombatRules.StellaProfile profile) {
       LinkedHashSet<Long> result = new LinkedHashSet<>();
       Vec3 side = new Vec3(-direction.z, 0.0, direction.x);
-      for (double distance = 0.0; distance <= ArashCombatRules.STELLA_LENGTH; distance += 8.0) {
+      for (double distance = 0.0; distance <= profile.length(); distance += 8.0) {
          Vec3 point = origin.add(direction.scale(distance));
-         for (double offset : new double[]{-18.0, -10.0, 0.0, 10.0, 18.0}) {
+         for (double offset : new double[]{-profile.scarRadius(), -profile.terrainRadius(), 0.0,
+            profile.terrainRadius(), profile.scarRadius()}) {
             Vec3 sample = point.add(side.scale(offset));
             result.add(ChunkPos.asLong(((int)Math.floor(sample.x)) >> 4, ((int)Math.floor(sample.z)) >> 4));
          }
       }
-      Vec3 end = origin.add(direction.scale(ArashCombatRules.STELLA_LENGTH));
-      int minX = ((int)Math.floor(end.x - ArashCombatRules.STELLA_END_RADIUS)) >> 4;
-      int maxX = ((int)Math.floor(end.x + ArashCombatRules.STELLA_END_RADIUS)) >> 4;
-      int minZ = ((int)Math.floor(end.z - ArashCombatRules.STELLA_END_RADIUS)) >> 4;
-      int maxZ = ((int)Math.floor(end.z + ArashCombatRules.STELLA_END_RADIUS)) >> 4;
+      Vec3 end = origin.add(direction.scale(profile.length()));
+      int minX = ((int)Math.floor(end.x - profile.endRadius())) >> 4;
+      int maxX = ((int)Math.floor(end.x + profile.endRadius())) >> 4;
+      int minZ = ((int)Math.floor(end.z - profile.endRadius())) >> 4;
+      int maxZ = ((int)Math.floor(end.z + profile.endRadius())) >> 4;
       for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) result.add(ChunkPos.asLong(x, z));
       return new ArrayList<>(result);
    }
@@ -538,8 +626,13 @@ public final class ArashStellaControllerEntity extends Entity {
       if (casterId != null) tag.putUUID("Caster", casterId);
       tag.putString("Team", teamName);
       tag.putLongArray("Chunks", chunks);
+      tag.putLongArray("ForcedChunks", new ArrayList<>(forcedChunks));
       tag.putBoolean("Released", released);
       tag.putBoolean("PlayerCaster", playerCaster);
+      tag.putBoolean("PlayerReleaseRequested", playerReleaseRequested);
+      tag.putBoolean("WaitForFullVoice", waitForFullVoice);
+      tag.putInt("ReleaseRequestTick", releaseRequestTick);
+      tag.putInt("PlayerChargeTicks", playerChargeTicks);
       tag.putBoolean("FinalDamage", finalDamageDone);
       tag.put("Allies", writeUuids(allies));
       tag.put("LineHits", writeUuids(lineHits));
@@ -553,8 +646,18 @@ public final class ArashStellaControllerEntity extends Entity {
       if (tag.hasUUID("Caster")) casterId = tag.getUUID("Caster");
       teamName = tag.getString("Team");
       chunks.clear(); for (long packed : tag.getLongArray("Chunks")) chunks.add(packed);
+      forcedChunks.clear();
+      for (long packed : tag.getLongArray("ForcedChunks")) forcedChunks.add(packed);
+      if (!tag.contains("ForcedChunks", Tag.TAG_LONG_ARRAY)) {
+         for (int i = 0; i < Math.min(preloadIndex, chunks.size()); i++) forcedChunks.add(chunks.get(i));
+      }
       released = tag.getBoolean("Released"); finalDamageDone = tag.getBoolean("FinalDamage");
       playerCaster = tag.getBoolean("PlayerCaster");
+      playerReleaseRequested = tag.getBoolean("PlayerReleaseRequested");
+      waitForFullVoice = tag.getBoolean("WaitForFullVoice");
+      releaseRequestTick = tag.contains("ReleaseRequestTick") ? tag.getInt("ReleaseRequestTick") : -1;
+      playerChargeTicks = tag.contains("PlayerChargeTicks") ? tag.getInt("PlayerChargeTicks")
+         : ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;
       readUuids(tag.getList("Allies", Tag.TAG_INT_ARRAY), allies);
       readUuids(tag.getList("LineHits", Tag.TAG_INT_ARRAY), lineHits);
    }

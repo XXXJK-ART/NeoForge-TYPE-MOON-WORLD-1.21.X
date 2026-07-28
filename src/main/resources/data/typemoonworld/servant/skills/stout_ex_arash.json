@@ -1,4 +1,6 @@
 {
   "id": "stout_ex_arash", "display_name": "Stout EX", "display_name_zh": "健硕 EX",
+  "description": "Increases maximum health, damage resistance, defense recovery and poise recovery.",
+  "description_zh": "提高生命上限、伤害减免、防御恢复效率与韧度恢复效率。",
   "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0, "effects": []
 }

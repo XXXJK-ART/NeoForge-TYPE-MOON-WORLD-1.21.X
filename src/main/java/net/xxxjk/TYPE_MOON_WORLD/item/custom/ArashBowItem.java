@@ -19,6 +19,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArashBowRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashAimHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -61,8 +62,9 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
    }
 
    private static void fireBasicArrow(ServerLevel serverLevel, Player player) {
-      Vec3 direction = player.getLookAngle().normalize();
-      Vec3 start = player.getEyePosition().add(player.getLookAngle().scale(0.65));
+      Vec3 look = player.getLookAngle().normalize();
+      Vec3 start = player.getEyePosition().add(look.scale(0.65));
+      Vec3 direction = ArashAimHelper.autoAimDirection(player, start, look, 3.4);
       ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(serverLevel, player,
          ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE);
       arrow.setPos(start.x, start.y - 0.12, start.z);

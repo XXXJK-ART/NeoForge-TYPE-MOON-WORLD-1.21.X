@@ -17,6 +17,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,6 +26,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -37,6 +40,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashAimHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class ServantCardArashSkills {
@@ -50,6 +55,7 @@ public final class ServantCardArashSkills {
    private static final String CHANTING = "ServantCardArashStellaChanting";
    private static final String CONTROLLER = "ServantCardArashStellaController";
    private static final String LOCK_X = "ServantCardArashStellaLockX";
+   private static final String LOCK_Y = "ServantCardArashStellaLockY";
    private static final String LOCK_Z = "ServantCardArashStellaLockZ";
    private static final String LOCK_YAW = "ServantCardArashStellaLockYaw";
    private static final String LOCK_PITCH = "ServantCardArashStellaLockPitch";
@@ -62,7 +68,7 @@ public final class ServantCardArashSkills {
    private static final String REFUND_COOLDOWN_END = "ServantCardArashStellaRefundCooldownEnd";
    private static final String SACRIFICE_ACTIVE = "ServantCardArashStellaSacrifice";
    private static final String SACRIFICE_TICKS = "ServantCardArashStellaSacrificeTicks";
-   private static final String SACRIFICE_HEALTH = "ServantCardArashStellaSacrificeHealth";
+   private static final String SACRIFICE_MAX_HEALTH = "ServantCardArashStellaSacrificeMaxHealth";
 
    private ServantCardArashSkills() { }
 
@@ -98,8 +104,16 @@ public final class ServantCardArashSkills {
 
    public static boolean performArrowRain(ServerPlayer player) {
       if (!hasRequiredBow(player) || !(player.level() instanceof ServerLevel level)) return false;
-      Vec3 start = player.getEyePosition().add(player.getLookAngle().scale(0.65));
-      Vec3 target = start.add(player.getLookAngle().normalize().scale(70.0));
+      Vec3 look = player.getLookAngle().normalize();
+      Vec3 start = player.getEyePosition().add(look.scale(0.65));
+      HitResult lookedAt = EntityUtils.getRayTraceTarget(player, ArashAimHelper.AUTO_AIM_RANGE);
+      Vec3 lookedAtPosition = lookedAt.getType() == HitResult.Type.MISS
+         ? start.add(look.scale(ArashAimHelper.AUTO_AIM_RANGE)) : lookedAt.getLocation();
+      LivingEntity autoAimTarget = lookedAt instanceof EntityHitResult entityHit
+         && entityHit.getEntity() instanceof LivingEntity living
+         && EntityUtils.isValidCombatTarget(player, living) ? living
+         : ArashAimHelper.findTargetNearPoint(player, lookedAtPosition, ArashAimHelper.ARROW_RAIN_ASSIST_RADIUS);
+      Vec3 target = autoAimTarget == null ? lookedAtPosition : predictedRainTarget(start, autoAimTarget);
       for (int i = 0; i < ArashCombatRules.RAIN_ARROW_COUNT; i++) {
          Vec3 spread = new Vec3(player.getRandom().nextGaussian() * 2.2,
             player.getRandom().nextGaussian() * 1.1, player.getRandom().nextGaussian() * 2.2);
@@ -146,8 +160,9 @@ public final class ServantCardArashSkills {
 
    private static boolean fireDirect(ServerPlayer player, int variant, float damage, double speed) {
       if (!hasRequiredBow(player) || !(player.level() instanceof ServerLevel level)) return false;
-      Vec3 direction = player.getLookAngle().normalize();
-      Vec3 start = player.getEyePosition().add(direction.scale(0.8));
+      Vec3 look = player.getLookAngle().normalize();
+      Vec3 start = player.getEyePosition().add(look.scale(0.8));
+      Vec3 direction = ArashAimHelper.autoAimDirection(player, start, look, speed);
       ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, player, variant, damage);
       arrow.setPos(start.x, start.y - 0.1, start.z);
       arrow.setDeltaMovement(direction.scale(speed));
@@ -155,6 +170,17 @@ public final class ServantCardArashSkills {
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z,
          variant == ArashParticleArrowEntity.LARGE_ENERGY ? 44 : 24, 0.3, 0.3, 0.3, 0.1);
       return true;
+   }
+
+   private static Vec3 predictedRainTarget(Vec3 start, LivingEntity target) {
+      Vec3 predicted = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+      for (int iteration = 0; iteration < 2; iteration++) {
+         double horizontal = predicted.subtract(start).horizontalDistance();
+         double flightTicks = Math.max(12.0, horizontal / 2.2);
+         predicted = target.position().add(ArashAimHelper.predictionOffset(target.getDeltaMovement(), flightTicks))
+            .add(0.0, target.getBbHeight() * 0.5, 0.0);
+      }
+      return predicted;
    }
 
    public static boolean performStellaAction(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars,
@@ -186,6 +212,7 @@ public final class ServantCardArashSkills {
       data.putBoolean(CHANTING, true);
       data.putUUID(CONTROLLER, controllerId);
       data.putDouble(LOCK_X, player.getX());
+      data.putDouble(LOCK_Y, player.getY());
       data.putDouble(LOCK_Z, player.getZ());
       data.putFloat(LOCK_YAW, player.getYRot());
       data.putFloat(LOCK_PITCH, player.getXRot());
@@ -199,6 +226,15 @@ public final class ServantCardArashSkills {
       return player != null && player.getPersistentData().getBoolean(CHANTING);
    }
 
+   public static void requestPlayerStellaRelease(ServerPlayer player) {
+      if (!isPlayerChanting(player) || !(player.level() instanceof ServerLevel level)) return;
+      CompoundTag data = player.getPersistentData();
+      if (!data.hasUUID(CONTROLLER)) return;
+      if (level.getEntity(data.getUUID(CONTROLLER)) instanceof ArashStellaControllerEntity controller) {
+         controller.requestPlayerRelease(player);
+      }
+   }
+
    public static void finishPlayerChant(ServerPlayer player) {
       clearChantTags(player);
       clearRefundSnapshot(player);
@@ -208,7 +244,8 @@ public final class ServantCardArashSkills {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(SACRIFICE_ACTIVE, true);
       data.putInt(SACRIFICE_TICKS, 0);
-      data.putFloat(SACRIFICE_HEALTH, Math.max(1.0F, player.getHealth()));
+      data.putFloat(SACRIFICE_MAX_HEALTH, Math.max(1.0F, player.getMaxHealth()));
+      data.remove("ServantCardArashStellaSacrificeHealth");
    }
 
    public static boolean isPlayerStellaSacrificing(ServerPlayer player) {
@@ -224,13 +261,18 @@ public final class ServantCardArashSkills {
       }
       int elapsed = data.getInt(SACRIFICE_TICKS) + 1;
       data.putInt(SACRIFICE_TICKS, elapsed);
-      float initialHealth = Math.max(1.0F, data.getFloat(SACRIFICE_HEALTH));
-      if (elapsed >= ArashCombatRules.STELLA_SACRIFICE_TICKS) {
-         clearPlayerStellaSacrifice(player);
-         player.kill();
-         return;
+      if (elapsed % ArashCombatRules.STELLA_SACRIFICE_DAMAGE_INTERVAL == 0) {
+         boolean finalPulse = elapsed >= ArashCombatRules.STELLA_SACRIFICE_TICKS;
+         float maxHealth = data.contains(SACRIFICE_MAX_HEALTH)
+            ? Math.max(1.0F, data.getFloat(SACRIFICE_MAX_HEALTH))
+            : Math.max(1.0F, player.getMaxHealth());
+         player.setHealth(ArashCombatRules.applyStellaSacrificePulse(player.getHealth(), maxHealth, finalPulse));
+         if (finalPulse) {
+            clearPlayerStellaSacrifice(player);
+            player.kill();
+            return;
+         }
       }
-      player.setHealth(Math.min(player.getHealth(), ArashCombatRules.stellaRemainingHealth(initialHealth, elapsed)));
       if (player.level() instanceof ServerLevel level && elapsed % 3 == 0) {
          level.sendParticles(elapsed < 120 ? ParticleTypes.END_ROD : ParticleTypes.FIREWORK,
             player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ(),
@@ -242,7 +284,8 @@ public final class ServantCardArashSkills {
       CompoundTag data = player.getPersistentData();
       data.remove(SACRIFICE_ACTIVE);
       data.remove(SACRIFICE_TICKS);
-      data.remove(SACRIFICE_HEALTH);
+      data.remove(SACRIFICE_MAX_HEALTH);
+      data.remove("ServantCardArashStellaSacrificeHealth");
    }
 
    public static void abortPlayerChantTechnical(ServerPlayer player) {
@@ -267,10 +310,9 @@ public final class ServantCardArashSkills {
       ensureBowInLockedSlot(player, slot);
       player.stopUsingItem();
 
-      double anchorX = data.getDouble(LOCK_X), anchorZ = data.getDouble(LOCK_Z);
-      player.setPos(anchorX, player.getY(), anchorZ);
-      Vec3 motion = player.getDeltaMovement();
-      player.setDeltaMovement(0.0, motion.y, 0.0);
+      double anchorX = data.getDouble(LOCK_X), anchorY = data.getDouble(LOCK_Y), anchorZ = data.getDouble(LOCK_Z);
+      player.setPos(anchorX, anchorY, anchorZ);
+      player.setDeltaMovement(Vec3.ZERO);
 
       float lockedYaw = data.getFloat(LOCK_YAW), lockedPitch = data.getFloat(LOCK_PITCH);
       float yaw = lockedYaw + Mth.clamp(Mth.wrapDegrees(player.getYRot() - lockedYaw), -CHANT_LOOK_TOLERANCE, CHANT_LOOK_TOLERANCE);
@@ -356,6 +398,7 @@ public final class ServantCardArashSkills {
       data.remove(CHANTING);
       data.remove(CONTROLLER);
       data.remove(LOCK_X);
+      data.remove(LOCK_Y);
       data.remove(LOCK_Z);
       data.remove(LOCK_YAW);
       data.remove(LOCK_PITCH);
@@ -461,6 +504,13 @@ public final class ServantCardArashSkills {
       if (event.getEntity() instanceof ServerPlayer player) {
          if (isPlayerChanting(player)) abortPlayerChantNoRefund(player);
          clearPlayerStellaSacrifice(player);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onHeal(LivingHealEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player && isPlayerStellaSacrificing(player)) {
+         event.setCanceled(true);
       }
    }
 

@@ -78,7 +78,9 @@ public final class CommonServantSkills {
       LivingEntity entity = context.caster();
       if (entity == null) return ServantExecutionResult.FAILED;
       entity.getPersistentData().putBoolean("StoutExArashActive", true);
-      entity.getPersistentData().putFloat("StoutExDamageMultiplier", 0.85F);
+      entity.getPersistentData().putFloat("StoutExDamageMultiplier", 0.70F);
+      entity.getPersistentData().putDouble("StoutDefenseRecoveryMultiplier", 2.0);
+      entity.getPersistentData().putDouble("StoutPoiseRecoveryMultiplier", 2.0);
       return ServantExecutionResult.SUCCESS;
    }
 
@@ -97,7 +99,6 @@ public final class CommonServantSkills {
       entity.getPersistentData().putBoolean("ArrowConstructionAActive", true);
       entity.getPersistentData().putFloat("BowDamageMultiplier", 1.10F);
       entity.getPersistentData().putFloat("BowAttackSpeedMultiplier", 1.20F);
-      if (!entity.getPersistentData().contains("ArashVirtualArrows")) entity.getPersistentData().putInt("ArashVirtualArrows", 10);
       return ServantExecutionResult.SUCCESS;
    }
 

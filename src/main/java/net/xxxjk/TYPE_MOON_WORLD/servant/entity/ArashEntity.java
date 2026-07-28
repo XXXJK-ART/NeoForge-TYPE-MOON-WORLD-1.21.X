@@ -28,7 +28,7 @@ public final class ArashEntity extends ServantEntity {
    public static final String TAG_STELLA_CHANTING = "ArashStellaChanting";
    public static final String TAG_STELLA_SACRIFICE = "ArashStellaSacrifice";
    public static final String TAG_STELLA_SACRIFICE_TICKS = "ArashStellaSacrificeTicks";
-   public static final String TAG_STELLA_SACRIFICE_HEALTH = "ArashStellaSacrificeHealth";
+   public static final String TAG_STELLA_SACRIFICE_MAX_HEALTH = "ArashStellaSacrificeMaxHealth";
    private static final ResourceLocation STOUT_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "arash_stout_ex_health");
 
@@ -110,14 +110,19 @@ public final class ArashEntity extends ServantEntity {
          applyStoutHealth(false);
          MagicResistanceHelper.setMagicResistance(this, net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank.C, 0.20F, 0.10F);
       }
-      if (!this.level().isClientSide) tickStellaSacrifice();
+      if (!this.level().isClientSide) {
+         ArashCombatHelper.tickCrossoverMovement(this);
+         ArashCombatHelper.tickAttackFacing(this);
+         tickStellaSacrifice();
+      }
    }
 
    public void beginStellaSacrifice() {
       CompoundTag data = this.getPersistentData();
       data.putBoolean(TAG_STELLA_SACRIFICE, true);
       data.putInt(TAG_STELLA_SACRIFICE_TICKS, 0);
-      data.putFloat(TAG_STELLA_SACRIFICE_HEALTH, Math.max(1.0F, this.getHealth()));
+      data.putFloat(TAG_STELLA_SACRIFICE_MAX_HEALTH, Math.max(1.0F, this.getMaxHealth()));
+      data.remove("ArashStellaSacrificeHealth");
       this.getNavigation().stop();
       this.setTarget(null);
    }
@@ -127,17 +132,28 @@ public final class ArashEntity extends ServantEntity {
       if (!data.getBoolean(TAG_STELLA_SACRIFICE) || !this.isAlive()) return;
       int elapsed = data.getInt(TAG_STELLA_SACRIFICE_TICKS) + 1;
       data.putInt(TAG_STELLA_SACRIFICE_TICKS, elapsed);
-      float initialHealth = Math.max(1.0F, data.getFloat(TAG_STELLA_SACRIFICE_HEALTH));
-      if (elapsed >= ArashCombatRules.STELLA_SACRIFICE_TICKS) {
-         this.kill();
-         return;
+      if (elapsed % ArashCombatRules.STELLA_SACRIFICE_DAMAGE_INTERVAL == 0) {
+         boolean finalPulse = elapsed >= ArashCombatRules.STELLA_SACRIFICE_TICKS;
+         float maxHealth = data.contains(TAG_STELLA_SACRIFICE_MAX_HEALTH)
+            ? Math.max(1.0F, data.getFloat(TAG_STELLA_SACRIFICE_MAX_HEALTH))
+            : Math.max(1.0F, this.getMaxHealth());
+         this.setHealth(ArashCombatRules.applyStellaSacrificePulse(this.getHealth(), maxHealth, finalPulse));
+         if (finalPulse) {
+            this.kill();
+            return;
+         }
       }
-      this.setHealth(Math.min(this.getHealth(), ArashCombatRules.stellaRemainingHealth(initialHealth, elapsed)));
       if (this.level() instanceof ServerLevel level && elapsed % 3 == 0) {
          level.sendParticles(elapsed < 120 ? net.minecraft.core.particles.ParticleTypes.END_ROD
                : net.minecraft.core.particles.ParticleTypes.FIREWORK,
             this.getX(), this.getY() + this.getBbHeight() * 0.55, this.getZ(),
             8 + elapsed / 12, 0.42, this.getBbHeight() * 0.5, 0.42, 0.035);
       }
+   }
+
+   @Override
+   public void heal(float amount) {
+      if (this.getPersistentData().getBoolean(TAG_STELLA_SACRIFICE)) return;
+      super.heal(amount);
    }
 }

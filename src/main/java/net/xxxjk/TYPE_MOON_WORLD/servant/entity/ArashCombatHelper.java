@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -15,20 +16,25 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ArashCombatHelper {
-   private static final String TAG_ARROWS = "ArashVirtualArrows";
    private static final String TAG_NEXT_NORMAL = "ArashNextNormalArrow";
+   private static final String TAG_ATTACK_FACE_UNTIL = "ArashAttackFaceUntil";
    private static final String TAG_NEXT_RAIN = "ArashNextArrowRain";
    private static final String TAG_NEXT_SMALL = "ArashNextSmallEnergyArrow";
    private static final String TAG_NEXT_LARGE = "ArashNextLargeEnergyArrow";
    private static final String TAG_LAST_SCAN = "ArashLastTargetScan";
    private static final String TAG_LAST_REPOSITION = "ArashLastReposition";
    private static final String TAG_NEXT_CROSSOVER = "ArashNextCrossover";
+   private static final String TAG_CROSSOVER_UNTIL = "ArashCrossoverUntil";
+   private static final String TAG_CROSSOVER_AXIS_X = "ArashCrossoverAxisX";
+   private static final String TAG_CROSSOVER_AXIS_Z = "ArashCrossoverAxisZ";
+   private static final String TAG_CROSSOVER_SIDE = "ArashCrossoverSide";
    private static final String TAG_ORBIT_DIRECTION = "ArashOrbitDirection";
    private static final String TAG_NEXT_ORBIT_SWITCH = "ArashNextOrbitSwitch";
    private static final String TAG_MOTION_SAMPLE = "ArashLastMotionSample";
@@ -82,6 +88,7 @@ public final class ArashCombatHelper {
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_LARGE)
          && arash.getCurrentMp() >= ArashCombatRules.LARGE_ENERGY_MANA
          && (target.getMaxHealth() >= 160.0F || cluster >= 4)) {
+         lockAttackFacing(arash, target, now, 22);
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.LARGE_ENERGY_MANA);
          arash.getPersistentData().putLong(TAG_NEXT_LARGE, now + ArashCombatRules.LARGE_ENERGY_COOLDOWN);
          fireDirect(level, arash, target, ArashParticleArrowEntity.LARGE_ENERGY, ArashCombatRules.LARGE_ENERGY_DAMAGE, 2.1);
@@ -92,6 +99,7 @@ public final class ArashCombatHelper {
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_RAIN)
          && arash.getCurrentMp() >= ArashCombatRules.RAIN_MANA
          && (!lineOfSight || arash.distanceTo(target) >= 48.0F || cluster >= 3)) {
+         lockAttackFacing(arash, target, now, 16);
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.RAIN_MANA);
          arash.getPersistentData().putLong(TAG_NEXT_RAIN, now + ArashCombatRules.RAIN_COOLDOWN);
          fireRain(level, arash, target);
@@ -101,6 +109,7 @@ public final class ArashCombatHelper {
       }
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_SMALL)
          && arash.getCurrentMp() >= ArashCombatRules.SMALL_ENERGY_MANA) {
+         lockAttackFacing(arash, target, now, 13);
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.SMALL_ENERGY_MANA);
          arash.getPersistentData().putLong(TAG_NEXT_SMALL, now + ArashCombatRules.SMALL_ENERGY_COOLDOWN);
          fireDirect(level, arash, target, ArashParticleArrowEntity.SMALL_ENERGY, ArashCombatRules.SMALL_ENERGY_DAMAGE, 2.7);
@@ -108,7 +117,8 @@ public final class ArashCombatHelper {
          ServantVoiceHelper.tryPlayAttack(arash);
          return;
       }
-      if (now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL) && consumeArrow(arash)) {
+      if (now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)) {
+         lockAttackFacing(arash, target, now, ArashCombatRules.NORMAL_ARROW_INTERVAL);
          arash.getPersistentData().putLong(TAG_NEXT_NORMAL, now + ArashCombatRules.NORMAL_ARROW_INTERVAL);
          fireDirect(level, arash, target, ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE, 3.2);
          arash.triggerNamedActionAnimation("bow_shot");
@@ -116,25 +126,33 @@ public final class ArashCombatHelper {
       }
    }
 
-   private static boolean consumeArrow(ArashEntity arash) {
-      var data = arash.getPersistentData();
-      if (!data.contains(TAG_ARROWS)) data.putInt(TAG_ARROWS, ArashCombatRules.ARROW_CAPACITY);
-      int arrows = data.getInt(TAG_ARROWS);
-      if (arrows <= 0) {
-         if (arash.getCurrentMp() < ArashCombatRules.ARROW_REFILL_MANA) return false;
-         arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.ARROW_REFILL_MANA);
-         arrows = ArashCombatRules.ARROW_CAPACITY;
-      }
-      data.putInt(TAG_ARROWS, arrows - 1);
-      return true;
+   public static void tickAttackFacing(ArashEntity arash) {
+      LivingEntity target = arash.getTarget();
+      if (!isTarget(arash, target)
+         || arash.level().getGameTime() > arash.getPersistentData().getLong(TAG_ATTACK_FACE_UNTIL)) return;
+      faceAttackTarget(arash, target);
+   }
+
+   private static void lockAttackFacing(ArashEntity arash, LivingEntity target, long now, int durationTicks) {
+      arash.getPersistentData().putLong(TAG_ATTACK_FACE_UNTIL, now + Math.max(1, durationTicks));
+      faceAttackTarget(arash, target);
+   }
+
+   private static void faceAttackTarget(ArashEntity arash, LivingEntity target) {
+      Vec3 offset = target.getEyePosition().subtract(arash.getEyePosition());
+      arash.faceVector(offset);
+      double horizontal = Math.max(1.0E-5, offset.horizontalDistance());
+      float pitch = (float)(-Mth.atan2(offset.y, horizontal) * Mth.RAD_TO_DEG);
+      pitch = Mth.clamp(pitch, -55.0F, 55.0F);
+      arash.setXRot(pitch);
+      arash.xRotO = pitch;
+      arash.getLookControl().setLookAt(target.getX(), target.getEyeY(), target.getZ(), 180.0F, 180.0F);
    }
 
    private static void fireDirect(ServerLevel level, ArashEntity arash, LivingEntity target, int variant,
                                   float damage, double speed) {
       Vec3 start = arash.getEyePosition().add(arash.getLookAngle().scale(0.65));
-      double distance = Math.max(1.0, start.distanceTo(target.getEyePosition()));
-      Vec3 predicted = target.getEyePosition().add(target.getDeltaMovement().scale(distance / speed));
-      Vec3 direction = predicted.subtract(start).normalize();
+      Vec3 direction = ArashAimHelper.leadDirection(start, target, speed);
       ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, arash, variant, damage);
       arrow.setPos(start.x, start.y, start.z);
       arrow.setDeltaMovement(direction.scale(speed));
@@ -144,7 +162,9 @@ public final class ArashCombatHelper {
    private static void fireRain(ServerLevel level, ArashEntity arash, LivingEntity target) {
       Vec3 start = arash.getEyePosition().add(0.0, 0.35, 0.0);
       for (int i = 0; i < ArashCombatRules.RAIN_ARROW_COUNT; i++) {
-         Vec3 predicted = target.position().add(target.getDeltaMovement().scale(18.0))
+         double initialHorizontal = target.position().subtract(start).horizontalDistance();
+         double flightTicks = Math.max(12.0, initialHorizontal / 2.65);
+         Vec3 predicted = target.position().add(ArashAimHelper.predictionOffset(target.getDeltaMovement(), flightTicks))
             .add((arash.getRandom().nextDouble() - 0.5) * 5.0, target.getBbHeight() * 0.5,
                (arash.getRandom().nextDouble() - 0.5) * 5.0);
          Vec3 delta = predicted.subtract(start);
@@ -174,6 +194,7 @@ public final class ArashCombatHelper {
 
       int stationaryTicks = sampleStationaryTicks(arash, now);
       double distance = arash.distanceTo(target);
+      if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) > now) return;
       boolean crowded = countCluster(arash, arash, 5.5) >= 2;
       boolean shouldCross = distance <= ArashCombatRules.CROSSOVER_TRIGGER_RANGE
          || stationaryTicks >= 30 && distance <= 18.0 || crowded && distance <= 11.0;
@@ -210,22 +231,65 @@ public final class ArashCombatHelper {
          desired = target.position().add(toward.scale(7.0)).add(side.scale(-3.5));
          stand = resolveStand(arash, desired);
       }
-      if (stand == null) return false;
-
-      Vec3 destination = Vec3.atBottomCenterOf(stand);
-      arash.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.42);
+      if (stand != null) {
+         Vec3 destination = Vec3.atBottomCenterOf(stand);
+         arash.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.42);
+      } else {
+         arash.getNavigation().stop();
+      }
       if (arash.onGround()) arash.jumpFromGround();
       Vec3 motion = arash.getDeltaMovement();
       arash.setDeltaMovement(toward.x * 0.72 + side.x * 0.24, Math.max(0.34, motion.y),
          toward.z * 0.72 + side.z * 0.24);
       arash.getPersistentData().putLong(TAG_NEXT_CROSSOVER, now + ArashCombatRules.CROSSOVER_COOLDOWN);
       arash.getPersistentData().putInt(TAG_ORBIT_DIRECTION, -orbitDirection);
+      arash.getPersistentData().putLong(TAG_CROSSOVER_UNTIL, now + 18L);
+      arash.getPersistentData().putDouble(TAG_CROSSOVER_AXIS_X, toward.x);
+      arash.getPersistentData().putDouble(TAG_CROSSOVER_AXIS_Z, toward.z);
+      arash.getPersistentData().putInt(TAG_CROSSOVER_SIDE, orbitDirection);
       if (arash.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.CLOUD, arash.getX(), arash.getY() + 0.15, arash.getZ(),
             14, 0.45, 0.12, 0.45, 0.08);
          level.sendParticles(ParticleTypes.CRIT, arash.getX(), arash.getY() + 0.9, arash.getZ(),
             10, 0.35, 0.55, 0.35, 0.16);
       }
+      return true;
+   }
+
+   public static void tickCrossoverMovement(ArashEntity arash) {
+      if (arash.level().isClientSide || !arash.isAlive()) return;
+      LivingEntity target = arash.getTarget();
+      long now = arash.level().getGameTime();
+      if (!isTarget(arash, target)) {
+         arash.getPersistentData().remove(TAG_CROSSOVER_UNTIL);
+         return;
+      }
+      continueCrossover(arash, target, now);
+   }
+
+   private static boolean continueCrossover(ArashEntity arash, LivingEntity target, long now) {
+      var data = arash.getPersistentData();
+      long until = data.getLong(TAG_CROSSOVER_UNTIL);
+      if (until <= now) {
+         data.remove(TAG_CROSSOVER_UNTIL);
+         return false;
+      }
+      Vec3 axis = new Vec3(data.getDouble(TAG_CROSSOVER_AXIS_X), 0.0, data.getDouble(TAG_CROSSOVER_AXIS_Z));
+      if (axis.lengthSqr() < 0.5) {
+         data.remove(TAG_CROSSOVER_UNTIL);
+         return false;
+      }
+      axis = axis.normalize();
+      double crossedBy = arash.position().subtract(target.position()).dot(axis);
+      Vec3 side = new Vec3(-axis.z, 0.0, axis.x).scale(data.getInt(TAG_CROSSOVER_SIDE));
+      Vec3 motion = arash.getDeltaMovement();
+      double forwardStep = crossedBy > 1.5 ? 0.16 : 0.38;
+      double forwardMotion = crossedBy > 1.5 ? 0.32 : 0.72;
+      arash.move(MoverType.SELF, axis.scale(forwardStep).add(side.scale(0.16)));
+      arash.setDeltaMovement(axis.x * forwardMotion + side.x * 0.24,
+         Math.max(arash.onGround() ? 0.24 : motion.y, motion.y),
+         axis.z * forwardMotion + side.z * 0.24);
+      arash.getLookControl().setLookAt(target, 40.0F, 40.0F);
       return true;
    }
 

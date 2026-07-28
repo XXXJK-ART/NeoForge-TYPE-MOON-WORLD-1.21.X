@@ -594,5 +594,9 @@
     "arash_voice_stella": {
       "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.stella",
       "sounds": [{"name": "typemoonworld:voice/arash/stella", "stream": true}]
+    },
+    "arash_voice_stella_short": {
+      "category": "hostile", "subtitle": "subtitles.typemoonworld.arash.stella",
+      "sounds": [{"name": "typemoonworld:voice/arash/stella_short", "stream": true}]
     }
 }

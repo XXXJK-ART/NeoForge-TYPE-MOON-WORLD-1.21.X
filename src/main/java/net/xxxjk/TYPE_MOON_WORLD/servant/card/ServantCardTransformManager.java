@@ -609,6 +609,12 @@ public final class ServantCardTransformManager {
          } else {
             player.getPersistentData().remove("ServantCardLiCounterUntil");
          }
+      } else if ("arash".equals(vars.servant_card_id) && slot == 9) {
+         if (pressed) {
+            triggerAction(player, slot);
+         } else {
+            ServantCardArashSkills.requestPlayerStellaRelease(player);
+         }
       } else if ("oda_nobunaga".equals(vars.servant_card_id)) {
          if (slot == 4) {
             if (pressed) {

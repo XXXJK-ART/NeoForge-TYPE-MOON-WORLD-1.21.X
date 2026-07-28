@@ -19,7 +19,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import org.joml.Vector3f;
 
 public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
@@ -83,8 +85,8 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    private void spawnFlightTrail() {
       int variant = this.getVariant();
       if (variant != SMALL_ENERGY && variant != LARGE_ENERGY) {
-         this.level().addParticle(GREEN, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
-         this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+         addFlightParticle(GREEN, this.position());
+         addFlightParticle(ParticleTypes.END_ROD, this.position());
          return;
       }
       Vec3 forward = this.getDeltaMovement().normalize();
@@ -101,19 +103,20 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       for (int layer = 0; layer < trailLayers; layer++) {
          Vec3 center = position.subtract(forward.scale(layer * (heavy ? 0.26 : 0.2)));
          double layerRadius = radius * (1.0 - layer / (double)(trailLayers + 2));
-         this.level().addParticle(heavy ? HEAVY_GREEN : CHARGED_GREEN,
-            center.x, center.y, center.z, 0.0, 0.0, 0.0);
-         this.level().addParticle(layer % 2 == 0 ? WHITE : GOLD,
-            center.x, center.y, center.z, 0.0, 0.0, 0.0);
+         addFlightParticle(heavy ? HEAVY_GREEN : CHARGED_GREEN, center);
+         addFlightParticle(layer % 2 == 0 ? WHITE : GOLD, center);
          for (int i = 0; i < ringPoints; i++) {
             double angle = Math.PI * 2.0 * i / ringPoints + this.tickCount * 0.22 + layer * 0.35;
             Vec3 point = center.add(side.scale(Math.cos(angle) * layerRadius)).add(up.scale(Math.sin(angle) * layerRadius));
-            this.level().addParticle(i % 3 == 0 ? GOLD : heavy ? HEAVY_GREEN : CHARGED_GREEN,
-               point.x, point.y, point.z, 0.0, 0.0, 0.0);
+            addFlightParticle(i % 3 == 0 ? GOLD : heavy ? HEAVY_GREEN : CHARGED_GREEN, point);
          }
       }
-      this.level().addParticle(ParticleTypes.END_ROD, position.x, position.y, position.z, 0.0, 0.0, 0.0);
-      if (heavy) this.level().addParticle(ParticleTypes.ELECTRIC_SPARK, position.x, position.y, position.z, 0.0, 0.0, 0.0);
+      addFlightParticle(ParticleTypes.END_ROD, position);
+      if (heavy) addFlightParticle(ParticleTypes.ELECTRIC_SPARK, position);
+   }
+
+   private void addFlightParticle(net.minecraft.core.particles.ParticleOptions particle, Vec3 position) {
+      this.level().addParticle(particle, true, position.x, position.y, position.z, 0.0, 0.0, 0.0);
    }
 
    @Override
@@ -122,18 +125,24 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       if (!this.level().isClientSide && result.getEntity() instanceof LivingEntity target) {
          target.invulnerableTime = 0;
          target.hurt(this.damageSources().thrown(this, this.getOwner()), this.entityData.get(DAMAGE));
-         impact();
+         impact(this.position());
       }
    }
 
    @Override
    protected void onHitBlock(BlockHitResult result) {
       super.onHitBlock(result);
-      if (!this.level().isClientSide) impact();
+      if (!this.level().isClientSide) impact(result.getLocation());
    }
 
-   private void impact() {
+   private void impact(Vec3 impactPosition) {
       if (this.level() instanceof ServerLevel level) {
+         int terrainRadius = ArashCombatRules.terrainDestructionRadius(this.getVariant());
+         if (terrainRadius > 0) {
+            var terrain = DeferredTerrainDestruction.queueExpandingSphere(level, impactPosition, terrainRadius, null);
+            terrain.advanceTo(terrainRadius);
+            terrain.seal();
+         }
          int count = this.getVariant() == LARGE_ENERGY ? 120 : this.getVariant() == SMALL_ENERGY ? 70 : 14;
          double spread = this.getVariant() == LARGE_ENERGY ? 1.1 : this.getVariant() == SMALL_ENERGY ? 0.65 : 0.35;
          level.sendParticles(this.getVariant() == LARGE_ENERGY ? HEAVY_GREEN : GREEN,

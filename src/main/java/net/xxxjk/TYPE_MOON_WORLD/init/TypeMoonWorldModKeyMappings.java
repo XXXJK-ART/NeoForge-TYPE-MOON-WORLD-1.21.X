@@ -722,6 +722,7 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
          return ("emiya_archer".equals(vars.servant_card_id) && slot == 1)
             || ("li_shuwen".equals(vars.servant_card_id) && slot == 2)
+            || ("arash".equals(vars.servant_card_id) && slot == 9)
             || ("oda_nobunaga".equals(vars.servant_card_id) && (slot == 4 || slot == 8));
       }
 

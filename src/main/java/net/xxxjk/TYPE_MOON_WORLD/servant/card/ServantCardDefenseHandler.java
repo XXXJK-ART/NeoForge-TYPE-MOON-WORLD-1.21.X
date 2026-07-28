@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
@@ -61,8 +62,16 @@ public final class ServantCardDefenseHandler {
       }
       CompoundTag data = player.getPersistentData();
       initializeResources(data, params);
-      data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params), data.getDouble(TAG_STAMINA) + ServantCombatFormulas.staminaRegenPerSecond(params) / 20.0));
-      data.putDouble(TAG_POISE, Math.min(ServantCombatFormulas.poiseMax(params), data.getDouble(TAG_POISE) + ServantCombatFormulas.poiseRegenPerSecond(params) / 20.0));
+      double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
+      double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      if ("arash".equals(vars.servant_card_id)) {
+         staminaRegen = ArashCombatRules.boostedDefenseRecovery(staminaRegen);
+         poiseRegen = ArashCombatRules.boostedPoiseRecovery(poiseRegen);
+      }
+      data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params),
+         data.getDouble(TAG_STAMINA) + staminaRegen / 20.0));
+      data.putDouble(TAG_POISE, Math.min(ServantCombatFormulas.poiseMax(params),
+         data.getDouble(TAG_POISE) + poiseRegen / 20.0));
    }
 
    public static void clear(ServerPlayer player) {
