@@ -24,6 +24,8 @@ public final class ServantCardVoiceHelper {
          case "medea" -> ModSounds.MEDEA_VOICE_ATTACK.get();
          case "medusa" -> ModSounds.MEDUSA_VOICE_ATTACK.get();
          case "cursed_arm_hassan" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ATTACK.get();
+         case "shadow_hassan" -> ModSounds.SHADOW_HASSAN_VOICE_ATTACK.get();
+         case "fanatic_assassin" -> ModSounds.FANATIC_ASSASSIN_VOICE_ATTACK.get();
          case "emiya_archer" -> ModSounds.EMIYA_ARCHER_VOICE_ATTACK.get();
          case "artoria_pendragon" -> ModSounds.ARTORIA_VOICE_ATTACK.get();
          case "oda_nobunaga" -> ModSounds.ODA_NOBUNAGA_VOICE_ATTACK.get();
@@ -33,6 +35,8 @@ public final class ServantCardVoiceHelper {
          case "li_shuwen" -> ModSounds.LI_SHUWEN_VOICE_ATTACK.get();
          case "paracelsus" -> ModSounds.PARACELSUS_VOICE_ATTACK.get();
          case "ushiwakamaru_rider" -> ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get();
+         case "arash" -> ModSounds.ARASH_VOICE_ATTACK.get();
+         case "nightingale" -> ModSounds.NIGHTINGALE_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -46,6 +50,12 @@ public final class ServantCardVoiceHelper {
          ? ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get()
          : switch (effectId) {
          case "zabaniya" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA_SHORT.get();
+         case "shadow_hassan_meditative_sensitivity" -> ModSounds.SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY.get();
+         case "fanatic_heartbeat" -> ModSounds.FANATIC_ASSASSIN_VOICE_HEARTBEAT.get();
+         case "fanatic_marrow" -> ModSounds.FANATIC_ASSASSIN_VOICE_MARROW.get();
+         case "fanatic_hair" -> ModSounds.FANATIC_ASSASSIN_VOICE_HAIR.get();
+         case "fanatic_temperature", "fanatic_computer" -> ModSounds.FANATIC_ASSASSIN_VOICE_COMPUTER_TEMPERATURE.get();
+         case "fanatic_nerves" -> ModSounds.FANATIC_ASSASSIN_VOICE_NERVES.get();
          case "bellerophon" -> ModSounds.MEDUSA_VOICE_BELLEROPHON.get();
          case "rho_aias" -> ModSounds.EMIYA_ARCHER_VOICE_RHO_AIAS.get();
          case "emiya_spiral" -> ModSounds.EMIYA_ARCHER_VOICE_SPIRAL.get();
@@ -58,6 +68,7 @@ public final class ServantCardVoiceHelper {
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();
          case "rule_breaker" -> ModSounds.MEDEA_VOICE_RULE_BREAKER_SHORT.get();
          case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
+         case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
          default -> null;
       };

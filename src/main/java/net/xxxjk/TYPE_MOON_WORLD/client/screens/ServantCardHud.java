@@ -25,6 +25,7 @@ import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
+import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
@@ -279,7 +280,11 @@ public class ServantCardHud {
          Component label = empty
             ? Component.translatable("hud.typemoonworld.servant_card.none")
             : (ticks <= 0 ? Component.translatable(skillKey) : Component.literal(ticksToSeconds(ticks)));
-         Component text = Component.literal(i + ":").append(label);
+         Component text = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[i]
+            .getTranslatedKeyMessage()
+            .copy()
+            .append(":")
+            .append(label);
          int color = empty ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
          float scale = 0.54F;
          int width = Math.min(142, Math.max(38, (int)(minecraft.font.width(text) * scale) + 5));

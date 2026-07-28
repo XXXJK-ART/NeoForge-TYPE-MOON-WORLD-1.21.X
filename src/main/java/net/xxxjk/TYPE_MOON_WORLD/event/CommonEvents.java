@@ -76,6 +76,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -83,6 +84,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
@@ -98,6 +102,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
@@ -161,11 +166,19 @@ public class CommonEvents {
       event.addListener(new ServantSkillDefinitionLoader());
       event.addListener(new ServantNoblePhantasmDefinitionLoader());
       event.addListener(new ServantAiDefinitionLoader());
+      event.addListener(new ServantActionLoader());
    }
 
    @SubscribeEvent
    public static void onEntityJoin(EntityJoinLevelEvent event) {
       if (!event.getLevel().isClientSide) {
+         if (event.getEntity() instanceof Projectile projectile && projectile.getOwner() instanceof ServerPlayer owner) {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(owner)) {
+               event.setCanceled(true);
+               return;
+            }
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(owner);
+         }
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
          }
@@ -290,6 +303,7 @@ public class CommonEvents {
       if (!event.getEntity().level().isClientSide) {
          Player player = event.getEntity();
          if (player instanceof ServerPlayer serverPlayer) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
             MagicGander.tick(serverPlayer);
@@ -391,6 +405,14 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getSource().getEntity() instanceof ServerPlayer attacker
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isShadowHassan(attacker)) {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(attacker)) {
+               event.setCanceled(true);
+               return;
+            }
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(attacker);
+         }
          if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
             event.setCanceled(true);
          } else {
@@ -432,12 +454,15 @@ public class CommonEvents {
                event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
                event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
             }
+            boolean fanaticDefensePiercing = event.getSource().is(
+               net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
             if (event.getEntity() instanceof ServerPlayer player) {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
                if (vars.servant_card_transformed && "enkidu".equals(vars.servant_card_id)
                   && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardEnkiduSkills.isEnumaElishActive(player)
+                  && !fanaticDefensePiercing
                   && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.bypassesEnkiduNoblePhantasm(event.getSource())) {
                   event.setCanceled(true);
                   event.setAmount(0.0F);
@@ -445,6 +470,7 @@ public class CommonEvents {
                }
                if (vars.servant_card_transformed
                   && "paracelsus".equals(vars.servant_card_id)
+                  && !fanaticDefensePiercing
                   && isParacelsusIgnoredDamage(event.getSource())) {
                   event.setCanceled(true);
                   event.setAmount(0.0F);
@@ -453,6 +479,7 @@ public class CommonEvents {
                }
                if (vars.servant_card_transformed
                   && "oda_nobunaga".equals(vars.servant_card_id)
+                  && !fanaticDefensePiercing
                   && isOdaNobunagaIgnoredDamage(event.getSource())) {
                   event.setCanceled(true);
                   event.setAmount(0.0F);
@@ -495,10 +522,12 @@ public class CommonEvents {
                }
             }
             if (event.getEntity() instanceof LivingEntity living) {
-                  if (!OriginBulletHelper.isOriginBulletDamage(event.getSource()) && tryRedirectRhoAiasDamage(living, event)) {
+                  if (!fanaticDefensePiercing && !OriginBulletHelper.isOriginBulletDamage(event.getSource())
+                     && tryRedirectRhoAiasDamage(living, event)) {
                      return;
                   }
                   if (living instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)
+                     && !fanaticDefensePiercing
                      && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.bypassesEnkiduNoblePhantasm(event.getSource())) {
                      event.setCanceled(true);
                      event.setAmount(0.0F);
@@ -758,6 +787,10 @@ public class CommonEvents {
       boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
       boolean paleRiderInfection = net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource());
+      boolean fanaticGuaranteedHit = event.getSource().is(
+         net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.GUARANTEED_HITS);
+      boolean fanaticDefensePiercing = event.getSource().is(
+         net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
       if (servant instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isFireDamage(event.getSource())) {
          EnkiduCombatHelper.extinguishFire(enkidu);
          event.setCanceled(true);
@@ -770,13 +803,27 @@ public class CommonEvents {
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
+      if (!fanaticDefensePiercing && !originBullet && servant instanceof GilgameshEntity gilgamesh) {
+         GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
+            gilgamesh, event.getSource(), event.getAmount()
+         );
+         if (shieldHit != null) {
+            event.setAmount(shieldHit.remainingDamage());
+            damage = event.getAmount();
+            if (shieldHit.remainingDamage() <= 0.0F) {
+               event.setCanceled(true);
+               return;
+            }
+         }
+      }
       if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
-         if (UshiwakamaruCombatHelper.tryAbsorbShieldDamage(ushiwakamaru, event.getSource(), event.getAmount())) {
+         if (!fanaticDefensePiercing
+            && UshiwakamaruCombatHelper.tryAbsorbShieldDamage(ushiwakamaru, event.getSource(), event.getAmount())) {
             event.setAmount(0.0F);
             event.setCanceled(true);
             return;
          }
-         if (!UshiwakamaruCombatHelper.isGuaranteedHit(event.getSource(), currentTick)
+         if (!fanaticGuaranteedHit && !UshiwakamaruCombatHelper.isGuaranteedHit(event.getSource(), currentTick)
             && UshiwakamaruCombatHelper.trySwallowDodge(ushiwakamaru, event.getSource())) {
             event.setAmount(0.0F);
             event.setCanceled(true);
@@ -791,36 +838,39 @@ public class CommonEvents {
       if (invisibleAirBypass) {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
-      if (!paleRiderInfection && !originBullet && !enkiduWitherUndefendable && ServantCombatSystem.isUntargetable(servant)) {
+      if (!fanaticGuaranteedHit && !paleRiderInfection && !originBullet && !enkiduWitherUndefendable
+         && ServantCombatSystem.isUntargetable(servant)) {
          event.setCanceled(true);
          return;
       }
 
-      if (!originBullet && !artoriaExcalibur && !antiHeraclesNoblePhantasm && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
+      if (!fanaticDefensePiercing && !originBullet && !artoriaExcalibur && !antiHeraclesNoblePhantasm
+         && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
          }
       }
       damage = event.getAmount();
-      if (servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
+      if (!fanaticDefensePiercing && servant instanceof UshiwakamaruRiderEntity ushiwakamaru) {
          event.setAmount(UshiwakamaruCombatHelper.applyRidingDamageReduction(ushiwakamaru, event.getSource(), event.getAmount()));
          damage = event.getAmount();
       }
-      if (servant instanceof EnkiduEntity enkidu) {
+      if (!fanaticDefensePiercing && servant instanceof EnkiduEntity enkidu) {
          event.setAmount(EnkiduCombatHelper.applyPerfectFormPassiveDamageReduction(enkidu, event));
          damage = event.getAmount();
       }
-      if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity liShuwen) {
+      if (!fanaticDefensePiercing && servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity liShuwen) {
          event.setAmount(net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper.applyIncomingDamageModifiers(liShuwen, event.getSource(), event.getAmount()));
          damage = event.getAmount();
       }
-      if (servant instanceof EnkiduEntity enkidu && EnkiduCombatHelper.tryClayBodyOnHeavyDamage(enkidu, event)) {
+      if (!fanaticDefensePiercing && servant instanceof EnkiduEntity enkidu
+         && EnkiduCombatHelper.tryClayBodyOnHeavyDamage(enkidu, event)) {
          return;
       }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
-         if (data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
+         if (!fanaticDefensePiercing && data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
             && !CuChulainnCombatHelper.isMovementRestricted(servant)
             && !event.getSource().is(DamageTypeTags.IS_EXPLOSION)
             && event.getSource().getDirectEntity() instanceof Projectile projectile
@@ -838,7 +888,7 @@ public class CommonEvents {
          }
 
          float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
-         if (!originBullet && shield > 0.0F) {
+         if (!fanaticDefensePiercing && !originBullet && shield > 0.0F) {
             if (majorBrokenPhantasmExplosion) {
                float minimumDamage = originalDamage * 0.5F;
                float absorbable = Math.max(0.0F, damage - minimumDamage);
@@ -905,7 +955,8 @@ public class CommonEvents {
       // --- God Hand: immunity against low-rank damage ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (!paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
+         if (!fanaticDefensePiercing && !paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack
+            && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -918,7 +969,8 @@ public class CommonEvents {
          }
 
          // Adaptive resistance: repeated damage types are reduced over time.
-         if (!paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
+         if (!fanaticDefensePiercing && !paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack
+            && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
             float reduction = data.getFloat("GodHandAdaptiveReduction");
             float maxReduction = data.getFloat("GodHandAdaptiveMax");
             float currentResistance = data.getFloat("GodHandCurrentResistance");
@@ -1595,6 +1647,12 @@ public class CommonEvents {
       } else {
          LivingEntity living = event.getEntity();
          MobEffectInstance effectInstance = event.getEffectInstance();
+         if (living instanceof FanaticAssassinEntity
+            && effectInstance != null
+            && effectInstance.getEffect().is(FanaticAssassinCombatHelper.MENTAL_EFFECTS)) {
+            living.removeEffect(effectInstance.getEffect());
+            return;
+         }
          if (living instanceof Mob && effectInstance != null && effectInstance.getEffect() == ModMobEffects.SUGGESTION) {
             trackSuggestedMob(living);
          }

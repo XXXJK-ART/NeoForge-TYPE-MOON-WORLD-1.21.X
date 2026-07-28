@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Witch;
@@ -204,6 +205,9 @@ public final class MagicResistanceHelper {
          return false;
       }
       if (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC)) {
+         return true;
+      }
+      if (source.is(FanaticDamageTypes.MARROW)) {
          return true;
       }
 

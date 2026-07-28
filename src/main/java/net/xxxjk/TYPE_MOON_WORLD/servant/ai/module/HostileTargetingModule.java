@@ -20,10 +20,15 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTargetingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
@@ -38,12 +43,20 @@ public final class HostileTargetingModule implements ServantAiModule {
    private static final int TARGET_SCAN_INTERVAL_TICKS = 10;
    private static final int CURRENT_TARGET_LOS_INTERVAL_TICKS = 5;
    private static final int AGGRESSION_MEMORY_TICKS = 200;
-   private static final double MAX_TARGET_SCAN_RANGE = 32.0;
-   private static final double MAX_LAGUZ_TARGET_SCAN_RANGE = 48.0;
+   private static final double MAX_TARGET_SCAN_RANGE = 64.0;
+   private static final double MAX_LAGUZ_TARGET_SCAN_RANGE = 80.0;
    private static final int MAX_TARGET_CANDIDATES_PER_SCAN = 96;
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      if (entity instanceof ArashEntity arash) {
+         ArashCombatHelper.tickTargeting(arash, context);
+         return;
+      }
+      if (entity instanceof FanaticAssassinEntity fanatic) {
+         FanaticAssassinCombatHelper.tickTargeting(fanatic, context);
+         return;
+      }
       boolean laguzActive = CuChulainnCombatHelper.isLaguzActive(entity);
       double profileRange = context.aiConfig() == null ? Math.max(16.0, context.behaviorProfile().aggressionRange()) : Math.max(16.0, context.aiConfig().movement().followDistance() * 4.0);
       boolean emiyaArcher = EmiyaArcherEntity.SERVANT_KEY.equals(entity.getServantId());
@@ -98,7 +111,9 @@ public final class HostileTargetingModule implements ServantAiModule {
 
       if (bestTarget != null) {
          entity.setTarget(bestTarget);
+         ServantTargetingService.remember(entity, bestTarget, gameTick);
       } else if (currentTarget != null) {
+         ServantTargetingService.forget(entity);
          entity.setTarget(null);
       }
    }
@@ -120,11 +135,12 @@ public final class HostileTargetingModule implements ServantAiModule {
       }
       double maxDistanceSqr = aggressionRange * aggressionRange * 1.35;
       double targetDistanceSqr = entity.distanceToSqr(target);
-      if (targetDistanceSqr > maxDistanceSqr) {
+      boolean retained = ServantTargetingService.canRetain(entity, target, gameTick);
+      if (targetDistanceSqr > maxDistanceSqr && !retained) {
          return false;
       }
 
-      if (targetDistanceSqr >= 16.0 && !hasCurrentTargetLineOfSight(entity, target, gameTick)) {
+      if (targetDistanceSqr >= 16.0 && !hasCurrentTargetLineOfSight(entity, target, gameTick) && !retained) {
          return false;
       }
 

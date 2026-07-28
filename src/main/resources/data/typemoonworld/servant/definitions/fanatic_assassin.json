@@ -1,0 +1,50 @@
+{
+  "id": "fanatic_assassin",
+  "display_name": "Fanatic (Assassin)",
+  "display_name_zh": "\u72c2\u4fe1\u5b50\uff08Assassin\uff09",
+  "class_type": "assassin",
+  "faction": "human",
+  "traits": [
+    "servant", "humanoid", "living_human", "female", "assassin",
+    "lawful", "good", "earth", "hassan_order", "fanatic", "divine_technique_mimic"
+  ],
+  "parameters": {
+    "endurance": "B", "endurance_plus": false,
+    "strength": "C", "strength_plus": false,
+    "agility": "A", "agility_plus": false,
+    "magic": "C", "magic_plus": false,
+    "luck": "D", "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/fanatic_assassin.geo.json",
+    "texture": "typemoonworld:textures/entity/fanatic_assassin.png",
+    "animation": "typemoonworld:animations/fanatic_assassin.animation.json",
+    "animations": {
+      "idle": "animation.fanatic_assassin.standing",
+      "walk": "animation.fanatic_assassin.walk",
+      "melee": "animation.fanatic_assassin.melee",
+      "heartbeat": "animation.fanatic_assassin.heartbeat",
+      "marrow": "animation.fanatic_assassin.marrow",
+      "hair": "animation.fanatic_assassin.hair",
+      "temperature": "animation.fanatic_assassin.temperature",
+      "nerves": "animation.fanatic_assassin.nerves",
+      "computer": "animation.fanatic_assassin.computer",
+      "toxin": "animation.fanatic_assassin.toxin",
+      "jinn": "animation.fanatic_assassin.jinn"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
+    "default_weapon": "",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": ["melee", "heartbeat", "marrow", "hair", "temperature", "nerves", "computer", "toxin", "jinn"]
+  },
+  "skills": ["presence_concealment_a_minus_fanatic", "fanaticism_a", "phantasmal_lineage"],
+  "noble_phantasm": "phantasmal_lineage",
+  "personality": {
+    "obedience": "rebellious", "principle": "lawful", "morality": "good",
+    "social": "hermit", "combat": "frenzied", "starting_favor": 0.0
+  },
+  "ai_config": "fanatic_assassin_ai",
+  "spawn_egg": {"primary": 1381661, "secondary": 12167072}
+}

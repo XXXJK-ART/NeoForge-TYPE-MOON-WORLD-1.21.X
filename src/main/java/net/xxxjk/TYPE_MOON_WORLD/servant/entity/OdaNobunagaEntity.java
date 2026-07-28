@@ -17,9 +17,6 @@ public class OdaNobunagaEntity extends ServantEntity {
    @Override
    protected void customServerAiStep() {
       super.customServerAiStep();
-      if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
-         OdaNobunagaCombatHelper.tick(this);
-      }
    }
 
    @Override

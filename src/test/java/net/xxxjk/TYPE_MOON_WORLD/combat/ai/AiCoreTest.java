@@ -1,0 +1,118 @@
+package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
+import org.junit.jupiter.api.Test;
+
+class AiCoreTest {
+   private static ResourceLocation id(String path) {
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", path);
+   }
+
+   @Test
+   void commitmentOnlyYieldsWhenMarkedInterruptibleAndReplacementIsHigherPriority() {
+      AiBlackboard board = new AiBlackboard();
+      AiIntent attack = AiIntent.of(id("attack"), AiIntent.PRIORITY_ATTACK, 1.0, 20, true, () -> { }, AiControl.ATTACK);
+      board.commit(attack, 100L);
+      AiIntent movement = AiIntent.of(id("move"), AiIntent.PRIORITY_POSITION, 100.0, 1, true, () -> { }, AiControl.MOVE);
+      AiIntent defense = AiIntent.of(id("defense"), AiIntent.PRIORITY_LETHAL_DEFENSE, 1.0, 1, true, () -> { }, AiControl.DEFEND);
+      assertTrue(board.commitmentBlocks(movement, 105L));
+      assertFalse(board.commitmentBlocks(defense, 105L));
+
+      board.commit(AiIntent.of(id("locked"), AiIntent.PRIORITY_ATTACK, 1.0, 20, false, () -> { }, AiControl.CAST), 200L);
+      assertTrue(board.commitmentBlocks(defense, 205L));
+   }
+
+   @Test
+   void memoryIsCappedAndExpires() {
+      AiBlackboard board = new AiBlackboard();
+      UUID retained = null;
+      for (int i = 0; i < 10; i++) {
+         UUID opponent = new UUID(0L, i + 1L);
+         retained = opponent;
+         for (int action = 0; action < 10; action++) board.observe(opponent, id("action_" + action), 4.0, 1.0, action % 2 == 0, i);
+      }
+      assertEquals(8, board.opponent(retained).observedActions());
+      assertEquals(AiBlackboard.OpponentSnapshot.EMPTY, board.opponent(new UUID(0L, 1L)));
+      board.beginTick(700L);
+      assertEquals(AiBlackboard.OpponentSnapshot.EMPTY, board.opponent(retained));
+   }
+
+   @Test
+   void threatLineGeometryUsesRadiusAndLength() {
+      CombatThreat threat = new CombatThreat(id("beam"), UUID.randomUUID(), null, Vec3.ZERO, new Vec3(1, 0, 0),
+         CombatThreat.Shape.LINE, 1.0, 10.0, 4, 0, 5, 10, false, true, true);
+      assertTrue(threat.threatens(new Vec3(6, 0.8, 0), 0.1));
+      assertFalse(threat.threatens(new Vec3(12, 0, 0), 0.1));
+      assertFalse(threat.threatens(new Vec3(6, 3, 0), 0.1));
+   }
+
+   @Test
+   void beamClashRequiresOpposedIntersectingBeams() {
+      assertTrue(BeamClashManager.canClashGeometry(new Vec3(0, 1, 0), new Vec3(100, 1, 0), 4.0,
+         new Vec3(100, 1, 0), new Vec3(0, 1, 0), 4.0));
+      assertFalse(BeamClashManager.canClashGeometry(new Vec3(0, 1, 0), new Vec3(100, 1, 0), 4.0,
+         new Vec3(0, 1, 12), new Vec3(100, 1, 12), 4.0));
+      assertFalse(BeamClashManager.canClashGeometry(new Vec3(0, 1, 0), new Vec3(100, 1, 0), 4.0,
+         new Vec3(100, 1, 12), new Vec3(0, 1, 12), 4.0));
+      assertFalse(BeamClashManager.canClashGeometry(new Vec3(0, 1, 0), new Vec3(20, 1, 0), 4.0,
+         new Vec3(100, 1, 0), new Vec3(80, 1, 0), 4.0));
+   }
+
+   @Test
+   void beamClashPressureUsesPowerAndManaAndLeavesBoundedResidual() {
+      float fullEa = BeamClashManager.effectiveStrength(1.18F, 1.0F);
+      float exhaustedEa = BeamClashManager.effectiveStrength(1.18F, 0.1F);
+      float fullExcalibur = BeamClashManager.effectiveStrength(1.0F, 1.0F);
+      assertTrue(BeamClashManager.pressureDelta(fullEa, fullExcalibur) > 0.0F);
+      assertTrue(BeamClashManager.pressureDelta(exhaustedEa, fullExcalibur) < 0.0F);
+      assertTrue(BeamClashManager.residualScale(fullEa, fullExcalibur, 0.4F) >= 0.25F);
+      assertTrue(BeamClashManager.residualScale(100.0F, 0.1F, 1.0F) <= 0.9F);
+   }
+
+   @Test
+   void jumpQualificationMatchesAgilityRules() {
+      assertEquals(EvasionMovementService.JumpCapability.BACKSTEP, EvasionMovementService.jumpCapability(2, false, false, false));
+      assertEquals(EvasionMovementService.JumpCapability.SINGLE_JUMP, EvasionMovementService.jumpCapability(3, false, false, false));
+      assertEquals(EvasionMovementService.JumpCapability.DOUBLE_JUMP, EvasionMovementService.jumpCapability(5, false, true, false));
+      assertEquals(EvasionMovementService.JumpCapability.DOUBLE_JUMP, EvasionMovementService.jumpCapability(3, true, true, false));
+      assertEquals(EvasionMovementService.JumpCapability.NONE, EvasionMovementService.jumpCapability(5, false, true, true));
+      assertEquals(32, ProjectileThreatSensor.scanLimit());
+   }
+
+   @Test
+   void arbitrationSelectsOnePrimaryAndOnlyDisjointAuxiliaries() {
+      List<String> executed = new ArrayList<>();
+      AiIntent move = AiIntent.of(id("move"), AiIntent.PRIORITY_POSITION, 10.0, 1, true,
+         () -> executed.add("move"), AiControl.MOVE, AiControl.LOOK);
+      AiIntent attack = AiIntent.of(id("attack"), AiIntent.PRIORITY_ATTACK, 10.0, 5, true,
+         () -> executed.add("attack"), AiControl.ATTACK, AiControl.LOOK);
+      AiIntent defend = AiIntent.of(id("defend"), AiIntent.PRIORITY_LETHAL_DEFENSE, 10.0, 3, false,
+         () -> executed.add("defend"), AiControl.DEFEND, AiControl.MOVE);
+      AiIntent cast = AiIntent.of(id("cast"), AiIntent.PRIORITY_ATTACK, 5.0, 2, true,
+         () -> executed.add("cast"), AiControl.CAST);
+
+      AiIntentArbitrator.Selection result = AiIntentArbitrator.select(List.of(move, attack, defend, cast), ignored -> false);
+      assertEquals(defend, result.primary());
+      assertEquals(List.of(attack, cast), result.auxiliaries());
+   }
+
+   @Test
+   void phaseThresholdsAreStableAndExplicit() {
+      assertEquals(ServantCombatPhase.PROBING, ServantPhaseService.desiredPhase(1.0F, 59L, 1.0F));
+      assertEquals(ServantCombatPhase.NORMAL, ServantPhaseService.desiredPhase(1.0F, 60L, 1.0F));
+      assertEquals(ServantCombatPhase.DECISIVE, ServantPhaseService.desiredPhase(0.55F, 1L, 1.0F));
+      assertEquals(ServantCombatPhase.LAST_STAND, ServantPhaseService.desiredPhase(0.25F, 1L, 3.0F));
+      assertEquals("CAUTIOUS", DeadApostleTacticalState.determinePhase(true, 1.0F, 0.0F, 1.0F));
+      assertEquals("HUNTING", DeadApostleTacticalState.determinePhase(false, 1.0F, 0.45F, 1.0F));
+      assertEquals("FERAL", DeadApostleTacticalState.determinePhase(false, 0.3F, 0.0F, 1.0F));
+   }
+}

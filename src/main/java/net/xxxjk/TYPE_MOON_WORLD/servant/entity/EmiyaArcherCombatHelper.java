@@ -66,6 +66,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
@@ -326,17 +327,16 @@ public final class EmiyaArcherCombatHelper {
          }
          if (activeShield != null) {
             stayBehindRhoAias(entity, activeShield, target);
-         } else if (distance < 10.0) {
-            kiteBack(entity, target, 5.0);
-         } else if (distance > 18.0) {
-            ServantNavigationHelper.moveToTargetThrottled(
+         } else {
+            ServantEngagementService.maintainRangedPosition(
                entity,
                target,
-               1.15,
                now,
-               ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
-               1.0,
-               "EmiyaRangedChasePath"
+               10.0,
+               14.0,
+               18.0,
+               1.15,
+               "EmiyaRangedPosition"
             );
          }
          maybeShield(entity, level, target, now, phase);

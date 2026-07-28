@@ -11,10 +11,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -22,6 +19,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 
 public final class ServantCardHeraclesSkills {
    private static final String HERACLES_AIRBORNE_TAG = "ServantCardHeraclesAirborne";
@@ -108,26 +107,6 @@ public final class ServantCardHeraclesSkills {
       ServantSprintCollisionHelper.tryPlayerSprintCollision(player, level, data, HERACLES_LAST_SPRINT_COLLISION_BREAK_TAG, false, 10.0F, 1.25, 0.26, 32, 45.0F);
    }
 
-   private static boolean hasHeraclesBreakableBlockAhead(ServerLevel level, ServerPlayer player, Vec3 dir) {
-      if (dir.lengthSqr() < 1.0E-4) {
-         return false;
-      }
-      dir = dir.normalize();
-      Vec3 right = new Vec3(-dir.z, 0.0, dir.x);
-      for (double step = 0.62; step <= 1.18; step += 0.28) {
-         Vec3 center = player.position().add(dir.scale(step));
-         for (int y = 0; y <= 2; y++) {
-            for (int w = -1; w <= 1; w++) {
-               BlockPos pos = BlockPos.containing(center.add(right.scale(w * 0.42)).add(0.0, y, 0.0));
-               if (canBreakHeraclesBlock(level, pos, 42.0F)) {
-                  return true;
-               }
-            }
-         }
-      }
-      return false;
-   }
-
    public static void beginHeraclesAirborne(ServerPlayer player, boolean forceLandingImpact) {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(HERACLES_AIRBORNE_TAG, true);
@@ -155,10 +134,10 @@ public final class ServantCardHeraclesSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
-      BlockPos center = player.blockPosition();
-      int broken = breakHeraclesRadius(level, center, 2.4, 1, 2, 22, 38.0F);
+      TerrainImpactService.impact(level, player, player.position().add(0.0, 0.2, 0.0),
+         TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
       damageHeraclesRadius(player, 3.2, 26.0F, 1.15, 0.42);
-      if (broken > 0 || player.tickCount % 2 == 0) {
+      if (player.tickCount % 2 == 0) {
          level.sendParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.18, player.getZ(), 26, 1.1, 0.18, 1.1, 0.12);
          level.sendParticles(ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 0.15, player.getZ(), 12, 0.9, 0.16, 0.9, 0.06);
          level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.65F, 0.72F);
@@ -173,7 +152,9 @@ public final class ServantCardHeraclesSkills {
       double radius = heavy ? 5.4 : 4.0;
       float damage = heavy ? 58.0F : 36.0F;
       damageHeraclesRadius(player, radius, damage, heavy ? 1.85 : 1.25, heavy ? 0.72 : 0.46);
-      breakHeraclesRadius(level, player.blockPosition(), heavy ? 3.8 : 2.6, 1, 2, heavy ? 70 : 28, heavy ? 75.0F : 42.0F);
+      TerrainImpactService.impact(level, player, player.position().add(0.0, 0.2, 0.0),
+         TerrainImpactProfile.of(heavy ? TerrainImpactProfile.Tier.HEAVY : TerrainImpactProfile.Tier.MEDIUM),
+         TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
       spawnHeraclesSlamFx(level, player.position(), heavy);
    }
 
@@ -240,7 +221,8 @@ public final class ServantCardHeraclesSkills {
          return;
       }
       Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.35, 0.0);
-      breakHeraclesRadius(level, BlockPos.containing(center), 2.0, 1, 2, 14, 45.0F);
+      TerrainImpactService.impact(level, player, center,
+         TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL), TerrainImpactService.Shape.SURFACE_HEMISPHERE);
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y - 0.25, center.z, 16, 0.7, 0.18, 0.7, 0.05);
       level.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 10, 0.45, 0.35, 0.45, 0.12);
    }
@@ -282,7 +264,8 @@ public final class ServantCardHeraclesSkills {
       if (!vars.servant_card_transformed || !"heracles".equals(vars.servant_card_id) || !(player.level() instanceof ServerLevel level)) {
          return;
       }
-      breakHeraclesRadius(level, pos, 1.85, 1, 1, 12, 45.0F);
+      TerrainImpactService.impact(level, player, Vec3.atCenterOf(pos),
+         TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL), TerrainImpactService.Shape.SURFACE_HEMISPHERE);
       Vec3 center = Vec3.atCenterOf(pos);
       level.sendParticles(ParticleTypes.CLOUD, center.x, center.y, center.z, 14, 0.55, 0.28, 0.55, 0.08);
       level.playSound(null, pos, SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.PLAYERS, 0.75F, 0.68F);
@@ -312,88 +295,6 @@ public final class ServantCardHeraclesSkills {
       }
    }
 
-   private static int breakHeraclesRadius(ServerLevel level, BlockPos center, double radius, int down, int up, int limit, float hardnessCap) {
-      int broken = 0;
-      int ceil = Mth.ceil(radius);
-      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-ceil, -down, -ceil), center.offset(ceil, up, ceil))) {
-         if (broken >= limit) {
-            break;
-         }
-         double dx = pos.getX() + 0.5 - (center.getX() + 0.5);
-         double dy = (pos.getY() - center.getY()) / 0.75;
-         double dz = pos.getZ() + 0.5 - (center.getZ() + 0.5);
-         if (dx * dx + dy * dy + dz * dz > radius * radius || blockNoise(level, pos) > 0.86 && radius > 2.0) {
-            continue;
-         }
-         if (breakHeraclesBlock(level, pos, hardnessCap, broken % 5 == 0)) {
-            broken++;
-         }
-      }
-      return broken;
-   }
-
-   private static int breakHeraclesForwardBlocks(ServerLevel level, ServerPlayer player, Vec3 dir, double distance, int halfWidth, int limit, float hardnessCap) {
-      if (dir.lengthSqr() < 1.0E-4) {
-         return 0;
-      }
-      dir = dir.normalize();
-      Vec3 right = new Vec3(-dir.z, 0.0, dir.x);
-      int broken = 0;
-      for (double step = 0.8; step <= distance && broken < limit; step += 0.8) {
-         Vec3 center = player.position().add(dir.scale(step));
-         for (int y = 0; y <= 2 && broken < limit; y++) {
-            for (int w = -halfWidth; w <= halfWidth && broken < limit; w++) {
-               if (Math.abs(w) == halfWidth && blockNoise(level, BlockPos.containing(center)) > 0.7) {
-                  continue;
-               }
-               BlockPos pos = BlockPos.containing(center.add(right.scale(w * 0.65)).add(0.0, y, 0.0));
-               if (breakHeraclesBlock(level, pos, hardnessCap, broken % 4 == 0)) {
-                  broken++;
-               }
-            }
-         }
-      }
-      return broken;
-   }
-
-   private static boolean breakHeraclesBlock(ServerLevel level, BlockPos pos, float hardnessCap, boolean debris) {
-      BlockState state = level.getBlockState(pos);
-      if (!canBreakHeraclesBlock(level, pos, hardnessCap)) {
-         return false;
-      }
-      if (debris) {
-         spawnHeraclesDebris(level, pos, state);
-      }
-      if (!level.removeBlock(pos, false)) {
-         return false;
-      }
-      if (debris) {
-         level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.45, pos.getZ() + 0.5, 4, 0.2, 0.16, 0.2, 0.04);
-      }
-      return true;
-   }
-
-   private static boolean canBreakHeraclesBlock(ServerLevel level, BlockPos pos, float hardnessCap) {
-      BlockState state = level.getBlockState(pos);
-      float hardness = state.getDestroySpeed(level, pos);
-      return !state.isAir()
-         && !state.is(Blocks.BEDROCK)
-         && hardness >= 0.0F
-         && hardness <= hardnessCap
-         && state.getExplosionResistance(level, pos, null) < 1200.0F;
-   }
-
-   private static void spawnHeraclesDebris(ServerLevel level, BlockPos pos, BlockState state) {
-      if (!level.getBlockState(pos.above()).isAir() || blockNoise(level, pos) > 0.35) {
-         return;
-      }
-      FallingBlockEntity falling = FallingBlockEntity.fall(level, pos.above(), state);
-      falling.disableDrop();
-      double angle = blockNoise(level, pos) * Math.PI * 2.0;
-      falling.setDeltaMovement(Math.cos(angle) * 0.08, 0.24 + blockNoise(level, pos.above()) * 0.16, Math.sin(angle) * 0.08);
-      falling.time = 1;
-   }
-
    private static void spawnHeraclesSlamFx(ServerLevel level, Vec3 center, boolean heavy) {
       double y = center.y;
       level.sendParticles(ParticleTypes.CLOUD, center.x, y + 0.3, center.z, heavy ? 36 : 26, 1.5, 0.3, 1.5, 0.3);
@@ -413,16 +314,5 @@ public final class ServantCardHeraclesSkills {
       level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, heavy ? 1.35F : 0.85F, 0.52F);
       level.playSound(null, BlockPos.containing(center), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, heavy ? 1.0F : 0.7F, 0.6F);
    }
-
-   private static double blockNoise(ServerLevel level, BlockPos pos) {
-      long seed = pos.asLong() ^ (level.getGameTime() * 341873128712L);
-      seed ^= seed >>> 33;
-      seed *= 0xff51afd7ed558ccdL;
-      seed ^= seed >>> 33;
-      seed *= 0xc4ceb9fe1a85ec53L;
-      seed ^= seed >>> 33;
-      return (double)(seed & 0xFFFFFFL) / (double)0x1000000;
-   }
-
 
 }

@@ -1,0 +1,4 @@
+{"servant":"fanatic_assassin","actions":[
+  {"id":"typemoonworld:fanatic/assassination","tags":["melee","interrupt"],"minimum_range":0,"maximum_range":7,"mana_cost":5,"stamina_cost":8,"timing":{"windup":3,"active":4,"recovery":5},"threat":{"shape":"point","radius":3,"length":0,"danger":3,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":1},"terrain_impact":"none"},
+  {"id":"typemoonworld:fanatic/zealot_manifestation","tags":["noble_phantasm","summon","area"],"minimum_range":0,"maximum_range":36,"mana_cost":145,"stamina_cost":14,"timing":{"windup":36,"active":140,"recovery":22},"threat":{"shape":"sphere","radius":20,"length":0,"danger":5,"blockable":false,"dodgeable":false,"interruptible":true,"friendly_fire_radius":20},"terrain_impact":"none"}
+]}

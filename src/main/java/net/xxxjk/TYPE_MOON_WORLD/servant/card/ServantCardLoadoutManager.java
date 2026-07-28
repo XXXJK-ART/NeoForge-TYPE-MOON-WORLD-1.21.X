@@ -74,6 +74,8 @@ public final class ServantCardLoadoutManager {
          case "gawain" -> main = stack(ModItems.EXCALIBUR_GALLATIN.get());
          case "paracelsus" -> main = stack(ModItems.PARACELSUS_SWORD.get());
          case "ushiwakamaru_rider" -> main = stack(ModItems.SPIDER_CUTTER.get());
+         case "arash" -> main = stack(ModItems.ARASH_BOW.get());
+         case "nightingale" -> main = stack(ModItems.NIGHTINGALE_GUN.get());
          default -> {
          }
       }

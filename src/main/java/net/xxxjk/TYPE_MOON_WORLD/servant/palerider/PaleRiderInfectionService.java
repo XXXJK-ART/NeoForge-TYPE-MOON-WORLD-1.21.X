@@ -44,7 +44,7 @@ public final class PaleRiderInfectionService {
       if (target == null || owner == null || !target.isAlive() || target == owner || target.isAlliedTo(owner)) {
          return false;
       }
-      if (isPaleRiderCardPlayer(target)) {
+      if (isPaleRiderCardPlayer(target) || isStoutArash(target)) {
          return false;
       }
       long now = target.level().getGameTime();
@@ -84,7 +84,7 @@ public final class PaleRiderInfectionService {
       if (!maintenanceTick && !controlledAiTick) {
          return;
       }
-      if (isPaleRiderCardPlayer(target)) {
+      if (isPaleRiderCardPlayer(target) || isStoutArash(target)) {
          if (target.getPersistentData().contains(TAG_LEVEL) || target.hasEffect(ModMobEffects.PALE_RIDER_INFECTION)) {
             cleanse(target, false);
          }
@@ -466,7 +466,8 @@ public final class PaleRiderInfectionService {
    }
 
    private static boolean canReceiveInfection(LivingEntity target, LivingEntity source, LivingEntity owner) {
-      if (target == source || target == owner || !target.isAlive() || isPaleRiderCardPlayer(target)
+      if (isStoutArash(target)
+         || target == source || target == owner || !target.isAlive() || isPaleRiderCardPlayer(target)
          || arePaleRiderAllies(owner, target)
          || net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)) {
          return false;
@@ -474,6 +475,12 @@ public final class PaleRiderInfectionService {
       CompoundTag data = target.getPersistentData();
       return getLevel(target) < InfectionRules.MAX_LEVEL || !data.hasUUID(TAG_OWNER)
          || !owner.getUUID().equals(data.getUUID(TAG_OWNER));
+   }
+
+   private static boolean isStoutArash(LivingEntity target) {
+      return target instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity
+         || target instanceof net.minecraft.server.level.ServerPlayer player
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills.isArash(player);
    }
 
    private static void refreshEffect(

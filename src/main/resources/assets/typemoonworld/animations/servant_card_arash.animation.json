@@ -1,0 +1,41 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"1": {
+			"loop": true,
+			"bones": {
+				"body": {
+					"scale": {
+						"vector": [1, 0.85, 1]
+					}
+				},
+				"left_leg": {
+					"position": {
+						"vector": [-0.2, 0, 0]
+					},
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"right_leg": {
+					"position": {
+						"vector": [0.2, 0, 0]
+					},
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"tui2": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"armorLeftLeg": {
+					"scale": {
+						"vector": [1.1, 1, 1]
+					}
+				}
+			}
+		}
+	}
+}

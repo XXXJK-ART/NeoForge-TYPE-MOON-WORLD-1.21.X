@@ -1,0 +1,7 @@
+{
+  "id": "steel_nursing_a", "display_name": "Nursing of Steel A", "display_name_zh": "钢之看护 A",
+  "type": "active", "mp_cost": 15, "cooldown_ticks": 200, "duration_ticks": 0,
+  "effects": [{"effect_type": "heal_cleanse", "params": {"amount": 150.0, "range": 15.0}}],
+  "description": "Heals 150 health and removes harmful effects; healing is reversed against Pale Rider.",
+  "description_zh": "恢复150点生命并净化负面状态；对苍白骑士转化为150点伤害。"
+}

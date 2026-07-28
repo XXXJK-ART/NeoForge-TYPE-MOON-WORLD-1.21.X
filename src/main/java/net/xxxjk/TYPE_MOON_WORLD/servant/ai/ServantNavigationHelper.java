@@ -31,6 +31,18 @@ public final class ServantNavigationHelper {
       double minTargetMoveSqr,
       String keyPrefix
    ) {
+      if (ServantEngagementService.matchup(entity, target) == ServantEngagementService.Matchup.MELEE_VS_RANGED
+         && entity.distanceTo(target) > 7.0) {
+         return moveToPositionThrottled(
+            entity,
+            ServantEngagementService.meleeApproachPoint(entity, target, gameTick),
+            speed * 1.12,
+            gameTick,
+            Math.min(repathInterval, SHORT_REPATH_INTERVAL),
+            minTargetMoveSqr,
+            keyPrefix + "Intercept"
+         );
+      }
       CompoundTag data = entity.getPersistentData();
       String xKey = keyPrefix + "TargetX";
       String yKey = keyPrefix + "TargetY";

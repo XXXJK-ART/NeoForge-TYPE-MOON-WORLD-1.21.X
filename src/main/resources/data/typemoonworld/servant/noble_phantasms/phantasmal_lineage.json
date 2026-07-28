@@ -1,0 +1,9 @@
+{
+  "id": "phantasmal_lineage",
+  "display_name": "Zabaniya: Phantasmal Lineage",
+  "display_name_zh": "\u5e7b\u60f3\u8840\u7edf",
+  "rank": "B+", "type": "anti_unit", "mp_cost": 0.0, "cooldown_ticks": 0,
+  "windup_ticks": 0, "duration_ticks": 0, "effects": [],
+  "description": "Reproduces the divine techniques of the previous eighteen Hassans.",
+  "description_zh": "\u4ee5\u8089\u4f53\u53d8\u8d28\u518d\u73b0\u524d\u5341\u516b\u4ee3\u54c8\u6851\u7684\u795e\u4e1a\u3002"
+}

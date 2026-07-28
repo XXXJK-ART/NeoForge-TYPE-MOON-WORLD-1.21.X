@@ -24,9 +24,17 @@ final class ServantCardConcealmentHelper {
    }
 
    static void maintain(ServerPlayer player, int duration) {
+      maintain(player, duration, 0);
+   }
+
+   static void maintain(ServerPlayer player, int duration, int amplifier) {
       MobEffectInstance current = player.getEffect(MobEffects.INVISIBILITY);
+      if (current != null && current.getAmplifier() != amplifier) {
+         player.removeEffect(MobEffects.INVISIBILITY);
+         current = null;
+      }
       if (current == null || current.getDuration() <= Math.min(20, duration / 2)) {
-         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, duration, 0, false, false, false));
+         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, duration, amplifier, false, false, false));
       }
       tick(player);
    }

@@ -21,17 +21,17 @@ public final class MovementModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      LivingEntity target = context.target();
+      if (target != null) {
+         // CombatModule owns all combat movement; a second writer here caused path oscillation.
+         return;
+      }
       if (entity instanceof MedeaEntity medea) {
          this.tickMedea(medea, context);
          return;
       }
       if (entity instanceof MedusaEntity medusa) {
          this.tickMedusa(medusa, context);
-         return;
-      }
-
-      LivingEntity target = context.target();
-      if (target != null) {
          return;
       }
 

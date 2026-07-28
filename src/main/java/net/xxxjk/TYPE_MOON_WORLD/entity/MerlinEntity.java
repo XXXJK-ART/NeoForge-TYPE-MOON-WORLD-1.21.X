@@ -87,6 +87,13 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class MerlinEntity extends PathfinderMob implements GeoEntity {
+   private boolean tacticalAiHandled;
+
+   @Override
+   protected void customServerAiStep() {
+      tacticalAiHandled = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
+      if (!tacticalAiHandled) super.customServerAiStep();
+   }
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private int lastDebuffTick = 0;
    private int supportAuraCooldown = 0;
@@ -259,6 +266,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
       super.aiStep();
       this.clearFire();
       if (!this.level().isClientSide) {
+         if (tacticalAiHandled) return;
          float health = this.getHealth();
          float maxHealth = (float) this.getAttributeValue(Attributes.MAX_HEALTH);
          ItemStack mainHand = this.getMainHandItem();

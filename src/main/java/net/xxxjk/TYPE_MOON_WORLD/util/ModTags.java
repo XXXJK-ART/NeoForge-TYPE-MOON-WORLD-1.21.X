@@ -21,5 +21,6 @@ public final class ModTags {
    public static final class Blocks {
       public static final TagKey<Block> GEM_ORES = TagKey.create(Registries.BLOCK, ModTags.id("gem_ores"));
       public static final TagKey<Block> GEM_GEODE_BLOCKS = TagKey.create(Registries.BLOCK, ModTags.id("gem_geode_blocks"));
+      public static final TagKey<Block> TERRAIN_IMMUNE = TagKey.create(Registries.BLOCK, ModTags.id("terrain_immune"));
    }
 }

@@ -17,5 +17,15 @@ public final class EnvironmentModule implements ServantAiModule {
       if (entity instanceof ParacelsusEntity paracelsus) {
          ParacelsusWorkshopHelper.tickEnvironment(paracelsus);
       }
+      if (context.aiConfig() == null || entity.tickCount % 40 != Math.floorMod(entity.getId(), 40)) return;
+      var environment = context.aiConfig().environment();
+      String biome = entity.level().getBiome(entity.blockPosition()).unwrapKey().map(key -> key.location().toString()).orElse("");
+      double comfort = environment.likedBiomes().contains(biome) ? 1.0 : environment.dislikedBiomes().contains(biome) ? -1.0 : 0.0;
+      String weather = environment.preferredWeather();
+      boolean preferred = "any".equals(weather)
+         || "rain".equals(weather) && entity.level().isRaining()
+         || "clear".equals(weather) && !entity.level().isRaining()
+         || "thunder".equals(weather) && entity.level().isThundering();
+      entity.getPersistentData().putDouble("TypeMoonAiEnvironmentComfort", comfort + (preferred ? 0.25 : -0.25));
    }
 }

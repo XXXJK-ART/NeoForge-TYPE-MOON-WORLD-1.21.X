@@ -108,6 +108,10 @@ public class Restore_mana {
             if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer && vars.master_active) {
                regenMultiplier = Math.max(regenMultiplier, linkedCasterWorkshopLeylineMultiplier(serverPlayer, vars));
             }
+            if (entity instanceof net.minecraft.world.entity.LivingEntity living
+               && living.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
+               regenMultiplier *= 0.5;
+            }
 
             vars.current_mana_regen_multiplier = regenMultiplier;
             if (vars.is_magic_circuit_open) {

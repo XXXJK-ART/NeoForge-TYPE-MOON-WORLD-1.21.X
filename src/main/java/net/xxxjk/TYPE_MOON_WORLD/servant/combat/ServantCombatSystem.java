@@ -21,9 +21,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
@@ -38,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -156,6 +161,7 @@ public final class ServantCombatSystem {
          return;
       }
       DamageSource source = event.getSource();
+      boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
       if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
          recordIncomingDamage(servant, event.getAmount());
          return;
@@ -163,7 +169,8 @@ public final class ServantCombatSystem {
 
       long now = servant.level().getGameTime();
       CompoundTag data = servant.getPersistentData();
-      if (!PaleRiderDamageTypes.isInfection(source) && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
+      if (!guaranteedHit && !PaleRiderDamageTypes.isInfection(source)
+         && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
          event.setCanceled(true);
          spawnGuardFx(servant, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return;
@@ -178,8 +185,8 @@ public final class ServantCombatSystem {
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
          boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
-         boolean guaranteedHit = UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
-         if (!PaleRiderDamageTypes.isInfection(source) && !ushiwakamaruMelee && !guaranteedHit
+         boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
+         if (!PaleRiderDamageTypes.isInfection(source) && !ushiwakamaruMelee && !unavoidable
             && tryAutoDodge(servant, source, params, now)) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount((float)Math.min(event.getAmount(), event.getAmount() * 0.5F));
@@ -209,6 +216,14 @@ public final class ServantCombatSystem {
       if (!(caster.level() instanceof ServerLevel level) || windupTicks <= 0) {
          return;
       }
+      CombatThreatService.publishWindup(
+         caster,
+         target,
+         ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "noble_phantasm/" + caster.getServantId()),
+         windupTicks,
+         ranged,
+         5
+      );
       AABB box = caster.getBoundingBox().inflate(20.0);
       List<ServantEntity> responders = level.getEntitiesOfClass(
          ServantEntity.class,
@@ -981,6 +996,9 @@ public final class ServantCombatSystem {
 
    private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
       double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      if (entity instanceof ArashEntity) {
+         return ArashCombatRules.boostedPoiseRecovery(poiseRegen);
+      }
       if (entity instanceof GilgameshEntity) {
          return poiseRegen * 2.0;
       }
@@ -989,6 +1007,9 @@ public final class ServantCombatSystem {
 
    private static double adjustedStaminaRegenPerSecond(ServantParams params, ServantEntity entity) {
       double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
+      if (entity instanceof ArashEntity) {
+         return ArashCombatRules.boostedDefenseRecovery(staminaRegen);
+      }
       return entity instanceof GilgameshEntity ? staminaRegen * 1.75 : staminaRegen;
    }
 }

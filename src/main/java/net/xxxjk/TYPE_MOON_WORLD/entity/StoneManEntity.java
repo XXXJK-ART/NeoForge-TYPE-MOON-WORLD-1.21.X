@@ -41,7 +41,6 @@ import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
-import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.DyeColor;
@@ -62,6 +61,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -71,6 +72,11 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class StoneManEntity extends PathfinderMob implements GeoEntity {
+   @Override
+   protected void customServerAiStep() {
+      if (!net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this)) super.customServerAiStep();
+   }
+
    private static final EntityDataAccessor<Integer> MIMIC_BLOCK_ID = SynchedEntityData.defineId(StoneManEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> ATTACK_TYPE = SynchedEntityData.defineId(StoneManEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> ATTACK_ANIM_TICKS = SynchedEntityData.defineId(StoneManEntity.class, EntityDataSerializers.INT);
@@ -696,7 +702,9 @@ public class StoneManEntity extends PathfinderMob implements GeoEntity {
       if (this.level() instanceof ServerLevel serverLevel) {
          BlockState impactState = this.getMimicBlockState();
          this.spawnSlamShockwave(serverLevel, center, impactState);
-         this.spawnSlamBlockUplift(serverLevel, center, impactState);
+         TerrainImpactService.impact(serverLevel, this, center,
+            TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM),
+            TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
       }
 
       this.level()
@@ -726,36 +734,6 @@ public class StoneManEntity extends PathfinderMob implements GeoEntity {
             double z = center.z + Math.sin(angle) * radius;
             level.sendParticles(blockDust, x, center.y + 0.05, z, 1, 0.08, 0.02, 0.08, 0.0);
             level.sendParticles(ParticleTypes.SMOKE, x, center.y + 0.1, z, 1, 0.05, 0.01, 0.05, 0.0);
-         }
-      }
-   }
-
-   private void spawnSlamBlockUplift(ServerLevel level, Vec3 center, BlockState fallbackState) {
-      for (int i = 0; i < 10; i++) {
-         double angle = this.random.nextDouble() * (Math.PI * 2);
-         double dist = 1.1 + this.random.nextDouble() * 2.699999952316284;
-         int x = Mth.floor(center.x + Math.cos(angle) * dist);
-         int z = Mth.floor(center.z + Math.sin(angle) * dist);
-         BlockPos groundPos = this.findSolidGroundAt(x, z);
-         if (groundPos != null) {
-            BlockState groundState = this.level().getBlockState(groundPos);
-            if (!groundState.isAir()
-               && groundState.isCollisionShapeFullBlock(this.level(), groundPos)
-               && !groundState.hasBlockEntity()
-               && groundState.getFluidState().isEmpty()
-               && !(groundState.getDestroySpeed(this.level(), groundPos) < 0.0F)) {
-               BlockPos spawnPos = groundPos.above();
-               if (this.level().getBlockState(spawnPos).isAir()) {
-                  BlockState visualState = groundState.isAir() ? fallbackState : groundState;
-                  FallingBlockEntity uplift = FallingBlockEntity.fall(level, spawnPos, visualState);
-                  uplift.disableDrop();
-                  uplift.dropItem = false;
-                  uplift.setDeltaMovement(
-                     (this.random.nextDouble() - 0.5) * 0.1, 0.34 + this.random.nextDouble() * 0.18, (this.random.nextDouble() - 0.5) * 0.1
-                  );
-                  uplift.time = 1;
-               }
-            }
          }
       }
    }

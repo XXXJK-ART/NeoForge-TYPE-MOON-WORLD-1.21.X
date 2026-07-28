@@ -113,10 +113,6 @@ public final class ServantCardPaleRiderSkills {
          }
          player.noPhysics = false;
          ServantCardConcealmentHelper.maintain(player, 40);
-         if (!player.getPersistentData().getBoolean(STEALTH_TAG) && player.tickCount % 4 == 0 && player.level() instanceof ServerLevel level) {
-            level.sendParticles(ParticleTypes.SQUID_INK, player.getX(), player.getY() + 0.8, player.getZ(), 5, 0.22, 0.7, 0.22, 0.01);
-            level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.9, player.getZ(), 3, 0.25, 0.7, 0.25, 0.01);
-         }
       } else {
          if (player.getVehicle() != host && !player.startRiding(host, true)) {
             releasePossession(player);

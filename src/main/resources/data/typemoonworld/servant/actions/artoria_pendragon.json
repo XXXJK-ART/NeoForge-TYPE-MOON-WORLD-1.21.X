@@ -1,0 +1,4 @@
+{"servant":"artoria_pendragon","actions":[
+  {"id":"typemoonworld:artoria/sword_combo","tags":["melee","interrupt"],"minimum_range":0,"maximum_range":5,"mana_cost":4,"stamina_cost":10,"timing":{"windup":5,"active":4,"recovery":7},"threat":{"shape":"cone","radius":3,"length":5,"danger":2,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":2},"terrain_impact":"chip"},
+  {"id":"typemoonworld:artoria/excalibur","tags":["noble_phantasm","area"],"minimum_range":5,"maximum_range":64,"mana_cost":180,"stamina_cost":20,"timing":{"windup":45,"active":18,"recovery":30},"threat":{"shape":"line","radius":5,"length":64,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":8},"terrain_impact":"np"}
+],"rivals":[{"opponent_servant":"gilgamesh","minimum_phase":"decisive","action_weights":{"typemoonworld:artoria/excalibur":1.25}}]}

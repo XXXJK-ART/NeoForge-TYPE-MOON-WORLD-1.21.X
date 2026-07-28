@@ -38,9 +38,12 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CursedArmHassanRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DirkProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DragonfangSoldierRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaArcherRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArashRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EnkiduRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ChainsOfHeavenBindingRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ContenderBulletRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NightingaleBulletRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NightingaleRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BlackKeyProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HeraclesRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
@@ -56,6 +59,9 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.LiShuwenRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ParacelsusRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RatSwarmRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PaleRiderCrowRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShadowHassanRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShadowHassanDeathShadowRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.FanaticAssassinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SoulEchoRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ApocalypseHorseRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ConceptSwordRenderer;
@@ -89,6 +95,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
 
 @EventBusSubscriber(
    modid = "typemoonworld",
@@ -179,6 +186,7 @@ public class TypeMoonWorldClientEvents {
       event.registerReloadListener(new ServantSkillDefinitionLoader());
       event.registerReloadListener(new ServantNoblePhantasmDefinitionLoader());
       event.registerReloadListener(new ServantAiDefinitionLoader());
+      event.registerReloadListener(new ServantActionLoader());
    }
 
    @SubscribeEvent
@@ -244,6 +252,9 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA.get(), MedusaRenderer::new);
       event.registerEntityRenderer(ModEntities.CURSED_ARM_HASSAN.get(), CursedArmHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH.get(), ArashRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH_STELLA_CONTROLLER.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
       event.registerEntityRenderer(ModEntities.USHIWAKAMARU_RIDER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.UshiwakamaruRiderRenderer::new);
@@ -253,6 +264,11 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), ParacelsusRenderer::new);
       event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.NIGHTINGALE.get(), NightingaleRenderer::new);
+      event.registerEntityRenderer(ModEntities.SHADOW_HASSAN.get(), ShadowHassanRenderer::new);
+      event.registerEntityRenderer(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), ShadowHassanDeathShadowRenderer::new);
+      event.registerEntityRenderer(ModEntities.FANATIC_ASSASSIN.get(), FanaticAssassinRenderer::new);
+      event.registerEntityRenderer(ModEntities.FANATIC_ASSASSIN_JINN.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.RAT_SWARM.get(), RatSwarmRenderer::new);
       event.registerEntityRenderer(ModEntities.PALE_RIDER_CROW.get(), PaleRiderCrowRenderer::new);
       event.registerEntityRenderer(ModEntities.SOUL_ECHO.get(), SoulEchoRenderer::new);
@@ -263,6 +279,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_GUN.get(), OdaMatchlockGunRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_MATCHLOCK_BULLET.get(), OdaMatchlockBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.CONTENDER_BULLET.get(), ContenderBulletRenderer::new);
+      event.registerEntityRenderer(ModEntities.NIGHTINGALE_BULLET.get(), NightingaleBulletRenderer::new);
       event.registerEntityRenderer(ModEntities.BLACK_KEY_PROJECTILE.get(), BlackKeyProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.RED_SKELETON_HAJUN.get(), RedSkeletonHajunRenderer::new);
       event.registerEntityRenderer(ModEntities.CHAINS_OF_HEAVEN_BINDING.get(), ChainsOfHeavenBindingRenderer::new);

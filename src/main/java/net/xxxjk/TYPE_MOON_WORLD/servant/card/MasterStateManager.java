@@ -11,6 +11,7 @@ import net.xxxjk.typemoonworld.api.event.ServantContractEvent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.RelativeMovement;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -18,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public final class MasterStateManager {
    public static final int MAX_COMMAND_SPELLS = 3;
@@ -210,6 +212,48 @@ public final class MasterStateManager {
       }
    }
 
+   public static LivingEntity getBoundServantEntity(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServerPlayer playerServant = getBoundServant(master, vars);
+      if (playerServant != null) return playerServant;
+      if (master == null || master.getServer() == null || !vars.master_active || isBlank(vars.master_servant_uuid)) return null;
+      try {
+         UUID uuid = UUID.fromString(vars.master_servant_uuid);
+         for (ServerLevel level : master.getServer().getAllLevels()) {
+            if (level.getEntity(uuid) instanceof ServantEntity servant && servant.isBoundTo(master)) return servant;
+         }
+      } catch (IllegalArgumentException ignored) {
+      }
+      return null;
+   }
+
+   public static boolean bindEntityServant(ServerPlayer master, ServantEntity servant) {
+      if (master == null || servant == null || !servant.isAlive()) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.master_active || !isBlank(vars.master_servant_uuid) || servant.getMasterUuid() != null) {
+         master.displayClientMessage(Component.translatable("message.typemoonworld.master.contract_occupied"), true);
+         return false;
+      }
+      if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
+      vars.master_servant_uuid = servant.getUUID().toString();
+      servant.bindMaster(master);
+      vars.syncPlayerVariables(master);
+      master.displayClientMessage(Component.translatable("message.typemoonworld.entity_servant.bound", servant.getDisplayName()), true);
+      NeoForge.EVENT_BUS.post(new ServantContractEvent.Post(master, servant));
+      return true;
+   }
+
+   public static boolean unbindEntityServant(ServerPlayer master, ServantEntity servant) {
+      if (master == null || servant == null || !servant.isBoundTo(master)) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (servant.getUUID().toString().equals(vars.master_servant_uuid)) {
+         vars.master_servant_uuid = "";
+         vars.syncPlayerVariables(master);
+      }
+      servant.unbindMaster();
+      master.displayClientMessage(Component.translatable("message.typemoonworld.entity_servant.unbound"), true);
+      return true;
+   }
+
    public static ServerPlayer getMaster(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (servant == null || servant.getServer() == null || isBlank(vars.servant_card_master_uuid)) {
          return null;
@@ -343,11 +387,13 @@ public final class MasterStateManager {
    }
 
    private static void clearBoundServant(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars) {
-      ServerPlayer servant = getBoundServant(master, masterVars);
-      if (servant != null) {
-         TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      LivingEntity servant = getBoundServantEntity(master, masterVars);
+      if (servant instanceof ServerPlayer servantPlayer) {
+         TypeMoonWorldModVariables.PlayerVariables servantVars = servantPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          servantVars.servant_card_master_uuid = "";
-         servantVars.syncPlayerVariables(servant);
+         servantVars.syncPlayerVariables(servantPlayer);
+      } else if (servant instanceof ServantEntity entityServant) {
+         entityServant.unbindMaster();
       }
    }
 

@@ -1,0 +1,4 @@
+{"servant":"shadow_hassan","actions":[
+  {"id":"typemoonworld:shadow_hassan/shadow_step","tags":["melee","evade","interrupt"],"minimum_range":0,"maximum_range":10,"mana_cost":6,"stamina_cost":7,"timing":{"windup":2,"active":4,"recovery":3},"threat":{"shape":"point","radius":3,"length":0,"danger":3,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":1},"terrain_impact":"none"},
+  {"id":"typemoonworld:shadow_hassan/delusional_illusion","tags":["noble_phantasm","summon","area"],"minimum_range":0,"maximum_range":32,"mana_cost":120,"stamina_cost":12,"timing":{"windup":30,"active":120,"recovery":20},"threat":{"shape":"sphere","radius":18,"length":0,"danger":5,"blockable":false,"dodgeable":false,"interruptible":true,"friendly_fire_radius":18},"terrain_impact":"none"}
+]}

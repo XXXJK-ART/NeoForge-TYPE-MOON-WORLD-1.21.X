@@ -70,6 +70,29 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Zabaniya", "zabaniya", 80.0, 1400);
             default -> null;
          };
+         case "fanatic_assassin" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Presence Concealment A-", "fanatic_concealment", 15.0, 300);
+            case 1 -> new ServantCardSkillAction("Delusional Heartbeat", "fanatic_heartbeat", 50.0, 600);
+            case 2 -> new ServantCardSkillAction("Delusional Marrow", "fanatic_marrow", 40.0, 600);
+            case 3 -> new ServantCardSkillAction("Delusional Hair", "fanatic_hair", 30.0, 600);
+            case 4 -> new ServantCardSkillAction("Delusional Temperature", "fanatic_temperature", 30.0, 600);
+            case 5 -> new ServantCardSkillAction("Delusional Nerves", "fanatic_nerves", 20.0, 600);
+            case 6 -> new ServantCardSkillAction("Delusional Computer", "fanatic_computer", 40.0, 600);
+            case 7 -> new ServantCardSkillAction("Delusional Toxin", "fanatic_toxin", 30.0, 600);
+            case 8 -> new ServantCardSkillAction("Delusional Jinn", "fanatic_jinn", 60.0, 600);
+            default -> null;
+         };
+         case "shadow_hassan" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Presence Concealment EX", "shadow_hassan_concealment", 0.0, 0);
+            case 1 -> new ServantCardSkillAction("Shadow Lantern A", "shadow_hassan_lantern", 0.0, 200);
+            case 2 -> new ServantCardSkillAction("Shadow Wandering A", "shadow_hassan_wandering", 15.0, 100);
+            case 3 -> new ServantCardSkillAction("Shadow Ambush", "shadow_hassan_ambush", 20.0, 120);
+            case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
+            case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
+            case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
+            case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
+            default -> null;
+         };
          case "emiya_archer" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Twin Flurry", "twin_flurry", 18.0, 20);
             case 0 -> new ServantCardSkillAction("Project Kanshou and Bakuya", "emiya_kb", 10.0, 20);
@@ -129,7 +152,7 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction(crouching ? "大规模王之宝库" : "王之宝库", crouching ? "gilgamesh_grand_vault" : "gilgamesh_vault", crouching ? 80.0 : 34.0, crouching ? 200 : 100);
             case 3 -> new ServantCardSkillAction("环敌王之宝库", "gilgamesh_ring_vault", 55.0, 300);
             case 4 -> new ServantCardSkillAction("解毒的灵药", "gilgamesh_elixir", 45.0, 600);
-            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 100);
+            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 300);
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
             case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);
@@ -196,6 +219,19 @@ public final class ServantCardSkillLayout {
             case 7 -> new ServantCardSkillAction("Benkei: Immovable Ground", "ushiwakamaru_benkei", 100.0, 600);
             case 8 -> new ServantCardSkillAction("Houmaru: Spider Slayer", "ushiwakamaru_spider_slayer", 50.0, 600);
             case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 150.0, 600);
+            default -> null;
+         };
+         case "arash" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Arrow Rain", "arash_arrow_rain", 8.0, 160);
+            case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
+            case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
+            case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
+            default -> null;
+         };
+         case "nightingale" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Nursing of Steel A", "nightingale_steel_nursing", 15.0, 200);
+            case 1 -> new ServantCardSkillAction("Angel's Cry EX", "nightingale_angel_cry", 10.0, 300);
+            case 9 -> new ServantCardSkillAction("Nightingale Pledge", "nightingale_pledge", 50.0, 600);
             default -> null;
          };
          default -> null;

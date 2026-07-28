@@ -1,0 +1,4 @@
+{"servant":"emiya_archer","actions":[
+  {"id":"typemoonworld:emiya/counter_shot","tags":["projectile","interrupt"],"minimum_range":4,"maximum_range":38,"mana_cost":8,"stamina_cost":4,"timing":{"windup":8,"active":2,"recovery":6},"threat":{"shape":"line","radius":1,"length":38,"danger":2,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":1},"terrain_impact":"chip"},
+  {"id":"typemoonworld:emiya/unlimited_blade_works","tags":["noble_phantasm","control","summon"],"minimum_range":0,"maximum_range":48,"mana_cost":160,"stamina_cost":12,"timing":{"windup":60,"active":200,"recovery":25},"threat":{"shape":"sphere","radius":32,"length":0,"danger":5,"blockable":false,"dodgeable":false,"interruptible":true,"friendly_fire_radius":32},"terrain_impact":"none"}
+],"rivals":[{"opponent_servant":"gilgamesh","minimum_phase":"decisive","action_weights":{"typemoonworld:emiya/unlimited_blade_works":1.4}}]}

@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
@@ -47,6 +48,13 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
             }
          }
       );
+   }
+
+   @Override
+   public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack,
+                      MultiBufferSource bufferSource, int packedLight) {
+      if (ServantCardConcealmentClient.isPerfectlyConcealed(entity)) return;
+      super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
    }
 
    protected ItemStack getStackForBone(GeoBone bone, T animatable) {

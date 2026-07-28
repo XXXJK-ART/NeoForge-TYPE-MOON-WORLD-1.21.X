@@ -35,6 +35,19 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_FAIL = register("cursed_arm_hassan_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_VICTORY = register("cursed_arm_hassan_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> CURSED_ARM_HASSAN_VOICE_ZABANIYA = register("cursed_arm_hassan_voice_zabaniya");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SHADOW_HASSAN_VOICE_ATTACK = register("shadow_hassan_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SHADOW_HASSAN_VOICE_COMMAND_ATTACK = register("shadow_hassan_voice_command_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SHADOW_HASSAN_VOICE_VICTORY = register("shadow_hassan_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY = register("shadow_hassan_voice_meditative_sensitivity");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_ATTACK = register("fanatic_assassin_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_ENCOUNTER = register("fanatic_assassin_voice_encounter");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_FAIL = register("fanatic_assassin_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_VICTORY = register("fanatic_assassin_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_HEARTBEAT = register("fanatic_assassin_voice_heartbeat");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_NERVES = register("fanatic_assassin_voice_nerves");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_MARROW = register("fanatic_assassin_voice_marrow");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_HAIR = register("fanatic_assassin_voice_hair");
+   public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_COMPUTER_TEMPERATURE = register("fanatic_assassin_voice_computer_temperature");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_ATTACK = register("emiya_archer_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_FAIL = register("emiya_archer_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_VICTORY = register("emiya_archer_voice_victory");
@@ -43,6 +56,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_SPIRAL = register("emiya_archer_voice_spiral");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_RHO_AIAS = register("emiya_archer_voice_rho_aias");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_UBW = register("emiya_archer_voice_ubw");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_ATTACK = register("arash_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_FAIL = register("arash_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_VICTORY = register("arash_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_STELLA = register("arash_voice_stella");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_STELLA_SHORT = register("arash_voice_stella_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_ATTACK = register("artoria_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_FAIL = register("artoria_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_VICTORY = register("artoria_voice_victory");
@@ -101,6 +119,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_FAIL = register("ushiwakamaru_rider_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_VICTORY = register("ushiwakamaru_rider_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> USHIWAKAMARU_RIDER_VOICE_NP = register("ushiwakamaru_rider_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_ATTACK = register("nightingale_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_FAIL = register("nightingale_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_VICTORY = register("nightingale_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_NP = register("nightingale_voice_np");
 
    private ModSounds() {
    }

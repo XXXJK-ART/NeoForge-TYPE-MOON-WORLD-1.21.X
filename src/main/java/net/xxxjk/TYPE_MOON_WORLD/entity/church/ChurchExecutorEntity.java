@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.church.BaptismRiteEventHandler;
 import net.xxxjk.TYPE_MOON_WORLD.magic.church.MagicBaptismRite;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import org.jetbrains.annotations.Nullable;
 
 public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraft.world.entity.monster.RangedAttackMob, StigmaBearer {
@@ -239,13 +240,15 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
 
    @Override
    protected void customServerAiStep() {
-      super.customServerAiStep();
+      boolean tactical = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
+      if (!tactical) super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       if (!getPersistentData().getBoolean(BASIC_MAGIC_ROSTER_VERSION)) rollBasicMagics();
-      if (tickCount % 8 == 0) coordinatePackTargets();
+      if (!tactical && tickCount % 8 == 0) coordinatePackTargets();
       int poseTicks = entityData.get(RANGED_POSE_TICKS);
       if (poseTicks > 0) entityData.set(RANGED_POSE_TICKS, poseTicks - 1);
       if (magicCooldown > 0) magicCooldown--;
+      if (tactical) return;
       if (isBaptismChanting()) {
          tickBaptismChant();
          return;
@@ -585,7 +588,13 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
 
       private void pursue(LivingEntity target, double distanceSqr, double reachSqr) {
          if (distanceSqr > reachSqr && pathCooldown <= 0) {
-            executor.getNavigation().moveTo(target, 1.34);
+            double distance = Math.sqrt(distanceSqr);
+            if (ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED && distance > 7.0) {
+               Vec3 intercept = ServantEngagementService.meleeApproachPoint(executor, target, executor.level().getGameTime());
+               executor.getNavigation().moveTo(intercept.x, intercept.y, intercept.z, 1.46);
+            } else {
+               executor.getNavigation().moveTo(target, 1.34);
+            }
             pathCooldown = 3 + executor.getRandom().nextInt(4);
          } else if (distanceSqr <= reachSqr) {
             executor.getNavigation().stop();
@@ -597,16 +606,29 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       }
 
       private void maintainRange(LivingEntity target, double distance, double idealRange, boolean visible) {
-         if (!visible || distance > idealRange + 2.0) {
+         ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(
+            target, Math.max(3.0, idealRange - 2.0), idealRange, idealRange + 2.0);
+         if (!visible) {
             if (pathCooldown <= 0) {
                executor.getNavigation().moveTo(target, 1.22);
                pathCooldown = 4 + executor.getRandom().nextInt(5);
             }
             return;
          }
+         if (distance < band.minimum() || distance > band.maximum()) {
+            if (pathCooldown <= 0) {
+               Vec3 destination = ServantEngagementService.rangedDestination(
+                  executor, target, executor.level().getGameTime(), band);
+               executor.getNavigation().moveTo(destination.x, destination.y, destination.z,
+                  distance < band.minimum() ? 1.30 : 1.22);
+               pathCooldown = 4 + executor.getRandom().nextInt(5);
+            }
+            return;
+         }
          executor.getNavigation().stop();
-         float forward = distance < idealRange - 2.0 ? -0.72F : 0.14F;
-         executor.getMoveControl().strafe(forward, strafeDirection * 0.72F);
+         boolean rangedDuel = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED;
+         float forward = rangedDuel ? 0.10F : distance < band.preferred() ? -0.35F : 0.14F;
+         executor.getMoveControl().strafe(forward, strafeDirection * (rangedDuel ? 0.86F : 0.72F));
       }
 
       private void tryMelee(LivingEntity target, boolean visible) {

@@ -1,0 +1,4 @@
+{
+  "id": "arrow_construction_a", "display_name": "Arrow Construction A", "display_name_zh": "箭矢制作 A",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0, "effects": []
+}

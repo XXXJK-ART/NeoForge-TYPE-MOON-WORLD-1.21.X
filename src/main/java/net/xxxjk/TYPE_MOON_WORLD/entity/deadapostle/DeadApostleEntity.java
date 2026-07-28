@@ -29,7 +29,6 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.pathfinder.PathType;
@@ -47,6 +46,8 @@ public abstract class DeadApostleEntity extends Monster {
    private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(DeadApostleEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> NAME_CULTURE = SynchedEntityData.defineId(DeadApostleEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> INHERITED_NAME = SynchedEntityData.defineId(DeadApostleEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final String HUNGER_TAG = "TypeMoonDeadApostleHunger";
+   private static final String TACTICAL_PHASE_TAG = "TypeMoonDeadApostleTacticalPhase";
 
    protected DeadApostleEntity(EntityType<? extends Monster> type, Level level) {
       super(type, level);
@@ -85,6 +86,31 @@ public abstract class DeadApostleEntity extends Monster {
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, HumanNpcEntity.class, true));
+   }
+
+   @Override
+   protected void customServerAiStep() {
+      tickTacticalState();
+      if (!net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this)) super.customServerAiStep();
+   }
+
+   private void tickTacticalState() {
+      if (tickCount % 20 != Math.floorMod(getId(), 20)) return;
+      CompoundTag data = getPersistentData();
+      float hunger = Mth.clamp(data.getFloat(HUNGER_TAG) + (level().isDay() ? 1.5F : 0.75F), 0.0F, 100.0F);
+      data.putFloat(HUNGER_TAG, hunger);
+      LivingEntity target = getTarget();
+      float strengthRatio = target == null ? 1.0F : (float)(target.getMaxHealth() / Math.max(1.0F, getMaxHealth()));
+      boolean exposedDaylight = level().isDay() && level().canSeeSky(blockPosition().above());
+      data.putString(TACTICAL_PHASE_TAG, net.xxxjk.TYPE_MOON_WORLD.combat.ai.DeadApostleTacticalState.determinePhase(exposedDaylight,
+         getHealth() / Math.max(1.0F, getMaxHealth()), hunger / 100.0F, strengthRatio));
+   }
+
+   @Override
+   public boolean doHurtTarget(Entity target) {
+      boolean hit = super.doHurtTarget(target);
+      if (hit) getPersistentData().putFloat(HUNGER_TAG, Math.max(0.0F, getPersistentData().getFloat(HUNGER_TAG) - 8.0F));
+      return hit;
    }
 
    @Override
@@ -251,7 +277,6 @@ public abstract class DeadApostleEntity extends Monster {
       private int pathCooldown;
       private int attackCooldown;
       private int circleTicks;
-      private int dodgeCooldown;
       private int approachCooldown;
       private float circleDirection;
 
@@ -284,7 +309,6 @@ public abstract class DeadApostleEntity extends Monster {
          apostle.getLookControl().setLookAt(target, 35.0F, 35.0F);
          if (pathCooldown > 0) pathCooldown--;
          if (attackCooldown > 0) attackCooldown--;
-         if (dodgeCooldown > 0) dodgeCooldown--;
          if (approachCooldown > 0) approachCooldown--;
          if (--circleTicks <= 0) chooseCircleDirection();
 
@@ -311,7 +335,11 @@ public abstract class DeadApostleEntity extends Monster {
          if (attackCooldown <= 0 && apostle.hasLineOfSight(target)) {
             apostle.swing(InteractionHand.MAIN_HAND);
             apostle.doHurtTarget(target);
-            attackCooldown = apostle instanceof NightKinEntity ? 10 : apostle instanceof LivingDeadEntity ? 12 : 16;
+            int baseCooldown = apostle instanceof NightKinEntity ? 10 : apostle instanceof LivingDeadEntity ? 12 : 16;
+            String phase = apostle.getPersistentData().getString(TACTICAL_PHASE_TAG);
+            attackCooldown = "FERAL".equals(phase) ? Math.max(6, baseCooldown - 4)
+               : "HUNTING".equals(phase) ? Math.max(8, baseCooldown - 2)
+               : "CAUTIOUS".equals(phase) ? baseCooldown + 4 : baseCooldown;
          }
       }
 
@@ -320,48 +348,22 @@ public abstract class DeadApostleEntity extends Monster {
       }
 
       private boolean tryDodgeIncomingProjectile() {
-         if (dodgeCooldown > 0) return false;
+         long now = apostle.level().getGameTime();
+         if (apostle.getPersistentData().getLong("TypeMoonAiProjectileScanTick") == now
+            || apostle.tickCount % 3 != Math.floorMod(apostle.getId(), 3)) return false;
          double searchRadius = apostle instanceof NightKinEntity ? 10.0 : 8.0;
-         Vec3 center = apostle.position().add(0.0, apostle.getBbHeight() * 0.5, 0.0);
-         Projectile nearestThreat = null;
-         double nearestImpact = Double.MAX_VALUE;
-         for (Projectile projectile : apostle.level().getEntitiesOfClass(Projectile.class,
-            apostle.getBoundingBox().inflate(searchRadius), this::isHostileProjectile)) {
-            Vec3 velocity = projectile.getDeltaMovement();
-            double velocitySqr = velocity.lengthSqr();
-            if (velocitySqr < 0.04) continue;
-            Vec3 toApostle = center.subtract(projectile.position());
-            double impactTicks = toApostle.dot(velocity) / velocitySqr;
-            if (impactTicks < 0.0 || impactTicks > 8.0) continue;
-            Vec3 closestPoint = projectile.position().add(velocity.scale(impactTicks));
-            double missDistanceSqr = closestPoint.distanceToSqr(center);
-            double dangerRadius = apostle.getBbWidth() * 0.65 + 0.85;
-            if (missDistanceSqr <= dangerRadius * dangerRadius && impactTicks < nearestImpact) {
-               nearestThreat = projectile;
-               nearestImpact = impactTicks;
-            }
+         net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatSensor.IncomingProjectile incoming =
+            net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatSensor.nearest(apostle, searchRadius, 8.0);
+         if (incoming == null) return false;
+         double impactTicks = incoming.impactTicks();
+         boolean moved = net.xxxjk.TYPE_MOON_WORLD.combat.ai.EvasionMovementService.tryEvade(
+            apostle, incoming.projectile().position(), apostle instanceof NightKinEntity ? 5 : 3,
+            apostle instanceof NightKinEntity);
+         if (moved) {
+            pathCooldown = Math.max(5, (int)Math.ceil(impactTicks));
+            chooseCircleDirection();
          }
-         if (nearestThreat == null) return false;
-
-         Vec3 flight = nearestThreat.getDeltaMovement();
-         Vec3 lateral = new Vec3(-flight.z, 0.0, flight.x);
-         if (lateral.lengthSqr() < 1.0E-5) return false;
-         lateral = lateral.normalize().scale(apostle.getRandom().nextBoolean() ? 1.0 : -1.0);
-         double strength = apostle instanceof NightKinEntity ? 0.92 : 0.72;
-         Vec3 dodge = lateral.scale(strength);
-         apostle.getNavigation().stop();
-         apostle.setDeltaMovement(dodge.x, Math.max(0.16, apostle.getDeltaMovement().y), dodge.z);
-         apostle.hasImpulse = true;
-         dodgeCooldown = apostle instanceof NightKinEntity ? 8 : 13;
-         pathCooldown = 5;
-         chooseCircleDirection();
-         return true;
-      }
-
-      private boolean isHostileProjectile(Projectile projectile) {
-         Entity owner = projectile.getOwner();
-         if (owner == apostle) return false;
-         return !(owner instanceof LivingEntity living && apostle.isAlliedTo(living));
+         return moved;
       }
 
       private boolean trySpecialApproach(LivingEntity target, double distance) {
@@ -387,10 +389,15 @@ public abstract class DeadApostleEntity extends Monster {
       }
 
       private double combatSpeed() {
-         if (apostle instanceof NightKinEntity) return 1.42;
-         if (apostle instanceof LivingDeadEntity) return 1.32;
-         if (apostle instanceof GhoulEntity) return 1.20;
-         return 1.14;
+         double base = apostle instanceof NightKinEntity ? 1.42
+            : apostle instanceof LivingDeadEntity ? 1.32
+            : apostle instanceof GhoulEntity ? 1.20 : 1.14;
+         return switch (apostle.getPersistentData().getString(TACTICAL_PHASE_TAG)) {
+            case "FERAL" -> base * 1.20;
+            case "HUNTING" -> base * 1.10;
+            case "CAUTIOUS" -> base * 0.88;
+            default -> base;
+         };
       }
 
       private void chooseCircleDirection() {

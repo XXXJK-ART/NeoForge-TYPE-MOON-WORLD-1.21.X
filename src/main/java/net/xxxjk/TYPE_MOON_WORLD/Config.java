@@ -35,6 +35,29 @@ public class Config {
    public static final DoubleValue GEM_BONUS_DROP_CHANCE = BUILDER.comment("Extra raw gem drop chance during resonance")
       .defineInRange("gemBonusDropChance", 0.15, 0.0, 1.0);
    public static final BooleanValue GEM_MIST_ENABLED = BUILDER.comment("Enable crystal mist ambient pulses in gem terrain").define("gemMistEnabled", true);
+   public static final BooleanValue TERRAIN_DESTRUCTION_ENABLED = BUILDER.comment("Enable terrain impacts produced by TYPE-MOON abilities")
+      .define("terrainDestructionEnabled", true);
+   public static final BooleanValue NPC_TERRAIN_DESTRUCTION_ENABLED = BUILDER.comment("Allow NPC abilities to damage terrain (also requires mobGriefing)")
+      .define("npcTerrainDestructionEnabled", true);
+   public static final BooleanValue PLAYER_TERRAIN_DESTRUCTION_ENABLED = BUILDER.comment("Allow player abilities to damage terrain")
+      .define("playerTerrainDestructionEnabled", true);
+   public static final IntValue TERRAIN_CHECKS_PER_TICK = BUILDER.comment("Maximum queued terrain voxel checks per dimension and tick")
+      .defineInRange("terrainChecksPerTick", 8000, 1000, 20000);
+   public static final IntValue TERRAIN_BUDGET_MICROS = BUILDER.comment("Soft terrain processing time budget per dimension and tick, in microseconds")
+      .defineInRange("terrainBudgetMicros", 4000, 1000, 12000);
+   public static final IntValue TERRAIN_DEBRIS_QUALITY = BUILDER.comment("Client debris quality: 0=LOW, 1=MEDIUM, 2=HIGH")
+      .defineInRange("terrainDebrisQuality", 1, 0, 2);
+   public static final BooleanValue PHYSICAL_TERRAIN_DEBRIS_ENABLED = BUILDER.comment(
+      "Allow medium and stronger terrain impacts to launch real falling-block entities")
+      .define("physicalTerrainDebrisEnabled", true);
+   public static final IntValue MAX_PHYSICAL_TERRAIN_DEBRIS = BUILDER.comment(
+      "Maximum active TYPE-MOON physical terrain debris entities per dimension")
+      .defineInRange("maxPhysicalTerrainDebris", 48, 0, 128);
+   public static final BooleanValue ARBITRATED_COMBAT_AI_ENABLED = BUILDER.comment("Enable intent arbitration for migrated combat NPCs")
+      .define("arbitratedCombatAiEnabled", true);
+   private static final ConfigValue<List<? extends String>> LEGACY_AI_ENTITY_STRINGS = BUILDER.comment(
+      "Entity type ids that must remain on LEGACY AI, for example typemoonworld:artoria_pendragon")
+      .defineList("legacyAiEntityTypes", List.of(), Config::validateResourceLocation);
    private static final ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER.comment("A list of items to log on common setup.")
       .defineList("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
    static final ModConfigSpec SPEC = BUILDER.build();
@@ -47,9 +70,24 @@ public class Config {
    public static int gemResonanceDurationTicks;
    public static double gemBonusDropChance;
    public static boolean gemMistEnabled;
+   public static boolean terrainDestructionEnabled = true;
+   public static boolean npcTerrainDestructionEnabled = true;
+   public static boolean playerTerrainDestructionEnabled = true;
+   public static int terrainChecksPerTick = 8000;
+   public static int terrainBudgetMicros = 4000;
+   public static int terrainDebrisQuality = 1;
+   public static boolean physicalTerrainDebrisEnabled = true;
+   public static int maxPhysicalTerrainDebris = 48;
+   public static boolean arbitratedCombatAiEnabled = true;
+   public static Set<ResourceLocation> legacyAiEntityTypes = Set.of();
 
    private static boolean validateItemName(Object obj) {
       return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
+   }
+
+   private static boolean validateResourceLocation(Object obj) {
+      if (!(obj instanceof String value)) return false;
+      try { ResourceLocation.parse(value); return true; } catch (RuntimeException ignored) { return false; }
    }
 
    @SubscribeEvent
@@ -62,6 +100,16 @@ public class Config {
       gemResonanceDurationTicks = Math.min(gemResonanceCycleTicks, (Integer)GEM_RESONANCE_DURATION_TICKS.get());
       gemBonusDropChance = (Double)GEM_BONUS_DROP_CHANCE.get();
       gemMistEnabled = (Boolean)GEM_MIST_ENABLED.get();
+      terrainDestructionEnabled = TERRAIN_DESTRUCTION_ENABLED.get();
+      npcTerrainDestructionEnabled = NPC_TERRAIN_DESTRUCTION_ENABLED.get();
+      playerTerrainDestructionEnabled = PLAYER_TERRAIN_DESTRUCTION_ENABLED.get();
+      terrainChecksPerTick = TERRAIN_CHECKS_PER_TICK.get();
+      terrainBudgetMicros = TERRAIN_BUDGET_MICROS.get();
+      terrainDebrisQuality = TERRAIN_DEBRIS_QUALITY.get();
+      physicalTerrainDebrisEnabled = PHYSICAL_TERRAIN_DEBRIS_ENABLED.get();
+      maxPhysicalTerrainDebris = MAX_PHYSICAL_TERRAIN_DEBRIS.get();
+      arbitratedCombatAiEnabled = ARBITRATED_COMBAT_AI_ENABLED.get();
+      legacyAiEntityTypes = LEGACY_AI_ENTITY_STRINGS.get().stream().map(ResourceLocation::parse).collect(Collectors.toUnmodifiableSet());
       items = ((List<? extends String>)ITEM_STRINGS.get())
          .stream()
          .map(itemName -> (Item)BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName)))

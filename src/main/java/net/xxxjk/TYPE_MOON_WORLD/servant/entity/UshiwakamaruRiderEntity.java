@@ -67,9 +67,6 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
          return;
       }
       super.customServerAiStep();
-      if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
-         UshiwakamaruCombatHelper.tick(this);
-      }
    }
 
    @Override

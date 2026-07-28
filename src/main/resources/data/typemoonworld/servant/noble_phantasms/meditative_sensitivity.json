@@ -1,0 +1,14 @@
+{
+  "id": "meditative_sensitivity",
+  "display_name": "Zabaniya: Meditative Sensitivity",
+  "display_name_zh": "\u51a5\u60f3\u795e\u7ecf",
+  "rank": "EX",
+  "type": "anti_unit",
+  "mp_cost": 0.0,
+  "cooldown_ticks": 0,
+  "windup_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [],
+  "description": "A death concept that pursues the killer after Hassan's spiritual core is extinguished.",
+  "description_zh": "\u4ee5\u7075\u57fa\u6d88\u706d\u4e3a\u4ee3\u4ef7\uff0c\u5316\u4f5c\u8ffd\u730e\u76ee\u6807\u7684\u6b7b\u4ea1\u6982\u5ff5\u3002"
+}

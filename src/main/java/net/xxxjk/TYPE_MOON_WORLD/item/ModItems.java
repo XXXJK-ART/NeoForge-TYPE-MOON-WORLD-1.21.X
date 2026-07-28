@@ -47,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GenericServantSummonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardReleaseItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantMasterContractItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NightingaleGunItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
 
@@ -288,6 +289,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_MEDEA = registerServantCard("medea");
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA = registerServantCard("medusa");
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN = registerServantCard("cursed_arm_hassan");
+    public static final DeferredItem<Item> SERVANT_CARD_SHADOW_HASSAN = registerServantCard("shadow_hassan");
     public static final DeferredItem<Item> SERVANT_CARD_HERACLES = registerServantCard("heracles");
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA = registerServantCard("oda_nobunaga");
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU = registerServantCard("enkidu");
@@ -297,6 +299,9 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
     public static final DeferredItem<Item> SERVANT_CARD_PALE_RIDER = registerServantCard("pale_rider");
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER = registerServantCard("ushiwakamaru_rider");
+    public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN = registerServantCard("fanatic_assassin");
+    public static final DeferredItem<Item> SERVANT_CARD_ARASH = registerServantCard("arash");
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE = registerServantCard("nightingale");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -313,6 +318,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_CHEST = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_MEDUSA_LEGS = registerServantArmor("medusa", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_HEAD = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SHADOW_HASSAN_MASK = registerServantArmor("shadow_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_CHEST = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_CURSED_ARM_HASSAN_LEGS = registerServantArmor("cursed_arm_hassan", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_HERACLES_CHEST = registerServantArmor("heracles", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -334,6 +340,12 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS = registerServantArmor("ushiwakamaru_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_HEAD = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_CHEST = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ARASH_CHEST = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -791,6 +803,8 @@ public class ModItems {
                             .build()), "mo_ye_overedge"));
     public static final DeferredItem<Item> NAMELESS_BOW = ITEMS.register("nameless_bow",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> ARASH_BOW = ITEMS.register("arash_bow",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> PSEUDO_SPIRAL_SWORD = ITEMS.register("pseudo_spiral_sword",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> CRIMSON_HOUND = ITEMS.register("crimson_hound",
@@ -840,6 +854,8 @@ public class ModItems {
                             .build())));
     public static final DeferredItem<Item> THOMPSON_CONTENDER = ITEMS.register("thompson_contender",
             () -> new ThompsonContenderItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> NIGHTINGALE_GUN = ITEMS.register("nightingale_gun",
+            () -> new NightingaleGunItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> BLACK_KEY = ITEMS.register("black_key",
             () -> new BlackKeyItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> EXCALIBUR_GALLATIN = ITEMS.register("excalibur_gallatin",
@@ -942,6 +958,14 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PARACELSUS, 0xA9E7FF, 0xFFD36A));
     public static final DeferredItem<Item> PALE_RIDER_SPAWN_EGG = ITEMS.register("pale_rider_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.PALE_RIDER, 0x17191C, 0xC7CBD1));
+    public static final DeferredItem<Item> NIGHTINGALE_SPAWN_EGG = ITEMS.register("nightingale_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NIGHTINGALE, 0xA73A45, 0xF3E7DC));
+    public static final DeferredItem<Item> SHADOW_HASSAN_SPAWN_EGG = ITEMS.register("shadow_hassan_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SHADOW_HASSAN, 0x080808, 0xE8E4DD));
+    public static final DeferredItem<Item> FANATIC_ASSASSIN_SPAWN_EGG = ITEMS.register("fanatic_assassin_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.FANATIC_ASSASSIN, 0x15151D, 0xB9A7A0));
+    public static final DeferredItem<Item> ARASH_SPAWN_EGG = ITEMS.register("arash_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARASH, 0x2F6F65, 0xC66B32));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {
@@ -987,6 +1011,7 @@ public class ModItems {
             case "medea" -> (head ? SERVANT_CARD_MEDEA_HEAD : legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();
             case "medusa" -> (head ? SERVANT_CARD_MEDUSA_HEAD : legs ? SERVANT_CARD_MEDUSA_LEGS : SERVANT_CARD_MEDUSA_CHEST).get();
             case "cursed_arm_hassan" -> (head ? SERVANT_CARD_CURSED_ARM_HASSAN_HEAD : SERVANT_CARD_CURSED_ARM_HASSAN_CHEST).get();
+            case "shadow_hassan" -> head ? SHADOW_HASSAN_MASK.get() : net.minecraft.world.item.Items.AIR;
             case "heracles" -> (legs ? SERVANT_CARD_HERACLES_LEGS : SERVANT_CARD_HERACLES_CHEST).get();
             case "oda_nobunaga" -> (head ? SERVANT_CARD_ODA_NOBUNAGA_HEAD : legs ? SERVANT_CARD_ODA_NOBUNAGA_LEGS : SERVANT_CARD_ODA_NOBUNAGA_CHEST).get();
             case "enkidu" -> (legs ? SERVANT_CARD_ENKIDU_LEGS : SERVANT_CARD_ENKIDU_CHEST).get();
@@ -995,6 +1020,10 @@ public class ModItems {
             case "paracelsus" -> (legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
             case "li_shuwen" -> (head ? SERVANT_CARD_LI_SHUWEN_HEAD : legs ? SERVANT_CARD_LI_SHUWEN_LEGS : SERVANT_CARD_LI_SHUWEN_CHEST).get();
             case "ushiwakamaru_rider" -> (head ? SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD : legs ? SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS : SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST).get();
+            case "fanatic_assassin" -> head ? SERVANT_CARD_FANATIC_ASSASSIN_HEAD.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
+            case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
+            case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

@@ -67,6 +67,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.MEDUSA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CURSED_ARM_HASSAN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.EMIYA_ARCHER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.ARASH.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ARTORIA_PENDRAGON.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.USHIWAKAMARU_RIDER.get(), ServantEntity.createAttributes().build());
@@ -76,6 +77,11 @@ public class ModEventBusEvents {
       event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PARACELSUS.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PALE_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.NIGHTINGALE.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.SHADOW_HASSAN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), Mob.createMobAttributes().build());
+      event.put(ModEntities.FANATIC_ASSASSIN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.FANATIC_ASSASSIN_JINN.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity.createAttributes().build());
       event.put(ModEntities.RAT_SWARM.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity.createAttributes().build());
       event.put(ModEntities.PALE_RIDER_CROW.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity.createAttributes().build());
       event.put(ModEntities.SOUL_ECHO.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity.createAttributes().build());
@@ -83,6 +89,11 @@ public class ModEventBusEvents {
       event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
+   }
+
+   @SubscribeEvent
+   public static void registerTicketControllers(net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent event) {
+      event.register(net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity.CHUNK_TICKETS);
    }
 
    @SubscribeEvent

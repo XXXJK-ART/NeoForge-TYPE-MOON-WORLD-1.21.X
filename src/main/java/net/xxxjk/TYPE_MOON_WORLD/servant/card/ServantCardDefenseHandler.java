@@ -26,13 +26,16 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 
 public final class ServantCardDefenseHandler {
@@ -60,8 +63,16 @@ public final class ServantCardDefenseHandler {
       }
       CompoundTag data = player.getPersistentData();
       initializeResources(data, params);
-      data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params), data.getDouble(TAG_STAMINA) + ServantCombatFormulas.staminaRegenPerSecond(params) / 20.0));
-      data.putDouble(TAG_POISE, Math.min(ServantCombatFormulas.poiseMax(params), data.getDouble(TAG_POISE) + ServantCombatFormulas.poiseRegenPerSecond(params) / 20.0));
+      double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
+      double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      if ("arash".equals(vars.servant_card_id)) {
+         staminaRegen = ArashCombatRules.boostedDefenseRecovery(staminaRegen);
+         poiseRegen = ArashCombatRules.boostedPoiseRecovery(poiseRegen);
+      }
+      data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params),
+         data.getDouble(TAG_STAMINA) + staminaRegen / 20.0));
+      data.putDouble(TAG_POISE, Math.min(ServantCombatFormulas.poiseMax(params),
+         data.getDouble(TAG_POISE) + poiseRegen / 20.0));
    }
 
    public static void clear(ServerPlayer player) {
@@ -94,6 +105,7 @@ public final class ServantCardDefenseHandler {
       }
 
       boolean infectionDamage = PaleRiderDamageTypes.isInfection(event.getSource());
+      boolean guaranteedHit = event.getSource().is(FanaticDamageTypes.GUARANTEED_HITS);
 
       ServantParams params = paramsFor(vars);
       if (params == null) {
@@ -109,7 +121,8 @@ public final class ServantCardDefenseHandler {
          player.removeEffect(MobEffects.ABSORPTION);
          player.setAbsorptionAmount(0.0F);
       }
-      if (!infectionDamage && !divineDefenseBroken && !specialNoblePhantasmDamage && now < data.getLong(TAG_INVULN_UNTIL)) {
+      if (!guaranteedHit && !infectionDamage && !divineDefenseBroken && !specialNoblePhantasmDamage
+         && now < data.getLong(TAG_INVULN_UNTIL)) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
@@ -117,6 +130,18 @@ public final class ServantCardDefenseHandler {
       }
       if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
          return true;
+      }
+      if ("gilgamesh".equals(vars.servant_card_id)) {
+         GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
+            player, event.getSource(), event.getAmount()
+         );
+         if (shieldHit != null) {
+            event.setAmount(shieldHit.remainingDamage());
+            if (shieldHit.remainingDamage() <= 0.0F) {
+               event.setCanceled(true);
+               return true;
+            }
+         }
       }
       if (!divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
          float projected = player.getHealth() - event.getAmount();
@@ -173,14 +198,15 @@ public final class ServantCardDefenseHandler {
             event.setAmount(0.0F);
             return true;
          }
-         if (ServantCardUshiwakamaruSkills.trySwallowDodge(player, event.getSource())) {
+         if (!guaranteedHit && ServantCardUshiwakamaruSkills.trySwallowDodge(player, event.getSource())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return true;
          }
       }
 
-      if (!infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+      if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
+         && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -312,9 +338,7 @@ public final class ServantCardDefenseHandler {
    }
 
    public static boolean isSpecialNoblePhantasmDamage(DamageSource source, float originalDamage) {
-      return isArtoriaExcaliburDamage(source)
-         || isGaeBulgArmyDamage(source)
-         || isMajorBrokenPhantasmExplosion(source, originalDamage);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, originalDamage);
    }
 
    private static boolean isPoisonOrWitherDamage(DamageSource source) {

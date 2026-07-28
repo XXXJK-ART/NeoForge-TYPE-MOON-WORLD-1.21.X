@@ -53,7 +53,7 @@ public class GilgameshEntity extends ServantEntity {
          .add(Attributes.ATTACK_DAMAGE, 5.0)
          .add(Attributes.ARMOR, 12.0)
          .add(Attributes.ARMOR_TOUGHNESS, 8.0)
-         .add(Attributes.FOLLOW_RANGE, 48.0)
+         .add(Attributes.FOLLOW_RANGE, 96.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
    }
 
@@ -61,7 +61,6 @@ public class GilgameshEntity extends ServantEntity {
    protected void customServerAiStep() {
       super.customServerAiStep();
       if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
-         GilgameshCombatHelper.tick(this);
          if (this.isFlyingMode()) {
             if (!this.onGround()) {
                this.getPersistentData().putBoolean(FLIGHT_WAS_AIRBORNE_TAG, true);

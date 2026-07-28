@@ -1784,7 +1784,7 @@ public final class EnkiduCombatHelper {
                .add(0.0, (entity.getRandom().nextDouble() - 0.5) * 0.55, 0.0);
          }
          ItemStack stack = randomWeapon(entity, volley);
-         float damage = applyAgeOfBabylonDivinitySpecialAttack(target, weaponDamage(stack, volley));
+         float damage = applyAgeOfBabylonDivinitySpecialAttack(entity, target, weaponDamage(stack, volley));
          spawnAgeOfBabylonGate(level, spawn, volley);
          final Vec3 finalSpawn = spawn;
          final Vec3 finalAimPoint = aimPoint;
@@ -1828,7 +1828,7 @@ public final class EnkiduCombatHelper {
          double radius = baseRadius + entity.getRandom().nextDouble() * (volley ? 7.0 : 2.0);
          Vec3 spawn = groundSpawn(level, target.position().add(Math.cos(angle) * radius, 0.0, Math.sin(angle) * radius));
          ItemStack stack = randomWeapon(entity, volley);
-         float damage = applyAgeOfBabylonDivinitySpecialAttack(target, weaponDamage(stack, volley));
+         float damage = applyAgeOfBabylonDivinitySpecialAttack(entity, target, weaponDamage(stack, volley));
          spawnAgeOfBabylonGate(level, spawn, volley);
          final Vec3 finalSpawn = spawn;
          final ItemStack finalStack = stack;
@@ -2555,7 +2555,10 @@ public final class EnkiduCombatHelper {
       return hasTrait(entity, ServantTraitTag.DIVINE) ? 1 : 0;
    }
 
-   private static float applyAgeOfBabylonDivinitySpecialAttack(LivingEntity target, float damage) {
+   private static float applyAgeOfBabylonDivinitySpecialAttack(EnkiduEntity entity, LivingEntity target, float damage) {
+      if (!isBoundByEnkidu(entity, target, entity.level().getGameTime())) {
+         return damage;
+      }
       int divinity = Mth.clamp(divinityLevel(target), 0, 5);
       if (divinity <= 0) {
          return damage;

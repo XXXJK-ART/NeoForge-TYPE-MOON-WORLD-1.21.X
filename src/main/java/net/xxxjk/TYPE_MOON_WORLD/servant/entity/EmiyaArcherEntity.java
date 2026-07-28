@@ -39,7 +39,6 @@ public class EmiyaArcherEntity extends ServantEntity {
          if (!this.isAlive() || this.isSpiritualDissolving()) {
             return;
          }
-         EmiyaArcherCombatHelper.tick(this);
       }
    }
 

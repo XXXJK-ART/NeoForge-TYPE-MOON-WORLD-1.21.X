@@ -51,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.BattlefieldAreaService;
 import org.joml.Vector3f;
 
 import static net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.findLookTarget;
@@ -127,6 +128,7 @@ public final class ServantCardParacelsusSkills {
             player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_workshop_need_inside"), true);
             return false;
          }
+         BattlefieldAreaService.unregister(level, player.getUUID(), BattlefieldAreaService.Type.WORKSHOP);
          clearWorkshop(data);
          level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.4, player.getZ(), 30, 0.7, 0.2, 0.7, 0.035);
          level.playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.75F, 1.25F);
@@ -142,6 +144,8 @@ public final class ServantCardParacelsusSkills {
       data.putDouble(WORKSHOP_Y_TAG, player.getY());
       data.putDouble(WORKSHOP_Z_TAG, player.getZ());
       data.putDouble(WORKSHOP_RADIUS_TAG, WORKSHOP_RADIUS);
+      BattlefieldAreaService.register(level, player.getUUID(), BattlefieldAreaService.Type.WORKSHOP,
+         workshopCenter(data), WORKSHOP_RADIUS, Long.MAX_VALUE);
       VFXServerEffects.spawn(level, "servant_medea_workshop", player, 128.0);
       spawnWorkshopHighlight(level, workshopCenter(data), WORKSHOP_RADIUS, true);
       level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 0.95F);

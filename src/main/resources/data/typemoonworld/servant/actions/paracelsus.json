@@ -1,0 +1,4 @@
+{"servant":"paracelsus","actions":[
+  {"id":"typemoonworld:paracelsus/elemental_control","tags":["projectile","control","area"],"minimum_range":5,"maximum_range":40,"mana_cost":14,"stamina_cost":1,"timing":{"windup":10,"active":12,"recovery":8},"threat":{"shape":"sphere","radius":6,"length":0,"danger":3,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":6},"terrain_impact":"small"},
+  {"id":"typemoonworld:paracelsus/sword_of_paracelsus","tags":["noble_phantasm","area","control"],"minimum_range":4,"maximum_range":52,"mana_cost":165,"stamina_cost":8,"timing":{"windup":48,"active":24,"recovery":28},"threat":{"shape":"sphere","radius":12,"length":0,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":12},"terrain_impact":"medium"}
+]}

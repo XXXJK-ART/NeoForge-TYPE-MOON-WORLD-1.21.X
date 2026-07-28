@@ -18,6 +18,9 @@ import net.xxxjk.TYPE_MOON_WORLD.effect.ReverseMovementEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.MartialControlEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PaleRiderFearEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.PaleRiderInfectionEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticCircuitDisruptionEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticToxinEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticWoundedEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
@@ -47,6 +50,15 @@ public class ModMobEffects {
    );
    public static final DeferredHolder<MobEffect, MobEffect> PALE_RIDER_FEAR = MOB_EFFECTS.register(
       "pale_rider_fear", PaleRiderFearEffect::new
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> FANATIC_WOUNDED = MOB_EFFECTS.register(
+      "fanatic_wounded", FanaticWoundedEffect::new
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> FANATIC_CIRCUIT_DISRUPTION = MOB_EFFECTS.register(
+      "fanatic_circuit_disruption", FanaticCircuitDisruptionEffect::new
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> FANATIC_TOXIN = MOB_EFFECTS.register(
+      "fanatic_toxin", FanaticToxinEffect::new
    );
    public static final DeferredHolder<MobEffect, MobEffect> REINFORCEMENT_SELF_STRENGTH = MOB_EFFECTS.register(
       "reinforcement_self_strength",

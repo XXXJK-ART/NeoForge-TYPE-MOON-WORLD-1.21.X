@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenGilgameshVaultScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
@@ -50,22 +51,15 @@ public final class ServantCardGilgameshSkills {
    private static final String CHAIN_TARGET = "ServantCardGilgameshChainTarget";
    private static final String CHAIN_UNTIL = "ServantCardGilgameshChainUntil";
    private static final String CHARISMA_UNTIL = "ServantCardGilgameshCharismaUntil";
-   private static final ResourceLocation SHIELD_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_shield_armor");
-   private static final ResourceLocation SHIELD_TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_shield_toughness");
    private static final ResourceLocation CHARISMA_KNOCKBACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_charisma_knockback");
-   private static final String SHIELD = "ServantCardGilgameshShieldUntil";
-   private static final String ARMOR = "ServantCardGilgameshArmor";
-   private static final String TOUGHNESS = "ServantCardGilgameshToughness";
    private static final String[] WEAPONS = {"gae_bulg", "pseudo_spiral_sword", "fangtian_huaji", "gram", "durandal", "vajra", "harpe"};
 
    private ServantCardGilgameshSkills() {}
 
    public static void reset(ServerPlayer player) {
       player.getPersistentData().remove(KEY);
-      player.getPersistentData().remove(SHIELD);
+      GilgameshDivineShield.clear(player);
       player.getPersistentData().putInt(MASK, 0);
-      player.getPersistentData().remove(ARMOR);
-      player.getPersistentData().remove(TOUGHNESS);
       player.getPersistentData().remove(SINGLE_COOLDOWN);
       player.getPersistentData().remove(MELEE_COOLDOWN);
       player.getPersistentData().remove(CHAIN_TARGET);
@@ -81,12 +75,9 @@ public final class ServantCardGilgameshSkills {
          }
       }
       player.getPersistentData().remove(KEY);
-      player.getPersistentData().remove(SHIELD);
-      player.getPersistentData().remove(ARMOR);
-      player.getPersistentData().remove(TOUGHNESS);
+      GilgameshDivineShield.clear(player);
       player.removeEffect(MobEffects.NIGHT_VISION);
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.NONE, 0.0F, 0.0F);
-      removeShieldModifiers(player);
       if (player.getAttribute(Attributes.KNOCKBACK_RESISTANCE) != null) player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).removeModifier(CHARISMA_KNOCKBACK_ID);
       for (int i = 0; i < player.getInventory().getContainerSize(); i++) if (isGenerated(player.getInventory().getItem(i))) player.getInventory().setItem(i, ItemStack.EMPTY);
       if (isGenerated(player.getMainHandItem())) player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -99,10 +90,7 @@ public final class ServantCardGilgameshSkills {
       if (nightVision == null || nightVision.getDuration() < 220) player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, false, false, false));
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.A, MagicResistanceHelper.damageReductionForRank(MagicResistanceRank.A), 0.75F);
       long now = player.level().getGameTime();
-      if (now < player.getPersistentData().getLong(SHIELD)) {
-         lockAttribute(player.getAttribute(Attributes.ARMOR), SHIELD_ARMOR_ID, player.getPersistentData().getDouble(ARMOR));
-         lockAttribute(player.getAttribute(Attributes.ARMOR_TOUGHNESS), SHIELD_TOUGHNESS_ID, player.getPersistentData().getDouble(TOUGHNESS));
-      } else removeShieldModifiers(player);
+      GilgameshDivineShield.tick(player);
       if (now >= player.getPersistentData().getLong(CHARISMA_UNTIL) && player.getAttribute(Attributes.KNOCKBACK_RESISTANCE) != null) {
          player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).removeModifier(CHARISMA_KNOCKBACK_ID);
       }
@@ -240,9 +228,7 @@ public final class ServantCardGilgameshSkills {
    }
 
    public static void performDivineShield(ServerPlayer player) {
-      player.getPersistentData().putDouble(ARMOR, player.getAttributeValue(Attributes.ARMOR));
-      player.getPersistentData().putDouble(TOUGHNESS, player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-      player.getPersistentData().putLong(SHIELD, player.level().getGameTime() + 100L);
+      GilgameshDivineShield.activate(player);
    }
 
    public static void performClairvoyance(ServerPlayer player) {
@@ -323,15 +309,4 @@ public final class ServantCardGilgameshSkills {
       } catch (IllegalArgumentException ignored) { }
    }
 
-   private static void lockAttribute(AttributeInstance attribute, ResourceLocation id, double minimum) {
-      if (attribute == null) return;
-      attribute.removeModifier(id);
-      double missing = minimum - attribute.getValue();
-      if (missing > 0.0) attribute.addTransientModifier(new AttributeModifier(id, missing, AttributeModifier.Operation.ADD_VALUE));
-   }
-
-   private static void removeShieldModifiers(ServerPlayer player) {
-      if (player.getAttribute(Attributes.ARMOR) != null) player.getAttribute(Attributes.ARMOR).removeModifier(SHIELD_ARMOR_ID);
-      if (player.getAttribute(Attributes.ARMOR_TOUGHNESS) != null) player.getAttribute(Attributes.ARMOR_TOUGHNESS).removeModifier(SHIELD_TOUGHNESS_ID);
-   }
 }

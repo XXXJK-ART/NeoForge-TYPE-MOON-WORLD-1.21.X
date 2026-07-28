@@ -3,10 +3,12 @@ package net.xxxjk.TYPE_MOON_WORLD.vfx;
 import java.util.Optional;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
@@ -31,14 +33,14 @@ public final class VFXServerEffects {
          level.dimension().location().toString(),
          level.getRandom().nextLong()
       );
-      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius, message, new CustomPacketPayload[0]);
+      sendToSupportedPlayersNear(level, origin, radius, message);
    }
 
    public static void spawnOriented(ServerLevel level, String effectId, Vec3 origin, Vec3 direction, double radius) {
       Vec3 dir = direction == null || direction.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : direction.normalize();
       VFXSpawnEffectMessage message = new VFXSpawnEffectMessage(effectId, origin.x, origin.y, origin.z, Optional.empty(),
          level.dimension().location().toString(), level.getRandom().nextLong(), Optional.of(dir));
-      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius, message, new CustomPacketPayload[0]);
+      sendToSupportedPlayersNear(level, origin, radius, message);
    }
 
    public static void spawn(ServerLevel level, String effectId, Entity target) {
@@ -55,7 +57,7 @@ public final class VFXServerEffects {
          level.dimension().location().toString(),
          level.getRandom().nextLong()
       );
-      PacketDistributor.sendToPlayersNear(level, null, target.getX(), target.getY(), target.getZ(), radius, message, new CustomPacketPayload[0]);
+      sendToSupportedPlayersNear(level, target.position(), radius, message);
    }
 
    public static void spawnReplayable(ServerLevel level, String effectId, Vec3 origin, float durationSeconds) {
@@ -80,7 +82,17 @@ public final class VFXServerEffects {
    }
 
    public static void screenFlash(ServerLevel level, Vec3 origin, double radius, int ticks, float strength) {
-      PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, radius,
-         new DuelScreenFlashMessage(ticks, strength), new CustomPacketPayload[0]);
+      sendToSupportedPlayersNear(level, origin, radius, new DuelScreenFlashMessage(ticks, strength));
+   }
+
+   private static void sendToSupportedPlayersNear(ServerLevel level, Vec3 origin, double radius,
+                                                   CustomPacketPayload payload) {
+      double radiusSqr = radius * radius;
+      for (ServerPlayer player : level.players()) {
+         if (player.distanceToSqr(origin) <= radiusSqr
+            && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
+            PacketDistributor.sendToPlayer(player, payload);
+         }
+      }
    }
 }

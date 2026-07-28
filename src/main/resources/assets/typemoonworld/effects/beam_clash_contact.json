@@ -1,0 +1,102 @@
+{
+  "duration": 1.8,
+  "notes": "Short red-gold contact bloom. Moving clash pressure is rendered by server particles.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.35,
+      "rate": 1800,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FFFFE070" },
+        { "t": 0.58, "color": "#FFFF3030" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.14 },
+        { "t": 0.35, "size": 0.65 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.5, "pos": [0.0, 0.0, 0.0], "scale": [4.8, 4.8, 4.8], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [2.2, 2.2, 2.2] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "BEAM_CLASH_CORE",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.35 },
+        { "type": "electric_spark", "count": 2, "spread": [1.2, 1.2, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.14, "chance": 0.7 }
+      ]
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 1.65,
+      "rate": 900,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.22,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 160 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFF4A0" },
+        { "t": 0.5, "color": "#CCFFFFFF" },
+        { "t": 1.0, "color": "#00FFD040" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.45, "size": 0.4 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.4, 0.4, 0.4] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [8.0, 8.0, 8.0], "easing": "ease_out_cubic" }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "ADDITIVE",
+      "particle_role": "EXCALIBUR_PRESSURE_RING"
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 1.65,
+      "rate": 900,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.22,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 160 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFF2020" },
+        { "t": 0.5, "color": "#CCFF7070" },
+        { "t": 1.0, "color": "#00A00000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.45, "size": 0.4 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.7071068, 0.7071068], "scale": [0.4, 0.4, 0.4] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.0, 0.0, 0.7071068, 0.7071068], "scale": [8.0, 8.0, 8.0], "easing": "ease_out_cubic" }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "ADDITIVE",
+      "particle_role": "EA_PRESSURE_RING"
+    }
+  ]
+}

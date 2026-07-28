@@ -22,15 +22,24 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
@@ -39,11 +48,17 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
@@ -92,7 +107,6 @@ public final class CombatModule implements ServantAiModule {
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
    private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 240;
-   private static final int PARACELSUS_WANDER_COOLDOWN = 65;
    private static final int PARACELSUS_MAGIC_AI_INTERVAL = 40;
    private static final String TAG_PARACELSUS_LAST_AI_MAGIC = "ParacelsusLastAiMagicTick";
 
@@ -289,6 +303,10 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      if (entity instanceof ArashEntity arash) {
+         ArashCombatHelper.tick(arash, context);
+         return;
+      }
       LivingEntity sharedTarget = context.target();
       if (sharedTarget != null && ServantCombatSystem.skillsSuppressed(entity)) {
          entity.getLookControl().setLookAt(sharedTarget, 30.0F, 30.0F);
@@ -298,6 +316,34 @@ public final class CombatModule implements ServantAiModule {
          } else {
             moveToTargetThrottled(entity, sharedTarget, 1.1, (int)entity.level().getGameTime(), 0.8);
          }
+         return;
+      }
+      if (entity instanceof EmiyaArcherEntity emiya) {
+         EmiyaArcherCombatHelper.tick(emiya);
+         return;
+      }
+      if (entity instanceof EnkiduEntity enkidu) {
+         EnkiduCombatHelper.tick(enkidu);
+         return;
+      }
+      if (entity instanceof GilgameshEntity gilgamesh) {
+         GilgameshCombatHelper.tick(gilgamesh);
+         return;
+      }
+      if (entity instanceof OdaNobunagaEntity oda) {
+         OdaNobunagaCombatHelper.tick(oda);
+         return;
+      }
+      if (entity instanceof PaleRiderEntity paleRider) {
+         PaleRiderCombatHelper.tick(paleRider);
+         return;
+      }
+      if (entity instanceof UshiwakamaruRiderEntity ushiwakamaru && !ushiwakamaru.isClone()) {
+         UshiwakamaruCombatHelper.tick(ushiwakamaru);
+         return;
+      }
+      if (entity instanceof FanaticAssassinEntity fanatic) {
+         FanaticAssassinCombatHelper.tick(fanatic, context);
          return;
       }
       if (entity instanceof LiShuwenEntity liShuwen) {
@@ -320,48 +366,16 @@ public final class CombatModule implements ServantAiModule {
             double distance = entity.distanceTo(sharedTarget);
             int phase = paracelsus.getCombatPhase();
             entity.getLookControl().setLookAt(sharedTarget, 35.0F, 35.0F);
-            if (distance <= 6.5) {
-               Vec3 away = entity.position().subtract(sharedTarget.position());
-               if (away.lengthSqr() > 1.0E-4) {
-                  away = away.normalize().scale(4.5);
-                  ServantNavigationHelper.moveToPositionThrottled(
-                     entity,
-                     new Vec3(entity.getX() + away.x, entity.getY(), entity.getZ() + away.z),
-                     1.05,
-                     context.gameTick(),
-                     10,
-                     3.5,
-                     "ParacelsusRetreatPath"
-                  );
-               } else {
-                  ServantNavigationHelper.stopIfMoving(entity);
-               }
-            } else if (distance >= 14.0) {
-               ServantNavigationHelper.moveToTargetThrottled(entity, sharedTarget, 0.92, context.gameTick(), 12, 1.5, "ParacelsusAdvancePath");
-            } else if (context.gameTick() % PARACELSUS_WANDER_COOLDOWN == 0) {
-               Vec3 toTarget = sharedTarget.position().subtract(entity.position());
-               Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
-               if (horizontal.lengthSqr() > 1.0E-4) {
-                  horizontal = horizontal.normalize();
-                  Vec3 side = new Vec3(-horizontal.z, 0.0, horizontal.x);
-                  double drift = ((context.gameTick() / PARACELSUS_WANDER_COOLDOWN) & 1) == 0 ? 1.0 : -1.0;
-                  Vec3 orbitPoint = sharedTarget.position()
-                     .add(side.scale(4.0 * drift))
-                     .add(horizontal.scale(-2.0))
-                     .add(0.0, 0.0, 0.0);
-                  ServantNavigationHelper.moveToPositionThrottled(
-                     entity,
-                     orbitPoint,
-                     1.0,
-                     context.gameTick(),
-                     10,
-                     2.0,
-                     "ParacelsusOrbitPath"
-                  );
-               }
-            } else {
-               ServantNavigationHelper.stopIfMoving(entity);
-            }
+            ServantEngagementService.maintainRangedPosition(
+               entity,
+               sharedTarget,
+               context.gameTick(),
+               6.5,
+               10.0,
+               14.0,
+               1.0,
+               "ParacelsusRangedPosition"
+            );
             if (sharedTarget != null && sharedTarget.isAlive()) {
                if (maybeCastParacelsusElementalMagic(paracelsus, sharedTarget, hasLineOfSight, context)) {
                   return;
@@ -2410,29 +2424,7 @@ public final class CombatModule implements ServantAiModule {
       sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + 0.25, entity.getZ(),
          heavySlam ? 90 : 58, slamRadius * 0.35, 0.45, slamRadius * 0.35, 0.06);
-      // 砸地地形破坏：3格半径内破坏软方块
-      BlockPos center = entity.blockPosition();
-      int radius = Math.max(1, (int)Math.ceil((heavySlam ? 6 : 4) * terrainScale));
-      int maxBroken = scaledBreakLimit(heavySlam ? 96 : 48, terrainScale);
-      int broken = 0;
-      for (BlockPos pos : BlockPos.betweenClosed(
-            center.offset(-radius, -1, -radius),
-            center.offset(radius, heavySlam ? 3 : 2, radius))) {
-         if (broken >= maxBroken) {
-            break;
-         }
-         if (!isInIrregularBreakShape(sl, pos, center, radius + (heavySlam ? 0.65 : 0.35), heavySlam ? 1.05 : 0.85, 0.85, heavySlam ? 0.76 : 0.68)) {
-            continue;
-         }
-         BlockState state = sl.getBlockState(pos);
-         float hardness = state.getDestroySpeed(sl, pos);
-         if (!state.isAir() && hardness >= 0 && hardness < (heavySlam ? 90 : 55)
-               && !state.is(Blocks.BEDROCK)) {
-            if (destroyBlockWithCombatFx(sl, pos, state, heavySlam)) {
-               broken++;
-            }
-         }
-      }
+      // triggerGroundSlam queues the crater through the shared terrain service.
    }
 
    /**

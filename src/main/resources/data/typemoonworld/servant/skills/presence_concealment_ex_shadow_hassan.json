@@ -1,0 +1,10 @@
+{
+  "id": "presence_concealment_ex_shadow_hassan",
+  "display_name": "Presence Concealment EX",
+  "display_name_zh": "\u6c14\u606f\u906e\u65ad EX",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [{"effect_type": "stealth_passive", "params": {}}]
+}

@@ -30,9 +30,6 @@ public class EnkiduEntity extends ServantEntity {
    @Override
    protected void customServerAiStep() {
       super.customServerAiStep();
-      if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
-         EnkiduCombatHelper.tick(this);
-      }
    }
 
    @Override

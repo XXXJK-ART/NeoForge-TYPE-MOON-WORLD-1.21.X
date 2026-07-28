@@ -613,7 +613,8 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    }
 
    protected void customServerAiStep() {
-      super.customServerAiStep();
+      boolean tactical = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
+      if (!tactical) super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       initializeMartialLoadout();
       ensurePhysicalEquipment();
@@ -631,11 +632,11 @@ public class MysticMagicianEntity extends HumanNpcEntity {
          }
       }
 
-      if (!this.level().isClientSide() && this.tickCount % 5 == 0) {
+      if (!tactical && !this.level().isClientSide() && this.tickCount % 5 == 0) {
          this.acquireAggressorTarget();
       }
 
-      NpcMagicCastBridge.tickServer(this);
+      if (!tactical) NpcMagicCastBridge.tickServer(this);
       this.refreshReinforcementVisualMask();
    }
 
