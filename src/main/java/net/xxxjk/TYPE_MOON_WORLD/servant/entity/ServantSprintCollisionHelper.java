@@ -9,17 +9,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 
 public final class ServantSprintCollisionHelper {
-   private static final double NPC_MIN_RUN_SPEED_SQR = 0.0036;
    private static final String PLAYER_LAST_SPRINT_TAG = "ServantCardLastSprintCollisionRun";
    private static final String NPC_LAST_COLLISION_TAG = "ServantLastSprintCollisionBreak";
 
@@ -75,7 +72,8 @@ public final class ServantSprintCollisionHelper {
       if (!gawain && !heracles) {
          return;
       }
-      if (!canUseGroundCollision(entity, NPC_MIN_RUN_SPEED_SQR) && !isActivelyPursuing(entity)) {
+      // NPC terrain damage represents a body collision with an obstacle, not heavy footsteps.
+      if (!entity.horizontalCollision) {
          return;
       }
 
@@ -102,15 +100,6 @@ public final class ServantSprintCollisionHelper {
       spawnCollisionFx(level, entity, dir, fiery, broken > 0, SoundSource.HOSTILE);
    }
 
-   private static boolean canUseGroundCollision(LivingEntity entity, double speedSqr) {
-      if (!entity.onGround() && !entity.horizontalCollision) {
-         return false;
-      }
-      double motionSpeed = entity.getDeltaMovement().horizontalDistanceSqr();
-      double positionSpeed = Mth.square(entity.getX() - entity.xo) + Mth.square(entity.getZ() - entity.zo);
-      return entity.horizontalCollision || motionSpeed >= speedSqr || positionSpeed >= speedSqr;
-   }
-
    private static boolean canUsePlayerSprintCollision(ServerPlayer player, boolean recentlySprinting) {
       if (!player.onGround() && !player.horizontalCollision) {
          return false;
@@ -124,15 +113,6 @@ public final class ServantSprintCollisionHelper {
          return look.normalize();
       }
       return collisionDirection(player, null);
-   }
-
-   private static boolean isActivelyPursuing(ServantEntity entity) {
-      LivingEntity target = entity.getTarget();
-      return entity.horizontalCollision
-         && target != null
-         && target.isAlive()
-         && !EntityUtils.isImmunePlayerTarget(target)
-         && entity.distanceToSqr(target) <= 20.0 * 20.0;
    }
 
    private static Vec3 collisionDirection(LivingEntity entity, LivingEntity target) {
@@ -206,53 +186,11 @@ public final class ServantSprintCollisionHelper {
       if (dir.lengthSqr() < 1.0E-4) {
          return 0;
       }
-      dir = dir.normalize();
-      int broken = breakCubeAt(level, owner, BlockPos.containing(owner.position().add(dir.scale(1.15))), 0, limit, hardnessCap);
-      if (broken < limit) {
-         broken += breakCubeAt(level, owner, BlockPos.containing(owner.position().add(dir.scale(2.15))), broken, limit - broken, hardnessCap);
-      }
-      return broken;
-   }
-
-   private static int breakCubeAt(ServerLevel level, LivingEntity owner, BlockPos center, int alreadyBroken, int limit, float hardnessCap) {
-      int broken = 0;
-      int baseY = owner.blockPosition().getY();
-      BlockPos min = new BlockPos(center.getX() - 1, baseY, center.getZ() - 1);
-      BlockPos max = new BlockPos(center.getX() + 1, baseY + 2, center.getZ() + 1);
-      for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-         if (broken >= limit) {
-            break;
-         }
-         if (breakBlock(level, owner, pos, hardnessCap, (alreadyBroken + broken) % 4 == 0)) {
-            broken++;
-         }
-      }
-      return broken;
-   }
-
-   private static boolean breakBlock(ServerLevel level, LivingEntity owner, BlockPos pos, float hardnessCap, boolean debris) {
-      BlockState state = level.getBlockState(pos);
-      if (!canBreak(level, pos, hardnessCap)) {
-         return false;
-      }
-      if (!level.destroyBlock(pos, false, owner) && !level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL)) {
-         return false;
-      }
-      if (debris) {
-         level.levelEvent(2001, pos, Block.getId(state));
-         level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.45, pos.getZ() + 0.5, 4, 0.2, 0.16, 0.2, 0.04);
-      }
-      return true;
-   }
-
-   private static boolean canBreak(ServerLevel level, BlockPos pos, float hardnessCap) {
-      BlockState state = level.getBlockState(pos);
-      float hardness = state.getDestroySpeed(level, pos);
-      return !state.isAir()
-         && !state.is(Blocks.BEDROCK)
-         && hardness >= 0.0F
-         && hardness <= Math.max(hardnessCap, 120.0F)
-         && state.getExplosionResistance(level, pos, null) < 1200.0F;
+      Vec3 center = owner.position().add(dir.normalize().scale(1.65)).add(0.0, 0.9, 0.0);
+      TerrainImpactProfile profile = new TerrainImpactProfile(TerrainImpactProfile.Tier.SMALL, 2.0,
+         Math.min(TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL).maximumHardness(), hardnessCap),
+         Math.min(12, Math.max(1, limit)), 28);
+      return TerrainImpactService.impact(level, owner, center, profile, TerrainImpactService.Shape.SURFACE_HEMISPHERE) ? 1 : 0;
    }
 
    private static void spawnCollisionFx(ServerLevel level, LivingEntity owner, Vec3 dir, boolean fiery, boolean blockHit, SoundSource source) {

@@ -100,6 +100,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
@@ -163,6 +164,7 @@ public class CommonEvents {
       event.addListener(new ServantSkillDefinitionLoader());
       event.addListener(new ServantNoblePhantasmDefinitionLoader());
       event.addListener(new ServantAiDefinitionLoader());
+      event.addListener(new ServantActionLoader());
    }
 
    @SubscribeEvent

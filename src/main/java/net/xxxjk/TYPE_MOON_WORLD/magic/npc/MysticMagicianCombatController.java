@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.FirearmPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 /** Combat goal for randomly generated martial and Thompson loadouts on magicians. */
@@ -70,16 +71,20 @@ public final class MysticMagicianCombatController {
    }
 
    private static void tickGun(MysticMagicianEntity npc, LivingEntity target, double distance) {
-      if (distance < 7.0) {
-         Vec3 away = npc.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
-         if (away.lengthSqr() > 0.01) npc.getMoveControl().strafe(-0.45F, away.normalize().x > 0.0 ? 0.65F : -0.65F);
-      } else if (distance > 14.0) {
-         npc.getNavigation().moveTo(target, 1.05);
-      } else if (npc.tickCount % 18 == 0) {
-         npc.getMoveControl().strafe(0.0F, npc.getRandom().nextBoolean() ? 0.6F : -0.6F);
+      long now = npc.level().getGameTime();
+      ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(target, 7.0, 11.0, 14.0);
+      boolean rangedDuel = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED;
+      if (distance < band.minimum() || distance > band.maximum()) {
+         Vec3 destination = ServantEngagementService.rangedDestination(npc, target, now, band);
+         npc.getNavigation().moveTo(destination.x, destination.y, destination.z,
+            distance < band.minimum() ? 1.18 : 1.08);
+      } else {
+         npc.getNavigation().stop();
+         float forward = rangedDuel ? 0.08F : distance < band.preferred() ? -0.28F : 0.12F;
+         float direction = ((npc.getId() + (int)(now / 60L)) & 1) == 0 ? 1.0F : -1.0F;
+         npc.getMoveControl().strafe(forward, direction * (rangedDuel ? 0.82F : 0.62F));
       }
 
-      long now = npc.level().getGameTime();
       if (distance <= 18.0 && npc.hasLineOfSight(target) && now >= npc.getPersistentData().getLong(TAG_NEXT_SHOT)) {
          fireNormalRound(npc, target);
          npc.getPersistentData().putLong(TAG_NEXT_SHOT, now + 14L);
@@ -89,7 +94,13 @@ public final class MysticMagicianCombatController {
    private static void tickMelee(MysticMagicianEntity npc, LivingEntity target, double distance) {
       double reach = 3.1 + (npc.getBbWidth() + target.getBbWidth()) * 0.4;
       if (distance > reach) {
-         npc.getNavigation().moveTo(target, npc.getMartialProficiency() >= 80.0 ? 1.35 : 1.15);
+         double speed = npc.getMartialProficiency() >= 80.0 ? 1.35 : 1.15;
+         if (ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED && distance > 7.0) {
+            Vec3 intercept = ServantEngagementService.meleeApproachPoint(npc, target, npc.level().getGameTime());
+            npc.getNavigation().moveTo(intercept.x, intercept.y, intercept.z, speed * 1.1);
+         } else {
+            npc.getNavigation().moveTo(target, speed);
+         }
          if (distance > 4.5 && npc.tickCount % 12 == 0) {
             Vec3 direction = target.position().subtract(npc.position()).multiply(1.0, 0.0, 1.0);
             if (direction.lengthSqr() > 0.01) npc.setDeltaMovement(npc.getDeltaMovement().add(direction.normalize().scale(0.08)));

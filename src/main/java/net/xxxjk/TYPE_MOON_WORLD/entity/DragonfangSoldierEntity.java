@@ -119,7 +119,8 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
 
    @Override
    protected void customServerAiStep() {
-      super.customServerAiStep();
+      boolean tactical = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
+      if (!tactical) super.customServerAiStep();
       LivingEntity owner = this.getSummoner();
       boolean ownedSummon = this.summonerUuid != null;
       if (ownedSummon && (owner == null || !owner.isAlive())) {
@@ -131,6 +132,7 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
          this.getPersistentData().putBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON, true);
          this.getPersistentData().putString(MedeaWorkshopHelper.TAG_MAGIC_SUMMON_OWNER, owner.getUUID().toString());
       }
+      if (tactical) return;
 
       LivingEntity preferredTarget = null;
       if (owner != null) {
@@ -144,6 +146,10 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       }
       if (isValidHostile(preferredTarget)) {
          this.setTarget(preferredTarget);
+         if (owner != null && this.distanceToSqr(preferredTarget) > 3.0 * 3.0) {
+            var slot = net.xxxjk.TYPE_MOON_WORLD.combat.ai.MinionCoordinationService.surroundPoint(owner, this, preferredTarget, 2.4);
+            this.getNavigation().moveTo(slot.x, slot.y, slot.z, 1.08);
+         }
       } else if (this.getTarget() != null && !isValidHostile(this.getTarget())) {
          this.setTarget(null);
       }

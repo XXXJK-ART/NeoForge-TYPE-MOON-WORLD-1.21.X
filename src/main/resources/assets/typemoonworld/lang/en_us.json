@@ -1804,5 +1804,12 @@
     "skill.typemoonworld.servant_card.arash_stella": "Stella",
     "message.typemoonworld.servant_card.arash_bow_required": "Arash's bow must be held in the main hand.",
     "message.typemoonworld.servant_card.arash_stella_blocked": "Stella cannot be released along this path.",
-    "message.typemoonworld.servant_card.arash_stella_charge_too_short": "Stella must be charged for at least 10 seconds."
+    "message.typemoonworld.servant_card.arash_stella_charge_too_short": "Stella must be charged for at least 10 seconds.",
+    "message.typemoonworld.entity_servant.bound": "Contract established with %s.",
+    "message.typemoonworld.entity_servant.unbound": "The entity Servant contract was released.",
+    "message.typemoonworld.entity_servant.command.follow": "Servant command: Follow",
+    "message.typemoonworld.entity_servant.command.guard": "Servant command: Guard",
+    "message.typemoonworld.entity_servant.command.stay": "Servant command: Stay",
+    "message.typemoonworld.entity_servant.np_permitted": "Noble Phantasm use permitted.",
+    "message.typemoonworld.entity_servant.np_forbidden": "Noble Phantasm use forbidden."
 }

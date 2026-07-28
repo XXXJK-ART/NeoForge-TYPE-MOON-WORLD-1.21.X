@@ -1,0 +1,4 @@
+{"servant":"cursed_arm_hassan","actions":[
+  {"id":"typemoonworld:cursed_arm/dirk_ambush","tags":["projectile","interrupt"],"minimum_range":3,"maximum_range":24,"mana_cost":2,"stamina_cost":5,"timing":{"windup":4,"active":2,"recovery":5},"threat":{"shape":"line","radius":1,"length":24,"danger":2,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":1},"terrain_impact":"none"},
+  {"id":"typemoonworld:cursed_arm/zabaniya","tags":["noble_phantasm","melee","control"],"minimum_range":0,"maximum_range":6,"mana_cost":80,"stamina_cost":20,"timing":{"windup":22,"active":4,"recovery":24},"threat":{"shape":"point","radius":4,"length":0,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":2},"terrain_impact":"none"}
+]}

@@ -1,0 +1,4 @@
+{"servant":"li_shuwen","actions":[
+  {"id":"typemoonworld:li/intercept","tags":["melee","guard","interrupt"],"minimum_range":0,"maximum_range":5,"mana_cost":0,"stamina_cost":7,"timing":{"windup":2,"active":3,"recovery":4},"threat":{"shape":"point","radius":3,"length":0,"danger":3,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":1},"terrain_impact":"none"},
+  {"id":"typemoonworld:li/no_second_strike","tags":["noble_phantasm","melee"],"minimum_range":0,"maximum_range":5,"mana_cost":45,"stamina_cost":25,"timing":{"windup":12,"active":2,"recovery":18},"threat":{"shape":"point","radius":4,"length":0,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":2},"terrain_impact":"small"}
+]}

@@ -20,6 +20,7 @@ import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ArashCombatHelper {
@@ -194,9 +195,15 @@ public final class ArashCombatHelper {
 
       int stationaryTicks = sampleStationaryTicks(arash, now);
       double distance = arash.distanceTo(target);
+      ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(
+         target,
+         ArashCombatRules.CROSSOVER_TRIGGER_RANGE,
+         ArashCombatRules.PREFERRED_COMBAT_RANGE,
+         ArashCombatRules.APPROACH_THRESHOLD
+      );
       if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) > now) return;
       boolean crowded = countCluster(arash, arash, 5.5) >= 2;
-      boolean shouldCross = distance <= ArashCombatRules.CROSSOVER_TRIGGER_RANGE
+      boolean shouldCross = distance <= band.minimum()
          || stationaryTicks >= 30 && distance <= 18.0 || crowded && distance <= 11.0;
       if (shouldCross && now >= data.getLong(TAG_NEXT_CROSSOVER)
          && beginCrossover(arash, target, now, orbitDirection)) {
@@ -206,17 +213,17 @@ public final class ArashCombatHelper {
 
       long lastReposition = data.getLong(TAG_LAST_REPOSITION);
       if (now - lastReposition < ArashCombatRules.TACTICAL_REPATH_INTERVAL) {
-         if (arash.getNavigation().isDone()) applyMobileStrafe(arash, target, distance, orbitDirection);
+         if (arash.getNavigation().isDone()) applyMobileStrafe(arash, target, distance, orbitDirection, band);
          return;
       }
       data.putLong(TAG_LAST_REPOSITION, now);
 
-      Vec3 destination = findTacticalPosition(arash, target, lineOfSight, orbitDirection);
-      double speed = distance > ArashCombatRules.APPROACH_THRESHOLD ? 1.25 : lineOfSight ? 1.10 : 1.20;
+      Vec3 destination = findTacticalPosition(arash, target, lineOfSight, orbitDirection, band);
+      double speed = distance > band.maximum() ? 1.25 : lineOfSight ? 1.10 : 1.20;
       if (destination == null || !arash.getNavigation().moveTo(destination.x, destination.y, destination.z, speed)) {
          orbitDirection = -orbitDirection;
          data.putInt(TAG_ORBIT_DIRECTION, orbitDirection);
-         applyMobileStrafe(arash, target, distance, orbitDirection);
+         applyMobileStrafe(arash, target, distance, orbitDirection, band);
       }
    }
 
@@ -294,14 +301,15 @@ public final class ArashCombatHelper {
    }
 
    private static Vec3 findTacticalPosition(ArashEntity arash, LivingEntity target, boolean lineOfSight,
-                                            int orbitDirection) {
+                                            int orbitDirection, ServantEngagementService.RangeBand band) {
       double distance = arash.distanceTo(target);
-      double desiredRange = distance > ArashCombatRules.APPROACH_THRESHOLD
-         ? 42.0 : !lineOfSight ? 24.0 : ArashCombatRules.PREFERRED_COMBAT_RANGE;
+      double desiredRange = distance > band.maximum()
+         ? Math.min(band.maximum() - 4.0, band.preferred() + 10.0)
+         : !lineOfSight ? Math.max(16.0, band.preferred() - 8.0) : band.preferred();
       Vec3 radial = arash.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
       if (radial.lengthSqr() < 1.0E-5) radial = new Vec3(1.0, 0.0, 0.0);
       radial = radial.normalize();
-      double[] angles = distance > ArashCombatRules.APPROACH_THRESHOLD
+      double[] angles = distance > band.maximum()
          ? new double[]{0.0, 24.0, -24.0, 48.0, -48.0, 78.0, -78.0}
          : new double[]{28.0, 46.0, 68.0, 92.0, 122.0, -38.0, -72.0};
 
@@ -364,9 +372,10 @@ public final class ArashCombatHelper {
       return new Vec3(vector.x * cosine - vector.z * sine, 0.0, vector.x * sine + vector.z * cosine);
    }
 
-   private static void applyMobileStrafe(ArashEntity arash, LivingEntity target, double distance, int orbitDirection) {
-      float forward = distance > ArashCombatRules.PREFERRED_COMBAT_RANGE + 7.0 ? 0.42F
-         : distance < ArashCombatRules.PREFERRED_COMBAT_RANGE - 8.0 ? -0.28F : 0.08F;
+   private static void applyMobileStrafe(ArashEntity arash, LivingEntity target, double distance, int orbitDirection,
+                                         ServantEngagementService.RangeBand band) {
+      float forward = distance > band.preferred() + 7.0 ? 0.42F
+         : distance < band.preferred() - 8.0 ? -0.28F : 0.08F;
       arash.getMoveControl().strafe(forward, orbitDirection * 0.68F);
       arash.getLookControl().setLookAt(target, 40.0F, 40.0F);
    }

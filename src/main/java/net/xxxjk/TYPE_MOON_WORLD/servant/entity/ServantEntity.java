@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -10,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
@@ -18,6 +20,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.MobSpawnType;
@@ -40,7 +43,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiEngine;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
@@ -57,6 +62,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -134,6 +141,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int basicAttackVariant = 0;
    private int spiritualDissolveTicks = 0;
    private int walkAnimationGraceTicks = 0;
+   private long tacticalAiHandledTick = Long.MIN_VALUE;
+   @Nullable private UUID masterUuid;
+   private ServantCommandMode commandMode = ServantCommandMode.FOLLOW;
+   private BlockPos stayAnchor = BlockPos.ZERO;
+   private boolean masterNoblePhantasmPermission;
 
    public int getAttackSwingTicks() {
       return this.attackSwingTicks;
@@ -204,6 +216,68 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
    }
 
+   @Nullable
+   public UUID getMasterUuid() {
+      return masterUuid;
+   }
+
+   @Nullable
+   public ServerPlayer getEntityMaster() {
+      if (masterUuid == null || !(level() instanceof ServerLevel serverLevel)) return null;
+      return serverLevel.getServer().getPlayerList().getPlayer(masterUuid);
+   }
+
+   public boolean isBoundTo(ServerPlayer player) {
+      return player != null && player.getUUID().equals(masterUuid);
+   }
+
+   public void bindMaster(ServerPlayer master) {
+      this.masterUuid = master.getUUID();
+      this.commandMode = ServantCommandMode.FOLLOW;
+      this.stayAnchor = blockPosition();
+      this.masterNoblePhantasmPermission = false;
+      setPersistenceRequired();
+   }
+
+   public void unbindMaster() {
+      this.masterUuid = null;
+      this.commandMode = ServantCommandMode.FOLLOW;
+      this.stayAnchor = blockPosition();
+      this.masterNoblePhantasmPermission = false;
+   }
+
+   public ServantCommandMode getCommandMode() {
+      return commandMode;
+   }
+
+   public BlockPos getStayAnchor() {
+      return stayAnchor;
+   }
+
+   public ServantCommandMode cycleCommandMode() {
+      commandMode = commandMode.next();
+      if (commandMode == ServantCommandMode.STAY) stayAnchor = blockPosition();
+      return commandMode;
+   }
+
+   public boolean hasMasterNoblePhantasmPermission() {
+      return masterUuid == null || masterNoblePhantasmPermission;
+   }
+
+   public boolean toggleMasterNoblePhantasmPermission() {
+      masterNoblePhantasmPermission = !masterNoblePhantasmPermission;
+      return masterNoblePhantasmPermission;
+   }
+
+   @Override
+   public boolean isAlliedTo(Entity other) {
+      if (super.isAlliedTo(other)) return true;
+      ServerPlayer master = getEntityMaster();
+      if (master == null) return false;
+      if (other == master || master.isAlliedTo(other)) return true;
+      return other instanceof ServantEntity servant && master.getUUID().equals(servant.masterUuid);
+   }
+
    public static AttributeSupplier.Builder createAttributes() {
       return PathfinderMob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 100.0)
@@ -212,7 +286,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          .add(Attributes.ATTACK_DAMAGE, 5.0)
          .add(Attributes.ARMOR, 4.0)
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
-         .add(Attributes.FOLLOW_RANGE, 48.0)
+         .add(Attributes.FOLLOW_RANGE, 96.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
    }
 
@@ -249,7 +323,6 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    protected void customServerAiStep() {
-      super.customServerAiStep();
       if (!this.level().isClientSide()) {
          if (this.hasEffect(ModMobEffects.PETRIFIED)) {
             this.getNavigation().stop();
@@ -266,7 +339,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         if (!ServantCombatSystem.tickBeforeAi(this)) {
+         boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
+         boolean tacticalHandled = !combatHandled && ServantTacticalController.tick(this);
+         this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
+         if (!combatHandled && !tacticalHandled) {
+            super.customServerAiStep();
             this.aiEngine.tick(this);
          }
          this.tickManaHealthConversion();
@@ -318,7 +395,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          // 璺岃惤浼ゅ鍏嶇柅
          // 锛堥€氳繃 causeFallDamage override 瀹炵幇锛岃涓嬫柟锛?
          // 水/岩浆中紧急闪避（索敌时也生效）
-         if (this.isInWater() || this.isInLava()) {
+         if (!combatHandled && !tacticalHandled && (this.isInWater() || this.isInLava())) {
             for (int i = 0; i < 3; i++) {
                double angle = this.random.nextDouble() * Math.PI * 2.0;
                double tx = this.getX() + 2.0 * Math.cos(angle);
@@ -337,7 +414,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          /* 着火时寻找水源自救 */
-         if (this.isOnFire() && this.random.nextFloat() < 0.5F && this.tickCount - this.getPersistentData().getInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG) >= 20) {
+         if (!combatHandled && !tacticalHandled && this.isOnFire() && this.random.nextFloat() < 0.5F
+            && this.tickCount - this.getPersistentData().getInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG) >= 20) {
             this.getPersistentData().putInt(LAST_FIRE_ESCAPE_SCAN_TICK_TAG, this.tickCount);
             BlockPos center = this.blockPosition();
             for (int attempt = 0; attempt < 18; attempt++) {
@@ -361,6 +439,20 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
       return false; // 英灵免疫摔落伤害
+   }
+
+   @Override
+   public boolean hurt(DamageSource source, float amount) {
+      float healthBefore = this.getHealth();
+      boolean hurt = super.hurt(source, amount);
+      if (hurt && !this.level().isClientSide() && source.getEntity() instanceof LivingEntity attacker && attacker != this) {
+         float effectiveDamage = Math.max(0.0F, healthBefore - this.getHealth());
+         ResourceLocation observedDamage = ResourceLocation.fromNamespaceAndPath(
+            net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "ai/observed_damage");
+         AiBrain.blackboard(this).observe(attacker.getUUID(), observedDamage, this.distanceTo(attacker), effectiveDamage, false,
+            this.level().getGameTime());
+      }
+      return hurt;
    }
 
    private void tickManaHealthConversion() {
@@ -395,6 +487,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
             inCombat ? 2 : 3, 0.22, 0.25, 0.22, 0.0);
       }
+   }
+
+   public boolean wasTacticalAiHandledThisTick() {
+      return this.tacticalAiHandledTick == this.level().getGameTime();
    }
 
    private void tickNaturalHealthRegen() {
@@ -493,9 +589,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.entityData.set(CURRENT_MP, (float) Math.min(this.getCurrentMp(), params.manaPool()));
       }
 
-      // 确保索敌距离匹配定义的 FOLLOW_RANGE
+      // Keep launched combat targets inside the vanilla goal system's tracking envelope.
       if (this.getAttribute(Attributes.FOLLOW_RANGE) != null) {
-         this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(48.0);
+         this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(96.0);
       }
 
       // Berserker 职阶额外移速补正（狂化加护）
@@ -609,33 +705,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
                   1, 0.0, 0.0, 0.0, 0.05);
             }
          }
-         /* FallingBlockEntity 飞溅碎块 */         for (int i = 0; i < 8; i++) {
-            double angle = this.random.nextDouble() * Math.PI * 2;
-            double dist = 1.0 + this.random.nextDouble() * 2.0;
-            int bx = (int) Math.floor(this.getX() + Math.cos(angle) * dist);
-            int bz = (int) Math.floor(this.getZ() + Math.sin(angle) * dist);
-            // 鍚戜笅瀵绘壘瀹炰綋鏂瑰潡
-            for (int by = (int) this.getY(); by >= (int) this.getY() - 3; by--) {
-               net.minecraft.world.level.block.state.BlockState ground =
-                  this.level().getBlockState(new net.minecraft.core.BlockPos(bx, by, bz));
-               if (!ground.isAir() && ground.isCollisionShapeFullBlock(this.level(), new net.minecraft.core.BlockPos(bx, by, bz))) {
-                  net.minecraft.world.level.block.state.BlockState above =
-                     this.level().getBlockState(new net.minecraft.core.BlockPos(bx, by + 1, bz));
-                  if (above.isAir()) {
-                     net.minecraft.world.entity.item.FallingBlockEntity fb =
-                        net.minecraft.world.entity.item.FallingBlockEntity.fall(
-                           sl, new net.minecraft.core.BlockPos(bx, by + 1, bz), ground);
-                     fb.disableDrop();
-                     fb.setDeltaMovement(
-                        (this.random.nextDouble() - 0.5) * 0.1,
-                        0.34 + this.random.nextDouble() * 0.18,
-                        (this.random.nextDouble() - 0.5) * 0.1);
-                     fb.time = 1;
-                  }
-                  break;
-               }
-            }
-         }
+         TerrainImpactProfile.Tier tier = this instanceof HeraclesEntity
+            ? TerrainImpactProfile.Tier.HEAVY : TerrainImpactProfile.Tier.MEDIUM;
+         TerrainImpactService.impact(sl, this, this.position().add(0.0, 0.2, 0.0),
+            TerrainImpactProfile.of(tier), TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
          // 鐮稿湴闊虫晥
          sl.playSound(null, this.getX(), this.getY(), this.getZ(),
             SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.5F, 0.5F);
@@ -1047,6 +1120,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       tag.putInt("CombatDisposition", this.getCombatDisposition().id());
       tag.putDouble("Favor", this.getFavor());
       tag.putDouble("CurrentMp", this.getCurrentMp());
+      if (masterUuid != null) tag.putUUID("EntityMaster", masterUuid);
+      tag.putString("EntityCommandMode", commandMode.name());
+      tag.putLong("EntityStayAnchor", stayAnchor.asLong());
+      tag.putBoolean("EntityNpPermission", masterNoblePhantasmPermission);
    }
 
    @Override
@@ -1061,6 +1138,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(COMBAT_DISPOSITION, tag.getInt("CombatDisposition"));
       this.entityData.set(FAVOR, (float) tag.getDouble("Favor"));
       this.entityData.set(CURRENT_MP, (float) tag.getDouble("CurrentMp"));
+      this.masterUuid = tag.hasUUID("EntityMaster") ? tag.getUUID("EntityMaster") : null;
+      this.commandMode = ServantCommandMode.byName(tag.getString("EntityCommandMode"));
+      this.stayAnchor = tag.contains("EntityStayAnchor") ? BlockPos.of(tag.getLong("EntityStayAnchor")) : blockPosition();
+      this.masterNoblePhantasmPermission = tag.getBoolean("EntityNpPermission");
       this.cachedDefinition = null;
 
       /* 兼容旧存档中没有 ServantId 的情况 */      if (loadedId == null || loadedId.isEmpty()) {

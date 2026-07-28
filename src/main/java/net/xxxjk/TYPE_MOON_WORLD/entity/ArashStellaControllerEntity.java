@@ -82,7 +82,7 @@ public final class ArashStellaControllerEntity extends Entity {
    public static boolean tryBegin(ArashEntity arash, LivingEntity target) {
       if (!(arash.level() instanceof ServerLevel level) || arash.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_USED)
          || arash.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_CHANTING)
-         || arash.getCurrentMp() < 100.0) return false;
+         || arash.getCurrentMp() < 100.0 || !arash.hasMasterNoblePhantasmPermission()) return false;
       List<LivingEntity> hostiles = level.getEntitiesOfClass(LivingEntity.class, arash.getBoundingBox().inflate(64.0),
          living -> ArashCombatHelper.isTarget(arash, living));
       boolean surrounded = hostiles.size() >= 8;

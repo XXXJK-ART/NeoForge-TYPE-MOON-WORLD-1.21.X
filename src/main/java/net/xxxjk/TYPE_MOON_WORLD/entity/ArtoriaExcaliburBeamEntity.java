@@ -109,6 +109,10 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
          this.updateEndFromOwner(owner);
          this.setPos(owner.position().add(0.0, owner.getBbHeight() * 0.66, 0.0).add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(1.2)));
          BeamClashManager.tick(level, this);
+         if (this.clashing) {
+            // A clash is its own active phase and must not consume Excalibur's remaining beam time.
+            this.entityData.set(DURATION, this.getDuration() + 1);
+         }
          if (this.isBeamActive() && this.tickCount % DAMAGE_INTERVAL == 0) {
             if (!this.clashing) {
                this.applyBeamDamage(level, owner);
@@ -136,6 +140,8 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       this.entityData.set(DAMAGE_START_TICK, tag.getInt("DamageStartTick"));
       this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, tag.contains("PowerScale") ? tag.getFloat("PowerScale") : 1.0F)));
       this.craterQueued = tag.getBoolean("CraterQueued");
+      this.clashDamageScale = Math.max(0.0F, Math.min(1.0F,
+         tag.contains("ClashDamageScale") ? tag.getFloat("ClashDamageScale") : 1.0F));
       if (tag.hasUUID("Owner")) {
          this.ownerUuid = tag.getUUID("Owner");
       }
@@ -150,6 +156,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       tag.putInt("DamageStartTick", this.entityData.get(DAMAGE_START_TICK));
       tag.putFloat("PowerScale", this.entityData.get(POWER_SCALE));
       tag.putBoolean("CraterQueued", this.craterQueued);
+      tag.putFloat("ClashDamageScale", this.clashDamageScale);
       if (this.ownerUuid != null) {
          tag.putUUID("Owner", this.ownerUuid);
       }
@@ -197,6 +204,9 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    public double beamHalfWidth() {
       return HALF_WIDTH * (0.28 + this.powerScale() * 0.72);
    }
+
+   @Override
+   public float clashPower() { return this.powerScale(); }
 
    private double beamHalfHeight() {
       return HALF_HEIGHT * (0.35 + this.powerScale() * 0.65);
@@ -382,7 +392,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    public void setClashing(boolean value) { this.clashing = value; }
 
    @Override
-   public void setClashDamageScale(float value) { this.clashDamageScale = Math.max(0.0F, value); }
+   public void setClashDamageScale(float value) { this.clashDamageScale = Math.max(0.0F, Math.min(1.0F, value)); }
 
    @Override
    public void cancelClashBeam() { this.discard(); }

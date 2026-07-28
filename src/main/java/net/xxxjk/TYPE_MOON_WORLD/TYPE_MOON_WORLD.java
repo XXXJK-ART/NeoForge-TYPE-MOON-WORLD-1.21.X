@@ -122,6 +122,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.TerrainDebrisMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
@@ -329,6 +330,7 @@ public class TYPE_MOON_WORLD {
       );
       registrar.playToClient(OpenLeylineSurveyMapMessage.TYPE, OpenLeylineSurveyMapMessage.STREAM_CODEC, OpenLeylineSurveyMapMessage::handleData);
       registrar.playToClient(VFXSpawnEffectMessage.TYPE, VFXSpawnEffectMessage.STREAM_CODEC, VFXSpawnEffectMessage::handleData);
+      registrar.playToClient(TerrainDebrisMessage.TYPE, TerrainDebrisMessage.STREAM_CODEC, TerrainDebrisMessage::handleData);
       registrar.playToClient(DefinitionSnapshotMessage.TYPE, DefinitionSnapshotMessage.STREAM_CODEC, DefinitionSnapshotMessage::handleData);
       networkingRegistered = true;
    }

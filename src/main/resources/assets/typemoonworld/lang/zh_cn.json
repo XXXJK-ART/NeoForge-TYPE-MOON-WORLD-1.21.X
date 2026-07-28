@@ -1968,6 +1968,13 @@
     "skill.typemoonworld.servant_card.arash_stella": "流星一条",
     "message.typemoonworld.servant_card.arash_bow_required": "主手必须持有阿拉什的专属弓。",
     "message.typemoonworld.servant_card.arash_stella_blocked": "当前方向无法安全释放流星一条。",
-    "message.typemoonworld.servant_card.arash_stella_charge_too_short": "流星一条至少需要蓄力10秒。"
+    "message.typemoonworld.servant_card.arash_stella_charge_too_short": "流星一条至少需要蓄力10秒。",
+    "message.typemoonworld.entity_servant.bound": "已与%s建立契约。",
+    "message.typemoonworld.entity_servant.unbound": "已解除实体从者契约。",
+    "message.typemoonworld.entity_servant.command.follow": "从者命令：跟随",
+    "message.typemoonworld.entity_servant.command.guard": "从者命令：护卫",
+    "message.typemoonworld.entity_servant.command.stay": "从者命令：待命",
+    "message.typemoonworld.entity_servant.np_permitted": "已允许使用宝具。",
+    "message.typemoonworld.entity_servant.np_forbidden": "已禁止使用宝具。"
 }
 

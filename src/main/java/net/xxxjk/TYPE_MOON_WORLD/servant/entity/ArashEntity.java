@@ -111,8 +111,10 @@ public final class ArashEntity extends ServantEntity {
          MagicResistanceHelper.setMagicResistance(this, net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank.C, 0.20F, 0.10F);
       }
       if (!this.level().isClientSide) {
-         ArashCombatHelper.tickCrossoverMovement(this);
-         ArashCombatHelper.tickAttackFacing(this);
+         if (!this.wasTacticalAiHandledThisTick()) {
+            ArashCombatHelper.tickCrossoverMovement(this);
+            ArashCombatHelper.tickAttackFacing(this);
+         }
          tickStellaSacrifice();
       }
    }

@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -377,21 +378,16 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static void handleMovementAndRifle(OdaNobunagaEntity entity, ServerLevel level, LivingEntity target, long now, double distance) {
-      if (distance < 8.0) {
-         kiteBack(entity, target, 3.5);
-      } else if (distance > 22.0) {
-         ServantNavigationHelper.moveToTargetThrottled(
-            entity,
-            target,
-            1.05,
-            now,
-            ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
-            1.0,
-            "OdaRifleChasePath"
-         );
-      } else {
-         ServantNavigationHelper.stopIfMoving(entity);
-      }
+      ServantEngagementService.maintainRangedPosition(
+         entity,
+         target,
+         now,
+         8.0,
+         15.0,
+         22.0,
+         1.05,
+         "OdaRiflePosition"
+      );
 
       if (canUse(now, entity.getPersistentData().getLong(TAG_LAST_RIFLE_SHOT), hasMaou(entity, now) ? 18 : 26)) {
          shootRifle(entity, level, target, now);

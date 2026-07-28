@@ -21,31 +21,45 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.xxxjk.TYPE_MOON_WORLD.Config;
+import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 
 /** Shared, round-robin terrain queue. Damage logic never waits for terrain work. */
 @EventBusSubscriber(modid = "typemoonworld")
 public final class DeferredTerrainDestruction {
-   // A complete advancing X cross-section is roughly 19k checks per tick.
-   // The time cap remains authoritative when block updates are expensive.
-   private static final int MAX_CHECKS_PER_LEVEL_TICK = 20_000;
-   private static final long SOFT_BUDGET_NANOS = 12_000_000L;
    private static final Map<ResourceKey<Level>, ArrayDeque<Job>> JOBS = new HashMap<>();
+   private static final Map<ResourceKey<Level>, TickMetrics> LAST_METRICS = new HashMap<>();
    private DeferredTerrainDestruction() { }
 
    @FunctionalInterface public interface BlockPredicate { boolean canRemove(ServerLevel level, BlockPos pos, double distanceSqr, double radius, Vec3 center); }
    @FunctionalInterface public interface RemovalCallback { void onRemoved(ServerLevel level, BlockPos pos, int removed); }
+   @FunctionalInterface public interface DetailedRemovalCallback { void onRemoved(ServerLevel level, BlockPos pos, BlockState previousState, int removed); }
 
    public static void queueSphere(ServerLevel level, Vec3 center, int radius, float maxHardness, int targetTicks) {
-      if (radius > 0) add(level, new SphereJob(level, center, radius, radius, maxHardness, false, null, null));
+      if (radius > 0) add(level, new SphereJob(level, center, radius, radius, maxHardness, false, null, null).schedule(targetTicks));
    }
    public static void queueSphere(ServerLevel level, Vec3 center, double radius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
-      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback));
+      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback).schedule(targetTicks));
    }
    public static void queueShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
-      if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius));
+      if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius).schedule(targetTicks));
    }
    public static void queueEllipsoid(ServerLevel level, Vec3 center, int radius, int halfHeight, float maxHardness, int targetTicks) {
-      if (radius > 0 && halfHeight > 0) add(level, new EllipsoidJob(level, center, radius, halfHeight, maxHardness));
+      if (radius > 0 && halfHeight > 0) add(level, new EllipsoidJob(level, center, radius, halfHeight, maxHardness).schedule(targetTicks));
+   }
+
+   public static void queueHemisphere(ServerLevel level, Vec3 center, double radius, boolean lower,
+                                      float maxHardness, int targetTicks, BlockPredicate predicate,
+                                      DetailedRemovalCallback callback, Runnable completion) {
+      if (level == null || radius <= 0.0) return;
+      add(level, new HemisphereJob(level, center, radius, lower, false, maxHardness, predicate, callback, completion).schedule(targetTicks));
+   }
+
+   public static void queueSphereDetailed(ServerLevel level, Vec3 center, double radius, float maxHardness,
+                                          int targetTicks, BlockPredicate predicate,
+                                          DetailedRemovalCallback callback, Runnable completion) {
+      if (level == null || radius <= 0.0) return;
+      add(level, new HemisphereJob(level, center, radius, false, true, maxHardness, predicate, callback, completion).schedule(targetTicks));
    }
    public static void queueDiagonalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, Runnable completion) {
       queueDiagonalCut(level, origin, direction, length, width, height, false, completion);
@@ -110,6 +124,11 @@ public final class DeferredTerrainDestruction {
    }
 
    public record TraceSegment(Vec3 start, Vec3 end) { }
+   public record TickMetrics(int checkedBlocks, long elapsedNanos, int queuedJobs) { }
+
+   public static TickMetrics lastMetrics(ServerLevel level) {
+      return level == null ? new TickMetrics(0, 0L, 0) : LAST_METRICS.getOrDefault(level.dimension(), new TickMetrics(0, 0L, 0));
+   }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
       add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel));
    }
@@ -122,10 +141,13 @@ public final class DeferredTerrainDestruction {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
       ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
       long started = System.nanoTime(); int checked = 0;
+      int maxChecks = Math.max(1000, Config.terrainChecksPerTick);
+      long softBudgetNanos = Math.max(1_000_000L, Config.terrainBudgetMicros * 1000L);
       int idleJobs = 0;
-      while (!queue.isEmpty() && checked < MAX_CHECKS_PER_LEVEL_TICK && System.nanoTime() - started < SOFT_BUDGET_NANOS) {
+      while (!queue.isEmpty() && checked < maxChecks && System.nanoTime() - started < softBudgetNanos) {
          Job job = queue.pollFirst(); int slice = 0;
-         while (!job.done && job.ready() && slice < 128 && checked < MAX_CHECKS_PER_LEVEL_TICK) { job.advance(); slice++; checked++; }
+         while (!job.done && job.ready() && slice < job.sliceLimit && checked < maxChecks
+            && System.nanoTime() - started < softBudgetNanos) { job.advance(); slice++; checked++; }
          if (!job.done) queue.addLast(job); else job.finish();
          if (slice == 0) {
             idleJobs++;
@@ -134,20 +156,26 @@ public final class DeferredTerrainDestruction {
             idleJobs = 0;
          }
       }
+      LAST_METRICS.put(level.dimension(), new TickMetrics(checked, System.nanoTime() - started, queue.size()));
       if (queue.isEmpty()) JOBS.remove(level.dimension());
    }
-   @SubscribeEvent public static void unload(LevelEvent.Unload event) { if (event.getLevel() instanceof Level level && !level.isClientSide()) JOBS.remove(level.dimension()); }
+   @SubscribeEvent public static void unload(LevelEvent.Unload event) { if (event.getLevel() instanceof Level level && !level.isClientSide()) { JOBS.remove(level.dimension()); LAST_METRICS.remove(level.dimension()); } }
 
    private abstract static class Job {
-      final ServerLevel level; boolean done; Runnable completion;
+      final ServerLevel level; boolean done; Runnable completion; int sliceLimit = 128;
       Job(ServerLevel level) { this.level = level; }
       abstract void advance();
       boolean ready() { return true; }
       void finish() { if (completion != null) completion.run(); }
+      Job schedule(int targetTicks, long estimatedChecks) {
+         if (targetTicks > 0) sliceLimit = Mth.clamp((int)Math.ceil(estimatedChecks / (double)targetTicks), 16, 512);
+         return this;
+      }
       boolean valid(BlockPos pos, float maxHardness) {
-         if (!level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) return false;
+         if (!Config.terrainDestructionEnabled || !level.getWorldBorder().isWithinBounds(pos)
+            || !level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) return false;
          BlockState state = level.getBlockState(pos); float hardness = state.getDestroySpeed(level, pos);
-         return !state.isAir() && !isProtected(state) && hardness >= 0 && hardness <= maxHardness
+         return !state.isAir() && !state.is(ModTags.Blocks.TERRAIN_IMMUNE) && !isProtected(state) && hardness >= 0 && hardness <= maxHardness
             && state.getExplosionResistance(level, pos, null) < 1200;
       }
 
@@ -163,14 +191,76 @@ public final class DeferredTerrainDestruction {
       double innerSqr; int x, y, z, removed;
       SphereJob(ServerLevel level, Vec3 center, int scan, double radius, float hardness, boolean shellOnly, BlockPredicate predicate, RemovalCallback callback) { super(level); this.center=center; this.scan=scan; this.radius=radius; this.radiusSqr=radius*radius; this.hardness=hardness; this.shellOnly=shellOnly; this.predicate=predicate; this.callback=callback; x=y=z=-scan; }
       SphereJob inner(double value) { innerSqr=Math.max(0,value*value); return this; }
-      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(predicate!=null ? predicate.canRemove(level,p,d,radius,center) : valid(p,hardness)){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
+      SphereJob schedule(int targetTicks) { super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * (scan * 2 + 1)); return this; }
+      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(valid(p,hardness) && (predicate==null || predicate.canRemove(level,p,d,radius,center))){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
       void cursor(){if(++z>scan){z=-scan;if(++y>scan){y=-scan;if(++x>scan)done=true;}}}
    }
    private static final class EllipsoidJob extends Job {
       final Vec3 center; final int radius,height; final float hardness; int x,y,z;
       EllipsoidJob(ServerLevel level,Vec3 center,int radius,int height,float hardness){super(level);this.center=center;this.radius=radius;this.height=height;this.hardness=hardness;x=z=-radius;y=-height;}
+      EllipsoidJob schedule(int targetTicks){super.schedule(targetTicks,(long)(radius*2+1)*(radius*2+1)*(height*2+1));return this;}
       void advance(){int cx=x,cy=y,cz=z;cursor();double n=(cx*cx+cz*cz)/(double)(radius*radius)+(cy*cy)/(double)(height*height);if(n<=1){BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz);if(valid(p,hardness))level.removeBlock(p,false);}}
       void cursor(){if(++z>radius){z=-radius;if(++y>height){y=-height;if(++x>radius)done=true;}}}
+   }
+
+   private static final class HemisphereJob extends Job {
+      final Vec3 center;
+      final int scan;
+      final double radius, radiusSqr;
+      final boolean lower;
+      final boolean full;
+      final float hardness;
+      final BlockPredicate predicate;
+      final DetailedRemovalCallback callback;
+      int x, y, z, removed;
+
+      HemisphereJob(ServerLevel level, Vec3 center, double radius, boolean lower, boolean full, float hardness,
+                    BlockPredicate predicate, DetailedRemovalCallback callback, Runnable completion) {
+         super(level);
+         this.center = center;
+         this.scan = (int)Math.ceil(radius);
+         this.radius = radius;
+         this.radiusSqr = radius * radius;
+         this.lower = lower;
+         this.full = full;
+         this.hardness = hardness;
+         this.predicate = predicate;
+         this.callback = callback;
+         this.completion = completion;
+         this.x = this.z = -scan;
+         this.y = lower || full ? -scan : 0;
+      }
+
+      HemisphereJob schedule(int targetTicks) {
+         int height = full ? scan * 2 + 1 : scan + 1;
+         super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * height);
+         return this;
+      }
+
+      @Override void advance() {
+         int cx = x, cy = y, cz = z;
+         cursor();
+         double distanceSqr = cx * cx + cy * cy + cz * cz;
+         if (distanceSqr > radiusSqr) return;
+         BlockPos pos = BlockPos.containing(center.x + cx, center.y + cy, center.z + cz);
+         if (!valid(pos, hardness) || predicate != null && !predicate.canRemove(level, pos, distanceSqr, radius, center)) return;
+         BlockState previous = level.getBlockState(pos);
+         if (level.removeBlock(pos, false)) {
+            removed++;
+            if (callback != null) callback.onRemoved(level, pos, previous, removed);
+         }
+      }
+
+      private void cursor() {
+         if (++z > scan) {
+            z = -scan;
+            int maxY = lower && !full ? 0 : scan;
+            if (++y > maxY) {
+               y = lower || full ? -scan : 0;
+               if (++x > scan) done = true;
+            }
+         }
+      }
    }
    private static final class DiagonalJob extends Job {
       final Vec3 origin,forward,side; final double length,width,height,sign; final boolean burn; double shell; boolean excludeCrossCore; int along,normal,vertical;

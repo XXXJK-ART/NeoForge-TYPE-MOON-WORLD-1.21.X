@@ -1,0 +1,78 @@
+{
+  "duration": 3.2,
+  "notes": "Shared terminal burst for EA and Excalibur clash resolution.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.85,
+      "rate": 4200,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.14, 0.0],
+      "velocity_variance": 0.3,
+      "max_vanilla_particles_per_tick": 8,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 260 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.2, "color": "#FFFFF0A0" },
+        { "t": 0.5, "color": "#FFFF3030" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.3 },
+        { "t": 0.4, "size": 1.6 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.2, 0.2, 0.2] },
+        { "t": 0.5, "pos": [0.0, 0.2, 0.0], "scale": [9.0, 7.0, 9.0], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.4, 0.0], "scale": [2.0, 1.5, 2.0] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "particle_role": "BEAM_CLASH_IMPACT_CORE",
+      "vanilla_particles": [
+        { "type": "explosion_emitter", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.7 },
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.8 }
+      ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 2.6,
+      "rate": 2100,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.38,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "circle", "radius": 1.0, "segments": 240 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.3, "color": "#CCFFD050" },
+        { "t": 0.65, "color": "#AAFF2020" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.45, "size": 0.9 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.2, 0.2, 0.2] },
+        { "t": 0.55, "pos": [0.0, 0.0, 0.0], "scale": [18.0, 18.0, 18.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [28.0, 28.0, 28.0] }
+      ],
+      "visibility_condition": "random() > 0.1",
+      "blend": "ADDITIVE",
+      "particle_role": "BEAM_CLASH_SHOCKWAVE",
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [1.1, 0.12, 1.1], "offset": [0.0, 0.0, 0.0], "speed": 0.05, "chance": 0.5 },
+        { "type": "electric_spark", "count": 2, "spread": [1.8, 1.0, 1.8], "offset": [0.0, 0.2, 0.0], "speed": 0.2, "chance": 0.65 }
+      ]
+    }
+  ]
+}

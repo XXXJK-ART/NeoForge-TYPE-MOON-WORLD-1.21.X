@@ -59,9 +59,6 @@ public final class PaleRiderEntity extends ServantEntity {
          return;
       }
       super.customServerAiStep();
-      if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
-         PaleRiderCombatHelper.tick(this);
-      }
    }
 
    @Override

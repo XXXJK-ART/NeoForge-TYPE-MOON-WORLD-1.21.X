@@ -95,6 +95,13 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
+   private boolean tacticalAiHandled;
+
+   @Override
+   protected void customServerAiStep() {
+      tacticalAiHandled = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
+      if (!tacticalAiHandled) super.customServerAiStep();
+   }
    private static final EntityDataAccessor<Boolean> IS_DEFENDING = SynchedEntityData.defineId(RyougiShikiEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Boolean> IS_BETRAYED = SynchedEntityData.defineId(RyougiShikiEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> FRIENDSHIP_LEVEL = SynchedEntityData.defineId(RyougiShikiEntity.class, EntityDataSerializers.INT);
@@ -147,6 +154,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
    public void tick() {
       super.tick();
       if (!this.level().isClientSide) {
+         if (tacticalAiHandled) return;
          if (this.isOnFire()) {
             if (this.random.nextFloat() < 0.5F) {
                this.clearFire();

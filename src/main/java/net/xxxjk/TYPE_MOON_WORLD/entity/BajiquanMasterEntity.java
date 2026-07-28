@@ -151,9 +151,11 @@ public class BajiquanMasterEntity extends HumanNpcEntity implements NpcActionPos
    }
 
    @Override protected void customServerAiStep() {
-      super.customServerAiStep();
+      boolean tactical = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
+      if (!tactical) super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       this.ensureRandomName();
+      if (tactical) return;
       CompoundTag data = this.getPersistentData();
       if (!data.hasUUID(TAG_PLAYER)) {
          LivingEntity retaliationTarget = getRetaliationTarget();

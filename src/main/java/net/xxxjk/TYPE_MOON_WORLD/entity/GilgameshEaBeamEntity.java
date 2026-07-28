@@ -218,17 +218,22 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private void tickBeam(ServerLevel level, LivingEntity owner) {
-      if (!drainMana(owner, 5.0)) {
-         setStage(Stage.FINISHED);
-         discard();
-         return;
-      }
       updateDirectionFromOwner(owner);
       if (!beamVisualStarted) {
          beamVisualStarted = true;
          VFXServerEffects.spawn(level, "ea_beam", owner, 256.0);
       }
       BeamClashManager.tick(level, this);
+      if (clashing) {
+         // BeamClashManager applies symmetrical clash upkeep. Freeze EA's beam clock here.
+         stageTicks--;
+         return;
+      }
+      if (!drainMana(owner, 5.0)) {
+         setStage(Stage.FINISHED);
+         discard();
+         return;
+      }
       if (!clashing && stageTicks >= BEAM_DAMAGE_START) {
          if (stageTicks % BEAM_DAMAGE_INTERVAL == 0) applyBeamDamage(level, owner);
          destroyBeamBlocks(level, owner);
@@ -493,6 +498,8 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       beamStarted = tag.getBoolean("BeamStarted"); impactQueued = tag.getBoolean("ImpactQueued"); autoReleaseAtFull = tag.getBoolean("AutoRelease");
       boundaryBroken = tag.getBoolean("BoundaryBroken"); beamVisualStarted = tag.getBoolean("BeamVisualStarted");
       duelFinale = tag.getBoolean("DuelFinale");
+      clashDamageScale = Math.max(0.0F, Math.min(1.0F,
+         tag.contains("ClashDamageScale") ? tag.getFloat("ClashDamageScale") : 1.0F));
    }
    @Override protected void addAdditionalSaveData(CompoundTag tag) {
       if (ownerUuid != null) tag.putUUID("Owner", ownerUuid);
@@ -504,6 +511,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       tag.putBoolean("BeamStarted", beamStarted); tag.putBoolean("ImpactQueued", impactQueued); tag.putBoolean("AutoRelease", autoReleaseAtFull);
       tag.putBoolean("BoundaryBroken", boundaryBroken); tag.putBoolean("BeamVisualStarted", beamVisualStarted);
       tag.putBoolean("DuelFinale", duelFinale);
+      tag.putFloat("ClashDamageScale", clashDamageScale);
    }
 
    @Override public Entity clashEntity() { return this; }
@@ -512,10 +520,11 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    @Override public Vec3 beamStart() { return this.position(); }
    @Override public Vec3 beamEnd() { return getEndPos(); }
    @Override public double beamHalfWidth() { return BEAM_HALF_WIDTH; }
+   @Override public float clashPower() { return 1.18F * getPowerScale(); }
    @Override public boolean isBeamDamageActive() { return getStage() == Stage.BEAM && stageTicks >= BEAM_DAMAGE_START; }
    @Override public boolean isClashing() { return clashing; }
    @Override public void setClashing(boolean value) { clashing = value; }
-   @Override public void setClashDamageScale(float value) { clashDamageScale = Math.max(0, value); }
+   @Override public void setClashDamageScale(float value) { clashDamageScale = Math.max(0, Math.min(1.0F, value)); }
    @Override public void cancelClashBeam() { setStage(Stage.FINISHED); discard(); }
    @Override public void continueAfterClash() { clashing = false; }
    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) { }

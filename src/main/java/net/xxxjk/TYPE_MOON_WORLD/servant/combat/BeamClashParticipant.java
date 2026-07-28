@@ -18,6 +18,9 @@ public interface BeamClashParticipant {
 
    double beamHalfWidth();
 
+   /** Relative output used by the clash resolver before current mana is considered. */
+   float clashPower();
+
    boolean isBeamDamageActive();
 
    boolean isClashing();

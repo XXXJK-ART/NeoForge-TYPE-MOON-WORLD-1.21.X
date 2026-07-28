@@ -1,0 +1,4 @@
+{"servant":"pale_rider","actions":[
+  {"id":"typemoonworld:pale_rider/plague_zone","tags":["area","control","summon"],"minimum_range":0,"maximum_range":34,"mana_cost":15,"stamina_cost":0,"timing":{"windup":10,"active":80,"recovery":8},"threat":{"shape":"sphere","radius":12,"length":0,"danger":4,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":12},"terrain_impact":"none"},
+  {"id":"typemoonworld:pale_rider/doomsday_come","tags":["noble_phantasm","area","control"],"minimum_range":0,"maximum_range":64,"mana_cost":220,"stamina_cost":0,"timing":{"windup":60,"active":200,"recovery":35},"threat":{"shape":"sphere","radius":32,"length":0,"danger":5,"blockable":false,"dodgeable":false,"interruptible":true,"friendly_fire_radius":32},"terrain_impact":"none"}
+]}

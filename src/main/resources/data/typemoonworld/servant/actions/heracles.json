@@ -1,0 +1,4 @@
+{"servant":"heracles","actions":[
+  {"id":"typemoonworld:heracles/ground_slam","tags":["melee","area","interrupt"],"minimum_range":0,"maximum_range":8,"mana_cost":0,"stamina_cost":18,"timing":{"windup":10,"active":5,"recovery":12},"threat":{"shape":"hemisphere","radius":6,"length":0,"danger":4,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":6},"terrain_impact":"heavy"},
+  {"id":"typemoonworld:heracles/nine_lives","tags":["noble_phantasm","melee"],"minimum_range":0,"maximum_range":10,"mana_cost":80,"stamina_cost":35,"timing":{"windup":24,"active":18,"recovery":28},"threat":{"shape":"cone","radius":5,"length":10,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":7},"terrain_impact":"heavy"}
+]}

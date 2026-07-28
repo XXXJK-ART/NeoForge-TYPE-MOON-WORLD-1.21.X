@@ -110,13 +110,15 @@ public final class ShadowHassanEntity extends ServantEntity {
       }
 
       LivingEntity target = this.getTarget();
-      if (!this.isNoblePhantasmConsumed() && target != null && target.isAlive()
-         && !ShadowHassanPursuitData.isPaleRider(target)
-         && ShadowHassanRules.shouldTriggerNoblePhantasm(this.getHealth(), this.getMaxHealth())) {
-         this.triggerNoblePhantasm(target);
-         return;
+      if (!this.wasTacticalAiHandledThisTick()) {
+         if (!this.isNoblePhantasmConsumed() && target != null && target.isAlive()
+            && !ShadowHassanPursuitData.isPaleRider(target)
+            && ShadowHassanRules.shouldTriggerNoblePhantasm(this.getHealth(), this.getMaxHealth())) {
+            this.triggerNoblePhantasm(target);
+            return;
+         }
+         this.tickShadowMovement(level, target, now);
       }
-      this.tickShadowMovement(level, target, now);
    }
 
    public boolean isPresenceConcealed() {

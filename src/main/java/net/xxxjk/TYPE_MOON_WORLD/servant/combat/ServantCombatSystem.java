@@ -21,6 +21,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -214,6 +216,14 @@ public final class ServantCombatSystem {
       if (!(caster.level() instanceof ServerLevel level) || windupTicks <= 0) {
          return;
       }
+      CombatThreatService.publishWindup(
+         caster,
+         target,
+         ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "noble_phantasm/" + caster.getServantId()),
+         windupTicks,
+         ranged,
+         5
+      );
       AABB box = caster.getBoundingBox().inflate(20.0);
       List<ServantEntity> responders = level.getEntitiesOfClass(
          ServantEntity.class,

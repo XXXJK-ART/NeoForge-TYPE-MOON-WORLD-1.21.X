@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -206,10 +207,12 @@ public final class GilgameshCombatHelper {
       if (away.lengthSqr() < 1.0E-4) away = new Vec3(1, 0, 0);
       away = away.normalize();
       boolean retreat = shouldRetreatFrom(entity, target, now);
+      ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(target, 18.0, 22.0, 26.0);
+      boolean rangedDuel = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED;
       double radial = retreat
-         ? distance < 20.0 ? 0.24 : distance > 26.0 ? -0.08 : 0.0
-         : distance > 18.0 ? -0.12 : 0.0;
-      Vec3 orbit = new Vec3(-away.z, 0, away.x).scale(retreat ? 0.06 : 0.10);
+         ? distance < band.minimum() ? 0.24 : distance > band.maximum() ? -0.08 : 0.0
+         : distance > band.maximum() ? -0.12 : distance < band.minimum() ? 0.08 : 0.0;
+      Vec3 orbit = new Vec3(-away.z, 0, away.x).scale(rangedDuel ? 0.14 : retreat ? 0.06 : 0.10);
       double vertical = net.minecraft.util.Mth.clamp((desiredY - entity.getY()) * 0.08, -0.22, 0.22);
       entity.setDeltaMovement(entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0));
    }

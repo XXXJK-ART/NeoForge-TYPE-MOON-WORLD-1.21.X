@@ -93,6 +93,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
 
 @EventBusSubscriber(
    modid = "typemoonworld",
@@ -183,6 +184,7 @@ public class TypeMoonWorldClientEvents {
       event.registerReloadListener(new ServantSkillDefinitionLoader());
       event.registerReloadListener(new ServantNoblePhantasmDefinitionLoader());
       event.registerReloadListener(new ServantAiDefinitionLoader());
+      event.registerReloadListener(new ServantActionLoader());
    }
 
    @SubscribeEvent
