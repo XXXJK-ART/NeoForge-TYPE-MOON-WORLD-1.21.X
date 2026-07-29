@@ -48,9 +48,15 @@ public record CombatThreat(
       }
       Vec3 relative = point.subtract(origin);
       double along = relative.dot(direction);
+      if (shape == Shape.HEMISPHERE) {
+         double reach = radius + padding;
+         return relative.lengthSqr() <= reach * reach && along >= -padding;
+      }
       if (along < -padding || along > length + padding) return false;
       Vec3 closest = origin.add(direction.scale(Math.max(0.0, Math.min(length, along))));
-      double reach = radius + padding;
+      double reach = shape == Shape.CONE && length > 1.0E-4
+         ? radius * Math.max(0.0, Math.min(1.0, along / length)) + padding
+         : radius + padding;
       return closest.distanceToSqr(point) <= reach * reach;
    }
 

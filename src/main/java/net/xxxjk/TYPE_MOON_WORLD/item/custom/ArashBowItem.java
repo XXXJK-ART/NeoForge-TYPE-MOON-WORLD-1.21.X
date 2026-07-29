@@ -38,7 +38,13 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       if (hand != InteractionHand.MAIN_HAND) return InteractionResultHolder.pass(stack);
-      if (level instanceof ServerLevel serverLevel) fireBasicArrow(serverLevel, player);
+      if (level instanceof ServerLevel serverLevel) {
+         if (player instanceof ServerPlayer serverPlayer && ServantCardArashSkills.isArash(serverPlayer)
+            && !ServantCardArashSkills.consumeBasicArrow(serverPlayer)) {
+            return InteractionResultHolder.fail(stack);
+         }
+         fireBasicArrow(serverLevel, player);
+      }
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
    }

@@ -60,7 +60,6 @@ public final class ArashStellaControllerEntity extends Entity {
    private UUID casterId;
    private boolean playerCaster;
    private boolean playerReleaseRequested;
-   private boolean waitForFullVoice;
    private int releaseRequestTick = -1;
    private int playerChargeTicks = ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;
    private String teamName = "";
@@ -100,6 +99,7 @@ public final class ArashStellaControllerEntity extends Entity {
 
       ArashStellaControllerEntity controller = ModEntities.ARASH_STELLA_CONTROLLER.get().create(level);
       if (controller == null) return false;
+      if (!arash.consumeCraftedArrows(ArashCombatRules.STELLA_ARROW_COST)) return false;
       controller.init(arash, origin, flat);
       arash.setCurrentMp(arash.getCurrentMp() - 100.0);
       arash.getPersistentData().putBoolean(ArashEntity.TAG_STELLA_USED, true);
@@ -175,7 +175,7 @@ public final class ArashStellaControllerEntity extends Entity {
          arash.faceVector(direction);
       }
       spawnChantEffects(level, caster, stageTicks);
-      int chunksPerTick = playerCaster && playerReleaseRequested ? 16 : 2;
+      int chunksPerTick = playerCaster ? (playerReleaseRequested ? 16 : 4) : 2;
       for (int requested = 0; requested < chunksPerTick && preloadIndex < chunks.size(); requested++) {
          long packed = chunks.get(preloadIndex++);
          CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), true, true);
@@ -184,15 +184,14 @@ public final class ArashStellaControllerEntity extends Entity {
       stageTicks++;
 
       if (playerCaster) {
-         if (!playerReleaseRequested && stageTicks >= ArashCombatRules.STELLA_VOICE_TICKS) {
+         if (!playerReleaseRequested && stageTicks >= ArashCombatRules.PLAYER_STELLA_AUTO_RELEASE_TICKS) {
             playerReleaseRequested = true;
             releaseRequestTick = stageTicks;
             configurePlayerCharge(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
-         } else if (waitForFullVoice && stageTicks >= ArashCombatRules.STELLA_VOICE_TICKS) {
-            waitForFullVoice = false;
-            configurePlayerCharge(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
+            release(level, caster);
+            return;
          }
-         if (!playerReleaseRequested || waitForFullVoice) return;
+         if (!playerReleaseRequested) return;
          if (preloadIndex < chunks.size()) {
             if (stageTicks <= releaseRequestTick + ArashCombatRules.STELLA_PRELOAD_GRACE_TICKS) return;
             abort(level, true);
@@ -221,7 +220,10 @@ public final class ArashStellaControllerEntity extends Entity {
       playerReleaseRequested = true;
       releaseRequestTick = stageTicks;
       if (ArashCombatRules.shouldFinishLongStellaVoice(stageTicks)) {
-         waitForFullVoice = true;
+         playerChargeTicks = Math.min(stageTicks, ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
+         configurePlayerCharge(playerChargeTicks);
+         // Keep the 38-second long voice playing after the 36-second shot.
+         if (chunks.isEmpty()) release(level, player);
       } else {
          playerChargeTicks = stageTicks;
          configurePlayerCharge(playerChargeTicks);
@@ -630,7 +632,6 @@ public final class ArashStellaControllerEntity extends Entity {
       tag.putBoolean("Released", released);
       tag.putBoolean("PlayerCaster", playerCaster);
       tag.putBoolean("PlayerReleaseRequested", playerReleaseRequested);
-      tag.putBoolean("WaitForFullVoice", waitForFullVoice);
       tag.putInt("ReleaseRequestTick", releaseRequestTick);
       tag.putInt("PlayerChargeTicks", playerChargeTicks);
       tag.putBoolean("FinalDamage", finalDamageDone);
@@ -654,7 +655,6 @@ public final class ArashStellaControllerEntity extends Entity {
       released = tag.getBoolean("Released"); finalDamageDone = tag.getBoolean("FinalDamage");
       playerCaster = tag.getBoolean("PlayerCaster");
       playerReleaseRequested = tag.getBoolean("PlayerReleaseRequested");
-      waitForFullVoice = tag.getBoolean("WaitForFullVoice");
       releaseRequestTick = tag.contains("ReleaseRequestTick") ? tag.getInt("ReleaseRequestTick") : -1;
       playerChargeTicks = tag.contains("PlayerChargeTicks") ? tag.getInt("PlayerChargeTicks")
          : ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;

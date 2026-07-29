@@ -1012,6 +1012,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource cause) {
       super.die(cause);
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onEntityServantDeath(this);
       ServantVoiceHelper.tryPlayFail(this);
       this.entityData.set(SPIRITUAL_DISSOLVING, true);
       this.spiritualDissolveTicks = 0;

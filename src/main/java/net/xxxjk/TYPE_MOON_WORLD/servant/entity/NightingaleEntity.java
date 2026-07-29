@@ -30,6 +30,9 @@ public final class NightingaleEntity extends ServantEntity {
    private static final String LAST_NURSING = "NightingaleLastNursing";
    private static final String LAST_ANGEL_CRY = "NightingaleLastAngelCry";
    private static final String LAST_SHOT = "NightingaleLastShot";
+   private static final String LAST_MELEE = "NightingaleLastMelee";
+   private static final String NEXT_MELEE = "NightingaleNextMelee";
+   private static final double MELEE_MODE_RANGE = 6.0;
    private static final String LAST_NP = "NightingaleLastNp";
    private static final String NP_CAST_END = "NightingaleNpCastEnd";
    private static final String NP_INTERRUPTED = "NightingaleNpInterrupted";
@@ -64,8 +67,9 @@ public final class NightingaleEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
-      if (!(target instanceof LivingEntity living) || !canAttackTarget(living) || this.distanceToSqr(living) > 9.0) return false;
-      this.triggerNamedActionAnimation("shoot");
+      if (!(target instanceof LivingEntity living) || !canAttackTarget(living)
+         || this.distanceToSqr(living) > MELEE_MODE_RANGE * MELEE_MODE_RANGE) return false;
+      this.triggerAttackSwing();
       ServantVoiceHelper.tryPlayAttack(this);
       float damage = (float)this.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
       return living.hurt(this.damageSources().mobAttack(this), damage);
@@ -140,6 +144,7 @@ public final class NightingaleEntity extends ServantEntity {
          maintainCombat(target, now);
       } else {
          this.getPersistentData().putBoolean(COMBAT_OPENED, false);
+         this.getPersistentData().putBoolean(NEXT_MELEE, false);
          if (now % 20L == 0L && isDirtyPosition(this.blockPosition())) {
             BlockPos clean = findCleanPosition();
             if (clean != null) this.getNavigation().moveTo(clean.getX() + 0.5, clean.getY(), clean.getZ() + 0.5, 1.0);
@@ -150,9 +155,24 @@ public final class NightingaleEntity extends ServantEntity {
    private void maintainCombat(LivingEntity target, long now) {
       this.faceToward(target.getEyePosition());
       double distance = this.distanceTo(target);
-      if (distance > 3.0) ServantEngagementService.maintainRangedPosition(this, target, now, 8.0, 13.0, 18.0, 1.1, "NightingaleRanged");
+      boolean meleeTurn = this.getPersistentData().getBoolean(NEXT_MELEE);
+      if (meleeTurn) {
+         if (distance > MELEE_MODE_RANGE) {
+            this.getNavigation().moveTo(target, 1.35);
+            return;
+         }
+         if (cooldownReady(LAST_MELEE, now, adjustedMeleeCooldown())) {
+            this.getPersistentData().putLong(LAST_MELEE, now);
+            this.getPersistentData().putBoolean(NEXT_MELEE, false);
+            this.getNavigation().stop();
+            this.doHurtTarget(target);
+         }
+         return;
+      }
+      if (distance > 3.0) ServantEngagementService.maintainRangedPosition(this, target, now, 7.0, 11.0, 16.0, 1.1, "NightingaleRanged");
       if (distance <= 32.0 && cooldownReady(LAST_SHOT, now, adjustedShotCooldown())) {
          this.getPersistentData().putLong(LAST_SHOT, now);
+         this.getPersistentData().putBoolean(NEXT_MELEE, true);
          this.triggerNamedActionAnimation("shoot");
          ServantVoiceHelper.tryPlayAttack(this);
          Vec3 aim = target.getEyePosition().subtract(this.getEyePosition()).normalize();
@@ -162,6 +182,10 @@ public final class NightingaleEntity extends ServantEntity {
 
    private int adjustedShotCooldown() {
       return NightingaleSupportService.adjustActionTicks(this, 20, this.level().getGameTime());
+   }
+
+   private int adjustedMeleeCooldown() {
+      return NightingaleSupportService.adjustActionTicks(this, 16, this.level().getGameTime());
    }
 
    private void useAngelCry(long now) {

@@ -19,6 +19,7 @@ class ServantActionResourcesTest {
    void allTwentyProfilesDecodeAndExerciseRuntimeFields() throws Exception {
       Set<String> servants = new HashSet<>();
       try (var paths = Files.list(ACTIONS)) {
+         long explicitSharedActions = 0;
          for (Path path : paths.filter(file -> file.toString().endsWith(".json")).toList()) {
             var json = JsonParser.parseString(Files.readString(path));
             ServantActionProfile profile = ServantActionProfile.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
@@ -29,14 +30,34 @@ class ServantActionResourcesTest {
                assertTrue(action.timing().activeTicks() >= 1);
                assertTrue(action.threat().danger() > 0);
                assertFalse(action.tags().isEmpty());
+               if (!action.maneuver().equals(AiActionDescriptor.ManeuverSpec.NONE)) {
+                  assertTrue(action.maneuver().effectiveApproachRange(action.maximumRange()) <= 48.0);
+                  assertTrue(action.maneuver().effectiveDamageScale(
+                     action.tags().contains(AiActionDescriptor.Tag.FINISHER)) > 0.0);
+                  assertTrue(action.maneuver().interruptResistance() >= 0);
+                  explicitSharedActions++;
+               }
             }
          }
+         assertTrue(explicitSharedActions >= 8, "too few explicitly shared actions");
       }
       assertEquals(20, servants.size());
       assertTrue(servants.contains("arash"));
       assertTrue(servants.contains("artoria_pendragon"));
       assertTrue(servants.contains("gilgamesh"));
       assertTrue(servants.contains("nightingale"));
+      try (var paths = Files.list(ACTIONS)) {
+         long maneuverProfiles = paths.filter(file -> file.toString().endsWith(".json")).filter(file -> {
+            try {
+               ServantActionProfile profile = ServantActionProfile.CODEC.parse(JsonOps.INSTANCE,
+                  JsonParser.parseString(Files.readString(file))).result().orElseThrow();
+               return profile.actions().stream().anyMatch(action -> !action.maneuver().equals(AiActionDescriptor.ManeuverSpec.NONE));
+            } catch (Exception exception) {
+               throw new RuntimeException(exception);
+            }
+         }).count();
+         assertTrue(maneuverProfiles >= 8, "too few servants participate in the shared maneuver system");
+      }
    }
 
    @Test
@@ -57,5 +78,15 @@ class ServantActionResourcesTest {
          net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.MEDIUM).physicalDebrisCount());
       assertEquals(8, net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.of(
          net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.HEAVY).physicalDebrisCount());
+   }
+
+   @Test
+   void sharedActionCooldownIncludesEveryCommittedPhase() {
+      String json = "{\"id\":\"typemoonworld:test/shared\",\"tags\":[\"melee\"],"
+         + "\"timing\":{\"windup\":5,\"active\":4,\"recovery\":7},"
+         + "\"maneuver\":{\"combo_cost\":2}}";
+      AiActionDescriptor action = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(json)).result().orElseThrow();
+      assertEquals(20, ServantPlannedActionExecutor.cooldownTicks(action));
    }
 }

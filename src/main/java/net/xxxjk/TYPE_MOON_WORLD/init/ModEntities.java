@@ -119,7 +119,7 @@ public class ModEntities {
       "arash_particle_arrow",
       () -> Builder.<ArashParticleArrowEntity>of(
             (entityType, level) -> new ArashParticleArrowEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC)
-         .sized(0.25F, 0.25F).clientTrackingRange(192).updateInterval(1).build("arash_particle_arrow")
+         .sized(0.25F, 0.25F).clientTrackingRange(8).updateInterval(1).build("arash_particle_arrow")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ArashStellaControllerEntity>> ARASH_STELLA_CONTROLLER = ENTITY_TYPES.register(
       "arash_stella_controller",

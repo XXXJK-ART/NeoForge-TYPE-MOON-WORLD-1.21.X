@@ -126,6 +126,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TerrainDebrisMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
@@ -287,6 +288,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(OpenParacelsusCraftScreenMessage.TYPE, OpenParacelsusCraftScreenMessage.STREAM_CODEC, OpenParacelsusCraftScreenMessage::handleData);
       registrar.playToClient(OpenParacelsusElementScreenMessage.TYPE, OpenParacelsusElementScreenMessage.STREAM_CODEC, OpenParacelsusElementScreenMessage::handleData);
       registrar.playToClient(MasterVisualStateMessage.TYPE, MasterVisualStateMessage.STREAM_CODEC, MasterVisualStateMessage::handleData);
+      registrar.playToClient(ConcealmentStateMessage.TYPE, ConcealmentStateMessage.STREAM_CODEC, ConcealmentStateMessage::handleData);
       registrar.playToClient(FirearmPoseMessage.TYPE, FirearmPoseMessage.STREAM_CODEC, FirearmPoseMessage::handleData);
       registrar.playToClient(BajiquanPoseMessage.TYPE, BajiquanPoseMessage.STREAM_CODEC, BajiquanPoseMessage::handleData);
       registrar.playToClient(GanryuPoseMessage.TYPE, GanryuPoseMessage.STREAM_CODEC, GanryuPoseMessage::handleData);

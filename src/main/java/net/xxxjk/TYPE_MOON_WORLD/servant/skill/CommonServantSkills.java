@@ -19,6 +19,7 @@ public final class CommonServantSkills {
       registry.register("artoria_instinct_a", CommonServantSkills::executeArtoriaInstinctA, "typemoonworld_core");
       registry.register("mana_burst_a", CommonServantSkills::executeManaBurstA, "typemoonworld_core");
       registry.register("charisma_b", CommonServantSkills::executeCharismaB, "typemoonworld_core");
+      registry.register("independent_action_a", CommonServantSkills::executeIndependentActionA, "typemoonworld_core");
       registry.register("independent_action_b", CommonServantSkills::executeIndependentActionB, "typemoonworld_core");
       registry.register("riding_a_plus", CommonServantSkills::executeRidingAPlus, "typemoonworld_core");
       registry.register("independent_action_c", CommonServantSkills::executeIndependentActionC, "typemoonworld_core");
@@ -198,6 +199,14 @@ public final class CommonServantSkills {
 
       entity.getPersistentData().putBoolean("IndependentActionActive", true);
       entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.08F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeIndependentActionA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) return ServantExecutionResult.FAILED;
+      entity.getPersistentData().putBoolean("IndependentActionActive", true);
+      entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.12F);
       return ServantExecutionResult.SUCCESS;
    }
 

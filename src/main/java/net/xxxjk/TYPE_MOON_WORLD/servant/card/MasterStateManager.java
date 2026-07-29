@@ -68,8 +68,11 @@ public final class MasterStateManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master.servant_cannot_master"), true);
          return false;
       }
+      if (vars.master_active && !isBlank(vars.master_servant_uuid)) {
+         MasterServantLinkService.onMasterLost(player, vars);
+      }
       vars.master_active = true;
-      vars.master_servant_uuid = vars.master_servant_uuid == null ? "" : vars.master_servant_uuid;
+      vars.master_servant_uuid = "";
       vars.master_command_spells = Math.max(vars.master_command_spells, MAX_COMMAND_SPELLS);
       vars.master_command_spell_style = sanitizeCommandSpellStyle(commandSpellStyle);
       vars.master_command_spell_pose_active = false;
@@ -91,9 +94,9 @@ public final class MasterStateManager {
       }
       ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
       if (boundServant != null) {
-         MasterServantLinkService.breakLink(player, boundServant, true);
+         MasterServantLinkService.onMasterLost(player, vars);
       } else {
-         clearBoundServant(player, vars);
+         MasterServantLinkService.onMasterLost(player, vars);
       }
       removeAttributes(player);
       vars.master_active = false;
@@ -120,9 +123,9 @@ public final class MasterStateManager {
    private static boolean releaseMasterCardProfile(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
       if (boundServant != null) {
-         MasterServantLinkService.breakLink(player, boundServant, true);
+         MasterServantLinkService.onMasterLost(player, vars);
       } else {
-         clearBoundServant(player, vars);
+         MasterServantLinkService.onMasterLost(player, vars);
       }
       removeAttributes(player);
       MasterCardProfile.restoreOriginalState(player, vars);
@@ -143,16 +146,15 @@ public final class MasterStateManager {
          return;
       }
       applyAttributes(player);
-      ServantCardTransformManager.normalizeFood(player);
    }
 
    public static boolean bindByContract(ServerPlayer actor, ServerPlayer target) {
       TypeMoonWorldModVariables.PlayerVariables actorVars = actor.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       TypeMoonWorldModVariables.PlayerVariables targetVars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (actorVars.master_active && targetVars.servant_card_transformed) {
+      if (actorVars.master_card_active && targetVars.servant_card_transformed) {
          return bind(actor, target);
       }
-      if (actorVars.servant_card_transformed && targetVars.master_active) {
+      if (actorVars.servant_card_transformed && targetVars.master_card_active) {
          return bind(target, actor);
       }
       actor.displayClientMessage(Component.translatable("message.typemoonworld.master.contract_invalid"), true);
@@ -165,7 +167,11 @@ public final class MasterStateManager {
       }
       TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!masterVars.master_active || !servantVars.servant_card_transformed) {
+      MasterServantLinkService.repairPlayerLink(master, masterVars);
+      MasterServantLinkService.repairPlayerLink(servant, servantVars);
+      if (!masterVars.master_active || !isPlayerCardContractPair(masterVars.master_card_active, masterVars.servant_card_transformed,
+         servantVars.master_card_active, servantVars.servant_card_transformed)) {
+         master.displayClientMessage(Component.translatable("message.typemoonworld.master.contract_invalid"), true);
          return false;
       }
       if (!isBlank(masterVars.master_servant_uuid) || !isBlank(servantVars.servant_card_master_uuid)) {
@@ -176,6 +182,9 @@ public final class MasterStateManager {
       if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
       masterVars.master_servant_uuid = servant.getUUID().toString();
       servantVars.servant_card_master_uuid = master.getUUID().toString();
+      MasterServantLinkService.clearSurvival(servantVars);
+      MasterServantLinkService.captureMasterPosition(master, servantVars);
+      servant.getPersistentData().remove("MasterServantIndependentActionState");
       masterVars.syncPlayerVariables(master);
       servantVars.syncPlayerVariables(servant);
       servant.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.master_bound", master.getGameProfile().getName()), true);
@@ -194,6 +203,7 @@ public final class MasterStateManager {
          }
       }
       servantVars.servant_card_master_uuid = "";
+      MasterServantLinkService.clearMasterPosition(servantVars);
    }
 
    public static ServerPlayer getBoundServant(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -322,7 +332,7 @@ public final class MasterStateManager {
       vars.master_command_spells = Math.max(0, vars.master_command_spells - 1);
       vars.master_command_spell_pose_active = false;
       if (vars.master_command_spells <= 0) {
-         MasterServantLinkService.breakLink(master, servant, true);
+         MasterServantLinkService.terminateContract(master, servant);
       }
       vars.syncPlayerVariables(master);
       MasterVisualStateSync.broadcast(master, vars);
@@ -337,6 +347,10 @@ public final class MasterStateManager {
          return false;
       }
       vars.master_command_spells = Math.max(0, count);
+      if (vars.master_command_spells == 0) {
+         ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
+         if (servant != null) MasterServantLinkService.terminateContract(player, servant);
+      }
       vars.master_command_spell_style = style;
       vars.master_command_spell_pose_active = false;
       vars.syncPlayerVariables(player);
@@ -366,6 +380,10 @@ public final class MasterStateManager {
          return false;
       }
       vars.master_command_spells--;
+      if (vars.master_command_spells <= 0) {
+         ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
+         if (servant != null) MasterServantLinkService.terminateContract(player, servant);
+      }
       vars.master_command_spell_pose_active = false;
       vars.syncPlayerVariables(player);
       MasterVisualStateSync.broadcast(player, vars);
@@ -425,6 +443,11 @@ public final class MasterStateManager {
 
    private static boolean isBlank(String value) {
       return value == null || value.isBlank();
+   }
+
+   static boolean isPlayerCardContractPair(boolean masterCard, boolean masterServantCard,
+                                           boolean servantMasterCard, boolean servantCard) {
+      return masterCard && !masterServantCard && !servantMasterCard && servantCard;
    }
 
    private static String randomCommandSpellStyle(ServerPlayer player) {

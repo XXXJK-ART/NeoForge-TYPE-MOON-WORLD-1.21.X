@@ -85,7 +85,7 @@
     "combat": "cautious",
     "starting_favor": 60.0
   },
-  "ai_config": "default_rider",
+  "ai_config": "medusa_ai",
   "spawn_egg": {
     "primary": 2825285,
     "secondary": 13090274

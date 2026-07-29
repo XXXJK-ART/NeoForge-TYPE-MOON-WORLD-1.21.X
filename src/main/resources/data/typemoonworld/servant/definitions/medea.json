@@ -75,7 +75,7 @@
     "combat": "cautious",
     "starting_favor": 50.0
   },
-  "ai_config": "default_caster",
+  "ai_config": "medea_ai",
   "spawn_egg": {
     "primary": 6976918,
     "secondary": 13022463

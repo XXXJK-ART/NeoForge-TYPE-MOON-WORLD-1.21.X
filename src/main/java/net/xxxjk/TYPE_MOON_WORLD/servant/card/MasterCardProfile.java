@@ -118,11 +118,15 @@ public final class MasterCardProfile {
    public static boolean restoreOriginalState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       String cardId = vars.master_card_id == null ? "" : vars.master_card_id;
       CompoundTag savedVariables = vars.master_card_saved_variables == null ? new CompoundTag() : vars.master_card_saved_variables.copy();
+      scrubContractState(savedVariables);
       CompoundTag savedInventory = vars.master_card_saved_inventory == null ? new CompoundTag() : vars.master_card_saved_inventory.copy();
       boolean hasSnapshot = !savedVariables.isEmpty() && savedInventory.contains("items", 9);
       if (hasSnapshot) {
          clearPlayerInventory(player);
          vars.deserializeNBT(player.registryAccess(), savedVariables);
+         vars.master_servant_uuid = "";
+         vars.servant_card_master_uuid = "";
+         MasterServantLinkService.clearSurvival(vars);
          BodyTrainingService.applyAttributes(player, vars);
          restoreInventory(player, savedInventory);
       } else {
@@ -253,11 +257,40 @@ public final class MasterCardProfile {
    }
 
    private static void saveOriginalStateAndClearPlayer(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, String masterId) {
+      if (vars.master_active && !vars.master_servant_uuid.isBlank()) {
+         MasterServantLinkService.onMasterLost(player, vars);
+      }
       vars.master_card_saved_variables = vars.serializeNBT(player.registryAccess());
+      scrubContractState(vars.master_card_saved_variables);
       vars.master_card_saved_inventory = saveInventory(player);
       vars.master_card_active = true;
       vars.master_card_id = masterId == null ? "" : masterId;
+      vars.master_servant_uuid = "";
+      vars.servant_card_master_uuid = "";
+      MasterServantLinkService.clearSurvival(vars);
       clearPlayerInventory(player);
+   }
+
+   private static void scrubContractState(CompoundTag tag) {
+      tag.remove("master_servant_uuid");
+      tag.remove("servant_card_master_uuid");
+      tag.remove("master_servant_link_partner_uuid");
+      tag.remove("master_servant_link_partner_hp");
+      tag.remove("master_servant_link_partner_max_hp");
+      tag.remove("master_servant_link_partner_mana");
+      tag.remove("master_servant_link_partner_max_mana");
+      tag.remove("master_servant_link_state");
+      tag.remove("master_servant_link_decay");
+      tag.remove("master_servant_link_drawing_mana");
+      tag.remove("master_servant_independent_ticks");
+      tag.remove("master_servant_survival_state");
+      tag.remove("master_servant_survival_ticks");
+      tag.remove("master_servant_master_position_valid");
+      tag.remove("master_servant_master_position_online");
+      tag.remove("master_servant_master_dimension");
+      tag.remove("master_servant_master_x");
+      tag.remove("master_servant_master_y");
+      tag.remove("master_servant_master_z");
    }
 
    private static void resetToProfileState(TypeMoonWorldModVariables.PlayerVariables vars) {

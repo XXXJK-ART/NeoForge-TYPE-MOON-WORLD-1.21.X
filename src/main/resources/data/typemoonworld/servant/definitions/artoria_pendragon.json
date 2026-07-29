@@ -71,7 +71,7 @@
     "combat": "balanced",
     "starting_favor": 65.0
   },
-  "ai_config": "default_saber",
+  "ai_config": "artoria_pendragon_ai",
   "spawn_egg": {
     "primary": 1986479,
     "secondary": 16044894

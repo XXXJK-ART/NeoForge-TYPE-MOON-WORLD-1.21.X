@@ -90,6 +90,7 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
             case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
             case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
+            case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 240);
             case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
             default -> null;
          };
@@ -222,9 +223,10 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "arash" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Arrow Rain", "arash_arrow_rain", 8.0, 160);
+            case 0 -> new ServantCardSkillAction(crouching ? "Grand Arrow Rain" : "Arrow Rain", "arash_arrow_rain", 8.0, 160);
             case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
             case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
+            case 3 -> new ServantCardSkillAction("Arrow Construction", "arash_arrow_creation", 1.0, 0);
             case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
             default -> null;
          };

@@ -87,10 +87,12 @@ public final class ArashCombatHelper {
       int cluster = countCluster(arash, target, 7.0);
 
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_LARGE)
+         && arash.getCraftedArrowCount() >= ArashCombatRules.ENERGY_ARROW_COST
          && arash.getCurrentMp() >= ArashCombatRules.LARGE_ENERGY_MANA
          && (target.getMaxHealth() >= 160.0F || cluster >= 4)) {
          lockAttackFacing(arash, target, now, 22);
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.LARGE_ENERGY_MANA);
+         arash.consumeCraftedArrows(ArashCombatRules.ENERGY_ARROW_COST);
          arash.getPersistentData().putLong(TAG_NEXT_LARGE, now + ArashCombatRules.LARGE_ENERGY_COOLDOWN);
          fireDirect(level, arash, target, ArashParticleArrowEntity.LARGE_ENERGY, ArashCombatRules.LARGE_ENERGY_DAMAGE, 2.1);
          arash.triggerNamedActionAnimation("energy_large");
@@ -98,10 +100,12 @@ public final class ArashCombatHelper {
          return;
       }
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_RAIN)
+         && arash.getCraftedArrowCount() >= ArashCombatRules.ARROW_RAIN_COST
          && arash.getCurrentMp() >= ArashCombatRules.RAIN_MANA
          && (!lineOfSight || arash.distanceTo(target) >= 48.0F || cluster >= 3)) {
          lockAttackFacing(arash, target, now, 16);
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.RAIN_MANA);
+         arash.consumeCraftedArrows(ArashCombatRules.ARROW_RAIN_COST);
          arash.getPersistentData().putLong(TAG_NEXT_RAIN, now + ArashCombatRules.RAIN_COOLDOWN);
          fireRain(level, arash, target);
          arash.triggerNamedActionAnimation("arrow_rain");
@@ -109,16 +113,19 @@ public final class ArashCombatHelper {
          return;
       }
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_SMALL)
+         && arash.getCraftedArrowCount() >= ArashCombatRules.ENERGY_ARROW_COST
          && arash.getCurrentMp() >= ArashCombatRules.SMALL_ENERGY_MANA) {
          lockAttackFacing(arash, target, now, 13);
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.SMALL_ENERGY_MANA);
+         arash.consumeCraftedArrows(ArashCombatRules.ENERGY_ARROW_COST);
          arash.getPersistentData().putLong(TAG_NEXT_SMALL, now + ArashCombatRules.SMALL_ENERGY_COOLDOWN);
          fireDirect(level, arash, target, ArashParticleArrowEntity.SMALL_ENERGY, ArashCombatRules.SMALL_ENERGY_DAMAGE, 2.7);
          arash.triggerNamedActionAnimation("energy_small");
          ServantVoiceHelper.tryPlayAttack(arash);
          return;
       }
-      if (now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)) {
+      if (now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)
+         && arash.consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)) {
          lockAttackFacing(arash, target, now, ArashCombatRules.NORMAL_ARROW_INTERVAL);
          arash.getPersistentData().putLong(TAG_NEXT_NORMAL, now + ArashCombatRules.NORMAL_ARROW_INTERVAL);
          fireDirect(level, arash, target, ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE, 3.2);
@@ -195,6 +202,8 @@ public final class ArashCombatHelper {
 
       int stationaryTicks = sampleStationaryTicks(arash, now);
       double distance = arash.distanceTo(target);
+      boolean meleePressureWindow = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.MELEE
+         && distance <= 18.0 && Math.floorMod(now, 100L) >= 70L;
       ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(
          target,
          ArashCombatRules.CROSSOVER_TRIGGER_RANGE,
@@ -202,6 +211,12 @@ public final class ArashCombatHelper {
          ArashCombatRules.APPROACH_THRESHOLD
       );
       if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) > now) return;
+      if (meleePressureWindow) {
+         arash.getNavigation().stop();
+         arash.getMoveControl().strafe(distance > 8.0 ? 0.24F : 0.0F, orbitDirection * 0.32F);
+         arash.getLookControl().setLookAt(target, 40.0F, 40.0F);
+         return;
+      }
       boolean crowded = countCluster(arash, arash, 5.5) >= 2;
       boolean shouldCross = distance <= band.minimum()
          || stationaryTicks >= 30 && distance <= 18.0 || crowded && distance <= 11.0;
@@ -248,7 +263,9 @@ public final class ArashCombatHelper {
       Vec3 motion = arash.getDeltaMovement();
       arash.setDeltaMovement(toward.x * 0.72 + side.x * 0.24, Math.max(0.34, motion.y),
          toward.z * 0.72 + side.z * 0.24);
-      arash.getPersistentData().putLong(TAG_NEXT_CROSSOVER, now + ArashCombatRules.CROSSOVER_COOLDOWN);
+      int cooldown = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.MELEE
+         ? ArashCombatRules.CROSSOVER_COOLDOWN + 40 : ArashCombatRules.CROSSOVER_COOLDOWN;
+      arash.getPersistentData().putLong(TAG_NEXT_CROSSOVER, now + cooldown);
       arash.getPersistentData().putInt(TAG_ORBIT_DIRECTION, -orbitDirection);
       arash.getPersistentData().putLong(TAG_CROSSOVER_UNTIL, now + 18L);
       arash.getPersistentData().putDouble(TAG_CROSSOVER_AXIS_X, toward.x);

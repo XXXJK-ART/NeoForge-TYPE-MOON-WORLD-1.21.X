@@ -1,6 +1,17 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 public final class ArashCombatRules {
+   public static final int INITIAL_ARROW_COUNT = 500;
+   public static final int MAX_ARROW_COUNT = 5000;
+   public static final int ARROW_CREATION_THRESHOLD = 1000;
+   public static final int ARROW_CREATION_AMOUNT = 10;
+   public static final double ARROW_CREATION_MANA_COST = 1.0;
+   public static final int ARROW_CREATION_INTERVAL = 20;
+   public static final int NORMAL_ARROW_COST = 1;
+   public static final int ENERGY_ARROW_COST = 1;
+   public static final int ARROW_RAIN_COST = 100;
+   public static final int CROUCH_ARROW_RAIN_COST = 500;
+   public static final int STELLA_ARROW_COST = 1;
    public static final double MAX_HEALTH = 600.0;
    public static final double MAX_MANA = 200.0;
    public static final float STOUT_DAMAGE_MULTIPLIER = 0.70F;
@@ -18,7 +29,11 @@ public final class ArashCombatRules {
    public static final float NORMAL_ARROW_DAMAGE = 10.0F;
    public static final int NORMAL_ARROW_INTERVAL = 5;
    public static final float RAIN_ARROW_DAMAGE = 13.2F;
-   public static final int RAIN_ARROW_COUNT = 50;
+   public static final int RAIN_ARROW_COUNT = 100;
+   public static final int CROUCH_RAIN_ARROW_COUNT = 500;
+   public static final double RAIN_SPREAD_RADIUS = 6.0;
+   public static final double CROUCH_RAIN_SPREAD_RADIUS = 30.0;
+   public static final double CROUCH_RAIN_ASSIST_RADIUS = 36.0;
    public static final double RAIN_MANA = 8.0;
    public static final int RAIN_COOLDOWN = 160;
    public static final float SMALL_ENERGY_DAMAGE = 30.0F;
@@ -31,8 +46,9 @@ public final class ArashCombatRules {
    public static final int LARGE_ENERGY_COOLDOWN = 240;
    public static final int STELLA_CHANT_TICKS = 700;
    public static final int STELLA_VOICE_TICKS = 777;
+   public static final int PLAYER_STELLA_AUTO_RELEASE_TICKS = 720;
    public static final int PLAYER_STELLA_MIN_CHARGE_TICKS = 200;
-   public static final int PLAYER_STELLA_FULL_CHARGE_TICKS = 760;
+   public static final int PLAYER_STELLA_FULL_CHARGE_TICKS = PLAYER_STELLA_AUTO_RELEASE_TICKS;
    public static final int PLAYER_STELLA_LONG_VOICE_CUTOFF_TICKS = 660;
    public static final double PLAYER_STELLA_MIN_LENGTH = 500.0;
    public static final float PLAYER_STELLA_MIN_DAMAGE_SCALE = 0.50F;

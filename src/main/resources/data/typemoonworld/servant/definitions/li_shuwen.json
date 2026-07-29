@@ -70,7 +70,7 @@
     "combat": "cautious",
     "starting_favor": 50.0
   },
-  "ai_config": "default_assassin",
+  "ai_config": "li_shuwen_ai",
   "spawn_egg": {
     "primary": 1710610,
     "secondary": 14139592

@@ -492,9 +492,6 @@ public class CommonEvents {
                if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
                   return;
                }
-               if (vars.servant_card_transformed && player.getHealth() - event.getAmount() <= 0.0F) {
-                  MasterServantLinkService.onServantDeath(player, vars);
-               }
                if (vars.servant_card_transformed
                   && vars.servant_card_death_release
                   && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
@@ -509,16 +506,6 @@ public class CommonEvents {
                   event.setAmount(0.0F);
                   MasterStateManager.tryRevive(player, vars);
                   return;
-               }
-               if (vars.master_active && player.getHealth() - event.getAmount() <= 0.0F) {
-                  ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
-                  if (servant != null) {
-                     MasterServantLinkService.breakLink(player, servant, false);
-                  } else {
-                     vars.master_servant_uuid = "";
-                     MasterServantLinkService.clearSnapshot(vars);
-                     vars.syncPlayerVariables(player);
-                  }
                }
             }
             if (event.getEntity() instanceof LivingEntity living) {
@@ -1115,17 +1102,11 @@ public class CommonEvents {
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             if (vars.servant_card_transformed) {
+               MasterServantLinkService.onServantDeath(player, vars);
                ServantCardTransformManager.prepareVanishingEquipment(player, vars);
             }
             if (vars.master_active) {
-               ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
-               if (servant != null) {
-                  MasterServantLinkService.breakLink(player, servant, false);
-               } else {
-                  vars.master_servant_uuid = "";
-                  MasterServantLinkService.clearSnapshot(vars);
-                  vars.syncPlayerVariables(player);
-               }
+               MasterServantLinkService.onMasterLost(player, vars);
             }
          }
 

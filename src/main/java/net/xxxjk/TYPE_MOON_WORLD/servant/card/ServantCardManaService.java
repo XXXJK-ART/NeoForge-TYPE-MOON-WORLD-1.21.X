@@ -35,13 +35,18 @@ public final class ServantCardManaService {
       if (vars.servant_card_max_mana <= 0.0) {
          vars.servant_card_max_mana = maxManaFor(vars.servant_card_id);
       }
-      double expectedRegen = regenPerSecondFor(vars.servant_card_id);
+      double expectedRegen = 0.0;
       ServerPlayer master = getMaster(player, vars);
       boolean linked = MasterServantLinkService.canUseMasterMana(player, vars, master);
       boolean medeaException = "medea".equals(vars.servant_card_id);
-      if (linked && master != null && !medeaException) {
-         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         expectedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
+      if (linked && master != null) {
+         if (medeaException) {
+            expectedRegen = regenPerSecondFor(vars.servant_card_id)
+               * Math.max(0.0, 1.0 - MasterServantLinkService.distanceDecay(player, vars, master));
+         } else {
+            TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            expectedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
+         }
       }
       if (player.hasEffect(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
          expectedRegen *= 0.5;
@@ -49,7 +54,7 @@ public final class ServantCardManaService {
       if (Math.abs(vars.servant_card_mana_regen - expectedRegen) > 1.0E-6) {
          vars.servant_card_mana_regen = expectedRegen;
       }
-      if ((medeaException || !linked || expectedRegen > 0.0) && vars.servant_card_mana < vars.servant_card_max_mana) {
+      if (expectedRegen > 0.0 && vars.servant_card_mana < vars.servant_card_max_mana) {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
       }
       if (player.tickCount % 20 == 0) {
@@ -103,9 +108,6 @@ public final class ServantCardManaService {
       if (ServantCardUnlimitedMode.isEnabled(player)) {
          return true;
       }
-      if (noblePhantasm && MasterServantLinkService.STATE_INDEPENDENT.equals(vars.master_servant_link_state)) {
-         return false;
-      }
       if (noblePhantasm) {
          double multiplier = MasterServantLinkService.noblePhantasmCostMultiplier(player, vars);
          if (!Double.isFinite(multiplier)) {
@@ -133,6 +135,14 @@ public final class ServantCardManaService {
       if (sync) {
          vars.syncMana(player);
       }
+      return true;
+   }
+
+   public static boolean consumeOwnMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      if (amount <= 0.0) return true;
+      if (vars.servant_card_mana + 1.0E-6 < amount) return false;
+      vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
+      vars.syncMana(player);
       return true;
    }
 

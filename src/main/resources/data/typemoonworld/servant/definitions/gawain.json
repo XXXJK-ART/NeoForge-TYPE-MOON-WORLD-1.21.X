@@ -80,7 +80,7 @@
     "combat": "aggressive",
     "starting_favor": 65.0
   },
-  "ai_config": "default_saber",
+  "ai_config": "gawain_ai",
   "spawn_egg": {
     "primary": 16180912,
     "secondary": 13059104

@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.typemoonworld.api.AiTacticProfile;
+import net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile;
 import net.xxxjk.typemoonworld.api.CommandSpellContext;
 import net.xxxjk.typemoonworld.api.CommandSpellExecutor;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
@@ -28,6 +29,7 @@ public final class ExtensionApiRegistry {
    private static final Map<String, CommandSpellExecutor> COMMAND_SPELLS = new ConcurrentHashMap<>();
    private static final Map<String, NoblePhantasmProjectileExecutor> PROJECTILES = new ConcurrentHashMap<>();
    private static final Map<String, AiTacticProfile> AI = new ConcurrentHashMap<>();
+   private static final Map<String, AdvancedAiTacticProfile> ADVANCED_AI = new ConcurrentHashMap<>();
    private static final Map<String, List<MagicOption>> CONTROLS = new ConcurrentHashMap<>();
 
    private ExtensionApiRegistry() { }
@@ -73,6 +75,15 @@ public final class ExtensionApiRegistry {
       return open(id, profile) && AI.putIfAbsent(id.toString(), profile) == null;
    }
    public static AiTacticProfile ai(ResourceLocation id) { return id == null ? null : AI.get(id.toString()); }
+   public static boolean registerAdvancedAi(ResourceLocation id, AdvancedAiTacticProfile profile) {
+      if (!open(id, profile) || AI.containsKey(id.toString())) return false;
+      AI.put(id.toString(), profile.base());
+      ADVANCED_AI.put(id.toString(), profile);
+      return true;
+   }
+   public static AdvancedAiTacticProfile advancedAi(ResourceLocation id) {
+      return id == null ? null : ADVANCED_AI.get(id.toString());
+   }
    public static List<ResourceLocation> aiIds() { return AI.keySet().stream().map(ResourceLocation::tryParse).filter(java.util.Objects::nonNull).sorted().toList(); }
    public static boolean registerControl(ResourceLocation id, MagicOption option) {
       if (!open(id, option)) return false;

@@ -25,13 +25,19 @@ import net.xxxjk.typemoonworld.api.event.TerrainImpactBlockEvent;
 
 public final class TerrainImpactService {
    public enum Shape { GROUND_LOWER_HEMISPHERE, SURFACE_HEMISPHERE, AIR_SPHERE }
+   public enum Permission { PLAYER, NPC }
 
    private TerrainImpactService() { }
 
    public static boolean impact(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
                                 TerrainImpactProfile profile, Shape shape) {
+      return impact(level, source, center, profile, permission(source), shape);
+   }
+
+   public static boolean impact(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                TerrainImpactProfile profile, Permission permission, Shape shape) {
       if (level == null || center == null || profile == null || profile.tier() == TerrainImpactProfile.Tier.NONE
-         || profile.radius() <= 0.0 || !allowed(level, source)) return false;
+         || profile.radius() <= 0.0 || !allowed(level, permission)) return false;
 
       List<TerrainDebrisMessage.Sample> debris = new ArrayList<>(Math.min(48, profile.debrisCount()));
       int[] physicalDebris = {0};
@@ -104,9 +110,13 @@ public final class TerrainImpactService {
       }
    }
 
-   private static boolean allowed(ServerLevel level, @Nullable LivingEntity source) {
+   private static Permission permission(@Nullable LivingEntity source) {
+      return source instanceof Player ? Permission.PLAYER : Permission.NPC;
+   }
+
+   private static boolean allowed(ServerLevel level, Permission permission) {
       if (!Config.terrainDestructionEnabled) return false;
-      if (source instanceof Player) return Config.playerTerrainDestructionEnabled;
+      if (permission == Permission.PLAYER) return Config.playerTerrainDestructionEnabled;
       return Config.npcTerrainDestructionEnabled && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
    }
 

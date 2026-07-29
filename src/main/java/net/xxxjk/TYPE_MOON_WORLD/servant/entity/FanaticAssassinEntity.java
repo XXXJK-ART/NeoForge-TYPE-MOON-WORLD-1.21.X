@@ -45,6 +45,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
       FanaticAssassinEntity.class, EntityDataSerializers.LONG);
    private static final ResourceLocation CRYSTAL_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "fanatic_crystal_armor");
+   private static final String LAST_REVEAL_TICK = "FanaticLastRevealTick";
    private static final ServantAnimations BUILT_IN_ANIMATIONS = new ServantAnimations(
       "animation.fanatic_assassin.standing",
       "animation.fanatic_assassin.walk",
@@ -103,8 +104,11 @@ public final class FanaticAssassinEntity extends ServantEntity {
    private void tickConcealment(long now) {
       boolean combat = this.getTarget() != null && this.getTarget().isAlive();
       long lastCombat = this.getPersistentData().getLong("FanaticLastCombatTick");
-      if (combat || this.hurtTime > 0) {
+      long lastReveal = this.getPersistentData().getLong(LAST_REVEAL_TICK);
+      if (combat) {
          this.getPersistentData().putLong("FanaticLastCombatTick", now);
+         this.setPresenceConcealed(this.hurtTime <= 0 && now - lastReveal >= 30L);
+      } else if (this.hurtTime > 0) {
          this.setPresenceConcealed(false);
       } else if (now - lastCombat >= FanaticAssassinRules.RECONCEAL_DELAY) {
          this.setPresenceConcealed(true);
@@ -159,6 +163,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
 
    public void revealForCombat() {
       this.getPersistentData().putLong("FanaticLastCombatTick", this.level().getGameTime());
+      this.getPersistentData().putLong(LAST_REVEAL_TICK, this.level().getGameTime());
       this.setPresenceConcealed(false);
    }
 
@@ -176,7 +181,6 @@ public final class FanaticAssassinEntity extends ServantEntity {
       net.minecraft.world.entity.LivingEntity previous = this.getTarget();
       super.setTarget(target);
       if (!this.level().isClientSide() && target != null && target != previous) {
-         this.revealForCombat();
          ServantVoiceHelper.tryPlayFanaticEncounter(this);
       }
    }

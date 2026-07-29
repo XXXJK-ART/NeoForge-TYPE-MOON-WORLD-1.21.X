@@ -12,6 +12,7 @@
     "berserk_health_ratio": 0.0,
     "berserk_damage_multiplier": 1.0
   },
+  "tactical": {"style":"controller","minimum_range":9,"preferred_range":18,"maximum_range":38,"reposition_distance":16,"pursuit_aggression":0.35,"intercept_bias":5,"vertical_mobility":0.6,"recovery_tendency":0.75,"collateral_caution":0.7,"maximum_terrain_impact":"medium"},
   "social": {
     "talk_interval": 0,
     "greeting_probability": 0.0

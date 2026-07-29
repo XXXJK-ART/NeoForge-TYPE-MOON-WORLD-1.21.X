@@ -63,18 +63,31 @@ public final class ServantCardTransformManager {
          return false;
       }
       ResourceLocation publicId = publicServantId(servantId);
-      if (NeoForge.EVENT_BUS.post(new ServantTransformEvent.Pre(player, publicId)).isCanceled()) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.master_card_active) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.master_card_conflict"), true);
+         return false;
+      }
+      if (NeoForge.EVENT_BUS.post(new ServantTransformEvent.Pre(player, publicId)).isCanceled()) return false;
       if (vars.servant_card_transformed) {
          release(player, false);
       }
+      if (vars.master_active) {
+         MasterStateManager.release(player);
+      }
       clearServantRuntimeState(player, vars);
+      player.getPersistentData().remove("MasterLossForcedDeath");
+      player.getPersistentData().remove("MasterLossDecayDamage");
       saveArmor(player, vars);
+      saveFood(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
       BodyTrainingService.stashForServantCard(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
+      MasterServantLinkService.clearMasterPosition(vars);
+      MasterServantLinkService.clearSurvival(vars);
+      vars.servant_card_last_combat_tick = player.level().getGameTime();
       vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);
       vars.servant_card_mana = vars.servant_card_max_mana;
       vars.servant_card_mana_regen = ServantCardManaService.regenPerSecondFor(servantId);
@@ -150,12 +163,7 @@ public final class ServantCardTransformManager {
       if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
       if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
-      ServerPlayer linkedMaster = MasterServantLinkService.getLinkedMaster(player, vars);
-      if (linkedMaster != null) {
-         MasterServantLinkService.breakLink(linkedMaster, player, false);
-      } else {
-         MasterStateManager.clearServantSide(player, vars);
-      }
+      MasterServantLinkService.onServantLost(player, vars);
       vars.servant_card_transformed = false;
       BodyTrainingService.restoreFromServantCard(player, vars);
       clearServantCardTags(player);
@@ -192,6 +200,9 @@ public final class ServantCardTransformManager {
       vars.is_magic_circuit_open = vars.servant_card_was_magic_circuit_open;
       vars.servant_card_was_magus = false;
       vars.servant_card_was_magic_circuit_open = false;
+      restoreFood(player, vars);
+      MasterServantLinkService.clearSurvival(vars);
+      vars.servant_card_last_combat_tick = Long.MIN_VALUE;
       if (keepOneHp) {
          player.setHealth(Math.max(1.0F, Math.min(player.getMaxHealth(), 1.0F)));
       } else if (player.getHealth() > player.getMaxHealth()) {
@@ -231,6 +242,7 @@ public final class ServantCardTransformManager {
       timersChanged |= tickSkillCooldowns(player, vars);
       timersChanged |= tickJumpRecovery(player, vars);
       ServantCardManaService.tick(player, vars);
+      ServantCardHealthService.tick(player, vars);
       ServantCardFlightController.tick(player, vars);
       ServantCardDefenseHandler.tick(player, vars);
       ServantCardTraitService.tick(player);
@@ -303,6 +315,23 @@ public final class ServantCardTransformManager {
       if (food.getExhaustionLevel() != 0.0F) {
          food.setExhaustion(0.0F);
       }
+   }
+
+   private static void saveFood(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      var food = player.getFoodData();
+      vars.servant_card_food_snapshot_valid = true;
+      vars.servant_card_saved_food_level = food.getFoodLevel();
+      vars.servant_card_saved_saturation = food.getSaturationLevel();
+      vars.servant_card_saved_exhaustion = food.getExhaustionLevel();
+   }
+
+   private static void restoreFood(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!vars.servant_card_food_snapshot_valid) return;
+      var food = player.getFoodData();
+      food.setFoodLevel(vars.servant_card_saved_food_level);
+      food.setSaturation(vars.servant_card_saved_saturation);
+      food.setExhaustion(vars.servant_card_saved_exhaustion);
+      vars.servant_card_food_snapshot_valid = false;
    }
 
    public static void prepareVanishingEquipment(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -1063,6 +1092,9 @@ public final class ServantCardTransformManager {
          case "arash_energy_large" -> {
             if (!ServantCardArashSkills.performLargeEnergyArrow(player)) return false;
          }
+         case "arash_arrow_creation" -> {
+            if (!ServantCardArashSkills.performArrowCreation(player)) return false;
+         }
          case "mana_burst" -> ServantCardArtoriaSkills.performManaBurst(player);
          case "charisma" -> ServantCardArtoriaSkills.performCharisma(player);
          case "strategy" -> ServantCardOdaNobunagaSkills.performOdaStrategy(player);
@@ -1280,6 +1312,7 @@ public final class ServantCardTransformManager {
          case "shadow_hassan_bind" -> { if (!ServantCardShadowHassanSkills.performShadowBind(player)) return false; }
          case "shadow_hassan_flurry" -> { if (!ServantCardShadowHassanSkills.performShadowFlurry(player)) return false; }
          case "shadow_hassan_retreat" -> { if (!ServantCardShadowHassanSkills.performShadowRetreat(player)) return false; }
+         case "shadow_hassan_slash" -> { if (!ServantCardShadowHassanSkills.performSlash(player)) return false; }
          case "shadow_hassan_meditative_sensitivity" -> { if (!ServantCardShadowHassanSkills.performMeditativeSensitivity(player)) return false; }
          case "fanatic_concealment" -> ServantCardFanaticAssassinSkills.performConcealment(player);
          case "fanatic_heartbeat" -> { if (!ServantCardFanaticAssassinSkills.performHeartbeat(player)) return false; }

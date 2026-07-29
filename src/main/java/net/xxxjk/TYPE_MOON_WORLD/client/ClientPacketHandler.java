@@ -100,6 +100,10 @@ public class ClientPacketHandler {
       CommandSpellVisualClient.apply(playerId, masterActive, commandSpells, style, poseActive);
    }
 
+   public static void handleConcealmentState(UUID entityId, boolean concealed) {
+      ObserverConcealmentClient.apply(entityId, concealed);
+   }
+
    public static void handleEnkiduDetectionHighlight(List<Integer> entityIds, int ticks) {
       EnkiduDetectionHighlightClient.apply(entityIds, ticks);
    }

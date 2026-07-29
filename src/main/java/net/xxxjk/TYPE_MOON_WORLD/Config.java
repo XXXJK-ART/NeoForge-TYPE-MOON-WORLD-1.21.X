@@ -45,6 +45,9 @@ public class Config {
       .defineInRange("terrainChecksPerTick", 8000, 1000, 20000);
    public static final IntValue TERRAIN_BUDGET_MICROS = BUILDER.comment("Soft terrain processing time budget per dimension and tick, in microseconds")
       .defineInRange("terrainBudgetMicros", 4000, 1000, 12000);
+   public static final IntValue MAX_QUEUED_TERRAIN_JOBS = BUILDER.comment(
+      "Maximum queued terrain destruction jobs per dimension")
+      .defineInRange("maxQueuedTerrainJobs", 64, 8, 256);
    public static final IntValue TERRAIN_DEBRIS_QUALITY = BUILDER.comment("Client debris quality: 0=LOW, 1=MEDIUM, 2=HIGH")
       .defineInRange("terrainDebrisQuality", 1, 0, 2);
    public static final BooleanValue PHYSICAL_TERRAIN_DEBRIS_ENABLED = BUILDER.comment(
@@ -75,6 +78,7 @@ public class Config {
    public static boolean playerTerrainDestructionEnabled = true;
    public static int terrainChecksPerTick = 8000;
    public static int terrainBudgetMicros = 4000;
+   public static int maxQueuedTerrainJobs = 64;
    public static int terrainDebrisQuality = 1;
    public static boolean physicalTerrainDebrisEnabled = true;
    public static int maxPhysicalTerrainDebris = 48;
@@ -105,6 +109,7 @@ public class Config {
       playerTerrainDestructionEnabled = PLAYER_TERRAIN_DESTRUCTION_ENABLED.get();
       terrainChecksPerTick = TERRAIN_CHECKS_PER_TICK.get();
       terrainBudgetMicros = TERRAIN_BUDGET_MICROS.get();
+      maxQueuedTerrainJobs = MAX_QUEUED_TERRAIN_JOBS.get();
       terrainDebrisQuality = TERRAIN_DEBRIS_QUALITY.get();
       physicalTerrainDebrisEnabled = PHYSICAL_TERRAIN_DEBRIS_ENABLED.get();
       maxPhysicalTerrainDebris = MAX_PHYSICAL_TERRAIN_DEBRIS.get();

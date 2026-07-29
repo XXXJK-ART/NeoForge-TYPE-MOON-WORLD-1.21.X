@@ -72,8 +72,7 @@ class ShadowHassanResourcesTest {
    void servantCardUsesPlannedSlotsAndOptimizedTexture() throws IOException {
       String layout = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardSkillLayout.java"));
       String shadowLayout = layout.substring(layout.indexOf("case \"shadow_hassan\""), layout.indexOf("case \"emiya_archer\""));
-      for (int slot : List.of(0, 1, 2, 3, 4, 5, 6, 9)) assertTrue(shadowLayout.contains("case " + slot + " ->"), "slot " + slot);
-      assertFalse(shadowLayout.contains("case 7 ->"));
+      for (int slot : List.of(0, 1, 2, 3, 4, 5, 6, 7, 9)) assertTrue(shadowLayout.contains("case " + slot + " ->"), "slot " + slot);
       assertFalse(shadowLayout.contains("case 8 ->"));
 
       String skills = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardShadowHassanSkills.java"));
@@ -179,19 +178,24 @@ class ShadowHassanResourcesTest {
    void allServantConcealmentUsesTheCompleteVisibilityStandard() throws IOException {
       String authority = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/concealment/ServantConcealment.java"));
       assertTrue(authority.contains("entity instanceof ServantEntity"));
-      assertTrue(authority.contains("if (!vars.servant_card_transformed) return false"));
       assertTrue(authority.contains("\"shadow_hassan\".equals(vars.servant_card_id)"));
-      assertTrue(authority.contains("invisibility.getAmplifier() >= 1"));
-      assertTrue(authority.contains("return player.isInvisible()"));
+      assertTrue(authority.contains("ServantCardShadowHassanSkills.isConcealed(serverPlayer)"));
+      assertTrue(authority.contains("player.hasEffect(MobEffects.INVISIBILITY)"));
       assertTrue(authority.contains("BajiquanCombatService.isCircleRealmActive(player)"));
+      assertTrue(authority.contains("manageVanillaInvisibility(entity, concealed)"));
+      assertTrue(authority.contains("ConcealmentStateSync.update(entity, concealed)"));
       assertTrue(authority.contains("entity.setGlowingTag(false)"));
       assertTrue(authority.contains("mob.setTarget(null)"));
       assertTrue(authority.contains("entity.setSilent(true)"));
 
       String client = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/client/ServantCardConcealmentClient.java"));
-      assertTrue(client.contains("entity instanceof ServantEntity servant && servant.isInvisible()"));
-      assertTrue(client.contains("\"shadow_hassan\".equals(vars.servant_card_id)"));
-      assertTrue(client.contains("invisibility.getAmplifier() >= 1"));
+      assertTrue(client.contains("ObserverConcealmentClient.isConcealed(player.getUUID())"));
+      assertTrue(client.contains("ObserverConcealmentClient.isConcealed(entity.getUUID())"));
+      String sync = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/concealment/ConcealmentStateSync.java"));
+      assertTrue(sync.contains("PlayerEvent.StartTracking"));
+      assertTrue(sync.contains("sendToPlayersTrackingEntityAndSelf"));
+      String message = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/network/ConcealmentStateMessage.java"));
+      assertTrue(message.contains("UUID entityId, boolean concealed"));
       String renderer = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/client/renderer/BaseServantRenderer.java"));
       assertTrue(renderer.contains("ServantCardConcealmentClient.isPerfectlyConcealed(entity)"));
       String dispatcher = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/mixin/client/EntityRenderDispatcherMixin.java"));

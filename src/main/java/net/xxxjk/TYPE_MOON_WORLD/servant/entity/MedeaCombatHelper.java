@@ -383,12 +383,12 @@ public final class MedeaCombatHelper {
          if (targetVars.servant_card_transformed) {
             net.minecraft.server.level.ServerPlayer master = MasterStateManager.getMaster(targetPlayer, targetVars);
             if (master != null) {
-               MasterServantLinkService.breakLink(master, targetPlayer, true);
+               MasterServantLinkService.terminateContract(master, targetPlayer);
             }
          } else if (targetVars.master_active) {
             net.minecraft.server.level.ServerPlayer servant = MasterServantLinkService.getLinkedServant(targetPlayer, targetVars);
             if (servant != null) {
-               MasterServantLinkService.breakLink(targetPlayer, servant, true);
+               MasterServantLinkService.terminateContract(targetPlayer, servant);
             }
          }
       }

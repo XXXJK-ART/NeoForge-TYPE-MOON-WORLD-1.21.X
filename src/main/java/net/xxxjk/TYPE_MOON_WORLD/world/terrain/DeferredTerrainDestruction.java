@@ -136,7 +136,30 @@ public final class DeferredTerrainDestruction {
       if (level != null && radius > 0) add(level, new UpperHemisphereJob(level, center, radius, minimumYExclusive, maxHardness));
    }
 
-   private static void add(ServerLevel level, Job job) { if (level != null && job != null) JOBS.computeIfAbsent(level.dimension(), k -> new ArrayDeque<>()).add(job); }
+   private static void add(ServerLevel level, Job job) {
+      if (level == null || job == null) return;
+      ArrayDeque<Job> queue = JOBS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
+      for (Job existing : List.copyOf(queue)) {
+         if (existing.supersedes(job)) return;
+         if (job.supersedes(existing)) queue.remove(existing);
+      }
+      if (queue.size() >= Math.max(8, Config.maxQueuedTerrainJobs)) return;
+      queue.add(job);
+   }
+
+   public static int maximumQueuedJobsPerDimension() {
+      return Math.max(8, Config.maxQueuedTerrainJobs);
+   }
+
+   static boolean overlappingImpactSupersedes(Vec3 center, double radius, float hardness, long queuedAt,
+                                               Vec3 otherCenter, double otherRadius, float otherHardness,
+                                               long otherQueuedAt) {
+      if (Math.abs(queuedAt - otherQueuedAt) > 4L) return false;
+      double overlap = Math.min(radius, otherRadius) * 0.75;
+      return center.distanceToSqr(otherCenter) <= overlap * overlap
+         && radius >= otherRadius && hardness >= otherHardness;
+   }
+
    @SubscribeEvent public static void tick(LevelTickEvent.Post event) {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
       ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
@@ -162,10 +185,11 @@ public final class DeferredTerrainDestruction {
    @SubscribeEvent public static void unload(LevelEvent.Unload event) { if (event.getLevel() instanceof Level level && !level.isClientSide()) { JOBS.remove(level.dimension()); LAST_METRICS.remove(level.dimension()); } }
 
    private abstract static class Job {
-      final ServerLevel level; boolean done; Runnable completion; int sliceLimit = 128;
-      Job(ServerLevel level) { this.level = level; }
+      final ServerLevel level; final long queuedAt; boolean done; Runnable completion; int sliceLimit = 128;
+      Job(ServerLevel level) { this.level = level; this.queuedAt = level.getGameTime(); }
       abstract void advance();
       boolean ready() { return true; }
+      boolean supersedes(Job other) { return false; }
       void finish() { if (completion != null) completion.run(); }
       Job schedule(int targetTicks, long estimatedChecks) {
          if (targetTicks > 0) sliceLimit = Mth.clamp((int)Math.ceil(estimatedChecks / (double)targetTicks), 16, 512);
@@ -235,6 +259,13 @@ public final class DeferredTerrainDestruction {
          int height = full ? scan * 2 + 1 : scan + 1;
          super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * height);
          return this;
+      }
+
+      @Override boolean supersedes(Job other) {
+         if (!(other instanceof HemisphereJob candidate) || this.full != candidate.full
+            || this.lower != candidate.lower) return false;
+         return overlappingImpactSupersedes(this.center, this.radius, this.hardness, this.queuedAt,
+            candidate.center, candidate.radius, candidate.hardness, candidate.queuedAt);
       }
 
       @Override void advance() {

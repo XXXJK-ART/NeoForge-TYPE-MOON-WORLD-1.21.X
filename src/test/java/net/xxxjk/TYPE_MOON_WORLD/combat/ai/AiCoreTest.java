@@ -11,6 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
 import org.junit.jupiter.api.Test;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 
 class AiCoreTest {
    private static ResourceLocation id(String path) {
@@ -53,6 +55,43 @@ class AiCoreTest {
       assertTrue(threat.threatens(new Vec3(6, 0.8, 0), 0.1));
       assertFalse(threat.threatens(new Vec3(12, 0, 0), 0.1));
       assertFalse(threat.threatens(new Vec3(6, 3, 0), 0.1));
+   }
+
+   @Test
+   void threatAreaGeometryMatchesTelegraphedShapes() {
+      UUID source = UUID.randomUUID();
+      CombatThreat sphere = new CombatThreat(id("sphere"), source, null, Vec3.ZERO, new Vec3(1, 0, 0),
+         CombatThreat.Shape.SPHERE, 3.0, 0.0, 2, 0, 3, 5, true, true, true);
+      assertTrue(sphere.threatens(new Vec3(2.9, 0, 0), 0.0));
+      assertFalse(sphere.threatens(new Vec3(3.1, 0, 0), 0.0));
+
+      CombatThreat cone = new CombatThreat(id("cone"), source, null, Vec3.ZERO, new Vec3(1, 0, 0),
+         CombatThreat.Shape.CONE, 4.0, 10.0, 3, 0, 3, 5, true, true, true);
+      assertTrue(cone.threatens(new Vec3(5.0, 1.9, 0), 0.0));
+      assertFalse(cone.threatens(new Vec3(5.0, 2.1, 0), 0.0));
+      assertFalse(cone.threatens(new Vec3(-0.2, 0, 0), 0.0));
+
+      CombatThreat hemisphere = new CombatThreat(id("hemisphere"), source, null, Vec3.ZERO, new Vec3(0, 1, 0),
+         CombatThreat.Shape.HEMISPHERE, 4.0, 0.0, 3, 0, 3, 5, true, true, true);
+      assertTrue(hemisphere.threatens(new Vec3(0, 3.9, 0), 0.0));
+      assertFalse(hemisphere.threatens(new Vec3(0, -0.1, 0), 0.0));
+   }
+
+   @Test
+   void failedPrimaryFallsBackWithoutCreatingCommitment() {
+      List<String> executed = new ArrayList<>();
+      AiIntent unavailable = AiIntent.attempt(id("unavailable"), AiIntent.PRIORITY_ATTACK, 50.0, 20, true,
+         () -> false, AiControl.ATTACK);
+      AiIntent fallback = AiIntent.attempt(id("fallback"), AiIntent.PRIORITY_POSITION, 10.0, 3, true, () -> {
+         executed.add("fallback");
+         return true;
+      }, AiControl.MOVE);
+      AiBlackboard board = new AiBlackboard();
+      AiBrain.Resolution resolution = AiBrain.resolve(List.of(unavailable, fallback), board, 100L);
+      assertTrue(resolution.executed());
+      assertEquals(fallback, resolution.intent());
+      assertEquals(List.of("fallback"), executed);
+      assertTrue(board.hasActiveCommitment(101L));
    }
 
    @Test
@@ -114,5 +153,36 @@ class AiCoreTest {
       assertEquals("CAUTIOUS", DeadApostleTacticalState.determinePhase(true, 1.0F, 0.0F, 1.0F));
       assertEquals("HUNTING", DeadApostleTacticalState.determinePhase(false, 1.0F, 0.45F, 1.0F));
       assertEquals("FERAL", DeadApostleTacticalState.determinePhase(false, 0.3F, 0.0F, 1.0F));
+   }
+
+   @Test
+   void maneuverActionsRemainOptionalAndDecodeWhenDeclared() {
+      String legacy = "{\"id\":\"typemoonworld:test/legacy\",\"tags\":[\"melee\"]}";
+      AiActionDescriptor legacyAction = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(legacy))
+         .result().orElseThrow();
+      assertEquals(AiActionDescriptor.ManeuverSpec.NONE, legacyAction.maneuver());
+
+      String advanced = "{\"id\":\"typemoonworld:test/launcher\",\"tags\":[\"melee\",\"launcher\",\"pursuit\"],"
+         + "\"maneuver\":{\"movement\":\"pursuit\",\"control\":\"launcher\",\"pursuit_window\":24,"
+         + "\"interrupt_level\":3,\"horizontal_force\":1.2,\"vertical_force\":0.5,"
+         + "\"approach_range\":18,\"damage_scale\":0.8}}";
+      AiActionDescriptor advancedAction = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(advanced))
+         .result().orElseThrow();
+      assertTrue(advancedAction.tags().contains(AiActionDescriptor.Tag.LAUNCHER));
+      assertEquals(24, advancedAction.maneuver().pursuitWindowTicks());
+      assertEquals(1.2, advancedAction.maneuver().horizontalForce());
+      assertEquals(18.0, advancedAction.maneuver().approachRange());
+      assertEquals(0.8, advancedAction.maneuver().damageScale());
+      assertEquals(3, advancedAction.maneuver().interruptResistance());
+   }
+
+   @Test
+   void antiAirQualificationRejectsFreshUnsettledGroundTargets() {
+      assertFalse(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 0.0, 0.0, 0.0F));
+      assertFalse(ServantPlannedActionExecutor.qualifiesAntiAirTarget(true, false, 0.0, 0.0, 0.0F));
+      assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, true, 0.0, 0.0, 0.0F));
+      assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 0.0, 0.2, 0.0F));
+      assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 2.0, 0.0, 0.0F));
+      assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 0.0, 0.0, 1.0F));
    }
 }

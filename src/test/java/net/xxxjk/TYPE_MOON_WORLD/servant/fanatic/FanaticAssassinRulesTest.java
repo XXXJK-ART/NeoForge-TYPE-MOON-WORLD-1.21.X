@@ -55,10 +55,11 @@ class FanaticAssassinRulesTest {
       assertEquals(15.0, FanaticAssassinRules.MARROW_RADIUS);
       assertEquals(150.0F, FanaticAssassinRules.MARROW_DAMAGE);
       assertEquals(100.0F, FanaticAssassinRules.HAIR_DAMAGE);
-      assertEquals(1.8, FanaticAssassinRules.COMPUTER_RANGE);
-      assertEquals(150.0F, FanaticAssassinRules.computerSplashDamage(0.0));
-      assertEquals(75.0F, FanaticAssassinRules.computerSplashDamage(1.0));
-      assertEquals(0.0F, FanaticAssassinRules.computerSplashDamage(2.0));
+      assertEquals(2.0, FanaticAssassinRules.COMPUTER_RANGE);
+      assertEquals(200.0F, FanaticAssassinRules.COMPUTER_DAMAGE);
+      assertEquals(50.0F, FanaticAssassinRules.computerSplashDamage(0.0));
+      assertEquals(50.0F, FanaticAssassinRules.computerSplashDamage(1.0));
+      assertEquals(50.0F, FanaticAssassinRules.computerSplashDamage(2.0));
       assertEquals(0.0F, FanaticAssassinRules.computerSplashDamage(2.01));
    }
 

@@ -104,7 +104,6 @@ public final class FanaticAssassinCombatHelper {
       }
       long now = context.gameTick();
       entity.getPersistentData().putLong("FanaticLastCombatTick", now);
-      entity.revealForCombat();
       entity.getLookControl().setLookAt(target, 45.0F, 45.0F);
 
       boolean retreating = entity.getPersistentData().getBoolean(RETREATING);
@@ -124,6 +123,7 @@ public final class FanaticAssassinCombatHelper {
          entity.getPersistentData().remove(RETREATING);
       }
       if (now < entity.getPersistentData().getLong(BUSY_UNTIL)) return;
+      if (tryConcealedApproach(entity, target, now)) return;
       if (continueCombo(entity, target, now)) return;
 
       double distance = entity.distanceTo(target);
@@ -725,13 +725,36 @@ public final class FanaticAssassinCombatHelper {
    }
 
    private static void commit(FanaticAssassinEntity entity, String key, int mp, long now,
-                              int technique, String animation, int visualDuration) {
+                               int technique, String animation, int visualDuration) {
+      entity.revealForCombat();
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - mp));
       entity.getPersistentData().putLong("FanaticLast" + key, now);
       entity.getPersistentData().putLong(BUSY_UNTIL, now + Math.min(24, visualDuration));
       entity.setActiveTechnique(technique, now + visualDuration);
       entity.triggerNamedActionAnimation(animation);
       entity.getNavigation().stop();
+   }
+
+   private static boolean tryConcealedApproach(FanaticAssassinEntity entity, LivingEntity target, long now) {
+      double distance = entity.distanceTo(target);
+      if (!entity.isPresenceConcealed() || distance < 4.0 || distance > 11.0
+         || now - entity.getPersistentData().getLong("FanaticLastShadowStep") < 70L) return false;
+      Vec3 look = target.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (look.lengthSqr() < 1.0E-5) look = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (look.lengthSqr() < 1.0E-5) return false;
+      Vec3 destination = target.position().subtract(look.normalize().scale(1.7));
+      Vec3 offset = destination.subtract(entity.position());
+      if (!entity.level().noCollision(entity, entity.getBoundingBox().move(offset))) return false;
+      entity.getPersistentData().putLong("FanaticLastShadowStep", now);
+      entity.getNavigation().stop();
+      entity.teleportTo(destination.x, target.getY(), destination.z);
+      entity.fallDistance = 0.0F;
+      entity.faceToward(target.position());
+      if (entity.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SQUID_INK, entity.getX(), entity.getY() + 0.8, entity.getZ(),
+            14, 0.35, 0.65, 0.35, 0.03);
+      }
+      return true;
    }
 
    private static boolean canCast(FanaticAssassinEntity entity, String key, int mp, int cooldown, long now) {

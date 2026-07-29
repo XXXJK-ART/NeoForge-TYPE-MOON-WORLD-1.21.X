@@ -18,7 +18,8 @@ public record AiActionDescriptor(
    double staminaCost,
    Timing timing,
    ThreatSpec threat,
-   TerrainImpactProfile.Tier terrainTier
+   TerrainImpactProfile.Tier terrainTier,
+   ManeuverSpec maneuver
 ) {
    private static final Codec<Tag> TAG_CODEC = Codec.STRING.xmap(value -> Tag.valueOf(value.toUpperCase()), value -> value.name().toLowerCase());
    private static final Codec<CombatThreat.Shape> SHAPE_CODEC = Codec.STRING.xmap(value -> CombatThreat.Shape.valueOf(value.toUpperCase()), value -> value.name().toLowerCase());
@@ -38,6 +39,18 @@ public record AiActionDescriptor(
       Codec.BOOL.optionalFieldOf("interruptible", true).forGetter(ThreatSpec::interruptible),
       Codec.DOUBLE.optionalFieldOf("friendly_fire_radius", 0.0).forGetter(ThreatSpec::collateralRadius)
    ).apply(instance, ThreatSpec::new));
+   public static final Codec<ManeuverSpec> MANEUVER_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+      Codec.STRING.optionalFieldOf("movement", "none").forGetter(ManeuverSpec::movement),
+      Codec.STRING.optionalFieldOf("control", "none").forGetter(ManeuverSpec::control),
+      Codec.INT.optionalFieldOf("pursuit_window", 0).forGetter(ManeuverSpec::pursuitWindowTicks),
+      Codec.INT.optionalFieldOf("combo_cost", 1).forGetter(ManeuverSpec::comboCost),
+      Codec.INT.optionalFieldOf("interrupt_level", 0).forGetter(ManeuverSpec::interruptLevel),
+      Codec.DOUBLE.optionalFieldOf("horizontal_force", 0.0).forGetter(ManeuverSpec::horizontalForce),
+      Codec.DOUBLE.optionalFieldOf("vertical_force", 0.0).forGetter(ManeuverSpec::verticalForce),
+      Codec.DOUBLE.optionalFieldOf("approach_range", -1.0).forGetter(ManeuverSpec::approachRange),
+      Codec.DOUBLE.optionalFieldOf("damage_scale", -1.0).forGetter(ManeuverSpec::damageScale),
+      Codec.INT.optionalFieldOf("interrupt_resistance", -1).forGetter(ManeuverSpec::interruptResistance)
+   ).apply(instance, ManeuverSpec::new));
    public static final Codec<AiActionDescriptor> CODEC = RecordCodecBuilder.create(instance -> instance.group(
       ResourceLocation.CODEC.fieldOf("id").forGetter(AiActionDescriptor::id),
       TAG_CODEC.listOf().optionalFieldOf("tags", List.of()).xmap(Set::copyOf, List::copyOf).forGetter(AiActionDescriptor::tags),
@@ -47,7 +60,8 @@ public record AiActionDescriptor(
       Codec.DOUBLE.optionalFieldOf("stamina_cost", 0.0).forGetter(AiActionDescriptor::staminaCost),
       TIMING_CODEC.optionalFieldOf("timing", new Timing(0, 1, 0)).forGetter(AiActionDescriptor::timing),
       THREAT_CODEC.optionalFieldOf("threat", ThreatSpec.NONE).forGetter(AiActionDescriptor::threat),
-      TIER_CODEC.optionalFieldOf("terrain_impact", TerrainImpactProfile.Tier.NONE).forGetter(AiActionDescriptor::terrainTier)
+      TIER_CODEC.optionalFieldOf("terrain_impact", TerrainImpactProfile.Tier.NONE).forGetter(AiActionDescriptor::terrainTier),
+      MANEUVER_CODEC.optionalFieldOf("maneuver", ManeuverSpec.NONE).forGetter(AiActionDescriptor::maneuver)
    ).apply(instance, AiActionDescriptor::new));
    public AiActionDescriptor {
       if (id == null) throw new IllegalArgumentException("action id cannot be null");
@@ -59,9 +73,11 @@ public record AiActionDescriptor(
       timing = timing == null ? new Timing(0, 1, 0) : timing;
       threat = threat == null ? ThreatSpec.NONE : threat;
       terrainTier = terrainTier == null ? TerrainImpactProfile.Tier.NONE : terrainTier;
+      maneuver = maneuver == null ? ManeuverSpec.NONE : maneuver;
    }
 
-   public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON }
+   public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON,
+      LAUNCHER, PURSUIT, INTERCEPT, GAP_CLOSER, ANTI_AIR, COUNTER, FINISHER, TERRAIN_BREAK }
    public record Timing(int windupTicks, int activeTicks, int recoveryTicks) {
       public Timing { windupTicks=Math.max(0,windupTicks); activeTicks=Math.max(1,activeTicks); recoveryTicks=Math.max(0,recoveryTicks); }
    }
@@ -69,5 +85,32 @@ public record AiActionDescriptor(
                             boolean blockable, boolean dodgeable, boolean interruptible, double collateralRadius) {
       public static final ThreatSpec NONE = new ThreatSpec(CombatThreat.Shape.POINT, 0.0, 0.0, 0, true, true, true, 0.0);
       public ThreatSpec { radius=Math.max(0.0,radius); length=Math.max(0.0,length); danger=Math.max(0,danger); collateralRadius=Math.max(0.0,collateralRadius); }
+   }
+   public record ManeuverSpec(String movement, String control, int pursuitWindowTicks, int comboCost,
+                              int interruptLevel, double horizontalForce, double verticalForce,
+                              double approachRange, double damageScale, int interruptResistance) {
+      public static final ManeuverSpec NONE = new ManeuverSpec("none", "none", 0, 1, 0, 0.0, 0.0,
+         -1.0, -1.0, 0);
+      public ManeuverSpec {
+         movement = movement == null || movement.isBlank() ? "none" : movement;
+         control = control == null || control.isBlank() ? "none" : control;
+         pursuitWindowTicks = Math.max(0, Math.min(60, pursuitWindowTicks));
+         comboCost = Math.max(0, Math.min(8, comboCost));
+         interruptLevel = Math.max(0, Math.min(5, interruptLevel));
+         horizontalForce = Math.max(0.0, Math.min(5.0, horizontalForce));
+         verticalForce = Math.max(0.0, Math.min(3.0, verticalForce));
+         approachRange = approachRange < 0.0 ? -1.0 : Math.min(48.0, approachRange);
+         damageScale = damageScale < 0.0 ? -1.0 : Math.min(5.0, damageScale);
+         interruptResistance = interruptResistance < 0
+            ? interruptLevel : Math.max(0, Math.min(5, interruptResistance));
+      }
+
+      public double effectiveApproachRange(double strikeRange) {
+         return approachRange < 0.0 ? strikeRange : Math.max(strikeRange, approachRange);
+      }
+
+      public double effectiveDamageScale(boolean finisher) {
+         return damageScale < 0.0 ? finisher ? 1.05 : 0.72 : damageScale;
+      }
    }
 }

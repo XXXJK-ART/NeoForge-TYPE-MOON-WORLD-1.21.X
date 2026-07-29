@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.EvasionMovementService;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatSensor;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionPlanner;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionProfile;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService;
@@ -33,6 +34,8 @@ public final class ServantTacticalController {
    private static final ResourceLocation MASTER_STAY = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/master_stay");
    private static final ResourceLocation PHASE_TRANSITION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/phase_transition");
    private static final ResourceLocation DISTANT_PURSUIT = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/distant_pursuit");
+   private static final ResourceLocation COMBAT_MANEUVER = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/combat_maneuver");
+   private static final ResourceLocation TACTICAL_REPOSITION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/tactical_reposition");
 
    private ServantTacticalController() { }
 
@@ -49,12 +52,20 @@ public final class ServantTacticalController {
          brain.submit(AiIntent.of(PHASE_TRANSITION, AiIntent.PRIORITY_PHASE, phase.phase().ordinal(), 1, false,
             entity.getNavigation()::stop, AiControl.DEFEND, AiControl.LOOK));
       }
-      var selected = ServantActionPlanner.select(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard());
+      boolean plannedActive = ServantPlannedActionExecutor.isActive(entity);
+      var candidates = plannedActive ? java.util.List.<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor>of()
+         : ServantActionPlanner.candidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard());
+      var selected = candidates.isEmpty() ? null : candidates.getFirst();
       if (selected == null) entity.getPersistentData().remove("TypeMoonAiSelectedAction");
       else entity.getPersistentData().putString("TypeMoonAiSelectedAction", selected.id().toString());
-      ServantActionPlanner.publishActiveThreat(entity, entity.getTarget(), selected, now);
       submitMasterCommand(entity, brain);
-      submitDistantPursuit(entity, brain, now);
+      if (plannedActive) submitActivePlannedAction(entity, brain, now);
+      else {
+         for (var candidate : candidates) submitPlannedAction(entity, candidate, brain, now);
+         submitCombatManeuver(entity, brain, now);
+         submitTacticalReposition(entity, brain, now);
+         submitDistantPursuit(entity, brain, now);
+      }
 
       if (entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
          ProjectileThreatSensor.IncomingProjectile projectile = ProjectileThreatSensor.nearest(entity, 12.0, 8.0);
@@ -79,7 +90,19 @@ public final class ServantTacticalController {
             AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
       }
 
-      return brain.resolve().consumesLegacyControl();
+      AiBrain.Resolution resolution = brain.resolve();
+      if (plannedActive && resolution.intent() != null
+         && resolution.intent().priority() > AiIntent.PRIORITY_ATTACK) {
+         ServantPlannedActionExecutor.interrupt(entity, 5, now);
+      }
+      return resolution.consumesLegacyControl();
+   }
+
+   private static void submitActivePlannedAction(ServantEntity entity, AiBrain brain, long now) {
+      ResourceLocation id = ResourceLocation.tryParse(entity.getPersistentData().getString("TypeMoonPlannedActionId"));
+      if (id == null) id = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/planned_action");
+      brain.submit(AiIntent.attempt(id, AiIntent.PRIORITY_ATTACK, 100.0, 1, true,
+         () -> ServantPlannedActionExecutor.tick(entity, now), AiControl.ATTACK, AiControl.MOVE, AiControl.LOOK));
    }
 
    private static void submitDistantPursuit(ServantEntity entity, AiBrain brain, long now) {
@@ -88,6 +111,39 @@ public final class ServantTacticalController {
       double distance = entity.distanceTo(target);
       brain.submit(AiIntent.of(DISTANT_PURSUIT, AiIntent.PRIORITY_POSITION, distance, 3, true,
          () -> ServantPursuitService.pursue(entity, target, now), AiControl.MOVE, AiControl.LOOK));
+   }
+
+   private static void submitPlannedAction(ServantEntity entity, net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor action,
+                                           AiBrain brain, long now) {
+      LivingEntity target = entity.getTarget();
+      if (!ServantPlannedActionExecutor.canExecute(entity, target, action, now)) return;
+      boolean cast = action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.PROJECTILE)
+         || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.NOBLE_PHANTASM);
+      brain.submit(AiIntent.attempt(action.id(), AiIntent.PRIORITY_ATTACK,
+         action.threat().danger() * 20.0 + action.maneuver().interruptLevel() * 6.0 + 10.0,
+         Math.max(1, action.timing().windupTicks()), action.threat().interruptible(),
+         () -> ServantPlannedActionExecutor.execute(entity, target, action, now),
+         cast ? AiControl.CAST : AiControl.ATTACK, AiControl.LOOK));
+   }
+
+   private static void submitCombatManeuver(ServantEntity entity, AiBrain brain, long now) {
+      LivingEntity target = entity.getTarget();
+      if (!ServantManeuverService.shouldManeuver(entity, target)) return;
+      ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
+      double utility = entity.distanceTo(target) + tactical.pursuitAggression() * 20.0;
+      brain.submit(AiIntent.of(COMBAT_MANEUVER, AiIntent.PRIORITY_POSITION, utility, 3, true,
+         () -> ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression()),
+         AiControl.MOVE, AiControl.LOOK));
+   }
+
+   private static void submitTacticalReposition(ServantEntity entity, AiBrain brain, long now) {
+      LivingEntity target = entity.getTarget();
+      if (target == null || entity.getDefinition() == null) return;
+      ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
+      if (!ServantManeuverService.shouldReposition(entity, target, tactical, now)) return;
+      brain.submit(AiIntent.of(TACTICAL_REPOSITION, AiIntent.PRIORITY_POSITION,
+         tactical.repositionDistance() + tactical.pursuitAggression() * 10.0, 4, true,
+         () -> ServantManeuverService.reposition(entity, target, tactical, now), AiControl.MOVE, AiControl.LOOK));
    }
 
    private static void submitMasterCommand(ServantEntity entity, AiBrain brain) {

@@ -38,9 +38,23 @@ class ArashRulesTest {
 
    @Test
    void arrowCostsDamageAndCadenceAreExact() {
+      assertEquals(500, ArashCombatRules.INITIAL_ARROW_COUNT);
+      assertEquals(5000, ArashCombatRules.MAX_ARROW_COUNT);
+      assertEquals(1000, ArashCombatRules.ARROW_CREATION_THRESHOLD);
+      assertEquals(10, ArashCombatRules.ARROW_CREATION_AMOUNT);
+      assertEquals(1.0, ArashCombatRules.ARROW_CREATION_MANA_COST);
+      assertEquals(1, ArashCombatRules.NORMAL_ARROW_COST);
+      assertEquals(1, ArashCombatRules.ENERGY_ARROW_COST);
+      assertEquals(100, ArashCombatRules.ARROW_RAIN_COST);
+      assertEquals(500, ArashCombatRules.CROUCH_ARROW_RAIN_COST);
+      assertEquals(1, ArashCombatRules.STELLA_ARROW_COST);
       assertEquals(10.0F, ArashCombatRules.NORMAL_ARROW_DAMAGE);
       assertEquals(5, ArashCombatRules.NORMAL_ARROW_INTERVAL);
-      assertEquals(50, ArashCombatRules.RAIN_ARROW_COUNT);
+      assertEquals(100, ArashCombatRules.RAIN_ARROW_COUNT);
+      assertEquals(500, ArashCombatRules.CROUCH_RAIN_ARROW_COUNT);
+      assertEquals(6.0, ArashCombatRules.RAIN_SPREAD_RADIUS);
+      assertEquals(30.0, ArashCombatRules.CROUCH_RAIN_SPREAD_RADIUS);
+      assertEquals(36.0, ArashCombatRules.CROUCH_RAIN_ASSIST_RADIUS);
       assertEquals(13.2F, ArashCombatRules.RAIN_ARROW_DAMAGE);
       assertEquals(30.0F, ArashCombatRules.SMALL_ENERGY_DAMAGE);
       assertEquals(60.0F, ArashCombatRules.LARGE_ENERGY_DAMAGE);
@@ -113,7 +127,8 @@ class ArashRulesTest {
    @Test
    void playerStellaScalesFromTenSecondsToFullCharge() {
       assertEquals(200, ArashCombatRules.PLAYER_STELLA_MIN_CHARGE_TICKS);
-      assertEquals(760, ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
+      assertEquals(720, ArashCombatRules.PLAYER_STELLA_AUTO_RELEASE_TICKS);
+      assertEquals(720, ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS);
       assertEquals(660, ArashCombatRules.PLAYER_STELLA_LONG_VOICE_CUTOFF_TICKS);
       assertFalse(ArashCombatRules.canReleasePlayerStella(199));
       assertTrue(ArashCombatRules.canReleasePlayerStella(200));
@@ -148,7 +163,8 @@ class ArashRulesTest {
       assertAction(0, "arash_arrow_rain", 8.0, 160);
       assertAction(1, "arash_energy_small", 8.0, 80);
       assertAction(2, "arash_energy_large", 20.0, 240);
-      for (int slot = 3; slot <= 8; slot++) assertNull(ServantCardSkillLayout.actionFor("arash", slot, false));
+      assertAction(3, "arash_arrow_creation", 1.0, 0);
+      for (int slot = 4; slot <= 8; slot++) assertNull(ServantCardSkillLayout.actionFor("arash", slot, false));
       assertAction(9, "arash_stella", 100.0, 3600);
    }
 

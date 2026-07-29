@@ -29,6 +29,7 @@ public final class ArashEntity extends ServantEntity {
    public static final String TAG_STELLA_SACRIFICE = "ArashStellaSacrifice";
    public static final String TAG_STELLA_SACRIFICE_TICKS = "ArashStellaSacrificeTicks";
    public static final String TAG_STELLA_SACRIFICE_MAX_HEALTH = "ArashStellaSacrificeMaxHealth";
+   private static final String TAG_ARROW_COUNT = "ArashArrowCount";
    private static final ResourceLocation STOUT_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "arash_stout_ex_health");
 
@@ -41,13 +42,39 @@ public final class ArashEntity extends ServantEntity {
                                        @Nullable SpawnGroupData groupData) {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, groupData);
       applyStoutHealth(true);
+      this.setCraftedArrowCount(ArashCombatRules.INITIAL_ARROW_COUNT);
       return result;
+   }
+
+   @Override
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putInt(TAG_ARROW_COUNT, this.getCraftedArrowCount());
    }
 
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
+      this.setCraftedArrowCount(tag.contains(TAG_ARROW_COUNT) ? tag.getInt(TAG_ARROW_COUNT)
+         : ArashCombatRules.INITIAL_ARROW_COUNT);
       applyStoutHealth(false);
+   }
+
+   public int getCraftedArrowCount() {
+      return this.getPersistentData().contains(TAG_ARROW_COUNT)
+         ? this.getPersistentData().getInt(TAG_ARROW_COUNT) : ArashCombatRules.INITIAL_ARROW_COUNT;
+   }
+
+   public void setCraftedArrowCount(int arrows) {
+      this.getPersistentData().putInt(TAG_ARROW_COUNT, Math.max(0, Math.min(ArashCombatRules.MAX_ARROW_COUNT, arrows)));
+   }
+
+   public boolean consumeCraftedArrows(int amount) {
+      if (amount <= 0) return true;
+      int arrows = this.getCraftedArrowCount();
+      if (arrows < amount) return false;
+      this.setCraftedArrowCount(arrows - amount);
+      return true;
    }
 
    private void applyStoutHealth(boolean heal) {
@@ -111,11 +138,26 @@ public final class ArashEntity extends ServantEntity {
          MagicResistanceHelper.setMagicResistance(this, net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank.C, 0.20F, 0.10F);
       }
       if (!this.level().isClientSide) {
+         tickArrowCreation();
          if (!this.wasTacticalAiHandledThisTick()) {
             ArashCombatHelper.tickCrossoverMovement(this);
             ArashCombatHelper.tickAttackFacing(this);
          }
          tickStellaSacrifice();
+      }
+   }
+
+   private void tickArrowCreation() {
+      if (this.tickCount % ArashCombatRules.ARROW_CREATION_INTERVAL != 0
+         || this.getCraftedArrowCount() >= ArashCombatRules.ARROW_CREATION_THRESHOLD
+         || this.getCurrentMp() < ArashCombatRules.ARROW_CREATION_MANA_COST
+         || this.getPersistentData().getBoolean(TAG_STELLA_CHANTING)
+         || this.getPersistentData().getBoolean(TAG_STELLA_SACRIFICE)) return;
+      this.setCurrentMp(this.getCurrentMp() - ArashCombatRules.ARROW_CREATION_MANA_COST);
+      this.setCraftedArrowCount(this.getCraftedArrowCount() + ArashCombatRules.ARROW_CREATION_AMOUNT);
+      if (this.level() instanceof ServerLevel level) {
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
+            this.getX(), this.getY() + 1.1, this.getZ(), 4, 0.18, 0.28, 0.18, 0.02);
       }
    }
 

@@ -35,6 +35,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
@@ -63,6 +66,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
@@ -170,14 +175,12 @@ public final class CombatModule implements ServantAiModule {
       long combatAge = now - data.getLong("CombatControlStartTick");
       boolean strongMove = horizontalPower >= 1.6 || verticalPower >= 0.65;
       double terrainScale = terrainBreakScale(attacker);
-      boolean canKnockback = combatAge >= 80L
-         && now - data.getLong("CombatLastKnockbackTick") >= 70L
-         && attacker.getRandom().nextInt(100) < (strongMove ? 35 : 18);
-      int launchChance = strongMove ? 8 : 2;
+      boolean canKnockback = combatAge >= 45L
+         && now - data.getLong("CombatLastKnockbackTick") >= (strongMove ? 48L : 65L);
       boolean canLaunch = canKnockback
-         && combatAge >= 140L
-         && now - data.getLong("CombatLastLaunchTick") >= 160L
-         && attacker.getRandom().nextInt(100) < launchChance;
+         && strongMove
+         && combatAge >= 90L
+         && now - data.getLong("CombatLastLaunchTick") >= 110L;
       if (!canKnockback) {
          level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 6, 0.22, 0.12, 0.22, 0.035);
          return;
@@ -186,16 +189,11 @@ public final class CombatModule implements ServantAiModule {
       if (canLaunch) {
          data.putLong("CombatLastLaunchTick", now);
       }
-      Vec3 motion = target.getDeltaMovement();
       double yPower = canLaunch ? Math.max(0.35, verticalPower) : Math.min(0.08, verticalPower * 0.12);
-      target.setDeltaMovement(motion.x + dir.x * horizontalPower, Math.max(motion.y + yPower, yPower), motion.z + dir.z * horizontalPower);
-      target.hasImpulse = true;
-      target.hurtMarked = true;
+      TerrainImpactProfile.Tier tier = strongMove
+         ? TerrainImpactProfile.Tier.HEAVY : canLaunch ? TerrainImpactProfile.Tier.MEDIUM : TerrainImpactProfile.Tier.SMALL;
+      ServantCombatMotionService.launch(attacker, target, dir, horizontalPower, yPower, tier, canLaunch ? 26 : 12);
       level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 16, 0.35, 0.18, 0.35, 0.08);
-      breakKnockbackPath(level, target.position(), dir, Math.max(2.0, horizontalPower * 2.2) * terrainScale, strongMove, terrainScale);
-      if (canLaunch) {
-         scheduleImpactCrater(target, craterRadius * terrainScale, scaledBreakLimit(maxBroken, terrainScale), strongMove);
-      }
    }
 
    private void breakKnockbackPath(ServerLevel level, Vec3 start, Vec3 dir, double distance, boolean heavyFx, double terrainScale) {
@@ -303,8 +301,16 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      LivingEntity engagementTarget = context.target();
+      if (engagementTarget != null && engagementTarget.isAlive()) {
+         ServantNavigationHelper.tryMeleeClosingBurst(entity, engagementTarget, context.gameTick());
+      }
       if (entity instanceof ArashEntity arash) {
          ArashCombatHelper.tick(arash, context);
+         return;
+      }
+      // Nightingale owns a strict ranged/melee alternation in her entity tick.
+      if (entity instanceof NightingaleEntity) {
          return;
       }
       LivingEntity sharedTarget = context.target();
@@ -344,6 +350,10 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof FanaticAssassinEntity fanatic) {
          FanaticAssassinCombatHelper.tick(fanatic, context);
+         return;
+      }
+      if (entity instanceof ShadowHassanEntity shadowHassan) {
+         ShadowHassanCombatHelper.tick(shadowHassan, context);
          return;
       }
       if (entity instanceof LiShuwenEntity liShuwen) {

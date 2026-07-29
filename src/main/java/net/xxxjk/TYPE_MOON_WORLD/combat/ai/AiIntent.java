@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import net.minecraft.resources.ResourceLocation;
 
 public record AiIntent(
@@ -12,7 +13,7 @@ public record AiIntent(
    Set<AiControl> controls,
    int commitmentTicks,
    boolean interruptible,
-   Runnable executor
+   BooleanSupplier executor
 ) {
    public static final int PRIORITY_COMMAND = 900;
    public static final int PRIORITY_LETHAL_DEFENSE = 800;
@@ -33,6 +34,15 @@ public record AiIntent(
    public static AiIntent of(ResourceLocation id, int priority, double utility, int commitmentTicks,
                              boolean interruptible, Runnable executor, AiControl first, AiControl... rest) {
       EnumSet<AiControl> controls = EnumSet.of(first, rest);
-      return new AiIntent(id, priority, utility, controls, commitmentTicks, interruptible, executor);
+      return new AiIntent(id, priority, utility, controls, commitmentTicks, interruptible, () -> {
+         executor.run();
+         return true;
+      });
+   }
+
+   public static AiIntent attempt(ResourceLocation id, int priority, double utility, int commitmentTicks,
+                                  boolean interruptible, BooleanSupplier executor,
+                                  AiControl first, AiControl... rest) {
+      return new AiIntent(id, priority, utility, EnumSet.of(first, rest), commitmentTicks, interruptible, executor);
    }
 }

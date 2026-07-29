@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.ai;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public final class ServantNavigationHelper {
@@ -33,10 +34,13 @@ public final class ServantNavigationHelper {
    ) {
       if (ServantEngagementService.matchup(entity, target) == ServantEngagementService.Matchup.MELEE_VS_RANGED
          && entity.distanceTo(target) > 7.0) {
+         double agilitySpeed = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+         double chaseScale = 1.12 + Math.max(0.0, Math.min(0.32, (agilitySpeed - 0.20) * 0.9));
+         tryMeleeClosingBurst(entity, target, gameTick);
          return moveToPositionThrottled(
             entity,
             ServantEngagementService.meleeApproachPoint(entity, target, gameTick),
-            speed * 1.12,
+            speed * chaseScale,
             gameTick,
             Math.min(repathInterval, SHORT_REPATH_INTERVAL),
             minTargetMoveSqr,
@@ -64,6 +68,31 @@ public final class ServantNavigationHelper {
       data.putDouble(zKey, target.getZ());
       data.putDouble(speedKey, speed);
       return entity.getNavigation().moveTo(target, speed);
+   }
+
+   /** Gives every melee servant a speed-scaled intercept burst against a retreating ranged target. */
+   public static void tryMeleeClosingBurst(ServantEntity entity, LivingEntity target, long gameTick) {
+      if (ServantEngagementService.matchup(entity, target) != ServantEngagementService.Matchup.MELEE_VS_RANGED
+         || entity.isPerformingAction() || !entity.onGround() || entity.distanceTo(target) <= 7.0
+         || entity.distanceTo(target) > 30.0 || target.getY() - entity.getY() > 4.0) return;
+      double agilitySpeed = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+      CompoundTag data = entity.getPersistentData();
+      int cooldown = Math.max(8, 18 - (int)Math.round(agilitySpeed * 20.0));
+      if (gameTick - data.getLong("ServantMeleeClosingBurstTick") < cooldown) return;
+      Vec3 direction = target.position().add(target.getDeltaMovement().scale(4.0))
+         .subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (direction.lengthSqr() < 1.0E-4) return;
+      direction = direction.normalize();
+      Vec3 lane = direction.scale(1.6);
+      if (!entity.level().noCollision(entity, entity.getBoundingBox().move(lane.x, 0.18, lane.z))) return;
+      Vec3 motion = entity.getDeltaMovement();
+      double desired = Math.max(0.42, Math.min(0.78, 0.30 + agilitySpeed));
+      double current = motion.x * direction.x + motion.z * direction.z;
+      double boost = Math.max(0.0, desired - current);
+      entity.setDeltaMovement(motion.x + direction.x * boost, Math.max(motion.y, 0.18),
+         motion.z + direction.z * boost);
+      entity.hasImpulse = true;
+      data.putLong("ServantMeleeClosingBurstTick", gameTick);
    }
 
    public static boolean moveToPositionThrottled(

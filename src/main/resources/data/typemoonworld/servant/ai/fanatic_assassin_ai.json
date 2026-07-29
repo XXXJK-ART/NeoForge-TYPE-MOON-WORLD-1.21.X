@@ -5,6 +5,7 @@
     "preferred_attack_distance": 2.0, "retreat_health_ratio": 0.0,
     "melee_preference": 1.0, "berserk_health_ratio": 0.0, "berserk_damage_multiplier": 1.0
   },
+  "tactical": {"style":"ambusher","minimum_range":2,"preferred_range":7,"maximum_range":24,"reposition_distance":16,"pursuit_aggression":0.88,"intercept_bias":4.5,"vertical_mobility":0.75,"recovery_tendency":0.9,"collateral_caution":0.7,"maximum_terrain_impact":"small"},
   "social": {"talk_interval": 0, "greeting_probability": 0.0},
   "command": {"base_obedience_rate": 0.0, "favor_multiplier": 0.0},
   "environment": {"liked_biomes": [], "disliked_biomes": [], "preferred_weather": "any"}

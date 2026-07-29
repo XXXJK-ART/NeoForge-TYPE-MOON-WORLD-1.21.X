@@ -23,6 +23,7 @@ public final class ServantConcealment {
    private static final String TAG_MANAGED_SILENCE = "TypeMoonConcealmentManagedSilence";
    private static final String TAG_PREVIOUS_SILENCE = "TypeMoonConcealmentPreviousSilence";
    private static final String TAG_NEXT_PARTICLE_TICK = "TypeMoonConcealmentNextParticleTick";
+   private static final String TAG_MANAGED_INVISIBLE = "TypeMoonConcealmentManagedInvisible";
    private static final DustParticleOptions LEAK_PARTICLE = new DustParticleOptions(
       new Vector3f(0.018F, 0.018F, 0.024F), 0.32F);
 
@@ -31,20 +32,25 @@ public final class ServantConcealment {
 
    public static boolean isFullyConcealed(LivingEntity entity) {
       if (entity instanceof ShadowHassanEntity hassan) return hassan.isPresenceConcealed();
-      if (entity instanceof ServantEntity) return entity.isInvisible();
+      if (entity instanceof ServantEntity) {
+         return entity.hasEffect(MobEffects.INVISIBILITY)
+            || entity.isInvisible() && !entity.getPersistentData().getBoolean(TAG_MANAGED_INVISIBLE);
+      }
       if (!(entity instanceof Player player)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (BajiquanCombatService.isCircleRealmActive(player)) return true;
-      if (!vars.servant_card_transformed) return false;
-      if ("shadow_hassan".equals(vars.servant_card_id)) {
-         MobEffectInstance invisibility = player.getEffect(MobEffects.INVISIBILITY);
-         return invisibility != null && invisibility.getAmplifier() >= 1;
+      if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
+         return player instanceof net.minecraft.server.level.ServerPlayer serverPlayer
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isConcealed(serverPlayer);
       }
-      return player.isInvisible();
+      return player.hasEffect(MobEffects.INVISIBILITY)
+         || player.isInvisible() && !player.getPersistentData().getBoolean(TAG_MANAGED_INVISIBLE);
    }
 
    public static void tick(LivingEntity entity) {
       boolean concealed = isFullyConcealed(entity);
+      manageVanillaInvisibility(entity, concealed);
+      ConcealmentStateSync.update(entity, concealed);
       manageSilence(entity, concealed);
       if (!concealed) {
          entity.getPersistentData().remove(TAG_NEXT_PARTICLE_TICK);
@@ -138,6 +144,19 @@ public final class ServantConcealment {
          entity.setSilent(data.getBoolean(TAG_PREVIOUS_SILENCE));
          data.remove(TAG_MANAGED_SILENCE);
          data.remove(TAG_PREVIOUS_SILENCE);
+      }
+   }
+
+   private static void manageVanillaInvisibility(LivingEntity entity, boolean concealed) {
+      var data = entity.getPersistentData();
+      if (concealed) {
+         if (!entity.isInvisible()) {
+            data.putBoolean(TAG_MANAGED_INVISIBLE, true);
+            entity.setInvisible(true);
+         }
+      } else if (data.getBoolean(TAG_MANAGED_INVISIBLE)) {
+         entity.setInvisible(false);
+         data.remove(TAG_MANAGED_INVISIBLE);
       }
    }
 }

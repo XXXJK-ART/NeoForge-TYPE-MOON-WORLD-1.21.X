@@ -110,9 +110,12 @@ public class ServantCardHud {
       );
       drawFlightStatus(gui, minecraft, vars, x, y + 58);
       drawPaleRiderStatus(gui, minecraft, vars, x, y + 58);
-      drawCooldownGrid(gui, minecraft, vars, 5, 78);
+      drawMasterPosition(gui, minecraft, vars, x, y + 68);
+      drawMasterLossStatus(gui, minecraft, vars, x, y + 78);
+      drawCooldownGrid(gui, minecraft, vars, 5, 98);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
+      drawArashArrows(gui, minecraft, vars, guiWidth, 36);
       drawGilgameshOmniscience(gui, minecraft, vars);
    }
 
@@ -225,9 +228,66 @@ public class ServantCardHud {
       return switch (vars.master_servant_link_state == null ? "" : vars.master_servant_link_state) {
          case "normal" -> base + " [G]";
          case "unstable" -> base + " [Y]";
-         case "broken", "independent_action" -> base + " [R]";
+         case "independent_action" -> base + " [Y]";
+         case "broken", "forced_death", "decaying" -> base + " [R]";
          default -> base;
       };
+   }
+
+   private static void drawMasterLossStatus(GuiGraphics gui, Minecraft minecraft,
+                                            TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      String state = vars.master_servant_survival_state == null ? "none" : vars.master_servant_survival_state;
+      if ("independent_action".equals(state)) {
+         drawScaledString(gui, minecraft,
+            Component.translatable("hud.typemoonworld.servant_card.independent_action", ticksToDuration(vars.master_servant_survival_ticks)),
+            x, y, 0xFFFFD54F, 0.58F);
+      } else if ("forced_death".equals(state)) {
+         drawScaledString(gui, minecraft,
+            Component.translatable("hud.typemoonworld.servant_card.forced_death", ticksToSeconds(vars.master_servant_survival_ticks)),
+            x, y, 0xFFFF5252, 0.58F);
+      } else if ("decaying".equals(state)) {
+         drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.decaying"),
+            x, y, 0xFFFF1744, 0.58F);
+      }
+   }
+
+   private static void drawMasterPosition(GuiGraphics gui, Minecraft minecraft,
+                                          TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      if (!vars.master_servant_master_position_valid || minecraft.player == null) return;
+      int masterX = (int)Math.floor(vars.master_servant_master_x);
+      int masterY = (int)Math.floor(vars.master_servant_master_y);
+      int masterZ = (int)Math.floor(vars.master_servant_master_z);
+      String currentDimension = minecraft.player.level().dimension().location().toString();
+      Component freshness = Component.translatable(vars.master_servant_master_position_online
+         ? "hud.typemoonworld.servant_card.master_position_live"
+         : "hud.typemoonworld.servant_card.master_position_last_known");
+      Component text;
+      if (currentDimension.equals(vars.master_servant_master_dimension)) {
+         double dx = vars.master_servant_master_x - minecraft.player.getX();
+         double dz = vars.master_servant_master_z - minecraft.player.getZ();
+         int distance = (int)Math.round(Math.sqrt(dx * dx + dz * dz));
+         text = Component.translatable("hud.typemoonworld.servant_card.master_position",
+            compassDirection(dx, dz), distance, masterX, masterY, masterZ, freshness);
+      } else {
+         text = Component.translatable("hud.typemoonworld.servant_card.master_position_dimension",
+            vars.master_servant_master_dimension, masterX, masterY, masterZ, freshness);
+      }
+      drawScaledString(gui, minecraft, text, x, y,
+         vars.master_servant_master_position_online ? 0xFF80CBC4 : 0xFFB0BEC5, 0.54F);
+   }
+
+   private static String compassDirection(double dx, double dz) {
+      if (dx * dx + dz * dz < 1.0) return "HERE";
+      String[] directions = {"E", "SE", "S", "SW", "W", "NW", "N", "NE"};
+      int index = Math.floorMod((int)Math.round(Math.atan2(dz, dx) / (Math.PI / 4.0)), directions.length);
+      return directions[index];
+   }
+
+   private static String ticksToDuration(int ticks) {
+      long seconds = Math.max(0L, ticks / 20L);
+      long days = seconds / 86400L;
+      long hours = seconds % 86400L / 3600L;
+      return days > 0 ? days + "d " + hours + "h" : hours + "h";
    }
 
    private static int effectiveNpCooldown(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -354,6 +414,25 @@ public class ServantCardHud {
          0xFFBFEFFF,
          0.58F
       );
+   }
+
+   private static void drawArashArrows(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int guiWidth, int y) {
+      if (!"arash".equals(vars.servant_card_id)) return;
+      int arrows = Math.max(0, Math.min(5000, vars.servant_card_arash_arrow_stock));
+      int panelWidth = 96;
+      int x = guiWidth - panelWidth - 6;
+      gui.fill(x - 3, y - 4, guiWidth - 5, y + 20, 0x66000000);
+      gui.renderOutline(x - 3, y - 4, panelWidth + 1, 24, arrows == 0 ? 0xFFFF4040 : 0xFFE0C080);
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.arash_arrows"),
+         x, y - 2, 0xFFFFE0A8, 0.62F);
+      int color = arrows == 0 ? 0xFFFF5555 : arrows < 50 ? 0xFFFFAA55 : 0xFFFFFFFF;
+      drawScaledString(gui, minecraft,
+         Component.translatable("hud.typemoonworld.servant_card.arash_arrow_count", arrows, 5000),
+         x, y + 8, color, 0.62F);
+      if (arrows == 0) {
+         drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.arash_empty"),
+            x, y + 16, 0xFFFF7777, 0.50F);
+      }
    }
 
    private static void drawScaledString(GuiGraphics gui, Minecraft minecraft, Component text, int x, int y, int color, float scale) {

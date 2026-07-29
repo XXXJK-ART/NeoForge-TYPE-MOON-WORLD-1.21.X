@@ -65,7 +65,7 @@
     "combat": "cautious",
     "starting_favor": 50.0
   },
-  "ai_config": "default_assassin",
+  "ai_config": "sasaki_kojiro_ai",
   "spawn_egg": {
     "primary": 2762330,
     "secondary": 1342177

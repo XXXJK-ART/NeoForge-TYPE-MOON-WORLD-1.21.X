@@ -33,6 +33,7 @@ public final class ServantCardShadowHassanSkills {
    private static final String TAG_BODY_INVISIBILITY_MANAGED = "ShadowHassanCardBodyInvisibilityManaged";
    private static final String TAG_NP_CONSUMED = "ShadowHassanCardNpConsumed";
    private static final String TAG_DARK_WARNING = "ShadowHassanCardDarkWarningTick";
+   private static final String TAG_EXPOSED_UNTIL = "ShadowHassanCardExposedUntil";
    private static final int PASSIVE_MANA_INTERVAL = 20;
    private static final double PASSIVE_MANA_RESTORE = 5.0;
 
@@ -52,6 +53,8 @@ public final class ServantCardShadowHassanSkills {
       player.getPersistentData().remove(TAG_BODY_INVISIBILITY_MANAGED);
       if (managedInvisibility) player.removeEffect(MobEffects.INVISIBILITY);
       player.getPersistentData().remove(TAG_DARK_WARNING);
+      player.getPersistentData().remove(TAG_EXPOSED_UNTIL);
+      if (managedInvisibility) player.setInvisible(false);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -76,7 +79,7 @@ public final class ServantCardShadowHassanSkills {
 
    public static boolean toggleConcealment(ServerPlayer player) {
       if (!isShadowHassan(player)) return false;
-      boolean concealed = !isConcealed(player);
+      boolean concealed = !wantsConcealment(player);
       setConcealed(player, concealed);
       player.displayClientMessage(Component.translatable(concealed
          ? "message.typemoonworld.shadow_hassan_card.concealment_on"
@@ -85,7 +88,10 @@ public final class ServantCardShadowHassanSkills {
    }
 
    public static void revealForAttack(ServerPlayer player) {
-      if (isShadowHassan(player) && isConcealed(player)) setConcealed(player, false);
+      if (!isShadowHassan(player) || !wantsConcealment(player)) return;
+      player.getPersistentData().putLong(TAG_EXPOSED_UNTIL,
+         player.level().getGameTime() + ShadowHassanRules.CONCEALMENT_EXPOSURE_TICKS);
+      maintainBodyInvisibility(player, false);
    }
 
    public static boolean canAttack(ServerPlayer player) {
@@ -162,6 +168,28 @@ public final class ServantCardShadowHassanSkills {
       return true;
    }
 
+   /** Ten full basic strikes, one every five ticks. */
+   public static boolean performSlash(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel) || !canAttack(player)) return false;
+      LivingEntity target = validBladeTarget(player, 8.0);
+      if (target == null) return false;
+      revealForAttack(player);
+      float damage = Math.max(1.0F, (float)player.getAttributeValue(
+         net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE));
+      for (int strike = 0; strike < 10; strike++) {
+         int delay = strike * 5;
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            if (!player.isAlive() || !target.isAlive() || player.level() != target.level()
+               || player.distanceToSqr(target) > 8.0 * 8.0
+               || target.getType().is(ShadowHassanDamageTypes.BLADE_IMMUNE)) return;
+            revealForAttack(player);
+            directStrike(player, target, damage);
+            if (player.level() instanceof ServerLevel currentLevel) spawnImpact(currentLevel, target, 12);
+         });
+      }
+      return true;
+   }
+
    public static boolean performShadowRetreat(ServerPlayer player) {
       if (!canUseShadow(player) || !(player.level() instanceof ServerLevel level)) return false;
       LivingEntity threat = ServantCardSkillUtils.findLookTarget(player, 20.0, 3.0);
@@ -186,7 +214,6 @@ public final class ServantCardShadowHassanSkills {
       setNoblePhantasmConsumed(player, true);
       ShadowHassanPursuitData.get(level.getServer()).addPursuit(level, player.position(), target);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      MasterServantLinkService.onServantDeath(player, vars);
       player.setHealth(0.0F);
       player.die(player.damageSources().genericKill());
       return true;
@@ -203,6 +230,11 @@ public final class ServantCardShadowHassanSkills {
    }
 
    public static boolean isConcealed(ServerPlayer player) {
+      return wantsConcealment(player)
+         && player.level().getGameTime() >= player.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
+   }
+
+   private static boolean wantsConcealment(ServerPlayer player) {
       return player.getPersistentData().getBoolean(TAG_CONCEALED);
    }
 
@@ -243,11 +275,20 @@ public final class ServantCardShadowHassanSkills {
 
    private static void setConcealed(ServerPlayer player, boolean concealed) {
       player.getPersistentData().putBoolean(TAG_CONCEALED, concealed);
+      player.getPersistentData().remove(TAG_EXPOSED_UNTIL);
       maintainBodyInvisibility(player, concealed);
    }
 
    private static void maintainBodyInvisibility(ServerPlayer player, boolean completeConcealment) {
-      ServantCardConcealmentHelper.maintain(player, 40, completeConcealment ? COMPLETE_CONCEALMENT_AMPLIFIER : 0);
+      player.setInvisible(completeConcealment);
+      if (completeConcealment) {
+         ServantCardConcealmentHelper.maintain(player, 40, COMPLETE_CONCEALMENT_AMPLIFIER);
+      } else {
+         MobEffectInstance invisibility = player.getEffect(MobEffects.INVISIBILITY);
+         if (invisibility != null && invisibility.getAmplifier() >= COMPLETE_CONCEALMENT_AMPLIFIER) {
+            player.removeEffect(MobEffects.INVISIBILITY);
+         }
+      }
    }
 
    private static boolean isNoblePhantasmConsumed(ServerPlayer player) {

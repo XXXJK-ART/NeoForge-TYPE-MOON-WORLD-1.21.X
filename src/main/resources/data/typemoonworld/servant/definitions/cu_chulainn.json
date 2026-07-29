@@ -78,7 +78,7 @@
     "special_principles": ["spare_canines"],
     "starting_favor": 55.0
   },
-  "ai_config": "default_lancer",
+  "ai_config": "cu_chulainn_ai",
   "spawn_egg": {
     "primary": 2842567,
     "secondary": 13160669

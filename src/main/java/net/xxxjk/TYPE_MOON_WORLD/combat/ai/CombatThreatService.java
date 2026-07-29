@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -53,6 +54,21 @@ public final class CombatThreatService {
          if (threat.endTick() >= now && threat.origin().distanceToSqr(point) <= rangeSqr) result.add(threat);
       }
       return result;
+   }
+
+   public static CombatThreat incoming(ServerLevel level, LivingEntity target, long now, long maximumTicks,
+                                       Predicate<CombatThreat> filter) {
+      if (level == null || target == null) return null;
+      CombatThreat best = null;
+      for (CombatThreat threat : nearby(level, target.position(), 64.0, now)) {
+         if (threat.sourceUuid().equals(target.getUUID()) || threat.ticksToImpact(now) > maximumTicks
+            || filter != null && !filter.test(threat)) continue;
+         boolean targeted = target.getUUID().equals(threat.targetUuid());
+         if (!targeted && !threat.threatens(target.getEyePosition(), target.getBbWidth() * 0.65)) continue;
+         if (best == null || threat.ticksToImpact(now) < best.ticksToImpact(now)
+            || threat.ticksToImpact(now) == best.ticksToImpact(now) && threat.danger() > best.danger()) best = threat;
+      }
+      return best;
    }
 
    @SubscribeEvent

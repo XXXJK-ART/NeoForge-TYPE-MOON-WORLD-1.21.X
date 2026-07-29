@@ -18,9 +18,13 @@ public final class ServantPursuitService {
 
    public static boolean shouldPursue(ServantEntity servant, LivingEntity target) {
       if (target == null || !target.isAlive() || servant.isPerformingAction()) return false;
+      ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(servant);
+      if (("support".equals(tactical.style()) || "sniper".equals(tactical.style())
+         || "disaster".equals(tactical.style())) && tactical.pursuitAggression() < 0.3) return false;
       double distance = servant.distanceTo(target);
       return distance > pursuitStartDistance(servant)
-         && distance <= ServantTargetingService.RETAIN_DISTANCE;
+         && distance <= Math.min(ServantTargetingService.RETAIN_DISTANCE,
+            Math.max(48.0, tactical.maximumRange() + tactical.pursuitAggression() * 80.0));
    }
 
    public static void pursue(ServantEntity servant, LivingEntity target, long now) {

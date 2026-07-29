@@ -181,6 +181,9 @@ class ArashResourcesTest {
       String cardSkills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       assertTrue(cardSkills.contains("player.setPos(anchorX, anchorY, anchorZ)"));
       assertTrue(cardSkills.contains("player.setDeltaMovement(Vec3.ZERO)"));
+      assertTrue(cardSkills.contains("data.putInt(REFUND_ARROWS, vars.servant_card_arash_arrow_stock)"));
+      assertTrue(cardSkills.contains("vars.servant_card_arash_arrow_stock = data.getInt(REFUND_ARROWS)"));
+      assertTrue(cardSkills.contains("data.remove(REFUND_ARROWS)"));
       String terrain = Files.readString(JAVA.resolve("world/terrain/DeferredTerrainDestruction.java"));
       assertTrue(terrain.contains("queueAdvancingCylinder"));
       assertTrue(terrain.contains("currentSide * currentSide + currentY * currentY > radiusSqr"));
@@ -207,6 +210,12 @@ class ArashResourcesTest {
       assertTrue(combat.contains("now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)"));
       assertTrue(combat.contains("lockAttackFacing"));
       assertTrue(combat.contains("arash.faceVector(offset)"));
+      assertTrue(combat.contains("consumeCraftedArrows(ArashCombatRules.ARROW_RAIN_COST)"));
+      assertTrue(combat.contains("consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)"));
+      String entity = Files.readString(JAVA.resolve("servant/entity/ArashEntity.java"));
+      assertTrue(entity.contains("INITIAL_ARROW_COUNT"));
+      assertTrue(entity.contains("tickArrowCreation"));
+      assertTrue(entity.contains("ARROW_CREATION_THRESHOLD"));
       String commonSkills = Files.readString(JAVA.resolve("servant/skill/CommonServantSkills.java"));
       assertTrue(!commonSkills.contains("ArashVirtualArrows"));
    }
@@ -225,12 +234,14 @@ class ArashResourcesTest {
       assertTrue(bow.contains("performBowChargedArrowNoCooldown"));
       assertTrue(!bow.contains("triggerAction(serverPlayer, slot)"));
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));
-      assertTrue(!arrow.contains("maxLifeTicks"));
-      assertTrue(!arrow.contains("tickCount >"));
+      assertTrue(arrow.contains("MAX_VISIBLE_FLIGHT_DISTANCE = 128.0"));
+      assertTrue(arrow.contains("distanceTraveled + this.getDeltaMovement().length()"));
       assertTrue(arrow.contains("addFlightParticle(GREEN, this.position())"));
-      assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_GREEN : CHARGED_GREEN, center)"));
-      assertTrue(arrow.contains("addParticle(particle, true"),
-         "Arash arrow trails must bypass the vanilla 32 block particle distance cutoff");
+      assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_RED : CHARGED_GREEN, center)"));
+      assertTrue(arrow.contains("addParticle(particle, false"),
+         "Arash arrow trails must stop outside the client's normal visible particle distance");
+      assertTrue(arrow.contains("LARGE_ENERGY ? HEAVY_RED : GREEN"));
+      assertTrue(entitiesForTest().contains("clientTrackingRange(8)"));
       assertTrue(arrow.contains("terrainDestructionRadius(this.getVariant())"));
       assertTrue(arrow.contains("queueExpandingSphere(level, impactPosition, terrainRadius, null)"));
       assertTrue(arrow.contains("terrain.advanceTo(terrainRadius)"));
@@ -240,6 +251,8 @@ class ArashResourcesTest {
       assertTrue(skills.contains("ArashAimHelper.findTargetNearPoint"));
       assertTrue(skills.contains("lookedAt.getLocation()"));
       assertTrue(skills.contains("ArashAimHelper.autoAimDirection"));
+      assertTrue(skills.contains("CROUCH_RAIN_ARROW_COUNT"));
+      assertTrue(skills.contains("CROUCH_RAIN_SPREAD_RADIUS"));
       assertTrue(combat.contains("ArashAimHelper.leadDirection"));
       assertTrue(combat.contains("ArashAimHelper.predictionOffset"));
       assertTrue(aim.contains("AUTO_AIM_ANGLE_DEGREES = 8.0"));
@@ -247,9 +260,19 @@ class ArashResourcesTest {
       assertTrue(aim.contains("target.getDeltaMovement()"));
       assertTrue(client.contains("ModItems.ARASH_BOW"));
       assertTrue(client.contains("float magnification = 2.0F + zoomSteps"));
+      String hud = Files.readString(JAVA.resolve("client/screens/ServantCardHud.java"));
+      assertTrue(hud.contains("drawArashArrows"));
+      assertTrue(hud.contains("servant_card_arash_arrow_stock"));
+      String variables = Files.readString(JAVA.resolve("network/TypeMoonWorldModVariables.java"));
+      assertTrue(variables.contains("servant_card_arash_arrow_stock"));
+      assertTrue(variables.contains("arashArrowStock"));
    }
 
    private static JsonObject json(String relative) throws Exception {
       return JsonParser.parseString(Files.readString(RESOURCES.resolve(relative))).getAsJsonObject();
+   }
+
+   private static String entitiesForTest() throws Exception {
+      return Files.readString(JAVA.resolve("init/ModEntities.java"));
    }
 }

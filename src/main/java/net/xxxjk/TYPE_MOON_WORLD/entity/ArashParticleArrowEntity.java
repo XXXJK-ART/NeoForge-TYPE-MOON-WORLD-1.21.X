@@ -29,13 +29,16 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    public static final int RAIN = 1;
    public static final int SMALL_ENERGY = 2;
    public static final int LARGE_ENERGY = 3;
+   public static final double MAX_VISIBLE_FLIGHT_DISTANCE = 128.0;
    private static final EntityDataAccessor<Float> DAMAGE = SynchedEntityData.defineId(ArashParticleArrowEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(ArashParticleArrowEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions GREEN = new DustParticleOptions(new Vector3f(0.2F, 1.0F, 0.42F), 1.15F);
    private static final DustParticleOptions CHARGED_GREEN = new DustParticleOptions(new Vector3f(0.2F, 1.0F, 0.42F), 2.4F);
-   private static final DustParticleOptions HEAVY_GREEN = new DustParticleOptions(new Vector3f(0.15F, 1.0F, 0.35F), 4.0F);
+   private static final DustParticleOptions HEAVY_RED = new DustParticleOptions(new Vector3f(1.0F, 0.04F, 0.015F), 4.0F);
+   private static final DustParticleOptions DARK_RED = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.0F), 2.6F);
    private static final DustParticleOptions GOLD = new DustParticleOptions(new Vector3f(1.0F, 0.78F, 0.08F), 2.2F);
    private static final DustParticleOptions WHITE = new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.8F);
+   private double distanceTraveled;
 
    public ArashParticleArrowEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -71,12 +74,19 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    @Override
    public void tick() {
       this.setNoGravity(this.getVariant() != RAIN);
-      if (this.level() instanceof ServerLevel level
-         && !level.hasChunkAt(BlockPos.containing(this.position().add(this.getDeltaMovement())))) {
-         this.discard();
-         return;
+      Vec3 previousPosition = this.position();
+      if (this.level() instanceof ServerLevel level) {
+         Vec3 nextPosition = previousPosition.add(this.getDeltaMovement());
+         if (this.distanceTraveled + this.getDeltaMovement().length() > MAX_VISIBLE_FLIGHT_DISTANCE
+            || !level.hasChunkAt(BlockPos.containing(nextPosition))) {
+            this.discard();
+            return;
+         }
       }
       super.tick();
+      if (!this.level().isClientSide && !this.isRemoved()) {
+         this.distanceTraveled += previousPosition.distanceTo(this.position());
+      }
       if (this.level().isClientSide) {
          spawnFlightTrail();
       }
@@ -103,20 +113,21 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       for (int layer = 0; layer < trailLayers; layer++) {
          Vec3 center = position.subtract(forward.scale(layer * (heavy ? 0.26 : 0.2)));
          double layerRadius = radius * (1.0 - layer / (double)(trailLayers + 2));
-         addFlightParticle(heavy ? HEAVY_GREEN : CHARGED_GREEN, center);
-         addFlightParticle(layer % 2 == 0 ? WHITE : GOLD, center);
+         addFlightParticle(heavy ? HEAVY_RED : CHARGED_GREEN, center);
+         addFlightParticle(heavy ? DARK_RED : layer % 2 == 0 ? WHITE : GOLD, center);
          for (int i = 0; i < ringPoints; i++) {
             double angle = Math.PI * 2.0 * i / ringPoints + this.tickCount * 0.22 + layer * 0.35;
             Vec3 point = center.add(side.scale(Math.cos(angle) * layerRadius)).add(up.scale(Math.sin(angle) * layerRadius));
-            addFlightParticle(i % 3 == 0 ? GOLD : heavy ? HEAVY_GREEN : CHARGED_GREEN, point);
+            addFlightParticle(heavy ? (i % 3 == 0 ? DARK_RED : HEAVY_RED)
+               : i % 3 == 0 ? GOLD : CHARGED_GREEN, point);
          }
       }
-      addFlightParticle(ParticleTypes.END_ROD, position);
+      addFlightParticle(heavy ? ParticleTypes.FLAME : ParticleTypes.END_ROD, position);
       if (heavy) addFlightParticle(ParticleTypes.ELECTRIC_SPARK, position);
    }
 
    private void addFlightParticle(net.minecraft.core.particles.ParticleOptions particle, Vec3 position) {
-      this.level().addParticle(particle, true, position.x, position.y, position.z, 0.0, 0.0, 0.0);
+      this.level().addParticle(particle, false, position.x, position.y, position.z, 0.0, 0.0, 0.0);
    }
 
    @Override
@@ -145,11 +156,13 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
          }
          int count = this.getVariant() == LARGE_ENERGY ? 120 : this.getVariant() == SMALL_ENERGY ? 70 : 14;
          double spread = this.getVariant() == LARGE_ENERGY ? 1.1 : this.getVariant() == SMALL_ENERGY ? 0.65 : 0.35;
-         level.sendParticles(this.getVariant() == LARGE_ENERGY ? HEAVY_GREEN : GREEN,
+         level.sendParticles(this.getVariant() == LARGE_ENERGY ? HEAVY_RED : GREEN,
             this.getX(), this.getY(), this.getZ(), count, spread, spread, spread, 0.12);
          if (this.getVariant() == SMALL_ENERGY || this.getVariant() == LARGE_ENERGY) {
-            level.sendParticles(GOLD, this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.1);
-            level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.15);
+            level.sendParticles(this.getVariant() == LARGE_ENERGY ? DARK_RED : GOLD,
+               this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.1);
+            level.sendParticles(this.getVariant() == LARGE_ENERGY ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
+               this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.15);
          }
          level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(),
             this.getVariant() == LARGE_ENERGY ? 3 : 1, 0, 0, 0, 0);
@@ -162,6 +175,7 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       super.addAdditionalSaveData(tag);
       tag.putFloat("Damage", this.entityData.get(DAMAGE));
       tag.putInt("Variant", this.getVariant());
+      tag.putDouble("DistanceTraveled", this.distanceTraveled);
    }
 
    @Override
@@ -169,5 +183,6 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       super.readAdditionalSaveData(tag);
       this.entityData.set(DAMAGE, tag.getFloat("Damage"));
       this.entityData.set(VARIANT, tag.getInt("Variant"));
+      this.distanceTraveled = tag.getDouble("DistanceTraveled");
    }
 }
