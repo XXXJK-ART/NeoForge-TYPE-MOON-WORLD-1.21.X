@@ -103,6 +103,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatKnowledgeService;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
@@ -460,6 +462,12 @@ public class CommonEvents {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
+               if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(player, event.getSource())) {
+                  CombatKnowledgeService.observeProjectileNegation(player, (Projectile)directEntity);
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  return;
+               }
                if (vars.servant_card_transformed && "enkidu".equals(vars.servant_card_id)
                   && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardEnkiduSkills.isEnumaElishActive(player)
                   && !fanaticDefensePiercing
@@ -857,11 +865,8 @@ public class CommonEvents {
       }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
-         if (!fanaticDefensePiercing && data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
-            && !CuChulainnCombatHelper.isMovementRestricted(servant)
-            && !event.getSource().is(DamageTypeTags.IS_EXPLOSION)
-            && event.getSource().getDirectEntity() instanceof Projectile projectile
-            && projectile.getOwner() != servant) {
+         if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())
+            && event.getSource().getDirectEntity() instanceof Projectile projectile) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.END_ROD,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
@@ -870,6 +875,7 @@ public class CommonEvents {
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
                   12, 0.3, 0.4, 0.3, 0.03);
             }
+            CombatKnowledgeService.observeProjectileNegation(servant, projectile);
             event.setCanceled(true);
             return;
          }

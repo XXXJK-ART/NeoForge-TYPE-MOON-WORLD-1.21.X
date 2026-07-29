@@ -16,11 +16,20 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBlackboard;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatCapabilitySnapshot;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCapabilityResolver;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 
 /** Mid-range pursuit and route interception without teleporting or loading new chunks. */
 public final class ServantManeuverService {
    public static final double MAX_NORMAL_ENGAGEMENT_DISTANCE = 48.0;
    private static final double MIN_MANEUVER_DISTANCE = 5.5;
+   private static final String SIDE_REENGAGE_START = "TypeMoonSideReengageStart";
+   private static final String SIDE_REENGAGE_FAILURES = "TypeMoonSideReengageFailures";
+   private static final String SIDE_REENGAGE_TARGET = "TypeMoonSideReengageTarget";
+   private static final String SIDE_REENGAGE_COOLDOWN = "TypeMoonSideReengageCooldown";
 
    private ServantManeuverService() { }
 
@@ -31,8 +40,13 @@ public final class ServantManeuverService {
       boolean airborneIntercept = !target.onGround()
          && Math.abs(target.getY() - servant.getY()) >= 1.5
          && tactical.verticalMobility() >= 0.35;
+      CombatCapabilitySnapshot capability = ServantCapabilityResolver.resolve(servant);
+      boolean rangedPressure = AiBrain.blackboard(servant).opponent(target.getUUID()).knows(FactType.PROJECTILE_PRESSURE);
+      boolean curvedApproach = rangedPressure && (capability.has(FactType.GAP_CLOSE) || capability.has(FactType.PURSUIT))
+         && distance > tactical.preferredRange() + 6.0;
       return distance >= MIN_MANEUVER_DISTANCE && distance <= MAX_NORMAL_ENGAGEMENT_DISTANCE
          && (ServantCombatMotionService.canPursue(servant, target)
+             || curvedApproach
              || ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.MELEE
                 && distance >= 10.0
                 && (target.getDeltaMovement().horizontalDistanceSqr() >= 0.08 || airborneIntercept));
@@ -72,6 +86,73 @@ public final class ServantManeuverService {
       boolean burst = !moved && servant.onGround() && servant.distanceTo(target) <= 24.0
          && trySafeBurst(servant, destination, agility, now, 0.25);
       return moved || burst;
+   }
+
+   public static boolean trySideForwardReengage(ServantEntity servant, LivingEntity target,
+                                                 ServantAiDefinition.Tactical tactical,
+                                                 AiBlackboard blackboard, long now) {
+      if (servant == null || target == null || tactical == null || !target.isAlive()
+         || ServantCombatMotionService.isRecovering(servant) || !ServantCapabilityResolver.isMobile(servant)) return false;
+      CombatCapabilitySnapshot capability = ServantCapabilityResolver.resolve(servant);
+      int agility = ServantCombatFormulas.agilityStep(servant.getDefinition() == null
+         ? null : servant.getDefinition().parameters());
+      boolean agileMelee = agility >= 4 && (capability.has(FactType.GAP_CLOSE) || capability.has(FactType.PURSUIT));
+      boolean knownRanged = blackboard != null
+         && blackboard.opponent(target.getUUID()).knows(FactType.PROJECTILE_PRESSURE);
+      double distance = servant.distanceTo(target);
+      if (!agileMelee || distance <= tactical.preferredRange() + 6.0 || !knownRanged) {
+         clearSideReengage(servant);
+         if (distance <= tactical.preferredRange() + 6.0) servant.getPersistentData().remove(SIDE_REENGAGE_COOLDOWN);
+         return false;
+      }
+
+      var data = servant.getPersistentData();
+      if (now < data.getLong(SIDE_REENGAGE_COOLDOWN)) return false;
+      if (!data.hasUUID(SIDE_REENGAGE_TARGET) || !target.getUUID().equals(data.getUUID(SIDE_REENGAGE_TARGET))) {
+         data.putUUID(SIDE_REENGAGE_TARGET, target.getUUID());
+         data.putLong(SIDE_REENGAGE_START, now);
+         data.putInt(SIDE_REENGAGE_FAILURES, 0);
+      }
+      if (now - data.getLong(SIDE_REENGAGE_START) >= 24L || data.getInt(SIDE_REENGAGE_FAILURES) >= 2) {
+         data.putLong(SIDE_REENGAGE_COOLDOWN, now + 40L);
+         clearSideReengage(servant);
+         return false;
+      }
+
+      Vec3 toward = target.position().subtract(servant.position()).multiply(1.0, 0.0, 1.0);
+      if (toward.lengthSqr() < 1.0E-4) return false;
+      int sideSign = ((servant.getId() + (int)(now / 8L)) & 1) == 0 ? 1 : -1;
+      double[] angles = {45.0 * sideSign, 70.0 * sideSign, -45.0 * sideSign, -70.0 * sideSign};
+      double stride = Math.min(Math.max(6.0, tactical.repositionDistance()), Math.max(6.0, distance - tactical.preferredRange()));
+      for (double angle : angles) {
+         Vec3 direction = sideForwardDirection(toward, angle);
+         Vec3 safe = findSafeDestination(servant, servant.position().add(direction.scale(stride)));
+         if (safe == null) continue;
+         boolean moved = ServantNavigationHelper.moveToPositionThrottled(
+            servant, safe, Math.min(2.1, 1.45 + agility * 0.1), now, 3, 0.4, "ServantSideForwardReengage");
+         if (moved) {
+            servant.getLookControl().setLookAt(target, 55.0F, 40.0F);
+            servant.setSprinting(true);
+            return true;
+         }
+      }
+      data.putInt(SIDE_REENGAGE_FAILURES, data.getInt(SIDE_REENGAGE_FAILURES) + 1);
+      return false;
+   }
+
+   public static Vec3 sideForwardDirection(Vec3 towardTarget, double degrees) {
+      Vec3 horizontal = towardTarget == null ? Vec3.ZERO : towardTarget.multiply(1.0, 0.0, 1.0);
+      if (horizontal.lengthSqr() < 1.0E-4) return Vec3.ZERO;
+      horizontal = horizontal.normalize();
+      double radians = Math.toRadians(degrees);
+      return new Vec3(horizontal.x * Math.cos(radians) - horizontal.z * Math.sin(radians), 0.0,
+         horizontal.x * Math.sin(radians) + horizontal.z * Math.cos(radians)).normalize();
+   }
+
+   private static void clearSideReengage(ServantEntity servant) {
+      servant.getPersistentData().remove(SIDE_REENGAGE_START);
+      servant.getPersistentData().remove(SIDE_REENGAGE_FAILURES);
+      servant.getPersistentData().remove(SIDE_REENGAGE_TARGET);
    }
 
    public static boolean approachForAction(ServantEntity servant, LivingEntity target, AiActionDescriptor action,

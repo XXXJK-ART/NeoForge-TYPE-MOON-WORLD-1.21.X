@@ -89,6 +89,8 @@ public final class ServantActionPlanner {
             }
          }
       }
+      double matchup = CombatMatchupEvaluator.actionMultiplier(entity, target, action, memory);
+      score += (matchup - 1.0) * 55.0;
       return score;
    }
 }

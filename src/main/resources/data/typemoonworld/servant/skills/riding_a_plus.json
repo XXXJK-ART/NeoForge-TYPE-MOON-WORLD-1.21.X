@@ -14,5 +14,9 @@
         "armor_bonus": 0.2
       }
     }
-  ]
+  ],
+  "ai": {"facts": [
+    {"type": "gap_close", "strength": 0.8},
+    {"type": "pursuit", "strength": 0.75}
+  ]}
 }

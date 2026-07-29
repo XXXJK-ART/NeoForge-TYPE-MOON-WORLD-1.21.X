@@ -13,5 +13,6 @@
         "certain_hit_or_death_chance": 0.95
       }
     }
-  ]
+  ],
+  "ai": {"facts": [{"type": "prediction", "strength": 0.95}]}
 }

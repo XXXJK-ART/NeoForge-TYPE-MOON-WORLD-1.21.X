@@ -28,6 +28,16 @@ class MasterServantLinkRulesTest {
    }
 
    @Test
+   void passiveManaRegenDistinguishesNativeContractedAndMasterlessServants() {
+      assertEquals(4.0, ServantCardManaService.passiveRegenForContractState(
+         MasterServantLinkService.SERVANT_CONTRACT_NATIVE, 4.0, 1.5), 1.0E-9);
+      assertEquals(1.5, ServantCardManaService.passiveRegenForContractState(
+         MasterServantLinkService.SERVANT_CONTRACT_CONTRACTED, 4.0, 1.5), 1.0E-9);
+      assertEquals(0.0, ServantCardManaService.passiveRegenForContractState(
+         MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS, 4.0, 1.5), 1.0E-9);
+   }
+
+   @Test
    void playerContractsRequireExactlyOneMasterCardAndOneServantCard() {
       assertTrue(MasterStateManager.isPlayerCardContractPair(true, false, false, true));
       assertFalse(MasterStateManager.isPlayerCardContractPair(false, false, false, true));

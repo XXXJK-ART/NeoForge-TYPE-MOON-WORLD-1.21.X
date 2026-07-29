@@ -34,6 +34,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
 
 public final class HostileTargetingModule implements ServantAiModule {
    private static final String LAST_TARGET_SCAN_TICK = "ServantLastTargetScanTick";
@@ -218,6 +220,9 @@ public final class HostileTargetingModule implements ServantAiModule {
       if (target.getHealth() < target.getMaxHealth() * 0.35F && principle != PrincipleAxis.ORDERLY) {
          score += 15.0;
       }
+
+      score += CombatMatchupEvaluator.targetAdjustment(entity, target,
+         AiBrain.blackboard(entity).opponent(target.getUUID()));
 
       return score;
    }

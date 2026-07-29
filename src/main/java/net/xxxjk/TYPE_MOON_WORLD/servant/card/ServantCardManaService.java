@@ -39,15 +39,18 @@ public final class ServantCardManaService {
       ServerPlayer master = getMaster(player, vars);
       boolean linked = MasterServantLinkService.canUseMasterMana(player, vars, master);
       boolean medeaException = "medea".equals(vars.servant_card_id);
+      double linkedRegen = 0.0;
       if (linked && master != null) {
          if (medeaException) {
-            expectedRegen = regenPerSecondFor(vars.servant_card_id)
+            linkedRegen = regenPerSecondFor(vars.servant_card_id)
                * Math.max(0.0, 1.0 - MasterServantLinkService.distanceDecay(player, vars, master));
          } else {
             TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            expectedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
+            linkedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
          }
       }
+      expectedRegen = passiveRegenForContractState(vars.servant_card_contract_state,
+         regenPerSecondFor(vars.servant_card_id), linkedRegen);
       if (player.hasEffect(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
          expectedRegen *= 0.5;
       }
@@ -69,6 +72,14 @@ public final class ServantCardManaService {
          case C -> 180.0;
          case D -> 240.0;
          case E -> 300.0;
+      };
+   }
+
+   static double passiveRegenForContractState(String state, double nativeRegen, double linkedRegen) {
+      return switch (MasterServantLinkService.sanitizeServantContractState(state)) {
+         case MasterServantLinkService.SERVANT_CONTRACT_NATIVE -> Math.max(0.0, nativeRegen);
+         case MasterServantLinkService.SERVANT_CONTRACT_CONTRACTED -> Math.max(0.0, linkedRegen);
+         default -> 0.0;
       };
    }
 

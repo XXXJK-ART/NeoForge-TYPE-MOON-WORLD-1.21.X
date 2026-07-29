@@ -15,6 +15,7 @@ import net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile;
 import net.xxxjk.typemoonworld.api.AiCombatStyle;
 import net.xxxjk.typemoonworld.api.AiTacticProfile;
 import org.junit.jupiter.api.Test;
+import net.minecraft.world.phys.Vec3;
 
 class ServantTacticalResourcesTest {
    private static final Path RESOURCES = Path.of("src/main/resources/data/typemoonworld/servant");
@@ -51,5 +52,15 @@ class ServantTacticalResourcesTest {
       assertEquals(0.7, tactical.verticalMobility());
       assertEquals(0.9, tactical.collateralCaution());
       assertEquals("medium", tactical.maximumTerrainImpact());
+   }
+
+   @Test
+   void sideForwardReengagementAlwaysAdvancesAndStrafes() {
+      Vec3 toward = new Vec3(1.0, 0.0, 0.0);
+      for (double angle : new double[]{45.0, -45.0, 70.0, -70.0}) {
+         Vec3 direction = ServantManeuverService.sideForwardDirection(toward, angle);
+         assertTrue(direction.dot(toward) > 0.0, "must retain a forward component");
+         assertTrue(Math.abs(direction.z) > 0.5, "must retain a lateral component");
+      }
    }
 }

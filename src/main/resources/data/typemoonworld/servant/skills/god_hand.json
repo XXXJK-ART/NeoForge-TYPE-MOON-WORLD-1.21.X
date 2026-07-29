@@ -23,5 +23,10 @@
       "effect_type": "multi_kill",
       "params": { "strong_attack_lives_cost": 2, "extra_strong_lives_cost": 3 }
     }
-  ]
+  ],
+  "ai": {"facts": [
+    {"type": "damage_threshold", "strength": 1.0},
+    {"type": "revive", "strength": 1.0},
+    {"type": "adaptive_defense", "strength": 1.0}
+  ]}
 }

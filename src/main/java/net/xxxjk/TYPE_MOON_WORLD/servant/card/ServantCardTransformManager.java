@@ -85,6 +85,7 @@ public final class ServantCardTransformManager {
       BodyTrainingService.stashForServantCard(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       MasterServantLinkService.clearMasterPosition(vars);
       MasterServantLinkService.clearSurvival(vars);
       vars.servant_card_last_combat_tick = player.level().getGameTime();
@@ -169,6 +170,7 @@ public final class ServantCardTransformManager {
       clearServantCardTags(player);
       vars.servant_card_id = "";
       vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       vars.servant_card_mana = 0.0;
       vars.servant_card_max_mana = 0.0;
       vars.servant_card_mana_regen = 0.0;

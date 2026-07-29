@@ -7,9 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactCondition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 import org.junit.jupiter.api.Test;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -184,5 +189,57 @@ class AiCoreTest {
       assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 0.0, 0.2, 0.0F));
       assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 2.0, 0.0, 0.0F));
       assertTrue(ServantPlannedActionExecutor.qualifiesAntiAirTarget(false, false, 0.0, 0.0, 1.0F));
+   }
+
+   @Test
+   void servantSkillAiFactsAreOptionalAndOldConstructorRemainsCompatible() {
+      String legacy = "{\"id\":\"legacy\",\"type\":\"passive\",\"effects\":[]}";
+      ServantSkillDefinition oldJson = ServantSkillDefinition.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(legacy)).result().orElseThrow();
+      assertTrue(oldJson.ai().facts().isEmpty());
+
+      ServantSkillDefinition oldJava = new ServantSkillDefinition("legacy", "Legacy", "Legacy",
+         ServantSkillDefinition.SkillType.PASSIVE, 0, 0, 0, List.of());
+      assertTrue(oldJava.ai().facts().isEmpty());
+
+      String aware = "{\"id\":\"aware\",\"ai\":{\"facts\":[{\"type\":\"projectile_negation\","
+         + "\"strength\":1.0,\"requires\":[\"mobile\"],\"bypassed_by\":[\"explosion\",\"piercing\"]}]}}";
+      var fact = ServantSkillDefinition.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(aware))
+         .result().orElseThrow().ai().facts().getFirst();
+      assertEquals(FactType.PROJECTILE_NEGATION, fact.type());
+      assertEquals(List.of(FactCondition.MOBILE), fact.conditions());
+      assertEquals(List.of(FactBypass.EXPLOSION, FactBypass.PIERCING), fact.bypassedBy());
+   }
+
+   @Test
+   void learnedFactsAreBoundedAndExpireWithOpponentMemory() {
+      AiBlackboard board = new AiBlackboard();
+      UUID opponent = UUID.randomUUID();
+      for (FactType type : FactType.values()) board.revealFact(opponent, type, 0.8, 100L);
+      assertTrue(board.opponent(opponent).knownFacts().size() <= AiBlackboard.MAX_FACTS_PER_OPPONENT);
+      assertTrue(board.opponent(opponent).knows(FactType.PROJECTILE_NEGATION));
+      board.beginTick(701L);
+      assertEquals(AiBlackboard.OpponentSnapshot.EMPTY, board.opponent(opponent));
+   }
+
+   @Test
+   void learnedProjectileNegationChangesChannelsButControlRestoresShooting() {
+      String projectileJson = "{\"id\":\"typemoonworld:test/shot\",\"tags\":[\"projectile\"]}";
+      String controlJson = "{\"id\":\"typemoonworld:test/bind\",\"tags\":[\"control\",\"area\"]}";
+      AiActionDescriptor projectile = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(projectileJson)).result().orElseThrow();
+      AiActionDescriptor control = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(controlJson)).result().orElseThrow();
+      AiBlackboard.OpponentSnapshot known = new AiBlackboard.OpponentSnapshot(
+         1L, 8.0, 0.0, 1, 1, 1, Map.of(FactType.PROJECTILE_NEGATION, 1.0));
+
+      double mobileShot = CombatMatchupEvaluator.learnedDefenseMultiplier(projectile, known, true);
+      double bind = CombatMatchupEvaluator.learnedDefenseMultiplier(control, known, true);
+      double immobilizedShot = CombatMatchupEvaluator.learnedDefenseMultiplier(projectile, known, false);
+      assertTrue(mobileShot < 0.5);
+      assertTrue(bind > 1.0);
+      assertTrue(immobilizedShot > 1.0);
+      assertTrue(mobileShot >= CombatMatchupEvaluator.MIN_ACTION_MULTIPLIER);
+      assertTrue(bind <= CombatMatchupEvaluator.MAX_ACTION_MULTIPLIER);
    }
 }

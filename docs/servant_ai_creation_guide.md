@@ -646,3 +646,20 @@ src/main/resources/assets/typemoonworld/animations/xxx.animation.json
 - 能复用 GEO 模型和动画
 
 后面再加 AI 专属逻辑、领域、特攻和华丽特效，就会顺很多。
+
+## 17. 能力事实与战斗认知
+
+技能定义可以声明可选的 `ai.facts`。能力事实只描述已经由效果或 Helper 实现的能力，不能单独赋予伤害、免疫、位移或控制效果。
+
+```json
+"ai": {
+  "facts": [{
+    "type": "projectile_negation",
+    "strength": 1.0,
+    "requires": ["mobile"],
+    "bypassed_by": ["immobilize", "explosion", "piercing"]
+  }]
+}
+```
+
+自身 AI 立即读取完整技能事实；敌方隐藏被动只在技能前摇、免疫触发或实际战斗结果中被确认。旧技能省略 `ai` 时保持兼容，`magic_resistance`、`revive`、`adaptive_defense` 等通用效果会自动推导。独特被动应显式配置事实与真实失效条件。

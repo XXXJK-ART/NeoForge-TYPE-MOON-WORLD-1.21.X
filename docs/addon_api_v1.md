@@ -174,3 +174,9 @@ read `DefinitionSnapshotStore.current()` and never trust local-only definitions.
 `DataProvider.saveStable`. `test-addon/` is a standalone fixture covering generated servants,
 cards, magic, AI, projection, command spells, projectiles and GUI controls. Built-in GameTests
 verify that the Codec registries are populated and magic definitions are available after reload.
+
+Skill JSON may optionally declare `ai.facts`. Facts influence bounded action utility, target
+matchup scoring, positioning, and defensive intent; they never implement the described effect.
+Old JSON and the eight-argument `ServantSkillDefinition` constructor remain compatible. Addons
+should declare facts only for effects their executor or combat helper actually enforces, including
+the matching `requires` and `bypassed_by` conditions for conditional defenses.

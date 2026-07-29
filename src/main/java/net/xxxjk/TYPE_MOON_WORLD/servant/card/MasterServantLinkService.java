@@ -38,6 +38,9 @@ public final class MasterServantLinkService {
    public static final String SURVIVAL_FORCED_DEATH = "forced_death";
    public static final String SURVIVAL_INDEPENDENT = "independent_action";
    public static final String SURVIVAL_DECAYING = "decaying";
+   public static final String SERVANT_CONTRACT_NATIVE = "native";
+   public static final String SERVANT_CONTRACT_CONTRACTED = "contracted";
+   public static final String SERVANT_CONTRACT_MASTERLESS = "masterless";
    public static final int FORCED_DEATH_TICKS = 200;
    public static final float DECAY_DAMAGE_PER_SECOND = 5.0F;
 
@@ -122,11 +125,14 @@ public final class MasterServantLinkService {
 
    public static void repairPlayerLink(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (player == null || vars == null || player.getServer() == null) return;
+      boolean hadServantContractReference = !isBlank(vars.servant_card_master_uuid);
+      vars.servant_card_contract_state = sanitizeServantContractState(vars.servant_card_contract_state);
       vars.master_servant_uuid = sanitizeUuid(vars.master_servant_uuid);
       vars.servant_card_master_uuid = sanitizeUuid(vars.servant_card_master_uuid);
       if (!vars.master_active) vars.master_servant_uuid = "";
       if (!vars.servant_card_transformed) {
          vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_state = SERVANT_CONTRACT_NATIVE;
          clearSurvival(vars);
          clearMasterPosition(vars);
       } else if (SURVIVAL_DECAYING.equals(vars.master_servant_survival_state)) {
@@ -160,9 +166,18 @@ public final class MasterServantLinkService {
             }
          }
       }
-      if (vars.servant_card_transformed && isBlank(vars.servant_card_master_uuid)
-         && SURVIVAL_NONE.equals(vars.master_servant_survival_state)) {
-         clearMasterPosition(vars);
+      if (vars.servant_card_transformed) {
+         if (!isBlank(vars.servant_card_master_uuid)) {
+            vars.servant_card_contract_state = SERVANT_CONTRACT_CONTRACTED;
+         } else if (hadServantContractReference
+            || SERVANT_CONTRACT_CONTRACTED.equals(vars.servant_card_contract_state)
+            || isSurvivalActive(vars)) {
+            vars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
+         }
+         if (isBlank(vars.servant_card_master_uuid)
+            && SURVIVAL_NONE.equals(vars.master_servant_survival_state)) {
+            clearMasterPosition(vars);
+         }
       }
    }
 
@@ -207,6 +222,7 @@ public final class MasterServantLinkService {
                masterId, servant.getUUID(), UnlinkReason.SERVANT_LOST);
          }
          servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
          clearSnapshot(servantVars);
          clearMasterPosition(servantVars);
          clearSurvival(servantVars);
@@ -252,6 +268,7 @@ public final class MasterServantLinkService {
       }
       if (servantVars != null && (master == null || master.getUUID().toString().equals(servantVars.servant_card_master_uuid))) {
          servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
          clearSnapshot(servantVars);
          clearMasterPosition(servantVars);
       }
@@ -274,6 +291,7 @@ public final class MasterServantLinkService {
       if (reason == UnlinkReason.MASTER_LOST) {
          if (!partnerId.toString().equals(vars.servant_card_master_uuid)) return;
          vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
          clearSnapshot(vars);
          clearMasterPosition(vars);
          if (vars.servant_card_transformed) startMasterLossSurvival(player, vars);
@@ -313,6 +331,13 @@ public final class MasterServantLinkService {
       return vars != null && !SURVIVAL_NONE.equals(sanitizeSurvival(vars.master_servant_survival_state));
    }
 
+   public static String sanitizeServantContractState(String state) {
+      if (SERVANT_CONTRACT_CONTRACTED.equals(state) || SERVANT_CONTRACT_MASTERLESS.equals(state)) {
+         return state;
+      }
+      return SERVANT_CONTRACT_NATIVE;
+   }
+
    private static void tickBacklash(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (vars.master_servant_backlash_ticks > 0) {
          vars.master_servant_backlash_ticks--;
@@ -339,6 +364,7 @@ public final class MasterServantLinkService {
       ServerPlayer master = getLinkedMaster(servant, vars);
       LinkInfo info = info(servant, vars, master);
       if (info.linked()) {
+         vars.servant_card_contract_state = SERVANT_CONTRACT_CONTRACTED;
          clearSurvival(vars);
          servant.getPersistentData().remove("MasterServantIndependentActionState");
          vars.master_servant_link_state = info.state();

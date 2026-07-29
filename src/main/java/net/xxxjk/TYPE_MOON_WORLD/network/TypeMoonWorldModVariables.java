@@ -274,6 +274,7 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_transformed = original.servant_card_transformed;
             clone.servant_card_id = original.servant_card_id;
             clone.servant_card_master_uuid = original.servant_card_master_uuid;
+            clone.servant_card_contract_state = original.servant_card_contract_state;
             clone.servant_card_mana = original.servant_card_mana;
             clone.servant_card_max_mana = original.servant_card_max_mana;
             clone.servant_card_mana_regen = original.servant_card_mana_regen;
@@ -999,6 +1000,7 @@ public class TypeMoonWorldModVariables {
       public boolean servant_card_transformed = false;
       public String servant_card_id = "";
       public String servant_card_master_uuid = "";
+      public String servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       public double servant_card_mana = 0.0;
       public double servant_card_max_mana = 0.0;
       public double servant_card_mana_regen = 0.0;
@@ -2046,6 +2048,8 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("servant_card_transformed", this.servant_card_transformed);
          nbt.putString("servant_card_id", this.servant_card_id == null ? "" : this.servant_card_id);
          nbt.putString("servant_card_master_uuid", this.servant_card_master_uuid == null ? "" : this.servant_card_master_uuid);
+         nbt.putString("servant_card_contract_state",
+            MasterServantLinkService.sanitizeServantContractState(this.servant_card_contract_state));
          nbt.putDouble("servant_card_mana", this.servant_card_mana);
          nbt.putDouble("servant_card_max_mana", this.servant_card_max_mana);
          nbt.putDouble("servant_card_mana_regen", this.servant_card_mana_regen);
@@ -2406,6 +2410,9 @@ public class TypeMoonWorldModVariables {
          this.servant_card_transformed = nbt.getBoolean("servant_card_transformed");
          this.servant_card_id = nbt.contains("servant_card_id") ? nbt.getString("servant_card_id") : "";
          this.servant_card_master_uuid = nbt.contains("servant_card_master_uuid") ? nbt.getString("servant_card_master_uuid") : "";
+         this.servant_card_contract_state = nbt.contains("servant_card_contract_state")
+            ? MasterServantLinkService.sanitizeServantContractState(nbt.getString("servant_card_contract_state"))
+            : "";
          this.servant_card_mana = nbt.getDouble("servant_card_mana");
          this.servant_card_max_mana = nbt.getDouble("servant_card_max_mana");
          this.servant_card_mana_regen = nbt.getDouble("servant_card_mana_regen");
@@ -2477,6 +2484,15 @@ public class TypeMoonWorldModVariables {
          this.master_servant_survival_state = nbt.contains("master_servant_survival_state") ? nbt.getString("master_servant_survival_state") : "none";
          this.master_servant_survival_ticks = nbt.contains("master_servant_survival_state")
             ? Math.max(0, nbt.getInt("master_servant_survival_ticks")) : 0;
+         if (!nbt.contains("servant_card_contract_state")) {
+            if (!this.servant_card_master_uuid.isBlank()) {
+               this.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_CONTRACTED;
+            } else if (!MasterServantLinkService.SURVIVAL_NONE.equals(this.master_servant_survival_state)) {
+               this.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS;
+            } else {
+               this.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
+            }
+         }
          this.master_servant_backlash_ticks = nbt.contains("master_servant_backlash_ticks") ? nbt.getInt("master_servant_backlash_ticks") : 0;
          this.master_servant_master_position_valid = nbt.getBoolean("master_servant_master_position_valid");
          this.master_servant_master_position_online = nbt.getBoolean("master_servant_master_position_online");

@@ -182,6 +182,7 @@ public final class MasterStateManager {
       if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
       masterVars.master_servant_uuid = servant.getUUID().toString();
       servantVars.servant_card_master_uuid = master.getUUID().toString();
+      servantVars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_CONTRACTED;
       MasterServantLinkService.clearSurvival(servantVars);
       MasterServantLinkService.captureMasterPosition(master, servantVars);
       servant.getPersistentData().remove("MasterServantIndependentActionState");
@@ -203,6 +204,7 @@ public final class MasterStateManager {
          }
       }
       servantVars.servant_card_master_uuid = "";
+      servantVars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS;
       MasterServantLinkService.clearMasterPosition(servantVars);
    }
 
@@ -409,6 +411,7 @@ public final class MasterStateManager {
       if (servant instanceof ServerPlayer servantPlayer) {
          TypeMoonWorldModVariables.PlayerVariables servantVars = servantPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS;
          servantVars.syncPlayerVariables(servantPlayer);
       } else if (servant instanceof ServantEntity entityServant) {
          entityServant.unbindMaster();

@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 
 public final class ServantCardCuChulainnSkills {
    private static final ResourceLocation CU_TIWAZ_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_cu_tiwaz_attack");
@@ -42,6 +43,7 @@ public final class ServantCardCuChulainnSkills {
          return;
       }
       CompoundTag data = player.getPersistentData();
+      data.putBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG, true);
       long now = player.level().getGameTime();
       long tiwazUntil = data.getLong(CU_RUNE_TIWAZ_UNTIL_TAG);
       if (tiwazUntil > 0L && now >= tiwazUntil) {
@@ -98,6 +100,7 @@ public final class ServantCardCuChulainnSkills {
       data.remove(CU_RUNE_BERKANA_UNTIL_TAG);
       data.remove(CU_RUNE_BERKANA_NEXT_HEAL_TAG);
       data.remove(CU_RECAST_USED_TAG);
+      data.remove(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG);
       clearCuTiwaz(player);
    }
 

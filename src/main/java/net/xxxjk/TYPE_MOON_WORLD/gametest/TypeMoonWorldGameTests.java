@@ -203,6 +203,49 @@ public final class TypeMoonWorldGameTests {
          "contract UUIDs were not cleared symmetrically");
       helper.assertTrue("none".equals(servantVars.master_servant_survival_state)
          && masterVars.master_servant_backlash_ticks == 0, "normal termination incorrectly caused death state");
+      helper.assertTrue("masterless".equals(servantVars.servant_card_contract_state),
+         "terminated contract did not leave a masterless servant");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void servantManaRegenUsesThreeContractStates(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      var servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      helper.assertTrue("native".equals(servantVars.servant_card_contract_state),
+         "fresh servant card was not native");
+      servantVars.servant_card_mana = servantVars.servant_card_max_mana - 20.0;
+      double nativeMana = servantVars.servant_card_mana;
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.tick(servant, servantVars);
+      helper.assertTrue(servantVars.servant_card_mana > nativeMana,
+         "native servant did not regenerate its own mana");
+
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master),
+         "master activation failed");
+      var masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      masterVars.master_card_active = true;
+      masterVars.player_mana_egenerated_every_moment = 10.0;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(master, servant),
+         "contract failed");
+      servantVars.servant_card_mana = servantVars.servant_card_max_mana - 20.0;
+      double contractedMana = servantVars.servant_card_mana;
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.tick(servant, servantVars);
+      helper.assertTrue("contracted".equals(servantVars.servant_card_contract_state)
+         && servantVars.servant_card_mana > contractedMana,
+         "contracted servant did not use in-range master mana regeneration");
+
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.terminateContract(master, servant);
+      servantVars.servant_card_mana = servantVars.servant_card_max_mana - 20.0;
+      double masterlessMana = servantVars.servant_card_mana;
+      for (int i = 0; i < 20; i++) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.tick(servant, servantVars);
+      }
+      helper.assertTrue("masterless".equals(servantVars.servant_card_contract_state)
+         && Math.abs(servantVars.servant_card_mana - masterlessMana) < 1.0E-9,
+         "masterless servant regenerated passive mana");
       helper.succeed();
    }
 

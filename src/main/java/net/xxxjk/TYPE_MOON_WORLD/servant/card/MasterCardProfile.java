@@ -126,6 +126,7 @@ public final class MasterCardProfile {
          vars.deserializeNBT(player.registryAccess(), savedVariables);
          vars.master_servant_uuid = "";
          vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
          MasterServantLinkService.clearSurvival(vars);
          BodyTrainingService.applyAttributes(player, vars);
          restoreInventory(player, savedInventory);
@@ -267,6 +268,7 @@ public final class MasterCardProfile {
       vars.master_card_id = masterId == null ? "" : masterId;
       vars.master_servant_uuid = "";
       vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       MasterServantLinkService.clearSurvival(vars);
       clearPlayerInventory(player);
    }
@@ -274,6 +276,7 @@ public final class MasterCardProfile {
    private static void scrubContractState(CompoundTag tag) {
       tag.remove("master_servant_uuid");
       tag.remove("servant_card_master_uuid");
+      tag.remove("servant_card_contract_state");
       tag.remove("master_servant_link_partner_uuid");
       tag.remove("master_servant_link_partner_hp");
       tag.remove("master_servant_link_partner_max_hp");

@@ -17,5 +17,9 @@
         "armor_multiplier": 3.0
       }
     }
-  ]
+  ],
+  "ai": {"facts": [
+    {"type": "melee_pressure", "strength": 1.0, "requires": ["daylight"]},
+    {"type": "regeneration", "strength": 0.8, "requires": ["daylight"]}
+  ]}
 }

@@ -179,6 +179,7 @@ public final class ServantPlannedActionExecutor {
       commit(entity, action, now);
       triggerAnimation(entity, action.maneuver().control(), action.maneuver().movement());
       publishThreat(entity, target, runtime, now);
+      CombatKnowledgeService.observeWindup(target, entity, action, now);
       return true;
    }
 

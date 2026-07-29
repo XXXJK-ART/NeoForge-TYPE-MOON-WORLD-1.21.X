@@ -15,5 +15,6 @@
       "effect_type": "crit_damage_boost",
       "params": { "multiplier": 2.0, "duration_ticks": 200 }
     }
-  ]
+  ],
+  "ai": {"facts": [{"type": "prediction", "strength": 0.7}]}
 }

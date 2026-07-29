@@ -17,6 +17,8 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreat;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.EvasionMovementService;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatSensor;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionPlanner;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionProfile;
@@ -70,10 +72,16 @@ public final class ServantTacticalController {
       if (entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
          ProjectileThreatSensor.IncomingProjectile projectile = ProjectileThreatSensor.nearest(entity, 12.0, 8.0);
          if (projectile != null) {
-            double utility = 100.0 - projectile.impactTicks() * 8.0;
-            brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-               () -> EvasionMovementService.tryEvade(entity, projectile.projectile().position()),
-               AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
+            Entity owner = projectile.projectile().getOwner();
+            if (owner instanceof LivingEntity shooter && !entity.isAlliedTo(shooter)) {
+               brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
+            }
+            if (!CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
+               double utility = 100.0 - projectile.impactTicks() * 8.0;
+               brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
+                  () -> EvasionMovementService.tryEvade(entity, projectile.projectile().position()),
+                  AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
+            }
          }
       }
 
@@ -132,7 +140,11 @@ public final class ServantTacticalController {
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       double utility = entity.distanceTo(target) + tactical.pursuitAggression() * 20.0;
       brain.submit(AiIntent.of(COMBAT_MANEUVER, AiIntent.PRIORITY_POSITION, utility, 3, true,
-         () -> ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression()),
+         () -> {
+            if (!ServantManeuverService.trySideForwardReengage(entity, target, tactical, brain.blackboard(), now)) {
+               ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression());
+            }
+         },
          AiControl.MOVE, AiControl.LOOK));
    }
 
