@@ -180,11 +180,11 @@ public final class CombatModule implements ServantAiModule {
       boolean strongMove = horizontalPower >= 1.6 || verticalPower >= 0.65;
       double terrainScale = terrainBreakScale(attacker);
       boolean canKnockback = combatAge >= 45L
-         && now - data.getLong("CombatLastKnockbackTick") >= (strongMove ? 48L : 65L);
+         && now - data.getLong("CombatLastKnockbackTick") >= (strongMove ? 64L : 84L);
       boolean canLaunch = canKnockback
          && strongMove
          && combatAge >= 90L
-         && now - data.getLong("CombatLastLaunchTick") >= 110L;
+         && now - data.getLong("CombatLastLaunchTick") >= 145L;
       if (!canKnockback) {
          level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.25, target.getZ(), 6, 0.22, 0.12, 0.22, 0.035);
          return;

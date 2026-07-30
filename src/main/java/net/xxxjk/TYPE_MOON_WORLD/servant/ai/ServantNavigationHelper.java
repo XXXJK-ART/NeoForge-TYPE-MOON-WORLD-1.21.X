@@ -83,6 +83,13 @@ public final class ServantNavigationHelper {
       double minTargetMoveSqr,
       String keyPrefix
    ) {
+      // Vanilla pathfinders are deliberately conservative in water and can stop
+      // making progress against a moving target. Keep navigation as a fallback,
+      // but apply a bounded steering impulse while submerged.
+      if (entity.isInWaterOrBubble() && target != null) {
+         return steerInWater(entity, target.position(), speed, gameTick, keyPrefix);
+      }
+      entity.setSwimming(false);
       if (ServantEngagementService.matchup(entity, target) == ServantEngagementService.Matchup.MELEE_VS_RANGED
          && entity.distanceTo(target) > 7.0) {
          double agilitySpeed = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
@@ -121,6 +128,35 @@ public final class ServantNavigationHelper {
       return entity.getNavigation().moveTo(target, speed);
    }
 
+   private static boolean steerInWater(ServantEntity entity, Vec3 target, double requestedSpeed, long gameTick, String keyPrefix) {
+      entity.setSwimming(true);
+      Vec3 toTarget = target.subtract(entity.position());
+      double distance = toTarget.length();
+      if (distance < 0.75) {
+         entity.getNavigation().stop();
+         entity.setDeltaMovement(entity.getDeltaMovement().scale(0.72));
+         return true;
+      }
+      Vec3 direction = toTarget.scale(1.0 / distance);
+      double maxSpeed = Math.max(0.24, Math.min(0.58, 0.20 + requestedSpeed * 0.22));
+      CompoundTag data = entity.getPersistentData();
+      Vec3 motion = entity.getDeltaMovement();
+      double along = motion.dot(direction);
+      double acceleration = Math.max(0.0, maxSpeed - along) * 0.28;
+      Vec3 next = motion.scale(0.88).add(direction.scale(acceleration));
+      if (next.length() > maxSpeed) {
+         next = next.normalize().scale(maxSpeed);
+      }
+      entity.setDeltaMovement(next);
+      entity.hasImpulse = true;
+      // Keep a low-frequency path active for collision avoidance and unloaded chunks.
+      if (gameTick - data.getLong(keyPrefix + "WaterPathTick") >= 6L) {
+         data.putLong(keyPrefix + "WaterPathTick", gameTick);
+         entity.getNavigation().moveTo(target.x, target.y, target.z, Math.max(0.8, requestedSpeed));
+      }
+      return true;
+   }
+
    /** Gives every melee servant a speed-scaled intercept burst against a retreating ranged target. */
    public static void tryMeleeClosingBurst(ServantEntity entity, LivingEntity target, long gameTick) {
       if (ServantEngagementService.matchup(entity, target) != ServantEngagementService.Matchup.MELEE_VS_RANGED
@@ -128,7 +164,7 @@ public final class ServantNavigationHelper {
          || entity.distanceTo(target) > 30.0 || target.getY() - entity.getY() > 4.0) return;
       double agilitySpeed = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
       CompoundTag data = entity.getPersistentData();
-      int cooldown = Math.max(8, 18 - (int)Math.round(agilitySpeed * 20.0));
+      int cooldown = Math.max(6, 16 - (int)Math.round(agilitySpeed * 20.0));
       if (gameTick - data.getLong("ServantMeleeClosingBurstTick") < cooldown) return;
       Vec3 direction = target.position().add(target.getDeltaMovement().scale(4.0))
          .subtract(entity.position()).multiply(1.0, 0.0, 1.0);
@@ -155,6 +191,10 @@ public final class ServantNavigationHelper {
       double minTargetMoveSqr,
       String keyPrefix
    ) {
+      if (entity.isInWaterOrBubble()) {
+         return steerInWater(entity, target, speed, gameTick, keyPrefix);
+      }
+      entity.setSwimming(false);
       CompoundTag data = entity.getPersistentData();
       String xKey = keyPrefix + "TargetX";
       String yKey = keyPrefix + "TargetY";

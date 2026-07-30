@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
@@ -109,10 +110,14 @@ public final class ServantCombatSystem {
       }
 
       ServantCombatMotionService.MotionState motionState = ServantCombatMotionService.state(entity);
-      if (motionState == ServantCombatMotionService.MotionState.AIRBORNE
+      // Bellerophon owns Pegasus movement while Medusa is mounted.  The rider
+      // is intentionally airborne, so the generic airborne gate must not
+      // suppress her combat helper and leave the mount stationary.
+      boolean medusaMounted = entity instanceof MedusaEntity medusa && medusa.isRidingPegasus();
+      if (!medusaMounted && (motionState == ServantCombatMotionService.MotionState.AIRBORNE
          || motionState == ServantCombatMotionService.MotionState.WALL_STAGGER
          || motionState == ServantCombatMotionService.MotionState.GROUND_STAGGER
-         || motionState == ServantCombatMotionService.MotionState.TECH_PROTECTED) {
+         || motionState == ServantCombatMotionService.MotionState.TECH_PROTECTED)) {
          entity.getNavigation().stop();
          return true;
       }
@@ -482,10 +487,10 @@ public final class ServantCombatSystem {
          combatAge = 0L;
       }
       boolean canKnockback = combatAge >= 40L
-         && now - data.getLong(TAG_LAST_KNOCKBACK_TICK) >= 55L;
+         && now - data.getLong(TAG_LAST_KNOCKBACK_TICK) >= 72L;
       boolean realLaunch = canKnockback
          && combatAge >= 80L
-         && now - data.getLong(TAG_LAST_LAUNCH_TICK) >= (heavy ? 80L : 110L);
+         && now - data.getLong(TAG_LAST_LAUNCH_TICK) >= (heavy ? 120L : 145L);
       if (!canKnockback) {
          target.hasImpulse = true;
          target.hurtMarked = true;
