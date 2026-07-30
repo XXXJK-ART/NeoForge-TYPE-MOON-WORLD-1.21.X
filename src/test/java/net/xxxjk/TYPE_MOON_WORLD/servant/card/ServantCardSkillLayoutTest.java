@@ -29,12 +29,12 @@ class ServantCardSkillLayoutTest {
    }
 
    @Test
-   void gilgameshDivineShieldMatchesItsFifteenSecondDuration() {
+   void gilgameshDivineShieldIsAResourceToggle() {
       ServantCardSkillAction action = ServantCardSkillLayout.actionFor("gilgamesh", 5, false);
       assertNotNull(action);
       assertEquals("gilgamesh_divine_shield", action.effectId());
       assertEquals(30.0, action.mpCost());
-      assertEquals(300, action.cooldownTicks());
+      assertEquals(0, action.cooldownTicks());
    }
 
    @Test

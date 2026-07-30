@@ -125,11 +125,17 @@ public final class ServantEngagementService {
       double angle = targetRanged ? (distance < band.minimum() ? 38.0 : 24.0)
          : distance < band.minimum() ? 16.0 : 10.0;
       Vec3 placementDirection = rotateHorizontal(radial, Math.toRadians(angle * direction));
-      double desiredRadius = distance < band.minimum() ? band.preferred() + (targetRanged ? 0.0 : 2.0)
-         : distance > band.maximum() ? band.preferred() : band.preferred();
+      double desiredRadius;
+      if (targetRanged) {
+         double closingStep = Math.max(2.0, Math.min(6.0, distance * 0.2));
+         desiredRadius = distance <= band.minimum() + 1.0
+            ? Math.max(3.0, distance) : Math.max(band.minimum(), distance - closingStep);
+      } else {
+         desiredRadius = distance < band.minimum() ? band.preferred() + 2.0 : band.preferred();
+      }
       Vec3 prediction = cappedHorizontal(target.getDeltaMovement().scale(targetRanged ? 4.0 : 6.0), 6.0);
       Vec3 predictedTarget = target.position().add(prediction);
-      Vec3 side = new Vec3(-radial.z, 0.0, radial.x).scale(direction * (targetRanged ? 3.0 : 1.5));
+      Vec3 side = new Vec3(-radial.z, 0.0, radial.x).scale(direction * 1.5);
       Vec3 destination = predictedTarget.add(placementDirection.scale(desiredRadius)).add(side);
       return new Vec3(destination.x, target.getY(), destination.z);
    }

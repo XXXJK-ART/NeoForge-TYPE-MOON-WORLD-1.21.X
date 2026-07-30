@@ -1,7 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 
 public final class ServantCardUnlimitedMode {
    private static final String TAG_ENABLED = "TypeMoonServantCardUnlimited";
@@ -43,6 +45,27 @@ public final class ServantCardUnlimitedMode {
       vars.servant_card_oda_flight_ticks = 100;
       for (String tag : CUSTOM_COOLDOWN_TAGS) {
          player.getPersistentData().remove(tag);
+      }
+      GilgameshDivineShield.clearCooldown(player);
+      clearItemCooldowns(player);
+   }
+
+   /** Clears cooldowns attached to held or inventory items, including projected Noble Phantasms. */
+   private static void clearItemCooldowns(ServerPlayer player) {
+      for (ItemStack stack : player.getInventory().items) {
+         clearItemCooldown(player, stack);
+      }
+      for (ItemStack stack : player.getInventory().armor) {
+         clearItemCooldown(player, stack);
+      }
+      for (ItemStack stack : player.getInventory().offhand) {
+         clearItemCooldown(player, stack);
+      }
+   }
+
+   private static void clearItemCooldown(ServerPlayer player, ItemStack stack) {
+      if (!stack.isEmpty()) {
+         player.getCooldowns().removeCooldown(stack.getItem());
       }
    }
 }

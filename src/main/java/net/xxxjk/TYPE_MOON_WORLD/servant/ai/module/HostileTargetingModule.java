@@ -114,9 +114,10 @@ public final class HostileTargetingModule implements ServantAiModule {
       if (bestTarget != null) {
          entity.setTarget(bestTarget);
          ServantTargetingService.remember(entity, bestTarget, gameTick);
-      } else if (currentTarget != null) {
-         ServantTargetingService.forget(entity);
-         entity.setTarget(null);
+      } else if (currentTarget != null && ServantTargetingService.canRetain(entity, currentTarget, gameTick)) {
+         // Preserve a valid combat memory through short LOS/pathing gaps.  The
+         // targeting service will clear it only after the explicit memory TTL.
+         ServantTargetingService.remember(entity, currentTarget, gameTick);
       }
    }
 

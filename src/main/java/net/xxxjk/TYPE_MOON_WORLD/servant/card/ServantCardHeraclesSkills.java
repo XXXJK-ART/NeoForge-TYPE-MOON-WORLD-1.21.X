@@ -240,7 +240,8 @@ public final class ServantCardHeraclesSkills {
       AABB area = player.getBoundingBox().inflate(4.2, 1.5, 4.2).move(look.scale(0.65));
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
-            && !entity.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(entity))) {
+            && !entity.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(entity)
+            && !ServantMasterProtection.isProtectedMaster(player, entity))) {
          Vec3 offset = target.position().subtract(player.position());
          if (offset.horizontalDistanceSqr() > 17.64 || !player.hasLineOfSight(target)) continue;
          target.invulnerableTime = 0;
@@ -279,6 +280,7 @@ public final class ServantCardHeraclesSkills {
          LivingEntity.class,
          player.getBoundingBox().inflate(radius),
          e -> e != player && e.isAlive() && !EntityUtils.isImmunePlayerTarget(e)
+            && !ServantMasterProtection.isProtectedMaster(player, e)
       )) {
          Vec3 away = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() < 1.0E-4) {

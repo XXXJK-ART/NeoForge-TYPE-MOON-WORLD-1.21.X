@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 
 public final class GawainCombatHelper {
    private static final String TAG_SUN_BLESSING = "GawainSunBlessingActive";
@@ -615,6 +617,7 @@ public final class GawainCombatHelper {
    }
 
    private static boolean tryBreakCombatWall(GawainEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now, boolean solar) {
+      if (!solar) return false;
       if (now - data.getLong(TAG_LAST_WALL_BREAK) < WALL_BREAK_COOLDOWN) {
          return false;
       }
@@ -623,8 +626,9 @@ public final class GawainCombatHelper {
          return false;
       }
       Vec3 dir = horizontalDirection(entity, target);
-      int broken = breakWallColumn(level, entity, dir, solar ? 50.0F : 32.0F, solar ? 18 : 10);
-      if (broken <= 0) {
+      Vec3 center = entity.position().add(dir.scale(1.8)).add(0.0, entity.getBbHeight() * 0.5, 0.0);
+      if (!TerrainImpactService.impact(level, entity, center,
+         TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), TerrainImpactService.Shape.AIR_SPHERE)) {
          return false;
       }
       data.putLong(TAG_LAST_WALL_BREAK, now);
@@ -632,30 +636,6 @@ public final class GawainCombatHelper {
       level.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, 8, 0.2, 0.18, 0.2, 0.035);
       level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 0.8F, 0.75F);
       return true;
-   }
-
-   private static int breakWallColumn(ServerLevel level, GawainEntity entity, Vec3 dir, float hardnessLimit, int maxBroken) {
-      int broken = 0;
-      Vec3 right = new Vec3(-dir.z, 0.0, dir.x);
-      BlockPos base = entity.blockPosition();
-      int maxY = Math.max(1, Mth.ceil(entity.getBbHeight()));
-      for (int forward = 1; forward <= 2 && broken < maxBroken; forward++) {
-         for (int side = -1; side <= 1 && broken < maxBroken; side++) {
-            Vec3 offset = dir.scale(forward).add(right.scale(side * 0.65));
-            BlockPos column = base.offset(Mth.floor(offset.x + 0.5), 0, Mth.floor(offset.z + 0.5));
-            for (int y = 0; y <= maxY && broken < maxBroken; y++) {
-               BlockPos pos = column.above(y);
-               BlockState state = level.getBlockState(pos);
-               float hardness = state.getDestroySpeed(level, pos);
-               if (!state.isAir() && hardness >= 0.0F && hardness <= hardnessLimit && !state.is(Blocks.BEDROCK) && state.getExplosionResistance(level, pos, null) < 1200.0F) {
-                  if (level.removeBlock(pos, false)) {
-                     broken++;
-                  }
-               }
-            }
-         }
-      }
-      return broken;
    }
 
    private static void breakGallatinPath(GawainEntity entity, ServerLevel level, Vec3 origin, Vec3 look) {

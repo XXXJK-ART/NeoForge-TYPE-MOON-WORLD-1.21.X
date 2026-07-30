@@ -142,6 +142,12 @@ public final class MasterServantLinkService {
       } else if (!isValidSurvival(vars.master_servant_survival_state)
          || (!SURVIVAL_DECAYING.equals(vars.master_servant_survival_state) && vars.master_servant_survival_ticks <= 0)) {
          clearSurvival(vars);
+      } else if (SURVIVAL_INDEPENDENT.equals(vars.master_servant_survival_state)) {
+         // Versions before the Minecraft-time rule stored wall-clock seconds as ticks (72x too large).
+         int currentDuration = independentDurationTicks(vars.servant_card_id);
+         if (currentDuration > 0 && vars.master_servant_survival_ticks > currentDuration) {
+            vars.master_servant_survival_ticks = Math.max(1, vars.master_servant_survival_ticks / 72);
+         }
       }
 
       UUID servantId = parse(vars.master_servant_uuid);
@@ -507,9 +513,10 @@ public final class MasterServantLinkService {
 
    static int independentDurationTicksForSkills(Collection<String> skillIds) {
       if (skillIds == null) return 0;
-      if (skillIds.contains("independent_action_a")) return 7 * 24 * 60 * 60 * 20;
-      if (skillIds.contains("independent_action_b")) return 48 * 60 * 60 * 20;
-      if (skillIds.contains("independent_action_c")) return 24 * 60 * 60 * 20;
+      // Independent Action is measured in Minecraft days, not wall-clock seconds.
+      if (skillIds.contains("independent_action_a")) return 7 * 24000;
+      if (skillIds.contains("independent_action_b")) return 2 * 24000;
+      if (skillIds.contains("independent_action_c")) return 24000;
       return 0;
    }
 

@@ -307,7 +307,11 @@ public final class MasterStateManager {
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       boolean success = switch (action) {
          case 0 -> {
-            servantVars.servant_card_mana += servantVars.servant_card_max_mana;
+            servantVars.servant_card_mana = Math.min(
+               servantVars.servant_card_max_mana,
+               servantVars.servant_card_mana + servantVars.servant_card_max_mana
+            );
+            ServantCardUnlimitedMode.clearCooldowns(servant);
             servantVars.syncPlayerVariables(servant);
             yield true;
          }

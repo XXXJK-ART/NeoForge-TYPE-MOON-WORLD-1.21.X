@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -500,6 +501,19 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_required"), true);
          return false;
       }
+      if ("gilgamesh_divine_shield".equals(action.effectId())) {
+         if (GilgameshDivineShield.isActive(player)) {
+            if (ServantCardGilgameshSkills.performDivineShield(player)) {
+               player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
+            }
+            return true;
+         }
+         int shieldCooldown = GilgameshDivineShield.cooldownRemaining(player);
+         if (shieldCooldown > 0) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", shieldCooldown / 20.0F)), true);
+            return false;
+         }
+      }
       int cooldownSlot = slot < 0 ? 6 : slot;
       int currentCooldown = unlimited ? 0 : npSlot ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
       if (!unlimited && ServantCardArtoriaSkills.isWindAction(action)) {
@@ -958,6 +972,11 @@ public final class ServantCardTransformManager {
       }
    }
 
+   /** Mirrors an absolute cooldown owned by a stateful skill into the card HUD. */
+   public static void setSkillCooldownUntil(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int slot, long until) {
+      setSkillCooldown(player, vars, slot, remainingTicks(player.level().getGameTime(), until));
+   }
+
    private static boolean tickNoblePhantasmCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       long now = player.level().getGameTime();
       if (vars.servant_card_np_cooldown_end <= 0L && vars.servant_card_np_cooldown > 0) {
@@ -1276,7 +1295,7 @@ public final class ServantCardTransformManager {
          case "gilgamesh_grand_vault" -> ServantCardGilgameshSkills.performVault(player, true);
          case "gilgamesh_ring_vault" -> ServantCardGilgameshSkills.performRingVault(player);
          case "gilgamesh_elixir" -> ServantCardGilgameshSkills.performElixir(player);
-         case "gilgamesh_divine_shield" -> ServantCardGilgameshSkills.performDivineShield(player);
+         case "gilgamesh_divine_shield" -> { if (!ServantCardGilgameshSkills.performDivineShield(player)) return false; }
          case "gilgamesh_clairvoyance" -> ServantCardGilgameshSkills.performClairvoyance(player);
          case "gilgamesh_charisma" -> ServantCardGilgameshSkills.performCharisma(player);
          case "gilgamesh_laugh_vault" -> ServantCardGilgameshSkills.performLaughVault(player);

@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -105,6 +106,15 @@ public final class ServantCombatSystem {
 
       if (isUntargetable(entity)) {
          entity.setTarget(null);
+      }
+
+      ServantCombatMotionService.MotionState motionState = ServantCombatMotionService.state(entity);
+      if (motionState == ServantCombatMotionService.MotionState.AIRBORNE
+         || motionState == ServantCombatMotionService.MotionState.WALL_STAGGER
+         || motionState == ServantCombatMotionService.MotionState.GROUND_STAGGER
+         || motionState == ServantCombatMotionService.MotionState.TECH_PROTECTED) {
+         entity.getNavigation().stop();
+         return true;
       }
 
       if (cannotAct(entity)) {
@@ -450,7 +460,8 @@ public final class ServantCombatSystem {
       attacker.getNavigation().stop();
       triggerLauncherAnimation(attacker);
       float damage = (float)(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.8F * damageScale);
-      if (target.hurt(attacker.damageSources().mobAttack(attacker), damage)) {
+      if (!ServantMasterProtection.isProtectedMaster(attacker, target)
+         && target.hurt(attacker.damageSources().mobAttack(attacker), damage)) {
          addComboDamage(attacker, target, damage);
       }
 

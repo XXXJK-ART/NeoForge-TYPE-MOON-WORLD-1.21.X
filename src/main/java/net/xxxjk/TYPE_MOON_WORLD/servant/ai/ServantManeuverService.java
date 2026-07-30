@@ -40,13 +40,11 @@ public final class ServantManeuverService {
       boolean airborneIntercept = !target.onGround()
          && Math.abs(target.getY() - servant.getY()) >= 1.5
          && tactical.verticalMobility() >= 0.35;
-      CombatCapabilitySnapshot capability = ServantCapabilityResolver.resolve(servant);
-      boolean rangedPressure = AiBrain.blackboard(servant).opponent(target.getUUID()).knows(FactType.PROJECTILE_PRESSURE);
-      boolean curvedApproach = rangedPressure && (capability.has(FactType.GAP_CLOSE) || capability.has(FactType.PURSUIT))
-         && distance > tactical.preferredRange() + 6.0;
+      boolean rangedPressure = hasRangedPressure(servant, target);
+      boolean antiKiteApproach = rangedPressure && distance > Math.max(5.0, tactical.minimumRange() + 1.0);
       return distance >= MIN_MANEUVER_DISTANCE && distance <= MAX_NORMAL_ENGAGEMENT_DISTANCE
          && (ServantCombatMotionService.canPursue(servant, target)
-             || curvedApproach
+             || antiKiteApproach
              || ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.MELEE
                 && distance >= 10.0
                 && (target.getDeltaMovement().horizontalDistanceSqr() >= 0.08 || airborneIntercept));
@@ -60,6 +58,11 @@ public final class ServantManeuverService {
       double maxLead = Math.min(12.0, 4.0 + distance * 0.18);
       if (lead.lengthSqr() > maxLead * maxLead) lead = lead.normalize().scale(maxLead);
       Vec3 predicted = target.position().add(lead);
+
+      if (ServantCombatDisposition.isRelentlessAdvance(servant)) {
+         Vec3 direct = predicted.subtract(servant.position()).multiply(1.0, 0.0, 1.0);
+         return direct.lengthSqr() < 1.0E-4 ? predicted : predicted.subtract(direct.normalize().scale(1.8));
+      }
 
       Vec3 travel = predicted.subtract(servant.position()).multiply(1.0, 0.0, 1.0);
       if (travel.lengthSqr() < 1.0E-4) return predicted;
@@ -77,7 +80,8 @@ public final class ServantManeuverService {
       Vec3 destination = destination(servant, target, now, interceptBias);
       ServantParams params = servant.getDefinition() == null ? null : servant.getDefinition().parameters();
       int agility = ServantCombatFormulas.agilityStep(params);
-      double speed = Math.min(2.0, 1.25 + agility * 0.1 + Math.max(0.0, pursuitAggression) * 0.25);
+      double speed = ServantCombatDisposition.isRelentlessAdvance(servant) ? 2.0
+         : Math.min(2.0, 1.25 + agility * 0.1 + Math.max(0.0, pursuitAggression) * 0.25);
       servant.getLookControl().setLookAt(target, 50.0F, 40.0F);
       servant.setSprinting(true);
       boolean moved = ServantNavigationHelper.moveToPositionThrottled(
@@ -86,6 +90,12 @@ public final class ServantManeuverService {
       boolean burst = !moved && servant.onGround() && servant.distanceTo(target) <= 24.0
          && trySafeBurst(servant, destination, agility, now, 0.25);
       return moved || burst;
+   }
+
+   public static boolean hasRangedPressure(ServantEntity servant, LivingEntity target) {
+      return servant != null && target != null
+         && (ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED
+             || AiBrain.blackboard(servant).opponent(target.getUUID()).knows(FactType.PROJECTILE_PRESSURE));
    }
 
    public static boolean trySideForwardReengage(ServantEntity servant, LivingEntity target,
@@ -97,8 +107,8 @@ public final class ServantManeuverService {
       int agility = ServantCombatFormulas.agilityStep(servant.getDefinition() == null
          ? null : servant.getDefinition().parameters());
       boolean agileMelee = agility >= 4 && (capability.has(FactType.GAP_CLOSE) || capability.has(FactType.PURSUIT));
-      boolean knownRanged = blackboard != null
-         && blackboard.opponent(target.getUUID()).knows(FactType.PROJECTILE_PRESSURE);
+      boolean knownRanged = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED
+         || blackboard != null && blackboard.opponent(target.getUUID()).knows(FactType.PROJECTILE_PRESSURE);
       double distance = servant.distanceTo(target);
       if (!agileMelee || distance <= tactical.preferredRange() + 6.0 || !knownRanged) {
          clearSideReengage(servant);

@@ -10,7 +10,6 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
@@ -73,13 +72,6 @@ public final class NightingaleEvents {
          for (DamageContainer.Reduction reduction : DamageContainer.Reduction.values()) {
             event.addReductionModifier(reduction, (container, amount) -> 0.0F);
          }
-      }
-   }
-
-   @SubscribeEvent
-   public static void interruptCardCastAfterDamage(LivingDamageEvent.Post event) {
-      if (event.getEntity() instanceof ServerPlayer player && ServantCardNightingaleSkills.isCasting(player)) {
-         ServantCardNightingaleSkills.interrupt(player);
       }
    }
 

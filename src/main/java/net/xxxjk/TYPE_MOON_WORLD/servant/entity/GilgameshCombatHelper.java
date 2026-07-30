@@ -54,8 +54,6 @@ public final class GilgameshCombatHelper {
    private static final String NEXT_COMBAT_VOICE = "GilgameshNextCombatVoice";
    private static final String NEXT_COMBAT_VOICE_INDEX = "GilgameshNextCombatVoiceIndex";
    private static final String NEXT_PROJECTION_DUEL = "GilgameshNextProjectionDuel";
-   private static final String LAST_DIVINE_SHIELD = "GilgameshLastDivineShield";
-   private static final long DIVINE_SHIELD_COOLDOWN = GilgameshDivineShield.DURATION_TICKS;
    private static final double DIVINE_SHIELD_MP_COST = 30.0;
    private static final double DIVINE_SHIELD_DETECTION_RANGE = 24.0;
    private static final long PROJECTION_DUEL_COOLDOWN = 30L * 20L;
@@ -85,7 +83,7 @@ public final class GilgameshCombatHelper {
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
       GilgameshDivineShield.tick(entity);
-      tryActivateDivineShield(entity, level, data, now);
+      tryActivateDivineShield(entity, level);
       if (!data.getBoolean("GilgameshPassivesInitialized")) {
          data.putBoolean("GilgameshPassivesInitialized", true);
          data.putFloat("MagicResistanceDamageReduction", 0.20F);
@@ -180,9 +178,9 @@ public final class GilgameshCombatHelper {
       }
    }
 
-   private static void tryActivateDivineShield(GilgameshEntity entity, ServerLevel level, CompoundTag data, long now) {
+   private static void tryActivateDivineShield(GilgameshEntity entity, ServerLevel level) {
       if (GilgameshDivineShield.isActive(entity) || entity.getCurrentMp() < DIVINE_SHIELD_MP_COST
-         || data.contains(LAST_DIVINE_SHIELD) && now - data.getLong(LAST_DIVINE_SHIELD) < DIVINE_SHIELD_COOLDOWN) {
+         || GilgameshDivineShield.isOnCooldown(entity)) {
          return;
       }
       boolean incomingProjectile = !level.getEntitiesOfClass(
@@ -193,7 +191,6 @@ public final class GilgameshCombatHelper {
       if (!incomingProjectile) return;
 
       entity.setCurrentMp(entity.getCurrentMp() - DIVINE_SHIELD_MP_COST);
-      data.putLong(LAST_DIVINE_SHIELD, now);
       GilgameshDivineShield.activate(entity);
    }
 

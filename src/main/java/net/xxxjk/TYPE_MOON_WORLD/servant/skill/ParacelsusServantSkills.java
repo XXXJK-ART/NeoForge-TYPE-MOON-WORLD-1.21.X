@@ -39,6 +39,8 @@ public final class ParacelsusServantSkills {
    public static final String ACTION_ELEMENTAL_SPIRIT = "elemental_spirit";
    public static final String ACTION_PHILOSOPHER_STONE = "philosopher_stone";
    public static final String NP_ELEMENTAL_SWORD = "elemental_sword";
+   /** Shared server-side gate for all Paracelsus NPC combat actions. */
+   public static final String TAG_NEXT_COMBAT_ACTION = "ParacelsusNextCombatActionTick";
    private static final String TAG_LAST_ELEMENTAL_SPIRIT = "ParacelsusLastElementalSpiritTick";
    private static final String TAG_LAST_PHILOSOPHER_STONE = "ParacelsusLastPhilosopherStoneTick";
    private static final String TAG_LAST_NP = "ParacelsusLastNpTick";
@@ -125,6 +127,16 @@ public final class ParacelsusServantSkills {
       return entity != null && entity.getPersistentData().getLong(TAG_NP_CHANT_END) > now;
    }
 
+   public static boolean combatActionReady(ParacelsusEntity entity, long now) {
+      return entity != null && entity.getPersistentData().getLong(TAG_NEXT_COMBAT_ACTION) <= now;
+   }
+
+   public static void markCombatAction(ParacelsusEntity entity, long now, long gapTicks) {
+      if (entity != null) {
+         entity.getPersistentData().putLong(TAG_NEXT_COMBAT_ACTION, now + Math.max(1L, gapTicks));
+      }
+   }
+
    private static ServantExecutionResult markHighSpeedChanting(ServantExecutionContext context) {
       if (!(context.caster() instanceof ParacelsusEntity entity)) {
          return ServantExecutionResult.FAILED;
@@ -182,6 +194,9 @@ public final class ParacelsusServantSkills {
       }
 
       long now = context.gameTick();
+      if (isNoblePhantasmChanting(entity, now) || !combatActionReady(entity, now)) {
+         return ServantExecutionResult.NOT_HANDLED;
+      }
       if (entity.isPerformingAction() && !entity.isSoftCombatActionActive() && entity.getPersistentData().getLong(TAG_HIGH_SPEED_UNTIL) <= now) {
          return ServantExecutionResult.NOT_HANDLED;
       }
@@ -218,6 +233,7 @@ public final class ParacelsusServantSkills {
             default -> castWindCut(level, entity, target, center, now);
          }
       }
+      markCombatAction(entity, now, 20L);
       return ServantExecutionResult.SUCCESS.withMpCost(7.0);
    }
 
@@ -260,9 +276,11 @@ public final class ParacelsusServantSkills {
       entity.getLookControl().setLookAt(target, 35.0F, 35.0F);
       if (spiritActive
          && entity.distanceTo(target) <= 20.0
+         && combatActionReady(entity, now)
          && now - entity.getPersistentData().getLong(TAG_LAST_ELEMENTAL_STRIKE) >= 34L) {
          entity.getPersistentData().putLong(TAG_LAST_ELEMENTAL_STRIKE, now);
          releaseElementalStrike(entity, target, now);
+         markCombatAction(entity, now, 20L);
       }
 
       double distance = entity.distanceTo(target);
@@ -517,7 +535,10 @@ public final class ParacelsusServantSkills {
          return ServantExecutionResult.NOT_HANDLED;
       }
       long now = context.gameTick();
-      if (now - entity.getPersistentData().getLong(TAG_ELEMENTAL_SPIRIT_LAST_SUMMON) < ELEMENTAL_SPIRIT_COOLDOWN || entity.getCurrentMp() < 18.0) {
+      if (isNoblePhantasmChanting(entity, now)
+         || !combatActionReady(entity, now)
+         || now - entity.getPersistentData().getLong(TAG_ELEMENTAL_SPIRIT_LAST_SUMMON) < ELEMENTAL_SPIRIT_COOLDOWN
+         || entity.getCurrentMp() < 18.0) {
          return ServantExecutionResult.NOT_HANDLED;
       }
       entity.getPersistentData().putLong(TAG_ELEMENTAL_SPIRIT_LAST_SUMMON, now);
@@ -541,6 +562,7 @@ public final class ParacelsusServantSkills {
          ParacelsusSpiritCannonEntity guardian = ParacelsusSpiritCannonEntity.summonGuardian(level, entity, guardianPos, entity.getRandom().nextInt(4), 120 * 20);
          level.addFreshEntity(guardian);
       }
+      markCombatAction(entity, now, 20L);
       return ServantExecutionResult.SUCCESS.withMpCost(18.0);
    }
 
@@ -905,7 +927,10 @@ public final class ParacelsusServantSkills {
          return ServantExecutionResult.NOT_HANDLED;
       }
       long now = context.gameTick();
-      if (now - entity.getPersistentData().getLong(TAG_LAST_PHILOSOPHER_STONE) < PHILOSOPHER_STONE_COOLDOWN || entity.getCurrentMp() < 20.0) {
+      if (isNoblePhantasmChanting(entity, now)
+         || !combatActionReady(entity, now)
+         || now - entity.getPersistentData().getLong(TAG_LAST_PHILOSOPHER_STONE) < PHILOSOPHER_STONE_COOLDOWN
+         || entity.getCurrentMp() < 20.0) {
          return ServantExecutionResult.NOT_HANDLED;
       }
       int count = entity.getPersistentData().getInt(TAG_PHILOSOPHER_STONE_COUNT);
@@ -938,6 +963,7 @@ public final class ParacelsusServantSkills {
          level.sendParticles(AETHER, entity.getX(), entity.getY() + entity.getBbHeight() * 0.8, entity.getZ(), 26, 0.25, 0.35, 0.25, 0.01);
          level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.9F, 1.3F);
       }
+      markCombatAction(entity, now, 20L);
       return ServantExecutionResult.SUCCESS.withMpCost(20.0);
    }
 
@@ -956,7 +982,8 @@ public final class ParacelsusServantSkills {
       }
       long lastNp = entity.getPersistentData().getLong(TAG_LAST_NP);
       long chantEnd = entity.getPersistentData().getLong(TAG_NP_CHANT_END);
-      if (chantEnd > now || now - lastNp < NP_COOLDOWN || context.currentMp() < context.noblePhantasmDefinition().mpCost()) {
+      if (chantEnd > now || now - lastNp < NP_COOLDOWN || !combatActionReady(entity, now)
+         || context.currentMp() < context.noblePhantasmDefinition().mpCost()) {
          return ServantExecutionResult.FAILED;
       }
       entity.getPersistentData().putLong(TAG_LAST_NP, now);
@@ -977,6 +1004,7 @@ public final class ParacelsusServantSkills {
       entity.getPersistentData().putDouble(TAG_NP_FORWARD_Z, forward.z);
       entity.faceToward(target.position());
       ServantVoiceHelper.tryPlayParacelsusNp(entity);
+      markCombatAction(entity, now, 20L);
       return ServantExecutionResult.SUCCESS.withMpCost(context.noblePhantasmDefinition().mpCost());
    }
 

@@ -1,8 +1,13 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -155,6 +160,60 @@ public final class ServantCardManaService {
       vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
       vars.syncMana(player);
       return true;
+   }
+
+   /** Restores card MP from explicit mana media in the player's inventory. */
+   public static boolean restoreFromInventory(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null || !vars.servant_card_transformed
+         || vars.servant_card_mana >= vars.servant_card_max_mana) {
+         return false;
+      }
+      double need = vars.servant_card_max_mana - vars.servant_card_mana;
+      ManaSource source = null;
+      for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+         ItemStack stack = player.getInventory().getItem(slot);
+         ManaSource candidate = manaSource(slot, stack);
+         if (candidate == null) continue;
+         if (source == null || (candidate.amount() >= need && source.amount() < need)
+            || (candidate.amount() >= need && source.amount() >= need && candidate.amount() < source.amount())
+            || (candidate.amount() < need && source.amount() < need && candidate.amount() > source.amount())) {
+            source = candidate;
+         }
+      }
+      if (source == null) return false;
+      consumeInventorySource(player, source);
+      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + source.amount());
+      vars.syncMana(player);
+      return true;
+   }
+
+   private static ManaSource manaSource(int slot, ItemStack stack) {
+      if (stack == null || stack.isEmpty()) return null;
+      if (stack.getItem() instanceof FullManaCarvedGemItem gem) {
+         return new ManaSource(slot, gem.getManaAmount(stack), gem.getEmptyGemItem());
+      }
+      if (stack.is(ModItems.MAGIC_FRAGMENTS.get())) {
+         return new ManaSource(slot, 10.0, null);
+      }
+      return stack.is(((Block)ModBlocks.SPIRIT_VEIN_BLOCK.get()).asItem())
+         ? new ManaSource(slot, 90.0, null) : null;
+   }
+
+   private static void consumeInventorySource(ServerPlayer player, ManaSource source) {
+      ItemStack stack = player.getInventory().getItem(source.slot());
+      if (stack.getCount() > 1) {
+         stack.shrink(1);
+         if (source.remainder() != null) {
+            ItemStack remainder = new ItemStack(source.remainder());
+            if (!player.getInventory().add(remainder)) player.drop(remainder, false);
+         }
+      } else {
+         player.getInventory().setItem(source.slot(), source.remainder() == null ? ItemStack.EMPTY : new ItemStack(source.remainder()));
+      }
+      player.getInventory().setChanged();
+   }
+
+   private record ManaSource(int slot, double amount, net.minecraft.world.item.Item remainder) {
    }
 
    public static ServerPlayer getMaster(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

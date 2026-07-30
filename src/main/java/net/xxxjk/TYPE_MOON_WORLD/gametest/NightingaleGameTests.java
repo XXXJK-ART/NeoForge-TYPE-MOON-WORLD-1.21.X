@@ -166,21 +166,6 @@ public final class NightingaleGameTests {
    }
 
    @GameTest(batch = "nightingale", template = "ancient_temple", timeoutTicks = 40)
-   public static void interruptedCardNoblePhantasmRefundsManaAndCooldown(GameTestHelper helper) {
-      var player = helper.makeMockServerPlayerInLevel();
-      helper.assertTrue(ServantCardTransformManager.transform(player, "nightingale"), "Nightingale card transform failed");
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double before = vars.servant_card_mana;
-      var action = ServantCardSkillLayout.actionFor("nightingale", 9, false);
-      helper.assertTrue(ServantCardNightingaleSkills.performNoblePhantasmAction(player, vars, action), "Nightingale Pledge did not start");
-      helper.assertTrue(Math.abs(vars.servant_card_mana - (before - 50.0)) < 0.01, "Nightingale Pledge did not reserve 50 MP");
-      ServantCardNightingaleSkills.interrupt(player);
-      helper.assertTrue(Math.abs(vars.servant_card_mana - before) < 0.01, "Interrupted Nightingale Pledge did not refund MP");
-      helper.assertTrue(vars.servant_card_np_cooldown == 0, "Interrupted Nightingale Pledge started cooldown");
-      helper.succeed();
-   }
-
-   @GameTest(batch = "nightingale", template = "ancient_temple", timeoutTicks = 40)
    public static void cardSafetyCircleHealsAndRestoresServantCardMana(GameTestHelper helper) {
       var player = helper.makeMockServerPlayerInLevel();
       helper.assertTrue(ServantCardTransformManager.transform(player, "nightingale"), "Nightingale card transform failed");

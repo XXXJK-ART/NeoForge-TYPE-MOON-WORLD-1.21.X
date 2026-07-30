@@ -12,38 +12,83 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 
 public final class GilgameshDivineShield {
-   public static final int DURATION_TICKS = 15 * 20;
+   /** The shield has no active duration; this is the post-break cooldown. */
+   public static final int COOLDOWN_TICKS = 30 * 20;
+   /** @deprecated use {@link #COOLDOWN_TICKS}; retained for addon source compatibility. */
+   @Deprecated public static final int DURATION_TICKS = COOLDOWN_TICKS;
    public static final float MAX_HP = 2000.0F;
    public static final float NON_PROJECTILE_ABSORPTION = 0.80F;
+   public static final String TAG_ACTIVE = "GilgameshDivineShieldActive";
+   public static final String TAG_COOLDOWN_UNTIL = "GilgameshDivineShieldCooldownUntil";
+   /** Kept for migration from the old timed shield implementation. */
    public static final String TAG_UNTIL = "GilgameshDivineShieldUntil";
    public static final String TAG_HP = "GilgameshDivineShieldHp";
 
    private GilgameshDivineShield() {
    }
 
-   public static void activate(LivingEntity defender) {
+   public static boolean activate(LivingEntity defender) {
       CompoundTag data = defender.getPersistentData();
-      data.putLong(TAG_UNTIL, defender.level().getGameTime() + DURATION_TICKS);
-      data.putFloat(TAG_HP, MAX_HP);
+      if (isOnCooldown(defender)) {
+         return false;
+      }
+      migrateLegacyState(defender, data);
+      if (data.getFloat(TAG_HP) <= 0.0F) {
+         data.putFloat(TAG_HP, MAX_HP);
+      }
+      data.putBoolean(TAG_ACTIVE, true);
+      data.remove(TAG_UNTIL);
       playActivationFx(defender);
+      return true;
    }
 
    public static void tick(LivingEntity defender) {
       CompoundTag data = defender.getPersistentData();
-      if (data.getLong(TAG_UNTIL) > defender.level().getGameTime() && data.getFloat(TAG_HP) > 0.0F) {
-         return;
+      migrateLegacyState(defender, data);
+      if (data.getBoolean(TAG_ACTIVE) && data.getFloat(TAG_HP) <= 0.0F) {
+         markBroken(defender, data);
       }
-      clear(defender);
    }
 
    public static void clear(LivingEntity defender) {
       defender.getPersistentData().remove(TAG_UNTIL);
+      defender.getPersistentData().remove(TAG_ACTIVE);
+      defender.getPersistentData().remove(TAG_COOLDOWN_UNTIL);
       defender.getPersistentData().remove(TAG_HP);
+   }
+
+   /** Closes the shield without restoring its remaining durability or starting cooldown. */
+   public static boolean deactivate(LivingEntity defender) {
+      if (!isActive(defender)) {
+         return false;
+      }
+      defender.getPersistentData().putBoolean(TAG_ACTIVE, false);
+      return true;
+   }
+
+   public static boolean isOnCooldown(LivingEntity defender) {
+      return cooldownRemaining(defender) > 0;
+   }
+
+   public static int cooldownRemaining(LivingEntity defender) {
+      long until = defender.getPersistentData().getLong(TAG_COOLDOWN_UNTIL);
+      long remaining = until - defender.level().getGameTime();
+      return (int)Math.max(0L, Math.min(Integer.MAX_VALUE, remaining));
+   }
+
+   public static long cooldownUntil(LivingEntity defender) {
+      return defender.getPersistentData().getLong(TAG_COOLDOWN_UNTIL);
+   }
+
+   /** Clears only the post-break lockout, preserving an active shield and its durability. */
+   public static void clearCooldown(LivingEntity defender) {
+      defender.getPersistentData().remove(TAG_COOLDOWN_UNTIL);
    }
 
    public static boolean isActive(LivingEntity defender) {
       CompoundTag data = defender.getPersistentData();
-      return data.getLong(TAG_UNTIL) > defender.level().getGameTime() && data.getFloat(TAG_HP) > 0.0F;
+      migrateLegacyState(defender, data);
+      return data.getBoolean(TAG_ACTIVE) && data.getFloat(TAG_HP) > 0.0F && !isOnCooldown(defender);
    }
 
    public static ShieldHit tryAbsorb(LivingEntity defender, DamageSource source, float incomingDamage) {
@@ -53,9 +98,10 @@ public final class GilgameshDivineShield {
       }
 
       CompoundTag data = defender.getPersistentData();
+      migrateLegacyState(defender, data);
       ShieldHit hit = absorb(data.getFloat(TAG_HP), incomingDamage, source.getDirectEntity() instanceof Projectile);
       if (hit.broken()) {
-         clear(defender);
+         markBroken(defender, data);
       } else {
          data.putFloat(TAG_HP, hit.remainingShieldHp());
       }
@@ -71,6 +117,21 @@ public final class GilgameshDivineShield {
       float remainingShieldHp = Math.max(0.0F, safeShieldHp - absorbed);
       float remainingDamage = Math.max(0.0F, safeDamage - absorbed);
       return new ShieldHit(remainingShieldHp, remainingDamage, absorbed, remainingShieldHp <= 0.0F, projectile);
+   }
+
+   private static void markBroken(LivingEntity defender, CompoundTag data) {
+      data.putBoolean(TAG_ACTIVE, false);
+      data.putFloat(TAG_HP, 0.0F);
+      data.putLong(TAG_COOLDOWN_UNTIL, defender.level().getGameTime() + COOLDOWN_TICKS);
+      data.remove(TAG_UNTIL);
+   }
+
+   private static void migrateLegacyState(LivingEntity defender, CompoundTag data) {
+      if (data.contains(TAG_UNTIL) && !data.contains(TAG_ACTIVE)) {
+         boolean wasActive = data.getLong(TAG_UNTIL) > defender.level().getGameTime() && data.getFloat(TAG_HP) > 0.0F;
+         data.putBoolean(TAG_ACTIVE, wasActive);
+         data.remove(TAG_UNTIL);
+      }
    }
 
    private static void playActivationFx(LivingEntity defender) {

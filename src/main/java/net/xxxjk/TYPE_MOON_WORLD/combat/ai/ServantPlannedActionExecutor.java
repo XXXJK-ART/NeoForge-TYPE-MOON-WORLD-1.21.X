@@ -9,7 +9,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
@@ -54,6 +56,7 @@ public final class ServantPlannedActionExecutor {
          && !hasCounterWindow(entity, now)) return false;
       if (action.tags().contains(AiActionDescriptor.Tag.FINISHER)
          && !ServantCombatMotionService.isImpactStaggered(target)) return false;
+      if (requiresProjectileSight(action) && !hasProjectileSight(entity, target)) return false;
       return EntityUtils.isValidCombatTarget(entity, target);
    }
 
@@ -186,6 +189,10 @@ public final class ServantPlannedActionExecutor {
    private static boolean tickWindup(ServantEntity entity, LivingEntity target, ActionRuntime runtime, long now) {
       entity.getNavigation().stop();
       entity.faceToward(entity.getEyePosition().add(runtime.snapshotDirection));
+      if (requiresProjectileSight(runtime.action) && !hasProjectileSight(entity, target)) {
+         cancel(entity, runtime, now);
+         return true;
+      }
       if (now < runtime.stageDeadline) return true;
       applyHit(entity, target, runtime, now);
       runtime.stage = Stage.ACTIVE;
@@ -239,7 +246,7 @@ public final class ServantPlannedActionExecutor {
             ServantCombatMotionService.launch(entity, victim, direction, action.maneuver().horizontalForce(),
                action.maneuver().verticalForce(), action.terrainTier(), action.maneuver().pursuitWindowTicks());
          }
-         if (!terrainTriggered && action.tags().contains(AiActionDescriptor.Tag.TERRAIN_BREAK)
+         if (!terrainTriggered && triggersTerrainAtHit(action)
             && entity.level() instanceof ServerLevel level) {
             TerrainImpactService.impact(level, entity, victim.position().add(0.0, 0.2, 0.0),
                net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.of(action.terrainTier()),
@@ -247,6 +254,13 @@ public final class ServantPlannedActionExecutor {
             terrainTriggered = true;
          }
       }
+   }
+
+   static boolean triggersTerrainAtHit(AiActionDescriptor action) {
+      if (action == null || !action.tags().contains(AiActionDescriptor.Tag.TERRAIN_BREAK)) return false;
+      String control = action.maneuver().control().toLowerCase(java.util.Locale.ROOT);
+      return action.threat().shape() == CombatThreat.Shape.HEMISPHERE
+         || control.contains("slam") || control.contains("stomp");
    }
 
    private static boolean threatens(CombatThreat threat, LivingEntity target, AiActionDescriptor action) {
@@ -288,6 +302,20 @@ public final class ServantPlannedActionExecutor {
 
    private static boolean requiresLineOfSight(CombatThreat.Shape shape) {
       return shape == CombatThreat.Shape.POINT || shape == CombatThreat.Shape.LINE || shape == CombatThreat.Shape.CONE;
+   }
+
+   private static boolean requiresProjectileSight(AiActionDescriptor action) {
+      return action.tags().contains(AiActionDescriptor.Tag.PROJECTILE)
+         || action.tags().contains(AiActionDescriptor.Tag.NOBLE_PHANTASM);
+   }
+
+   private static boolean hasProjectileSight(ServantEntity entity, LivingEntity target) {
+      Vec3 start = entity.getEyePosition();
+      Vec3 end = target.getEyePosition();
+      HitResult hit = entity.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER,
+         ClipContext.Fluid.NONE, entity));
+      return hit.getType() == HitResult.Type.MISS
+         || hit.getLocation().distanceToSqr(end) < 0.36;
    }
 
    private static LivingEntity resolveTarget(ServantEntity entity, UUID targetUuid) {

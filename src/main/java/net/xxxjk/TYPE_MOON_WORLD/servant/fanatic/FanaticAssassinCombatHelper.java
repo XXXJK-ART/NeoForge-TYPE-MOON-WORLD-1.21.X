@@ -91,7 +91,15 @@ public final class FanaticAssassinCombatHelper {
          candidate -> isValidTarget(entity, candidate)
             && (entity.isNervesActive() || entity.distanceToSqr(candidate) <= 16.0 || entity.getSensing().hasLineOfSight(candidate)))
          .stream().max(Comparator.comparingDouble(candidate -> targetScore(entity, candidate))).orElse(null);
-      entity.setTarget(best);
+      // A scan can legitimately miss a target for a few ticks behind terrain.
+      // Keep the combat memory until it is actually dead or stale instead of
+      // dropping the target and restarting the encounter.
+      if (best != null) {
+         entity.setTarget(best);
+      } else if (current != null && current.isAlive()
+         && now - entity.getPersistentData().getLong("FanaticLastCombatTick") <= 240L) {
+         entity.setTarget(current);
+      }
    }
 
    public static void tick(FanaticAssassinEntity entity, ServantAiContext context) {
@@ -106,22 +114,9 @@ public final class FanaticAssassinCombatHelper {
       entity.getPersistentData().putLong("FanaticLastCombatTick", now);
       entity.getLookControl().setLookAt(target, 45.0F, 45.0F);
 
-      boolean retreating = entity.getPersistentData().getBoolean(RETREATING);
-      if (FanaticAssassinRules.shouldRetreat(entity.getCurrentMp(), entity.getMaxMp())) {
-         entity.getPersistentData().putBoolean(RETREATING, true);
-         retreating = true;
-      }
-      if (retreating && !FanaticAssassinRules.recoveredFromRetreat(entity.getCurrentMp(), entity.getMaxMp())) {
-         clearCombo(entity);
-         if (canCast(entity, "Nerves", FanaticAssassinRules.NERVES_MP, FanaticAssassinRules.NERVES_COOLDOWN, now)) {
-            castNerves(entity, now);
-         }
-         retreat(entity, target, now);
-         return;
-      }
-      if (retreating) {
-         entity.getPersistentData().remove(RETREATING);
-      }
+      // MP only gates techniques.  The assassin must keep closing and using its
+      // poison blade/basic attack when empty instead of entering a retreat loop.
+      entity.getPersistentData().remove(RETREATING);
       if (now < entity.getPersistentData().getLong(BUSY_UNTIL)) return;
       if (tryConcealedApproach(entity, target, now)) return;
       if (continueCombo(entity, target, now)) return;

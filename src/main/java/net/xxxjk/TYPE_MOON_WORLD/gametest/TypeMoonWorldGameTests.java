@@ -250,6 +250,44 @@ public final class TypeMoonWorldGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void servantCardCanRestoreMpFromManaMedia(GameTestHelper helper) {
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      var vars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_mana = 0.0;
+      servant.getInventory().add(new net.minecraft.world.item.ItemStack(ModItems.MAGIC_FRAGMENTS.get()));
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.restoreFromInventory(servant, vars),
+         "servant card did not consume mana media");
+      helper.assertTrue(Math.abs(vars.servant_card_mana - 10.0) < 1.0E-9
+         && servant.getInventory().countItem(ModItems.MAGIC_FRAGMENTS.get()) == 0,
+         "mana media did not restore the servant card MP pool");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void masterCanHealFromVanillaFood(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master),
+         "master activation failed");
+      master.getFoodData().setFoodLevel(20);
+      master.getFoodData().setSaturation(5.0F);
+      master.setHealth(master.getMaxHealth() - 10.0F);
+      float damagedHealth = master.getHealth();
+      var naturalRegen = helper.getLevel().getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_NATURAL_REGENERATION);
+      boolean previousNaturalRegen = naturalRegen.get();
+      try {
+         naturalRegen.set(true, helper.getLevel().getServer());
+         for (int i = 0; i < 40; i++) master.getFoodData().tick(master);
+         helper.assertTrue(master.getFoodData().getFoodLevel() >= 18 && master.getHealth() > damagedHealth,
+            "master hunger was locked or vanilla food regeneration did not heal");
+      } finally {
+         naturalRegen.set(previousNaturalRegen, helper.getLevel().getServer());
+      }
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
    public static void masterLossForcesHeraclesDeathOnTick200(GameTestHelper helper) {
       var master = helper.makeMockServerPlayerInLevel();
       var servant = helper.makeMockServerPlayerInLevel();
@@ -537,6 +575,52 @@ public final class TypeMoonWorldGameTests {
       helper.succeed();
    }
 
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void combatMotionResolvesARealWallImpactAfterFlight(GameTestHelper helper) {
+      var level = helper.getLevel();
+      BlockPos attackerPos = helper.absolutePos(new BlockPos(2, 20, 2));
+      BlockPos wall = helper.absolutePos(new BlockPos(8, 20, 2));
+      for (int x = 4; x <= 8; x++) {
+         for (int z = 1; z <= 3; z++) {
+            level.setBlock(helper.absolutePos(new BlockPos(x, 19, z)),
+               net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+         }
+      }
+      for (int y = 0; y < 3; y++) {
+         level.setBlock(wall.above(y), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+      }
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level,
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "artoria_pendragon"), attackerPos);
+      helper.assertTrue(summoned instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity,
+         "could not create wall-impact attacker");
+      var attacker = (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)summoned;
+      attacker.setNoAi(true);
+      var targetEntity = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level,
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "emiya_archer"),
+         helper.absolutePos(new BlockPos(5, 20, 2)));
+      helper.assertTrue(targetEntity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity,
+         "could not create wall-impact servant target");
+      var target = (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)targetEntity;
+      var launch = net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.launch(
+         attacker, target, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0), 2.6, 0.35,
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.MEDIUM, 24);
+      helper.assertTrue(launch.applied(), "wall-impact launch was rejected");
+      helper.assertTrue(level.getBlockState(wall).is(net.minecraft.world.level.block.Blocks.STONE),
+         "launch call damaged a wall before flight");
+      helper.runAfterDelay(12, () -> {
+         helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.state(target)
+               == net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.MotionState.WALL_STAGGER,
+            "target did not enter wall stagger after a real swept collision: state="
+               + net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.state(target)
+               + ", position=" + target.position() + ", motion=" + target.getDeltaMovement());
+         helper.assertTrue(!level.getBlockState(wall).is(net.minecraft.world.level.block.Blocks.STONE),
+            "real wall impact did not damage the collision surface");
+         helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.canPursue(attacker, target),
+            "wall impact removed the attacker's pursuit window");
+         helper.succeed();
+      });
+   }
+
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
    public static void allServantsLoadDedicatedBoundedTacticalProfiles(GameTestHelper helper) {
       var profileIds = new java.util.HashSet<String>();
@@ -726,7 +810,7 @@ public final class TypeMoonWorldGameTests {
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 260)
+   @GameTest(template = "ancient_temple", timeoutTicks = 480)
    public static void fiftyCombatNpcArbitrationStress(GameTestHelper helper) {
       var level = helper.getLevel();
       var target = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(6, 2, 6));
@@ -745,10 +829,17 @@ public final class TypeMoonWorldGameTests {
          }
       }
       helper.assertTrue(spawned == 50, "could not spawn the 50-NPC stress group");
-      helper.runAfterDelay(220, () -> {
+      helper.runAfterDelay(420, () -> {
          var servants = level.getEntitiesOfClass(net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class,
             new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(48.0));
          helper.assertTrue(servants.size() >= 50, "combat arbitration lost NPCs during stress run: " + servants.size());
+         long maxDisconnected = servants.stream().mapToLong(servant ->
+            net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService.disconnectedTicks(
+               servant, level.getGameTime())).max().orElse(0L);
+         helper.assertTrue(maxDisconnected <= net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService.MAX_DISCONNECTED_TICKS,
+            "combat tempo exceeded the no-contact deadline: " + maxDisconnected);
+         helper.assertTrue(servants.stream().noneMatch(servant -> servant.getY() > target.getY() + 16.0),
+            "combat stress group accumulated an invalid flight height");
          var metrics = net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction.lastMetrics(level);
          helper.assertTrue(metrics.checkedBlocks() <= net.xxxjk.TYPE_MOON_WORLD.Config.terrainChecksPerTick,
             "terrain queue exceeded its voxel check cap: " + metrics.checkedBlocks());

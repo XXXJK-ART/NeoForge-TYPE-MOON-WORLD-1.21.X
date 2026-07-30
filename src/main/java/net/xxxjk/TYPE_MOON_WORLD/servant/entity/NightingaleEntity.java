@@ -1,11 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -35,7 +32,6 @@ public final class NightingaleEntity extends ServantEntity {
    private static final double MELEE_MODE_RANGE = 6.0;
    private static final String LAST_NP = "NightingaleLastNp";
    private static final String NP_CAST_END = "NightingaleNpCastEnd";
-   private static final String NP_INTERRUPTED = "NightingaleNpInterrupted";
    private static final String COMBAT_OPENED = "NightingaleCombatOpened";
    private static final String LAST_INNOCENT_ATTACK_PREFIX = "NightingaleAggressor.";
 
@@ -59,7 +55,6 @@ public final class NightingaleEntity extends ServantEntity {
    public boolean hurt(DamageSource source, float amount) {
       boolean hurt = super.hurt(source, amount);
       if (!this.level().isClientSide && hurt && amount > 0.0F) {
-         if (this.isNoblePhantasmCasting()) this.getPersistentData().putBoolean(NP_INTERRUPTED, true);
          if (source.getEntity() instanceof LivingEntity attacker) markAggressor(attacker);
       }
       return hurt;
@@ -97,14 +92,7 @@ public final class NightingaleEntity extends ServantEntity {
       if (isNoblePhantasmCasting()) {
          this.getNavigation().stop();
          this.setDeltaMovement(Vec3.ZERO);
-         if (this.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.PETRIFIED)
-            || this.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.BINDING)
-            || this.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.STAGGER)) {
-            this.getPersistentData().putBoolean(NP_INTERRUPTED, true);
-         }
-         if (this.getPersistentData().getBoolean(NP_INTERRUPTED)) {
-            cancelNoblePhantasmCast();
-         } else if (now >= this.getPersistentData().getLong(NP_CAST_END)) {
+         if (now >= this.getPersistentData().getLong(NP_CAST_END)) {
             finishNoblePhantasm(level, now);
          }
          return;
@@ -221,26 +209,15 @@ public final class NightingaleEntity extends ServantEntity {
 
    private void startNoblePhantasm(long now) {
       this.getPersistentData().putLong(NP_CAST_END, now + NightingaleRules.NOBLE_PHANTASM_WINDUP);
-      this.getPersistentData().putBoolean(NP_INTERRUPTED, false);
       this.triggerNamedActionAnimation("noble_phantasm");
       ServantVoiceHelper.tryPlayNightingaleNp(this);
    }
 
    private void finishNoblePhantasm(ServerLevel level, long now) {
       this.getPersistentData().remove(NP_CAST_END);
-      this.getPersistentData().remove(NP_INTERRUPTED);
       this.getPersistentData().putLong(LAST_NP, now);
       this.setCurrentMp(this.getCurrentMp() - NightingaleRules.NOBLE_PHANTASM_COST);
       NightingaleSupportService.createSafetyCircle(this, level, this.position(), now);
-   }
-
-   private void cancelNoblePhantasmCast() {
-      this.getPersistentData().remove(NP_CAST_END);
-      this.getPersistentData().remove(NP_INTERRUPTED);
-      if (this.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 1.0, this.getZ(), 18, 0.4, 0.5, 0.4, 0.04);
-         level.playSound(null, this.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.HOSTILE, 0.8F, 1.2F);
-      }
    }
 
    private static boolean isNormallyInnocent(LivingEntity target) {

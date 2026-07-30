@@ -284,9 +284,12 @@ public class ServantCardHud {
    }
 
    private static String ticksToDuration(int ticks) {
-      long seconds = Math.max(0L, ticks / 20L);
-      long days = seconds / 86400L;
-      long hours = seconds % 86400L / 3600L;
+      // Survival timers use Minecraft time: 24,000 ticks per in-game day and
+      // 1,000 ticks per displayed in-game hour.  Do not convert this value to
+      // wall-clock seconds (that would make a seven-day timer look like hours).
+      long remainingTicks = Math.max(0L, ticks);
+      long days = remainingTicks / 24000L;
+      long hours = remainingTicks % 24000L / 1000L;
       return days > 0 ? days + "d " + hours + "h" : hours + "h";
    }
 

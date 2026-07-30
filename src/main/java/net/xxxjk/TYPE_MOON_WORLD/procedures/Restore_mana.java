@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
@@ -92,6 +93,10 @@ public class Restore_mana {
             return;
          }
          if (vars.servant_card_transformed) {
+            if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
+               && vars.servant_card_mana < CRITICAL_MANA_THRESHOLD) {
+               ServantCardManaService.restoreFromInventory(serverPlayer, vars);
+            }
             TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
             return;
          }

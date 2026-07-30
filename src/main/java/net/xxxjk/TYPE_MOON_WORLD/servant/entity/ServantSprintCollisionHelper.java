@@ -12,6 +12,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -171,6 +172,9 @@ public final class ServantSprintCollisionHelper {
 
    private static boolean canHit(LivingEntity owner, LivingEntity target) {
       if (target == owner || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
+         return false;
+      }
+      if (ServantMasterProtection.isProtectedMaster(owner, target)) {
          return false;
       }
       return !(owner instanceof ServantEntity servant) || !target.isAlliedTo(servant);

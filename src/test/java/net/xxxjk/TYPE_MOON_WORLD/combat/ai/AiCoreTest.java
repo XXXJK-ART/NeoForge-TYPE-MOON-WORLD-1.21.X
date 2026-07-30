@@ -11,6 +11,9 @@ import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactCondition;
@@ -133,6 +136,47 @@ class AiCoreTest {
    }
 
    @Test
+   void rangedPressureEvasionsAlwaysMoveSidewaysAndTowardTheShooter() {
+      Vec3 toward = new Vec3(0.8, 0.0, 0.6).normalize();
+      Vec3 side = new Vec3(-toward.z, 0.0, toward.x);
+      List<Vec3> candidates = EvasionMovementService.forwardEvasionDirections(toward);
+      assertEquals(4, candidates.size());
+      for (Vec3 candidate : candidates) {
+         assertTrue(candidate.dot(toward) > 0.3, "candidate must retain a forward component");
+         assertTrue(Math.abs(candidate.dot(side)) > 0.65, "candidate must leave the projectile line laterally");
+      }
+   }
+
+   @Test
+   void combatTempoEscalatesAtExplicitNoContactDeadlines() {
+      assertEquals(0, ServantCombatTempoService.stageForDisconnectedTicks(39));
+      assertEquals(1, ServantCombatTempoService.stageForDisconnectedTicks(40));
+      assertEquals(2, ServantCombatTempoService.stageForDisconnectedTicks(100));
+      assertEquals(3, ServantCombatTempoService.stageForDisconnectedTicks(160));
+      assertEquals(4, ServantCombatTempoService.stageForDisconnectedTicks(200));
+   }
+
+   @Test
+   void combatFlightBandCannotClimbWithRoofsAndDescendsWhenDisconnected() {
+      double engaged = ServantFlightHelper.desiredCombatY(64.0, 64.0, 1.8, 0L);
+      double pressured = ServantFlightHelper.desiredCombatY(64.0, 64.0, 1.8, 40L);
+      double forcedDown = ServantFlightHelper.desiredCombatY(64.0, 64.0, 1.8, 100L);
+      assertTrue(engaged <= 70.0);
+      assertTrue(pressured < engaged);
+      assertTrue(forcedDown < pressured);
+      assertEquals(70.0, ServantFlightHelper.desiredCombatY(64.0, 200.0, 2.0, 0L));
+   }
+
+   @Test
+   void detailedNavigationOnlyTreatsActualMovementAsAccepted() {
+      assertTrue(ServantNavigationHelper.NavigationResult.MOVED.accepted());
+      assertFalse(ServantNavigationHelper.NavigationResult.NO_PATH.accepted());
+      assertFalse(ServantNavigationHelper.NavigationResult.BLOCKED.accepted());
+      assertFalse(ServantNavigationHelper.NavigationResult.NO_PROGRESS.accepted());
+      assertFalse(ServantNavigationHelper.NavigationResult.UNSAFE.accepted());
+   }
+
+   @Test
    void arbitrationSelectsOnePrimaryAndOnlyDisjointAuxiliaries() {
       List<String> executed = new ArrayList<>();
       AiIntent move = AiIntent.of(id("move"), AiIntent.PRIORITY_POSITION, 10.0, 1, true,
@@ -241,5 +285,21 @@ class AiCoreTest {
       assertTrue(immobilizedShot > 1.0);
       assertTrue(mobileShot >= CombatMatchupEvaluator.MIN_ACTION_MULTIPLIER);
       assertTrue(bind <= CombatMatchupEvaluator.MAX_ACTION_MULTIPLIER);
+   }
+
+   @Test
+   void launcherTerrainBreakWaitsForAnImpactShape() {
+      String launcherJson = "{\"id\":\"typemoonworld:test/launcher_break\",\"tags\":[\"melee\",\"launcher\",\"terrain_break\"],"
+         + "\"threat\":{\"shape\":\"cone\",\"radius\":2,\"length\":5},"
+         + "\"maneuver\":{\"movement\":\"gap_closer\",\"control\":\"launcher\"}}";
+      String slamJson = "{\"id\":\"typemoonworld:test/slam_break\",\"tags\":[\"melee\",\"launcher\",\"terrain_break\"],"
+         + "\"threat\":{\"shape\":\"hemisphere\",\"radius\":4,\"length\":0},"
+         + "\"maneuver\":{\"movement\":\"gap_closer\",\"control\":\"slam\"}}";
+      AiActionDescriptor launcher = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(launcherJson)).result().orElseThrow();
+      AiActionDescriptor slam = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(slamJson)).result().orElseThrow();
+      assertFalse(ServantPlannedActionExecutor.triggersTerrainAtHit(launcher));
+      assertTrue(ServantPlannedActionExecutor.triggersTerrainAtHit(slam));
    }
 }

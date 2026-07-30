@@ -23,6 +23,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatDisposition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTargetingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
@@ -68,6 +71,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
@@ -112,7 +116,7 @@ public final class CombatModule implements ServantAiModule {
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
    private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 240;
-   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 40;
+   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 50;
    private static final String TAG_PARACELSUS_LAST_AI_MAGIC = "ParacelsusLastAiMagicTick";
 
    private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
@@ -251,7 +255,11 @@ public final class CombatModule implements ServantAiModule {
 
    private boolean maybeCastParacelsusElementalMagic(ParacelsusEntity entity, LivingEntity target, boolean hasLineOfSight, ServantAiContext context) {
       long now = context.gameTick();
-      if (entity.getCurrentMp() < 7.0 || !hasLineOfSight || now - entity.getPersistentData().getLong(TAG_PARACELSUS_LAST_AI_MAGIC) < PARACELSUS_MAGIC_AI_INTERVAL) {
+      if (entity.getCurrentMp() < 7.0 || !hasLineOfSight
+         || ParacelsusServantSkills.isNoblePhantasmChanting(entity, now)
+         || !ParacelsusServantSkills.combatActionReady(entity, now)
+         || now - entity.getPersistentData().getLong(TAG_PARACELSUS_LAST_AI_MAGIC)
+            < (entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now ? 20 : PARACELSUS_MAGIC_AI_INTERVAL)) {
          return false;
       }
       if (!EntityUtils.isValidCombatTarget(entity, target)) {
@@ -260,9 +268,13 @@ public final class CombatModule implements ServantAiModule {
       String[] actions = entity.getCurrentMp() > entity.getMaxMp() * 0.55
          ? new String[]{"fire_magic_a_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_b_cast", "earth_magic_b_cast", "wind_magic_b_cast"}
          : new String[]{"water_magic_b_cast", "earth_magic_b_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_b_cast", "fire_magic_a_cast"};
-      int casts = entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now ? 3 : 1;
+      // High-speed chanting shortens the next decision interval, but it never
+      // permits several damaging actions in the same tick.
+      int casts = 1;
       boolean castAny = false;
-      int start = (int)((now / PARACELSUS_MAGIC_AI_INTERVAL) % actions.length);
+      int decisionInterval = entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now
+         ? 20 : PARACELSUS_MAGIC_AI_INTERVAL;
+      int start = (int)((now / decisionInterval) % actions.length);
       for (int i = 0; i < casts; i++) {
          if (entity.getCurrentMp() < 7.0) {
             break;
@@ -273,6 +285,8 @@ public final class CombatModule implements ServantAiModule {
          );
          if (result.handled() && result.success()) {
             castAny = true;
+            ParacelsusServantSkills.markCombatAction(entity, now, 20L);
+            break;
          }
       }
       if (castAny) {
@@ -285,6 +299,8 @@ public final class CombatModule implements ServantAiModule {
       long now = context.gameTick();
       if (entity.getCurrentMp() < 18.0
          || !hasLineOfSight
+         || ParacelsusServantSkills.isNoblePhantasmChanting(entity, now)
+         || !ParacelsusServantSkills.combatActionReady(entity, now)
          || now % 80 != 0
          || !EntityUtils.isValidCombatTarget(entity, target)
          || now - entity.getPersistentData().getLong("ParacelsusLastElementalSpiritSummon") < PARACELSUS_CANNON_SUMMON_COOLDOWN) {
@@ -296,7 +312,9 @@ public final class CombatModule implements ServantAiModule {
       ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
          new ServantCombatActionContext(entity, target, context, context.definition(), "elemental_spirit", entity.distanceTo(target), hasLineOfSight, now)
       );
-      return result.handled() && result.success();
+      boolean success = result.handled() && result.success();
+      if (success) ParacelsusServantSkills.markCombatAction(entity, now, 20L);
+      return success;
    }
 
    @Override
@@ -396,6 +414,8 @@ public final class CombatModule implements ServantAiModule {
             }
             if ((paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5 || paracelsus.getCurrentMp() <= paracelsus.getMaxMp() * 0.3)
                && context.definition().specialization().hasCombatAction("philosopher_stone")
+               && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
+               && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
                && context.gameTick() % 80 == 0) {
                ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
                   new ServantCombatActionContext(
@@ -403,6 +423,7 @@ public final class CombatModule implements ServantAiModule {
                   )
                );
                if (result.handled()) {
+                  if (result.success()) ParacelsusServantSkills.markCombatAction(paracelsus, context.gameTick(), 20L);
                   return;
                }
             }
@@ -410,11 +431,12 @@ public final class CombatModule implements ServantAiModule {
                && paracelsus.getHealth() <= paracelsus.getMaxHealth() / 3.0F
                && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
                && paracelsus.getCurrentMp() >= 150.0
+               && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
                && hasLineOfSight
                && EntityUtils.isValidCombatTarget(paracelsus, sharedTarget)
                && distance <= 28.0
                && context.gameTick() - paracelsus.getPersistentData().getLong("ParacelsusLastNpTick") >= 900L) {
-               ServantNoblePhantasmExecutor.activateNp(
+               ServantExecutionResult npResult = ServantNoblePhantasmExecutor.activateNp(
                   paracelsus,
                   sharedTarget,
                   java.util.Objects.requireNonNullElseGet(
@@ -436,25 +458,31 @@ public final class CombatModule implements ServantAiModule {
                   )),
                   1
                );
+               if (npResult.success()) ParacelsusServantSkills.markCombatAction(paracelsus, context.gameTick(), 20L);
                return;
             }
             if (distance <= 4.0 && entity.isPerformingAction()) {
                return;
             }
-            if (distance <= 4.5 && hasLineOfSight && context.gameTick() % 34 == 0) {
+            if (distance <= 4.5 && hasLineOfSight && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
+               && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
+               && context.gameTick() % 34 == 0) {
                entity.triggerAttackSwing();
-               entity.doHurtTarget(sharedTarget);
+               if (entity.doHurtTarget(sharedTarget)) ParacelsusServantSkills.markCombatAction(paracelsus, context.gameTick(), 20L);
                return;
             }
             if (context.definition().specialization().hasCombatAction("philosopher_stone")
                && paracelsus.getHealth() <= paracelsus.getMaxHealth() * 0.5
                && paracelsus.getPersistentData().getInt("ParacelsusPhilosopherStoneCount") > 0
+               && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
+               && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
                && context.gameTick() % 100 == 0) {
-               ServantAddonRegistry.executeCombatAction(
+               ServantExecutionResult result = ServantAddonRegistry.executeCombatAction(
                   new ServantCombatActionContext(
                      entity, sharedTarget, context, context.definition(), "philosopher_stone", distance, hasLineOfSight, context.gameTick()
                   )
                );
+               if (result.success()) ParacelsusServantSkills.markCombatAction(paracelsus, context.gameTick(), 20L);
             }
          }
          return;
@@ -549,7 +577,8 @@ public final class CombatModule implements ServantAiModule {
 
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
 
-      if (entity.distanceToSqr(target) > aggressionRange * aggressionRange * 1.5) {
+      if (entity.distanceToSqr(target) > aggressionRange * aggressionRange * 1.5
+         && !ServantTargetingService.canRetain(entity, target, context.gameTick())) {
          entity.setTarget(null);
          entity.getNavigation().stop();
          return;
@@ -577,44 +606,14 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      if (entity instanceof GawainEntity) {
-         data.remove("RetreatStartTick");
-      } else if (!(entity instanceof ArtoriaPendragonEntity) && combatStyle != CombatDisposition.FRENZIED && healthRatio < retreatThreshold) {
-         // 决死一战检测
-         int retreatStartTick = data.getInt("RetreatStartTick");
-         if (retreatStartTick == 0) {
-            data.putInt("RetreatStartTick", tick);
-            retreatStartTick = tick;
-         }
-
-         // 条件1：逃跑时间超过10秒 (200 ticks)
-         boolean timeout = (tick - retreatStartTick) >= 200;
-
-         // 条件2：周围3格内有3+敌人
-         int enemyCount = getNearbyEnemyCountCached(entity, data, tick);
-         boolean surrounded = enemyCount >= 3;
-
-         // 决死一战：清除逃跑计时器，获得临时buff
-         if (timeout || surrounded) {
-            data.remove("RetreatStartTick");
-            data.putBoolean("LastStandActive", true);
-            // 施加力量I 10秒 (200 ticks)
-            entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-               net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 200, 0, false, true));
-            // 施加抗性I 10秒
-            entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-               net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 200, 0, false, true));
-            // 粒子效果
-            if (entity.level() instanceof ServerLevel sl) {
-               sl.sendParticles(ParticleTypes.ENCHANTED_HIT,
-                  entity.getX(), entity.getY() + 1, entity.getZ(),
-                  30, 0.5, 0.5, 0.5, 0.1);
-            }
-            // 不执行逃跑，继续正常战斗
-         } else {
-            performRetreatFootwork(entity, target, combatStyle);
-            return;
-         }
+      data.remove("RetreatStartTick");
+      if (!(entity instanceof ArtoriaPendragonEntity) && combatStyle != CombatDisposition.FRENZIED
+         && healthRatio < retreatThreshold && !data.getBoolean("LastStandActive")) {
+         data.putBoolean("LastStandActive", true);
+         entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+            net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 200, 0, false, true));
+         entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+            net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 200, 0, false, true));
       }
 
       // 动画中冻结
@@ -629,12 +628,14 @@ public final class CombatModule implements ServantAiModule {
       }
 
       double distance = entity.distanceTo(target);
-      if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity) && canBreakForwardBlocks) {
+      if (ServantCombatDisposition.isRelentlessAdvance(entity) && canBreakForwardBlocks) {
          tryBreakCollisionWall(entity, target, data, tick, entity instanceof HeraclesEntity, hasLineOfSight);
       }
 
       // ——— 0. 被方块挡住：挥砍砸开前方路径（仅Berserker） ———
-      if (canBreakForwardBlocks && (entity.getNavigation().isInProgress() || distance > 3.5)) {
+      if (canBreakForwardBlocks && (ServantCombatDisposition.isRelentlessAdvance(entity)
+         || ServantCombatTempoService.disconnectedTicks(entity, tick) >= ServantCombatTempoService.BREAKOUT_ESCALATION_TICKS)
+         && (entity.getNavigation().isInProgress() || distance > 3.5)) {
          int lastBreak = data.getInt("LastBlockBreakTick");
          if (tick - lastBreak >= BLOCK_BREAK_COOLDOWN) {
             boolean stuck = isBlockedForward(entity, target);
@@ -1093,9 +1094,10 @@ public final class CombatModule implements ServantAiModule {
       }
 
       if (tick - startTick >= UNDERGROUND_TARGET_TIMEOUT) {
-         entity.setTarget(null);
-         entity.getNavigation().stop();
          data.remove("UndergroundTargetStartTick");
+         // Keep the target and let the tempo supervisor choose a new approach
+         // or breakout route instead of turning an occlusion into disengagement.
+         ServantCombatTempoService.enforceLegacy(entity, target, tick);
          return true;
       }
 
@@ -1204,6 +1206,12 @@ public final class CombatModule implements ServantAiModule {
 
    private void performCombatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle, double distance) {
       ServantNavigationHelper.stopIfMoving(entity);
+      if (ServantCombatTempoService.inMeleePressure(entity, entity.level().getGameTime())) {
+         entity.getMoveControl().strafe(distance > 2.5 ? 0.42F : 0.16F,
+            entity.getRandom().nextBoolean() ? 0.14F : -0.14F);
+         entity.getLookControl().setLookAt(target, 40.0F, 35.0F);
+         return;
+      }
       float side = entity.getRandom().nextBoolean() ? 0.45F : -0.45F;
       float forward = switch (combatStyle) {
          case CAUTIOUS -> distance < 2.4 ? -0.35F : -0.10F;
@@ -1587,34 +1595,12 @@ public final class CombatModule implements ServantAiModule {
          return false;
       }
       dir = dir.normalize();
-      Vec3 right = new Vec3(-dir.z, 0.0, dir.x);
-      int broken = 0;
-      int maxBroken = heavy ? 26 : 12;
-      float hardnessLimit = heavy ? 75.0F : 45.0F;
-      int height = Math.max(1, (int)Math.ceil(entity.getBbHeight()));
-      BlockPos base = entity.blockPosition();
-      for (int forward = 1; forward <= (heavy ? 3 : 2) && broken < maxBroken; forward++) {
-         for (int side = heavy ? -1 : 0; side <= 1 && broken < maxBroken; side++) {
-            Vec3 offset = dir.scale(forward).add(right.scale(side * (heavy ? 0.9 : 0.6)));
-            BlockPos column = base.offset((int)Math.round(offset.x), 0, (int)Math.round(offset.z));
-            for (int y = 0; y <= height && broken < maxBroken; y++) {
-               BlockPos pos = column.above(y);
-               BlockState state = sl.getBlockState(pos);
-               float hardness = state.getDestroySpeed(sl, pos);
-               if (!state.isAir()
-                  && hardness >= 0.0F
-                  && hardness <= hardnessLimit
-                  && !state.is(Blocks.BEDROCK)
-                  && state.getExplosionResistance(sl, pos, null) < 1200.0F
-                  && destroyBlockWithCombatFx(sl, pos, state, heavy)) {
-                  broken++;
-               }
-            }
-         }
-      }
-      if (broken <= 0) {
-         return false;
-      }
+      Vec3 center = entity.position().add(dir.scale(heavy ? 2.2 : 1.6))
+         .add(0.0, entity.getBbHeight() * 0.5, 0.0);
+      boolean queued = TerrainImpactService.impact(sl, entity, center,
+         TerrainImpactProfile.of(heavy ? TerrainImpactProfile.Tier.HEAVY : TerrainImpactProfile.Tier.MEDIUM),
+         TerrainImpactService.Shape.AIR_SPHERE);
+      if (!queued) return false;
       data.putInt("LastCombatWallBreakTick", tick);
       Vec3 fx = entity.position().add(dir.scale(1.4)).add(0.0, entity.getBbHeight() * 0.42, 0.0);
       sl.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, heavy ? 14 : 8, 0.25, 0.2, 0.25, 0.055);

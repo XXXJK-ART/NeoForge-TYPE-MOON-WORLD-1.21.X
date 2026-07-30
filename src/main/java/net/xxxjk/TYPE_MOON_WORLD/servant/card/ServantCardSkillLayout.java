@@ -153,7 +153,7 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction(crouching ? "大规模王之宝库" : "王之宝库", crouching ? "gilgamesh_grand_vault" : "gilgamesh_vault", crouching ? 80.0 : 34.0, crouching ? 200 : 100);
             case 3 -> new ServantCardSkillAction("环敌王之宝库", "gilgamesh_ring_vault", 55.0, 300);
             case 4 -> new ServantCardSkillAction("解毒的灵药", "gilgamesh_elixir", 45.0, 600);
-            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 300);
+            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 0);
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
             case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);

@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
 import java.util.UUID;
 import javax.annotation.Nullable;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -12,6 +13,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
@@ -19,6 +21,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -44,6 +49,9 @@ public final class ServantCombatMotionService {
    private static final String PREVIOUS_POS_X = PREFIX + "PreviousPosX";
    private static final String PREVIOUS_POS_Y = PREFIX + "PreviousPosY";
    private static final String PREVIOUS_POS_Z = PREFIX + "PreviousPosZ";
+   private static final String LAUNCH_TICK = PREFIX + "LaunchTick";
+   private static final String LAUNCH_ENTITY_TICK = PREFIX + "LaunchEntityTick";
+   private static final String TRAVEL_DISTANCE = PREFIX + "TravelDistance";
    private static final String PENDING_IMPACT_UNTIL = PREFIX + "PendingImpactUntil";
    private static final String PENDING_WALL = PREFIX + "PendingWall";
    private static final String PENDING_ENERGY = PREFIX + "PendingEnergy";
@@ -96,10 +104,17 @@ public final class ServantCombatMotionService {
       data.putLong(LAST_CONTROL, now);
       data.putString(STATE, MotionState.AIRBORNE.name());
       data.putString(TERRAIN_PERMISSION, attacker instanceof Player ? "PLAYER" : "NPC");
+      data.putLong(LAUNCH_TICK, now);
+      data.putInt(LAUNCH_ENTITY_TICK, target.tickCount);
+      data.putDouble(TRAVEL_DISTANCE, 0.0);
       data.remove(PENDING_IMPACT_UNTIL);
       data.remove(NPC_RECOVERY_ROLLED);
       storePreviousMotion(data, target.getDeltaMovement());
       storePreviousPosition(data, target.position());
+      if (attacker instanceof ServantEntity servant) {
+         ServantCombatTempoService.recordContact(servant, target,
+            ServantCombatTempoService.ContactType.LAUNCH, now);
+      }
       return new LaunchResult(true, depth, controlScale, appliedHorizontal, appliedVertical);
    }
 
@@ -176,19 +191,25 @@ public final class ServantCombatMotionService {
       Vec3 current = target.getDeltaMovement();
       double lostHorizontal = Math.max(0.0, previous.horizontalDistance() - current.horizontalDistance());
       Vec3 previousPosition = previousPosition(data);
-      Vec3 expected = previousPosition.add(previous);
-      boolean sweptWall = level.clip(new ClipContext(previousPosition.add(0.0, target.getBbHeight() * 0.5, 0.0),
-         expected.add(0.0, target.getBbHeight() * 0.5, 0.0), ClipContext.Block.COLLIDER,
-         ClipContext.Fluid.NONE, target)).getType() == HitResult.Type.BLOCK;
-      boolean wallImpact = target.horizontalCollision && sweptWall && lostHorizontal >= 0.18;
+      double moved = target.position().distanceTo(previousPosition);
+      data.putDouble(TRAVEL_DISTANCE, data.getDouble(TRAVEL_DISTANCE) + moved);
+      boolean completedMovementTick = now >= data.getLong(LAUNCH_TICK)
+         && target.tickCount > data.getInt(LAUNCH_ENTITY_TICK);
+      BlockHitResult wallHit = completedMovementTick && target.horizontalCollision
+         ? sweepWall(level, target, previousPosition, previous) : null;
+      boolean wallImpact = wallHit != null && lostHorizontal >= 0.18;
       boolean groundImpact = target.onGround() && previous.y <= -0.42;
       double impactEnergy = wallImpact ? Math.max(lostHorizontal, previous.horizontalDistance() * 0.55)
          : Math.max(0.0, Math.abs(previous.y) - Math.abs(current.y));
 
       if ((wallImpact || groundImpact) && now >= data.getLong(COLLISION_COOLDOWN)) {
          data.putLong(COLLISION_COOLDOWN, now + 4L);
+         if (wallImpact) {
+            resolveImpact(level, target, previous, true, Math.max(0.1, impactEnergy), wallHit.getLocation());
+            return;
+         }
          data.putLong(PENDING_IMPACT_UNTIL, now + 3L);
-         data.putBoolean(PENDING_WALL, wallImpact);
+         data.putBoolean(PENDING_WALL, false);
          data.putDouble(PENDING_ENERGY, Math.max(0.1, impactEnergy));
          if (!(target instanceof ServerPlayer) && tryRecovery(target, data, now)) {
             finishRecovery(target, now);
@@ -230,6 +251,11 @@ public final class ServantCombatMotionService {
 
    private static void resolveImpact(ServerLevel level, LivingEntity target, Vec3 previous, boolean wallImpact,
                                      double impactEnergy) {
+      resolveImpact(level, target, previous, wallImpact, impactEnergy, null);
+   }
+
+   private static void resolveImpact(ServerLevel level, LivingEntity target, Vec3 previous, boolean wallImpact,
+                                     double impactEnergy, @Nullable Vec3 collisionPoint) {
       CompoundTag data = target.getPersistentData();
       TerrainImpactProfile.Tier tier = impactTier(data);
       double energy = Math.max(0.1, impactEnergy);
@@ -239,18 +265,27 @@ public final class ServantCombatMotionService {
       TerrainImpactProfile profile = new TerrainImpactProfile(tier, radius, base.maximumHardness(),
          Math.min(base.debrisCount(), heavy ? 24 : 12), Math.min(base.dustCount(), 48));
       Vec3 direction = previous.lengthSqr() < 1.0E-4 ? target.getLookAngle() : previous.normalize();
-      Vec3 center = target.position().add(direction.scale(wallImpact ? 0.8 : 0.0)).add(0.0, wallImpact ? target.getBbHeight() * 0.45 : 0.1, 0.0);
+      Vec3 center = wallImpact && collisionPoint != null ? collisionPoint
+         : target.position().add(direction.scale(wallImpact ? 0.8 : 0.0))
+            .add(0.0, wallImpact ? target.getBbHeight() * 0.45 : 0.1, 0.0);
       LivingEntity source = resolveAttacker(level, data);
       TerrainImpactService.impact(level, source, center, profile,
          terrainPermission(data),
          wallImpact ? TerrainImpactService.Shape.AIR_SPHERE : TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
 
       float damage = (float)Math.min(heavy ? 14.0 : 8.0, Math.max(1.0, energy * (wallImpact ? 3.2 : 2.4)));
-      target.hurt(impactDamageSource(target, source), damage);
+      if (!ServantMasterProtection.isProtectedMaster(source, target)) {
+         target.hurt(impactDamageSource(target, source), damage);
+      }
       target.setDeltaMovement(previous.x * (wallImpact ? -0.12 : 0.25), wallImpact ? Math.max(0.08, previous.y * 0.18) : 0.08,
          previous.z * (wallImpact ? -0.12 : 0.25));
       target.hurtMarked = true;
       beginImpactStagger(target, level.getGameTime(), wallImpact ? 12 : 8, wallImpact);
+      if (source instanceof ServantEntity servant) {
+         ServantCombatTempoService.recordContact(servant, target, wallImpact
+            ? ServantCombatTempoService.ContactType.WALL
+            : ServantCombatTempoService.ContactType.LANDING, level.getGameTime());
+      }
       level.sendParticles(wallImpact ? ParticleTypes.POOF : ParticleTypes.CLOUD,
          center.x, center.y, center.z, heavy ? 24 : 14, radius * 0.35, 0.25, radius * 0.35, 0.08);
       level.playSound(null, target.blockPosition(), wallImpact ? SoundEvents.ZOMBIE_ATTACK_IRON_DOOR : SoundEvents.GENERIC_EXPLODE.value(),
@@ -337,6 +372,40 @@ public final class ServantCombatMotionService {
 
    private static Vec3 previousPosition(CompoundTag data) {
       return new Vec3(data.getDouble(PREVIOUS_POS_X), data.getDouble(PREVIOUS_POS_Y), data.getDouble(PREVIOUS_POS_Z));
+   }
+
+   @Nullable
+   private static BlockHitResult sweepWall(ServerLevel level, LivingEntity target, Vec3 start, Vec3 motion) {
+      Vec3 horizontal = motion.multiply(1.0, 0.0, 1.0);
+      if (horizontal.lengthSqr() < 1.0E-4) return null;
+      // Vanilla stops the entity at its collision-box edge, so the centre-point
+      // segment ends just short of the block face. Extend the sweep by the
+      // leading half-width to sample the actual surface that stopped the body.
+      Vec3 end = start.add(horizontal.x, motion.y, horizontal.z)
+         .add(horizontal.normalize().scale(Math.max(0.3, target.getBbWidth() * 0.75 + 0.2)));
+      Vec3 side = new Vec3(-horizontal.z, 0.0, horizontal.x).normalize()
+         .scale(Math.max(0.1, target.getBbWidth() * 0.42));
+      double[] heights = {0.2, 0.5, 0.82};
+      Vec3[] offsets = {Vec3.ZERO, side, side.scale(-1.0)};
+      BlockHitResult closest = null;
+      double closestDistance = Double.MAX_VALUE;
+      for (double height : heights) {
+         for (Vec3 offset : offsets) {
+            Vec3 from = start.add(offset).add(0.0, target.getBbHeight() * height, 0.0);
+            Vec3 to = end.add(offset).add(0.0, target.getBbHeight() * height, 0.0);
+            HitResult result = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER,
+               ClipContext.Fluid.NONE, target));
+            if (result instanceof BlockHitResult blockHit
+               && blockHit.getDirection().getAxis() != Direction.Axis.Y) {
+               double distance = from.distanceToSqr(blockHit.getLocation());
+               if (distance < closestDistance) {
+                  closest = blockHit;
+                  closestDistance = distance;
+               }
+            }
+         }
+      }
+      return closest;
    }
 
    private static TerrainImpactService.Permission terrainPermission(CompoundTag data) {

@@ -159,6 +159,10 @@ public class ModPlayerEventHandler {
          }
          triggerArtoriaManaBurstTerrainBreak(player, target);
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection.isProtectedMaster(player, target)) {
+            event.setCanceled(true);
+            return;
+         }
          if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
             if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) {
                event.setCanceled(true);

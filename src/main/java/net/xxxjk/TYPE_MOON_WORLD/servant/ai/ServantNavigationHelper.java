@@ -1,7 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -11,6 +13,55 @@ public final class ServantNavigationHelper {
    public static final int SHORT_REPATH_INTERVAL = 5;
 
    private ServantNavigationHelper() {
+   }
+
+   /** Detailed path outcome used by the tempo guard; the old boolean methods remain compatible. */
+   public enum NavigationResult {
+      MOVED, NO_PATH, BLOCKED, NO_PROGRESS, UNSAFE;
+
+      public boolean accepted() {
+         return this == MOVED;
+      }
+   }
+
+   public static NavigationResult moveToPositionDetailed(
+      ServantEntity entity, Vec3 target, double speed, long gameTick,
+      int repathInterval, double minTargetMoveSqr, String keyPrefix) {
+      if (entity == null || target == null) return NavigationResult.NO_PATH;
+      BlockPos targetBlock = BlockPos.containing(target);
+      if (!entity.level().hasChunkAt(targetBlock)) return NavigationResult.UNSAFE;
+      AABB destination = entity.getBoundingBox().move(
+         target.x - entity.getX(), target.y - entity.getY(), target.z - entity.getZ());
+      if (!entity.level().noCollision(entity, destination)) return NavigationResult.UNSAFE;
+      boolean accepted = moveToPositionThrottled(entity, target, speed, gameTick,
+         repathInterval, minTargetMoveSqr, keyPrefix);
+      if (!accepted) return NavigationResult.NO_PATH;
+      if (entity.distanceToSqr(target) <= 2.25) return NavigationResult.MOVED;
+      CompoundTag data = entity.getPersistentData();
+      String progress = keyPrefix + "Progress";
+      String px = keyPrefix + "ProgressX";
+      String py = keyPrefix + "ProgressY";
+      String pz = keyPrefix + "ProgressZ";
+      if (!data.contains(px)) {
+         data.putDouble(px, entity.getX());
+         data.putDouble(py, entity.getY());
+         data.putDouble(pz, entity.getZ());
+         data.putLong(progress, gameTick);
+      } else {
+         double dx = entity.getX() - data.getDouble(px);
+         double dy = entity.getY() - data.getDouble(py);
+         double dz = entity.getZ() - data.getDouble(pz);
+         if (dx * dx + dy * dy + dz * dz >= 0.04) {
+            data.putDouble(px, entity.getX());
+            data.putDouble(py, entity.getY());
+            data.putDouble(pz, entity.getZ());
+            data.putLong(progress, gameTick);
+         }
+      }
+      if (gameTick - data.getLong(progress) >= 12L) {
+         return entity.getNavigation().isDone() ? NavigationResult.BLOCKED : NavigationResult.NO_PROGRESS;
+      }
+      return NavigationResult.MOVED;
    }
 
    public static boolean moveToTargetThrottled(

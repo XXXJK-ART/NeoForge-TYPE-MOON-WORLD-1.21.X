@@ -48,6 +48,7 @@ public final class ServantTacticalController {
       AiBrain brain = AiBrain.begin(entity);
       ServantTargetingService.refreshOrRecover(entity, now);
       rememberTarget(entity, brain.blackboard(), now);
+      ServantCombatTempoService.TempoState tempo = ServantCombatTempoService.tick(entity, entity.getTarget(), now);
       ServantActionProfile actionProfile = ServantActionRegistry.get(entity.getServantId());
       ServantPhaseService.Update phase = ServantPhaseService.tick(entity, entity.getTarget(), actionProfile, now);
       if (phase.changed()) {
@@ -68,6 +69,7 @@ public final class ServantTacticalController {
          submitTacticalReposition(entity, brain, now);
          submitDistantPursuit(entity, brain, now);
       }
+      ServantCombatTempoService.submitFallback(entity, entity.getTarget(), brain, now, tempo);
 
       if (entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
          ProjectileThreatSensor.IncomingProjectile projectile = ProjectileThreatSensor.nearest(entity, 12.0, 8.0);
@@ -76,10 +78,12 @@ public final class ServantTacticalController {
             if (owner instanceof LivingEntity shooter && !entity.isAlliedTo(shooter)) {
                brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
             }
-            if (!CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
+            if (!ServantCombatDisposition.isRelentlessAdvance(entity)
+               && !CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
                double utility = 100.0 - projectile.impactTicks() * 8.0;
                brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> EvasionMovementService.tryEvade(entity, projectile.projectile().position()),
+                  () -> EvasionMovementService.tryAdvanceEvade(entity, projectile.projectile().position(),
+                     owner instanceof LivingEntity shooter ? shooter : null),
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          }
@@ -90,11 +94,22 @@ public final class ServantTacticalController {
          boolean explicitlyTargeted = entity.getUUID().equals(threat.targetUuid());
          if (!explicitlyTargeted && !threat.threatens(entity.getEyePosition(), entity.getBbWidth() * 0.65)) continue;
          if (threat.ticksToImpact(now) > 20L || !threat.dodgeable()) continue;
+         if (ServantCombatDisposition.isRelentlessAdvance(entity)) continue;
          brain.blackboard().observe(threat.sourceUuid(), threat.actionId(),
             entity.position().distanceTo(threat.origin()), 0.0, true, now);
          double utility = threat.danger() * 20.0 + Math.max(0.0, 20.0 - threat.ticksToImpact(now));
+         Entity source = level.getEntity(threat.sourceUuid());
+         boolean rangedPressure = threat.shape() == CombatThreat.Shape.LINE && threat.length() > 6.0
+            || threat.shape() == CombatThreat.Shape.CONE && threat.length() > 6.0;
          brain.submit(AiIntent.of(EVADE_ACTION, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 5, false,
-            () -> EvasionMovementService.tryEvade(entity, threat.origin()),
+            () -> {
+               if (rangedPressure) {
+                  EvasionMovementService.tryAdvanceEvade(entity, threat.origin(),
+                     source instanceof LivingEntity shooter ? shooter : null);
+               } else {
+                  EvasionMovementService.tryEvade(entity, threat.origin());
+               }
+            },
             AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
       }
 
@@ -138,8 +153,11 @@ public final class ServantTacticalController {
       LivingEntity target = entity.getTarget();
       if (!ServantManeuverService.shouldManeuver(entity, target)) return;
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
-      double utility = entity.distanceTo(target) + tactical.pursuitAggression() * 20.0;
-      brain.submit(AiIntent.of(COMBAT_MANEUVER, AiIntent.PRIORITY_POSITION, utility, 3, true,
+      boolean rangedPressure = ServantManeuverService.hasRangedPressure(entity, target);
+      int priority = rangedPressure ? AiIntent.PRIORITY_ATTACK : AiIntent.PRIORITY_POSITION;
+      double utility = entity.distanceTo(target) + tactical.pursuitAggression() * 20.0
+         + (rangedPressure ? 120.0 : 0.0);
+      brain.submit(AiIntent.of(COMBAT_MANEUVER, priority, utility, 3, true,
          () -> {
             if (!ServantManeuverService.trySideForwardReengage(entity, target, tactical, brain.blackboard(), now)) {
                ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression());
@@ -151,6 +169,7 @@ public final class ServantTacticalController {
    private static void submitTacticalReposition(ServantEntity entity, AiBrain brain, long now) {
       LivingEntity target = entity.getTarget();
       if (target == null || entity.getDefinition() == null) return;
+      if (ServantCombatTempoService.inMeleePressure(entity, now)) return;
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       if (!ServantManeuverService.shouldReposition(entity, target, tactical, now)) return;
       brain.submit(AiIntent.of(TACTICAL_REPOSITION, AiIntent.PRIORITY_POSITION,

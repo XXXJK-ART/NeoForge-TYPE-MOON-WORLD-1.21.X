@@ -137,17 +137,6 @@ public class CommonEvents {
    private static final Map<String, Set<UUID>> SHIKI_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
 
    @SubscribeEvent
-   public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
-      if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer serverPlayer)) {
-         return;
-      }
-      TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.master_active && !vars.servant_card_transformed) {
-         ServantCardTransformManager.normalizeFood(serverPlayer);
-      }
-   }
-
-   @SubscribeEvent
    public static void onServantCardFall(LivingFallEvent event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) {
          return;

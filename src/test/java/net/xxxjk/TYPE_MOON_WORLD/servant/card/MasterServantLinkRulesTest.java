@@ -10,11 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MasterServantLinkRulesTest {
    @Test
    void independentActionRanksUseConfiguredOnlineDurations() {
-      assertEquals(7 * 24 * 60 * 60 * 20,
+      assertEquals(7 * 24000,
          MasterServantLinkService.independentDurationTicksForSkills(List.of("independent_action_a")));
-      assertEquals(48 * 60 * 60 * 20,
+      assertEquals(2 * 24000,
          MasterServantLinkService.independentDurationTicksForSkills(List.of("independent_action_b")));
-      assertEquals(24 * 60 * 60 * 20,
+      assertEquals(24000,
          MasterServantLinkService.independentDurationTicksForSkills(List.of("independent_action_c")));
       assertEquals(0, MasterServantLinkService.independentDurationTicksForSkills(List.of("battle_continuation_a")));
    }

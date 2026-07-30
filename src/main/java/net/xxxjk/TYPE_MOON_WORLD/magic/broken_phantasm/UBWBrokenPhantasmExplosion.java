@@ -5,6 +5,7 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -19,7 +20,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -48,6 +51,7 @@ public class UBWBrokenPhantasmExplosion {
             float clampedScale = Mth.clamp(scale, 0.35F, 2.0F);
             double damageRadius = Mth.clamp(radiusPower * 4.2 * clampedScale, 8.0, 25.0);
             float totalDamage = Mth.clamp(80.0F + damagePower * 14.0F * clampedScale, 40.0F, 600.0F);
+            boolean emiyaDistanceFalloff = isEmiyaBrokenPhantasmOwner(owner);
             DamageSource explosionSource = level.damageSources().explosion(source, owner);
             Set<Integer> damagedEntities = new HashSet<>();
             VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", pos, 128.0);
@@ -67,7 +71,8 @@ public class UBWBrokenPhantasmExplosion {
                TYPE_MOON_WORLD.queueServerWork(waveIndex * 2, () -> {
                   double previousRadius = Math.max(0.0, (waveIndex - 1) * waveStep);
                   double currentRadius = waveIndex * waveStep;
-                  processWave(serverLevel, pos, currentRadius, previousRadius, explosionSource, owner, damagedEntities, totalDamage);
+                  processWave(serverLevel, pos, currentRadius, previousRadius, explosionSource, owner,
+                     damagedEntities, totalDamage, damageRadius, emiyaDistanceFalloff);
                });
             }
          }
@@ -145,7 +150,9 @@ public class UBWBrokenPhantasmExplosion {
       DamageSource source,
       Entity owner,
       Set<Integer> damagedEntities,
-      float damage
+      float damage,
+      double maximumRadius,
+      boolean emiyaDistanceFalloff
    ) {
       int ringCount = Math.max(24, (int)(currentRadius * 9.0));
       for (int i = 0; i < ringCount; i++) {
@@ -173,6 +180,9 @@ public class UBWBrokenPhantasmExplosion {
          living.invulnerableTime = 0;
          float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         if (emiyaDistanceFalloff) {
+            finalDamage = Math.min(finalDamage, emiyaDamageAtDistance(damage, dist, maximumRadius));
+         }
          living.hurt(source, finalDamage);
          living.invulnerableTime = 0;
          Vec3 push = living.position().subtract(center);
@@ -182,6 +192,20 @@ public class UBWBrokenPhantasmExplosion {
             living.hurtMarked = true;
          }
       }
+   }
+
+   static float emiyaDamageAtDistance(float centerDamage, double distance, double radius) {
+      float safeCenter = Math.max(0.0F, centerDamage);
+      float outerDamage = Math.min(80.0F, safeCenter);
+      float progress = radius <= 0.0 ? 1.0F : Mth.clamp((float)(distance / radius), 0.0F, 1.0F);
+      return Mth.lerp(progress, safeCenter, outerDamage);
+   }
+
+   private static boolean isEmiyaBrokenPhantasmOwner(Entity owner) {
+      if (owner instanceof EmiyaArcherEntity) return true;
+      if (!(owner instanceof ServerPlayer player)) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id);
    }
 
 }
