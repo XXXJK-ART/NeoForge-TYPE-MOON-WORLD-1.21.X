@@ -1,3 +1,6 @@
 {
-  "parent": "typemoonworld:block/summoning_circle"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "typemoonworld:block/summoning_circle"
+  }
 }

@@ -1,6 +1,9 @@
 {
   "variants": {
-    "": {
+    "lit=false": {
+      "model": "typemoonworld:block/summoning_circle"
+    },
+    "lit=true": {
       "model": "typemoonworld:block/summoning_circle"
     }
   }

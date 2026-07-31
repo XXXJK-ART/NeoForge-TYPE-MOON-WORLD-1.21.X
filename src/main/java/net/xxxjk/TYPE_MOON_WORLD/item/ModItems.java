@@ -51,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.NightingaleGunItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.OdaMatchlockCatalystItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
 
 public class ModItems {
@@ -163,7 +164,8 @@ public class ModItems {
     public static final DeferredItem<Item> DRAGONS_REVERSE_SCALE = registerSimpleItem("dragons_reverse_scale");
     public static final DeferredItem<Item> EVIL_BONE = registerSimpleItem("evil_bone");
     public static final DeferredItem<Item> SEA_BEAST_BONE = registerSummoningRelic("sea_beast_bone");
-    public static final DeferredItem<Item> ODA_MATCHLOCK_CATALYST = registerSummoningRelic("oda_matchlock_catalyst");
+    public static final DeferredItem<Item> ODA_MATCHLOCK_CATALYST = ITEMS.register("oda_matchlock_catalyst",
+            () -> new OdaMatchlockCatalystItem(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> BROKEN_BOWSTRING = registerSummoningRelic("broken_bowstring");
     public static final DeferredItem<Item> CHALK = ITEMS.register("chalk",
             () -> new ChalkItem(new Item.Properties().stacksTo(64)));

@@ -28,7 +28,7 @@ public class ModBlocks {
       "summoning_circle",
       () -> new SummoningCircleBlock(
          Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.WHITE_CARPET)
-            .noOcclusion().noLootTable().strength(0.1F)
+            .noOcclusion().noLootTable().strength(0.1F).lightLevel(SummoningCircleBlock::activeLight)
       )
    );
    public static final DeferredBlock<Block> AGE_OF_GODS_DIRT = registerBlock(
