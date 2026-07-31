@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 public final class ArashCombatHelper {
    private static final String TAG_NEXT_NORMAL = "ArashNextNormalArrow";
@@ -427,6 +428,7 @@ public final class ArashCombatHelper {
 
    public static boolean isTarget(ArashEntity arash, LivingEntity target) {
       if (target == null || !EntityUtils.isValidCombatTarget(arash, target)) return false;
+      if (ServantMasterTargeting.isContractMaster(arash, target)) return false;
       return target instanceof Enemy || target instanceof ServantEntity
          || target.getLastHurtMob() == arash || arash.getLastHurtByMob() == target;
    }

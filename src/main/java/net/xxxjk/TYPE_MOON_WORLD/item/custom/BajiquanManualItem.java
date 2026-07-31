@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 
-public class BajiquanManualItem extends Item {
+public class BajiquanManualItem extends SummoningRelicItem {
    public BajiquanManualItem(Properties properties) {
       super(properties.stacksTo(1));
    }

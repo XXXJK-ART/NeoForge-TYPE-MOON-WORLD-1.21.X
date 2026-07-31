@@ -25,6 +25,8 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionProfile;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode;
 
 /** Common pre-emptive defense layer. Character combat remains the fallback until migrated. */
@@ -79,6 +81,8 @@ public final class ServantTacticalController {
                brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
             }
             if (!ServantCombatDisposition.isRelentlessAdvance(entity)
+               && (!(entity instanceof HeraclesEntity) && !(entity instanceof GawainEntity)
+                  || entity.getRandom().nextFloat() < 0.04F)
                && !CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
                double utility = 100.0 - projectile.impactTicks() * 8.0;
                brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
@@ -152,6 +156,8 @@ public final class ServantTacticalController {
    private static void submitCombatManeuver(ServantEntity entity, AiBrain brain, long now) {
       LivingEntity target = entity.getTarget();
       if (!ServantManeuverService.shouldManeuver(entity, target)) return;
+      if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity)
+         && target != null && entity.distanceTo(target) > 3.0) return;
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       boolean rangedPressure = ServantManeuverService.hasRangedPressure(entity, target);
       int priority = rangedPressure ? AiIntent.PRIORITY_ATTACK : AiIntent.PRIORITY_POSITION;
@@ -170,6 +176,8 @@ public final class ServantTacticalController {
       LivingEntity target = entity.getTarget();
       if (target == null || entity.getDefinition() == null) return;
       if (ServantCombatTempoService.inMeleePressure(entity, now)) return;
+      if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity)
+         && entity.distanceTo(target) > 3.0) return;
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       if (!ServantManeuverService.shouldReposition(entity, target, tactical, now)) return;
       brain.submit(AiIntent.of(TACTICAL_REPOSITION, AiIntent.PRIORITY_POSITION,

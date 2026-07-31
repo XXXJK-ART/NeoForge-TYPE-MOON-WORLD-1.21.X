@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 public final class ArashAimHelper {
    public static final double AUTO_AIM_RANGE = 200.0;
@@ -34,6 +35,7 @@ public final class ArashAimHelper {
       Level level = shooter.level();
       return level.getEntitiesOfClass(LivingEntity.class, search, target ->
             EntityUtils.isValidCombatTarget(shooter, target)
+               && !ServantMasterTargeting.isContractMaster(shooter, target)
                && shooter.hasLineOfSight(target)
                && isWithinAimCone(look, target.getEyePosition().subtract(origin), AUTO_AIM_ANGLE_DEGREES)
                && target.getEyePosition().distanceToSqr(origin) <= AUTO_AIM_RANGE * AUTO_AIM_RANGE)
@@ -47,6 +49,7 @@ public final class ArashAimHelper {
       double radiusSqr = radius * radius;
       return shooter.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
             target -> EntityUtils.isValidCombatTarget(shooter, target)
+               && !ServantMasterTargeting.isContractMaster(shooter, target)
                && target.getBoundingBox().getCenter().distanceToSqr(center) <= radiusSqr
                && target.distanceToSqr(shooter) <= AUTO_AIM_RANGE * AUTO_AIM_RANGE)
          .stream()

@@ -26,6 +26,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SUPERVISOR_COMMAND_SPELL);
                         output.accept(ModItems.SINGLE_COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
+                        output.accept(ModItems.CHALK);
+                        output.accept(ModBlocks.SUMMONING_CIRCLE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
                         output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
                         output.accept(ModItems.MASTER_CARD_TOHSAKA_RIN);
@@ -115,6 +117,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_PHILOSOPHERS_STONE);
                         output.accept(ModItems.RELIC_GOLDEN_FLEECE);
                         output.accept(ModItems.RELIC_ATO_CRADLE);
+                        output.accept(ModItems.SEA_BEAST_BONE);
+                        output.accept(ModItems.ODA_MATCHLOCK_CATALYST);
+                        output.accept(ModItems.BROKEN_BOWSTRING);
+                        output.accept(ModBlocks.AGE_OF_GODS_DIRT);
                         output.accept(ModItems.GEM_NECKLACE);
                         output.accept(ModItems.AVALON);
                     }).build());

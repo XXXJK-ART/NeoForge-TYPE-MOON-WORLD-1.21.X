@@ -50,6 +50,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NightingaleGunItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -57,6 +59,10 @@ public class ModItems {
 
     private static DeferredItem<Item> registerSimpleItem(String name) {
         return ITEMS.register(name, () -> new Item(new Item.Properties()));
+    }
+
+    private static DeferredItem<Item> registerSummoningRelic(String name) {
+        return ITEMS.register(name, () -> new SummoningRelicItem(new Item.Properties().rarity(Rarity.RARE)));
     }
 
     private static DeferredItem<Item> registerJapaneseSword(String name, double damage, double speed, double interactionRange) {
@@ -156,6 +162,11 @@ public class ModItems {
     public static final DeferredItem<Item> DRAGON_FANG = registerSimpleItem("dragon_fang");
     public static final DeferredItem<Item> DRAGONS_REVERSE_SCALE = registerSimpleItem("dragons_reverse_scale");
     public static final DeferredItem<Item> EVIL_BONE = registerSimpleItem("evil_bone");
+    public static final DeferredItem<Item> SEA_BEAST_BONE = registerSummoningRelic("sea_beast_bone");
+    public static final DeferredItem<Item> ODA_MATCHLOCK_CATALYST = registerSummoningRelic("oda_matchlock_catalyst");
+    public static final DeferredItem<Item> BROKEN_BOWSTRING = registerSummoningRelic("broken_bowstring");
+    public static final DeferredItem<Item> CHALK = ITEMS.register("chalk",
+            () -> new ChalkItem(new Item.Properties().stacksTo(64)));
     public static final DeferredItem<Item> HOLY_GRAIL = ITEMS.register("holy_grail",
             () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> PHOENIX_FEATHER = registerSimpleItem("phoenix_feather");
@@ -234,9 +245,9 @@ public class ModItems {
     public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
 
-    public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSimpleItem("relic_apocalypse");
-    public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSimpleItem("relic_apocalypse_page");
-    public static final DeferredItem<Item> RELIC_FIRST_SNAKE_SKIN = registerSimpleItem("relic_first_snake_skin");
+    public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSummoningRelic("relic_apocalypse");
+    public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSummoningRelic("relic_apocalypse_page");
+    public static final DeferredItem<Item> RELIC_FIRST_SNAKE_SKIN = registerSummoningRelic("relic_first_snake_skin");
     public static final DeferredItem<Item> RELIC_HAJIQUAN_MANUAL = ITEMS.register("relic_hajiquan_manual",
             () -> new BajiquanManualItem(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> GANRYU_MANUAL = ITEMS.register("ganryu_manual",
@@ -250,16 +261,16 @@ public class ModItems {
     public static final DeferredItem<Item> SPARRING_INVITATION = ITEMS.register("sparring_invitation",
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> RELIC_VALKYRIE_ARROWHEAD = registerSimpleItem("relic_valkyrie_arrowhead");
-    public static final DeferredItem<Item> RELIC_BRONZE_MIRROR = registerSimpleItem("relic_bronze_mirror");
-    public static final DeferredItem<Item> RELIC_ROUND_TABLE_FRAGMENT = registerSimpleItem("relic_round_table_fragment");
-    public static final DeferredItem<Item> RELIC_TSUBURA_SHIP_PLANK = registerSimpleItem("relic_tsubura_ship_plank");
-    public static final DeferredItem<Item> RELIC_BIZEN_TSUBA = registerSimpleItem("relic_bizen_tsuba");
-    public static final DeferredItem<Item> RELIC_OLD_MAN_MASK = registerSimpleItem("relic_old_man_mask");
-    public static final DeferredItem<Item> RELIC_BANDAGE = registerSimpleItem("relic_bandage");
-    public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSimpleItem("relic_philosophers_stone");
-    public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSimpleItem("relic_golden_fleece");
+    public static final DeferredItem<Item> RELIC_BRONZE_MIRROR = registerSummoningRelic("relic_bronze_mirror");
+    public static final DeferredItem<Item> RELIC_ROUND_TABLE_FRAGMENT = registerSummoningRelic("relic_round_table_fragment");
+    public static final DeferredItem<Item> RELIC_TSUBURA_SHIP_PLANK = registerSummoningRelic("relic_tsubura_ship_plank");
+    public static final DeferredItem<Item> RELIC_BIZEN_TSUBA = registerSummoningRelic("relic_bizen_tsuba");
+    public static final DeferredItem<Item> RELIC_OLD_MAN_MASK = registerSummoningRelic("relic_old_man_mask");
+    public static final DeferredItem<Item> RELIC_BANDAGE = registerSummoningRelic("relic_bandage");
+    public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSummoningRelic("relic_philosophers_stone");
+    public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSummoningRelic("relic_golden_fleece");
     public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSimpleItem("relic_ato_cradle");
-    public static final DeferredItem<Item> GEM_NECKLACE = registerSimpleItem("gem_necklace");
+    public static final DeferredItem<Item> GEM_NECKLACE = registerSummoningRelic("gem_necklace");
     public static final DeferredItem<Item> MYSTIC_MERCURY = ITEMS.register("mystic_mercury",
             () -> new MysticMercuryItem(new Item.Properties().rarity(Rarity.RARE)));
 

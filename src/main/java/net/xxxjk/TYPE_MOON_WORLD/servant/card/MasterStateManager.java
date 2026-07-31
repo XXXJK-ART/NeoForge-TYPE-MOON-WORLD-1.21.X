@@ -50,6 +50,8 @@ public final class MasterStateManager {
       }
       vars.master_active = true;
       vars.master_servant_uuid = "";
+      vars.master_servant_contract_id = "";
+      MasterServantLinkService.clearContractTags(player);
       vars.master_command_spells = MAX_COMMAND_SPELLS;
       vars.master_command_spell_style = randomCommandSpellStyle(player);
       vars.master_command_spell_pose_active = false;
@@ -73,6 +75,8 @@ public final class MasterStateManager {
       }
       vars.master_active = true;
       vars.master_servant_uuid = "";
+      vars.master_servant_contract_id = "";
+      MasterServantLinkService.clearContractTags(player);
       vars.master_command_spells = Math.max(vars.master_command_spells, MAX_COMMAND_SPELLS);
       vars.master_command_spell_style = sanitizeCommandSpellStyle(commandSpellStyle);
       vars.master_command_spell_pose_active = false;
@@ -101,6 +105,7 @@ public final class MasterStateManager {
       removeAttributes(player);
       vars.master_active = false;
       vars.master_servant_uuid = "";
+      vars.master_servant_contract_id = "";
       vars.master_command_spells = 0;
       vars.master_command_spell_style = "default";
       vars.master_command_spell_pose_active = false;
@@ -145,6 +150,7 @@ public final class MasterStateManager {
       if (!vars.master_active) {
          return;
       }
+      if (vars.master_card_active) MasterCardProfile.ensureTags(player, vars.master_card_id);
       applyAttributes(player);
    }
 
@@ -162,6 +168,19 @@ public final class MasterStateManager {
    }
 
    public static boolean bind(ServerPlayer master, ServerPlayer servant) {
+      return bindInternal(master, servant, false);
+   }
+
+   /**
+    * Binds a player servant summoned by a catalyst. A normal master form may
+    * perform this ritual even when no master card is active; direct card
+    * contracts continue to use the stricter card-to-card validation above.
+    */
+   public static boolean bindForSummoning(ServerPlayer master, ServerPlayer servant) {
+      return bindInternal(master, servant, true);
+   }
+
+   private static boolean bindInternal(ServerPlayer master, ServerPlayer servant, boolean summoned) {
       if (master == servant) {
          return false;
       }
@@ -169,8 +188,11 @@ public final class MasterStateManager {
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       MasterServantLinkService.repairPlayerLink(master, masterVars);
       MasterServantLinkService.repairPlayerLink(servant, servantVars);
-      if (!masterVars.master_active || !isPlayerCardContractPair(masterVars.master_card_active, masterVars.servant_card_transformed,
-         servantVars.master_card_active, servantVars.servant_card_transformed)) {
+      boolean validPair = summoned
+         ? servantVars.servant_card_transformed && !servantVars.master_card_active
+         : isPlayerCardContractPair(masterVars.master_card_active, masterVars.servant_card_transformed,
+            servantVars.master_card_active, servantVars.servant_card_transformed);
+      if (!masterVars.master_active || !validPair) {
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.contract_invalid"), true);
          return false;
       }
@@ -182,6 +204,7 @@ public final class MasterStateManager {
       if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
       masterVars.master_servant_uuid = servant.getUUID().toString();
       servantVars.servant_card_master_uuid = master.getUUID().toString();
+      MasterServantLinkService.establishContract(master, masterVars, servant, servantVars);
       servantVars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_CONTRACTED;
       MasterServantLinkService.clearSurvival(servantVars);
       MasterServantLinkService.captureMasterPosition(master, servantVars);
@@ -200,11 +223,15 @@ public final class MasterStateManager {
          TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (servant.getUUID().toString().equals(masterVars.master_servant_uuid)) {
             masterVars.master_servant_uuid = "";
+            masterVars.master_servant_contract_id = "";
+            MasterServantLinkService.clearContractTags(master);
             masterVars.syncPlayerVariables(master);
          }
       }
       servantVars.servant_card_master_uuid = "";
+      servantVars.servant_card_contract_id = "";
       servantVars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS;
+      MasterServantLinkService.clearContractTags(servant);
       MasterServantLinkService.clearMasterPosition(servantVars);
    }
 
@@ -248,6 +275,7 @@ public final class MasterStateManager {
       if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
       vars.master_servant_uuid = servant.getUUID().toString();
       servant.bindMaster(master);
+      MasterServantLinkService.establishEntityContract(master, vars, servant);
       vars.syncPlayerVariables(master);
       master.displayClientMessage(Component.translatable("message.typemoonworld.entity_servant.bound", servant.getDisplayName()), true);
       NeoForge.EVENT_BUS.post(new ServantContractEvent.Post(master, servant));
@@ -259,6 +287,8 @@ public final class MasterStateManager {
       TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (servant.getUUID().toString().equals(vars.master_servant_uuid)) {
          vars.master_servant_uuid = "";
+         vars.master_servant_contract_id = "";
+         MasterServantLinkService.clearContractTags(master);
          vars.syncPlayerVariables(master);
       }
       servant.unbindMaster();
@@ -415,10 +445,13 @@ public final class MasterStateManager {
       if (servant instanceof ServerPlayer servantPlayer) {
          TypeMoonWorldModVariables.PlayerVariables servantVars = servantPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_id = "";
          servantVars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS;
+         MasterServantLinkService.clearContractTags(servantPlayer);
          servantVars.syncPlayerVariables(servantPlayer);
       } else if (servant instanceof ServantEntity entityServant) {
          entityServant.unbindMaster();
+         MasterServantLinkService.clearEntityContract(entityServant);
       }
    }
 

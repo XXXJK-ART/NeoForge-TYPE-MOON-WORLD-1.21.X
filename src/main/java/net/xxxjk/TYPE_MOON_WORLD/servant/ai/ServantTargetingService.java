@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 /** Keeps a recently engaged, still valid opponent from being discarded after knockback or brief occlusion. */
 public final class ServantTargetingService {
@@ -97,6 +98,7 @@ public final class ServantTargetingService {
    private static boolean isRetainable(ServantEntity servant, LivingEntity target) {
       return target.level() == servant.level()
          && EntityUtils.isValidCombatTarget(servant, target)
+         && !ServantMasterTargeting.isContractMaster(servant, target)
          && servant.distanceToSqr(target) <= RETAIN_DISTANCE * RETAIN_DISTANCE;
    }
 

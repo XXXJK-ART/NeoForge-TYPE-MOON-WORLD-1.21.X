@@ -6,12 +6,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
@@ -43,6 +45,7 @@ public final class MasterServantLinkService {
    public static final String SERVANT_CONTRACT_MASTERLESS = "masterless";
    public static final int FORCED_DEATH_TICKS = 200;
    public static final float DECAY_DAMAGE_PER_SECOND = 5.0F;
+   private static final String CONTRACT_TAG_PREFIX = "tmw_contract_";
 
    private static final ResourceLocation LINK_HEALTH_ID = id("servant_card_link_health_penalty");
    private static final ResourceLocation LINK_ATTACK_ID = id("servant_card_link_attack_penalty");
@@ -117,6 +120,56 @@ public final class MasterServantLinkService {
       unlink(master, servant, UnlinkReason.CONTRACT_TERMINATED);
    }
 
+   public static String establishContract(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars,
+                                          ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
+      String id = sanitizeUuid(masterVars.master_servant_contract_id);
+      if (id.isBlank()) id = sanitizeUuid(servantVars.servant_card_contract_id);
+      if (id.isBlank()) id = UUID.randomUUID().toString();
+      masterVars.master_servant_contract_id = id;
+      servantVars.servant_card_contract_id = id;
+      setContractTag(master, id);
+      setContractTag(servant, id);
+      return id;
+   }
+
+   public static void establishEntityContract(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars,
+                                               ServantEntity servant) {
+      String id = sanitizeUuid(masterVars.master_servant_contract_id);
+      if (id.isBlank()) id = UUID.randomUUID().toString();
+      masterVars.master_servant_contract_id = id;
+      setContractTag(master, id);
+      setContractTag(servant, id);
+      servant.setContractId(id);
+   }
+
+   public static void clearPlayerContract(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      clearContractTags(player);
+      vars.master_servant_contract_id = "";
+      vars.servant_card_contract_id = "";
+   }
+
+   public static void clearEntityContract(ServantEntity servant) {
+      clearContractTags(servant);
+      servant.setContractId("");
+   }
+
+   public static void setContractTag(Entity entity, String id) {
+      if (entity == null) return;
+      clearContractTags(entity);
+      if (!isBlank(id)) entity.addTag(CONTRACT_TAG_PREFIX + id);
+   }
+
+   public static void clearContractTags(Entity entity) {
+      if (entity == null) return;
+      for (String tag : new java.util.ArrayList<>(entity.getTags())) {
+         if (tag.equals(CONTRACT_TAG_PREFIX) || tag.startsWith(CONTRACT_TAG_PREFIX)) entity.removeTag(tag);
+      }
+   }
+
+   public static String contractTagPrefix() {
+      return CONTRACT_TAG_PREFIX;
+   }
+
    public static void consumePendingTransitions(ServerPlayer player) {
       if (player != null && player.getServer() != null) {
          PlayerLinkTransitionData.get(player.getServer()).consume(player);
@@ -129,10 +182,18 @@ public final class MasterServantLinkService {
       vars.servant_card_contract_state = sanitizeServantContractState(vars.servant_card_contract_state);
       vars.master_servant_uuid = sanitizeUuid(vars.master_servant_uuid);
       vars.servant_card_master_uuid = sanitizeUuid(vars.servant_card_master_uuid);
-      if (!vars.master_active) vars.master_servant_uuid = "";
+      vars.master_servant_contract_id = sanitizeUuid(vars.master_servant_contract_id);
+      vars.servant_card_contract_id = sanitizeUuid(vars.servant_card_contract_id);
+      if (!vars.master_active) {
+         vars.master_servant_uuid = "";
+         vars.master_servant_contract_id = "";
+         clearContractTags(player);
+      }
       if (!vars.servant_card_transformed) {
          vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_id = "";
          vars.servant_card_contract_state = SERVANT_CONTRACT_NATIVE;
+         clearContractTags(player);
          clearSurvival(vars);
          clearMasterPosition(vars);
       } else if (SURVIVAL_DECAYING.equals(vars.master_servant_survival_state)) {
@@ -157,6 +218,11 @@ public final class MasterServantLinkService {
             TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             if (!servantVars.servant_card_transformed || !player.getUUID().toString().equals(servantVars.servant_card_master_uuid)) {
                vars.master_servant_uuid = "";
+               vars.master_servant_contract_id = "";
+               clearContractTags(player);
+            } else {
+               establishContract(player, vars, servant, servantVars);
+               servantVars.syncPlayerVariables(servant);
             }
          }
       }
@@ -168,7 +234,12 @@ public final class MasterServantLinkService {
             TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             if (!masterVars.master_active || !player.getUUID().toString().equals(masterVars.master_servant_uuid)) {
                vars.servant_card_master_uuid = "";
+               vars.servant_card_contract_id = "";
+               clearContractTags(player);
                clearMasterPosition(vars);
+            } else {
+               establishContract(master, masterVars, player, vars);
+               masterVars.syncPlayerVariables(master);
             }
          }
       }
@@ -189,7 +260,11 @@ public final class MasterServantLinkService {
 
    public static void onMasterLost(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars) {
       if (master == null || masterVars == null || isBlank(masterVars.master_servant_uuid)) {
-         if (masterVars != null) clearSnapshot(masterVars);
+         if (masterVars != null) {
+            masterVars.master_servant_contract_id = "";
+            clearContractTags(master);
+            clearSnapshot(masterVars);
+         }
          return;
       }
       UUID servantId = parse(masterVars.master_servant_uuid);
@@ -203,6 +278,8 @@ public final class MasterServantLinkService {
                servantId, master.getUUID(), UnlinkReason.MASTER_LOST);
          }
          masterVars.master_servant_uuid = "";
+         masterVars.master_servant_contract_id = "";
+         clearContractTags(master);
          clearSnapshot(masterVars);
          masterVars.syncPlayerVariables(master);
       }
@@ -212,6 +289,8 @@ public final class MasterServantLinkService {
       if (servant == null || servantVars == null || isBlank(servantVars.servant_card_master_uuid)) {
          if (servantVars != null) {
             servantVars.servant_card_master_uuid = "";
+            servantVars.servant_card_contract_id = "";
+            clearContractTags(servant);
             clearSnapshot(servantVars);
             clearSurvival(servantVars);
          }
@@ -228,6 +307,8 @@ public final class MasterServantLinkService {
                masterId, servant.getUUID(), UnlinkReason.SERVANT_LOST);
          }
          servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_id = "";
+         clearContractTags(servant);
          servantVars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
          clearSnapshot(servantVars);
          clearMasterPosition(servantVars);
@@ -248,6 +329,8 @@ public final class MasterServantLinkService {
          TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (servant.getUUID().toString().equals(vars.master_servant_uuid)) {
             vars.master_servant_uuid = "";
+            vars.master_servant_contract_id = "";
+            clearContractTags(master);
             clearSnapshot(vars);
             if (vars.master_active) applyServantLossToMaster(master, vars);
             vars.syncPlayerVariables(master);
@@ -256,6 +339,8 @@ public final class MasterServantLinkService {
          PlayerLinkTransitionData.get(servant.getServer()).queue(
             masterId, servant.getUUID(), UnlinkReason.SERVANT_LOST);
       }
+      clearContractTags(servant);
+      servant.setContractId("");
       servant.unbindMaster();
    }
 
@@ -271,12 +356,16 @@ public final class MasterServantLinkService {
       if (masterVars != null && (servant == null || servant.getUUID().toString().equals(masterVars.master_servant_uuid))) {
          masterVars.master_servant_uuid = "";
          clearSnapshot(masterVars);
+         masterVars.master_servant_contract_id = "";
+         clearContractTags(master);
       }
       if (servantVars != null && (master == null || master.getUUID().toString().equals(servantVars.servant_card_master_uuid))) {
          servantVars.servant_card_master_uuid = "";
          servantVars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
          clearSnapshot(servantVars);
          clearMasterPosition(servantVars);
+         servantVars.servant_card_contract_id = "";
+         clearContractTags(servant);
       }
 
       if (paired && reason == UnlinkReason.MASTER_LOST && servantVars.servant_card_transformed) {
@@ -297,6 +386,8 @@ public final class MasterServantLinkService {
       if (reason == UnlinkReason.MASTER_LOST) {
          if (!partnerId.toString().equals(vars.servant_card_master_uuid)) return;
          vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_id = "";
+         clearContractTags(player);
          vars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
          clearSnapshot(vars);
          clearMasterPosition(vars);
@@ -304,6 +395,8 @@ public final class MasterServantLinkService {
       } else if (reason == UnlinkReason.SERVANT_LOST) {
          if (!partnerId.toString().equals(vars.master_servant_uuid)) return;
          vars.master_servant_uuid = "";
+         vars.master_servant_contract_id = "";
+         clearContractTags(player);
          clearSnapshot(vars);
          if (vars.master_active) applyServantLossToMaster(player, vars);
       }
@@ -356,8 +449,14 @@ public final class MasterServantLinkService {
    private static void tickMaster(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.master_servant_link_drawing_mana = false;
       ServerPlayer servant = getLinkedServant(master, vars);
-      if (servant == null) {
+      LivingEntity entityServant = servant == null ? MasterStateManager.getBoundServantEntity(master, vars) : servant;
+      if (entityServant == null) {
          clearSnapshot(vars);
+         clearServantPosition(vars);
+         return;
+      }
+      if (servant == null) {
+         updateEntitySnapshot(master, vars, entityServant);
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -484,6 +583,20 @@ public final class MasterServantLinkService {
       vars.master_servant_link_state = STATE_NONE;
       vars.master_servant_link_decay = 0.0;
       vars.master_servant_link_drawing_mana = false;
+      clearServantPosition(vars);
+   }
+
+   private static void updateEntitySnapshot(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars,
+                                             LivingEntity servant) {
+      vars.master_servant_link_partner_uuid = servant.getUUID().toString();
+      vars.master_servant_link_partner_hp = servant.getHealth();
+      vars.master_servant_link_partner_max_hp = servant.getMaxHealth();
+      vars.master_servant_link_partner_mana = 0.0;
+      vars.master_servant_link_partner_max_mana = 0.0;
+      vars.master_servant_link_state = STATE_NORMAL;
+      vars.master_servant_link_decay = 0.0;
+      captureServantPosition(servant, vars);
+      if (master.tickCount % 20 == 0) vars.syncMana(master);
    }
 
    static void captureMasterPosition(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables servantVars) {
@@ -494,6 +607,26 @@ public final class MasterServantLinkService {
       servantVars.master_servant_master_x = master.getX();
       servantVars.master_servant_master_y = master.getY();
       servantVars.master_servant_master_z = master.getZ();
+   }
+
+   static void captureServantPosition(LivingEntity servant, TypeMoonWorldModVariables.PlayerVariables masterVars) {
+      if (servant == null || masterVars == null) return;
+      masterVars.master_servant_servant_position_valid = true;
+      masterVars.master_servant_servant_position_online = servant.isAlive() && !servant.isRemoved();
+      masterVars.master_servant_servant_dimension = servant.level().dimension().location().toString();
+      masterVars.master_servant_servant_x = servant.getX();
+      masterVars.master_servant_servant_y = servant.getY();
+      masterVars.master_servant_servant_z = servant.getZ();
+   }
+
+   public static void clearServantPosition(TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars == null) return;
+      vars.master_servant_servant_position_valid = false;
+      vars.master_servant_servant_position_online = false;
+      vars.master_servant_servant_dimension = "";
+      vars.master_servant_servant_x = 0.0;
+      vars.master_servant_servant_y = 0.0;
+      vars.master_servant_servant_z = 0.0;
    }
 
    public static void clearMasterPosition(TypeMoonWorldModVariables.PlayerVariables vars) {

@@ -20,6 +20,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import org.joml.Vector3f;
@@ -67,6 +68,7 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    @Override
    protected boolean canHitEntity(Entity entity) {
       return entity != null && entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity)
+         && (!(this.getOwner() instanceof LivingEntity owner) || !(entity instanceof LivingEntity living) || !ServantMasterTargeting.isContractMaster(owner, living))
          && (!(this.getOwner() instanceof LivingEntity owner) || EntityUtils.isValidCombatTarget(owner, entity instanceof LivingEntity living ? living : null))
          && super.canHitEntity(entity);
    }

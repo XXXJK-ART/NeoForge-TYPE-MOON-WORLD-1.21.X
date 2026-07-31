@@ -143,6 +143,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int walkAnimationGraceTicks = 0;
    private long tacticalAiHandledTick = Long.MIN_VALUE;
    @Nullable private UUID masterUuid;
+   private String contractId = "";
    private ServantCommandMode commandMode = ServantCommandMode.FOLLOW;
    private BlockPos stayAnchor = BlockPos.ZERO;
    private boolean masterNoblePhantasmPermission;
@@ -239,8 +240,18 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       setPersistenceRequired();
    }
 
+   public String getContractId() {
+      return contractId;
+   }
+
+   public void setContractId(String id) {
+      contractId = id == null ? "" : id;
+   }
+
    public void unbindMaster() {
       this.masterUuid = null;
+      this.contractId = "";
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.clearContractTags(this);
       this.commandMode = ServantCommandMode.FOLLOW;
       this.stayAnchor = blockPosition();
       this.masterNoblePhantasmPermission = false;
@@ -1123,6 +1134,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       tag.putDouble("Favor", this.getFavor());
       tag.putDouble("CurrentMp", this.getCurrentMp());
       if (masterUuid != null) tag.putUUID("EntityMaster", masterUuid);
+      if (!contractId.isBlank()) tag.putString("EntityContractId", contractId);
       tag.putString("EntityCommandMode", commandMode.name());
       tag.putLong("EntityStayAnchor", stayAnchor.asLong());
       tag.putBoolean("EntityNpPermission", masterNoblePhantasmPermission);
@@ -1141,6 +1153,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(FAVOR, (float) tag.getDouble("Favor"));
       this.entityData.set(CURRENT_MP, (float) tag.getDouble("CurrentMp"));
       this.masterUuid = tag.hasUUID("EntityMaster") ? tag.getUUID("EntityMaster") : null;
+      this.contractId = tag.getString("EntityContractId");
       this.commandMode = ServantCommandMode.byName(tag.getString("EntityCommandMode"));
       this.stayAnchor = tag.contains("EntityStayAnchor") ? BlockPos.of(tag.getLong("EntityStayAnchor")) : blockPosition();
       this.masterNoblePhantasmPermission = tag.getBoolean("EntityNpPermission");

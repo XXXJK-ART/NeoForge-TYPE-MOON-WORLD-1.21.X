@@ -38,6 +38,7 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
@@ -1087,7 +1088,7 @@ public class CommonEvents {
       }
    }
 
-   @SubscribeEvent
+   @SubscribeEvent(priority = EventPriority.LOWEST)
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
          if (event.getEntity() instanceof Player player) {
@@ -1096,11 +1097,13 @@ public class CommonEvents {
 
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (vars.servant_card_transformed) {
+            // Contract loss is committed only after every higher-priority death
+            // handler has had a chance to cancel the event (revive/protection).
+            if (!event.isCanceled() && vars.servant_card_transformed) {
                MasterServantLinkService.onServantDeath(player, vars);
                ServantCardTransformManager.prepareVanishingEquipment(player, vars);
             }
-            if (vars.master_active) {
+            if (!event.isCanceled() && vars.master_active) {
                MasterServantLinkService.onMasterLost(player, vars);
             }
          }

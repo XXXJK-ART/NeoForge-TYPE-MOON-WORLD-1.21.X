@@ -94,6 +94,7 @@ public class ServantCardHud {
       if (vars.master_active) {
          drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.master.status"), x, y + 38, 0xFFFFFFFF, 0.72F);
          drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.master.command_spells", vars.master_command_spells), x, y + 48, 0xFFE0E0E0, 0.62F);
+         drawServantPosition(gui, minecraft, vars, x, y + 58);
          return;
       }
       String servant = vars.servant_card_id == null || vars.servant_card_id.isBlank() ? "servant" : vars.servant_card_id;
@@ -274,6 +275,31 @@ public class ServantCardHud {
       }
       drawScaledString(gui, minecraft, text, x, y,
          vars.master_servant_master_position_online ? 0xFF80CBC4 : 0xFFB0BEC5, 0.54F);
+   }
+
+   private static void drawServantPosition(GuiGraphics gui, Minecraft minecraft,
+                                           TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      if (!vars.master_servant_servant_position_valid || minecraft.player == null) return;
+      int servantX = (int)Math.floor(vars.master_servant_servant_x);
+      int servantY = (int)Math.floor(vars.master_servant_servant_y);
+      int servantZ = (int)Math.floor(vars.master_servant_servant_z);
+      String currentDimension = minecraft.player.level().dimension().location().toString();
+      Component freshness = Component.translatable(vars.master_servant_servant_position_online
+         ? "hud.typemoonworld.servant_card.servant_position_live"
+         : "hud.typemoonworld.servant_card.servant_position_last_known");
+      Component text;
+      if (currentDimension.equals(vars.master_servant_servant_dimension)) {
+         double dx = vars.master_servant_servant_x - minecraft.player.getX();
+         double dz = vars.master_servant_servant_z - minecraft.player.getZ();
+         int distance = (int)Math.round(Math.sqrt(dx * dx + dz * dz));
+         text = Component.translatable("hud.typemoonworld.servant_card.servant_position",
+            compassDirection(dx, dz), distance, servantX, servantY, servantZ, freshness);
+      } else {
+         text = Component.translatable("hud.typemoonworld.servant_card.servant_position_dimension",
+            vars.master_servant_servant_dimension, servantX, servantY, servantZ, freshness);
+      }
+      drawScaledString(gui, minecraft, text, x, y,
+         vars.master_servant_servant_position_online ? 0xFF80CBC4 : 0xFFB0BEC5, 0.54F);
    }
 
    private static String compassDirection(double dx, double dz) {

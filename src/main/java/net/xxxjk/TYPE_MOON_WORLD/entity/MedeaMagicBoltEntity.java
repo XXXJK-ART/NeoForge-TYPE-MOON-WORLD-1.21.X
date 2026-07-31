@@ -26,6 +26,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
@@ -112,10 +113,11 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
    @Override
    protected boolean canHitEntity(Entity entity) {
       LivingEntity owner = this.getOwner() instanceof LivingEntity livingOwner ? livingOwner : null;
-      return entity != this.getOwner()
-         && entity != null
+      return entity instanceof LivingEntity living
+         && entity != this.getOwner()
          && !this.piercedEntityIds.contains(entity.getId())
          && !EntityUtils.isImmunePlayerTarget(entity)
+         && !(owner != null && ServantMasterTargeting.isContractMaster(owner, living))
          && (owner == null || !entity.isAlliedTo(owner))
          && super.canHitEntity(entity);
    }

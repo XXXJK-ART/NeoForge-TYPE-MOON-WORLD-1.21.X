@@ -56,6 +56,10 @@ public class ArtificialLeylineBlock extends BaseEntityBlock {
    protected void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
       if (!state.is(newState.getBlock())) {
          if (!level.isClientSide()) {
+            if (level instanceof ServerLevel serverLevel
+               && level.getBlockEntity(pos) instanceof ArtificialLeylineBlockEntity blockEntity) {
+               blockEntity.clearBindingOnDestroy(serverLevel);
+            }
             level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 7.0F, Level.ExplosionInteraction.BLOCK);
          }
          super.onRemove(state, level, pos, newState, isMoving);

@@ -37,7 +37,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class AvalonItem extends Item implements GeoItem, NoblePhantasmItem {
+public class AvalonItem extends SummoningRelicItem implements GeoItem, NoblePhantasmItem {
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private static final long TICKS_FOR_SWORD_ATTRIBUTE = 24000L;
    private static final String AVALON_ACTIVE_TAG = "TypeMoonAvalonActive";

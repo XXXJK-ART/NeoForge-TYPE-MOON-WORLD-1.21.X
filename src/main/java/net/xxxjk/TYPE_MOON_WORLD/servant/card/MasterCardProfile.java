@@ -84,6 +84,7 @@ public final class MasterCardProfile {
       if (!MasterStateManager.activateProfile(player, profile.commandSpellStyle())) {
          return false;
       }
+      applyMasterCardTags(player, profile.id());
 
       vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.is_magus = true;
@@ -125,8 +126,11 @@ public final class MasterCardProfile {
          clearPlayerInventory(player);
          vars.deserializeNBT(player.registryAccess(), savedVariables);
          vars.master_servant_uuid = "";
+         vars.master_servant_contract_id = "";
          vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_id = "";
          vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
+         MasterServantLinkService.clearContractTags(player);
          MasterServantLinkService.clearSurvival(vars);
          BodyTrainingService.applyAttributes(player, vars);
          restoreInventory(player, savedInventory);
@@ -136,9 +140,32 @@ public final class MasterCardProfile {
          vars.master_card_id = "";
          vars.master_card_saved_variables = new CompoundTag();
          vars.master_card_saved_inventory = new CompoundTag();
+         MasterServantLinkService.clearContractTags(player);
       }
       give(player, createCardStack(cardId));
+      clearMasterCardTags(player);
       return true;
+   }
+
+   public static void ensureTags(ServerPlayer player, String masterId) {
+      if (player == null || masterId == null || masterId.isBlank()) return;
+      String type = "tmw_master_card_" + masterId.trim().toLowerCase(java.util.Locale.ROOT);
+      if (!player.getTags().contains("tmw_master_card") || !player.getTags().contains(type)) {
+         applyMasterCardTags(player, masterId);
+      }
+   }
+
+   public static void clearMasterCardTags(ServerPlayer player) {
+      if (player == null) return;
+      for (String tag : new java.util.ArrayList<>(player.getTags())) {
+         if (tag.equals("tmw_master_card") || tag.startsWith("tmw_master_card_")) player.removeTag(tag);
+      }
+   }
+
+   private static void applyMasterCardTags(ServerPlayer player, String masterId) {
+      clearMasterCardTags(player);
+      player.addTag("tmw_master_card");
+      player.addTag("tmw_master_card_" + masterId.trim().toLowerCase(java.util.Locale.ROOT));
    }
 
    private static Profile profile(String masterId) {
@@ -266,8 +293,11 @@ public final class MasterCardProfile {
       vars.master_card_saved_inventory = saveInventory(player);
       vars.master_card_active = true;
       vars.master_card_id = masterId == null ? "" : masterId;
+      applyMasterCardTags(player, vars.master_card_id);
       vars.master_servant_uuid = "";
+      vars.master_servant_contract_id = "";
       vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_id = "";
       vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       MasterServantLinkService.clearSurvival(vars);
       clearPlayerInventory(player);
@@ -276,6 +306,8 @@ public final class MasterCardProfile {
    private static void scrubContractState(CompoundTag tag) {
       tag.remove("master_servant_uuid");
       tag.remove("servant_card_master_uuid");
+      tag.remove("master_servant_contract_id");
+      tag.remove("servant_card_contract_id");
       tag.remove("servant_card_contract_state");
       tag.remove("master_servant_link_partner_uuid");
       tag.remove("master_servant_link_partner_hp");

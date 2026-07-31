@@ -19,6 +19,9 @@ import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 
 @EventBusSubscriber(modid = "typemoonworld")
 public final class ServantMasterCarryService {
@@ -32,9 +35,21 @@ public final class ServantMasterCarryService {
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       TypeMoonWorldModVariables.PlayerVariables masterVars = masterPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return servantVars.servant_card_transformed
+         && canCarry(servantVars.servant_card_id)
          && masterVars.master_active
          && masterPlayer.getUUID().toString().equals(servantVars.servant_card_master_uuid)
          && servant.getUUID().toString().equals(masterVars.master_servant_uuid);
+   }
+
+   public static boolean canCarry(Player servant) {
+      if (servant == null) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && canCarry(vars.servant_card_id);
+   }
+
+   public static boolean canCarry(String servantId) {
+      ServantDefinition definition = ServantDataRegistry.get(servantId == null ? "" : servantId);
+      return definition == null || definition.parameters().strength().coefficient() > StatRank.E.coefficient();
    }
 
    public static boolean isCarryingMaster(Player servant) {

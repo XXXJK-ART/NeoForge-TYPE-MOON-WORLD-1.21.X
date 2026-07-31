@@ -22,6 +22,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
@@ -155,7 +156,8 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          }
          AABB box = new AABB(old, next).inflate(0.65);
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box,
-            e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
+            e -> e.isAlive() && e != owner && !ServantMasterTargeting.isContractMaster(owner, e)
+               && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
             if (this.hit.add(target.getId())) {
                DamageSource source = owner.damageSources().mobProjectile(this, owner);
                Vec3 movementBeforeHit = target.getDeltaMovement();
@@ -192,7 +194,12 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       }
       if (target == null || !target.isAlive()) return;
       LivingEntity owner = getOwner(level);
-      if (owner != null && (target == owner || target.isAlliedTo(owner))) return;
+      if (owner != null && (target == owner || target.isAlliedTo(owner)
+         || ServantMasterTargeting.isContractMaster(owner, target))) {
+         this.homingTargetUuid = null;
+         this.entityData.set(HOMING_TARGET_ID, 0);
+         return;
+      }
       Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0)
          .add(target.getDeltaMovement().scale(Math.min(2.5, Math.max(0.35, this.distanceTo(target) / 8.0))));
       Vec3 desired = targetPoint.subtract(this.position());

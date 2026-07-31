@@ -57,5 +57,12 @@ public final class ServantAiEngine {
       // Legacy helpers have many early returns.  Run the shared tempo guard after
       // them so cooldowns and failed casts can never leave a servant idle forever.
       ServantCombatTempoService.enforceLegacy(entity, entity.getTarget(), gameTick);
+      // Keep orientation deterministic at the end of the tick.  Individual skills
+      // may return early, but a valid target should still be the facing authority.
+      LivingEntity finalTarget = entity.getTarget();
+      if (finalTarget != null && finalTarget.isAlive()
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting.isContractMaster(entity, finalTarget)) {
+         entity.getLookControl().setLookAt(finalTarget, 45.0F, 45.0F);
+      }
    }
 }

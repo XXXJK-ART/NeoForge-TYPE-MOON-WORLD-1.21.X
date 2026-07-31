@@ -39,6 +39,11 @@ public class ServantCardItem extends Item {
       return this.servantId;
    }
 
+   @Override
+   public ItemStack getDefaultInstance() {
+      return create(this, this.servantId);
+   }
+
    public String servantId(ItemStack stack) {
       if (this.servantId != null && !this.servantId.isBlank()) return this.servantId;
       CustomData data = stack == null ? null : stack.get(DataComponents.CUSTOM_DATA);

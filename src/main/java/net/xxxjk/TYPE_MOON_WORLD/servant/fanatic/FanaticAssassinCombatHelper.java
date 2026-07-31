@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import org.joml.Vector3f;
 
 public final class FanaticAssassinCombatHelper {
@@ -766,7 +767,8 @@ public final class FanaticAssassinCombatHelper {
 
    public static boolean isValidTarget(FanaticAssassinEntity entity, LivingEntity candidate) {
       if (candidate == null || candidate == entity || !candidate.isAlive() || EntityUtils.isImmunePlayerTarget(candidate)
-         || entity.isAlliedTo(candidate) || candidate.isAlliedTo(entity)) return false;
+         || entity.isAlliedTo(candidate) || candidate.isAlliedTo(entity)
+         || ServantMasterTargeting.isContractMaster(entity, candidate)) return false;
       if (isDoctrineTarget(candidate)) return true;
       if (candidate instanceof Enemy) return true;
       if (entity.getLastHurtByMob() == candidate && entity.tickCount - entity.getLastHurtByMobTimestamp() <= 200) return true;

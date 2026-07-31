@@ -86,6 +86,7 @@ public final class ServantCardTransformManager {
       BodyTrainingService.stashForServantCard(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_id = "";
       vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       MasterServantLinkService.clearMasterPosition(vars);
       MasterServantLinkService.clearSurvival(vars);
@@ -171,6 +172,7 @@ public final class ServantCardTransformManager {
       clearServantCardTags(player);
       vars.servant_card_id = "";
       vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_id = "";
       vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       vars.servant_card_mana = 0.0;
       vars.servant_card_max_mana = 0.0;
@@ -575,7 +577,7 @@ public final class ServantCardTransformManager {
          return false;
       }
       if (ServantCardActionPreconditions.requiresLookTarget(action.effectId())
-         && ServantCardSkillUtils.findLookTarget(player, ServantCardActionPreconditions.targetRangeFor(action.effectId()), 1.8) == null) {
+         && isInvalidLookTarget(player, action.effectId())) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
@@ -621,6 +623,20 @@ public final class ServantCardTransformManager {
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
       return true;
+   }
+
+   private static boolean isInvalidLookTarget(ServerPlayer player, String actionId) {
+      var target = ServantCardSkillUtils.findLookTarget(player,
+         ServantCardActionPreconditions.targetRangeFor(actionId), 1.8);
+      if (target == null) {
+         return true;
+      }
+      // Rule Breaker is explicitly allowed to target Medea's contract master so it
+      // can terminate the contract. Other targeted actions keep the automatic
+      // contract-master exclusion.
+      boolean mayTargetContractMaster = "rule_breaker".equals(actionId)
+         && "medea".equals(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_id);
+      return !mayTargetContractMaster && ServantMasterTargeting.isContractMaster(player, target);
    }
 
    private static void stopActiveNoblePhantasmVoices(ServerPlayer player) {

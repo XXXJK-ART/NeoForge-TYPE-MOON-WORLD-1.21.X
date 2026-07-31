@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
@@ -136,6 +137,9 @@ public final class HostileTargetingModule implements ServantAiModule {
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
+      if (ServantMasterTargeting.isContractMaster(entity, target)) {
+         return false;
+      }
       double maxDistanceSqr = aggressionRange * aggressionRange * 1.35;
       double targetDistanceSqr = entity.distanceToSqr(target);
       boolean retained = ServantTargetingService.canRetain(entity, target, gameTick);
@@ -240,6 +244,7 @@ public final class HostileTargetingModule implements ServantAiModule {
          || !other.isAlive()
          || other == self
          || EntityUtils.isImmunePlayerTarget(other)
+         || ServantMasterTargeting.isContractMaster(self, other)
          || other.isAlliedTo(self)
          || self.isAlliedTo(other)
          || CursedArmHassanCombatHelper.shouldAvoidPassiveFellowHassanTarget(self, other)

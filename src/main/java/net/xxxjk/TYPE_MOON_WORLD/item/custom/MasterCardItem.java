@@ -36,6 +36,11 @@ public class MasterCardItem extends Item {
       return this.masterId;
    }
 
+   @Override
+   public ItemStack getDefaultInstance() {
+      return create(this, this.masterId);
+   }
+
    public String masterId(ItemStack stack) {
       if (this.masterId != null && !this.masterId.isBlank()) return this.masterId;
       CustomData data = stack == null ? null : stack.get(DataComponents.CUSTOM_DATA);

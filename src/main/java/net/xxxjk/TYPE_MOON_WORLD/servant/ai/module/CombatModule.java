@@ -78,6 +78,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 import java.util.List;
 
@@ -1039,6 +1040,7 @@ public final class CombatModule implements ServantAiModule {
       int enemyCount = entity.level().getEntitiesOfClass(
          LivingEntity.class, dangerZone,
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, e)
       ).size();
       data.putInt("CombatSurroundedScanTick", tick);
       data.putInt("CombatSurroundedEnemyCount", enemyCount);
@@ -1206,6 +1208,14 @@ public final class CombatModule implements ServantAiModule {
 
    private void performCombatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle, double distance) {
       ServantNavigationHelper.stopIfMoving(entity);
+      // Heracles and Gawain are committed melee pursuers.  At the edge of
+      // melee range they should keep their line and face the opponent instead
+      // of entering the generic random strafe loop (which reads as spinning).
+      if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity) && distance > 2.8) {
+         entity.getLookControl().setLookAt(target, 45.0F, 45.0F);
+         moveToTargetThrottled(entity, target, 1.15, (int)entity.level().getGameTime(), 0.15);
+         return;
+      }
       if (ServantCombatTempoService.inMeleePressure(entity, entity.level().getGameTime())) {
          entity.getMoveControl().strafe(distance > 2.5 ? 0.42F : 0.16F,
             entity.getRandom().nextBoolean() ? 0.14F : -0.14F);

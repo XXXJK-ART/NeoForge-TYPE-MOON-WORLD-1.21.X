@@ -42,6 +42,27 @@ public final class ServantCardSkillUtils {
       return best;
    }
 
+   /** Look target used by autonomous card systems; contract masters are never selected. */
+   public static LivingEntity findAutomaticLookTarget(ServerPlayer player, double range, double inflate) {
+      Vec3 eye = player.getEyePosition();
+      Vec3 look = player.getLookAngle().normalize();
+      AABB box = player.getBoundingBox().expandTowards(look.scale(range)).inflate(inflate);
+      LivingEntity best = null;
+      double bestScore = 0.78;
+      for (LivingEntity living : player.level().getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player
+         && !ServantMasterTargeting.isContractMaster(player, e) && !EntityUtils.isImmunePlayerTarget(e))) {
+         Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(eye);
+         double distance = to.length();
+         if (distance <= 0.01 || distance > range) continue;
+         double score = look.dot(to.normalize());
+         if (score > bestScore) {
+            bestScore = score;
+            best = living;
+         }
+      }
+      return best;
+   }
+
    public static void hitForwardArc(ServerPlayer player, Vec3 dir, double range, float damage) {
       if (!(player.level() instanceof ServerLevel level)) {
          return;

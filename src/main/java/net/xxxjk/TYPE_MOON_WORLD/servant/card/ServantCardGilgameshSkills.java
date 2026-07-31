@@ -314,6 +314,10 @@ public final class ServantCardGilgameshSkills {
       try {
          net.minecraft.world.entity.Entity entity = level.getEntity(java.util.UUID.fromString(raw));
          if (!(entity instanceof LivingEntity target) || !target.isAlive()) return;
+         if (ServantMasterTargeting.isContractMaster(player, target)) {
+            player.getPersistentData().remove(CHAIN_TARGET);
+            return;
+         }
          target.invulnerableTime = 0; target.hurt(player.damageSources().magic(), 8.0F); target.invulnerableTime = 0;
          for (int i = 0; i < 3; i++) {
             Vec3 start = player.getEyePosition().add((i - 1) * 1.4, 1.0 + i * .4, 0);

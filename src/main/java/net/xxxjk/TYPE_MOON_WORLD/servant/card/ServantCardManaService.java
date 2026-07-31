@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
@@ -8,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.block.entity.ArtificialLeylineBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -56,6 +59,9 @@ public final class ServantCardManaService {
       }
       expectedRegen = passiveRegenForContractState(vars.servant_card_contract_state,
          regenPerSecondFor(vars.servant_card_id), linkedRegen);
+      if (hasValidServantCardLeyline(player, vars)) {
+         expectedRegen = regenPerSecondFor(vars.servant_card_id);
+      }
       if (player.hasEffect(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
          expectedRegen *= 0.5;
       }
@@ -187,6 +193,30 @@ public final class ServantCardManaService {
       return true;
    }
 
+   public static boolean restoreFromActiveItem(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars,
+                                                InteractionHand hand) {
+      if (player == null || vars == null || hand == null || !vars.servant_card_transformed
+         || vars.servant_card_mana >= vars.servant_card_max_mana) return false;
+      ItemStack stack = player.getItemInHand(hand);
+      ManaSource source = manaSource(-1, stack);
+      if (source == null) return false;
+      double amount = Math.min(source.amount(), vars.servant_card_max_mana - vars.servant_card_mana);
+      consumeHeldSource(player, hand, source.remainder());
+      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + amount);
+      vars.syncMana(player);
+      return true;
+   }
+
+   public static boolean hasValidServantCardLeyline(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null || !vars.servant_card_transformed
+         || !vars.servant_card_artificial_leyline_bonus_active
+         || !player.level().dimension().location().toString().equals(vars.servant_card_artificial_leyline_dimension)) return false;
+      BlockPos pos = new BlockPos(vars.servant_card_artificial_leyline_x,
+         vars.servant_card_artificial_leyline_y, vars.servant_card_artificial_leyline_z);
+      return player.level().getBlockEntity(pos) instanceof ArtificialLeylineBlockEntity leyline
+         && leyline.isOwnedBy(player.getUUID());
+   }
+
    private static ManaSource manaSource(int slot, ItemStack stack) {
       if (stack == null || stack.isEmpty()) return null;
       if (stack.getItem() instanceof FullManaCarvedGemItem gem) {
@@ -209,6 +239,20 @@ public final class ServantCardManaService {
          }
       } else {
          player.getInventory().setItem(source.slot(), source.remainder() == null ? ItemStack.EMPTY : new ItemStack(source.remainder()));
+      }
+      player.getInventory().setChanged();
+   }
+
+   private static void consumeHeldSource(ServerPlayer player, InteractionHand hand, net.minecraft.world.item.Item remainder) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (stack.getCount() > 1) {
+         stack.shrink(1);
+         if (remainder != null) {
+            ItemStack empty = new ItemStack(remainder);
+            if (!player.getInventory().add(empty)) player.drop(empty, false);
+         }
+      } else {
+         player.setItemInHand(hand, remainder == null ? ItemStack.EMPTY : new ItemStack(remainder));
       }
       player.getInventory().setChanged();
    }
