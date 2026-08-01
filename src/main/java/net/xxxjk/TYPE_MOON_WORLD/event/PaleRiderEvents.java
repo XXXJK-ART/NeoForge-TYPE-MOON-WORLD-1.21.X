@@ -20,6 +20,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
@@ -189,7 +190,7 @@ public final class PaleRiderEvents {
          || !PaleRiderInfectionService.isPaleRiderCardPlayer(player)) return;
       ServerLevel previousLevel = player.getServer().getLevel(event.getFrom());
       if (previousLevel != null) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.returnAllLivingSouls(player, previousLevel);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.cleanupPreviousLevel(player, previousLevel);
       }
    }
 
@@ -197,7 +198,14 @@ public final class PaleRiderEvents {
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
       if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level
          && PaleRiderInfectionService.isPaleRiderCardPlayer(player)) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.returnAllLivingSouls(player, level);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.cleanupPreviousLevel(player, level);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onLevelUnload(LevelEvent.Unload event) {
+      if (event.getLevel() instanceof ServerLevel level) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderEntityIndex.clearLevel(level);
       }
    }
 

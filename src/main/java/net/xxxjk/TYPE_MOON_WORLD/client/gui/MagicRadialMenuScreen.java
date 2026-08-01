@@ -49,6 +49,10 @@ public class MagicRadialMenuScreen extends Screen {
       this.crestPresetHints = crestPresetHints == null ? Collections.emptyList() : crestPresetHints;
    }
 
+   @Override
+   public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   }
+
    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
       if (!this.availableMagics.isEmpty()) {

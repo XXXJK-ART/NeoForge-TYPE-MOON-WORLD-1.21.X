@@ -74,6 +74,7 @@ public final class CombatThreatService {
    @SubscribeEvent
    public static void tick(LevelTickEvent.Post event) {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
+      if (level.getGameTime() % 20L != 0L) return;
       List<CombatThreat> threats = THREATS.get(level.dimension());
       if (threats == null) return;
       long now = level.getGameTime();

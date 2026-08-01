@@ -31,8 +31,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
 @EventBusSubscriber({Dist.CLIENT})
 public class ServantCardHud {
+   private static final int DISPLAY_READY_THRESHOLD_TICKS = 10;
    private static String cachedCooldownRaw = null;
    private static int[] cachedCooldowns = new int[10];
+   private static String cachedCooldownEndsRaw = null;
+   private static long[] cachedCooldownEnds = new long[10];
+   private static final int[] effectiveCooldowns = new int[10];
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
@@ -103,7 +107,7 @@ public class ServantCardHud {
       drawScaledString(
          gui,
          minecraft,
-         Component.translatable("hud.typemoonworld.servant_card.jump_np", vars.servant_card_jump_charges, ticksToSeconds(effectiveNpCooldown(minecraft, vars))),
+         Component.translatable("hud.typemoonworld.servant_card.jump_np", effectiveJumpCharges(minecraft, vars), ticksToSeconds(effectiveNpCooldown(minecraft, vars))),
          x,
          y + 48,
          0xFFE0E0E0,
@@ -321,10 +325,11 @@ public class ServantCardHud {
 
    private static int effectiveNpCooldown(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
       if ("ushiwakamaru_rider".equals(vars.servant_card_id)) {
-         return parseCooldowns(vars.servant_card_skill_cooldowns)[9];
+         return effectiveSkillCooldowns(minecraft, vars)[9];
       }
+      int syncedCooldown = effectiveRemainingTicks(minecraft, vars.servant_card_np_cooldown, vars.servant_card_np_cooldown_end);
       if (minecraft.player == null) {
-         return vars.servant_card_np_cooldown;
+         return displayRemainingTicks(syncedCooldown);
       }
       int itemCooldown = 0;
       if (!minecraft.player.getMainHandItem().isEmpty()) {
@@ -333,7 +338,7 @@ public class ServantCardHud {
       if (!minecraft.player.getOffhandItem().isEmpty()) {
          itemCooldown = Math.max(itemCooldown, Math.round(minecraft.player.getCooldowns().getCooldownPercent(minecraft.player.getOffhandItem().getItem(), 0.0F) * 3600.0F));
       }
-      return Math.max(vars.servant_card_np_cooldown, itemCooldown);
+      return displayRemainingTicks(Math.max(syncedCooldown, itemCooldown));
    }
 
    private static void drawBar(GuiGraphics gui, Minecraft minecraft, int x, int y, int width, String label, double value, double max, int startColor, int endColor) {
@@ -358,7 +363,7 @@ public class ServantCardHud {
    }
 
    private static void drawCooldownGrid(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
-      int[] cooldowns = parseCooldowns(vars.servant_card_skill_cooldowns);
+      int[] cooldowns = effectiveSkillCooldowns(minecraft, vars);
       for (int i = 0; i < 10; i++) {
          int drawX = x;
          int drawY = y + i * 8;
@@ -491,6 +496,52 @@ public class ServantCardHud {
       }
       cachedCooldownRaw = raw;
       cachedCooldowns = result;
+      return result;
+   }
+
+   private static int[] effectiveSkillCooldowns(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
+      int[] synced = parseCooldowns(vars.servant_card_skill_cooldowns);
+      long[] ends = parseCooldownEnds(vars.servant_card_skill_cooldown_ends);
+      for (int index = 0; index < effectiveCooldowns.length; index++) {
+         effectiveCooldowns[index] = displayRemainingTicks(effectiveRemainingTicks(minecraft, synced[index], ends[index]));
+      }
+      return effectiveCooldowns;
+   }
+
+   private static int effectiveJumpCharges(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars.servant_card_jump_recovery_end <= 0L || minecraft.level == null) return vars.servant_card_jump_charges;
+      long remaining = vars.servant_card_jump_recovery_end - minecraft.level.getGameTime();
+      return remaining <= DISPLAY_READY_THRESHOLD_TICKS ? vars.servant_card_jump_charges + 1 : vars.servant_card_jump_charges;
+   }
+
+   private static int effectiveRemainingTicks(Minecraft minecraft, int syncedTicks, long endTick) {
+      if (endTick <= 0L || minecraft.level == null) return Math.max(0, syncedTicks);
+      long remaining = endTick - minecraft.level.getGameTime();
+      return remaining <= 0L ? 0 : (int)Math.min(Integer.MAX_VALUE, remaining);
+   }
+
+   private static int displayRemainingTicks(int ticks) {
+      return ticks <= DISPLAY_READY_THRESHOLD_TICKS ? 0 : ticks;
+   }
+
+   private static long[] parseCooldownEnds(String raw) {
+      if (raw == null || raw.isBlank()) {
+         cachedCooldownEndsRaw = raw;
+         cachedCooldownEnds = new long[10];
+         return cachedCooldownEnds;
+      }
+      if (raw.equals(cachedCooldownEndsRaw)) return cachedCooldownEnds;
+      long[] result = new long[10];
+      String[] parts = raw.split(",");
+      for (int index = 0; index < result.length && index < parts.length; index++) {
+         try {
+            result[index] = Math.max(0L, Long.parseLong(parts[index]));
+         } catch (NumberFormatException ignored) {
+            result[index] = 0L;
+         }
+      }
+      cachedCooldownEndsRaw = raw;
+      cachedCooldownEnds = result;
       return result;
    }
 }

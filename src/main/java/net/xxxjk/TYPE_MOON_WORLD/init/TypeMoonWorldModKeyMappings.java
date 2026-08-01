@@ -127,6 +127,7 @@ public class TypeMoonWorldModKeyMappings {
       private static float lastServantFlightForward = Float.NaN;
       private static float lastServantFlightStrafe = Float.NaN;
       private static float lastServantFlightVertical = Float.NaN;
+      private static int paleRiderInputSendDelay = 0;
       private static long castPressStartMs = -1L;
       private static boolean castLongTriggered = false;
       private static boolean machineGunCastKeyDown = false;
@@ -657,8 +658,16 @@ public class TypeMoonWorldModKeyMappings {
             float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
             boolean descend = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
             float vertical = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1 ? 1.0F : 0.0F) + (descend ? -1.0F : 0.0F);
-            PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical,
-               Minecraft.getInstance().player.getYRot(), Minecraft.getInstance().player.getXRot()), new CustomPacketPayload[0]);
+            float yaw = Minecraft.getInstance().player.getYRot();
+            float pitch = Minecraft.getInstance().player.getXRot();
+            if (paleRiderInputSendDelay > 0) {
+               paleRiderInputSendDelay--;
+            } else {
+               PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical, yaw, pitch), new CustomPacketPayload[0]);
+               paleRiderInputSendDelay = 2;
+            }
+         } else {
+            paleRiderInputSendDelay = 0;
          }
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
             if (isHoldServantCardSkill(vars, slot)) {

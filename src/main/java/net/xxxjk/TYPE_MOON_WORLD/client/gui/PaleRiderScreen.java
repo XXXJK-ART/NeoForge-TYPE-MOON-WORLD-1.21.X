@@ -24,6 +24,11 @@ public final class PaleRiderScreen extends Screen {
    private final List<PaleRiderOpenScreenMessage.Target> targets;
    private PaleRiderOpenScreenMessage.Target hoveredTarget;
    private int selectedTargetIndex;
+   private List<Marker> cachedMarkers = List.of();
+   private int cachedMapX = Integer.MIN_VALUE;
+   private int cachedMapY = Integer.MIN_VALUE;
+   private int cachedMapWidth = Integer.MIN_VALUE;
+   private int cachedMapHeight = Integer.MIN_VALUE;
 
    public PaleRiderScreen(int kind, List<PaleRiderOpenScreenMessage.Target> targets) {
       super(Component.translatable(kind == 2 ? "screen.typemoonworld.pale_rider.possession"
@@ -154,6 +159,10 @@ public final class PaleRiderScreen extends Screen {
    }
 
    private List<Marker> layoutMarkers(int mapX, int mapY, int mapWidth, int mapHeight) {
+      if (mapX == this.cachedMapX && mapY == this.cachedMapY
+         && mapWidth == this.cachedMapWidth && mapHeight == this.cachedMapHeight) {
+         return this.cachedMarkers;
+      }
       int minX = this.targets.stream().mapToInt(PaleRiderOpenScreenMessage.Target::x).min().orElse(0);
       int maxX = this.targets.stream().mapToInt(PaleRiderOpenScreenMessage.Target::x).max().orElse(minX);
       int minZ = this.targets.stream().mapToInt(PaleRiderOpenScreenMessage.Target::z).min().orElse(0);
@@ -186,7 +195,12 @@ public final class PaleRiderScreen extends Screen {
          }
          markers.add(new Marker(target, markerX, markerY));
       }
-      return markers;
+      this.cachedMapX = mapX;
+      this.cachedMapY = mapY;
+      this.cachedMapWidth = mapWidth;
+      this.cachedMapHeight = mapHeight;
+      this.cachedMarkers = List.copyOf(markers);
+      return this.cachedMarkers;
    }
 
    @Override

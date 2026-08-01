@@ -155,6 +155,7 @@ public final class ServantTacticalController {
 
    private static void submitCombatManeuver(ServantEntity entity, AiBrain brain, long now) {
       LivingEntity target = entity.getTarget();
+      if (isGawainHeraclesMatchup(entity, target)) return;
       if (!ServantManeuverService.shouldManeuver(entity, target)) return;
       if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity)
          && target != null && entity.distanceTo(target) > 3.0) return;
@@ -174,6 +175,7 @@ public final class ServantTacticalController {
 
    private static void submitTacticalReposition(ServantEntity entity, AiBrain brain, long now) {
       LivingEntity target = entity.getTarget();
+      if (isGawainHeraclesMatchup(entity, target)) return;
       if (target == null || entity.getDefinition() == null) return;
       if (ServantCombatTempoService.inMeleePressure(entity, now)) return;
       if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity)
@@ -228,5 +230,10 @@ public final class ServantTacticalController {
    private static boolean hostile(ServantEntity observer, ServerLevel level, UUID sourceUuid) {
       Entity source = level.getEntity(sourceUuid);
       return source instanceof LivingEntity living && living != observer && !observer.isAlliedTo(living);
+   }
+
+   public static boolean isGawainHeraclesMatchup(LivingEntity actor, LivingEntity target) {
+      return (actor instanceof GawainEntity && target instanceof HeraclesEntity)
+         || (actor instanceof HeraclesEntity && target instanceof GawainEntity);
    }
 }

@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,8 +26,10 @@ public record MasterCommandSpellMessage(int action) implements CustomPacketPaylo
    }
 
    public static void handleData(MasterCommandSpellMessage message, IPayloadContext context) {
+      if (context.flow() != PacketFlow.SERVERBOUND || message.action < 0 || message.action > 3) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player) {
+         if (context.player() instanceof ServerPlayer player
+            && ServerPacketRateLimiter.allow(player, "master_command_spell", 5)) {
             MasterStateManager.useCommandSpell(player, message.action);
          }
       });

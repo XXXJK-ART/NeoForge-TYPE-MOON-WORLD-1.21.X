@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,8 +29,10 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
    }
 
    public static void handleData(ServantCardBasicAttackMessage message, IPayloadContext context) {
+      if (context.flow() != PacketFlow.SERVERBOUND) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player) {
+         if (context.player() instanceof ServerPlayer player
+            && ServerPacketRateLimiter.allow(player, "servant_card_basic_attack", 1)) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
                if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) return;

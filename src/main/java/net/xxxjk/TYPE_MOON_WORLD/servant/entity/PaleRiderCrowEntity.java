@@ -60,8 +60,8 @@ public final class PaleRiderCrowEntity extends Parrot {
          long now = this.level().getGameTime();
          int command = player.getPersistentData().getInt("PaleRiderCardCommand");
          if (command != 2) {
-            this.setTarget(null);
-            if (command == 1) this.getNavigation().stop();
+            if (this.getTarget() != null) this.setTarget(null);
+            if (command == 1 && !this.getNavigation().isDone()) this.getNavigation().stop();
             else if (command == 3 && this.canRefreshNavigation(now, 20)) {
                this.getNavigation().moveTo(player.getX(), player.getY() + 2.5, player.getZ(), 1.0);
             }
@@ -70,14 +70,16 @@ public final class PaleRiderCrowEntity extends Parrot {
       }
       LivingEntity target = findEnemy(owner, 64.0);
       if (target == null) {
-         this.setTarget(null);
+         if (this.getTarget() != null) this.setTarget(null);
          Vec3 perch = this.gatheringPosition(owner);
          if (this.distanceToSqr(perch) > 2.25 && this.canRefreshNavigation(this.level().getGameTime(), 20)) {
             this.getNavigation().moveTo(perch.x, perch.y, perch.z, 1.0);
+         } else if (this.distanceToSqr(perch) <= 2.25 && !this.getNavigation().isDone()) {
+            this.getNavigation().stop();
          }
          return;
       }
-      this.setTarget(target);
+      if (this.getTarget() != target) this.setTarget(target);
       this.getLookControl().setLookAt(target, 30.0F, 30.0F);
       long now = this.level().getGameTime();
       if (this.canRefreshNavigation(now, 10)) {
@@ -152,7 +154,7 @@ public final class PaleRiderCrowEntity extends Parrot {
          && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(this.getTarget())) return this.getTarget();
       long now = this.level().getGameTime();
       if (now < this.nextTargetScanTick) return null;
-      this.nextTargetScanTick = now + 10L + Math.floorMod(this.getId(), 5);
+      this.nextTargetScanTick = now + 40L + Math.floorMod(this.getId(), 16);
       return this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius),
          target -> target != this && target != owner && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(owner, target)

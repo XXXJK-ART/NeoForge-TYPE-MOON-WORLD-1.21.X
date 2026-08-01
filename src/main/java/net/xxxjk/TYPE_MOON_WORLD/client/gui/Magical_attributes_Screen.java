@@ -638,6 +638,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       }
    }
 
+   @Override
+   public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   }
+
    private void renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
       int listX = this.leftPos + LIST_X_OFFSET;
       int listY = this.topPos + LIST_Y_OFFSET;

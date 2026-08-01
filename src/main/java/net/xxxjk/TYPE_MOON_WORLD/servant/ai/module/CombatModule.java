@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTargetingService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
@@ -1208,6 +1209,13 @@ public final class CombatModule implements ServantAiModule {
 
    private void performCombatFootwork(ServantEntity entity, LivingEntity target, CombatDisposition combatStyle, double distance) {
       ServantNavigationHelper.stopIfMoving(entity);
+      if (ServantTacticalController.isGawainHeraclesMatchup(entity, target)) {
+         entity.getLookControl().setLookAt(target, 60.0F, 60.0F);
+         if (distance > 2.4) {
+            moveToTargetThrottled(entity, target, 1.15, (int)entity.level().getGameTime(), 0.15);
+         }
+         return;
+      }
       // Heracles and Gawain are committed melee pursuers.  At the edge of
       // melee range they should keep their line and face the opponent instead
       // of entering the generic random strafe loop (which reads as spinning).

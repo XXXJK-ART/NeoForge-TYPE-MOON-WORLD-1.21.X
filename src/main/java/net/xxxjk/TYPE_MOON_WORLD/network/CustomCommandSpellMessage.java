@@ -26,7 +26,9 @@ public record CustomCommandSpellMessage(ResourceLocation id, int spellIndex) imp
    public static void handleData(CustomCommandSpellMessage message, IPayloadContext context) {
       if (context.flow() != PacketFlow.SERVERBOUND) return;
       context.enqueueWork(() -> {
-         if (!(context.player() instanceof ServerPlayer player) || message.id == null || !message.id.toString().matches("[a-z0-9_.-]+:[a-z0-9_./-]+")) return;
+         if (!(context.player() instanceof ServerPlayer player) || message.id == null || message.spellIndex < 0 || message.spellIndex > 2
+            || !message.id.toString().matches("[a-z0-9_.-]+:[a-z0-9_./-]+")
+            || !ServerPacketRateLimiter.allow(player, "custom_command_spell", 5)) return;
          var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (!vars.master_active || vars.master_command_spells <= 0) return;
          var servant = MasterServantLinkService.getLinkedServant(player, vars);

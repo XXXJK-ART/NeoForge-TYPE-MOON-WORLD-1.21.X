@@ -84,6 +84,7 @@ public final class GenericMagicOptionsScreen extends Screen {
       onClose();
    }
    @Override public void onClose() { if (minecraft != null) minecraft.setScreen(null); }
+   @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) { }
    @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
       renderBackground(graphics, mouseX, mouseY, partialTick); super.render(graphics, mouseX, mouseY, partialTick);
       graphics.drawCenteredString(font, title, width / 2, 14, 0xFFFFFF);

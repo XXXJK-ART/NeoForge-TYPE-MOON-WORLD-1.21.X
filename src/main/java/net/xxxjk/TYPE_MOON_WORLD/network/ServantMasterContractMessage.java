@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,8 +29,10 @@ public record ServantMasterContractMessage(int targetEntityId) implements Custom
    }
 
    public static void handleData(ServantMasterContractMessage message, IPayloadContext context) {
+      if (context.flow() != PacketFlow.SERVERBOUND || message.targetEntityId < 0) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer actor) {
+         if (context.player() instanceof ServerPlayer actor
+            && ServerPacketRateLimiter.allow(actor, "servant_master_contract", 10)) {
             Entity target = actor.level().getEntity(message.targetEntityId);
             ItemStack contract = actor.getMainHandItem().is(ModItems.SERVANT_MASTER_CONTRACT.get())
                ? actor.getMainHandItem() : actor.getOffhandItem();

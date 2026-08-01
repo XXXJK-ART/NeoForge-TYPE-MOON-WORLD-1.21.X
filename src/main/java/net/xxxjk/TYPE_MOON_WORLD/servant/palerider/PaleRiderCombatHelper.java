@@ -72,7 +72,7 @@ public final class PaleRiderCombatHelper {
       }
       tickUnderworld(rider, level, now);
       tickCalamity(rider, level, now);
-      tickMounts(rider, level, now);
+      if (InfectionRules.isScheduled(rider.getId(), now, 10)) tickMounts(rider, level, now);
       if (rider.isUnderworldActive() && now - rider.getPersistentData().getLong(TAG_LAST_UNDERWORLD_ENVIRONMENT) >= 80L) {
          rider.getPersistentData().putLong(TAG_LAST_UNDERWORLD_ENVIRONMENT, now);
          VFXServerEffects.spawn(level, "pale_rider_underworld_sustain", rider, 64.0);
@@ -332,7 +332,7 @@ public final class PaleRiderCombatHelper {
 
    private static void tickCalamity(PaleRiderEntity rider, ServerLevel level, long now) {
       if (!rider.isCalamityActive()) return;
-      ensureCalamityHorsemen(rider, level);
+      if (InfectionRules.isScheduled(rider.getId(), now, 20)) ensureCalamityHorsemen(rider, level);
       PaleRiderCorruptionService.tickDomain(rider, level);
       if (rider.getCurrentMp() < PaleRiderCombatRules.CALAMITY_UPKEEP_MP_PER_SECOND) {
          endCalamity(rider, level);
@@ -585,15 +585,16 @@ public final class PaleRiderCombatHelper {
    }
 
    private static void spawnDomainShell(ServerLevel level, Vec3 center, double radius, boolean inner) {
+      if (!level.hasNearbyAlivePlayer(center.x, center.y, center.z, radius + 32.0)) return;
       DustParticleOptions shellDust = new DustParticleOptions(new Vector3f(inner ? 0.24F : 0.68F, inner ? 0.24F : 0.7F, inner ? 0.26F : 0.74F), inner ? 1.15F : 0.9F);
-      int shellSamples = inner ? 40 : 64;
+      int shellSamples = inner ? 16 : 24;
       for (int index = 0; index < shellSamples; index++) {
          double theta = level.getRandom().nextDouble() * Math.PI * 2.0;
          double phi = Math.acos(2.0 * level.getRandom().nextDouble() - 1.0);
          level.sendParticles(shellDust, center.x + radius * Math.sin(phi) * Math.cos(theta), center.y + radius * Math.cos(phi),
             center.z + radius * Math.sin(phi) * Math.sin(theta), 1, 0.0, 0.0, 0.0, 0.0);
       }
-      int deathSamples = inner ? 16 : 24;
+      int deathSamples = inner ? 8 : 12;
       for (int index = 0; index < deathSamples; index++) {
          double theta = level.getRandom().nextDouble() * Math.PI * 2.0;
          double distance = radius * Math.sqrt(level.getRandom().nextDouble()) * 0.92;
