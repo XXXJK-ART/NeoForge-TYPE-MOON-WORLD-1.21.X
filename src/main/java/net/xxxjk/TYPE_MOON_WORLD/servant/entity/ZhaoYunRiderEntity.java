@@ -67,7 +67,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private static final int AOKO_DURATION = 300;
    private static final int AOKO_COOLDOWN = 400;
    private static final int AOKO_SECOND_STRIKE_DELAY = 10;
-   private static final float AOKO_SECOND_STRIKE_BASE_DAMAGE = 15.0F;
+   private static final float AOKO_SECOND_STRIKE_BASE_DAMAGE = 20.0F;
    private static final ResourceLocation RIDING_ARMOR_MODIFIER =
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "zhao_yun_riding_armor");
    private static final EntityDataAccessor<Integer> COMBAT_PHASE = SynchedEntityData.defineId(
@@ -240,14 +240,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             || target == this || target == getHakuryu() || target == getEntityMaster()
             || isAlliedTo(target)) continue;
 
-         AttributeInstance attack = getAttribute(Attributes.ATTACK_DAMAGE);
-         double baseAttack = attack == null ? 1.0 : Math.max(1.0, attack.getBaseValue());
-         double currentAttack = attack == null ? baseAttack : Math.max(baseAttack, attack.getValue());
-         MobEffectInstance strength = getEffect(MobEffects.DAMAGE_BOOST);
-         if (strength != null) {
-            currentAttack += 3.0 * (strength.getAmplifier() + 1);
-         }
-         float damage = (float)(AOKO_SECOND_STRIKE_BASE_DAMAGE * (currentAttack / baseAttack));
+         float damage = AOKO_SECOND_STRIKE_BASE_DAMAGE;
          target.invulnerableTime = 0;
          float remaining = Math.max(0.0F, target.getHealth() - damage);
          target.setHealth(remaining);
@@ -551,10 +544,9 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          if (!isPassenger()) startRiding(initialMount, true);
       }
       triggerNamedActionAnimation("changbanpo_no_ikki_gake");
-      // The effect definition emits its dragon coil, beam and afterglow for
-      // the full 15-second ride. Bind it to Zhao Yun so the large effect keeps
-      // following the moving mount instead of remaining at the release point.
-      VFXServerEffects.spawnReplayable(level, "servant_zhao_yun_changbanpo", this, NP_DURATION / 20.0F);
+      // Bind the full effect to Hakuryu itself. The mount owns the charge
+      // movement, so every continuously emitted dragon/beam trail follows it.
+      VFXServerEffects.spawnReplayable(level, "servant_zhao_yun_changbanpo", initialMount, NP_DURATION / 20.0F);
    }
 
    public void onHakuryuDeath(ZhaoYunHakuryuEntity mount) {
@@ -666,7 +658,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       // again before the next Changbanpo update.
       mount.setDeltaMovement(0.0, verticalVelocity, 0.0);
       if (mount.horizontalCollision && mount.onGround()) {
-         mount.getJumpControl().jump();
+         mount.jumpWithZhaoYunPower();
       }
       if (initialDistance < NP_INITIAL_DISTANCE) {
          double updatedDistance = initialDistance + travel;
@@ -701,9 +693,14 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          contactsThisTick.add(victimId);
          if (!npContactTargets.contains(victimId)) {
             victim.invulnerableTime = 0;
-            boolean hurt = victim.hurt(damageSources().mobAttack(this), initialCharge ? NP_INITIAL_DAMAGE : NP_DAMAGE);
+            float collisionDamage = initialCharge ? NP_INITIAL_DAMAGE : NP_DAMAGE;
+            float remaining = Math.max(0.0F, victim.getHealth() - collisionDamage);
+            victim.setHealth(remaining);
+            if (remaining <= 0.0F && !victim.isDeadOrDying()) {
+               victim.die(damageSources().mobAttack(this));
+            }
             victim.invulnerableTime = 0;
-            if (initialCharge && hurt) initialChargeHit = true;
+            if (initialCharge) initialChargeHit = true;
          }
       }
       if (initialChargeHit) getPersistentData().putBoolean(TAG_NP_INITIAL_CHARGE, false);

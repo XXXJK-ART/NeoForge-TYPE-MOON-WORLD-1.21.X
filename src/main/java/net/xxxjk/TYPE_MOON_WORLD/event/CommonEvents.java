@@ -463,8 +463,12 @@ public class CommonEvents {
             }
             handleContenderBulletDamage(event, directEntity);
             if (event.getSource().getEntity() instanceof LivingEntity attacker) {
-               event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
-               event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+               boolean qinggangSecondHit = event.getSource().is(
+                  net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes.QINGGANG_SECOND_HIT);
+               if (!qinggangSecondHit) {
+                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+                  event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+               }
             }
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
@@ -729,15 +733,24 @@ public class CommonEvents {
    }
 
    private static boolean tryRedirectZhaoYunMountDamage(LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F) return false;
+      if (event.getEntity() instanceof ZhaoYunHakuryuEntity mount
+         && mount.isAlive() && mount.isDamageProtectedWhileMounted()) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
       LivingEntity passenger = event.getEntity();
-      if (event.getAmount() <= 0.0F || !(passenger.getVehicle() instanceof ZhaoYunHakuryuEntity mount)
-         || !mount.isAlive() || !(passenger instanceof ZhaoYunRiderEntity || passenger instanceof ServerPlayer)) {
+      if (!(passenger.getVehicle() instanceof ZhaoYunHakuryuEntity mount)
+         || !mount.isAlive() || !mount.isDamageProtectedWhileMounted()
+         || !(passenger instanceof ZhaoYunRiderEntity || passenger instanceof ServerPlayer)) {
          return false;
       }
-      float amount = event.getAmount();
+      // Mounted Zhao Yun and his master are protected as one unit. Do not
+      // redirect damage to the mount, since the mount itself is invulnerable
+      // while occupied.
       event.setCanceled(true);
       event.setAmount(0.0F);
-      mount.hurt(event.getSource(), amount);
       return true;
    }
 

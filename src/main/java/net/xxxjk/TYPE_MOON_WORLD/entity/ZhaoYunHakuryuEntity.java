@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,8 +20,14 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.level.Level;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -32,15 +39,29 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** Persistent white dragon mount used by Zhao Yun. */
 public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEntity {
+   /** Ground speed in blocks per tick; deliberately above a sprinting player's speed. */
+   private static final double HAKURYU_BASE_SPEED = 0.65;
+   private static final double HAKURYU_CARD_SPEED_SCALE = 0.55;
+   private static final double HAKURYU_NPC_SPEED_SCALE = 0.45;
+   /** Matches Zhao Yun's Rider-card big-jump vertical impulse (A agility). */
+   private static final double ZHAO_YUN_BIG_JUMP_VERTICAL = 1.14;
    public static final String TAG_RIDER = "ZhaoYunRider";
    public static final String TAG_MASTER = "ZhaoYunMaster";
    public static final String TAG_SKILL_OWNER = "ZhaoYunSkillOwner";
    private static final EntityDataAccessor<Boolean> NP_ACTIVE = SynchedEntityData.defineId(
       ZhaoYunHakuryuEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> MOVING = SynchedEntityData.defineId(
+      ZhaoYunHakuryuEntity.class, EntityDataSerializers.BOOLEAN);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    @Nullable private UUID riderUuid;
    @Nullable private UUID masterUuid;
    @Nullable private UUID skillOwnerUuid;
+   private boolean jumpInputPrevious;
+   private int jumpCount;
+   private boolean landingGrounded = true;
+   private int airborneTicks;
+   private double airborneMaxY;
+   private long lastLandingImpactTick = Long.MIN_VALUE;
 
    public ZhaoYunHakuryuEntity(EntityType<? extends ZhaoYunHakuryuEntity> type, Level level) {
       super(type, level);
@@ -54,7 +75,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    public static AttributeSupplier.Builder createAttributes() {
       return PathfinderMob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 2000.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.35)
+         .add(Attributes.MOVEMENT_SPEED, HAKURYU_BASE_SPEED)
          // Allow the ground mount to step up three-block ledges like Zhao Yun.
          .add(Attributes.STEP_HEIGHT, 3.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
@@ -64,6 +85,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(NP_ACTIVE, false);
+      builder.define(MOVING, false);
    }
 
    @Override protected void registerGoals() { this.goalSelector.addGoal(0, new FloatGoal(this)); }
@@ -71,10 +93,12 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Override public void tick() {
       super.tick();
       if (!(level() instanceof ServerLevel level)) return;
+      tickLandingImpact(level);
       if (skillOwnerUuid != null) {
          Entity ownerEntity = level.getEntity(skillOwnerUuid);
          if (!(ownerEntity instanceof net.minecraft.server.level.ServerPlayer owner) || !owner.isAlive()
             || getPassengers().isEmpty()) {
+            setMovingState(false);
             discard();
             return;
          }
@@ -82,20 +106,39 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             float forwardInput = owner.zza;
             float strafeInput = owner.xxa;
             float yaw = owner.getYRot();
+            double ownerSpeed = owner.getAttributeValue(Attributes.MOVEMENT_SPEED);
+            double ownerBaseSpeed = Math.max(0.1, owner.getAttributeBaseValue(Attributes.MOVEMENT_SPEED));
+            double speedRatio = Math.max(0.35, ownerSpeed / ownerBaseSpeed);
+            // Keep the mount clearly faster than both walking and sprinting,
+            // while preserving every movement-speed modifier on the card.
+            double mountSpeed = Math.max(HAKURYU_BASE_SPEED, HAKURYU_CARD_SPEED_SCALE * speedRatio);
+            getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(mountSpeed);
+            // A mounted player's look direction is the mount's direction, even
+            // while standing still. Keep body/head rotation in sync so the
+            // horse never drifts away from the rider's facing.
+            setYRot(yaw);
+            setYBodyRot(yaw);
+            setYHeadRot(yaw);
+            handleControlledJump(owner);
             Vec3 forward = new Vec3(-Math.sin(Math.toRadians(yaw)), 0.0, Math.cos(Math.toRadians(yaw)));
             Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
             Vec3 intent = forward.scale(forwardInput).add(right.scale(strafeInput));
             if (intent.lengthSqr() > 1.0E-4) {
                intent = intent.normalize();
-               setYRot(yaw);
-               double speed = getAttributeValue(Attributes.MOVEMENT_SPEED) * (owner.isSprinting() ? 1.25 : 1.0);
+               double speed = mountSpeed * (owner.isSprinting() ? 1.35 : 1.0);
                move(net.minecraft.world.entity.MoverType.SELF, intent.scale(speed));
                setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
-               if (horizontalCollision && onGround()) getJumpControl().jump();
+               if (horizontalCollision && onGround()) jumpWithZhaoYunPower();
+               setMovingState(true);
             } else {
                preserveGravityWhileStopping();
+               setMovingState(false);
             }
             fallDistance = 0.0F;
+         } else {
+            jumpInputPrevious = false;
+            if (onGround()) jumpCount = 0;
+            setMovingState(isNpActive());
          }
          return;
       }
@@ -104,6 +147,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          // The mount is persistent even while Zhao Yun is still on foot.
          if ((riderUuid == null || rider != null) && getPassengers().isEmpty()) discard();
          preserveGravityWhileStopping();
+         setMovingState(false);
          return;
       }
       riderUuid = rider.getUUID();
@@ -114,6 +158,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          rider.onHakuryuDismounted(this);
          discard();
          preserveGravityWhileStopping();
+         setMovingState(false);
          fallDistance = 0.0F;
          return;
       }
@@ -122,7 +167,8 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          riderSpeed *= 1.0 + rider.getPersistentData().getDouble("RidingAPlusSpeedBonus");
       }
       double speedRatio = Math.max(0.35, riderSpeed / 0.2);
-      getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35 * speedRatio);
+      getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(
+         Math.max(HAKURYU_BASE_SPEED, HAKURYU_NPC_SPEED_SCALE * speedRatio));
       setNoGravity(false);
       if (rider.isChangbanpoCharging()) {
          // Chanting does not immobilize Zhao Yun. Follow the normal target or
@@ -138,7 +184,99 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          setNpActive(false);
          followRiderIntent(rider, master);
       }
+      setMovingState(isNpActive() || getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
       fallDistance = 0.0F;
+   }
+
+   /** One ground jump plus two additional jumps while airborne. */
+   private void handleControlledJump(net.minecraft.server.level.ServerPlayer owner) {
+      boolean jumpPressed = ((LivingEntityInputAccessor)owner).typemoonworld$isJumping();
+      if (onGround() && getDeltaMovement().y <= 0.0) {
+         jumpCount = 0;
+      }
+      if (jumpPressed && !jumpInputPrevious) {
+         if (onGround()) {
+            jumpWithZhaoYunPower();
+            jumpCount = 1;
+         } else if (jumpCount < 3) {
+            jumpWithZhaoYunPower();
+            jumpCount++;
+         }
+      }
+      jumpInputPrevious = jumpPressed;
+   }
+
+   /** Uses the same vertical impulse as Zhao Yun's card big jump. */
+   public void jumpWithZhaoYunPower() {
+      jumpFromGround();
+      Vec3 motion = getDeltaMovement();
+      setDeltaMovement(motion.x, Math.max(motion.y, ZHAO_YUN_BIG_JUMP_VERTICAL), motion.z);
+      hasImpulse = true;
+      fallDistance = 0.0F;
+      if (level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 0.12, getZ(),
+            18, 0.65, 0.12, 0.65, 0.08);
+         level.sendParticles(ParticleTypes.CRIT, getX(), getY() + 0.35, getZ(),
+            10, 0.32, 0.18, 0.32, 0.05);
+         level.playSound(null, blockPosition(), SoundEvents.HORSE_JUMP, SoundSource.HOSTILE, 0.9F, 0.9F);
+      }
+   }
+
+   private void tickLandingImpact(ServerLevel level) {
+      boolean grounded = onGround();
+      if (!grounded) {
+         if (landingGrounded) {
+            airborneMaxY = getY();
+            airborneTicks = 0;
+         }
+         airborneMaxY = Math.max(airborneMaxY, getY());
+         airborneTicks++;
+      } else if (!landingGrounded) {
+         double drop = Math.max(0.0, airborneMaxY - getY());
+         if (!isNpActive() && airborneTicks >= 8 && drop >= 5.0
+            && level.getGameTime() - lastLandingImpactTick >= 10L) {
+            performLandingImpact(level, drop);
+            lastLandingImpactTick = level.getGameTime();
+         }
+         airborneTicks = 0;
+         airborneMaxY = getY();
+      }
+      landingGrounded = grounded;
+   }
+
+   private void performLandingImpact(ServerLevel level, double drop) {
+      LivingEntity attacker = getPassengers().stream()
+         .filter(LivingEntity.class::isInstance)
+         .map(LivingEntity.class::cast)
+         .findFirst()
+         .orElse(this);
+      DamageSource source = attacker instanceof Player player
+         ? player.damageSources().playerAttack(player)
+         : damageSources().mobAttack(attacker);
+      float damage = (float)Math.min(42.0, 26.0 + Math.max(0.0, drop - 5.0) * 3.0);
+      AABB area = getBoundingBox().inflate(3.2, 1.2, 3.2);
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
+         entity -> entity != this && !getPassengers().contains(entity) && entity.isAlive() && !isAlliedTo(entity))) {
+         target.hurt(source, damage);
+         Vec3 away = target.position().subtract(position()).multiply(1.0, 0.0, 1.0);
+         if (away.lengthSqr() < 1.0E-4) away = getLookAngle().multiply(1.0, 0.0, 1.0);
+         away = away.normalize();
+         target.push(away.x * 1.15, 0.42, away.z * 1.15);
+         target.hurtMarked = true;
+      }
+      TerrainImpactService.impact(level, attacker, position().add(0.0, 0.2, 0.0),
+         TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM),
+         TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
+      level.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 0.16, getZ(),
+         30, 1.1, 0.18, 1.1, 0.12);
+      level.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 0.12, getZ(),
+         14, 0.9, 0.16, 0.9, 0.06);
+      level.sendParticles(ParticleTypes.CRIT, getX(), getY() + 0.3, getZ(),
+         18, 1.0, 0.25, 1.0, 0.08);
+      level.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(),
+         SoundSource.HOSTILE, 0.8F, 0.72F);
+      level.playSound(null, blockPosition(), SoundEvents.ANVIL_LAND,
+         SoundSource.HOSTILE, 0.9F, 0.65F);
    }
 
    @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -172,7 +310,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       Vec3 velocity = flat.scale(getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.8);
       move(net.minecraft.world.entity.MoverType.SELF, velocity);
       if (horizontalCollision && onGround()) {
-         getJumpControl().jump();
+         jumpWithZhaoYunPower();
       }
       setDeltaMovement(velocity.x * 0.5, getDeltaMovement().y, velocity.z * 0.5);
    }
@@ -196,6 +334,10 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
 
    public boolean isSkillMount() {
       return skillOwnerUuid != null;
+   }
+
+   public boolean isDamageProtectedWhileMounted() {
+      return !getPassengers().isEmpty();
    }
 
    @Override protected boolean canAddPassenger(Entity passenger) {
@@ -227,7 +369,6 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       double offsetX = -Math.sin(yaw) * localZ;
       double offsetZ = Math.cos(yaw) * localZ;
       double seatY = 0.82 + index * 0.35;
-      if (passenger instanceof Player) seatY -= 0.5;
       callback.accept(passenger, getX() + offsetX, getY() + seatY, getZ() + offsetZ);
       if (passenger instanceof ZhaoYunRiderEntity rider) {
          float forwardYaw = getYRot();
@@ -240,6 +381,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
 
    @Override public boolean hurt(DamageSource source, float amount) {
       if (level().isClientSide || amount <= 0.0F) return false;
+      if (isDamageProtectedWhileMounted()) return false;
       if (isNpActive()) {
          amount *= 0.05F;
       }
@@ -285,6 +427,9 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
 
    public boolean isNpActive() { return entityData.get(NP_ACTIVE); }
    public void setNpActive(boolean active) { entityData.set(NP_ACTIVE, active); }
+   private void setMovingState(boolean moving) {
+      if (!level().isClientSide()) entityData.set(MOVING, moving);
+   }
    @Nullable public UUID getRiderUuid() { return riderUuid; }
    @Nullable public UUID getMasterUuid() { return masterUuid; }
 
@@ -320,14 +465,13 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Override protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float partialTick) {
       int index = getPassengers().indexOf(passenger);
       double seatY = 0.82 + index * 0.35;
-      if (passenger instanceof Player) seatY -= 0.5;
       return new Vec3(0.0, seatY, -0.15 + index * 0.35);
    }
 
    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          event.getController().setAnimation(RawAnimation.begin().thenLoop(
-            isNpActive() ? "gallop" : event.isMoving() ? "walk" : "standing"));
+            isNpActive() ? "gallop" : entityData.get(MOVING) ? "walk" : "standing"));
          return PlayState.CONTINUE;
       }));
    }
