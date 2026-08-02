@@ -58,6 +58,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN);
                         output.accept(ModItems.SERVANT_CARD_ARASH);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
@@ -98,6 +99,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_LEGS);
                     }).build());
 
     public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",

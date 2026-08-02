@@ -65,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
@@ -321,10 +322,6 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
-      LivingEntity engagementTarget = context.target();
-      if (engagementTarget != null && engagementTarget.isAlive()) {
-         ServantNavigationHelper.tryMeleeClosingBurst(entity, engagementTarget, context.gameTick());
-      }
       if (entity instanceof ArashEntity arash) {
          ArashCombatHelper.tick(arash, context);
          return;
@@ -366,6 +363,14 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof UshiwakamaruRiderEntity ushiwakamaru && !ushiwakamaru.isClone()) {
          UshiwakamaruCombatHelper.tick(ushiwakamaru);
+         return;
+      }
+      if (entity instanceof ZhaoYunRiderEntity zhaoYun) {
+         if (sharedTarget != null && sharedTarget.isAlive() && EntityUtils.isValidCombatTarget(entity, sharedTarget)) {
+            zhaoYun.tickDedicatedCombat(sharedTarget, context.gameTick());
+         } else {
+            entity.setTarget(null);
+         }
          return;
       }
       if (entity instanceof FanaticAssassinEntity fanatic) {

@@ -640,6 +640,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    @Override
    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
    }
 
    private void renderMagicList(GuiGraphics guiGraphics, int mouseX, int mouseY) {

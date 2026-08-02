@@ -104,10 +104,12 @@ public final class FanaticAssassinEntity extends ServantEntity {
    private void tickConcealment(long now) {
       boolean combat = this.getTarget() != null && this.getTarget().isAlive();
       long lastCombat = this.getPersistentData().getLong("FanaticLastCombatTick");
-      long lastReveal = this.getPersistentData().getLong(LAST_REVEAL_TICK);
       if (combat) {
          this.getPersistentData().putLong("FanaticLastCombatTick", now);
-         this.setPresenceConcealed(this.hurtTime <= 0 && now - lastReveal >= 30L);
+         // Presence concealment is an approach tool, not a combat idle state.
+         // Once a target is acquired the NPC must remain visible and keep its
+         // attack loop running instead of re-concealing every 30 ticks.
+         this.setPresenceConcealed(false);
       } else if (this.hurtTime > 0) {
          this.setPresenceConcealed(false);
       } else if (now - lastCombat >= FanaticAssassinRules.RECONCEAL_DELAY) {
@@ -181,6 +183,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
       net.minecraft.world.entity.LivingEntity previous = this.getTarget();
       super.setTarget(target);
       if (!this.level().isClientSide() && target != null && target != previous) {
+         this.revealForCombat();
          ServantVoiceHelper.tryPlayFanaticEncounter(this);
       }
    }

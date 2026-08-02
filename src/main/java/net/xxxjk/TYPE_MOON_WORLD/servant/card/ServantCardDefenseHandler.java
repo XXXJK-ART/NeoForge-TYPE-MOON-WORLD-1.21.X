@@ -207,6 +207,9 @@ public final class ServantCardDefenseHandler {
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
          && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+         if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+            ServantCardZhaoYunSkills.recordBreakthroughDefense(player);
+         }
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -218,6 +221,9 @@ public final class ServantCardDefenseHandler {
 
       Float reduced = divineDefenseBroken || specialNoblePhantasmDamage ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
+         if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+            ServantCardZhaoYunSkills.recordBreakthroughDefense(player);
+         }
          if (reduced <= 0.0F) {
             event.setCanceled(true);
             event.setAmount(0.0F);

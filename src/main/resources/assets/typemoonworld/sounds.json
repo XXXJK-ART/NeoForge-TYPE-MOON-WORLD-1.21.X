@@ -615,20 +615,16 @@
       "category": "hostile", "subtitle": "subtitles.typemoonworld.nightingale.np",
       "sounds": [{"name": "typemoonworld:voice/nightingale/np", "stream": true}]
     },
-    "zhao_yun_voice_attack": {
-      "category": "hostile", "subtitle": "subtitles.typemoonworld.zhao_yun.attack",
-      "sounds": ["typemoonworld:voice/zhao_yun/attack1", "typemoonworld:voice/zhao_yun/attack2", "typemoonworld:voice/zhao_yun/attack3"]
-    },
     "zhao_yun_voice_fail": {
       "category": "hostile", "subtitle": "subtitles.typemoonworld.zhao_yun.fail",
-      "sounds": ["typemoonworld:voice/zhao_yun/fail1", "typemoonworld:voice/zhao_yun/fail2"]
+      "sounds": ["typemoonworld:voice/zhao_yun/fail1_audio", "typemoonworld:voice/zhao_yun/fail2_audio"]
     },
     "zhao_yun_voice_victory": {
       "category": "hostile", "subtitle": "subtitles.typemoonworld.zhao_yun.victory",
-      "sounds": ["typemoonworld:voice/zhao_yun/victory1", "typemoonworld:voice/zhao_yun/victory2"]
+      "sounds": ["typemoonworld:voice/zhao_yun/victory1_audio", "typemoonworld:voice/zhao_yun/victory2_audio"]
     },
     "zhao_yun_voice_np": {
       "category": "hostile", "subtitle": "subtitles.typemoonworld.zhao_yun.np",
-      "sounds": [{"name": "typemoonworld:voice/zhao_yun/np", "stream": true}]
+      "sounds": [{"name": "typemoonworld:voice/zhao_yun/np_audio", "stream": true}]
     }
 }

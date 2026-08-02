@@ -105,6 +105,11 @@ public class ModItems {
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "temple_stone_sword_axe_speed"),
                                             -3.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "temple_stone_sword_axe_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
     public static final DeferredItem<Item> MURAMASA = ITEMS.register("redsword",
@@ -290,11 +295,25 @@ public class ModItems {
     public static final DeferredItem<Item> GILGAMESH_VAJRA = ITEMS.register("gilgamesh_vajra",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "vajra"));
     public static final DeferredItem<Item> GILGAMESH_FANGTIAN_HUAJI = ITEMS.register("gilgamesh_fangtian_huaji",
-            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "fangtian_huaji"));
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_fangtian_huaji_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build()), "fangtian_huaji"));
     public static final DeferredItem<Item> GILGAMESH_SPIRAL_SWORD = ITEMS.register("gilgamesh_spiral_sword",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> GILGAMESH_GAE_BULG = ITEMS.register("gilgamesh_gae_bulg",
-            () -> new GilgameshHarmlessGaeBulgItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+            () -> new GilgameshHarmlessGaeBulgItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_gae_bulg_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
@@ -316,6 +335,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN = registerServantCard("fanatic_assassin");
     public static final DeferredItem<Item> SERVANT_CARD_ARASH = registerServantCard("arash");
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE = registerServantCard("nightingale");
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER = registerServantCard("zhao_yun_rider");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -360,6 +380,8 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_CHEST = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_LEGS = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -730,6 +752,11 @@ public class ModItems {
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hecates_staff_speed"),
                                             0.6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hecates_staff_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> NAMELESS_CHAIN_DAGGER = ITEMS.register("nameless_chain_dagger",
             () -> new NamelessChainDaggerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1)
@@ -863,6 +890,11 @@ public class ModItems {
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_speed"),
                                             1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
@@ -1054,6 +1086,7 @@ public class ModItems {
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
             case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
+            case "zhao_yun_rider" -> (legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

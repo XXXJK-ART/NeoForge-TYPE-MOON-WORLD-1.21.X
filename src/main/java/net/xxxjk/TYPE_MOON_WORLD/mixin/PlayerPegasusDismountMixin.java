@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.mixin;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,7 +18,9 @@ public abstract class PlayerPegasusDismountMixin {
    )
    private void typemoonworld$keepRidingMedusaPegasus(CallbackInfoReturnable<Boolean> cir) {
       Player player = (Player)(Object)this;
-      if (player.getVehicle() instanceof MedusaPegasusEntity || player.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isMountMode()) {
+      if (player.getVehicle() instanceof ZhaoYunHakuryuEntity && player.isShiftKeyDown()) {
+         cir.setReturnValue(true);
+      } else if (player.getVehicle() instanceof MedusaPegasusEntity || player.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isMountMode()) {
          cir.setReturnValue(false);
       }
    }

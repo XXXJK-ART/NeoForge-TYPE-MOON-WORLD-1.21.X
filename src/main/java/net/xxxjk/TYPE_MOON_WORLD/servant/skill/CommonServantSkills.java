@@ -5,6 +5,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 
 public final class CommonServantSkills {
    private CommonServantSkills() {
@@ -131,8 +132,9 @@ public final class CommonServantSkills {
       }
 
       entity.getPersistentData().putBoolean("RidingAPlusActive", true);
-      entity.getPersistentData().putFloat("RidingAPlusSpeedBonus", 0.5F);
-      entity.getPersistentData().putFloat("RidingAPlusArmorBonus", 0.2F);
+      boolean zhaoYun = entity instanceof ZhaoYunRiderEntity;
+      entity.getPersistentData().putFloat("RidingAPlusSpeedBonus", zhaoYun ? 0.3F : 0.5F);
+      entity.getPersistentData().putFloat("RidingAPlusArmorBonus", zhaoYun ? 0.15F : 0.2F);
       return ServantExecutionResult.SUCCESS;
    }
 

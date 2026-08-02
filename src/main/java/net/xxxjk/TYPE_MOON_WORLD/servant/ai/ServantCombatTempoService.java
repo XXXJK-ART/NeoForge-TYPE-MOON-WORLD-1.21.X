@@ -193,10 +193,12 @@ public final class ServantCombatTempoService {
             if (servant.level().noCollision(servant, servant.getBoundingBox().move(offset.x, 0.15, offset.z))) {
                servant.setDeltaMovement(motion.x + toward.x * boost, Math.max(motion.y, 0.18), motion.z + toward.z * boost);
                servant.hasImpulse = true;
+               ServantNavigationHelper.limitMeleeApproachMotion(servant, target);
                return true;
             }
          }
       }
+      ServantNavigationHelper.limitMeleeApproachMotion(servant, target);
       return moved;
    }
 

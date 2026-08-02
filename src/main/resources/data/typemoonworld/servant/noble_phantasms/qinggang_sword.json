@@ -1,0 +1,13 @@
+{
+  "id": "qinggang_sword",
+  "display_name": "Qinggang Sword",
+  "display_name_zh": "\u9752\u91ed\u5251",
+  "rank": "C",
+  "type": "anti_personnel",
+  "mp_cost": 50,
+  "cooldown_ticks": 400,
+  "duration_ticks": 300,
+  "base_damage": 15,
+  "effects": [{"effect_type":"extra_delayed_strike","delay_ticks":10,"bypass_armor":true,"scales_with_attack_buffs":true}],
+  "description": "For 15 seconds, every successful attack schedules a second armor-piercing strike after 0.5 seconds."
+}

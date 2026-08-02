@@ -178,6 +178,9 @@ public class ModPlayerEventHandler {
          }
          if (vars.servant_card_transformed) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);
+            if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.onZhaoYunAttack(player, target);
+            }
          }
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.triggerHeraclesAttackImpact(player, target);
       }

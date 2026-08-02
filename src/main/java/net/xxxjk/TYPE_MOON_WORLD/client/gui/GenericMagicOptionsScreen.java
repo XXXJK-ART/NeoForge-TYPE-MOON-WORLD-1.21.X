@@ -84,9 +84,11 @@ public final class GenericMagicOptionsScreen extends Screen {
       onClose();
    }
    @Override public void onClose() { if (minecraft != null) minecraft.setScreen(null); }
-   @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) { }
+   @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+      GuiUtils.renderScreenBackdrop(graphics, this.width, this.height);
+   }
    @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-      renderBackground(graphics, mouseX, mouseY, partialTick); super.render(graphics, mouseX, mouseY, partialTick);
+      super.render(graphics, mouseX, mouseY, partialTick);
       graphics.drawCenteredString(font, title, width / 2, 14, 0xFFFFFF);
       int y = Math.max(39, height / 2 - options.size() * 13);
       for (MagicOption option : options) { graphics.drawString(font, Component.literal(option.key()), width / 2 - 158, y, 0xD7E3EE); y += 26; }

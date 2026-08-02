@@ -982,6 +982,25 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return;
       }
 
+      // Zhao Yun's basic attack chain is a four-part spear routine. Keep the
+      // common attack entry point so all normal combat AI can use the extra
+      // weapon work without registering a separate attack sound.
+      if (this instanceof ZhaoYunRiderEntity && this.hasActionAnimation("spear_flourish")
+         && this.hasActionAnimation("spear_dance")) {
+         String animation = switch (this.basicAttackVariant++ & 3) {
+            case 0 -> "uppercut";
+            case 1 -> "horizontal_swing";
+            case 2 -> "spear_flourish";
+            default -> "spear_dance";
+         };
+         this.triggerNamedActionAnimation(animation);
+         if (this.level() instanceof ServerLevel sl) {
+            sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+               SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.1F, 0.9F);
+         }
+         return;
+      }
+
       boolean hasDiagonal = this.hasActionAnimation("uppercut");
       boolean hasHorizontal = this.hasActionAnimation("horizontal_swing");
       if (!hasDiagonal && !hasHorizontal) {

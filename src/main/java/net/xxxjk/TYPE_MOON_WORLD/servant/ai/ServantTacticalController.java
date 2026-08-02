@@ -122,6 +122,14 @@ public final class ServantTacticalController {
          && resolution.intent().priority() > AiIntent.PRIORITY_ATTACK) {
          ServantPlannedActionExecutor.interrupt(entity, 5, now);
       }
+      if (!resolution.executed()) {
+         LivingEntity facingTarget = entity.getTarget();
+         if (facingTarget != null && facingTarget.isAlive()) {
+            // Do not let an old side-step path continue when no movement intent won.
+            ServantNavigationHelper.stopIfMoving(entity);
+            entity.getLookControl().setLookAt(facingTarget, 45.0F, 45.0F);
+         }
+      }
       return resolution.consumesLegacyControl();
    }
 
@@ -156,6 +164,8 @@ public final class ServantTacticalController {
    private static void submitCombatManeuver(ServantEntity entity, AiBrain brain, long now) {
       LivingEntity target = entity.getTarget();
       if (isGawainHeraclesMatchup(entity, target)) return;
+      if (ServantEngagementService.isMeleeDuel(entity, target)
+         && target != null && entity.distanceTo(target) <= 16.0) return;
       if (!ServantManeuverService.shouldManeuver(entity, target)) return;
       if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity)
          && target != null && entity.distanceTo(target) > 3.0) return;
@@ -164,11 +174,12 @@ public final class ServantTacticalController {
       int priority = rangedPressure ? AiIntent.PRIORITY_ATTACK : AiIntent.PRIORITY_POSITION;
       double utility = entity.distanceTo(target) + tactical.pursuitAggression() * 20.0
          + (rangedPressure ? 120.0 : 0.0);
-      brain.submit(AiIntent.of(COMBAT_MANEUVER, priority, utility, 3, true,
+      brain.submit(AiIntent.attempt(COMBAT_MANEUVER, priority, utility, 3, true,
          () -> {
             if (!ServantManeuverService.trySideForwardReengage(entity, target, tactical, brain.blackboard(), now)) {
-               ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression());
+               return ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression());
             }
+            return true;
          },
          AiControl.MOVE, AiControl.LOOK));
    }
@@ -176,13 +187,15 @@ public final class ServantTacticalController {
    private static void submitTacticalReposition(ServantEntity entity, AiBrain brain, long now) {
       LivingEntity target = entity.getTarget();
       if (isGawainHeraclesMatchup(entity, target)) return;
+      if (ServantEngagementService.isMeleeDuel(entity, target)
+         && target != null && entity.distanceTo(target) <= 16.0) return;
       if (target == null || entity.getDefinition() == null) return;
       if (ServantCombatTempoService.inMeleePressure(entity, now)) return;
       if ((entity instanceof HeraclesEntity || entity instanceof GawainEntity)
          && entity.distanceTo(target) > 3.0) return;
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       if (!ServantManeuverService.shouldReposition(entity, target, tactical, now)) return;
-      brain.submit(AiIntent.of(TACTICAL_REPOSITION, AiIntent.PRIORITY_POSITION,
+      brain.submit(AiIntent.attempt(TACTICAL_REPOSITION, AiIntent.PRIORITY_POSITION,
          tactical.repositionDistance() + tactical.pursuitAggression() * 10.0, 4, true,
          () -> ServantManeuverService.reposition(entity, target, tactical, now), AiControl.MOVE, AiControl.LOOK));
    }

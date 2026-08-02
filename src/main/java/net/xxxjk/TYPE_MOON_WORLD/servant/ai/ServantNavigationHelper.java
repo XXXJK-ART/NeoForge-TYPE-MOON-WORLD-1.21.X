@@ -11,6 +11,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 public final class ServantNavigationHelper {
    public static final int DEFAULT_REPATH_INTERVAL = 8;
    public static final int SHORT_REPATH_INTERVAL = 5;
+   private static final String MOVEMENT_TICK = "TypeMoonMovementWriteTick";
+   private static final String MOVEMENT_WRITER = "TypeMoonMovementWriter";
 
    private ServantNavigationHelper() {
    }
@@ -94,8 +96,7 @@ public final class ServantNavigationHelper {
          && entity.distanceTo(target) > 7.0) {
          double agilitySpeed = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
          double chaseScale = 1.12 + Math.max(0.0, Math.min(0.32, (agilitySpeed - 0.20) * 0.9));
-         tryMeleeClosingBurst(entity, target, gameTick);
-         return moveToPositionThrottled(
+         boolean moved = moveToPositionThrottled(
             entity,
             ServantEngagementService.meleeApproachPoint(entity, target, gameTick),
             speed * chaseScale,
@@ -104,6 +105,7 @@ public final class ServantNavigationHelper {
             minTargetMoveSqr,
             keyPrefix + "Intercept"
          );
+         return moved;
       }
       CompoundTag data = entity.getPersistentData();
       String xKey = keyPrefix + "TargetX";
@@ -117,24 +119,35 @@ public final class ServantNavigationHelper {
       boolean targetMoved = dx * dx + dy * dy + dz * dz >= minTargetMoveSqr;
       boolean speedChanged = !data.contains(speedKey) || Math.abs(data.getDouble(speedKey) - speed) > 0.05;
       if (!targetMoved && !speedChanged && !entity.getNavigation().isDone() && gameTick - data.getLong(keyPrefix + "LastPathTick") < repathInterval) {
+         if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
+         rememberMovementWriter(entity, gameTick, keyPrefix);
+         limitMeleeApproachMotion(entity, target);
          return true;
       }
+
+      if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
 
       data.putLong(keyPrefix + "LastPathTick", gameTick);
       data.putDouble(xKey, target.getX());
       data.putDouble(yKey, target.getY());
       data.putDouble(zKey, target.getZ());
       data.putDouble(speedKey, speed);
-      return entity.getNavigation().moveTo(target, speed);
+      if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
+      boolean accepted = entity.getNavigation().moveTo(target, speed);
+      if (accepted) rememberMovementWriter(entity, gameTick, keyPrefix);
+      limitMeleeApproachMotion(entity, target);
+      return accepted;
    }
 
    private static boolean steerInWater(ServantEntity entity, Vec3 target, double requestedSpeed, long gameTick, String keyPrefix) {
+      if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
       entity.setSwimming(true);
       Vec3 toTarget = target.subtract(entity.position());
       double distance = toTarget.length();
       if (distance < 0.75) {
          entity.getNavigation().stop();
          entity.setDeltaMovement(entity.getDeltaMovement().scale(0.72));
+         rememberMovementWriter(entity, gameTick, keyPrefix);
          return true;
       }
       Vec3 direction = toTarget.scale(1.0 / distance);
@@ -149,6 +162,7 @@ public final class ServantNavigationHelper {
       }
       entity.setDeltaMovement(next);
       entity.hasImpulse = true;
+      rememberMovementWriter(entity, gameTick, keyPrefix);
       // Keep a low-frequency path active for collision avoidance and unloaded chunks.
       if (gameTick - data.getLong(keyPrefix + "WaterPathTick") >= 6L) {
          data.putLong(keyPrefix + "WaterPathTick", gameTick);
@@ -172,6 +186,7 @@ public final class ServantNavigationHelper {
       direction = direction.normalize();
       Vec3 lane = direction.scale(1.6);
       if (!entity.level().noCollision(entity, entity.getBoundingBox().move(lane.x, 0.18, lane.z))) return;
+      if (!movementAvailable(entity, gameTick, "CombatMeleeBurst")) return;
       Vec3 motion = entity.getDeltaMovement();
       double desired = Math.max(0.42, Math.min(0.78, 0.30 + agilitySpeed));
       double current = motion.x * direction.x + motion.z * direction.z;
@@ -179,6 +194,7 @@ public final class ServantNavigationHelper {
       entity.setDeltaMovement(motion.x + direction.x * boost, Math.max(motion.y, 0.18),
          motion.z + direction.z * boost);
       entity.hasImpulse = true;
+      rememberMovementWriter(entity, gameTick, "CombatMeleeBurst");
       data.putLong("ServantMeleeClosingBurstTick", gameTick);
    }
 
@@ -207,15 +223,58 @@ public final class ServantNavigationHelper {
       boolean targetMoved = dx * dx + dy * dy + dz * dz >= minTargetMoveSqr;
       boolean speedChanged = !data.contains(speedKey) || Math.abs(data.getDouble(speedKey) - speed) > 0.05;
       if (!targetMoved && !speedChanged && !entity.getNavigation().isDone() && gameTick - data.getLong(keyPrefix + "LastPathTick") < repathInterval) {
+         if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
+         rememberMovementWriter(entity, gameTick, keyPrefix);
          return true;
       }
+
+      if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
 
       data.putLong(keyPrefix + "LastPathTick", gameTick);
       data.putDouble(xKey, target.x);
       data.putDouble(yKey, target.y);
       data.putDouble(zKey, target.z);
       data.putDouble(speedKey, speed);
-      return entity.getNavigation().moveTo(target.x, target.y, target.z, speed);
+      boolean accepted = entity.getNavigation().moveTo(target.x, target.y, target.z, speed);
+      if (accepted) rememberMovementWriter(entity, gameTick, keyPrefix);
+      return accepted;
+   }
+
+   /** Allows one movement writer per server tick; repeated path/impulse writes are ignored. */
+   public static boolean movementAvailable(ServantEntity entity, long gameTick, String writer) {
+      if (entity == null) return false;
+      CompoundTag data = entity.getPersistentData();
+      long claimedTick = data.getLong(MOVEMENT_TICK);
+      return claimedTick != gameTick || writer == null || writer.equals(data.getString(MOVEMENT_WRITER));
+   }
+
+   public static void rememberMovementWriter(ServantEntity entity, long gameTick, String writer) {
+      if (entity == null) return;
+      CompoundTag data = entity.getPersistentData();
+      data.putLong(MOVEMENT_TICK, gameTick);
+      data.putString(MOVEMENT_WRITER, writer == null ? "unknown" : writer);
+   }
+
+   /** Decelerates agile melee units near their opponent and removes excessive lateral drift. */
+   public static void limitMeleeApproachMotion(ServantEntity entity, LivingEntity target) {
+      if (!ServantEngagementService.isMeleeDuel(entity, target) || entity.distanceTo(target) > 14.0) return;
+      Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (toward.lengthSqr() < 1.0E-4) return;
+      toward = toward.normalize();
+      Vec3 motion = entity.getDeltaMovement();
+      double forward = motion.x * toward.x + motion.z * toward.z;
+      double movementAttribute = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+      double distance = entity.distanceTo(target);
+      double maxForward = distance <= 4.5 ? 0.24 : Math.min(0.58, 0.34 + movementAttribute * 0.8);
+      forward = Math.max(-0.12, Math.min(maxForward, forward));
+      Vec3 lateral = new Vec3(motion.x - toward.x * forward, 0.0, motion.z - toward.z * forward);
+      double lateralLimit = Math.min(0.18, 0.08 + movementAttribute * 0.3);
+      if (lateral.lengthSqr() > lateralLimit * lateralLimit) lateral = lateral.normalize().scale(lateralLimit);
+      Vec3 adjusted = toward.scale(forward).add(lateral).add(0.0, motion.y, 0.0);
+      if (adjusted.distanceToSqr(motion) > 1.0E-6) {
+         entity.setDeltaMovement(adjusted);
+         entity.hasImpulse = true;
+      }
    }
 
    public static boolean stopIfMoving(ServantEntity entity) {

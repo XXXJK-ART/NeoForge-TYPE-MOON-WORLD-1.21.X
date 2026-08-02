@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai;
 
+import java.util.UUID;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.item.BowItem;
@@ -16,6 +17,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 /** Shared spacing rules for melee and ranged combatants. */
 public final class ServantEngagementService {
    private static final double MIN_DIRECTION_SQR = 1.0E-5;
+   /** Inside this radius melee units use a direct attack lane instead of orbiting. */
+   public static final double DIRECT_MELEE_DISTANCE = 8.0;
 
    private ServantEngagementService() {
    }
@@ -73,6 +76,30 @@ public final class ServantEngagementService {
       return targetRanged ? Matchup.MELEE_VS_RANGED : Matchup.MELEE_VS_MELEE;
    }
 
+   /**
+    * Returns a stable side for an actor/target pair. UUID ordering makes the
+    * two sides complementary and, unlike a tick-based parity, cannot flip
+    * while the same pair remains engaged.
+    */
+   public static int combatSlotSign(LivingEntity actor, LivingEntity target) {
+      if (actor == null || target == null || actor == target) return 1;
+      UUID own = actor.getUUID();
+      UUID opponent = target.getUUID();
+      return own.compareTo(opponent) < 0 ? 1 : -1;
+   }
+
+   public static boolean isDirectMeleeEngagement(LivingEntity actor, LivingEntity target) {
+      return actor != null && target != null && target.isAlive()
+         && role(actor) == CombatRole.MELEE
+         && role(target) == CombatRole.MELEE
+         && actor.distanceTo(target) <= DIRECT_MELEE_DISTANCE;
+   }
+
+   public static boolean isMeleeDuel(LivingEntity actor, LivingEntity target) {
+      return actor != null && target != null && target.isAlive()
+         && role(actor) == CombatRole.MELEE && role(target) == CombatRole.MELEE;
+   }
+
    public static RangeBand rangedBand(LivingEntity target, double minimum, double preferred, double maximum) {
       return rangedBand(role(target) == CombatRole.RANGED, minimum, preferred, maximum);
    }
@@ -111,6 +138,9 @@ public final class ServantEngagementService {
 
    public static Vec3 rangedDestination(LivingEntity entity, LivingEntity target, long gameTick, RangeBand band) {
       double distance = entity.distanceTo(target);
+      if (isDirectMeleeEngagement(entity, target)) {
+         return target.position();
+      }
       Vec3 radial = horizontal(entity.position().subtract(target.position()));
       if (radial.lengthSqr() < MIN_DIRECTION_SQR) {
          radial = horizontal(entity.getLookAngle()).scale(-1.0);
@@ -121,17 +151,17 @@ public final class ServantEngagementService {
       radial = radial.normalize();
 
       boolean targetRanged = role(target) == CombatRole.RANGED;
-      int direction = ((entity.getId() + (int)(gameTick / 80L)) & 1) == 0 ? 1 : -1;
+      int direction = combatSlotSign(entity, target);
       double angle = targetRanged ? (distance < band.minimum() ? 38.0 : 24.0)
          : distance < band.minimum() ? 16.0 : 10.0;
       Vec3 placementDirection = rotateHorizontal(radial, Math.toRadians(angle * direction));
       double desiredRadius;
       if (targetRanged) {
          double closingStep = Math.max(2.0, Math.min(6.0, distance * 0.2));
-         desiredRadius = distance <= band.minimum() + 1.0
+         desiredRadius = distance < band.minimum() - 0.75
             ? Math.max(3.0, distance) : Math.max(band.minimum(), distance - closingStep);
       } else {
-         desiredRadius = distance < band.minimum() ? band.preferred() + 2.0 : band.preferred();
+         desiredRadius = distance < band.minimum() - 0.75 ? band.preferred() + 2.0 : band.preferred();
       }
       Vec3 prediction = cappedHorizontal(target.getDeltaMovement().scale(targetRanged ? 4.0 : 6.0), 6.0);
       Vec3 predictedTarget = target.position().add(prediction);
@@ -152,7 +182,7 @@ public final class ServantEngagementService {
          return predicted;
       }
       approach = approach.normalize();
-      int direction = ((entity.getId() + (int)(gameTick / 50L)) & 1) == 0 ? 1 : -1;
+      int direction = combatSlotSign(entity, target);
       Vec3 side = new Vec3(-approach.z, 0.0, approach.x).scale(direction * Math.min(3.0, 1.5 + distance * 0.025));
       return predicted.add(side);
    }

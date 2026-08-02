@@ -236,6 +236,20 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Nightingale Pledge", "nightingale_pledge", 50.0, 600);
             default -> null;
          };
+         case "zhao_yun_rider" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("Dragon Gall Spear Art", "zhao_yun_spear_combo", 0.0, 20);
+            case 0 -> new ServantCardSkillAction("Summon Hakuryu", "zhao_yun_summon_hakuryu", 20.0, 0);
+            case 1 -> new ServantCardSkillAction("涯角枪·破阵", "zhao_yun_spear_breakthrough", 16.0, 120);
+            case 2 -> new ServantCardSkillAction("单骑救主 A", "zhao_yun_rescue", 30.0, 400);
+            case 3 -> new ServantCardSkillAction("龙回首·横扫", "zhao_yun_dragon_sweep", 20.0, 160);
+            case 4 -> new ServantCardSkillAction("白龙突进", "zhao_yun_mounted_rush", 18.0, 160);
+            case 5 -> new ServantCardSkillAction("龙胆闪", "zhao_yun_dragon_flash", 22.0, 200);
+            case 6 -> new ServantCardSkillAction("七探蛇盘", "zhao_yun_seven_probe", 28.0, 280);
+            case 7 -> new ServantCardSkillAction("白龙踏阵", "zhao_yun_hakuryu_trample", 26.0, 320);
+            case 8 -> new ServantCardSkillAction("青釭剑 C", "zhao_yun_qinggang", 50.0, 400);
+            case 9 -> new ServantCardSkillAction("长坂坡一骑驱 EX", "zhao_yun_changbanpo", 80.0, 1200);
+            default -> null;
+         };
          default -> null;
       };
    }

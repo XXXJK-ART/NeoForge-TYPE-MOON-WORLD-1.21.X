@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 
 public final class ServantVoiceHelper {
    private static final String GLOBAL_VOICE_TICK_TAG = "TypeMoonVoiceGlobalTick";
+   private static final String VOICE_LOCK_UNTIL_TAG = "TypeMoonVoiceLockUntil";
    private static final String CATEGORY_VOICE_TICK_PREFIX = "TypeMoonVoice.";
    private static final int GLOBAL_VOICE_COOLDOWN = 40;
    private static final int ATTACK_VOICE_COOLDOWN = 90;
@@ -22,9 +23,7 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
-      if (servant instanceof ZhaoYunRiderEntity) {
-         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_ATTACK.get());
-      } else if (isSasakiKojiro(servant)) {
+      if (isSasakiKojiro(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
          }
@@ -241,6 +240,12 @@ public final class ServantVoiceHelper {
 
    public static void tryPlayZhaoYunNp(ZhaoYunRiderEntity servant) {
       playVoiceForced(servant, "zhao_yun_np", 1.1F, 1.0F, ModSounds.ZHAO_YUN_VOICE_NP.get());
+      if (servant.level() instanceof ServerLevel serverLevel) {
+         // The source clip is about sixteen seconds long. Suppress ordinary
+         // and forced servant voices for its duration so the chant/release
+         // callout cannot be masked by combat barks.
+         servant.getPersistentData().putLong(VOICE_LOCK_UNTIL_TAG, serverLevel.getGameTime() + 320L);
+      }
    }
 
    public static void tryPlayGaeBolg(ServantEntity servant) {
@@ -454,6 +459,9 @@ public final class ServantVoiceHelper {
 
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
+      if (now < data.getLong(VOICE_LOCK_UNTIL_TAG)) {
+         return;
+      }
       if (now - data.getLong(GLOBAL_VOICE_TICK_TAG) < GLOBAL_VOICE_COOLDOWN) {
          return;
       }
@@ -476,6 +484,9 @@ public final class ServantVoiceHelper {
 
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
+      if (now < data.getLong(VOICE_LOCK_UNTIL_TAG) && !"zhao_yun_np".equals(category)) {
+         return;
+      }
       data.putLong(GLOBAL_VOICE_TICK_TAG, now);
       data.putLong(CATEGORY_VOICE_TICK_PREFIX + category, now);
       float finalPitch = pitch + (servant.getRandom().nextFloat() - 0.5F) * 0.08F;

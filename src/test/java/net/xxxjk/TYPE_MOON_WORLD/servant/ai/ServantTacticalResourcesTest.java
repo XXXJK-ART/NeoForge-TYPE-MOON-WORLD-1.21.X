@@ -21,7 +21,7 @@ class ServantTacticalResourcesTest {
    private static final Path RESOURCES = Path.of("src/main/resources/data/typemoonworld/servant");
 
    @Test
-   void allTwentyServantsUseDedicatedBoundedTacticalProfiles() throws Exception {
+   void allServantsUseDedicatedBoundedTacticalProfiles() throws Exception {
       Set<String> profileIds = new HashSet<>();
       try (var definitions = Files.list(RESOURCES.resolve("definitions"))) {
          for (Path path : definitions.filter(file -> file.toString().endsWith(".json")).toList()) {
@@ -38,7 +38,7 @@ class ServantTacticalResourcesTest {
             assertTrue(profile.tactical().maximumRange() <= 48.0);
          }
       }
-      assertEquals(20, profileIds.size());
+      assertEquals(21, profileIds.size());
    }
 
    @Test

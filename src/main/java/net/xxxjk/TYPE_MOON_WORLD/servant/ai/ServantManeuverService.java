@@ -26,6 +26,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 public final class ServantManeuverService {
    public static final double MAX_NORMAL_ENGAGEMENT_DISTANCE = 48.0;
    private static final double MIN_MANEUVER_DISTANCE = 5.5;
+   private static final double MANEUVER_ENTER_DISTANCE = 7.0;
+   private static final double MANEUVER_EXIT_DISTANCE = 52.0;
+   private static final String MANEUVER_TARGET = "TypeMoonManeuverTarget";
+   private static final String MANEUVER_ACTIVE = "TypeMoonManeuverActive";
    private static final String SIDE_REENGAGE_START = "TypeMoonSideReengageStart";
    private static final String SIDE_REENGAGE_FAILURES = "TypeMoonSideReengageFailures";
    private static final String SIDE_REENGAGE_TARGET = "TypeMoonSideReengageTarget";
@@ -36,13 +40,15 @@ public final class ServantManeuverService {
    public static boolean shouldManeuver(ServantEntity servant, LivingEntity target) {
       if (servant == null || target == null || !target.isAlive() || servant.isPerformingAction()) return false;
       double distance = servant.distanceTo(target);
+      if (ServantEngagementService.isDirectMeleeEngagement(servant, target)) return false;
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(servant);
       boolean airborneIntercept = !target.onGround()
          && Math.abs(target.getY() - servant.getY()) >= 1.5
          && tactical.verticalMobility() >= 0.35;
       boolean rangedPressure = hasRangedPressure(servant, target);
       boolean antiKiteApproach = rangedPressure && distance > Math.max(5.0, tactical.minimumRange() + 1.0);
-      return distance >= MIN_MANEUVER_DISTANCE && distance <= MAX_NORMAL_ENGAGEMENT_DISTANCE
+      boolean maneuverActive = maneuverLatch(servant, target, distance);
+      return distance >= MIN_MANEUVER_DISTANCE && distance <= MANEUVER_EXIT_DISTANCE && maneuverActive
          && (ServantCombatMotionService.canPursue(servant, target)
              || antiKiteApproach
              || ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.MELEE
@@ -59,7 +65,8 @@ public final class ServantManeuverService {
       if (lead.lengthSqr() > maxLead * maxLead) lead = lead.normalize().scale(maxLead);
       Vec3 predicted = target.position().add(lead);
 
-      if (ServantCombatDisposition.isRelentlessAdvance(servant)) {
+      if (ServantEngagementService.isMeleeDuel(servant, target)
+         || ServantCombatDisposition.isRelentlessAdvance(servant)) {
          Vec3 direct = predicted.subtract(servant.position()).multiply(1.0, 0.0, 1.0);
          return direct.lengthSqr() < 1.0E-4 ? predicted : predicted.subtract(direct.normalize().scale(1.8));
       }
@@ -67,7 +74,7 @@ public final class ServantManeuverService {
       Vec3 travel = predicted.subtract(servant.position()).multiply(1.0, 0.0, 1.0);
       if (travel.lengthSqr() < 1.0E-4) return predicted;
       travel = travel.normalize();
-      int sideSign = ((servant.getId() + (int)(now / 24L)) & 1) == 0 ? 1 : -1;
+      int sideSign = ServantEngagementService.combatSlotSign(servant, target);
       Vec3 side = new Vec3(-travel.z, 0.0, travel.x).scale(sideSign * Math.max(0.0, interceptBias));
       Vec3 candidate = predicted.add(side).subtract(travel.scale(1.8));
       Vec3 safe = findSafeDestination(servant, candidate);
@@ -131,7 +138,7 @@ public final class ServantManeuverService {
 
       Vec3 toward = target.position().subtract(servant.position()).multiply(1.0, 0.0, 1.0);
       if (toward.lengthSqr() < 1.0E-4) return false;
-      int sideSign = ((servant.getId() + (int)(now / 8L)) & 1) == 0 ? 1 : -1;
+      int sideSign = ServantEngagementService.combatSlotSign(servant, target);
       double[] angles = {45.0 * sideSign, 70.0 * sideSign, -45.0 * sideSign, -70.0 * sideSign};
       double stride = Math.min(Math.max(6.0, tactical.repositionDistance()), Math.max(6.0, distance - tactical.preferredRange()));
       for (double angle : angles) {
@@ -199,7 +206,9 @@ public final class ServantManeuverService {
    public static boolean shouldReposition(ServantEntity servant, LivingEntity target,
                                           ServantAiDefinition.Tactical tactical, long now) {
       if (servant == null || target == null || tactical == null || !target.isAlive()
-         || servant.isPerformingAction() || shouldManeuver(servant, target)) return false;
+         || servant.isPerformingAction() || ServantEngagementService.isDirectMeleeEngagement(servant, target)
+         || ServantEngagementService.isMeleeDuel(servant, target) && servant.distanceTo(target) <= 16.0
+         || shouldManeuver(servant, target)) return false;
       int interval = Math.max(16, 34 - (int)Math.round(tactical.pursuitAggression() * 14.0));
       if (Math.floorMod(now + servant.getId(), interval) != 0) return false;
       double distance = servant.distanceTo(target);
@@ -210,6 +219,11 @@ public final class ServantManeuverService {
    public static boolean reposition(ServantEntity servant, LivingEntity target,
                                     ServantAiDefinition.Tactical tactical, long now) {
       if (servant == null || target == null || tactical == null) return false;
+      if (ServantEngagementService.isDirectMeleeEngagement(servant, target)) {
+         servant.getLookControl().setLookAt(target, 50.0F, 40.0F);
+         return ServantNavigationHelper.moveToTargetThrottled(servant, target, 1.2, now,
+            ServantNavigationHelper.SHORT_REPATH_INTERVAL, 0.45, "ServantDirectMelee");
+      }
       double distance = servant.distanceTo(target);
       Vec3 radial = servant.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
       if (radial.lengthSqr() < 1.0E-4) radial = servant.getLookAngle().scale(-1.0).multiply(1.0, 0.0, 1.0);
@@ -252,8 +266,25 @@ public final class ServantManeuverService {
       double lift = 0.12 + Math.max(0.0, Math.min(1.0, verticalMobility)) * 0.22;
       servant.setDeltaMovement(motion.x + direction.x * boost, Math.max(motion.y, lift), motion.z + direction.z * boost);
       servant.hasImpulse = true;
+      ServantNavigationHelper.limitMeleeApproachMotion(servant, servant.getTarget());
       servant.getPersistentData().putLong("ServantManeuverBurstTick", now);
       return true;
+   }
+
+   private static boolean maneuverLatch(ServantEntity servant, LivingEntity target, double distance) {
+      var data = servant.getPersistentData();
+      if (!data.hasUUID(MANEUVER_TARGET) || !target.getUUID().equals(data.getUUID(MANEUVER_TARGET))) {
+         data.putUUID(MANEUVER_TARGET, target.getUUID());
+         data.putBoolean(MANEUVER_ACTIVE, false);
+      }
+      boolean active = data.getBoolean(MANEUVER_ACTIVE);
+      if (active) {
+         if (distance > MANEUVER_EXIT_DISTANCE) active = false;
+      } else if (distance >= MANEUVER_ENTER_DISTANCE && distance <= MANEUVER_EXIT_DISTANCE) {
+         active = true;
+      }
+      data.putBoolean(MANEUVER_ACTIVE, active);
+      return active;
    }
 
    private static Vec3 findSafeDestination(ServantEntity servant, Vec3 candidate) {
@@ -283,8 +314,9 @@ public final class ServantManeuverService {
       };
       List<ScoredDestination> result = new ArrayList<>(6);
       double movementLimit = Math.max(6.0, tactical.repositionDistance());
+      int slotSign = ServantEngagementService.combatSlotSign(servant, target);
       for (double angle : angles) {
-         double radians = Math.toRadians(angle);
+         double radians = Math.toRadians(angle * slotSign);
          Vec3 direction = new Vec3(baseDirection.x * Math.cos(radians) - baseDirection.z * Math.sin(radians), 0.0,
             baseDirection.x * Math.sin(radians) + baseDirection.z * Math.cos(radians));
          Vec3 candidate = target.position().add(direction.scale(desiredRadius));

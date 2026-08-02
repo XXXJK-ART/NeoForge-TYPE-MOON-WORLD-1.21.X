@@ -770,6 +770,10 @@ public final class FanaticAssassinCombatHelper {
          || entity.isAlliedTo(candidate) || candidate.isAlliedTo(entity)
          || ServantMasterTargeting.isContractMaster(entity, candidate)) return false;
       if (isDoctrineTarget(candidate)) return true;
+      // A hostile NPC should not wait for the player to land the first hit.
+      // Contract masters and allied players were filtered above, so every
+      // remaining player is a valid active combat target.
+      if (candidate instanceof Player) return true;
       if (candidate instanceof Enemy) return true;
       if (entity.getLastHurtByMob() == candidate && entity.tickCount - entity.getLastHurtByMobTimestamp() <= 200) return true;
       return candidate instanceof Mob mob && mob.getTarget() == entity;

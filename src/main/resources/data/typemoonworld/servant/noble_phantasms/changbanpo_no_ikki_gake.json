@@ -8,6 +8,6 @@
   "cooldown_ticks": 800,
   "range": 100,
   "duration_ticks": 300,
-  "base_damage": 100,
+  "base_damage": 500,
   "effects": [{"effect_type":"control_immunity"},{"effect_type":"break_blocks_except_bedrock"},{"effect_type":"protect_master"}]
 }

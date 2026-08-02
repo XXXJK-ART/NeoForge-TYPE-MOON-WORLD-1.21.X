@@ -296,6 +296,16 @@ public class CommonEvents {
    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
       if (!event.getEntity().level().isClientSide) {
          Player player = event.getEntity();
+         // Hakuryu accepts two passengers, so the vanilla dismount path can
+         // occasionally leave the master attached when Zhao Yun occupies the
+         // first seat. Handle the master's Shift request on the server as a
+         // final authority; the client mixin still provides immediate input
+         // prediction.
+         if (player instanceof ServerPlayer serverPlayer
+            && player.isShiftKeyDown()
+            && player.getVehicle() instanceof ZhaoYunHakuryuEntity) {
+            player.stopRiding();
+         }
          if (player.hasEffect(ModMobEffects.PETRIFIED)) {
             player.setDeltaMovement(Vec3.ZERO);
             player.hurtMarked = true;
@@ -406,6 +416,7 @@ public class CommonEvents {
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
          if (tryRedirectZhaoYunMountDamage(event)) return;
+         if (tryRedirectZhaoYunRescueDamage(event)) return;
          if (event.getSource().getEntity() instanceof ServerPlayer attacker
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isShadowHassan(attacker)) {
             if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(attacker)) {
@@ -728,6 +739,39 @@ public class CommonEvents {
       event.setAmount(0.0F);
       mount.hurt(event.getSource(), amount);
       return true;
+   }
+
+   private static boolean tryRedirectZhaoYunRescueDamage(LivingIncomingDamageEvent event) {
+      if (event.getEntity() instanceof LivingEntity protectedEntity
+         && protectedEntity.level() instanceof ServerLevel level
+         && event.getAmount() > 0.0F) {
+         // A card Zhao Yun can protect a friendly player target. The target
+         // UUID and expiry are kept on Zhao Yun's persistent data.
+         for (ServerPlayer protector : level.players()) {
+               var protectorVars = protector.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               if (!protectorVars.servant_card_transformed || !"zhao_yun_rider".equals(protectorVars.servant_card_id)) continue;
+               var data = protector.getPersistentData();
+               if (data.getLong(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_RESCUE_UNTIL) <= level.getGameTime()
+                  || !data.hasUUID(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_RESCUE_TARGET)
+                  || !data.getUUID(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_RESCUE_TARGET).equals(protectedEntity.getUUID())) continue;
+               float redirected = event.getAmount() * 0.8F;
+               event.setAmount(event.getAmount() - redirected);
+               protector.hurt(event.getSource(), redirected);
+               return false;
+         }
+      }
+      if (!(event.getEntity() instanceof ServerPlayer master) || event.getEntity().getVehicle() instanceof ZhaoYunHakuryuEntity
+         || !(master.level() instanceof ServerLevel level) || event.getAmount() <= 0.0F) {
+         return false;
+      }
+      ZhaoYunRiderEntity protector = level.getEntitiesOfClass(ZhaoYunRiderEntity.class,
+         master.getBoundingBox().inflate(16.0), rider -> rider.isAlive()
+            && rider.getEntityMaster() == master && rider.isRescueProtecting(level.getGameTime())).stream().findFirst().orElse(null);
+      if (protector == null) return false;
+      float redirected = event.getAmount() * 0.8F;
+      event.setAmount(event.getAmount() - redirected);
+      protector.hurt(event.getSource(), redirected);
+      return false;
    }
 
    @SubscribeEvent
@@ -1122,6 +1166,9 @@ public class CommonEvents {
             // Contract loss is committed only after every higher-priority death
             // handler has had a chance to cancel the event (revive/protection).
             if (!event.isCanceled() && vars.servant_card_transformed) {
+               if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+                  net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.clear(player);
+               }
                MasterServantLinkService.onServantDeath(player, vars);
                ServantCardTransformManager.prepareVanishingEquipment(player, vars);
             }

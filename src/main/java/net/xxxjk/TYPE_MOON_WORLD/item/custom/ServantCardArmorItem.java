@@ -58,7 +58,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
          case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
-         case "fanatic_assassin", "arash", "nightingale" -> true;
+         case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider" -> true;
          default -> false;
       };
    }

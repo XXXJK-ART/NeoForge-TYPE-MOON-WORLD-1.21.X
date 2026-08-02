@@ -11,6 +11,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 /** Long-range interception used after an opponent has been launched out of the normal combat envelope. */
 public final class ServantPursuitService {
    private static final String LAST_BURST_TICK = "ServantDistantPursuitBurstTick";
+   private static final String PURSUIT_TARGET = "ServantDistantPursuitTarget";
+   private static final String PURSUIT_ACTIVE = "ServantDistantPursuitActive";
    private static final int BURST_COOLDOWN_TICKS = 14;
    private static final double MAX_LEAD_DISTANCE = 8.0;
 
@@ -22,9 +24,22 @@ public final class ServantPursuitService {
       if (("support".equals(tactical.style()) || "sniper".equals(tactical.style())
          || "disaster".equals(tactical.style())) && tactical.pursuitAggression() < 0.3) return false;
       double distance = servant.distanceTo(target);
-      return distance > pursuitStartDistance(servant)
-         && distance <= Math.min(ServantTargetingService.RETAIN_DISTANCE,
-            Math.max(48.0, tactical.maximumRange() + tactical.pursuitAggression() * 80.0));
+      double enterDistance = pursuitStartDistance(servant) + 2.0;
+      double exitDistance = Math.min(ServantTargetingService.RETAIN_DISTANCE,
+         Math.max(48.0, tactical.maximumRange() + tactical.pursuitAggression() * 80.0)) + 6.0;
+      var data = servant.getPersistentData();
+      if (!data.hasUUID(PURSUIT_TARGET) || !target.getUUID().equals(data.getUUID(PURSUIT_TARGET))) {
+         data.putUUID(PURSUIT_TARGET, target.getUUID());
+         data.putBoolean(PURSUIT_ACTIVE, false);
+      }
+      boolean active = data.getBoolean(PURSUIT_ACTIVE);
+      if (active) {
+         if (distance > exitDistance) active = false;
+      } else if (distance > enterDistance && distance <= exitDistance) {
+         active = true;
+      }
+      data.putBoolean(PURSUIT_ACTIVE, active);
+      return active;
    }
 
    public static void pursue(ServantEntity servant, LivingEntity target, long now) {
@@ -37,10 +52,11 @@ public final class ServantPursuitService {
       boolean pathStarted = ServantNavigationHelper.moveToPositionThrottled(
          servant, intercept, speed, now, 4, 0.5, "ServantDistantPursuitPath"
       );
-      if (!pathStarted) {
+      if (!pathStarted && ServantNavigationHelper.movementAvailable(servant, now, "ServantDistantPursuitMoveControl")) {
          servant.getMoveControl().setWantedPosition(intercept.x, intercept.y, intercept.z, speed);
+         ServantNavigationHelper.rememberMovementWriter(servant, now, "ServantDistantPursuitMoveControl");
       }
-      tryForwardBurst(servant, target, distance, now);
+      if (!pathStarted) tryForwardBurst(servant, target, distance, now);
    }
 
    static double pursuitStartDistance(ServantClassType classType) {
@@ -86,6 +102,7 @@ public final class ServantPursuitService {
       if (horizontal.lengthSqr() < 1.0E-4) return;
       Vec3 direction = horizontal.normalize();
       if (!hasSafeBurstLane(servant, direction)) return;
+      if (!ServantNavigationHelper.movementAvailable(servant, now, "ServantDistantPursuitBurst")) return;
 
       Vec3 motion = servant.getDeltaMovement();
       double desiredForward = distance >= 72.0 ? 0.72 : 0.58;
@@ -97,6 +114,7 @@ public final class ServantPursuitService {
          motion.z + direction.z * acceleration
       );
       servant.hasImpulse = true;
+      ServantNavigationHelper.rememberMovementWriter(servant, now, "ServantDistantPursuitBurst");
       data.putLong(LAST_BURST_TICK, now);
    }
 

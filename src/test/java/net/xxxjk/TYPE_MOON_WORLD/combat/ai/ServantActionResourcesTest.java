@@ -16,7 +16,7 @@ class ServantActionResourcesTest {
    private static final Path ACTIONS = Path.of("src/main/resources/data/typemoonworld/servant/actions");
 
    @Test
-   void allTwentyProfilesDecodeAndExerciseRuntimeFields() throws Exception {
+   void allServantProfilesDecodeAndExerciseRuntimeFields() throws Exception {
       Set<String> servants = new HashSet<>();
       try (var paths = Files.list(ACTIONS)) {
          long explicitSharedActions = 0;
@@ -41,11 +41,12 @@ class ServantActionResourcesTest {
          }
          assertTrue(explicitSharedActions >= 8, "too few explicitly shared actions");
       }
-      assertEquals(20, servants.size());
+      assertEquals(21, servants.size());
       assertTrue(servants.contains("arash"));
       assertTrue(servants.contains("artoria_pendragon"));
       assertTrue(servants.contains("gilgamesh"));
       assertTrue(servants.contains("nightingale"));
+      assertTrue(servants.contains("zhao_yun_rider"));
       try (var paths = Files.list(ACTIONS)) {
          long maneuverProfiles = paths.filter(file -> file.toString().endsWith(".json")).filter(file -> {
             try {
