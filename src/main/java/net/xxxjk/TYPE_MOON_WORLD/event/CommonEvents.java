@@ -65,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
@@ -80,6 +81,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
@@ -294,6 +296,12 @@ public class CommonEvents {
    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
       if (!event.getEntity().level().isClientSide) {
          Player player = event.getEntity();
+         if (player.hasEffect(ModMobEffects.PETRIFIED)) {
+            player.setDeltaMovement(Vec3.ZERO);
+            player.hurtMarked = true;
+            player.setSprinting(false);
+            player.stopUsingItem();
+         }
          if (player instanceof ServerPlayer serverPlayer) {
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
@@ -397,6 +405,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (tryRedirectZhaoYunMountDamage(event)) return;
          if (event.getSource().getEntity() instanceof ServerPlayer attacker
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isShadowHassan(attacker)) {
             if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(attacker)) {
@@ -706,6 +715,19 @@ public class CommonEvents {
    public static void onMobEffectRemoved(Remove event) {
       restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
       clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
+   }
+
+   private static boolean tryRedirectZhaoYunMountDamage(LivingIncomingDamageEvent event) {
+      LivingEntity passenger = event.getEntity();
+      if (event.getAmount() <= 0.0F || !(passenger.getVehicle() instanceof ZhaoYunHakuryuEntity mount)
+         || !mount.isAlive() || !(passenger instanceof ZhaoYunRiderEntity || passenger instanceof ServerPlayer)) {
+         return false;
+      }
+      float amount = event.getAmount();
+      event.setCanceled(true);
+      event.setAmount(0.0F);
+      mount.hurt(event.getSource(), amount);
+      return true;
    }
 
    @SubscribeEvent

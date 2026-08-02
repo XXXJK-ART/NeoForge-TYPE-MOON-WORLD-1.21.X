@@ -53,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.OdaMatchlockCatalystItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -850,6 +851,20 @@ public class ModItems {
                                             1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> YAJIAO_QIANG = ITEMS.register("yajiao_qiang",
+            () -> new YajiaoQiangItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_damage"),
+                                            12.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_speed"),
+                                            1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
 
     public static final DeferredItem<Item> SPIDER_CUTTER = ITEMS.register("spider_cutter",
             () -> new SpiderCutterItem(new Item.Properties().durability(SpiderCutterItem.DURABILITY).fireResistant().rarity(Rarity.RARE)
@@ -959,6 +974,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ODA_NOBUNAGA, 0xB01818, 0xF4C430));
     public static final DeferredItem<Item> USHIWAKAMARU_RIDER_SPAWN_EGG = ITEMS.register("ushiwakamaru_rider_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.USHIWAKAMARU_RIDER, 0x4A1E38, 0xE9C9D5));
+    public static final DeferredItem<Item> ZHAO_YUN_RIDER_SPAWN_EGG = ITEMS.register("zhao_yun_rider_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ZHAO_YUN_RIDER, 0xDDEEFF, 0x33AA66));
     public static final DeferredItem<Item> ENKIDU_SPAWN_EGG = ITEMS.register("enkidu_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
     public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",

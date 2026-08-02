@@ -41,6 +41,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    private static final EntityDataAccessor<Integer> LAUNCH_DELAY = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> EMPOWERED = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> HOMING_TARGET_ID = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> EFFECT_STRIDE = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions VAJRA_PURPLE = new DustParticleOptions(new Vector3f(0.62F, 0.12F, 1.0F), 1.45F);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
@@ -68,6 +69,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    public void setSourceStyle(int style) { this.entityData.set(SOURCE_STYLE, style); }
    public void setDuelToken(String token) { this.entityData.set(DUEL_TOKEN, token == null ? "" : token); }
    public void setLaunchDelay(int ticks) { this.entityData.set(LAUNCH_DELAY, Math.max(0, ticks)); }
+   public void setEffectStride(int stride) { this.entityData.set(EFFECT_STRIDE, Math.max(1, stride)); }
    public void setEmpowered(boolean empowered) { this.entityData.set(EMPOWERED, empowered); }
    public void setHomingTarget(LivingEntity target) {
       if (target == null || !target.isAlive()) {
@@ -103,16 +105,23 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
             return;
          }
          if (this.tickCount == 1) {
-            if (this.getSourceStyle() == 2) {
-               VFXServerEffects.spawn(level, "servant_enkidu_age_of_babylon_gate", this.position(), 160.0);
-            } else if (this.getSourceStyle() == 1) {
-               // Emiya's counter projectiles are projections, not golden
-               // Gate of Babylon portals.
-               VFXServerEffects.spawnOriented(level, "servant_emiya_projection",
-                  this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
-            } else {
-               VFXServerEffects.spawnOriented(level, "gilgamesh_gate",
-                  this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
+            String duelToken = this.entityData.get(DUEL_TOKEN);
+            int effectStride = this.entityData.get(EFFECT_STRIDE);
+            boolean showDuelFx = duelToken.isBlank()
+               ? Math.floorMod(this.getId(), effectStride) == 0
+               : (duelToken.hashCode() & 3) == 0;
+            if (showDuelFx) {
+               if (this.getSourceStyle() == 2) {
+                  VFXServerEffects.spawn(level, "servant_enkidu_age_of_babylon_gate", this.position(), 160.0);
+               } else if (this.getSourceStyle() == 1) {
+                  // Emiya's counter projectiles are projections, not golden
+                  // Gate of Babylon portals.
+                  VFXServerEffects.spawnOriented(level, "servant_emiya_projection",
+                     this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
+               } else {
+                  VFXServerEffects.spawnOriented(level, "gilgamesh_gate",
+                     this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
+               }
             }
          }
          if (this.tickCount <= delay) {
@@ -127,10 +136,12 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                   && p.getSourceStyle() != this.getSourceStyle()).stream().findFirst().orElse(null);
             if (counterpart != null) {
                Vec3 impact = this.position().lerp(counterpart.position(), 0.5);
-               level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, 2, 0.22, 0.22, 0.22, 0.02);
-               level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y, impact.z, 1, 0.04, 0.04, 0.04, 0.0);
-               level.sendParticles(ParticleTypes.CRIT, impact.x, impact.y, impact.z, 20, 0.34, 0.34, 0.34, 0.12);
-               level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 10, 0.26, 0.26, 0.26, 0.06);
+               if ((token.hashCode() & 3) == 0) {
+                  level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, 2, 0.22, 0.22, 0.22, 0.02);
+                  level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y, impact.z, 1, 0.04, 0.04, 0.04, 0.0);
+                  level.sendParticles(ParticleTypes.CRIT, impact.x, impact.y, impact.z, 8, 0.34, 0.34, 0.34, 0.12);
+                  level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 4, 0.26, 0.26, 0.26, 0.06);
+               }
                if ((token.hashCode() & 15) == 0) {
                   level.playSound(null, impact.x, impact.y, impact.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
                      net.minecraft.sounds.SoundSource.HOSTILE, 0.75F, 1.65F);
@@ -174,7 +185,13 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                break;
             }
          }
-         if ((this.tickCount & 1) == 0) spawnTrail(level);
+         if ((this.tickCount & 1) == 0) {
+            int effectStride = this.entityData.get(EFFECT_STRIDE);
+            boolean showTrail = token.isBlank()
+               ? Math.floorMod(this.getId(), effectStride) == 0
+               : (token.hashCode() & 3) == 0;
+            if (showTrail) spawnTrail(level);
+         }
       this.setPos(next);
    }
 
@@ -218,6 +235,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       builder.define(LAUNCH_DELAY, 0);
       builder.define(EMPOWERED, false);
       builder.define(HOMING_TARGET_ID, 0);
+      builder.define(EFFECT_STRIDE, 1);
    }
 
    @Override
@@ -229,6 +247,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       this.entityData.set(LAUNCH_DELAY, tag.getInt("LaunchDelay"));
       this.entityData.set(EMPOWERED, tag.getBoolean("Empowered"));
       this.entityData.set(HOMING_TARGET_ID, tag.getInt("HomingTargetId"));
+      this.entityData.set(EFFECT_STRIDE, Math.max(1, tag.getInt("EffectStride")));
       if (tag.hasUUID("HomingTarget")) this.homingTargetUuid = tag.getUUID("HomingTarget");
       this.damage = tag.contains("Damage") ? tag.getFloat("Damage") : 18.0F;
    }
@@ -242,6 +261,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       tag.putInt("LaunchDelay", this.entityData.get(LAUNCH_DELAY));
       tag.putBoolean("Empowered", this.entityData.get(EMPOWERED));
       tag.putInt("HomingTargetId", this.entityData.get(HOMING_TARGET_ID));
+      tag.putInt("EffectStride", this.entityData.get(EFFECT_STRIDE));
       if (this.homingTargetUuid != null) tag.putUUID("HomingTarget", this.homingTargetUuid);
       tag.putFloat("Damage", this.damage);
    }

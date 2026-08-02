@@ -1,0 +1,50 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"standing": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"left wing base": {
+					"rotation": {
+						"vector": [1.7494, -27.4618, 81.949]
+					},
+					"position": {
+						"vector": [0, 3, 0]
+					},
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"left wingtips": {
+					"rotation": {
+						"vector": [0, -80, 0]
+					}
+				},
+				"right wing base": {
+					"rotation": {
+						"vector": [1.7494, 27.4618, -81.949]
+					},
+					"position": {
+						"vector": [0, 3, 0]
+					}
+				},
+				"right wingtips": {
+					"rotation": {
+						"vector": [0, 80, 0]
+					}
+				},
+				"bone": {
+					"position": {
+						"vector": [0, 2, 0]
+					},
+					"scale": {
+						"vector": [1.1, 1.1, 1.1]
+					}
+				}
+			}
+		},
+		"walk": {"loop": true, "bones": {"Left front leg": {"rotation": {"vector": [0, 0, 18]}}, "Right front leg": {"rotation": {"vector": [0, 0, -18]}}, "Left hind leg": {"rotation": {"vector": [0, 0, -18]}}, "Right hind leg": {"rotation": {"vector": [0, 0, 18]}}, "head": {"rotation": {"vector": [0, 0, 4]}}}},
+		"gallop": {"loop": true, "bones": {"Left front leg": {"rotation": {"vector": [0, 0, 32]}}, "Right front leg": {"rotation": {"vector": [0, 0, -32]}}, "Left hind leg": {"rotation": {"vector": [0, 0, -32]}}, "Right hind leg": {"rotation": {"vector": [0, 0, 32]}}, "Tail": {"rotation": {"vector": [0, 12, 0]}}}},
+		"rear": {"animation_length": 0.8, "bones": {"body": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.35": {"vector": [-18, 0, 0]}, "0.8": {"vector": [0, 0, 0]}}}, "head": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.35": {"vector": [18, 0, 0]}, "0.8": {"vector": [0, 0, 0]}}}}}
+	}
+}

@@ -22,7 +22,9 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
-      if (isSasakiKojiro(servant)) {
+      if (servant instanceof ZhaoYunRiderEntity) {
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_ATTACK.get());
+      } else if (isSasakiKojiro(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
          }
@@ -141,7 +143,9 @@ public final class ServantVoiceHelper {
          return;
       }
 
-      if (isSasakiKojiro(servant)) {
+      if (servant instanceof ZhaoYunRiderEntity) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_VICTORY.get());
+      } else if (isSasakiKojiro(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SASAKI_KOJIRO_VOICE_VICTORY.get());
       } else if (isHeracles(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.15F, 0.92F, ModSounds.HERACLES_VOICE_VICTORY.get());
@@ -182,7 +186,9 @@ public final class ServantVoiceHelper {
 
    public static void tryPlayFail(ServantEntity servant) {
       if (isArash(servant) && servant.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_SACRIFICE)) return;
-      if (isSasakiKojiro(servant)) {
+      if (servant instanceof ZhaoYunRiderEntity) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_FAIL.get());
+      } else if (isSasakiKojiro(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.SASAKI_KOJIRO_VOICE_FAIL.get());
       } else if (isHeracles(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.15F, 0.9F, ModSounds.HERACLES_VOICE_FAIL.get());
@@ -231,6 +237,10 @@ public final class ServantVoiceHelper {
       if (isUshiwakamaru(servant)) {
          playVoiceForced(servant, "ushiwakamaru_np", 1.15F, 1.0F, ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get());
       }
+   }
+
+   public static void tryPlayZhaoYunNp(ZhaoYunRiderEntity servant) {
+      playVoiceForced(servant, "zhao_yun_np", 1.1F, 1.0F, ModSounds.ZHAO_YUN_VOICE_NP.get());
    }
 
    public static void tryPlayGaeBolg(ServantEntity servant) {

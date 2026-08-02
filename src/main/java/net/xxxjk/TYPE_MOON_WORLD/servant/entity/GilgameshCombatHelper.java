@@ -59,7 +59,7 @@ public final class GilgameshCombatHelper {
    private static final long PROJECTION_DUEL_COOLDOWN = 30L * 20L;
    private static final float PROJECTION_DUEL_CHANCE = 0.18F;
    private static final int PROJECTION_DUEL_ROUNDS = 12;
-   private static final int PROJECTION_WEAPONS_PER_ROUND = 50;
+   private static final int PROJECTION_WEAPONS_PER_ROUND = 25;
    private static final String LAST_EA = "GilgameshLastEa";
    private static final String LAST_CROSS = "GilgameshLastCross";
    private static final long MAJOR_NP_SWITCH_LOCK_TICKS = 200L;
@@ -570,6 +570,7 @@ public final class GilgameshCombatHelper {
       int waveSize = projectionCounter ? PROJECTION_WEAPONS_PER_ROUND : count >= 100 ? 20 : 16;
       int waves = projectionCounter ? PROJECTION_DUEL_ROUNDS : (count + waveSize - 1) / waveSize;
       final int totalCount = count;
+      final int effectStride = projectionCounter ? 4 : totalCount >= 48 ? 4 : totalCount >= 18 ? 2 : 1;
       GateFormation baseFormation = projectionCounter ? GateFormation.FRONTAL : chooseFormation(entity, target, count);
       triggerGateAnimation(entity, count);
       tryPlayCombatVoice(entity, level);
@@ -591,6 +592,7 @@ public final class GilgameshCombatHelper {
                String weapon = weaponForSlot(target, globalIndex);
                float projectileDamage = projectionCounter ? damage : damage * GATE_PROJECTILE_DAMAGE_MULTIPLIER;
                GilgameshGateWeaponProjectileEntity projectile = new GilgameshGateWeaponProjectileEntity(level, entity, gate, aim, weapon, projectileDamage);
+               projectile.setEffectStride(effectStride);
                projectile.setLaunchDelay(projectionCounter
                   ? 8 + Math.min(6, (i / columns) * 2)
                   : 24 + Math.min(16, (i / columns) * 3));
@@ -601,7 +603,11 @@ public final class GilgameshCombatHelper {
                   projectile.setHomingTarget(target);
                }
                level.addFreshEntity(projectile);
-               level.sendParticles(ParticleTypes.END_ROD, gate.x, gate.y, gate.z, 14, 0.35, 0.35, 0.35, 0.02);
+            }
+            if (amount > 0) {
+               level.sendParticles(ParticleTypes.END_ROD,
+                  entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ(),
+                  Math.min(24, Math.max(4, amount / 2)), 1.2, 0.7, 1.2, 0.035);
             }
             level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.HOSTILE, 1.2F, 1.45F);
          });

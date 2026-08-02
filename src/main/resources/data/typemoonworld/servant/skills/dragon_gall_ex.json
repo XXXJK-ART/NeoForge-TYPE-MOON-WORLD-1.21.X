@@ -1,0 +1,1 @@
+{"id":"dragon_gall_ex","display_name":"Dragon Gall EX","display_name_zh":"龙胆 EX","type":"passive","mp_cost":0,"cooldown_ticks":0,"duration_ticks":0,"effects":[{"effect_type":"desperation_boost","params":{"health_ratio":0.5,"attack_bonus":0.25,"speed_bonus":0.15}}]}

@@ -78,6 +78,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
@@ -459,6 +461,14 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<UshiwakamaruRiderEntity>> USHIWAKAMARU_RIDER = ENTITY_TYPES.register(
       "ushiwakamaru_rider", () -> Builder.of(UshiwakamaruRiderEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ushiwakamaru_rider")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunRiderEntity>> ZHAO_YUN_RIDER = ENTITY_TYPES.register(
+      "zhao_yun_rider", () -> Builder.of(ZhaoYunRiderEntity::new, MobCategory.CREATURE)
+         .sized(0.7F, 1.9F).clientTrackingRange(64).build("zhao_yun_rider")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunHakuryuEntity>> ZHAO_YUN_HAKURYU = ENTITY_TYPES.register(
+      "zhao_yun_hakuryu", () -> Builder.of(ZhaoYunHakuryuEntity::new, MobCategory.CREATURE)
+         .sized(2.2F, 2.4F).clientTrackingRange(64).build("zhao_yun_hakuryu")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
       "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")

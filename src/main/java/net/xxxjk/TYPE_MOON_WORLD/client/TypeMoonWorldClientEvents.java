@@ -87,6 +87,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.VFXTriggerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.HajunDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ZhaoYunRiderRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ZhaoYunHakuryuRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
@@ -258,6 +260,8 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), ArtoriaPendragonRenderer::new);
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), OdaNobunagaRenderer::new);
       event.registerEntityRenderer(ModEntities.USHIWAKAMARU_RIDER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.UshiwakamaruRiderRenderer::new);
+      event.registerEntityRenderer(ModEntities.ZHAO_YUN_RIDER.get(), ZhaoYunRiderRenderer::new);
+      event.registerEntityRenderer(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuRenderer::new);
       event.registerEntityRenderer(ModEntities.ENKIDU.get(), EnkiduRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH.get(), GilgameshRenderer::new);
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);

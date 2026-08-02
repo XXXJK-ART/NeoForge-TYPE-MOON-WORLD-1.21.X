@@ -53,6 +53,27 @@ public final class CommonServantSkills {
       registry.register("solar_rebuke", CommonServantSkills::executeGawainSolarRebuke, "typemoonworld_core");
       registry.register("radiant_field", CommonServantSkills::executeGawainRadiantField, "typemoonworld_core");
       registry.register("flame_tornado", CommonServantSkills::executeGawainFlameTornado, "typemoonworld_core");
+      registry.register("dragon_gall_ex", CommonServantSkills::executeDragonGallEx, "typemoonworld_core");
+      registry.register("single_rider_rescue_a", CommonServantSkills::executeSingleRiderRescueA, "typemoonworld_core");
+      registry.register("seven_in_seven_out_b_plus_plus", CommonServantSkills::executeSevenInSevenOut, "typemoonworld_core");
+   }
+
+   private static ServantExecutionResult executeDragonGallEx(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().putBoolean("ZhaoYunDragonGallSkill", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeSingleRiderRescueA(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().putBoolean("ZhaoYunRescueSkill", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeSevenInSevenOut(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().putBoolean("ZhaoYunSevenOutSkill", true);
+      return ServantExecutionResult.SUCCESS;
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {

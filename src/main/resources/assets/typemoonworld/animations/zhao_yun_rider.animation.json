@@ -1,0 +1,25 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"standing": {
+			"loop": true,
+			"bones": {
+				"bone": {
+					"position": {
+						"vector": [0, -5, 0]
+					},
+					"scale": {
+						"vector": [0.8, 0.8, 0.8]
+					}
+				}
+			}
+		},
+		"walk": {"loop": true, "bones": {"right_leg": {"rotation": {"vector": [0, 0, 12]}}, "left_leg": {"rotation": {"vector": [0, 0, -12]}}, "right arm": {"rotation": {"vector": [0, 0, -8]}}, "left arm": {"rotation": {"vector": [0, 0, 8]}}}},
+		"spear_strike": {"animation_length": 0.55, "bones": {"right arm": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.18": {"vector": [-55, 0, 15]}, "0.42": {"vector": [38, 0, -10]}, "0.55": {"vector": [0, 0, 0]}}}, "bone": {"position": {"0.0": {"vector": [0, 0, 0]}, "0.18": {"vector": [0, 0, -2]}, "0.42": {"vector": [0, 0, 1]}, "0.55": {"vector": [0, 0, 0]}}}}},
+		"dragon_gall": {"animation_length": 0.8, "bones": {"bone": {"scale": {"0.0": {"vector": [0.8, 0.8, 0.8]}, "0.25": {"vector": [0.92, 0.92, 0.92]}, "0.8": {"vector": [0.8, 0.8, 0.8]}}}, "head": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.4": {"vector": [-8, 0, 0]}, "0.8": {"vector": [0, 0, 0]}}}}},
+		"riding_burst": {"animation_length": 0.6, "bones": {"bone": {"position": {"0.0": {"vector": [0, 0, 0]}, "0.15": {"vector": [0, 0, -2]}, "0.6": {"vector": [0, 0, 0]}}}, "right arm": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.3": {"vector": [-18, 0, 0]}, "0.6": {"vector": [0, 0, 0]}}}}},
+		"rescue": {"animation_length": 0.7, "bones": {"right arm": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.25": {"vector": [-30, 0, 0]}, "0.7": {"vector": [0, 0, 0]}}}, "left arm": {"rotation": {"0.0": {"vector": [0, 0, 0]}, "0.25": {"vector": [-30, 0, 0]}, "0.7": {"vector": [0, 0, 0]}}}}},
+		"seven_out": {"animation_length": 0.5, "bones": {"bone": {"rotation": {"0.0": {"vector": [0, -10, 0]}, "0.25": {"vector": [0, 10, 0]}, "0.5": {"vector": [0, -10, 0]}}}}},
+		"changbanpo_no_ikki_gake": {"animation_length": 15.0, "bones": {"bone": {"position": {"vector": [0, -5, 0]}, "scale": {"vector": [0.86, 0.86, 0.86]}}, "right arm": {"rotation": {"vector": [-18, 0, 0]}}}}
+	}
+}

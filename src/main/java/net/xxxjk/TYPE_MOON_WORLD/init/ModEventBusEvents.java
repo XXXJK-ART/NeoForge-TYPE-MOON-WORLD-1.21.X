@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 
@@ -71,6 +73,8 @@ public class ModEventBusEvents {
       event.put(ModEntities.ARTORIA_PENDRAGON.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.USHIWAKAMARU_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.ZHAO_YUN_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuEntity.createAttributes().build());
       event.put(ModEntities.ENKIDU.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GILGAMESH.get(), GilgameshEntity.createAttributes().build());
       event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());

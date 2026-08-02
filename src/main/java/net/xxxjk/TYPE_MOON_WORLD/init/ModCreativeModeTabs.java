@@ -221,6 +221,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EXCALIBUR2);
                         output.accept(ModItems.BIZEN_NAGAMITSU);
                         output.accept(ModItems.GAE_BULG);
+                        output.accept(ModItems.YAJIAO_QIANG);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
                         output.accept(ModItems.NAMELESS_CHAIN_DAGGER);
@@ -383,6 +384,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
                         output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.ZHAO_YUN_RIDER_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
