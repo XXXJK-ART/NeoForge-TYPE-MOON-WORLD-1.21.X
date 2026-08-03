@@ -31,6 +31,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SenkoMuramasaEntity;
@@ -79,6 +80,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuEntity.createAttributes().build());
       event.put(ModEntities.ENKIDU.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GILGAMESH.get(), GilgameshEntity.createAttributes().build());
+      event.put(ModEntities.GILGAMESH_CASTER.get(), CasterGilgameshEntity.createAttributes().build());
       event.put(ModEntities.GAWAIN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.LI_SHUWEN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.PARACELSUS.get(), ServantEntity.createAttributes().build());

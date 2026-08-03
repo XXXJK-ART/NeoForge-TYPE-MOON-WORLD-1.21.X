@@ -88,6 +88,15 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> GILGAMESH_VOICE_EA = register("gilgamesh_voice_ea");
    public static final DeferredHolder<SoundEvent, SoundEvent> GILGAMESH_VOICE_EA_NPC = register("gilgamesh_voice_ea_npc");
    public static final DeferredHolder<SoundEvent, SoundEvent> GILGAMESH_VOICE_ENKIDU_DUEL = register("gilgamesh_voice_enkidu_duel");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_NP = register("caster_gilgamesh_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_SHOT = register("caster_gilgamesh_voice_shot");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_ATTACK_1 = register("caster_gilgamesh_voice_attack_1");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_ATTACK_2 = register("caster_gilgamesh_voice_attack_2");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_FAIL_1 = register("caster_gilgamesh_voice_fail_1");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_FAIL_2 = register("caster_gilgamesh_voice_fail_2");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_MONGREL = register("caster_gilgamesh_voice_mongrel");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_VICTORY = register("caster_gilgamesh_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> CASTER_GILGAMESH_VOICE_VICTORY_2 = register("caster_gilgamesh_voice_victory_2");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_ATTACK = register("gawain_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_FAIL = register("gawain_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> GAWAIN_VOICE_VICTORY = register("gawain_voice_victory");

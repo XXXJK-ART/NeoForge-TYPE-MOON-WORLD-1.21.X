@@ -26,7 +26,11 @@ public final class ServantCombatService {
 
       double baseDamage = ServantDamageCalculator.computeBaseDamage(attackerAttack, normalAttackMultiplier);
 
-      double zoneB = ServantDamageCalculator.computeCritMultiplier(isCrit, attacker.getCritRate() * 0.01);
+      double critRate = attacker.getCritRate();
+      if (attacker.getPersistentData().getLong("CasterGilgameshCritBuffUntil") > attacker.level().getGameTime()) {
+         critRate += 80.0;
+      }
+      double zoneB = ServantDamageCalculator.computeCritMultiplier(isCrit, critRate * 0.01);
 
       double factionMultiplier = ServantDamageCalculator.computeFactionMultiplier(attackerFaction, getDefenderFaction(defender));
       java.util.List<ServantTraitTag> specialConditions = npSpecialConditions != null ? npSpecialConditions : attackerTraits;

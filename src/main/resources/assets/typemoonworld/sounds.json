@@ -483,6 +483,15 @@
     "gilgamesh_voice_ea": {"category":"hostile","sounds":["typemoonworld:voice/gilgamesh/ea_full","typemoonworld:voice/gilgamesh/ea_half"]},
     "gilgamesh_voice_ea_npc": {"category":"hostile","sounds":["typemoonworld:voice/gilgamesh/ea_half"]},
     "gilgamesh_voice_enkidu_duel": {"category":"hostile","sounds":["typemoonworld:voice/gilgamesh/enkidu_duel"]},
+    "caster_gilgamesh_voice_np": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/np"]},
+    "caster_gilgamesh_voice_shot": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/shot"]},
+    "caster_gilgamesh_voice_attack_1": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/attack1"]},
+    "caster_gilgamesh_voice_attack_2": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/attack2"]},
+    "caster_gilgamesh_voice_fail_1": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/fail1"]},
+    "caster_gilgamesh_voice_fail_2": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/fail2"]},
+    "caster_gilgamesh_voice_mongrel": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/mongrel"]},
+    "caster_gilgamesh_voice_victory": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/victory1"]},
+    "caster_gilgamesh_voice_victory_2": {"category":"hostile","sounds":["typemoonworld:voice/caster_gilgamesh/victory2"]},
     "oda_nobunaga_voice_hajun_short": {
                                "category": "hostile",
                                "sounds": [ "typemoonworld:voice/short_np/hajun_short" ]

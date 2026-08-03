@@ -31,6 +31,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshGateWeaponRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshCrossSlashRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GilgameshEaRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CasterGilgameshRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RoyalCannonProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GemProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuChulainnRenderer;
@@ -266,6 +268,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuRenderer::new);
       event.registerEntityRenderer(ModEntities.ENKIDU.get(), EnkiduRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH.get(), GilgameshRenderer::new);
+      event.registerEntityRenderer(ModEntities.GILGAMESH_CASTER.get(), CasterGilgameshRenderer::new);
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), GawainRenderer::new);
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), LiShuwenRenderer::new);
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), ParacelsusRenderer::new);
@@ -307,6 +310,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GILGAMESH_GATE_PROJECTILE.get(), GilgameshGateWeaponRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_CROSS_SLASH.get(), GilgameshCrossSlashRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_EA_BEAM.get(), GilgameshEaRenderer::new);
+      event.registerEntityRenderer(ModEntities.ROYAL_CANNON_PROJECTILE.get(), RoyalCannonProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.CYAN_WIND_FIELD.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_SHELL_EFFECT.get(), GravityShellRenderer::new);
       event.registerEntityRenderer(ModEntities.GRAVITY_FIELD_SHELL_EFFECT.get(), GravityFieldShellRenderer::new);

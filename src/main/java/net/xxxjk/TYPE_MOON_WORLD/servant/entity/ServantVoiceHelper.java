@@ -23,7 +23,13 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
-      if (isSasakiKojiro(servant)) {
+      if (isCasterGilgamesh(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) return;
+         SoundEvent sound = servant.getRandom().nextBoolean()
+            ? ModSounds.CASTER_GILGAMESH_VOICE_ATTACK_1.get()
+            : ModSounds.CASTER_GILGAMESH_VOICE_ATTACK_2.get();
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, sound);
+      } else if (isSasakiKojiro(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
          }
@@ -145,7 +151,12 @@ public final class ServantVoiceHelper {
          return;
       }
 
-      if (servant instanceof ZhaoYunRiderEntity) {
+      if (isCasterGilgamesh(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.1F, 1.0F,
+            servant.getRandom().nextBoolean()
+               ? ModSounds.CASTER_GILGAMESH_VOICE_VICTORY.get()
+               : ModSounds.CASTER_GILGAMESH_VOICE_VICTORY_2.get());
+      } else if (servant instanceof ZhaoYunRiderEntity) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_VICTORY.get());
       } else if (isSasakiKojiro(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SASAKI_KOJIRO_VOICE_VICTORY.get());
@@ -190,7 +201,12 @@ public final class ServantVoiceHelper {
 
    public static void tryPlayFail(ServantEntity servant) {
       if (isArash(servant) && servant.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_SACRIFICE)) return;
-      if (servant instanceof ZhaoYunRiderEntity) {
+      if (isCasterGilgamesh(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F,
+            servant.getRandom().nextBoolean()
+               ? ModSounds.CASTER_GILGAMESH_VOICE_FAIL_1.get()
+               : ModSounds.CASTER_GILGAMESH_VOICE_FAIL_2.get());
+      } else if (servant instanceof ZhaoYunRiderEntity) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_FAIL.get());
       } else if (isSasakiKojiro(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.SASAKI_KOJIRO_VOICE_FAIL.get());
@@ -395,6 +411,20 @@ public final class ServantVoiceHelper {
       }
    }
 
+   public static void tryPlayCasterGilgameshShot(ServantEntity servant) {
+      if (isCasterGilgamesh(servant)) {
+         playCasterVoice(servant, "caster_gilgamesh_shot", 80, 0.95F, 1.0F,
+            ModSounds.CASTER_GILGAMESH_VOICE_SHOT.get());
+      }
+   }
+
+   public static void tryPlayCasterGilgameshNp(ServantEntity servant) {
+      if (isCasterGilgamesh(servant)) {
+         playCasterVoice(servant, "caster_gilgamesh_np", 200, 1.35F, 1.0F,
+            ModSounds.CASTER_GILGAMESH_VOICE_NP.get());
+      }
+   }
+
    public static void tryPlayOdaNobunagaHajun(ServantEntity servant) {
       if (!isOdaNobunaga(servant)) {
          return;
@@ -512,8 +542,24 @@ public final class ServantVoiceHelper {
       serverLevel.playSound(null, servant.getX(), servant.getY(), servant.getZ(), sound, SoundSource.HOSTILE, volume, finalPitch);
    }
 
+   private static void playCasterVoice(ServantEntity servant, String category, int cooldownTicks,
+                                       float volume, float pitch, SoundEvent sound) {
+      if (servant != null && servant.level() instanceof ServerLevel serverLevel) {
+         String categoryTag = CATEGORY_VOICE_TICK_PREFIX + category;
+         CompoundTag data = servant.getPersistentData();
+         if (!data.contains(categoryTag)) {
+            data.putLong(categoryTag, serverLevel.getGameTime() - cooldownTicks);
+         }
+      }
+      playVoice(servant, category, cooldownTicks, volume, pitch, sound);
+   }
+
    private static boolean isSasakiKojiro(ServantEntity servant) {
       return servant != null && SasakiKojiroEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isCasterGilgamesh(ServantEntity servant) {
+      return servant != null && CasterGilgameshEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isPaleRider(ServantEntity servant) {

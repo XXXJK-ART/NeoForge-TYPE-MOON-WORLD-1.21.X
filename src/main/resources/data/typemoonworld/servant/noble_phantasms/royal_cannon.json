@@ -1,0 +1,13 @@
+{
+  "id": "royal_cannon",
+  "display_name": "Royal Cannon",
+  "display_name_zh": "\u738b\u4e4b\u53f7\u70ae",
+  "rank": "B",
+  "type": "anti_army",
+  "mp_cost": 30,
+  "cooldown_ticks": 0,
+  "duration_ticks": 20,
+  "effects": [],
+  "description": "Thirty lightly homing shots fired from a golden gate behind Caster Gilgamesh.",
+  "description_zh": "\u4ece\u8d24\u738b\u8eab\u540e\u5f00\u542f\u7684\u91d1\u8272\u7a7a\u95f4\u95e8\u4e2d\u9f50\u5c04\u4e09\u5341\u53d1\u8ffd\u8e2a\u70ae\u5f39\u3002"
+}

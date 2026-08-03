@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.OdaMatchlockCatalystItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -849,6 +850,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> ARASH_BOW = ITEMS.register("arash_bow",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> GILGAMESH_SLATE = ITEMS.register("gilgamesh_slate",
+            () -> new GilgameshSlateItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
     public static final DeferredItem<Item> PSEUDO_SPIRAL_SWORD = ITEMS.register("pseudo_spiral_sword",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> CRIMSON_HOUND = ITEMS.register("crimson_hound",
@@ -1015,6 +1018,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
     public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GILGAMESH, 0xD4AF37, 0xB11226));
+    public static final DeferredItem<Item> GILGAMESH_CASTER_SPAWN_EGG = ITEMS.register("gilgamesh_caster_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GILGAMESH_CASTER, 0xE4B94E, 0x2D4A7A));
     public static final DeferredItem<Item> GAWAIN_SPAWN_EGG = ITEMS.register("gawain_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GAWAIN, 0xC0C0C0, 0xFFD700));
     public static final DeferredItem<Item> SENKO_MURAMASA_SPAWN_EGG = ITEMS.register("senko_muramasa_spawn_egg",

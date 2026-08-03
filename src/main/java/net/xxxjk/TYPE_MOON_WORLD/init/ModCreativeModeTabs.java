@@ -238,6 +238,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MO_YE_OVEREDGE);
                         output.accept(ModItems.NAMELESS_BOW);
                         output.accept(ModItems.ARASH_BOW);
+                        output.accept(ModItems.GILGAMESH_SLATE);
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);
@@ -393,6 +394,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ZHAO_YUN_RIDER_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
+                        output.accept(ModItems.GILGAMESH_CASTER_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
                         output.accept(ModItems.SENKO_MURAMASA_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
