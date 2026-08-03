@@ -13,6 +13,11 @@ public final class ServantNavigationHelper {
    public static final int SHORT_REPATH_INTERVAL = 5;
    private static final String MOVEMENT_TICK = "TypeMoonMovementWriteTick";
    private static final String MOVEMENT_WRITER = "TypeMoonMovementWriter";
+   private static final String PROGRESS_X = "TypeMoonCombatProgressX";
+   private static final String PROGRESS_Y = "TypeMoonCombatProgressY";
+   private static final String PROGRESS_Z = "TypeMoonCombatProgressZ";
+   private static final String PROGRESS_TICK = "TypeMoonCombatProgressTick";
+   private static final long NO_PROGRESS_TIMEOUT = 12L;
 
    private ServantNavigationHelper() {
    }
@@ -39,6 +44,10 @@ public final class ServantNavigationHelper {
          repathInterval, minTargetMoveSqr, keyPrefix);
       if (!accepted) return NavigationResult.NO_PATH;
       if (entity.distanceToSqr(target) <= 2.25) return NavigationResult.MOVED;
+      if (!actualProgress(entity, gameTick)) {
+         clearMovementState(entity);
+         return NavigationResult.NO_PROGRESS;
+      }
       CompoundTag data = entity.getPersistentData();
       String progress = keyPrefix + "Progress";
       String px = keyPrefix + "ProgressX";
@@ -120,6 +129,10 @@ public final class ServantNavigationHelper {
       boolean speedChanged = !data.contains(speedKey) || Math.abs(data.getDouble(speedKey) - speed) > 0.05;
       if (!targetMoved && !speedChanged && !entity.getNavigation().isDone() && gameTick - data.getLong(keyPrefix + "LastPathTick") < repathInterval) {
          if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
+         if (entity.distanceTo(target) > 4.35 && !actualProgress(entity, gameTick)) {
+            clearMovementState(entity);
+            return false;
+         }
          rememberMovementWriter(entity, gameTick, keyPrefix);
          limitMeleeApproachMotion(entity, target);
          return true;
@@ -134,7 +147,13 @@ public final class ServantNavigationHelper {
       data.putDouble(speedKey, speed);
       if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
       boolean accepted = entity.getNavigation().moveTo(target, speed);
-      if (accepted) rememberMovementWriter(entity, gameTick, keyPrefix);
+      if (accepted) {
+         rememberMovementWriter(entity, gameTick, keyPrefix);
+         if (entity.distanceTo(target) > 4.35 && !actualProgress(entity, gameTick)) {
+            clearMovementState(entity);
+            return false;
+         }
+      }
       limitMeleeApproachMotion(entity, target);
       return accepted;
    }
@@ -224,6 +243,12 @@ public final class ServantNavigationHelper {
       boolean speedChanged = !data.contains(speedKey) || Math.abs(data.getDouble(speedKey) - speed) > 0.05;
       if (!targetMoved && !speedChanged && !entity.getNavigation().isDone() && gameTick - data.getLong(keyPrefix + "LastPathTick") < repathInterval) {
          if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
+         LivingEntity combatTarget = entity.getTarget();
+         if (combatTarget != null && entity.distanceTo(combatTarget) > 4.35
+            && !actualProgress(entity, gameTick)) {
+            clearMovementState(entity);
+            return false;
+         }
          rememberMovementWriter(entity, gameTick, keyPrefix);
          return true;
       }
@@ -236,7 +261,15 @@ public final class ServantNavigationHelper {
       data.putDouble(zKey, target.z);
       data.putDouble(speedKey, speed);
       boolean accepted = entity.getNavigation().moveTo(target.x, target.y, target.z, speed);
-      if (accepted) rememberMovementWriter(entity, gameTick, keyPrefix);
+      if (accepted) {
+         rememberMovementWriter(entity, gameTick, keyPrefix);
+         LivingEntity combatTarget = entity.getTarget();
+         if (combatTarget != null && entity.distanceTo(combatTarget) > 4.35
+            && !actualProgress(entity, gameTick)) {
+            clearMovementState(entity);
+            return false;
+         }
+      }
       return accepted;
    }
 
@@ -253,6 +286,41 @@ public final class ServantNavigationHelper {
       CompoundTag data = entity.getPersistentData();
       data.putLong(MOVEMENT_TICK, gameTick);
       data.putString(MOVEMENT_WRITER, writer == null ? "unknown" : writer);
+   }
+
+   /** Clears stale navigation ownership so a failed path cannot keep winning future ticks. */
+   public static void clearMovementState(ServantEntity entity) {
+      if (entity == null) return;
+      CompoundTag data = entity.getPersistentData();
+      data.remove(MOVEMENT_TICK);
+      data.remove(MOVEMENT_WRITER);
+      data.remove(PROGRESS_X);
+      data.remove(PROGRESS_Y);
+      data.remove(PROGRESS_Z);
+      data.remove(PROGRESS_TICK);
+      entity.getNavigation().stop();
+   }
+
+   private static boolean actualProgress(ServantEntity entity, long gameTick) {
+      CompoundTag data = entity.getPersistentData();
+      if (!data.contains(PROGRESS_X)) {
+         data.putDouble(PROGRESS_X, entity.getX());
+         data.putDouble(PROGRESS_Y, entity.getY());
+         data.putDouble(PROGRESS_Z, entity.getZ());
+         data.putLong(PROGRESS_TICK, gameTick);
+         return true;
+      }
+      double dx = entity.getX() - data.getDouble(PROGRESS_X);
+      double dy = entity.getY() - data.getDouble(PROGRESS_Y);
+      double dz = entity.getZ() - data.getDouble(PROGRESS_Z);
+      if (dx * dx + dy * dy + dz * dz >= 0.04) {
+         data.putDouble(PROGRESS_X, entity.getX());
+         data.putDouble(PROGRESS_Y, entity.getY());
+         data.putDouble(PROGRESS_Z, entity.getZ());
+         data.putLong(PROGRESS_TICK, gameTick);
+         return true;
+      }
+      return gameTick - data.getLong(PROGRESS_TICK) < NO_PROGRESS_TIMEOUT;
    }
 
    /** Decelerates agile melee units near their opponent and removes excessive lateral drift. */

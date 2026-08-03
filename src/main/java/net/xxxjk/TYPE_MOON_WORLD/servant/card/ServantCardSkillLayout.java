@@ -247,7 +247,20 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("七探蛇盘", "zhao_yun_seven_probe", 28.0, 280);
             case 7 -> new ServantCardSkillAction("白龙踏阵", "zhao_yun_hakuryu_trample", 26.0, 320);
             case 8 -> new ServantCardSkillAction("青釭剑 C", "zhao_yun_qinggang", 50.0, 400);
-            case 9 -> new ServantCardSkillAction("长坂坡一骑驱 EX", "zhao_yun_changbanpo", 80.0, 1200);
+            case 9 -> new ServantCardSkillAction("长坂坡一骑驱 EX", "zhao_yun_changbanpo", 150.0, 1200);
+            default -> null;
+         };
+         case "senko_muramasa" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("锻造", "muramasa_forge", 0.0, 0);
+            case 1 -> new ServantCardSkillAction("阵地建造", "muramasa_workshop", 30.0, 1200);
+            case 2 -> new ServantCardSkillAction("试斩 B+", "muramasa_trial_slash", 10.0, 500);
+            case 3 -> new ServantCardSkillAction("业之瞳 A", "muramasa_karma_eye", 15.0, 600);
+            case 4 -> new ServantCardSkillAction("焰 EX", "muramasa_flame", 0.0, 600);
+            case 5 -> new ServantCardSkillAction("投影连刃", "muramasa_projection_volley", 25.0, 400);
+            case 6 -> new ServantCardSkillAction("锻火淬身", "muramasa_temper", 20.0, 600);
+            case 7 -> new ServantCardSkillAction("宿业断斩", "muramasa_karma_slash", 35.0, 500);
+            case 8 -> new ServantCardSkillAction("刀剑荒野·试制", "muramasa_sword_field", 40.0, 600);
+            case 9 -> new ServantCardSkillAction("无元剑制", "muramasa_no_gen_kensai", 50.0, 3600);
             default -> null;
          };
          default -> null;

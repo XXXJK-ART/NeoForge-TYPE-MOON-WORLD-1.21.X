@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.LeylineSurveyMapScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MedeaCraftSelectScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.MuramasaForgeSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.EnkiduTransfigurationScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusCraftSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ParacelsusElementSelectScreen;
@@ -45,6 +46,12 @@ public class ClientPacketHandler {
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
          mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock, leylineMapStock));
+      }
+   }
+
+   public static void openMuramasaForgeScreen() {
+      if (!ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         Minecraft.getInstance().setScreen(new MuramasaForgeSelectScreen());
       }
    }
 

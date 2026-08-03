@@ -7,6 +7,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -26,6 +27,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +50,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    public static final String TAG_RIDER = "ZhaoYunRider";
    public static final String TAG_MASTER = "ZhaoYunMaster";
    public static final String TAG_SKILL_OWNER = "ZhaoYunSkillOwner";
+   private static final String TAG_NP_MOUNT = "ZhaoYunNoblePhantasmMount";
    private static final EntityDataAccessor<Boolean> NP_ACTIVE = SynchedEntityData.defineId(
       ZhaoYunHakuryuEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Boolean> MOVING = SynchedEntityData.defineId(
@@ -56,6 +59,8 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Nullable private UUID riderUuid;
    @Nullable private UUID masterUuid;
    @Nullable private UUID skillOwnerUuid;
+   /** True while this is the temporary card Noble Phantasm horse. */
+   private boolean npMount;
    private boolean jumpInputPrevious;
    private int jumpCount;
    private boolean landingGrounded = true;
@@ -93,6 +98,17 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Override public void tick() {
       super.tick();
       if (!(level() instanceof ServerLevel level)) return;
+      // Make Shift dismount authoritative on the mount itself as well as the
+      // player tick/mixin path. This also works when Zhao Yun occupies seat 0
+      // and the master occupies seat 1.
+      for (Entity passenger : java.util.List.copyOf(getPassengers())) {
+         // Authorization is checked when mounting. Once a player is already
+         // seated, Shift must always be able to detach that passenger,
+         // including the secondary seat behind Zhao Yun.
+         if (passenger instanceof Player player && player.isShiftKeyDown()) {
+            player.stopRiding();
+         }
+      }
       tickLandingImpact(level);
       if (skillOwnerUuid != null) {
          Entity ownerEntity = level.getEntity(skillOwnerUuid);
@@ -101,6 +117,15 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             setMovingState(false);
             discard();
             return;
+         }
+         // Safety for old/stale NP horses after reloads or interrupted ticks:
+         // the 95% reduction belongs only to the timed Noble Phantasm window.
+         if (!npMount && isNpActive()) {
+            setNpActive(false);
+         } else if (npMount && owner.getPersistentData().getLong(
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_NP_UNTIL)
+            <= level.getGameTime()) {
+            promoteToSkillMount(owner);
          }
          if (getPassengers().get(0) == owner && !isNpActive()) {
             float forwardInput = owner.zza;
@@ -122,7 +147,11 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             handleControlledJump(owner);
             Vec3 forward = new Vec3(-Math.sin(Math.toRadians(yaw)), 0.0, Math.cos(Math.toRadians(yaw)));
             Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
-            Vec3 intent = forward.scale(forwardInput).add(right.scale(strafeInput));
+            // Server-side xxa is the player's left impulse. The old mapping
+            // treated it as a right impulse, so A/left made Hakuryu move
+            // right. Invert only the lateral component; forward/back stays
+            // unchanged.
+            Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
             if (intent.lengthSqr() > 1.0E-4) {
                intent = intent.normalize();
                double speed = mountSpeed * (owner.isSprinting() ? 1.35 : 1.0);
@@ -144,8 +173,13 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       }
       ZhaoYunRiderEntity rider = getRider(level);
       if (rider == null || !rider.isAlive()) {
-         // The mount is persistent even while Zhao Yun is still on foot.
-         if ((riderUuid == null || rider != null) && getPassengers().isEmpty()) discard();
+         // A servant mount must never become an orphan. This also covers a
+         // dead Zhao Yun still present in the passenger list and an unloaded
+         // rider UUID that can no longer be resolved on the server.
+         if (rider != null) rider.onHakuryuDeath(this);
+         ejectPassengers();
+         setNpActive(false);
+         discard();
          preserveGravityWhileStopping();
          setMovingState(false);
          return;
@@ -256,7 +290,8 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       float damage = (float)Math.min(42.0, 26.0 + Math.max(0.0, drop - 5.0) * 3.0);
       AABB area = getBoundingBox().inflate(3.2, 1.2, 3.2);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
-         entity -> entity != this && !getPassengers().contains(entity) && entity.isAlive() && !isAlliedTo(entity))) {
+         entity -> entity != this && !getPassengers().contains(entity) && entity.isAlive()
+            && !isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
          target.hurt(source, damage);
          Vec3 away = target.position().subtract(position()).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() < 1.0E-4) away = getLookAngle().multiply(1.0, 0.0, 1.0);
@@ -280,9 +315,13 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    }
 
    @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-      if (hand == InteractionHand.MAIN_HAND && !player.isSecondaryUseActive()
-         && canAddPassenger(player) && player.startRiding(this, true)) {
-         return InteractionResult.sidedSuccess(level().isClientSide);
+      if (hand == InteractionHand.MAIN_HAND && !player.isSecondaryUseActive()) {
+         if (!canPlayerMount(player)) return InteractionResult.FAIL;
+         // Do not use force=true for normal interaction. Force mounting is
+         // reserved for Zhao Yun's/NP's server-controlled seat changes.
+         if (player.startRiding(this, false)) {
+            return InteractionResult.sidedSuccess(level().isClientSide);
+         }
       }
       return super.mobInteract(player, hand);
    }
@@ -306,13 +345,22 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          return;
       }
       flat = flat.normalize();
-      setYRot((float)(Math.atan2(-flat.x, flat.z) * 180.0 / Math.PI));
-      Vec3 velocity = flat.scale(getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.8);
+      float yaw = (float)(Math.atan2(-flat.x, flat.z) * 180.0 / Math.PI);
+      setYRot(yaw);
+      setYBodyRot(yaw);
+      setYHeadRot(yaw);
+      boolean forceMelee = rider.getPersistentData().getLong(
+         ZhaoYunRiderEntity.TAG_FORCE_MELEE_UNTIL) > level().getGameTime();
+      double followMultiplier = forceMelee ? 0.85 : 1.8;
+      Vec3 velocity = flat.scale(getAttributeValue(Attributes.MOVEMENT_SPEED) * followMultiplier);
       move(net.minecraft.world.entity.MoverType.SELF, velocity);
       if (horizontalCollision && onGround()) {
          jumpWithZhaoYunPower();
       }
-      setDeltaMovement(velocity.x * 0.5, getDeltaMovement().y, velocity.z * 0.5);
+      // Movement is applied explicitly above. Do not leave horizontal
+      // velocity behind for PathfinderMob.tick(), or the horse advances a
+      // second time on the next tick and can overshoot its target.
+      setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
    }
 
    private void preserveGravityWhileStopping() {
@@ -323,21 +371,64 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    /** Binds the persistent mount to its Zhao Yun owner before either rider mounts. */
    public void bindRider(ZhaoYunRiderEntity rider, @Nullable LivingEntity master) {
       riderUuid = rider.getUUID();
-      if (master != null) masterUuid = master.getUUID();
+      masterUuid = master == null ? null : master.getUUID();
+      skillOwnerUuid = null;
+      npMount = false;
+      setNpActive(false);
+      getPersistentData().remove(TAG_SKILL_OWNER);
+      getPersistentData().remove(TAG_NP_MOUNT);
    }
 
    /** Binds this horse to a transformed Zhao Yun card player. */
    public void bindSkillOwner(net.minecraft.server.level.ServerPlayer owner) {
+      riderUuid = null;
+      masterUuid = null;
       skillOwnerUuid = owner.getUUID();
+      npMount = false;
+      setNpActive(false);
       getPersistentData().putUUID(TAG_SKILL_OWNER, skillOwnerUuid);
+      getPersistentData().remove(TAG_NP_MOUNT);
+   }
+
+   /** Binds a temporary Noble Phantasm horse without arming the skill-mount cooldown. */
+   public void bindNoblePhantasmOwner(net.minecraft.server.level.ServerPlayer owner) {
+      riderUuid = null;
+      masterUuid = null;
+      skillOwnerUuid = owner.getUUID();
+      npMount = true;
+      getPersistentData().putUUID(TAG_SKILL_OWNER, skillOwnerUuid);
+      getPersistentData().putBoolean(TAG_NP_MOUNT, true);
+   }
+
+   /** Converts a surviving Noble Phantasm horse into the persistent skill mount. */
+   public void promoteToSkillMount(net.minecraft.server.level.ServerPlayer owner) {
+      bindSkillOwner(owner);
    }
 
    public boolean isSkillMount() {
-      return skillOwnerUuid != null;
+      return skillOwnerUuid != null && !npMount;
    }
 
    public boolean isDamageProtectedWhileMounted() {
-      return !getPassengers().isEmpty();
+      // The NPC's shared mount is protected as one unit while occupied.
+      // A Zhao Yun servant-card mount must remain a normal damageable entity
+      // so its 2000 HP and death/cooldown behavior work correctly.
+      return riderUuid != null && !isNpActive() && !getPassengers().isEmpty();
+   }
+
+   /** True when the entity is Zhao Yun, the bound master/owner, or already seated on this mount. */
+   public boolean isBoundCompanion(@Nullable Entity entity) {
+      if (entity == null) return false;
+      if (entity == this || getPassengers().contains(entity)) return true;
+      UUID uuid = entity.getUUID();
+      return riderUuid != null && riderUuid.equals(uuid)
+         || masterUuid != null && masterUuid.equals(uuid)
+         || skillOwnerUuid != null && skillOwnerUuid.equals(uuid);
+   }
+
+   public boolean shouldRedirectPassengerDamage(Entity passenger) {
+      return getPassengers().contains(passenger)
+         && (passenger instanceof ZhaoYunRiderEntity || passenger instanceof ServerPlayer);
    }
 
    @Override protected boolean canAddPassenger(Entity passenger) {
@@ -347,18 +438,43 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          return riderUuid != null ? rider.getUUID().equals(riderUuid) : getPassengers().isEmpty();
       }
       if (passenger instanceof net.minecraft.world.entity.player.Player player) {
-         if (skillOwnerUuid != null) {
-            return skillOwnerUuid.equals(player.getUUID()) && getPassengers().isEmpty();
+         // The client cannot resolve the server-side servant/master link. Let
+         // it predict the interaction; the server-side check below is strict.
+         if (!(level() instanceof ServerLevel)) {
+            return skillOwnerUuid != null || riderUuid != null;
          }
-         // The client cannot resolve the server-side servant/master link. Let it
-         // predict the mount interaction; the server performs the real check.
-         if (!(level() instanceof ServerLevel)) return true;
-         ZhaoYunRiderEntity rider = level() instanceof ServerLevel server ? getRider(server) : null;
-         LivingEntity master = rider == null ? null : rider.getEntityMaster();
-         return rider != null && ((masterUuid != null && masterUuid.equals(player.getUUID()))
-            || master != null && master.getUUID().equals(player.getUUID()));
+         return canPlayerMount(player);
       }
       return false;
+   }
+
+   private boolean isAuthorizedPlayerPassenger(Player player) {
+      // An NPC Hakuryu always wins this precedence check: stale card-owner
+      // data must never let an unrelated player mount Zhao Yun's horse.
+      if (riderUuid != null) {
+         if (!(level() instanceof ServerLevel server)) return true;
+         ZhaoYunRiderEntity rider = getRider(server);
+         ServerPlayer master = rider == null ? null : rider.getEntityMaster();
+         return rider != null
+            && riderUuid.equals(rider.getUUID())
+            && masterUuid != null && masterUuid.equals(player.getUUID())
+            && master == player;
+      }
+      if (skillOwnerUuid != null) return skillOwnerUuid.equals(player.getUUID());
+      return false;
+   }
+
+   /** Server-authoritative player boarding check, including force-mount paths. */
+   public boolean canPlayerMount(Player player) {
+      return getPassengers().size() < 2 && isAuthorizedPlayerPassenger(player);
+   }
+
+   private boolean isControllingPlayer(Player player) {
+      // Only a card owner directly controls a card Hakuryu. The player in the
+      // NPC mount's secondary seat is the master/passenger and keeps their own
+      // camera yaw instead of being snapped to the horse's forward direction.
+      return skillOwnerUuid != null && skillOwnerUuid.equals(player.getUUID())
+         && riderUuid == null;
    }
 
    @Override protected void positionRider(Entity passenger, MoveFunction callback) {
@@ -370,7 +486,12 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       double offsetZ = Math.cos(yaw) * localZ;
       double seatY = 0.82 + index * 0.35;
       callback.accept(passenger, getX() + offsetX, getY() + seatY, getZ() + offsetZ);
-      if (passenger instanceof ZhaoYunRiderEntity rider) {
+      if (passenger instanceof Player player && isControllingPlayer(player)) {
+         player.setYRot(getYRot());
+         player.setYBodyRot(getYRot());
+         player.setYHeadRot(getYRot());
+         player.setXRot(0.0F);
+      } else if (passenger instanceof ZhaoYunRiderEntity rider) {
          float forwardYaw = getYRot();
          rider.setYRot(forwardYaw);
          rider.setYBodyRot(forwardYaw);
@@ -381,7 +502,9 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
 
    @Override public boolean hurt(DamageSource source, float amount) {
       if (level().isClientSide || amount <= 0.0F) return false;
-      if (isDamageProtectedWhileMounted()) return false;
+      if (isBoundCompanion(source.getEntity()) || isBoundCompanion(source.getDirectEntity())) {
+         return false;
+      }
       if (isNpActive()) {
          amount *= 0.05F;
       }
@@ -417,7 +540,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    }
 
    private void markSkillOwnerDead() {
-      if (skillOwnerUuid != null && level() instanceof ServerLevel server
+      if (isSkillMount() && level() instanceof ServerLevel server
          && server.getEntity(skillOwnerUuid) instanceof net.minecraft.server.level.ServerPlayer owner) {
          owner.getPersistentData().putLong(
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_SKILL_MOUNT_COOLDOWN,
@@ -451,6 +574,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       if (riderUuid != null) tag.putUUID(TAG_RIDER, riderUuid);
       if (masterUuid != null) tag.putUUID(TAG_MASTER, masterUuid);
       if (skillOwnerUuid != null) tag.putUUID(TAG_SKILL_OWNER, skillOwnerUuid);
+      tag.putBoolean(TAG_NP_MOUNT, npMount);
       tag.putBoolean("ChangbanpoActive", isNpActive());
    }
 
@@ -459,6 +583,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       if (tag.hasUUID(TAG_RIDER)) riderUuid = tag.getUUID(TAG_RIDER);
       if (tag.hasUUID(TAG_MASTER)) masterUuid = tag.getUUID(TAG_MASTER);
       if (tag.hasUUID(TAG_SKILL_OWNER)) skillOwnerUuid = tag.getUUID(TAG_SKILL_OWNER);
+      npMount = tag.getBoolean(TAG_NP_MOUNT);
       setNpActive(tag.getBoolean("ChangbanpoActive"));
    }
 

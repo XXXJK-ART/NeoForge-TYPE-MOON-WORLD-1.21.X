@@ -27,6 +27,7 @@ public final class SummoningRelicRegistry {
       map("relic_bandage", "nightingale");
       map("relic_philosophers_stone", "paracelsus");
       map("relic_golden_fleece", "medea");
+      map("relic_ato_cradle", "zhao_yun_rider");
       map("relic_apocalypse", "pale_rider");
       map("relic_apocalypse_page", "pale_rider");
       map("gem_necklace", "emiya_archer");

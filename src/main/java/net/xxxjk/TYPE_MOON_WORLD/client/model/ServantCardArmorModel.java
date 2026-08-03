@@ -39,7 +39,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
          case "emiya_archer", "enkidu", "cu_chulainn", "medea",
             "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
-         case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider" -> true;
+         case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
          default -> false;
       };
    }

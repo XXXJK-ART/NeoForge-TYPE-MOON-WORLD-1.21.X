@@ -45,6 +45,7 @@ public final class ServantCardZhaoYunSkills {
    public static final String TAG_QINGGANG_TARGETS = "ServantCardZhaoYunQinggangTargets";
    public static final String TAG_RESCUE_UNTIL = "ServantCardZhaoYunRescueUntil";
    public static final String TAG_RESCUE_TARGET = "ServantCardZhaoYunRescueTarget";
+   public static final String TAG_RESCUE_DEFENSE_UNTIL = "ServantCardZhaoYunRescueDefenseUntil";
    public static final String TAG_NP_CHANT_UNTIL = "ServantCardZhaoYunNpChantUntil";
    public static final String TAG_NP_MOUNT_UUID = "ServantCardZhaoYunNpMount";
    public static final String TAG_NP_UNTIL = "ServantCardZhaoYunNpUntil";
@@ -52,14 +53,22 @@ public final class ServantCardZhaoYunSkills {
    public static final String TAG_NP_INITIAL_DONE = "ServantCardZhaoYunNpInitialDone";
    public static final String TAG_NP_INITIAL_DIR_X = "ServantCardZhaoYunNpInitialDirX";
    public static final String TAG_NP_INITIAL_DIR_Z = "ServantCardZhaoYunNpInitialDirZ";
+   public static final String TAG_NP_SAFE_X = "ServantCardZhaoYunNpSafeX";
+   public static final String TAG_NP_SAFE_Y = "ServantCardZhaoYunNpSafeY";
+   public static final String TAG_NP_SAFE_Z = "ServantCardZhaoYunNpSafeZ";
    public static final String TAG_SKILL_MOUNT_UUID = "ServantCardZhaoYunSkillMount";
    public static final String TAG_SKILL_MOUNT_COOLDOWN = "ServantCardZhaoYunSkillMountCooldown";
    public static final String TAG_NORMAL_THRUST_UNTIL = "ServantCardZhaoYunNormalThrustUntil";
+   public static final String TAG_LAST_COMBAT = "ServantCardZhaoYunLastCombat";
 
    private static final net.minecraft.resources.ResourceLocation DRAGON_GALL_ATTACK =
       net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_zhao_yun_dragon_gall_attack");
    private static final net.minecraft.resources.ResourceLocation DRAGON_GALL_SPEED =
       net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_zhao_yun_dragon_gall_speed");
+   private static final net.minecraft.resources.ResourceLocation DRAGON_GALL_A_PLUS_ATTACK =
+      net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_zhao_yun_dragon_gall_a_plus_attack");
+   private static final net.minecraft.resources.ResourceLocation DRAGON_GALL_A_PLUS_SPEED =
+      net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_zhao_yun_dragon_gall_a_plus_speed");
    private static final net.minecraft.resources.ResourceLocation SURROUNDED_ATTACK =
       net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_zhao_yun_surrounded_attack");
    private static final net.minecraft.resources.ResourceLocation DESPERATION_SPEED =
@@ -72,6 +81,7 @@ public final class ServantCardZhaoYunSkills {
    public static void initialize(ServerPlayer player) {
       clear(player);
       player.getPersistentData().putInt(TAG_BREAKTHROUGH, 0);
+      player.getPersistentData().putLong(TAG_LAST_COMBAT, player.level().getGameTime());
       tick(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
    }
 
@@ -82,19 +92,32 @@ public final class ServantCardZhaoYunSkills {
       }
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
-      int enemies = nearbyEnemies(player, 8.0).size();
+      if (player.hurtTime > 0) {
+         data.putLong(TAG_LAST_COMBAT, now);
+      }
+      if (now - data.getLong(TAG_LAST_COMBAT) >= 15L * 20L) {
+         data.putInt(TAG_BREAKTHROUGH, 0);
+      }
+      int enemies = dragonGallEnemyCount(player, 25.0);
       boolean low = player.getHealth() <= player.getMaxHealth() * 0.5F;
 
       // 龙胆 EX: permanent, non-slot passive.
       if (low) {
          ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_ATTACK, 0.20);
          ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_SPEED, 0.15);
+         // Existing A-state bonuses remain active; these additional modifiers
+         // represent the A+ breakthrough once Zhao Yun is below half health.
+         ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_A_PLUS_ATTACK, 0.10);
+         ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_A_PLUS_SPEED, 0.10);
       } else {
          ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_ATTACK);
          ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_SPEED);
+         ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_A_PLUS_ATTACK);
+         ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_A_PLUS_SPEED);
       }
       if (enemies >= 2) {
-         ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.ATTACK_DAMAGE), SURROUNDED_ATTACK, 0.25);
+         double surroundedBonus = Math.min(0.50, 0.25 + Math.max(0, enemies - 2) * 0.05);
+         ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.ATTACK_DAMAGE), SURROUNDED_ATTACK, surroundedBonus);
       } else {
          ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), SURROUNDED_ATTACK);
       }
@@ -108,9 +131,10 @@ public final class ServantCardZhaoYunSkills {
       // A successful guard is represented by the short hurt window while blocking.
       if (player.isBlocking() && player.hurtTime > 0 && data.getLong("ServantCardZhaoYunLastGuard") != now) {
          data.putLong("ServantCardZhaoYunLastGuard", now);
-         data.putInt(TAG_BREAKTHROUGH, Math.min(7, data.getInt(TAG_BREAKTHROUGH) + 1));
+         data.putInt(TAG_BREAKTHROUGH, Math.min(14, data.getInt(TAG_BREAKTHROUGH) + 1));
+         data.putLong(TAG_LAST_COMBAT, now);
       }
-      int stacks = Math.max(0, Math.min(7, data.getInt(TAG_BREAKTHROUGH)));
+      int stacks = Math.max(0, Math.min(14, data.getInt(TAG_BREAKTHROUGH)));
       if (stacks > 0) {
          ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.MOVEMENT_SPEED), id("servant_card_zhao_yun_breakthrough_speed"), stacks * 0.03);
       } else {
@@ -119,6 +143,10 @@ public final class ServantCardZhaoYunSkills {
       if (stacks >= 7) {
          player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 4, 1, false, false, false));
+      }
+      if (stacks >= 8) {
+         player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 4, 2, false, false, false));
       }
 
       // 绝境突围: automatic and slotless.
@@ -147,15 +175,19 @@ public final class ServantCardZhaoYunSkills {
       CompoundTag data = player.getPersistentData();
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_ATTACK);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_SPEED);
+      ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_A_PLUS_ATTACK);
+      ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_A_PLUS_SPEED);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), SURROUNDED_ATTACK);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), DESPERATION_SPEED);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DESPERATION_ATTACK);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), id("servant_card_zhao_yun_breakthrough_speed"));
       data.remove(TAG_BREAKTHROUGH);
+      data.remove(TAG_LAST_COMBAT);
       data.remove("ServantCardZhaoYunLastGuard");
       data.remove("ServantCardZhaoYunDesperationUntil");
       data.remove(TAG_RESCUE_UNTIL);
       data.remove(TAG_RESCUE_TARGET);
+      data.remove(TAG_RESCUE_DEFENSE_UNTIL);
       data.remove(TAG_QINGGANG_UNTIL);
       data.remove(TAG_QINGGANG_TARGETS);
       data.remove(TAG_NP_CHANT_UNTIL);
@@ -164,6 +196,9 @@ public final class ServantCardZhaoYunSkills {
       data.remove(TAG_NP_INITIAL_DONE);
       data.remove(TAG_NP_INITIAL_DIR_X);
       data.remove(TAG_NP_INITIAL_DIR_Z);
+      data.remove(TAG_NP_SAFE_X);
+      data.remove(TAG_NP_SAFE_Y);
+      data.remove(TAG_NP_SAFE_Z);
       clearNpHitTags(data);
       discardMount(player, TAG_SKILL_MOUNT_UUID);
       discardMount(player, TAG_NP_MOUNT_UUID);
@@ -293,6 +328,7 @@ public final class ServantCardZhaoYunSkills {
          player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       ServerPlayer master = MasterServantLinkService.getLinkedMaster(player, vars);
       if (master == null || !master.isAlive() || master.level() != player.level()
+         || master == player
          || player.distanceToSqr(master) > 12.0 * 12.0) {
          return false;
       }
@@ -301,7 +337,12 @@ public final class ServantCardZhaoYunSkills {
       CompoundTag data = player.getPersistentData();
       data.putLong(TAG_RESCUE_UNTIL, until);
       data.putUUID(TAG_RESCUE_TARGET, target.getUUID());
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 12 * 20, 1, false, true, true));
+      // Resistance I supplies a visible baseline; CommonEvents applies the
+      // remaining factor so the final rescue defense is exactly 30% rather
+      // than the old 50%-class protection.
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 12 * 20, 0, false, true, true));
+      target.getPersistentData().putLong(TAG_RESCUE_DEFENSE_UNTIL, until);
+      player.getPersistentData().putLong(TAG_RESCUE_DEFENSE_UNTIL, until);
       if (player.level() instanceof ServerLevel level) {
          VFXServerEffects.spawn(level, "servant_zhao_yun_rescue", player, 64.0);
          level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, target.getX(), target.getY() + 0.8, target.getZ(), 12, 0.35, 0.5, 0.35, 0.04);
@@ -406,10 +447,18 @@ public final class ServantCardZhaoYunSkills {
    public static boolean performChangbanpo(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
+      if (data.getLong(TAG_NP_CHANT_UNTIL) > now || data.getLong(TAG_NP_UNTIL) > now) return false;
+      // A stale temporary horse must not be allowed to coexist with a new
+      // Noble Phantasm horse after a disconnect, failed dismount, or death.
+      discardMount(player, TAG_NP_MOUNT_UUID);
       data.putLong(TAG_NP_CHANT_UNTIL, now + 3L * 20L);
       data.remove(TAG_NP_UNTIL);
       data.remove(TAG_NP_INITIAL_DONE);
       data.putDouble(TAG_NP_INITIAL_DISTANCE, 0.0);
+      data.remove(TAG_NP_SAFE_X);
+      data.remove(TAG_NP_SAFE_Y);
+      data.remove(TAG_NP_SAFE_Z);
+      clearNpHitTags(data);
       player.level().playSound(null, player.blockPosition(), ModSounds.ZHAO_YUN_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
       return true;
    }
@@ -439,7 +488,29 @@ public final class ServantCardZhaoYunSkills {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || !SERVANT_ID.equals(vars.servant_card_id)) return;
       CompoundTag data = player.getPersistentData();
-      data.putInt(TAG_BREAKTHROUGH, Math.min(7, Math.max(0, data.getInt(TAG_BREAKTHROUGH)) + 1));
+      data.putInt(TAG_BREAKTHROUGH, Math.min(14, Math.max(0, data.getInt(TAG_BREAKTHROUGH)) + 1));
+      data.putLong(TAG_LAST_COMBAT, player.level().getGameTime());
+   }
+
+   public static void markCombatActivity(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed && SERVANT_ID.equals(vars.servant_card_id)) {
+         player.getPersistentData().putLong(TAG_LAST_COMBAT, player.level().getGameTime());
+      }
+   }
+
+   public static boolean hasSevenInSevenOutDiscount(ServerPlayer player) {
+      return player.getPersistentData().getInt(TAG_BREAKTHROUGH) >= 8;
+   }
+
+   public static boolean isMeleeSmallSkill(String effectId) {
+      return switch (effectId) {
+         case "zhao_yun_spear_combo", "zhao_yun_spear_breakthrough",
+            "zhao_yun_dragon_sweep", "zhao_yun_mounted_rush",
+            "zhao_yun_dragon_flash", "zhao_yun_seven_probe",
+            "zhao_yun_hakuryu_trample" -> true;
+         default -> false;
+      };
    }
 
    private static void tickRescue(ServerPlayer player, long now) {
@@ -447,6 +518,7 @@ public final class ServantCardZhaoYunSkills {
       if (data.getLong(TAG_RESCUE_UNTIL) <= now) {
          data.remove(TAG_RESCUE_UNTIL);
          data.remove(TAG_RESCUE_TARGET);
+         data.remove(TAG_RESCUE_DEFENSE_UNTIL);
       }
    }
 
@@ -481,11 +553,22 @@ public final class ServantCardZhaoYunSkills {
             data.putLong(TAG_NP_UNTIL, now + 15L * 20L);
             data.putDouble(TAG_NP_INITIAL_DISTANCE, 0.0);
             data.remove(TAG_NP_INITIAL_DONE);
+            rememberNpSafePosition(data, mount);
             Vec3 initialDirection = PlayerNoblePhantasmHelper.horizontalLook(player);
             data.putDouble(TAG_NP_INITIAL_DIR_X, initialDirection.x);
             data.putDouble(TAG_NP_INITIAL_DIR_Z, initialDirection.z);
             mount.setNpActive(true);
-            player.startRiding(mount, true);
+            if (!player.startRiding(mount, true)) {
+               mount.discard();
+               data.remove(TAG_NP_MOUNT_UUID);
+               data.remove(TAG_NP_UNTIL);
+               data.remove(TAG_NP_INITIAL_DISTANCE);
+               data.remove(TAG_NP_INITIAL_DONE);
+               data.remove(TAG_NP_INITIAL_DIR_X);
+               data.remove(TAG_NP_INITIAL_DIR_Z);
+               clearNpHitTags(data);
+               return;
+            }
             if (player.level() instanceof ServerLevel level) {
             VFXServerEffects.spawn(level, "servant_zhao_yun_changbanpo", mount, 96.0);
             }
@@ -494,16 +577,33 @@ public final class ServantCardZhaoYunSkills {
       if (data.getLong(TAG_NP_UNTIL) > now) {
          ZhaoYunHakuryuEntity mount = getMount(player, TAG_NP_MOUNT_UUID);
          if (mount != null) {
+            // Dismounting the temporary NP horse cancels that horse instead
+            // of leaving an ownerless entity moving through the world.
+            if (player.getVehicle() != mount) {
+               discardMount(player, TAG_NP_MOUNT_UUID);
+               data.remove(TAG_NP_UNTIL);
+               data.remove(TAG_NP_INITIAL_DISTANCE);
+               data.remove(TAG_NP_INITIAL_DONE);
+               data.remove(TAG_NP_INITIAL_DIR_X);
+               data.remove(TAG_NP_INITIAL_DIR_Z);
+               data.remove(TAG_NP_SAFE_X);
+               data.remove(TAG_NP_SAFE_Y);
+               data.remove(TAG_NP_SAFE_Z);
+               clearNpHitTags(data);
+               return;
+            }
             double distance = data.getDouble(TAG_NP_INITIAL_DISTANCE);
             boolean opening = !data.getBoolean(TAG_NP_INITIAL_DONE);
             Vec3 dir = opening ? initialChargeDirection(data)
                : PlayerNoblePhantasmHelper.horizontalLook(player);
             double speed = (opening ? 1.0 : 0.65) * cardMovementSpeedRatio(player);
             double step = Math.min(speed, opening ? 50.0 - distance : speed);
-            moveMountHorizontally(mount, dir, step);
+            boolean moved = moveMountHorizontally(player, mount, dir, step);
             if (opening) {
-               data.putDouble(TAG_NP_INITIAL_DISTANCE, distance + step);
-               if (distance + step >= 50.0) data.putBoolean(TAG_NP_INITIAL_DONE, true);
+               if (moved) data.putDouble(TAG_NP_INITIAL_DISTANCE, distance + step);
+               // An opening-dash bedrock hit stops the fixed dash safely and
+               // hands control to the 15-second free-movement phase.
+               if (!moved || distance + step >= 50.0) data.putBoolean(TAG_NP_INITIAL_DONE, true);
             }
             hitMountTargets(player, mount, opening ? 3.8 : 3.2, opening ? 500.0F : 100.0F);
             if (player.tickCount % 3 == 0 && player.level() instanceof ServerLevel level) {
@@ -517,12 +617,25 @@ public final class ServantCardZhaoYunSkills {
             data.remove(TAG_NP_INITIAL_DIR_X);
             data.remove(TAG_NP_INITIAL_DIR_Z);
             clearNpHitTags(data);
+            data.remove(TAG_NP_SAFE_X);
+            data.remove(TAG_NP_SAFE_Y);
+            data.remove(TAG_NP_SAFE_Z);
             data.remove(TAG_NP_MOUNT_UUID);
          }
       } else if (data.getLong(TAG_NP_UNTIL) > 0L) {
          ZhaoYunHakuryuEntity mount = getMount(player, TAG_NP_MOUNT_UUID);
          if (mount != null) {
             mount.setNpActive(false);
+            mount.promoteToSkillMount(player);
+            if (data.hasUUID(TAG_SKILL_MOUNT_UUID)
+               && !data.getUUID(TAG_SKILL_MOUNT_UUID).equals(mount.getUUID())
+               && player.level() instanceof ServerLevel level) {
+               Entity previous = level.getEntity(data.getUUID(TAG_SKILL_MOUNT_UUID));
+               if (previous != null) {
+                  previous.ejectPassengers();
+                  previous.discard();
+               }
+            }
             data.putUUID(TAG_SKILL_MOUNT_UUID, mount.getUUID());
          }
          data.remove(TAG_NP_MOUNT_UUID);
@@ -531,6 +644,9 @@ public final class ServantCardZhaoYunSkills {
          data.remove(TAG_NP_INITIAL_DONE);
          data.remove(TAG_NP_INITIAL_DIR_X);
          data.remove(TAG_NP_INITIAL_DIR_Z);
+         data.remove(TAG_NP_SAFE_X);
+         data.remove(TAG_NP_SAFE_Y);
+         data.remove(TAG_NP_SAFE_Z);
          clearNpHitTags(data);
       }
    }
@@ -539,30 +655,113 @@ public final class ServantCardZhaoYunSkills {
       if (!(player.level() instanceof ServerLevel level)) return null;
       ZhaoYunHakuryuEntity mount = ModEntities.ZHAO_YUN_HAKURYU.get().create(level);
       if (mount == null) return null;
-      mount.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0.0F);
+      // If the player is already on the persistent skill horse, use that
+      // horse's feet as the spawn height. Spawning at the player's passenger
+      // eye/seat height made the NP horse begin in mid-air and fight gravity
+      // for several ticks.
+      double spawnY = player.getVehicle() instanceof ZhaoYunHakuryuEntity vehicle
+         ? vehicle.getY() : player.getY();
+      mount.moveTo(player.getX(), spawnY, player.getZ(), player.getYRot(), 0.0F);
       mount.setHealth(mount.getMaxHealth());
-      mount.bindSkillOwner(player);
+      mount.bindNoblePhantasmOwner(player);
       if (!level.addFreshEntity(mount)) return null;
       player.getPersistentData().putUUID(TAG_NP_MOUNT_UUID, mount.getUUID());
       return mount;
    }
 
-   private static void moveMountHorizontally(ZhaoYunHakuryuEntity mount, Vec3 dir, double distance) {
-      if (!(mount.level() instanceof ServerLevel level)) return;
-      Vec3 delta = new Vec3(dir.x, 0.0, dir.z).normalize().scale(distance);
-      BlockPos check = mount.blockPosition().offset((int)Math.round(delta.x), 0, (int)Math.round(delta.z));
-      if (level.getBlockState(check).is(Blocks.BEDROCK)) return;
-      BlockPos min = BlockPos.containing(mount.getX() + Math.min(0.0, delta.x) - 1.5, mount.getY(), mount.getZ() + Math.min(0.0, delta.z) - 1.5);
-      BlockPos max = BlockPos.containing(mount.getX() + Math.max(0.0, delta.x) + 1.5, mount.getY() + 2.4, mount.getZ() + Math.max(0.0, delta.z) + 1.5);
-      for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-         var state = level.getBlockState(pos);
-         if (!state.isAir() && !state.is(Blocks.BEDROCK) && state.getDestroySpeed(level, pos) >= 0.0F) {
-            level.removeBlock(pos, false);
+   private static boolean moveMountHorizontally(ServerPlayer owner, ZhaoYunHakuryuEntity mount, Vec3 dir, double distance) {
+      if (!(mount.level() instanceof ServerLevel level)) return false;
+      Vec3 flat = new Vec3(dir.x, 0.0, dir.z);
+      if (flat.lengthSqr() < 1.0E-6 || distance <= 0.0) return true;
+      flat = flat.normalize();
+      Vec3 delta = flat.scale(distance);
+      AABB startBox = mount.getBoundingBox();
+      if (containsBedrock(level, startBox, delta)) return false;
+
+      if (mount.onGround() || hasSolidSupport(level, mount)) {
+         rememberNpSafePosition(owner.getPersistentData(), mount);
+      }
+      breakNpBlocks(level, mount, delta);
+
+      float yaw = (float)(Math.atan2(-flat.x, flat.z) * 180.0 / Math.PI);
+      mount.setYRot(yaw);
+      mount.setYBodyRot(yaw);
+      mount.setYHeadRot(yaw);
+      double verticalVelocity = mount.getDeltaMovement().y;
+      mount.move(net.minecraft.world.entity.MoverType.SELF, delta);
+      mount.setDeltaMovement(0.0, verticalVelocity, 0.0);
+      mount.fallDistance = 0.0F;
+
+      // Gravity stays enabled, but a high-speed one-tick move must never send
+      // the horse below the last supported location or into the void.
+      if (verticalVelocity < -0.08 && !hasSolidSupport(level, mount)) {
+         restoreNpSafePosition(owner.getPersistentData(), mount);
+         return false;
+      }
+      return true;
+   }
+
+   private static boolean containsBedrock(ServerLevel level, AABB startBox, Vec3 delta) {
+      int steps = Math.max(1, (int)Math.ceil(delta.length() / 0.4));
+      for (int i = 0; i <= steps; i++) {
+         double progress = (double)i / steps;
+         AABB box = startBox.move(delta.scale(progress)).inflate(0.04);
+         BlockPos min = BlockPos.containing(box.minX, box.minY, box.minZ);
+         BlockPos max = BlockPos.containing(box.maxX, box.maxY, box.maxZ);
+         for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            if (level.getBlockState(pos).is(Blocks.BEDROCK)) return true;
          }
       }
-      mount.setYRot((float)(Math.atan2(-dir.x, dir.z) * 180.0 / Math.PI));
-      mount.move(net.minecraft.world.entity.MoverType.SELF, delta);
-      mount.setDeltaMovement(0.0, mount.getDeltaMovement().y, 0.0);
+      return false;
+   }
+
+   private static void breakNpBlocks(ServerLevel level, ZhaoYunHakuryuEntity mount, Vec3 desired) {
+      Vec3 forward = new Vec3(desired.x, 0.0, desired.z);
+      if (forward.lengthSqr() < 1.0E-6) return;
+      forward = forward.normalize();
+      BlockPos base = mount.blockPosition();
+      int broken = 0;
+      for (int distance = 0; distance < 7 && broken < 96; distance++) {
+         BlockPos check = base.offset((int)Math.round(forward.x * (distance + 1)), 0,
+            (int)Math.round(forward.z * (distance + 1)));
+         for (BlockPos pos : BlockPos.betweenClosed(check.offset(-2, -1, -2), check.offset(2, 4, 2))) {
+            // The support below a ground mount is never destroyed by the NP.
+            if (pos.getY() < base.getY()) continue;
+            var state = level.getBlockState(pos);
+            if (!state.isAir() && !state.is(Blocks.BEDROCK)
+               && state.getDestroySpeed(level, pos) >= 0.0F && state.getDestroySpeed(level, pos) < 75.0F) {
+               level.removeBlock(pos, false);
+               if (++broken >= 96) break;
+            }
+         }
+      }
+   }
+
+   private static void rememberNpSafePosition(CompoundTag data, ZhaoYunHakuryuEntity mount) {
+      data.putDouble(TAG_NP_SAFE_X, mount.getX());
+      data.putDouble(TAG_NP_SAFE_Y, mount.getY());
+      data.putDouble(TAG_NP_SAFE_Z, mount.getZ());
+   }
+
+   private static void restoreNpSafePosition(CompoundTag data, ZhaoYunHakuryuEntity mount) {
+      if (!data.contains(TAG_NP_SAFE_X) || !data.contains(TAG_NP_SAFE_Y) || !data.contains(TAG_NP_SAFE_Z)) {
+         mount.setDeltaMovement(Vec3.ZERO);
+         return;
+      }
+      mount.teleportTo(data.getDouble(TAG_NP_SAFE_X), data.getDouble(TAG_NP_SAFE_Y), data.getDouble(TAG_NP_SAFE_Z));
+      mount.setDeltaMovement(Vec3.ZERO);
+      mount.fallDistance = 0.0F;
+   }
+
+   private static boolean hasSolidSupport(ServerLevel level, ZhaoYunHakuryuEntity mount) {
+      double y = mount.getY() - 0.08;
+      for (double xOffset : new double[]{-0.75, 0.0, 0.75}) {
+         for (double zOffset : new double[]{-0.75, 0.0, 0.75}) {
+            BlockPos below = BlockPos.containing(mount.getX() + xOffset, y, mount.getZ() + zOffset);
+            if (level.getBlockState(below).isSolidRender(level, below)) return true;
+         }
+      }
+      return false;
    }
 
    private static Vec3 initialChargeDirection(CompoundTag data) {
@@ -587,11 +786,10 @@ public final class ServantCardZhaoYunSkills {
          if (player.getPersistentData().getBoolean(key)) continue;
          player.getPersistentData().putBoolean(key, true);
          target.invulnerableTime = 0;
-         float remaining = Math.max(0.0F, target.getHealth() - damage);
-         target.setHealth(remaining);
-         if (remaining <= 0.0F && !target.isDeadOrDying()) {
-            target.die(player.damageSources().mobAttack(player));
-         }
+         // Use the regular damage pipeline so Heracles' Twelve Trials,
+         // Battle Continuation, servant dodge, and damage immunities all
+         // resolve correctly instead of being bypassed by setHealth().
+         target.hurt(player.damageSources().mobAttack(player), damage);
          target.invulnerableTime = 0;
          level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55,
             target.getZ(), damage >= 500.0F ? 28 : 14, 0.35, 0.45, 0.35, 0.04);
@@ -641,6 +839,32 @@ public final class ServantCardZhaoYunSkills {
          e -> isEnemy(player, e));
    }
 
+   /**
+    * Dragon Gall uses a wider battlefield scan than ordinary skill targeting.
+    * NPCs count when they are actually targeting Zhao Yun (or have exchanged
+    * a hit); players count only after a combat exchange has occurred.
+    */
+   private static int dragonGallEnemyCount(ServerPlayer player, double radius) {
+      return player.level().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius),
+         entity -> isDragonGallEnemy(player, entity)).size();
+   }
+
+   private static boolean isDragonGallEnemy(ServerPlayer player, LivingEntity entity) {
+      if (!isEnemy(player, entity)) return false;
+      if (entity instanceof Player other) {
+         return player.getLastHurtMob() == other
+            || player.getLastHurtByMob() == other
+            || other.getLastHurtMob() == player
+            || other.getLastHurtByMob() == player;
+      }
+      if (entity instanceof net.minecraft.world.entity.Mob mob) {
+         return mob.getTarget() == player
+            || player.getLastHurtMob() == entity
+            || player.getLastHurtByMob() == entity;
+      }
+      return player.getLastHurtMob() == entity || player.getLastHurtByMob() == entity;
+   }
+
    private static boolean isEnemy(ServerPlayer player, LivingEntity entity) {
       return entity != player && entity.isAlive() && !EntityUtils.isImmunePlayerTarget(entity)
          && !player.isAlliedTo(entity) && !entity.isAlliedTo(player);
@@ -662,7 +886,10 @@ public final class ServantCardZhaoYunSkills {
       CompoundTag data = player.getPersistentData();
       if (data.hasUUID(tag) && player.level() instanceof ServerLevel level) {
          Entity entity = level.getEntity(data.getUUID(tag));
-         if (entity != null) entity.discard();
+         if (entity != null) {
+            entity.ejectPassengers();
+            entity.discard();
+         }
       }
       data.remove(tag);
    }

@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleHumanoidHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleSupportService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class NightingaleEvents {
@@ -133,7 +134,8 @@ public final class NightingaleEvents {
    private static boolean shouldCancelSafetyCircleDamage(LivingEntity target, DamageSource source) {
       return NightingaleSupportService.isProtected(target)
          && !source.is(DamageTypes.FELL_OUT_OF_WORLD)
-         && !source.is(DamageTypes.GENERIC_KILL);
+         && !source.is(DamageTypes.GENERIC_KILL)
+         && !source.is(MuramasaDamageTypes.TSUMUKARI_MURAMASA);
    }
 
    private static void cancel(LivingIncomingDamageEvent event) {

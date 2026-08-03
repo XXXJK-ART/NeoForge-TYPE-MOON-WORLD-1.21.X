@@ -89,6 +89,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ZhaoYunRiderRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ZhaoYunHakuryuRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SenkoMuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDefinitionLoader;
@@ -254,6 +255,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA.get(), MedusaRenderer::new);
       event.registerEntityRenderer(ModEntities.CURSED_ARM_HASSAN.get(), CursedArmHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), EmiyaArcherRenderer::new);
+      event.registerEntityRenderer(ModEntities.SENKO_MURAMASA.get(), SenkoMuramasaRenderer::new);
       event.registerEntityRenderer(ModEntities.ARASH.get(), ArashRenderer::new);
       event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.ARASH_STELLA_CONTROLLER.get(), NoopRenderer::new);

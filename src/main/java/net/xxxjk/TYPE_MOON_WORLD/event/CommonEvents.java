@@ -44,6 +44,7 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -54,6 +55,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
@@ -94,6 +96,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
@@ -138,6 +142,20 @@ public class CommonEvents {
    private static final Map<String, Set<UUID>> SUGGESTED_MOB_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
    private static final Map<String, Set<UUID>> SERVANT_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
    private static final Map<String, Set<UUID>> SHIKI_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
+
+   @SubscribeEvent
+   public static void onZhaoYunHakuryuMount(EntityMountEvent event) {
+      if (!event.isMounting() || event.getLevel().isClientSide()) return;
+      if (!(event.getEntityBeingMounted() instanceof ZhaoYunHakuryuEntity mount)
+         || !(event.getEntityMounting() instanceof Player player)) {
+         return;
+      }
+      // Force-mount calls bypass Entity.canAddPassenger, so enforce the
+      // Zhao Yun master/card-owner rule at the NeoForge mount event too.
+      if (!mount.canPlayerMount(player)) {
+         event.setCanceled(true);
+      }
+   }
 
    @SubscribeEvent
    public static void onServantCardFall(LivingFallEvent event) {
@@ -313,6 +331,7 @@ public class CommonEvents {
             player.stopUsingItem();
          }
          if (player instanceof ServerPlayer serverPlayer) {
+            MuramasaDissolutionService.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
@@ -415,8 +434,28 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         // Creative and spectator players are globally non-combat targets.
+         // Do this before servant damage redirection so custom effects cannot
+         // transfer damage away from the protected player or otherwise mutate
+         // the event first.
+         if (event.getEntity() instanceof Player player
+            && (player.isCreative() || player.isSpectator())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
+         if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
+            event.setCanceled(false);
+            event.setAmount(Float.MAX_VALUE);
+            event.setInvulnerabilityTicks(0);
+            for (DamageContainer.Reduction reduction : DamageContainer.Reduction.values()) {
+               event.addReductionModifier(reduction, (container, amount) -> 0.0F);
+            }
+            return;
+         }
          if (tryRedirectZhaoYunMountDamage(event)) return;
          if (tryRedirectZhaoYunRescueDamage(event)) return;
+         applyZhaoYunRescueDefense(event);
          if (event.getSource().getEntity() instanceof ServerPlayer attacker
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isShadowHassan(attacker)) {
             if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(attacker)) {
@@ -425,9 +464,7 @@ public class CommonEvents {
             }
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(attacker);
          }
-         if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
-            event.setCanceled(true);
-         } else {
+         {
             if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) {
                tryRedirectMedusaPegasusDamage(event.getEntity(), event);
                return;
@@ -734,23 +771,36 @@ public class CommonEvents {
 
    private static boolean tryRedirectZhaoYunMountDamage(LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F) return false;
-      if (event.getEntity() instanceof ZhaoYunHakuryuEntity mount
-         && mount.isAlive() && mount.isDamageProtectedWhileMounted()) {
+      Entity attacker = event.getSource().getEntity();
+      Entity direct = event.getSource().getDirectEntity();
+      if (event.getEntity() instanceof ZhaoYunHakuryuEntity mount && mount.isAlive()) {
+         // Zhao Yun, the master/owner, and current passengers must not hurt
+         // their own Hakuryu. Enemy damage is allowed through; during
+         // Changbanpo the entity's hurt() method reduces it to 5%.
+         if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+         }
+         return false;
+      }
+      LivingEntity passenger = event.getEntity();
+      if (!(passenger.getVehicle() instanceof ZhaoYunHakuryuEntity mount)
+         || !mount.isAlive() || !mount.shouldRedirectPassengerDamage(passenger)) {
+         return false;
+      }
+      if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          return true;
       }
-      LivingEntity passenger = event.getEntity();
-      if (!(passenger.getVehicle() instanceof ZhaoYunHakuryuEntity mount)
-         || !mount.isAlive() || !mount.isDamageProtectedWhileMounted()
-         || !(passenger instanceof ZhaoYunRiderEntity || passenger instanceof ServerPlayer)) {
-         return false;
-      }
-      // Mounted Zhao Yun and his master are protected as one unit. Do not
-      // redirect damage to the mount, since the mount itself is invulnerable
-      // while occupied.
+      // Mounted Zhao Yun/card owner and Hakuryu share one health pool: attacks
+      // against riders are transferred to Hakuryu. This keeps the horse's
+      // 2000 HP meaningful, and NP damage reduction is applied by mount.hurt().
+      float redirected = event.getAmount();
       event.setCanceled(true);
       event.setAmount(0.0F);
+      mount.hurt(event.getSource(), redirected);
       return true;
    }
 
@@ -785,6 +835,21 @@ public class CommonEvents {
       event.setAmount(event.getAmount() - redirected);
       protector.hurt(event.getSource(), redirected);
       return false;
+   }
+
+   /**
+    * Single Rider Rescue used to stack a 50%-class resistance effect. Keep
+    * the visible Resistance I effect, then apply the remaining factor here so
+    * the total reduction is exactly 30% (0.8 * 0.875 = 0.7).
+    */
+   private static void applyZhaoYunRescueDefense(LivingIncomingDamageEvent event) {
+      if (!(event.getEntity() instanceof LivingEntity entity)
+         || event.getAmount() <= 0.0F
+         || entity.getPersistentData().getLong("ZhaoYunRescueDefenseUntil")
+            <= entity.level().getGameTime()) {
+         return;
+      }
+      event.setAmount(event.getAmount() * 0.875F);
    }
 
    @SubscribeEvent

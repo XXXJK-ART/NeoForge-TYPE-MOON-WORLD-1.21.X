@@ -58,7 +58,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
          case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
-         case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider" -> true;
+         case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
          default -> false;
       };
    }
@@ -99,6 +99,8 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          animation = hassanArmorAnimation(state);
       } else if ("li_shuwen".equals(this.servantId)) {
          animation = liShuwenArmorAnimation(state);
+      } else if ("senko_muramasa".equals(this.servantId)) {
+         animation = "animation";
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
          || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)

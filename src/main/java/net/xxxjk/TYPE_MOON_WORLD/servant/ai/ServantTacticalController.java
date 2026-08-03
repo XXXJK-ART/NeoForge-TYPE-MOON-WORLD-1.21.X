@@ -57,21 +57,46 @@ public final class ServantTacticalController {
          brain.submit(AiIntent.of(PHASE_TRANSITION, AiIntent.PRIORITY_PHASE, phase.phase().ordinal(), 1, false,
             entity.getNavigation()::stop, AiControl.DEFEND, AiControl.LOOK));
       }
+      boolean meleeOverride = tempo.meleeOverride();
+      boolean orbiting = tempo.orbiting();
       boolean plannedActive = ServantPlannedActionExecutor.isActive(entity);
+      if (meleeOverride && plannedActive
+         && ServantPlannedActionExecutor.stage(entity) == ServantPlannedActionExecutor.Stage.APPROACH) {
+         ServantPlannedActionExecutor.cancelForMeleeOverride(entity, now);
+         plannedActive = false;
+      }
+      // The action timeline owns movement once a telegraph has started.  A
+      // melee override only releases an approach path; windup/active/recovery
+      // must remain uninterrupted.
+      boolean keepActionTimeline = plannedActive
+         && ServantPlannedActionExecutor.stage(entity) != ServantPlannedActionExecutor.Stage.APPROACH;
       var candidates = plannedActive ? java.util.List.<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor>of()
          : ServantActionPlanner.candidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard());
       var selected = candidates.isEmpty() ? null : candidates.getFirst();
       if (selected == null) entity.getPersistentData().remove("TypeMoonAiSelectedAction");
       else entity.getPersistentData().putString("TypeMoonAiSelectedAction", selected.id().toString());
       submitMasterCommand(entity, brain);
-      if (plannedActive) submitActivePlannedAction(entity, brain, now);
-      else {
+      if (keepActionTimeline || (plannedActive && !meleeOverride)) submitActivePlannedAction(entity, brain, now);
+      else if (!meleeOverride) {
          for (var candidate : candidates) submitPlannedAction(entity, candidate, brain, now);
-         submitCombatManeuver(entity, brain, now);
-         submitTacticalReposition(entity, brain, now);
-         submitDistantPursuit(entity, brain, now);
+         if (!orbiting) {
+            submitCombatManeuver(entity, brain, now);
+            submitTacticalReposition(entity, brain, now);
+         }
+         if (!orbiting) submitDistantPursuit(entity, brain, now);
+      } else {
+         // Legacy CombatModule is the final authority for forced contact. Any
+         // stale route/side-step must be removed before it runs.
+         LivingEntity forcedTarget = entity.getTarget();
+         if (forcedTarget != null && forcedTarget.isAlive()) {
+            entity.getLookControl().setLookAt(forcedTarget, 75.0F, 75.0F);
+            entity.faceToward(forcedTarget.position());
+         }
+         ServantNavigationHelper.clearMovementState(entity);
       }
-      ServantCombatTempoService.submitFallback(entity, entity.getTarget(), brain, now, tempo);
+      if (!meleeOverride && !keepActionTimeline) {
+         ServantCombatTempoService.submitFallback(entity, entity.getTarget(), brain, now, tempo);
+      }
 
       if (entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
          ProjectileThreatSensor.IncomingProjectile projectile = ProjectileThreatSensor.nearest(entity, 12.0, 8.0);
@@ -118,7 +143,7 @@ public final class ServantTacticalController {
       }
 
       AiBrain.Resolution resolution = brain.resolve();
-      if (plannedActive && resolution.intent() != null
+      if (keepActionTimeline && resolution.intent() != null
          && resolution.intent().priority() > AiIntent.PRIORITY_ATTACK) {
          ServantPlannedActionExecutor.interrupt(entity, 5, now);
       }

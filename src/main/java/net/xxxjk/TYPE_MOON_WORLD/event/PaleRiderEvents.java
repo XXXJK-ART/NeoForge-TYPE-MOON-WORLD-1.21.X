@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class PaleRiderEvents {
@@ -59,6 +60,7 @@ public final class PaleRiderEvents {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onControlledFriendlyFire(LivingIncomingDamageEvent event) {
+      if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) return;
       Entity attacker = event.getSource().getEntity();
       Entity direct = event.getSource().getDirectEntity();
       if (PaleRiderInfectionService.arePaleRiderAllies(event.getEntity(), attacker)
@@ -116,6 +118,7 @@ public final class PaleRiderEvents {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onPossessedRiderDamage(LivingIncomingDamageEvent event) {
+      if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) return;
       if (event.isCanceled() || !(event.getEntity() instanceof PaleRiderEntity rider) || !rider.hasPossessedHost()) return;
       rider.redirectPossessedDamage(event.getSource(), event.getAmount());
       event.setAmount(0.0F);
@@ -124,6 +127,7 @@ public final class PaleRiderEvents {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onPossessedCardDamage(LivingIncomingDamageEvent event) {
+      if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) return;
       if (!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)) return;
       var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || !"pale_rider".equals(vars.servant_card_id)) return;

@@ -627,4 +627,9 @@
       "category": "hostile", "subtitle": "subtitles.typemoonworld.zhao_yun.np",
       "sounds": [{"name": "typemoonworld:voice/zhao_yun/np_audio", "stream": true}]
     }
+    ,"senko_muramasa_voice_attack":{"category":"hostile","sounds":["typemoonworld:voice/senko_muramasa/attack1","typemoonworld:voice/senko_muramasa/attack2","typemoonworld:voice/senko_muramasa/attack3"]}
+    ,"senko_muramasa_voice_fail":{"category":"hostile","sounds":["typemoonworld:voice/senko_muramasa/fail1","typemoonworld:voice/senko_muramasa/fail2"]}
+    ,"senko_muramasa_voice_victory":{"category":"hostile","sounds":["typemoonworld:voice/senko_muramasa/victory1","typemoonworld:voice/senko_muramasa/victory2"]}
+    ,"senko_muramasa_voice_np":{"category":"hostile","sounds":["typemoonworld:voice/senko_muramasa/np"]}
+    ,"senko_muramasa_voice_tsumukari":{"category":"hostile","sounds":["typemoonworld:voice/senko_muramasa/tsumukari"]}
 }

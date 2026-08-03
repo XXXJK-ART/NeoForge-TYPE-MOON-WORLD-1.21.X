@@ -1,0 +1,1 @@
+{"id":"projection_volley_b","display_name":"Projection Volley B","display_name_zh":"投影连刃 B","type":"active","mp_cost":25,"cooldown_ticks":400,"duration_ticks":0,"effects":[{"effect_type":"projected_sword_volley","params":{"count":5,"damage_type":"sword"}}]}

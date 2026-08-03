@@ -37,6 +37,7 @@ public final class ServantCardVoiceHelper {
          case "ushiwakamaru_rider" -> ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get();
          case "arash" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "nightingale" -> ModSounds.NIGHTINGALE_VOICE_ATTACK.get();
+         case "senko_muramasa" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -70,6 +71,11 @@ public final class ServantCardVoiceHelper {
          case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
          case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
+         case "muramasa_no_gen_kensai" -> ModSounds.SENKO_MURAMASA_VOICE_NP.get();
+         case "muramasa_tsumukari" -> ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get();
+         case "muramasa_forge", "muramasa_workshop", "muramasa_trial_slash", "muramasa_karma_eye",
+            "muramasa_flame", "muramasa_projection_volley", "muramasa_temper", "muramasa_karma_slash",
+            "muramasa_sword_field" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
          default -> null;
       };
       play(player, sound, 40);

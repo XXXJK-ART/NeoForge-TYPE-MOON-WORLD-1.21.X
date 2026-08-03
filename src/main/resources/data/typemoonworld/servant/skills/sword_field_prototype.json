@@ -1,0 +1,1 @@
+{"id":"sword_field_prototype","display_name":"Prototype Blade Wilderness","display_name_zh":"刀剑荒野·试制","type":"active","mp_cost":40,"cooldown_ticks":600,"duration_ticks":15,"effects":[{"effect_type":"area_true_damage","params":{"radius":8,"amount":28}},{"effect_type":"burning","params":{"seconds":3}}]}

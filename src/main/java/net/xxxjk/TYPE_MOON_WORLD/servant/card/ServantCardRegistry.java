@@ -27,7 +27,8 @@ public final class ServantCardRegistry {
       new Entry("li_shuwen", "Li Shuwen", "李书文", true),
       new Entry("pale_rider", "Pale Rider", "苍白骑士", false),
       new Entry("ushiwakamaru_rider", "Ushiwakamaru (Rider)", "牛若丸（Rider）", true),
-      new Entry("zhao_yun_rider", "Zhao Yun (Rider)", "赵云（Rider）", true)
+      new Entry("zhao_yun_rider", "Zhao Yun (Rider)", "赵云（Rider）", true),
+      new Entry("senko_muramasa", "Senko Muramasa (Saber)", "千子村正", true)
    );
 
    private ServantCardRegistry() {

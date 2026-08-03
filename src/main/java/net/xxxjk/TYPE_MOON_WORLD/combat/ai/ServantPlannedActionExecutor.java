@@ -15,6 +15,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalProfileResolver;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
@@ -122,6 +124,29 @@ public final class ServantPlannedActionExecutor {
    public static Stage stage(ServantEntity entity) {
       ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
       return runtime == null ? null : runtime.stage;
+   }
+
+   /**
+    * Releases an action that is still trying to reach its target when the
+    * combat tempo supervisor demands direct melee.  Once an action has paid
+    * its resource cost and entered its telegraph, it owns the attack timeline
+    * and must be allowed to finish.
+    */
+   public static boolean cancelForMeleeOverride(ServantEntity entity, long now) {
+      ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
+      if (runtime == null || runtime.stage != Stage.APPROACH) return false;
+      entity.getNavigation().stop();
+      ServantNavigationHelper.clearMovementState(entity);
+      if (entity.level() instanceof ServerLevel level) {
+         CombatThreatService.clearForSource(level, entity.getUUID());
+      }
+      clear(entity);
+      entity.getPersistentData().remove("TypeMoonPlannedActionTargetX");
+      entity.getPersistentData().remove("TypeMoonPlannedActionTargetY");
+      entity.getPersistentData().remove("TypeMoonPlannedActionTargetZ");
+      entity.getPersistentData().remove("TypeMoonPlannedActionStalledTicks");
+      entity.getPersistentData().remove("TypeMoonCombatThreat");
+      return true;
    }
 
    public static boolean interrupt(ServantEntity entity, int power, long now) {
@@ -235,7 +260,11 @@ public final class ServantPlannedActionExecutor {
          if (requiresLineOfSight(action.threat().shape()) && !entity.getSensing().hasLineOfSight(victim)) continue;
          float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE)
             * action.maneuver().effectiveDamageScale(action.tags().contains(AiActionDescriptor.Tag.FINISHER)));
-         if (!victim.hurt(entity.damageSources().mobAttack(entity), damage)) continue;
+         boolean damaged = victim.hurt(entity.damageSources().mobAttack(entity), damage);
+         ServantCombatTempoService.recordContact(entity, victim,
+            damaged ? ServantCombatTempoService.ContactType.DAMAGE
+               : ServantCombatTempoService.ContactType.BLOCKED, now);
+         if (!damaged) continue;
          if (action.tags().contains(AiActionDescriptor.Tag.INTERRUPT) && victim instanceof ServantEntity servant) {
             interrupt(servant, action.maneuver().interruptLevel(), now);
          }

@@ -109,6 +109,9 @@ public final class ServantVoiceHelper {
       } else if (isNightingale(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_ATTACK.get());
+      } else if (isMuramasa(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get());
       }
    }
 
@@ -180,6 +183,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_VICTORY.get());
       } else if (isNightingale(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_VICTORY.get());
+      } else if (isMuramasa(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_VICTORY.get());
       }
    }
 
@@ -223,6 +228,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_FAIL.get());
       } else if (isNightingale(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_FAIL.get());
+      } else if (isMuramasa(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_FAIL.get());
       }
    }
 
@@ -374,6 +381,18 @@ public final class ServantVoiceHelper {
       }
 
       playVoiceForced(servant, "oda_np", 1.1F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_NP.get());
+   }
+
+   public static void tryPlayMuramasaNp(ServantEntity servant) {
+      if (isMuramasa(servant)) {
+         playVoiceForced(servant, "muramasa_np", 1.15F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_NP.get());
+      }
+   }
+
+   public static void tryPlayMuramasaTsumukari(ServantEntity servant) {
+      if (isMuramasa(servant)) {
+         playVoiceForced(servant, "muramasa_tsumukari", 1.2F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get());
+      }
    }
 
    public static void tryPlayOdaNobunagaHajun(ServantEntity servant) {
@@ -567,5 +586,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isNightingale(ServantEntity servant) {
       return servant != null && NightingaleEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isMuramasa(ServantEntity servant) {
+      return servant != null && SenkoMuramasaEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

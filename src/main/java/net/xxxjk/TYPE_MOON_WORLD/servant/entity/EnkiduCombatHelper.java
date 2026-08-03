@@ -2518,6 +2518,10 @@ public final class EnkiduCombatHelper {
       float before = target.getHealth();
       target.hurt(entity.damageSources().magic(), amount);
       target.invulnerableTime = 0;
+      // Do not let the no-defense fallback overwrite a God Hand revival.
+      if (target.getPersistentData().getBoolean("GodHandActive")) {
+         return;
+      }
       float expected = before - amount;
       if (target.isAlive() && target.getHealth() > expected) {
          target.setHealth(Math.max(0.0F, expected));

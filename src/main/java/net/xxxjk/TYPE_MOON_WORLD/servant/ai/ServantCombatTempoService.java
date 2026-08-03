@@ -21,6 +21,8 @@ public final class ServantCombatTempoService {
    public static final int MAX_DISCONNECTED_TICKS = 200;
    public static final int MELEE_PRESSURE_MIN = 60;
    public static final int MELEE_PRESSURE_MAX = 100;
+   public static final int ORBIT_DETECTION_TICKS = 40;
+   public static final int MELEE_OVERRIDE_TICKS = 100;
 
    private static final String PREFIX = "TypeMoonCombatTempo";
    private static final String TARGET = PREFIX + "Target";
@@ -33,6 +35,14 @@ public final class ServantCombatTempoService {
    private static final String LAST_BASIC = PREFIX + "LastBasic";
    private static final String LAST_FAILURE = PREFIX + "LastFailure";
    private static final String LAST_BREAK = PREFIX + "LastBreak";
+   private static final String LAST_DISTANCE = PREFIX + "LastDistance";
+   private static final String LAST_ANGLE = PREFIX + "LastAngle";
+   private static final String ANGLE_TRAVEL = PREFIX + "AngleTravel";
+   private static final String ORBIT_STALL = PREFIX + "OrbitStall";
+   private static final String ORBIT_REVERSALS = PREFIX + "OrbitReversals";
+   private static final String ORBIT_DIRECTION = PREFIX + "OrbitDirection";
+   private static final String ORBITING = PREFIX + "Orbiting";
+   private static final String MELEE_OVERRIDE = PREFIX + "MeleeOverride";
    private static final int BASIC_COOLDOWN = 10;
 
    private ServantCombatTempoService() { }
@@ -50,6 +60,7 @@ public final class ServantCombatTempoService {
          data.putDouble(LAST_X, servant.getX());
          data.putDouble(LAST_Y, servant.getY());
          data.putDouble(LAST_Z, servant.getZ());
+         initializeOrbitMetrics(data, servant, target);
          data.remove(PRESSURE_UNTIL);
       }
 
@@ -62,16 +73,22 @@ public final class ServantCombatTempoService {
          data.putDouble(LAST_Y, servant.getY());
          data.putDouble(LAST_Z, servant.getZ());
       }
-      if (servant.distanceTo(target) <= 4.2) {
-         data.putLong(LAST_CONTACT, now);
+      double distance = servant.distanceTo(target);
+      updateOrbitMetrics(servant, target, data, now, distance);
+      if (distance <= 4.2) {
          int pressure = pressureWindow(servant, target);
          data.putLong(PRESSURE_UNTIL, Math.max(data.getLong(PRESSURE_UNTIL), now + pressure));
       }
       long lastContact = data.getLong(LAST_CONTACT);
       long disconnected = Math.max(0L, now - lastContact);
+      boolean orbiting = data.getBoolean(ORBITING);
+      // Orbiting changes the movement choice immediately, but the hard melee
+      // takeover remains the explicit five-second no-contact deadline.
+      boolean override = disconnected >= MELEE_OVERRIDE_TICKS;
+      data.putBoolean(MELEE_OVERRIDE, override);
       int stage = stageForDisconnectedTicks(disconnected);
       return new TempoState(target.getUUID(), lastContact, data.getLong(LAST_PROGRESS),
-         stage, data.getLong(PRESSURE_UNTIL) > now, disconnected);
+         stage, data.getLong(PRESSURE_UNTIL) > now, disconnected, orbiting, override);
    }
 
    public static boolean submitFallback(ServantEntity servant, LivingEntity target, AiBrain brain, long now,
@@ -126,12 +143,17 @@ public final class ServantCombatTempoService {
    }
 
    public static void recordContact(ServantEntity servant, LivingEntity target, ContactType type, long now) {
-      if (servant == null || target == null || !target.isAlive()) return;
+      // Record the exchange even when this hit is lethal; the next tick will
+      // clear the target state through the normal dead-target path.
+      if (servant == null || target == null) return;
       CompoundTag data = servant.getPersistentData();
       data.putUUID(TARGET, target.getUUID());
       data.putLong(LAST_CONTACT, now);
       data.putLong(LAST_FAILURE, type.ordinal());
       data.putLong(PRESSURE_UNTIL, Math.max(data.getLong(PRESSURE_UNTIL), now + pressureWindow(servant, target)));
+      initializeOrbitMetrics(data, servant, target);
+      data.putBoolean(ORBITING, false);
+      data.putBoolean(MELEE_OVERRIDE, false);
    }
 
    public static void clear(ServantEntity servant) {
@@ -145,10 +167,26 @@ public final class ServantCombatTempoService {
       data.remove(LAST_Z);
       data.remove(PRESSURE_UNTIL);
       data.remove(LAST_FAILURE);
+      data.remove(LAST_DISTANCE);
+      data.remove(LAST_ANGLE);
+      data.remove(ANGLE_TRAVEL);
+      data.remove(ORBIT_STALL);
+      data.remove(ORBIT_REVERSALS);
+      data.remove(ORBIT_DIRECTION);
+      data.remove(ORBITING);
+      data.remove(MELEE_OVERRIDE);
    }
 
    public static boolean inMeleePressure(ServantEntity servant, long now) {
       return servant != null && servant.getPersistentData().getLong(PRESSURE_UNTIL) > now;
+   }
+
+   public static boolean isOrbiting(ServantEntity servant) {
+      return servant != null && servant.getPersistentData().getBoolean(ORBITING);
+   }
+
+   public static boolean isMeleeOverride(ServantEntity servant) {
+      return servant != null && servant.getPersistentData().getBoolean(MELEE_OVERRIDE);
    }
 
    public static long disconnectedTicks(ServantEntity servant, long now) {
@@ -208,8 +246,60 @@ public final class ServantCombatTempoService {
 
    public enum ContactType { RANGE, DAMAGE, BLOCKED, LAUNCH, WALL, LANDING }
 
+   private static void initializeOrbitMetrics(CompoundTag data, ServantEntity servant, LivingEntity target) {
+      if (servant == null || target == null) return;
+      Vec3 relative = servant.position().subtract(target.position());
+      data.putDouble(LAST_DISTANCE, relative.length());
+      data.putDouble(LAST_ANGLE, Math.atan2(relative.z, relative.x));
+      data.putDouble(ANGLE_TRAVEL, 0.0);
+      data.putInt(ORBIT_STALL, 0);
+      data.putInt(ORBIT_REVERSALS, 0);
+      data.putInt(ORBIT_DIRECTION, 0);
+      data.putBoolean(ORBITING, false);
+   }
+
+   private static void updateOrbitMetrics(ServantEntity servant, LivingEntity target, CompoundTag data,
+                                          long now, double distance) {
+      if (!data.contains(LAST_DISTANCE) || !data.contains(LAST_ANGLE)) {
+         initializeOrbitMetrics(data, servant, target);
+         return;
+      }
+      Vec3 relative = servant.position().subtract(target.position());
+      double angle = Math.atan2(relative.z, relative.x);
+      double delta = angle - data.getDouble(LAST_ANGLE);
+      while (delta > Math.PI) delta -= Math.PI * 2.0;
+      while (delta < -Math.PI) delta += Math.PI * 2.0;
+      double previousDistance = data.getDouble(LAST_DISTANCE);
+      int stall = data.getInt(ORBIT_STALL);
+      if (distance < previousDistance - 0.12) stall = 0;
+      else if (distance > 4.35) stall++;
+      else stall = Math.max(0, stall - 1);
+      if (Math.abs(delta) > 0.035) {
+         int direction = delta > 0.0 ? 1 : -1;
+         int previousDirection = data.getInt(ORBIT_DIRECTION);
+         if (previousDirection != 0 && previousDirection != direction) {
+            data.putInt(ORBIT_REVERSALS, data.getInt(ORBIT_REVERSALS) + 1);
+         }
+         data.putInt(ORBIT_DIRECTION, direction);
+         data.putDouble(ANGLE_TRAVEL, data.getDouble(ANGLE_TRAVEL) + Math.abs(delta));
+      }
+      data.putDouble(LAST_DISTANCE, distance);
+      data.putDouble(LAST_ANGLE, angle);
+      data.putInt(ORBIT_STALL, stall);
+      boolean orbiting = distance > 4.35 && stall >= ORBIT_DETECTION_TICKS
+         && (data.getDouble(ANGLE_TRAVEL) >= 1.8 || data.getInt(ORBIT_REVERSALS) >= 3);
+      data.putBoolean(ORBITING, orbiting);
+   }
+
    public record TempoState(java.util.UUID target, long lastContact, long lastProgress,
-                            int stage, boolean meleePressure, long disconnectedTicks) {
-      private static final TempoState EMPTY = new TempoState(null, 0L, 0L, 0, false, 0L);
+                            int stage, boolean meleePressure, long disconnectedTicks,
+                            boolean orbiting, boolean meleeOverride) {
+      /** Source-compatible constructor for integrations built against phase one. */
+      public TempoState(java.util.UUID target, long lastContact, long lastProgress,
+                        int stage, boolean meleePressure, long disconnectedTicks) {
+         this(target, lastContact, lastProgress, stage, meleePressure, disconnectedTicks, false, false);
+      }
+
+      private static final TempoState EMPTY = new TempoState(null, 0L, 0L, 0, false, 0L, false, false);
    }
 }

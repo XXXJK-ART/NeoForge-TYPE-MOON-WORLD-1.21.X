@@ -32,6 +32,15 @@ public final class CombatThreatService {
       threats.add(threat);
    }
 
+   /** Removes stale telegraphs when an approach action is surrendered to melee. */
+   public static void clearForSource(ServerLevel level, UUID sourceUuid) {
+      if (level == null || sourceUuid == null) return;
+      List<CombatThreat> threats = THREATS.get(level.dimension());
+      if (threats == null) return;
+      threats.removeIf(threat -> sourceUuid.equals(threat.sourceUuid()));
+      if (threats.isEmpty()) THREATS.remove(level.dimension());
+   }
+
    public static CombatThreat publishWindup(LivingEntity caster, LivingEntity target, ResourceLocation actionId,
                                              int windupTicks, boolean ranged, int danger) {
       if (!(caster.level() instanceof ServerLevel level)) return null;

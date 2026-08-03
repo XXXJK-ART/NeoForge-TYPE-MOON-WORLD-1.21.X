@@ -1,0 +1,1 @@
+{"id":"sword_aesthetics_a","display_name":"Sword Aesthetics A","display_name_zh":"刀剑审美 A","type":"passive","mp_cost":0,"cooldown_ticks":0,"duration_ticks":0,"effects":[{"effect_type":"sword_damage_bonus","params":{"bonus":0.20,"include_vanilla_swords":true}}]}

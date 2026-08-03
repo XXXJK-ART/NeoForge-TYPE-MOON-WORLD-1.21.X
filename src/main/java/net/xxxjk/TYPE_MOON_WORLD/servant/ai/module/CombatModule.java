@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshCombatHelper;
@@ -55,6 +56,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
@@ -79,7 +81,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
-import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 import java.util.List;
@@ -322,6 +323,12 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      LivingEntity sharedTarget = context.target();
+      if (sharedTarget != null && sharedTarget.isAlive()
+         && ServantCombatTempoService.isMeleeOverride(entity)
+         && forceMeleeContact(entity, sharedTarget, context.gameTick())) {
+         return;
+      }
       if (entity instanceof ArashEntity arash) {
          ArashCombatHelper.tick(arash, context);
          return;
@@ -330,12 +337,10 @@ public final class CombatModule implements ServantAiModule {
       if (entity instanceof NightingaleEntity) {
          return;
       }
-      LivingEntity sharedTarget = context.target();
       if (sharedTarget != null && ServantCombatSystem.skillsSuppressed(entity)) {
          entity.getLookControl().setLookAt(sharedTarget, 30.0F, 30.0F);
          if (entity.distanceTo(sharedTarget) <= 2.7 && !entity.isPerformingAction()) {
-            entity.triggerAttackSwing();
-            entity.doHurtTarget(sharedTarget);
+            ServantCombatTempoService.tryBasicAttack(entity, sharedTarget, context.gameTick());
          } else {
             moveToTargetThrottled(entity, sharedTarget, 1.1, (int)entity.level().getGameTime(), 0.8);
          }
@@ -475,7 +480,11 @@ public final class CombatModule implements ServantAiModule {
                && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
                && context.gameTick() % 34 == 0) {
                entity.triggerAttackSwing();
-               if (entity.doHurtTarget(sharedTarget)) ParacelsusServantSkills.markCombatAction(paracelsus, context.gameTick(), 20L);
+               boolean hit = entity.doHurtTarget(sharedTarget);
+               ServantCombatTempoService.recordContact(entity, sharedTarget,
+                  hit ? ServantCombatTempoService.ContactType.DAMAGE
+                     : ServantCombatTempoService.ContactType.BLOCKED, context.gameTick());
+               if (hit) ParacelsusServantSkills.markCombatAction(paracelsus, context.gameTick(), 20L);
                return;
             }
             if (context.definition().specialization().hasCombatAction("philosopher_stone")
@@ -521,6 +530,10 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
       if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {
+         return;
+      }
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.SenkoMuramasaEntity muramasa
+         && MuramasaCombatHelper.tick(muramasa, context)) {
          return;
       }
       LivingEntity target = context.target();
@@ -735,7 +748,10 @@ public final class CombatModule implements ServantAiModule {
             }
             // 冲刺结束后对目标造成伤害
             if (distance <= 3.5) {
-               entity.doHurtTarget(target);
+               boolean hit = entity.doHurtTarget(target);
+               ServantCombatTempoService.recordContact(entity, target,
+                  hit ? ServantCombatTempoService.ContactType.DAMAGE
+                     : ServantCombatTempoService.ContactType.BLOCKED, tick);
                entity.triggerAttackSwing();
                applyDivinityDamage(entity, target, data);
                applyMadEnhancementDamage(entity, target, data);
@@ -998,7 +1014,10 @@ public final class CombatModule implements ServantAiModule {
             return;
          }
          data.putInt("LastBasicAttackTick", tick);
-         entity.doHurtTarget(target);
+         boolean hit = entity.doHurtTarget(target);
+         ServantCombatTempoService.recordContact(entity, target,
+            hit ? ServantCombatTempoService.ContactType.DAMAGE
+               : ServantCombatTempoService.ContactType.BLOCKED, tick);
          entity.triggerAttackSwing();
          applyDivinityDamage(entity, target, data);
          applyMadEnhancementDamage(entity, target, data);
@@ -1026,6 +1045,33 @@ public final class CombatModule implements ServantAiModule {
                FRENZY_SPEED_RES, 0.05, AttributeModifier.Operation.ADD_VALUE));
          }
       }
+   }
+
+   private boolean forceMeleeContact(ServantEntity entity, LivingEntity target, long now) {
+      // Forced contact owns facing as well as movement.  Apply it before any
+      // action/cc early return so a stunned or animating servant never turns
+      // away from the opponent while the override is active.
+      entity.getLookControl().setLookAt(target, 75.0F, 75.0F);
+      entity.faceToward(target.position());
+      if (ServantCombatSystem.cannotAct(entity) || entity.isPerformingAction()) return true;
+      double distance = entity.distanceTo(target);
+      if (distance > 4.35) {
+         entity.setSprinting(true);
+         boolean moved = ServantNavigationHelper.moveToTargetThrottled(
+            entity, target,
+            entity instanceof HeraclesEntity || entity instanceof GawainEntity ? 1.85 : 1.55,
+            now, ServantNavigationHelper.SHORT_REPATH_INTERVAL, 0.12, "MeleeOverrideApproach");
+         ServantNavigationHelper.tryMeleeClosingBurst(entity, target, now);
+         if (!moved && entity.horizontalCollision
+            && (entity instanceof HeraclesEntity
+               || entity instanceof GawainEntity gawain && GawainCombatHelper.hasSunBlessing(gawain))) {
+            breakForwardBlocks(entity);
+         }
+         ServantNavigationHelper.limitMeleeApproachMotion(entity, target);
+         return true;
+      }
+      ServantNavigationHelper.stopIfMoving(entity);
+      return ServantCombatTempoService.tryBasicAttack(entity, target, now) || distance <= 4.35;
    }
 
    /**
@@ -1635,7 +1681,7 @@ public final class CombatModule implements ServantAiModule {
     * 燕返（Tsurigameshi）：必杀一击特效增强版
     */
    private void performTsurigameshi(ServantEntity entity, LivingEntity target) {
-      if (!(entity.level() instanceof ServerLevel sl)) return;
+      if (!(entity.level() instanceof ServerLevel sl) || EntityUtils.isImmunePlayerTarget(target)) return;
       if (SasakiKojiroCombatHelper.isSasakiKojiro(entity)) {
          float hitChance = SasakiKojiroCombatHelper.getTsurigameshiHitChance(entity);
          if (hitChance <= 0.0F) {
@@ -2310,6 +2356,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void applyFixedNoArmorDamage(ServantEntity attacker, LivingEntity target, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) return;
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), damage);
@@ -2321,6 +2368,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private boolean tryConsumeGodHandLife(ServantEntity attacker, LivingEntity target, float incomingDamage, boolean deathThorn) {
+      if (EntityUtils.isImmunePlayerTarget(target)) return false;
       CompoundTag targetData = target.getPersistentData();
       if (targetData.getBoolean("CausalSevered") || !targetData.getBoolean("GodHandActive")) {
          return false;
@@ -2352,6 +2400,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) return;
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), lethalDamage);

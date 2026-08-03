@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 
 public final class ServantCardDefenseHandler {
    private static final String TAG_PREFIX = "ServantCardCombat";
@@ -98,6 +99,12 @@ public final class ServantCardDefenseHandler {
          return true;
       }
       if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return false;
+      }
+      if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
+         event.setCanceled(false);
+         event.setAmount(Float.MAX_VALUE);
+         event.setInvulnerabilityTicks(0);
          return false;
       }
       if (OriginBulletHelper.isOriginBulletDamage(event.getSource())) {
@@ -455,8 +462,9 @@ public final class ServantCardDefenseHandler {
       if (player.getRandom().nextDouble() > chance) {
          return false;
       }
+      boolean zhaoYun = "zhao_yun_rider".equals(vars.servant_card_id);
       double cost = Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * ("emiya_archer".equals(vars.servant_card_id) ? 0.55 : 1.0));
-      if (!ServantCardManaService.consume(player, vars, cost)) {
+      if (!zhaoYun && !ServantCardManaService.consume(player, vars, cost)) {
          return false;
       }
       data.putLong(TAG_LAST_DODGE_TICK, now);

@@ -36,8 +36,10 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
+import net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes;
 import org.jetbrains.annotations.Nullable;
 
 public final class ZhaoYunRiderEntity extends ServantEntity {
@@ -58,12 +60,17 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private static final String TAG_AOKO_COOLDOWN = "ZhaoYunAokoSwordCooldown";
    private static final String TAG_TECHNIQUE_COOLDOWN = "ZhaoYunTechniqueCooldown";
    private static final String TAG_TECHNIQUE_INDEX = "ZhaoYunTechniqueIndex";
+   public static final String TAG_FORCE_MELEE_UNTIL = "ZhaoYunForceMeleeUntil";
+   private static final String TAG_ORBIT_TICKS = "ZhaoYunOrbitTicks";
+   private static final String TAG_ORBIT_LAST_DISTANCE = "ZhaoYunOrbitLastDistance";
+   private static final String TAG_ORBIT_TARGET = "ZhaoYunOrbitTarget";
    private static final int NP_DURATION = 300;
    private static final int NP_CHANT_DURATION = 60;
    private static final int NP_COOLDOWN = 800;
    private static final float NP_INITIAL_DAMAGE = 500.0F;
    private static final double NP_INITIAL_DISTANCE = 50.0;
    private static final float NP_DAMAGE = 100.0F;
+   private static final double CHANGBANPO_MP_COST = 150.0;
    private static final int AOKO_DURATION = 300;
    private static final int AOKO_COOLDOWN = 400;
    private static final int AOKO_SECOND_STRIKE_DELAY = 10;
@@ -202,14 +209,24 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          getPersistentData().putBoolean("ZhaoYunDragonGallActive", false);
       }
 
-      LivingEntity master = getEntityMaster();
-      if (master != null && master.getHealth() <= master.getMaxHealth() * 0.5F
+      ServerPlayer master = getEntityMaster();
+      if (master == null || !master.isAlive() || master.level() != level) {
+         // Master-protection skills are unavailable for a masterless Zhao
+         // Yun. Clear any stale rescue state left by a broken contract so it
+         // cannot keep protecting an old player after unbinding.
+         getPersistentData().remove("ZhaoYunRescueUntil");
+         getPersistentData().remove("ZhaoYunRescueDefenseUntil");
+      } else if (master.getHealth() <= master.getMaxHealth() * 0.5F
          && getCurrentMp() >= 20.0 && now >= getPersistentData().getLong("ZhaoYunRescueCooldown")) {
          setCurrentMp(getCurrentMp() - 20.0);
          getPersistentData().putLong("ZhaoYunRescueCooldown", now + 400L);
          getPersistentData().putLong("ZhaoYunRescueUntil", now + 1200L);
-         addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 1200, 1, true, false));
-         master.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 1200, 1, true, false));
+         // Resistance I plus the shared incoming-damage factor in
+         // CommonEvents gives the intended 30% rescue defense.
+         addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 1200, 0, true, false));
+         master.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 1200, 0, true, false));
+         getPersistentData().putLong("ZhaoYunRescueDefenseUntil", now + 1200L);
+         master.getPersistentData().putLong("ZhaoYunRescueDefenseUntil", now + 1200L);
          triggerNamedActionAnimation("rescue");
          VFXServerEffects.spawnReplayable(level, "servant_zhao_yun_rescue", master, 32.0F);
       }
@@ -238,15 +255,13 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          Entity entity = level.getEntity(pending.targetId);
          if (!(entity instanceof LivingEntity target) || !target.isAlive()
             || target == this || target == getHakuryu() || target == getEntityMaster()
-            || isAlliedTo(target)) continue;
+            || isAlliedTo(target) || EntityUtils.isImmunePlayerTarget(target)) continue;
 
          float damage = AOKO_SECOND_STRIKE_BASE_DAMAGE;
          target.invulnerableTime = 0;
-         float remaining = Math.max(0.0F, target.getHealth() - damage);
-         target.setHealth(remaining);
-         if (remaining <= 0.0F && !target.isDeadOrDying()) {
-            target.die(damageSources().mobAttack(this));
-         }
+         // Qinggang's follow-up is a genuine delayed attack: it bypasses
+         // armor, but not evasion, i-frames, or Twelve Trials.
+         target.hurt(damageSources().source(ZhaoYunDamageTypes.QINGGANG_SECOND_HIT, this), damage);
          level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55,
             target.getZ(), 8, 0.18, 0.25, 0.18, 0.02);
          level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT,
@@ -273,8 +288,10 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private void tickZhaoYunTechniques(ServerLevel level) {
       if (isChangbanpoCasting()) return;
       LivingEntity target = getTarget();
-      if (target == null || !target.isAlive() || isAlliedTo(target)) return;
+      if (target == null || !target.isAlive() || isAlliedTo(target)
+         || EntityUtils.isImmunePlayerTarget(target)) return;
       long now = level.getGameTime();
+      if (getPersistentData().getLong(TAG_FORCE_MELEE_UNTIL) > now) return;
       if (now < getPersistentData().getLong(TAG_TECHNIQUE_COOLDOWN)) return;
 
       ZhaoYunHakuryuEntity mount = getVehicle() instanceof ZhaoYunHakuryuEntity value && value.isAlive() ? value : null;
@@ -304,25 +321,81 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    /** Dedicated combat loop used by CombatModule instead of the generic servant fallback. */
    public void tickDedicatedCombat(LivingEntity target, long now) {
-      if (!(level() instanceof ServerLevel level) || target == null || !target.isAlive() || isAlliedTo(target)) return;
+      if (!(level() instanceof ServerLevel level) || target == null || !target.isAlive()
+         || isAlliedTo(target) || EntityUtils.isImmunePlayerTarget(target)) {
+         if (target != null && EntityUtils.isImmunePlayerTarget(target)) setTarget(null);
+         return;
+      }
       setTarget(target);
       getLookControl().setLookAt(target, 45.0F, 45.0F);
       if (isChangbanpoActive() || isPerformingAction()) return;
 
       double distance = distanceTo(target);
+      updateOrbitRecovery(target, distance, now);
+      boolean forceMelee = getPersistentData().getLong(TAG_FORCE_MELEE_UNTIL) > now;
       if (isChangbanpoCharging()) {
          if (!isPassenger() && distance > 4.0) getNavigation().moveTo(target, 1.15);
          return;
       }
       if (distance <= 5.5 && now - getPersistentData().getLong("ZhaoYunLastBasicAttack") >= 10L) {
          getPersistentData().putLong("ZhaoYunLastBasicAttack", now);
+         resetOrbitRecovery();
          triggerAttackSwing();
          doHurtTarget(target);
+         return;
+      }
+      if (forceMelee) {
+         // Break out of high-speed circling and deliberately close the
+         // distance for a short, stable point-blank melee window.
+         Vec3 toward = horizontalDirection(target);
+         if (toward != null) {
+            if (isPassenger() && getVehicle() instanceof ZhaoYunHakuryuEntity mount) {
+               mount.setYRot((float)(Math.atan2(-toward.x, toward.z) * 180.0 / Math.PI));
+               mount.setDeltaMovement(toward.scale(Math.min(0.62,
+                  Math.max(0.42, mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.15)))
+                  .add(0.0, mount.getDeltaMovement().y, 0.0));
+               mount.hasImpulse = true;
+            } else {
+               getNavigation().moveTo(target, 0.78);
+            }
+         }
          return;
       }
       if (!isPassenger() && distance > 4.0) {
          getNavigation().moveTo(target, getCombatPhase() >= 3 ? 1.35 : 1.2);
       }
+   }
+
+   private void updateOrbitRecovery(LivingEntity target, double distance, long now) {
+      CompoundTag data = getPersistentData();
+      if (!data.hasUUID(TAG_ORBIT_TARGET) || !data.getUUID(TAG_ORBIT_TARGET).equals(target.getUUID())) {
+         data.putUUID(TAG_ORBIT_TARGET, target.getUUID());
+         data.putDouble(TAG_ORBIT_LAST_DISTANCE, distance);
+         data.putInt(TAG_ORBIT_TICKS, 0);
+         return;
+      }
+      double previousDistance = data.getDouble(TAG_ORBIT_LAST_DISTANCE);
+      boolean stableBand = distance >= 3.0 && distance <= 11.0
+         && Math.abs(distance - previousDistance) < 0.22;
+      int orbitTicks = data.getInt(TAG_ORBIT_TICKS);
+      if (stableBand) {
+         orbitTicks++;
+      } else {
+         orbitTicks = Math.max(0, orbitTicks - 3);
+      }
+      data.putDouble(TAG_ORBIT_LAST_DISTANCE, distance);
+      if (orbitTicks >= 100) {
+         data.putLong(TAG_FORCE_MELEE_UNTIL, now + 100L);
+         data.putLong(TAG_TECHNIQUE_COOLDOWN, now + 100L);
+         orbitTicks = 0;
+      }
+      data.putInt(TAG_ORBIT_TICKS, orbitTicks);
+   }
+
+   private void resetOrbitRecovery() {
+      CompoundTag data = getPersistentData();
+      data.putInt(TAG_ORBIT_TICKS, 0);
+      data.remove(TAG_FORCE_MELEE_UNTIL);
    }
 
    private boolean performSpearLungingThrust(ServerLevel level, LivingEntity target) {
@@ -414,7 +487,8 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
                                      double knockback, double verticalKnockback) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box,
          entity -> entity != this && entity != getHakuryu() && entity.isAlive()
-            && !isAlliedTo(entity) && entity != getEntityMaster())) {
+            && !isAlliedTo(entity) && entity != getEntityMaster()
+            && !EntityUtils.isImmunePlayerTarget(entity))) {
          victim.hurt(damageSources().mobAttack(this), (float)damage);
          Vec3 push = direction != null ? direction : victim.position().subtract(position()).multiply(1.0, 0.0, 1.0).normalize();
          if (push.lengthSqr() > 1.0E-4) {
@@ -516,10 +590,10 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    }
 
    public boolean startChangbanpo() {
-      if (!(level() instanceof ServerLevel level) || isChangbanpoCasting() || isAokoSwordActive() || getCurrentMp() < 80.0
+      if (!(level() instanceof ServerLevel level) || isChangbanpoCasting() || isAokoSwordActive() || getCurrentMp() < CHANGBANPO_MP_COST
          || !hasMasterNoblePhantasmPermission()
          || level.getGameTime() < getPersistentData().getLong(TAG_NP_COOLDOWN)) return false;
-      setCurrentMp(getCurrentMp() - 80.0);
+      setCurrentMp(getCurrentMp() - CHANGBANPO_MP_COST);
       long now = level.getGameTime();
       getPersistentData().putLong(TAG_NP_CHANT_UNTIL, now + NP_CHANT_DURATION);
       getPersistentData().putLong(TAG_NP_COOLDOWN, level.getGameTime() + NP_COOLDOWN);
@@ -685,25 +759,21 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          master.startRiding(mount, true);
       }
       Set<UUID> contactsThisTick = new HashSet<>();
-      boolean initialChargeHit = false;
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && entity != mount && entity.isAlive() && entity != getEntityMaster()
-            && !isAlliedTo(entity))) {
+            && !isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
          UUID victimId = victim.getUUID();
          contactsThisTick.add(victimId);
          if (!npContactTargets.contains(victimId)) {
             victim.invulnerableTime = 0;
             float collisionDamage = initialCharge ? NP_INITIAL_DAMAGE : NP_DAMAGE;
-            float remaining = Math.max(0.0F, victim.getHealth() - collisionDamage);
-            victim.setHealth(remaining);
-            if (remaining <= 0.0F && !victim.isDeadOrDying()) {
-               victim.die(damageSources().mobAttack(this));
-            }
+            // Route collision damage through the normal damage event. Direct
+            // setHealth() bypassed Twelve Trials, Battle Continuation, dodge,
+            // and other servant-specific defensive rules.
+            victim.hurt(damageSources().mobAttack(this), collisionDamage);
             victim.invulnerableTime = 0;
-            if (initialCharge) initialChargeHit = true;
          }
       }
-      if (initialChargeHit) getPersistentData().putBoolean(TAG_NP_INITIAL_CHARGE, false);
       npContactTargets.retainAll(contactsThisTick);
       npContactTargets.addAll(contactsThisTick);
    }
@@ -714,7 +784,8 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       AABB search = mount.getBoundingBox().inflate(48.0, 12.0, 48.0);
       for (LivingEntity candidate : level.getEntitiesOfClass(LivingEntity.class, search,
          entity -> entity != this && entity != mount && entity.isAlive()
-            && entity != getEntityMaster() && !isAlliedTo(entity))) {
+            && entity != getEntityMaster() && !isAlliedTo(entity)
+            && !EntityUtils.isImmunePlayerTarget(entity))) {
          double distance = mount.distanceToSqr(candidate);
          if (distance < nearestDistance) {
             nearest = candidate;

@@ -59,6 +59,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ARASH);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER);
+                        output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
@@ -101,6 +102,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_LEGS);
                     }).build());
 
     public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
@@ -391,6 +394,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
+                        output.accept(ModItems.SENKO_MURAMASA_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                         output.accept(ModItems.PARACELSUS_SPAWN_EGG);
                         output.accept(ModItems.PALE_RIDER_SPAWN_EGG);

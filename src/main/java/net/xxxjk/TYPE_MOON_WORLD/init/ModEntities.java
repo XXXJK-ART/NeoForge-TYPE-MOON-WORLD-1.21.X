@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SenkoMuramasaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
@@ -448,6 +449,10 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArcherEntity>> EMIYA_ARCHER = ENTITY_TYPES.register(
       "emiya_archer", () -> Builder.of(EmiyaArcherEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("emiya_archer")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<SenkoMuramasaEntity>> SENKO_MURAMASA = ENTITY_TYPES.register(
+      "senko_muramasa", () -> Builder.of(SenkoMuramasaEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).build("senko_muramasa")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ArashEntity>> ARASH = ENTITY_TYPES.register(
       "arash", () -> Builder.of(ArashEntity::new, MobCategory.CREATURE)

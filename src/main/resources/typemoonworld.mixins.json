@@ -16,6 +16,7 @@
     "client.EntityRenderDispatcherMixin",
     "client.NeatHealthBarRendererMixin",
     "client.MixinMinecraft",
+    "client.LocalPlayerHakuryuDismountMixin",
     "client.PlayerModelMixin",
     "client.PlayerRendererMixin",
     "client.RenderBuffersMixin"

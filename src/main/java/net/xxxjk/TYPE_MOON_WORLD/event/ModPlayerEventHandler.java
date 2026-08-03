@@ -192,6 +192,7 @@ public class ModPlayerEventHandler {
          if (vars.servant_card_transformed) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);
             if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+               ServantCardZhaoYunSkills.markCombatActivity(player);
                net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.onZhaoYunAttack(player, target);
             }
          }
@@ -220,6 +221,9 @@ public class ModPlayerEventHandler {
          || !"zhao_yun_rider".equals(vars.servant_card_id)) {
          return false;
       }
+      // This is Zhao Yun's ordinary weapon thrust, not a skill-slot action:
+      // it deliberately bypasses the mana-cost pipeline and only keeps its
+      // own 0.5-second action cooldown.
       return ServantCardZhaoYunSkills.performNormalSpearThrust(serverPlayer);
    }
 

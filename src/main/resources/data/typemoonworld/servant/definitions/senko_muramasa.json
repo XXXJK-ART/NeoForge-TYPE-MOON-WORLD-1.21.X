@@ -1,0 +1,61 @@
+{
+  "id": "senko_muramasa",
+  "display_name": "Senko Muramasa (Saber)",
+  "display_name_zh": "千子村正",
+  "class_type": "saber",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "human", "human_kind", "male", "saber", "chaotic", "neutral_alignment", "balanced", "sapient"],
+  "parameters": {
+    "endurance": "A",
+    "strength": "B",
+    "agility": "D",
+    "magic": "E",
+    "luck": "B"
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/senko_muramasa.geo.json",
+    "texture": "typemoonworld:textures/entity/senko_muramasa.png",
+    "animation": "typemoonworld:animations/senko_muramasa.animation.json",
+    "animations": {
+      "idle": "animation.senko_muramasa.idle",
+      "walk": "animation.senko_muramasa.walk",
+      "charge": "animation.senko_muramasa.charge",
+      "sweep": "animation.senko_muramasa.sweep",
+      "slash": "animation.senko_muramasa.slash",
+      "uppercut": "animation.senko_muramasa.uppercut",
+      "horizontal_swing": "animation.senko_muramasa.horizontal_swing",
+      "np": "animation.senko_muramasa.np"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
+    "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
+    "default_weapon": "typemoonworld:redsword",
+    "combat_actions": ["slash", "sweep", "uppercut", "horizontal_swing", "charge", "np"]
+  },
+  "skills": [
+    "magic_resistance_b",
+    "territory_creation_a",
+    "sword_aesthetics_a",
+    "contemporary_unluck_b",
+    "trial_slash_b_plus",
+    "karma_eye_a",
+    "flame_ex",
+    "tsumukari_muramasa_ex",
+    "projection_volley_b",
+    "forge_temper_b",
+    "karma_sever_b",
+    "sword_field_prototype"
+  ],
+  "noble_phantasm": "muramasa_no_gen_kensai",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "neutral",
+    "morality": "neutral",
+    "social": "normal",
+    "combat": "balanced",
+    "starting_favor": 50.0
+  },
+  "ai_config": "senko_muramasa_ai",
+  "spawn_egg": {"primary": 16724736, "secondary": 4473924}
+}

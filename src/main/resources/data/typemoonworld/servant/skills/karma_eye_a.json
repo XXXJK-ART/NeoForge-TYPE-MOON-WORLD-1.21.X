@@ -1,0 +1,1 @@
+{"id":"karma_eye_a","display_name":"Eye of Karma A","display_name_zh":"业之瞳 A","type":"active","mp_cost":15,"cooldown_ticks":600,"duration_ticks":200,"effects":[{"effect_type":"ignore_defense","params":{"enabled":true}},{"effect_type":"max_damage_critical","params":{"enabled":true}},{"effect_type":"guard_bonus","params":{"bonus":0.50}}]}

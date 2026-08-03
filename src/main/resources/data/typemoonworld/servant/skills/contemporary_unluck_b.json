@@ -1,0 +1,1 @@
+{"id":"contemporary_unluck_b","display_name":"Contemporary Unluck B","display_name_zh":"当代不吉 B","type":"passive","mp_cost":0,"cooldown_ticks":0,"duration_ticks":0,"effects":[{"effect_type":"anti_ruler","params":{"bonus":0.30,"trait":"ruler","advancement":"typemoonworld:king_qualification"}}]}

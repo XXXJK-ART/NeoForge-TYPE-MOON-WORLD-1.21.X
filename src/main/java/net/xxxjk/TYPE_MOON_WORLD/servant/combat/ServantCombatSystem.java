@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -568,8 +569,9 @@ public final class ServantCombatSystem {
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {
          return false;
       }
+      boolean zhaoYun = servant instanceof ZhaoYunRiderEntity;
       double dodgeCost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45) : ServantCombatFormulas.dodgeMpCost(params);
-      if (servant.getCurrentMp() < dodgeCost) {
+      if (!zhaoYun && servant.getCurrentMp() < dodgeCost) {
          return false;
       }
       int agility = ServantCombatFormulas.agilityStep(params);
@@ -580,7 +582,9 @@ public final class ServantCombatSystem {
       if (agility < 3 && !urgent) {
          return false;
       }
-      servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
+      if (!zhaoYun) {
+         servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
+      }
       servant.getPersistentData().putLong(TAG_LAST_DODGE_TICK, now);
       int invulnTicks = ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0);
       if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {

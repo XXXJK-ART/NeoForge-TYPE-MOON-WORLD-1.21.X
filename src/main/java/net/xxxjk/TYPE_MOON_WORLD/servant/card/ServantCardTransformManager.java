@@ -168,6 +168,7 @@ public final class ServantCardTransformManager {
       if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
       if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
       if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
+      if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
       if ("zhao_yun_rider".equals(vars.servant_card_id)) ServantCardZhaoYunSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
       MasterServantLinkService.onServantLost(player, vars);
@@ -289,6 +290,7 @@ public final class ServantCardTransformManager {
          case "arash" -> ServantCardArashSkills.tick(player, vars);
          case "nightingale" -> ServantCardNightingaleSkills.tick(player, vars);
          case "zhao_yun_rider" -> ServantCardZhaoYunSkills.tick(player, vars);
+         case "senko_muramasa" -> ServantCardSenkoMuramasaSkills.tick(player, vars);
          default -> {
          }
       }
@@ -313,6 +315,7 @@ public final class ServantCardTransformManager {
       ServantCardArashSkills.clear(player);
       ServantCardNightingaleSkills.clear(player, false);
       ServantCardZhaoYunSkills.clear(player);
+      ServantCardSenkoMuramasaSkills.clear(player, vars);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -477,6 +480,9 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
       }
+      if ("muramasa_forge".equals(action.effectId())) {
+         return ServantCardSenkoMuramasaSkills.openForgeSelection(player);
+      }
       boolean npSlot = usesSharedNoblePhantasmCooldown(vars.servant_card_id, slot);
       boolean np = noblePhantasmAction;
       boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
@@ -607,6 +613,13 @@ public final class ServantCardTransformManager {
          return ServantCardNightingaleSkills.performNoblePhantasmAction(player, vars, action);
       }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
+      boolean zhaoYunBreakthroughDiscount =
+         "zhao_yun_rider".equals(vars.servant_card_id)
+            && ServantCardZhaoYunSkills.hasSevenInSevenOutDiscount(player)
+            && ServantCardZhaoYunSkills.isMeleeSmallSkill(action.effectId());
+      if (zhaoYunBreakthroughDiscount) {
+         mpCost = 0.0;
+      }
       ServantCardManaService.ManaSnapshot manaBeforeAction = ServantCardManaService.snapshot(player, vars);
       boolean paid = np ? ServantCardManaService.consumeNoblePhantasm(player, vars, mpCost) : ServantCardManaService.consume(player, vars, mpCost);
       if (!paid) {
@@ -621,6 +634,9 @@ public final class ServantCardTransformManager {
          ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
       }
       int cooldownTicks = effectiveCooldownTicks(action, npSlot);
+      if (zhaoYunBreakthroughDiscount) {
+         cooldownTicks = Math.max(1, (cooldownTicks + 1) / 2);
+      }
       if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
@@ -1393,6 +1409,15 @@ public final class ServantCardTransformManager {
          case "zhao_yun_hakuryu_trample" -> { if (!ServantCardZhaoYunSkills.performHakuryuTrample(player)) return false; }
          case "zhao_yun_qinggang" -> { if (!ServantCardZhaoYunSkills.performQinggang(player)) return false; }
          case "zhao_yun_changbanpo" -> { if (!ServantCardZhaoYunSkills.performChangbanpo(player)) return false; }
+         case "muramasa_workshop" -> { if (!ServantCardSenkoMuramasaSkills.performWorkshop(player)) return false; }
+         case "muramasa_trial_slash" -> { if (!ServantCardSenkoMuramasaSkills.performTrial(player)) return false; }
+         case "muramasa_karma_eye" -> { if (!ServantCardSenkoMuramasaSkills.performKarma(player)) return false; }
+         case "muramasa_flame" -> { if (!ServantCardSenkoMuramasaSkills.performFlame(player, vars)) return false; }
+         case "muramasa_projection_volley" -> { if (!ServantCardSenkoMuramasaSkills.performProjectionVolley(player)) return false; }
+         case "muramasa_temper" -> { if (!ServantCardSenkoMuramasaSkills.performTemper(player)) return false; }
+         case "muramasa_karma_slash" -> { if (!ServantCardSenkoMuramasaSkills.performKarmaSlash(player)) return false; }
+         case "muramasa_sword_field" -> { if (!ServantCardSenkoMuramasaSkills.performSwordField(player)) return false; }
+         case "muramasa_no_gen_kensai" -> { if (!ServantCardSenkoMuramasaSkills.performNoblePhantasm(player)) return false; }
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

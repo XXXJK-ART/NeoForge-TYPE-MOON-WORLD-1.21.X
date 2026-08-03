@@ -277,7 +277,7 @@ public class ModItems {
     public static final DeferredItem<Item> RELIC_BANDAGE = registerSummoningRelic("relic_bandage");
     public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSummoningRelic("relic_philosophers_stone");
     public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSummoningRelic("relic_golden_fleece");
-    public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSimpleItem("relic_ato_cradle");
+    public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSummoningRelic("relic_ato_cradle");
     public static final DeferredItem<Item> GEM_NECKLACE = registerSummoningRelic("gem_necklace");
     public static final DeferredItem<Item> MYSTIC_MERCURY = ITEMS.register("mystic_mercury",
             () -> new MysticMercuryItem(new Item.Properties().rarity(Rarity.RARE)));
@@ -336,6 +336,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ARASH = registerServantCard("arash");
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE = registerServantCard("nightingale");
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER = registerServantCard("zhao_yun_rider");
+    public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA = registerServantCard("senko_muramasa");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -382,6 +383,8 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_CHEST = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_LEGS = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA_CHEST = registerServantArmor("senko_muramasa", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA_LEGS = registerServantArmor("senko_muramasa", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -1014,6 +1017,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GILGAMESH, 0xD4AF37, 0xB11226));
     public static final DeferredItem<Item> GAWAIN_SPAWN_EGG = ITEMS.register("gawain_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GAWAIN, 0xC0C0C0, 0xFFD700));
+    public static final DeferredItem<Item> SENKO_MURAMASA_SPAWN_EGG = ITEMS.register("senko_muramasa_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SENKO_MURAMASA, 0xFF3300, 0x444444));
     public static final DeferredItem<Item> LI_SHUWEN_SPAWN_EGG = ITEMS.register("li_shuwen_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LI_SHUWEN, 0x1A1A1A, 0xD8D0C8));
     public static final DeferredItem<Item> PARACELSUS_SPAWN_EGG = ITEMS.register("paracelsus_spawn_egg",
@@ -1087,6 +1092,7 @@ public class ModItems {
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
             case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
             case "zhao_yun_rider" -> (legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();
+            case "senko_muramasa" -> (legs ? SERVANT_CARD_SENKO_MURAMASA_LEGS : SERVANT_CARD_SENKO_MURAMASA_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }
