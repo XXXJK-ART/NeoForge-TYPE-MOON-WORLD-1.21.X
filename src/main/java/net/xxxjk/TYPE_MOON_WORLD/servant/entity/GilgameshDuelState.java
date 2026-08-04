@@ -154,6 +154,10 @@ public final class GilgameshDuelState {
          && a.getPersistentData().hasUUID(PARTNER) && b.getUUID().equals(a.getPersistentData().getUUID(PARTNER));
    }
 
+   public static boolean isActive(LivingEntity entity) {
+      return entity != null && entity.getPersistentData().getBoolean(ACTIVE);
+   }
+
    /** Called by Enkidu on the exact tick its final rush starts. */
    public static void markEnkiduRushStarted(EnkiduEntity enkidu, ServerLevel level, long now) {
       CompoundTag data = enkidu.getPersistentData();

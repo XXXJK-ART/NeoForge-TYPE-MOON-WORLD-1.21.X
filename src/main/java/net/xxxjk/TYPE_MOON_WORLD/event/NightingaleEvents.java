@@ -140,6 +140,7 @@ public final class NightingaleEvents {
 
    private static void cancel(LivingIncomingDamageEvent event) {
       event.setAmount(0.0F);
+      event.setInvulnerabilityTicks(0);
       event.setCanceled(true);
    }
 }

@@ -456,6 +456,7 @@ public class CommonEvents {
             return;
          }
          if (tryRedirectZhaoYunMountDamage(event)) return;
+         if (tryIgnoreZhaoYunChangbanpoFriendlyFire(event)) return;
          if (tryRedirectZhaoYunRescueDamage(event)) return;
          applyZhaoYunRescueDefense(event);
          if (event.getSource().getEntity() instanceof ServerPlayer attacker
@@ -778,6 +779,11 @@ public class CommonEvents {
       if (event.getAmount() <= 0.0F) return false;
       Entity attacker = event.getSource().getEntity();
       Entity direct = event.getSource().getDirectEntity();
+      if (isZhaoYunBoundMasterFriendlyFire(event.getEntity(), attacker, direct)) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
       if (event.getEntity() instanceof ZhaoYunHakuryuEntity mount && mount.isAlive()) {
          // Zhao Yun, the master/owner, and current passengers must not hurt
          // their own Hakuryu. Enemy damage is allowed through; during
@@ -807,6 +813,49 @@ public class CommonEvents {
       event.setAmount(0.0F);
       mount.hurt(event.getSource(), redirected);
       return true;
+   }
+
+   private static boolean isZhaoYunBoundMasterFriendlyFire(LivingEntity victim, Entity attacker, Entity direct) {
+      if (!(victim instanceof ServerPlayer master)) return false;
+      return isZhaoYunSourceBoundTo(attacker, master) || isZhaoYunSourceBoundTo(direct, master);
+   }
+
+   private static boolean isZhaoYunSourceBoundTo(Entity source, ServerPlayer master) {
+      if (source instanceof ZhaoYunRiderEntity zhaoYun) {
+         return zhaoYun.isBoundTo(master);
+      }
+      if (source instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed
+            && "zhao_yun_rider".equals(vars.servant_card_id)
+            && vars.servant_card_master_uuid != null
+            && vars.servant_card_master_uuid.equals(master.getUUID().toString());
+      }
+      return source instanceof ZhaoYunHakuryuEntity mount && mount.isBoundCompanion(master);
+   }
+
+   private static boolean tryIgnoreZhaoYunChangbanpoFriendlyFire(LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F) return false;
+      Entity sourceEntity = event.getSource().getEntity();
+      Entity directEntity = event.getSource().getDirectEntity();
+      ZhaoYunHakuryuEntity mount = sourceEntity instanceof ZhaoYunHakuryuEntity zhaoMount ? zhaoMount
+         : directEntity instanceof ZhaoYunHakuryuEntity zhaoDirect ? zhaoDirect : null;
+      if (mount == null || !mount.isAlive() || !mount.isNpActive() || !(event.getEntity() instanceof LivingEntity victim)) {
+         return false;
+      }
+      if (mount.isBoundCompanion(victim) || victim.getVehicle() == mount) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      if (mount.level() instanceof ServerLevel level && mount.getMasterUuid() != null
+         && level.getEntity(mount.getMasterUuid()) instanceof LivingEntity master
+         && (victim == master || victim.isAlliedTo(master) || master.isAlliedTo(victim) || victim.isAlliedTo(mount))) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      return false;
    }
 
    private static boolean tryRedirectZhaoYunRescueDamage(LivingIncomingDamageEvent event) {

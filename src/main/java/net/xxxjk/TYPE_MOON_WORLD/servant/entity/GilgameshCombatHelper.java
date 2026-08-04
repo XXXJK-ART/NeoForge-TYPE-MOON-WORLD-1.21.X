@@ -24,6 +24,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
@@ -74,8 +76,10 @@ public final class GilgameshCombatHelper {
    private static final String ENKIDU_BARRAGE_COOLDOWN = "GilgameshEnkiduBarrageCooldown";
    private static final String FLIGHT_CYCLE_START = "GilgameshFlightCycleStart";
    private static final String FLIGHT_CYCLE_TARGET = "GilgameshFlightCycleTarget";
+   private static final String FLIGHT_LAST_CONTACT = "GilgameshFlightLastContact";
    private static final int FLIGHT_CYCLE_TICKS = 18 * 20;
    private static final int FLIGHT_ACTIVE_TICKS = 12 * 20;
+   private static final long FLIGHT_STALLED_TICKS = 8 * 20L;
    private GilgameshCombatHelper() { }
 
    public static void tick(GilgameshEntity entity) {
@@ -91,7 +95,7 @@ public final class GilgameshCombatHelper {
          data.putFloat("GilgameshCommandObedienceMax", 0.60F);
          data.putBoolean("ClairvoyanceExActive", true);
       }
-      tickClairvoyance(entity, level, data);
+      tickClairvoyanceEx(entity, level, data);
       updateMonotonicPhase(entity);
       if (entity.tickCount % 20 == 0) {
          entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
@@ -164,7 +168,7 @@ public final class GilgameshCombatHelper {
       else if (ratio <= 0.60) ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.NORMAL);
    }
 
-   private static void tickClairvoyance(GilgameshEntity entity, ServerLevel level, CompoundTag data) {
+   public static void tickClairvoyanceEx(LivingEntity entity, ServerLevel level, CompoundTag data) {
       if (!data.getBoolean("ClairvoyanceExActive") || entity.tickCount % 20 != 0) {
          return;
       }
@@ -172,6 +176,7 @@ public final class GilgameshCombatHelper {
          LivingEntity.class,
          entity.getBoundingBox().inflate(100.0),
          target -> target != entity && target.isAlive() && !target.isAlliedTo(entity) && !entity.isAlliedTo(target)
+            && !ServantMasterTargeting.isContractMaster(entity, target)
       )) {
          living.removeEffect(MobEffects.INVISIBILITY);
          living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
@@ -225,6 +230,7 @@ public final class GilgameshCombatHelper {
       if (!data.hasUUID(FLIGHT_CYCLE_TARGET) || !target.getUUID().equals(data.getUUID(FLIGHT_CYCLE_TARGET))) {
          data.putUUID(FLIGHT_CYCLE_TARGET, target.getUUID());
          data.putLong(FLIGHT_CYCLE_START, now);
+         data.putLong(FLIGHT_LAST_CONTACT, now);
       }
       long elapsed = Math.floorMod(now - data.getLong(FLIGHT_CYCLE_START), (long)FLIGHT_CYCLE_TICKS);
       if (elapsed >= FLIGHT_ACTIVE_TICKS) {
@@ -232,6 +238,17 @@ public final class GilgameshCombatHelper {
          return;
       }
       double distance = entity.distanceTo(target);
+      if (distance <= 14.0 || entity.getSensing().hasLineOfSight(target)) {
+         data.putLong(FLIGHT_LAST_CONTACT, now);
+      } else if (entity.isFlyingMode() && now - data.getLong(FLIGHT_LAST_CONTACT) >= FLIGHT_STALLED_TICKS) {
+         data.putLong(MELEE_UNTIL, now + 100L);
+         data.putLong(FLIGHT_CYCLE_START, now + FLIGHT_ACTIVE_TICKS);
+         data.putLong(FLIGHT_LAST_CONTACT, now);
+         enterGroundMode(entity);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity, target, 1.35, now, 2, 0.2, "GilgameshFlightStalled");
+         return;
+      }
       entity.setFlyingMode(true);
       entity.getNavigation().stop(); entity.fallDistance = 0.0F;
       double desiredY = ServantFlightHelper.desiredHoverY(entity, target);

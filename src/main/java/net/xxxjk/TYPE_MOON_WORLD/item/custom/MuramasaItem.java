@@ -99,21 +99,14 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
          }
 
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         boolean isMaxCharge = currentCharge >= 100;
          boolean muramasaCard = isMuramasaCard(player);
-         boolean canPay = isMaxCharge
-            || (muramasaCard
-               ? ServantCardManaService.consumeSilently(player, vars, 5.0)
-               : vars.player_mana >= 10.0);
+         boolean canPay = muramasaCard
+            ? ServantCardManaService.consumeSilently(player, vars, 5.0)
+            : consumePlayerMana(player, vars, 10.0);
          if (!canPay) {
             player.releaseUsingItem();
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          } else {
-            if (!isMaxCharge && !muramasaCard) {
-               vars.player_mana -= 10.0;
-               vars.syncMana(player);
-            }
-
             player.displayClientMessage(
                Component.translatable("message.typemoonworld.muramasa.charge", currentCharge).withStyle(ChatFormatting.RED), true
             );
@@ -210,6 +203,14 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
       TypeMoonWorldModVariables.PlayerVariables vars =
          player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id);
+   }
+
+   private static boolean consumePlayerMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      if (amount <= 0.0) return true;
+      if (vars.player_mana + 1.0E-6 < amount) return false;
+      vars.player_mana -= amount;
+      vars.syncMana(player);
+      return true;
    }
 
    public int getMaxManaCost() {

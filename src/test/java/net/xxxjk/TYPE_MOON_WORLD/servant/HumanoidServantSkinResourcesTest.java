@@ -250,6 +250,7 @@ class HumanoidServantSkinResourcesTest {
       String armorModel = Files.readString(JAVA.resolve("client/model/ServantCardArmorModel.java"));
       assertTrue(armorModel.contains("_head.geo.json"));
       assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
+      assertTrue(armorModel.contains("usesDedicatedHeadModel(servantId)"));
       assertTrue(armorModel.contains("return EMPTY_ANIMATION;"));
       assertTrue(armorModel.contains(
          "case \"artoria_pendragon\", \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\","));
@@ -259,6 +260,9 @@ class HumanoidServantSkinResourcesTest {
          "case \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\" -> true"));
       assertFalse(armorModel.contains(
          "case \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\", \"gilgamesh_caster\" -> true"));
+      assertTrue(armorModel.contains(
+         "return hasDedicatedHeadModel(servantId) || \"gilgamesh_caster\".equals(servantId);"));
+      assertFalse(armorModel.contains("\"gilgamesh_caster\" -> true"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair\", pitchRad, 1.25F)"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair1\", pitchRad, 1.35F)"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair2\", pitchRad, 1.35F)"));

@@ -867,6 +867,8 @@ public final class ServantCardZhaoYunSkills {
 
    private static boolean isEnemy(ServerPlayer player, LivingEntity entity) {
       return entity != player && entity.isAlive() && !EntityUtils.isImmunePlayerTarget(entity)
+         && entity.getVehicle() != player.getVehicle()
+         && !ServantMasterTargeting.isContractMaster(player, entity)
          && !player.isAlliedTo(entity) && !entity.isAlliedTo(player);
    }
 

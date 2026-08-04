@@ -65,6 +65,7 @@ public final class ServantCardGilgameshSkills {
       player.getPersistentData().remove(CHAIN_TARGET);
       player.getPersistentData().remove(CHAIN_UNTIL);
       player.getPersistentData().remove(CHARISMA_UNTIL);
+      player.getPersistentData().remove("ClairvoyanceActive");
    }
 
    public static void clear(ServerPlayer player) {
@@ -78,6 +79,7 @@ public final class ServantCardGilgameshSkills {
       GilgameshDivineShield.clear(player);
       player.removeEffect(MobEffects.NIGHT_VISION);
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.NONE, 0.0F, 0.0F);
+      player.getPersistentData().remove("ClairvoyanceActive");
       if (player.getAttribute(Attributes.KNOCKBACK_RESISTANCE) != null) player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).removeModifier(CHARISMA_KNOCKBACK_ID);
       for (int i = 0; i < player.getInventory().getContainerSize(); i++) if (isGenerated(player.getInventory().getItem(i))) player.getInventory().setItem(i, ItemStack.EMPTY);
       if (isGenerated(player.getMainHandItem())) player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -135,7 +137,7 @@ public final class ServantCardGilgameshSkills {
 
    public static boolean selectTreasure(ServerPlayer player, int index) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || !"gilgamesh".equals(vars.servant_card_id) || !hasKey(player) || index < 0 || index >= 7) return false;
+      if (!vars.servant_card_transformed || !isGilgameshVaultUser(vars.servant_card_id) || !hasKey(player) || index < 0 || index >= 7) return false;
       int mask = player.getPersistentData().getInt(MASK);
       if ((mask & (1 << index)) != 0) return false;
       ItemStack treasure = markGilgameshGenerated(ServantCardTransformManager.markGeneratedItem(treasureFor(index), true, false));
@@ -149,6 +151,10 @@ public final class ServantCardGilgameshSkills {
       player.getPersistentData().putInt(MASK, mask | (1 << index));
       player.inventoryMenu.broadcastChanges();
       return true;
+   }
+
+   private static boolean isGilgameshVaultUser(String servantId) {
+      return "gilgamesh".equals(servantId) || "gilgamesh_caster".equals(servantId);
    }
 
    public static ItemStack treasureFor(int index) {

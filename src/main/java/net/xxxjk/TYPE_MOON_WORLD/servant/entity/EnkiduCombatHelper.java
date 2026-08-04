@@ -102,6 +102,7 @@ public final class EnkiduCombatHelper {
    private static final String TAG_FLIGHT_UNTIL = "EnkiduFlightUntil";
    private static final String TAG_LAND_UNTIL = "EnkiduLandUntil";
    private static final String TAG_FLIGHT_WAS_AIRBORNE = "EnkiduFlightWasAirborne";
+   private static final String TAG_FLIGHT_LAST_CONTACT = "EnkiduFlightLastContact";
    private static final String TAG_NEXT_FLIGHT_TOGGLE = "EnkiduNextFlightToggle";
    private static final String TAG_UNREACHABLE_TICKS = "EnkiduUnreachableTicks";
    private static final String TAG_ENUMA_IMPACT_X = "EnkiduEnumaImpactX";
@@ -573,9 +574,26 @@ public final class EnkiduCombatHelper {
          data.remove(TAG_FLIGHT_WAS_AIRBORNE);
          data.remove(TAG_FLIGHT_UNTIL);
          data.remove(TAG_NEXT_FLIGHT_TOGGLE);
+         data.remove(TAG_FLIGHT_LAST_CONTACT);
          return;
       }
       double distance = entity.distanceTo(target);
+      if (!data.contains(TAG_FLIGHT_LAST_CONTACT)) {
+         data.putLong(TAG_FLIGHT_LAST_CONTACT, now);
+      }
+      if (distance <= 12.0 || entity.getSensing().hasLineOfSight(target)) {
+         data.putLong(TAG_FLIGHT_LAST_CONTACT, now);
+      } else if (isFlying(entity) && now - data.getLong(TAG_FLIGHT_LAST_CONTACT) >= 8L * 20L) {
+         entity.setNoGravity(false);
+         data.remove(TAG_FLIGHT_WAS_AIRBORNE);
+         data.remove(TAG_FLIGHT_UNTIL);
+         data.putLong(TAG_LAND_UNTIL, now + 120L);
+         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 200L);
+         data.putLong(TAG_FLIGHT_LAST_CONTACT, now);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity, target, 1.25, now, 2, 0.2, "EnkiduFlightStalled");
+         return;
+      }
       long flightUntil = data.getLong(TAG_FLIGHT_UNTIL);
       boolean lowHealthNeedsEarth = entity.getHealth() <= entity.getMaxHealth() * 0.8F;
       double verticalGap = target.getY() - entity.getY();
@@ -2113,9 +2131,16 @@ public final class EnkiduCombatHelper {
       if (release <= 0L && finish <= 0L) {
          return;
       }
+      boolean duelFinale = data.getBoolean(TAG_ENUMA_DUEL_FINALE);
+      if (!duelFinale && finish > 0L && now > finish + 60L) {
+         clearEnumaState(entity);
+         entity.setNoGravity(false);
+         entity.setDeltaMovement(Vec3.ZERO);
+         data.putLong(TAG_LAND_UNTIL, now + 160L);
+         return;
+      }
       Entity targetEntity = data.hasUUID(TAG_ENUMA_TARGET) ? level.getEntity(data.getUUID(TAG_ENUMA_TARGET)) : null;
       LivingEntity target = targetEntity instanceof LivingEntity livingTarget && livingTarget.isAlive() ? livingTarget : null;
-      boolean duelFinale = data.getBoolean(TAG_ENUMA_DUEL_FINALE);
       if (target == null) {
          if ((data.getBoolean(TAG_ENUMA_DAMAGE_DONE) || data.getInt(TAG_ENUMA_STAGE) == 1) && now < finish) {
             entity.getNavigation().stop();

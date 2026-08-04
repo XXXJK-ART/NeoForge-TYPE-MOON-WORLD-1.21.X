@@ -19,7 +19,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getModelResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
-      if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+      if (isHeadSlot(animatable) && usesDedicatedHeadModel(servantId)) {
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "geo/servant_card_" + servantId + "_head.geo.json");
       }
@@ -31,6 +31,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getTextureResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
+      if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "textures/models/armor/servant_card_gilgamesh_caster.png");
+      }
       if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "textures/models/armor/servant_card_" + servantId + "_head.png");
@@ -43,7 +47,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getAnimationResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
-      if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+      if (isHeadSlot(animatable) && usesDedicatedHeadModel(servantId)) {
          return EMPTY_ANIMATION;
       }
       if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
@@ -100,6 +104,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (bone != null) {
          bone.setRotX(-pitchRad * strength);
       }
+   }
+
+   private static boolean usesDedicatedHeadModel(String servantId) {
+      return hasDedicatedHeadModel(servantId) || "gilgamesh_caster".equals(servantId);
    }
 
    private static boolean hasDedicatedHeadModel(String servantId) {

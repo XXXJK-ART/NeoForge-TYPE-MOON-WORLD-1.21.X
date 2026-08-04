@@ -17,8 +17,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -31,7 +33,7 @@ public final class CasterGilgameshCombatHelper {
    public static final String FIRING_TAG = "RoyalCannonFiring";
    public static final int MAX_AMMO = 5000;
    public static final int STARTING_AMMO = 500;
-   public static final int CANNON_SHOTS_PER_ROUND = 10;
+   public static final int CANNON_SHOTS_PER_ROUND = 30;
    public static final float CANNON_EXPLOSION_RADIUS = 3.0F;
    private static final String LAST_LEADER = "CasterGilgameshLastLeader";
    private static final String LAST_RETURN = "CasterGilgameshLastReturn";
@@ -41,6 +43,8 @@ public final class CasterGilgameshCombatHelper {
    private static final String LAST_MP = "CasterGilgameshLastMp";
    private static final String LAST_SHIELD = "CasterGilgameshLastShield";
    private static final String LAST_CANNON_ROUND = "CasterGilgameshLastCannonRound";
+   private static final String LAST_GATE_OF_BABYLON = "CasterGilgameshLastGateOfBabylon";
+   private static final String FLIGHT_LAST_CONTACT = "CasterGilgameshFlightLastContact";
    private static final String LAST_APPLIED_PHASE = "CasterGilgameshLastAppliedPhase";
    private static final String WORKSHOP_TYPE = "CasterGilgameshWorkshop";
    private static final String CENTER_X = "CasterGilgameshWorkshopX";
@@ -53,6 +57,9 @@ public final class CasterGilgameshCombatHelper {
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "caster_gilgamesh_workshop_armor");
    private static final DustParticleOptions GOLD =
       new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.12F), 1.15F);
+   private static final String[] GATE_WEAPONS = {"durandal", "gram", "vajra", "harpe", "fangtian_huaji", "pseudo_spiral_sword", "gae_bulg"};
+   private static final long GATE_OF_BABYLON_COOLDOWN = 12L * 20L;
+   private static final long FLIGHT_STALLED_TICKS = 8L * 20L;
 
    private CasterGilgameshCombatHelper() {}
 
@@ -70,11 +77,15 @@ public final class CasterGilgameshCombatHelper {
       if (target == null || !target.isAlive() || entity.isAlliedTo(target)) {
          data.putBoolean(FIRING_TAG, false);
          entity.setFlyingMode(false);
+         data.remove(FLIGHT_LAST_CONTACT);
          return;
       }
 
-      updateFlight(entity, target);
+      updateFlight(entity, target, now, data);
       int phase = entity.getCombatPhase();
+      if (tryGateOfBabylon(entity, level, target, data, now, phase)) {
+         return;
+      }
       if (now >= data.getLong(LAST_LEADER) + leaderCooldown(phase) && entity.getCurrentMp() >= 20.0) {
          useLeader(entity, level, data, now);
       }
@@ -103,6 +114,7 @@ public final class CasterGilgameshCombatHelper {
       if (!data.getBoolean("CasterGilgameshPassivesInitialized")) {
          data.putBoolean("CasterGilgameshPassivesInitialized", true);
          data.putBoolean("DivinityActive", true);
+         data.putBoolean("ClairvoyanceExActive", true);
          data.putFloat("DivinityFlatDamage", 5.0F);
          data.putBoolean("CasterWandDominionActive", true);
          data.putFloat("CasterWandDominionMultiplier", 1.20F);
@@ -164,6 +176,7 @@ public final class CasterGilgameshCombatHelper {
    }
 
    private static void tickTimedBuffs(CasterGilgameshEntity entity, ServerLevel level, CompoundTag data, long now) {
+      GilgameshCombatHelper.tickClairvoyanceEx(entity, level, data);
       if (now >= data.getLong(LEADER_UNTIL)) {
          for (LivingEntity ally : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(30.0),
             e -> e.isAlive() && (e == entity || e.isAlliedTo(entity)))) {
@@ -218,7 +231,16 @@ public final class CasterGilgameshCombatHelper {
       }
    }
 
-   private static void updateFlight(CasterGilgameshEntity entity, LivingEntity target) {
+   private static void updateFlight(CasterGilgameshEntity entity, LivingEntity target, long now, CompoundTag data) {
+      double distance = entity.distanceTo(target);
+      if (distance <= 14.0 || entity.getSensing().hasLineOfSight(target)) {
+         data.putLong(FLIGHT_LAST_CONTACT, now);
+      } else if (entity.isFlyingMode() && now - data.getLong(FLIGHT_LAST_CONTACT) >= FLIGHT_STALLED_TICKS) {
+         entity.setFlyingMode(false);
+         entity.getNavigation().moveTo(target, 1.25);
+         data.putLong(FLIGHT_LAST_CONTACT, now);
+         return;
+      }
       entity.setFlyingMode(true);
       entity.getNavigation().stop();
       entity.fallDistance = 0.0F;
@@ -226,7 +248,6 @@ public final class CasterGilgameshCombatHelper {
       Vec3 away = entity.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
       if (away.lengthSqr() < 1.0E-4) away = new Vec3(1.0, 0.0, 0.0);
       away = away.normalize();
-      double distance = entity.distanceTo(target);
       int phase = entity.getCombatPhase();
       double preferred = preferredRange(phase);
       double radial = distance < minimumCannonDistance(phase) + 6.0 ? 0.24 + phase * 0.04 : distance > preferred + 8.0 ? -0.08 : 0.0;
@@ -238,6 +259,47 @@ public final class CasterGilgameshCombatHelper {
       if (radial != 0.0) motion = motion.add(away.scale(radial));
       entity.setDeltaMovement(motion);
       entity.faceToward(target.position());
+   }
+
+   private static boolean tryGateOfBabylon(CasterGilgameshEntity entity, ServerLevel level, LivingEntity target,
+                                           CompoundTag data, long now, int phase) {
+      if (now - data.getLong(LAST_GATE_OF_BABYLON) < GATE_OF_BABYLON_COOLDOWN
+         || entity.getCurrentMp() < 18.0
+         || entity.getRandom().nextFloat() > (phase >= 3 ? 0.12F : 0.06F)) {
+         return false;
+      }
+      data.putLong(LAST_GATE_OF_BABYLON, now);
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 18.0));
+      int count = phase >= 3 ? 18 : phase >= 2 ? 12 : 8;
+      fireGateOfBabylon(entity, level, target, count, phase >= 3 ? 24.0F : 18.0F);
+      return true;
+   }
+
+   private static void fireGateOfBabylon(CasterGilgameshEntity entity, ServerLevel level, LivingEntity target,
+                                         int count, float damage) {
+      Vec3 forward = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0)
+         .subtract(entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0));
+      if (forward.lengthSqr() < 1.0E-4) forward = entity.getLookAngle();
+      forward = forward.normalize();
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      if (right.lengthSqr() < 1.0E-4) right = new Vec3(1.0, 0.0, 0.0);
+      right = right.normalize();
+      Vec3 center = entity.position().add(0.0, entity.getBbHeight() * 0.85, 0.0).add(forward.scale(-1.9));
+      for (int i = 0; i < count; i++) {
+         double row = i / 6;
+         double side = (i % 6 - 2.5) * 0.75;
+         Vec3 gate = center.add(right.scale(side)).add(0.0, 0.45 + row * 0.55, 0.0);
+         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(gate).normalize();
+         GilgameshGateWeaponProjectileEntity projectile = new GilgameshGateWeaponProjectileEntity(
+            level, entity, gate, aim, GATE_WEAPONS[Math.floorMod(i, GATE_WEAPONS.length)], damage);
+         projectile.setHomingTarget(target);
+         projectile.setLaunchDelay(14 + (i / 6) * 4);
+         projectile.setEffectStride(count >= 12 ? 2 : 1);
+         level.addFreshEntity(projectile);
+      }
+      VFXServerEffects.spawnOriented(level, "gilgamesh_gate", center, forward, 128.0);
+      level.sendParticles(GOLD, center.x, center.y, center.z, 24 + count, 1.2, 0.8, 1.2, 0.06);
+      ServantVoiceHelper.tryPlayCasterGilgameshShot(entity);
    }
 
    private static boolean hasValidCannonResources(CasterGilgameshEntity entity, LivingEntity target) {
@@ -328,7 +390,16 @@ public final class CasterGilgameshCombatHelper {
    private static boolean isValidVolleyTarget(LivingEntity owner, LivingEntity target) {
       return owner != null && target != null && target.isAlive() && target != owner
          && !target.isAlliedTo(owner) && !owner.isAlliedTo(target)
+         && !isProtectedMasterTarget(owner, target)
          && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   public static boolean isProtectedMasterTarget(LivingEntity owner, LivingEntity target) {
+      if (owner == null || target == null) return false;
+      if (ServantMasterTargeting.isContractMaster(owner, target)) return true;
+      return owner instanceof ServantEntity servant
+         && target instanceof net.minecraft.server.level.ServerPlayer master
+         && servant.isBoundTo(master);
    }
 
    private static void spawnRoyalCannonGateFx(ServerLevel level, Vec3 center, Vec3 forward, Vec3 right, int shots) {

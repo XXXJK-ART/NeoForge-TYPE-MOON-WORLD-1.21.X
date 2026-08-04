@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -18,6 +20,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -234,6 +237,7 @@ public final class ServantCardSenkoMuramasaSkills {
       level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
       level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 120, 1.5, 1.2, 1.5, 0.15);
       level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 180, 12.0, 3.0, 12.0, 0.12);
+      replaceTemporaryRedField(level, player, 16, 12 * 20);
       player.getPersistentData().putBoolean(NP_PENDING, false);
       for (int i = 25; i >= 0; i--) {
          final int step = i;
@@ -248,6 +252,42 @@ public final class ServantCardSenkoMuramasaSkills {
             }
          });
       }
+   }
+
+   private static void replaceTemporaryRedField(ServerLevel level, ServerPlayer player, int radius, int restoreDelay) {
+      Map<BlockPos, BlockState> originals = new HashMap<>();
+      BlockPos center = player.blockPosition();
+      int radiusSquared = radius * radius;
+      int limit = 900;
+      for (int dx = -radius; dx <= radius && originals.size() < limit; dx++) {
+         for (int dz = -radius; dz <= radius && originals.size() < limit; dz++) {
+            if (dx * dx + dz * dz > radiusSquared) {
+               continue;
+            }
+            int x = center.getX() + dx;
+            int z = center.getZ() + dz;
+            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            BlockPos pos = new BlockPos(x, y, z);
+            if (!level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) {
+               continue;
+            }
+            BlockState original = level.getBlockState(pos);
+            BlockState replacement = Blocks.RED_SANDSTONE.defaultBlockState();
+            if (original.is(Blocks.BEDROCK) || original.equals(replacement) || original.getDestroySpeed(level, pos) < 0.0F) {
+               continue;
+            }
+            if (level.setBlock(pos, replacement, 3)) {
+               originals.put(pos.immutable(), original);
+            }
+         }
+      }
+      TYPE_MOON_WORLD.queueServerWork(restoreDelay, () -> {
+         for (Map.Entry<BlockPos, BlockState> entry : originals.entrySet()) {
+            if (level.hasChunkAt(entry.getKey()) && level.getBlockState(entry.getKey()).is(Blocks.RED_SANDSTONE)) {
+               level.setBlock(entry.getKey(), entry.getValue(), 3);
+            }
+         }
+      });
    }
 
    private static void refreshModifiers(ServerPlayer player, long now) {

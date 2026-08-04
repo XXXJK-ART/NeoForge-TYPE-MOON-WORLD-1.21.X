@@ -312,6 +312,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide && this.tickCount == 1) {
          this.equipNpcServantCardArmor();
+      } else if (!this.level().isClientSide && this.tickCount % 40 == 0
+         && !GilgameshDuelState.isActive(this)) {
+         this.equipNpcServantCardArmor();
       }
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);

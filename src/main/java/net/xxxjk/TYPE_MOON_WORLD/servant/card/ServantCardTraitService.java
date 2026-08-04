@@ -187,7 +187,11 @@ public final class ServantCardTraitService {
          data.putFloat("ProjectionMagicSwordDiscount", 0.5F);
          data.putInt("ProjectionMagicLifetimeTicks", 100);
       }
-      if (hasSkill(definition, "clairvoyance_c")) {
+      if (hasSkill(definition, "clairvoyance_ex")) {
+         data.putBoolean("ClairvoyanceExActive", true);
+         data.putFloat("ClairvoyanceAccuracyBonus", 0.50F);
+         data.putFloat("ClairvoyanceCritBonus", 0.20F);
+      } else if (hasSkill(definition, "clairvoyance_c")) {
          data.putBoolean("ClairvoyanceActive", true);
          data.putFloat("ClairvoyanceAccuracyBonus", 0.30F);
          data.putFloat("ClairvoyanceCritBonus", 0.10F);
@@ -242,6 +246,7 @@ public final class ServantCardTraitService {
       data.remove("ProjectionMagicSwordDiscount");
       data.remove("ProjectionMagicLifetimeTicks");
       data.remove("ClairvoyanceActive");
+      data.remove("ClairvoyanceExActive");
       data.remove("ClairvoyanceAccuracyBonus");
       data.remove("ClairvoyanceCritBonus");
       data.remove("IndependentActionActive");

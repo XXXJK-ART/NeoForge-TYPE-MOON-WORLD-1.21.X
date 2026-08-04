@@ -50,7 +50,9 @@ public final class ServantCardSkillUtils {
       LivingEntity best = null;
       double bestScore = 0.78;
       for (LivingEntity living : player.level().getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player
-         && !ServantMasterTargeting.isContractMaster(player, e) && !EntityUtils.isImmunePlayerTarget(e))) {
+         && !ServantMasterTargeting.isContractMaster(player, e)
+         && !player.isAlliedTo(e) && !e.isAlliedTo(player)
+         && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(eye);
          double distance = to.length();
          if (distance <= 0.01 || distance > range) continue;

@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -771,17 +772,35 @@ public final class MuramasaCombatHelper {
             removeBeneficialEffects(target);
          }
       }
+      spawnMuramasaReleaseEffects(level, entity, percent);
       if (delayedDissolution) {
-         MuramasaDissolutionService.schedule(entity);
+         forceTsumukariDeath(entity, level);
+         return;
       }
       if (data.getBoolean(CHARGE_FORCED_DEATH)) {
          TYPE_MOON_WORLD.queueServerWork(2, () -> {
             if (entity.isAlive()) {
-               entity.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);
+               forceTsumukariDeath(entity, level);
             }
          });
       }
-      spawnMuramasaReleaseEffects(level, entity, percent);
+   }
+
+   private static void forceTsumukariDeath(SenkoMuramasaEntity entity, ServerLevel level) {
+      if (entity == null || !entity.isAlive()) {
+         return;
+      }
+      level.sendParticles(ParticleTypes.EXPLOSION, entity.getX(), entity.getY() + 1.0, entity.getZ(),
+         4, 0.6, 0.8, 0.6, 0.0);
+      level.sendParticles(ParticleTypes.LAVA, entity.getX(), entity.getY() + 0.8, entity.getZ(),
+         40, 1.0, 0.8, 1.0, 0.04);
+      entity.setInvulnerable(false);
+      entity.invulnerableTime = 0;
+      entity.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);
+      if (entity.isAlive()) {
+         entity.setHealth(0.0F);
+         entity.die(entity.damageSources().genericKill());
+      }
    }
 
    private static void spawnMuramasaFieldEffects(ServerLevel level, SenkoMuramasaEntity entity) {
