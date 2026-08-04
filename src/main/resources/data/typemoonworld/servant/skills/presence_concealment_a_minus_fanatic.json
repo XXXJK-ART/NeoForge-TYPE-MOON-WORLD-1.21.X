@@ -3,5 +3,6 @@
   "display_name": "Presence Concealment A-",
   "display_name_zh": "\u6c14\u606f\u906e\u65ad A-",
   "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
-  "effects": [{"effect_type": "stealth_passive", "params": {}}]
+  "effects": [{"effect_type": "stealth_passive", "params": {}}],
+  "ai": {"facts": [{"type": "concealment", "strength": 0.85}]}
 }

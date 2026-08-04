@@ -1,0 +1,33 @@
+{
+  "id": "zhao_yun_rider",
+  "display_name": "Zhao Yun",
+  "display_name_zh": "\u8d75\u4e91",
+  "class_type": "rider",
+  "faction": "shu_han",
+  "traits": ["servant", "male", "rider", "human", "humanoid", "living_human", "sapient", "order", "good", "riding", "shu_han", "five_tigers"],
+  "parameters": {
+    "endurance": "B", "endurance_plus": true,
+    "strength": "A", "strength_plus": false,
+    "agility": "A", "agility_plus": false,
+    "magic": "D", "magic_plus": false,
+    "luck": "B", "luck_plus": false
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/zhao_yun_rider.png",
+    "animation": ""
+  },
+  "specialization": {
+    "dimensions": {"width": 0.7, "height": 1.9, "eye_height": 1.7},
+    "hand_item_offset": {"x": 0.1, "y": -0.8, "z": -0.2},
+    "default_weapon": "typemoonworld:yajiao_qiang",
+    "immune_to_stone_axe_debuff": true,
+    "combat_actions": ["spear_strike", "spear_lunging_thrust", "spear_driving_slash", "spear_sweeping_advance", "mounted_lance_charge", "mounted_sweeping_pass", "mounted_dragon_rein", "changbanpo_no_ikki_gake", "qinggang_sword"]
+  },
+  "skills": ["magic_resistance_d", "riding_a_plus", "independent_action_c", "dragon_gall_ex", "single_rider_rescue_a", "seven_in_seven_out_b_plus_plus"],
+  "noble_phantasm": "changbanpo_no_ikki_gake",
+  "noble_phantasms": ["changbanpo_no_ikki_gake", "qinggang_sword"],
+  "personality": {"obedience": "cooperative", "principle": "orderly", "morality": "good", "social": "normal", "combat": "balanced", "starting_favor": 95.0},
+  "ai_config": "zhao_yun_rider_ai",
+  "spawn_egg": {"primary": 14544623, "secondary": 3385958}
+}

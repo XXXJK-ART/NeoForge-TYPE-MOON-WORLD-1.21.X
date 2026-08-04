@@ -23,11 +23,12 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickB
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 
 @EventBusSubscriber(
@@ -75,6 +76,10 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleZhaoYunSpearRightClick(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
@@ -95,6 +100,10 @@ public class ModPlayerEventHandler {
             return;
          }
          if (handleThompsonContenderRightClick(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            return;
+         }
+         if (handleZhaoYunSpearRightClick(event.getEntity(), event.getHand())) {
             event.setCanceled(true);
             return;
          }
@@ -120,6 +129,10 @@ public class ModPlayerEventHandler {
             return;
          }
          if (handleThompsonContenderRightClick(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            return;
+         }
+         if (handleZhaoYunSpearRightClick(event.getEntity(), event.getHand())) {
             event.setCanceled(true);
             return;
          }
@@ -159,6 +172,10 @@ public class ModPlayerEventHandler {
          }
          triggerArtoriaManaBurstTerrainBreak(player, target);
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection.isProtectedMaster(player, target)) {
+            event.setCanceled(true);
+            return;
+         }
          if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
             if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) {
                event.setCanceled(true);
@@ -174,6 +191,10 @@ public class ModPlayerEventHandler {
          }
          if (vars.servant_card_transformed) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);
+            if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+               ServantCardZhaoYunSkills.markCombatActivity(player);
+               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.onZhaoYunAttack(player, target);
+            }
          }
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.triggerHeraclesAttackImpact(player, target);
       }
@@ -181,6 +202,29 @@ public class ModPlayerEventHandler {
 
    private static boolean handleThompsonContenderRightClick(Player player, InteractionHand hand) {
       return player instanceof ServerPlayer serverPlayer && ThompsonContenderItem.handleServerRightClick(serverPlayer, hand);
+   }
+
+   /**
+    * The transformed Zhao Yun player can use the Yajiao spear's ordinary
+    * right-click as skill-slot 1.  Routing through the card manager keeps the
+    * normal MP, cooldown, HUD feedback and skill implementation in one place.
+    */
+   private static boolean handleZhaoYunSpearRightClick(Player player, InteractionHand hand) {
+      if (!(player instanceof ServerPlayer serverPlayer)
+         || hand != InteractionHand.MAIN_HAND
+         || !player.getItemInHand(hand).is(ModItems.YAJIAO_QIANG.get())) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars =
+         player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.servant_card_transformed
+         || !"zhao_yun_rider".equals(vars.servant_card_id)) {
+         return false;
+      }
+      // This is Zhao Yun's ordinary weapon thrust, not a skill-slot action:
+      // it deliberately bypasses the mana-cost pipeline and only keeps its
+      // own 0.5-second action cooldown.
+      return ServantCardZhaoYunSkills.performNormalSpearThrust(serverPlayer);
    }
 
    private static void triggerArtoriaManaBurstTerrainBreak(ServerPlayer player, LivingEntity target) {

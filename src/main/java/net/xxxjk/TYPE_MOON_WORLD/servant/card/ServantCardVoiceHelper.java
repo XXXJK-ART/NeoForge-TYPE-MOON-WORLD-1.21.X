@@ -37,6 +37,7 @@ public final class ServantCardVoiceHelper {
          case "ushiwakamaru_rider" -> ModSounds.USHIWAKAMARU_RIDER_VOICE_ATTACK.get();
          case "arash" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "nightingale" -> ModSounds.NIGHTINGALE_VOICE_ATTACK.get();
+         case "senko_muramasa" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -63,6 +64,8 @@ public final class ServantCardVoiceHelper {
          case "invisible_air_hammer", "invisible_air_release" -> ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get();
          case "enuma_elish" -> ModSounds.ENKIDU_VOICE_NP.get();
          case "gilgamesh_cross_slash" -> ModSounds.GILGAMESH_VOICE_ATTACK.get();
+         case "caster_gilgamesh_cannon_calibration", "caster_gilgamesh_royal_cannon" -> ModSounds.CASTER_GILGAMESH_VOICE_NP.get();
+         case "caster_gilgamesh_leader", "caster_gilgamesh_return", "caster_gilgamesh_workshop", "caster_gilgamesh_item_creation" -> ModSounds.CASTER_GILGAMESH_VOICE_SHOT.get();
          case "gallatin_spark" -> ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get();
          case "flame_tornado" -> ModSounds.GAWAIN_VOICE_FIRE_ATTACK.get();
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();
@@ -70,6 +73,11 @@ public final class ServantCardVoiceHelper {
          case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
          case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
+         case "muramasa_no_gen_kensai" -> ModSounds.SENKO_MURAMASA_VOICE_NP.get();
+         case "muramasa_tsumukari" -> ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get();
+         case "muramasa_forge", "muramasa_workshop", "muramasa_trial_slash", "muramasa_karma_eye",
+            "muramasa_flame", "muramasa_projection_volley", "muramasa_temper", "muramasa_karma_slash",
+            "muramasa_sword_field" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
          default -> null;
       };
       play(player, sound, 40);

@@ -20,4 +20,12 @@ class ServantPursuitServiceTest {
       assertEquals(2.0, ServantPursuitService.leadTicks(8.0));
       assertEquals(10.0, ServantPursuitService.leadTicks(160.0));
    }
+
+   @Test
+   void cinematicManeuverPredictionIsBounded() {
+      assertEquals(2.0, ServantManeuverService.leadTicks(0.0));
+      assertTrue(ServantManeuverService.leadTicks(32.0) > 2.0);
+      assertEquals(10.0, ServantManeuverService.leadTicks(128.0));
+      assertEquals(48.0, ServantManeuverService.MAX_NORMAL_ENGAGEMENT_DISTANCE);
+   }
 }

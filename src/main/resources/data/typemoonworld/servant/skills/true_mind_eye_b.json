@@ -6,5 +6,6 @@
   "mp_cost": 0,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": []
+  "effects": [],
+  "ai": {"facts": [{"type": "prediction", "strength": 0.75}]}
 }

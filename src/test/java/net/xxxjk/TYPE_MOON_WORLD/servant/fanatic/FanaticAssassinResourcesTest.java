@@ -37,38 +37,20 @@ class FanaticAssassinResourcesTest {
 
    @Test
    void modelTextureAndRequiredAnimationsAreValid() throws Exception {
-      JsonObject geo = json("assets/typemoonworld/geo/fanatic_assassin.geo.json");
-      JsonObject description = geo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject().getAsJsonObject("description");
-      assertEquals("geometry.fanatic_assassin", description.get("identifier").getAsString());
-      assertEquals(128, description.get("texture_width").getAsInt());
-      assertEquals(128, description.get("texture_height").getAsInt());
+      JsonObject definitionModel = json("data/typemoonworld/servant/definitions/fanatic_assassin.json")
+         .getAsJsonObject("model");
+      assertEquals("", definitionModel.get("geometry").getAsString());
+      assertEquals("", definitionModel.get("animation").getAsString());
       var texture = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/entity/fanatic_assassin.png").toFile());
       assertNotNull(texture);
-      assertEquals(128, texture.getWidth());
-      assertEquals(128, texture.getHeight());
-      JsonObject animations = json("assets/typemoonworld/animations/fanatic_assassin.animation.json").getAsJsonObject("animations");
-      for (String key : List.of("standing", "walk", "melee", "heartbeat", "marrow", "hair", "temperature", "nerves", "computer", "toxin", "jinn")) {
-         String full = "standing".equals(key) ? key : "animation.fanatic_assassin." + key;
-         assertTrue(animations.has(full), full);
-      }
-      JsonObject baseBones = animations.getAsJsonObject("standing").getAsJsonObject("bones");
-      assertEquals(-9.0, baseBones.getAsJsonObject("bone").getAsJsonArray("position").get(1).getAsDouble());
-      assertEquals(0.65, baseBones.getAsJsonObject("bone").getAsJsonArray("scale").get(0).getAsDouble());
-      assertEquals(0.5, baseBones.getAsJsonObject("head").getAsJsonArray("position").get(2).getAsDouble());
-      assertEquals(0.9, baseBones.getAsJsonObject("\u888d\u5b50").getAsJsonArray("scale").get(2).getAsDouble());
-      assertEquals(1.1, baseBones.getAsJsonObject("bone10").getAsJsonArray("scale").get(2).getAsDouble());
-      JsonObject idleBody = animations.getAsJsonObject("animation.fanatic_assassin.standing").getAsJsonObject("bones")
-         .getAsJsonObject("body");
-      assertEquals(0.0, idleBody.getAsJsonObject("rotation").getAsJsonArray("0.0").get(0).getAsDouble());
-      JsonObject walkBody = animations.getAsJsonObject("animation.fanatic_assassin.walk").getAsJsonObject("bones")
-         .getAsJsonObject("body");
-      assertEquals(0.0, walkBody.getAsJsonObject("rotation").getAsJsonArray("0.0").get(0).getAsDouble());
-
-      String model = Files.readString(JAVA.resolve("client/model/FanaticAssassinModel.java"));
-      assertTrue(model.contains("applyBaseProportions()"));
-      assertTrue(model.contains("root.setPosY(-9.0F)"));
-      assertTrue(model.contains("root.setScaleX(0.65F)"));
-      assertTrue(model.contains("head.setPosZ(0.5F)"));
+      assertEquals(64, texture.getWidth());
+      assertEquals(64, texture.getHeight());
+      String client = Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java"));
+      assertTrue(client.contains("ModEntities.FANATIC_ASSASSIN.get(), context -> new HumanoidServantRenderer<>(context, \"fanatic_assassin\")"));
+      assertTrue(Files.notExists(JAVA.resolve("client/model/FanaticAssassinModel.java")));
+      assertTrue(Files.notExists(JAVA.resolve("client/renderer/FanaticAssassinRenderer.java")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/geo/fanatic_assassin.geo.json")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/animations/fanatic_assassin.animation.json")));
    }
 
    @Test
@@ -162,10 +144,7 @@ class FanaticAssassinResourcesTest {
       String jinn = Files.readString(JAVA.resolve("servant/entity/FanaticAssassinJinnEntity.java"));
       assertTrue(jinn.contains("spawnJinnTransitionFx"));
       assertTrue(jinn.contains("spawnJinnAura"));
-      String renderer = Files.readString(JAVA.resolve("client/renderer/FanaticAssassinRenderer.java"));
-      for (String technique : List.of("HEARTBEAT", "COMPUTER", "MARROW", "HAIR", "TEMPERATURE", "NERVES", "TOXIN", "JINN")) {
-         assertTrue(renderer.contains("TECHNIQUE_" + technique), technique);
-      }
+      assertTrue(Files.notExists(JAVA.resolve("client/renderer/FanaticAssassinRenderer.java")));
    }
 
    private static JsonObject json(String path) throws Exception {

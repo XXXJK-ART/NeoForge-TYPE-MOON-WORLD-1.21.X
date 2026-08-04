@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MercurySwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaBlockRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RuleBreakerRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RubyStaffRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaSlashProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessChainDaggerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NamelessBowRenderer;
@@ -138,6 +139,17 @@ public class ClientModEventSubscriber {
             return this.renderer;
          }
       }, new Item[]{ModItems.HECATES_STAFF.get()});
+      event.registerItem(new IClientItemExtensions() {
+         private RubyStaffRenderer renderer;
+
+         public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            if (this.renderer == null) {
+               this.renderer = new RubyStaffRenderer();
+            }
+
+            return this.renderer;
+         }
+      }, new Item[]{ModItems.RUBY_STAFF.get()});
       event.registerItem(new IClientItemExtensions() {
          private MercurySwordRenderer renderer;
 

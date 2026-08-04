@@ -100,6 +100,14 @@ public final class DeferredTerrainDestruction {
       return new AdvancingCylinder(job);
    }
 
+   /** Queues a distance-gated vertical rift that clears the tunnel core upward to the open sky. */
+   public static AdvancingSkyRift queueAdvancingSkyRift(ServerLevel level, Vec3 origin, Vec3 direction,
+                                                        double length, int radius, Runnable completion) {
+      SkyRiftJob job = new SkyRiftJob(level, origin, direction, length, radius, completion);
+      add(level, job);
+      return new AdvancingSkyRift(job);
+   }
+
    /** Queues a sphere whose available work expands only when the caller advances its radius. */
    public static ExpandingSphere queueExpandingSphere(ServerLevel level, Vec3 center, int radius, Runnable completion) {
       ExpandingSphereJob job = new ExpandingSphereJob(level, center, radius, completion);
@@ -136,7 +144,30 @@ public final class DeferredTerrainDestruction {
       if (level != null && radius > 0) add(level, new UpperHemisphereJob(level, center, radius, minimumYExclusive, maxHardness));
    }
 
-   private static void add(ServerLevel level, Job job) { if (level != null && job != null) JOBS.computeIfAbsent(level.dimension(), k -> new ArrayDeque<>()).add(job); }
+   private static void add(ServerLevel level, Job job) {
+      if (level == null || job == null) return;
+      ArrayDeque<Job> queue = JOBS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
+      for (Job existing : List.copyOf(queue)) {
+         if (existing.supersedes(job)) return;
+         if (job.supersedes(existing)) queue.remove(existing);
+      }
+      if (queue.size() >= Math.max(8, Config.maxQueuedTerrainJobs)) return;
+      queue.add(job);
+   }
+
+   public static int maximumQueuedJobsPerDimension() {
+      return Math.max(8, Config.maxQueuedTerrainJobs);
+   }
+
+   static boolean overlappingImpactSupersedes(Vec3 center, double radius, float hardness, long queuedAt,
+                                               Vec3 otherCenter, double otherRadius, float otherHardness,
+                                               long otherQueuedAt) {
+      if (Math.abs(queuedAt - otherQueuedAt) > 4L) return false;
+      double overlap = Math.min(radius, otherRadius) * 0.75;
+      return center.distanceToSqr(otherCenter) <= overlap * overlap
+         && radius >= otherRadius && hardness >= otherHardness;
+   }
+
    @SubscribeEvent public static void tick(LevelTickEvent.Post event) {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
       ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
@@ -162,10 +193,11 @@ public final class DeferredTerrainDestruction {
    @SubscribeEvent public static void unload(LevelEvent.Unload event) { if (event.getLevel() instanceof Level level && !level.isClientSide()) { JOBS.remove(level.dimension()); LAST_METRICS.remove(level.dimension()); } }
 
    private abstract static class Job {
-      final ServerLevel level; boolean done; Runnable completion; int sliceLimit = 128;
-      Job(ServerLevel level) { this.level = level; }
+      final ServerLevel level; final long queuedAt; boolean done; Runnable completion; int sliceLimit = 128;
+      Job(ServerLevel level) { this.level = level; this.queuedAt = level.getGameTime(); }
       abstract void advance();
       boolean ready() { return true; }
+      boolean supersedes(Job other) { return false; }
       void finish() { if (completion != null) completion.run(); }
       Job schedule(int targetTicks, long estimatedChecks) {
          if (targetTicks > 0) sliceLimit = Mth.clamp((int)Math.ceil(estimatedChecks / (double)targetTicks), 16, 512);
@@ -235,6 +267,13 @@ public final class DeferredTerrainDestruction {
          int height = full ? scan * 2 + 1 : scan + 1;
          super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * height);
          return this;
+      }
+
+      @Override boolean supersedes(Job other) {
+         if (!(other instanceof HemisphereJob candidate) || this.full != candidate.full
+            || this.lower != candidate.lower) return false;
+         return overlappingImpactSupersedes(this.center, this.radius, this.hardness, this.queuedAt,
+            candidate.center, candidate.radius, candidate.hardness, candidate.queuedAt);
       }
 
       @Override void advance() {
@@ -443,6 +482,81 @@ public final class DeferredTerrainDestruction {
          sideOffset = -radius;
          verticalOffset = -radius;
          if (along > Math.ceil(length) && sealed) done = true;
+      }
+   }
+
+   public static final class AdvancingSkyRift {
+      private final SkyRiftJob job;
+      private AdvancingSkyRift(SkyRiftJob job) { this.job = job; }
+      public void advanceTo(double distance) { job.advanceTo(distance); }
+      public void seal() { job.seal(); }
+      public boolean isComplete() { return job.done; }
+   }
+
+   private static final class SkyRiftJob extends Job {
+      final Vec3 origin, forward, side;
+      final double length;
+      final int radius, radiusSqr, minY;
+      int along, sideOffset, currentY;
+      double targetDistance;
+      boolean sealed, columnReady;
+
+      SkyRiftJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int radius, Runnable completion) {
+         super(level);
+         this.origin = origin;
+         Vec3 flat = new Vec3(direction.x, 0.0, direction.z);
+         this.forward = flat.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : flat.normalize();
+         this.side = new Vec3(-this.forward.z, 0.0, this.forward.x);
+         this.length = Math.max(0.0, length);
+         this.radius = Math.max(1, radius);
+         this.radiusSqr = this.radius * this.radius;
+         this.minY = Mth.clamp(Mth.floor(origin.y), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
+         this.sideOffset = -this.radius;
+         this.completion = completion;
+      }
+
+      void advanceTo(double distance) { targetDistance = Math.max(targetDistance, Math.min(length, distance)); }
+      void seal() { sealed = true; targetDistance = length; }
+      @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
+
+      @Override void advance() {
+         while (!done && ready()) {
+            if (!columnReady && !prepareColumn()) continue;
+            BlockPos pos = columnPos(currentY);
+            currentY--;
+            if (currentY < minY) nextColumn();
+            if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
+            return;
+         }
+      }
+
+      private boolean prepareColumn() {
+         if (sideOffset * sideOffset > radiusSqr) {
+            nextColumn();
+            return false;
+         }
+         Vec3 column = origin.add(forward.scale(along)).add(side.scale(sideOffset));
+         int x = Mth.floor(column.x), z = Mth.floor(column.z);
+         currentY = Math.min(level.getMaxBuildHeight() - 1, level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+         if (currentY < minY) {
+            nextColumn();
+            return false;
+         }
+         columnReady = true;
+         return true;
+      }
+
+      private BlockPos columnPos(int y) {
+         Vec3 column = origin.add(forward.scale(along)).add(side.scale(sideOffset));
+         return new BlockPos(Mth.floor(column.x), y, Mth.floor(column.z));
+      }
+
+      private void nextColumn() {
+         columnReady = false;
+         if (++sideOffset > radius) {
+            sideOffset = -radius;
+            if (++along > Math.ceil(length) && sealed) done = true;
+         }
       }
    }
 

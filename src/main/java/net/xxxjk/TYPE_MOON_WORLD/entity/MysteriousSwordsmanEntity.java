@@ -291,14 +291,14 @@ public class MysteriousSwordsmanEntity extends HumanNpcEntity implements GeoEnti
 
    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       controllers.add(new AnimationController<>(this, "controller", 4, event -> event.setAndContinue(
-         event.isMoving() ? RawAnimation.begin().thenLoop("animation.sasaki_kojiro.walk") : RawAnimation.begin().thenLoop("animation.sasaki_kojiro.idle")
+         RawAnimation.begin().thenLoop("animation")
       )));
       AnimationController<MysteriousSwordsmanEntity> action = new AnimationController<>(this, "action_controller", 0, event -> PlayState.STOP);
-      action.triggerableAnim("stance", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.idle"));
-      action.triggerableAnim("thrust", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.slash_diagonal"));
-      action.triggerableAnim("slash", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.slash_diagonal"));
-      action.triggerableAnim("horizontal", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.horizontal_swing"));
-      action.triggerableAnim("tsubame", RawAnimation.begin().thenPlay("animation.sasaki_kojiro.swallow_return"));
+      action.triggerableAnim("stance", RawAnimation.begin().thenPlay("animation"));
+      action.triggerableAnim("thrust", RawAnimation.begin().thenPlay("animation"));
+      action.triggerableAnim("slash", RawAnimation.begin().thenPlay("animation"));
+      action.triggerableAnim("horizontal", RawAnimation.begin().thenPlay("animation"));
+      action.triggerableAnim("tsubame", RawAnimation.begin().thenPlay("animation"));
       controllers.add(action);
    }
 

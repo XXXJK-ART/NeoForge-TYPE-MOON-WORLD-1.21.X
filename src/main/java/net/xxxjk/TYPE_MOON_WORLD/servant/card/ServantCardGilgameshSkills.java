@@ -91,10 +91,21 @@ public final class ServantCardGilgameshSkills {
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.A, MagicResistanceHelper.damageReductionForRank(MagicResistanceRank.A), 0.75F);
       long now = player.level().getGameTime();
       GilgameshDivineShield.tick(player);
+      syncDivineShieldCooldown(player, vars);
       if (now >= player.getPersistentData().getLong(CHARISMA_UNTIL) && player.getAttribute(Attributes.KNOCKBACK_RESISTANCE) != null) {
          player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).removeModifier(CHARISMA_KNOCKBACK_ID);
       }
       tickChainPursuit(player, now);
+   }
+
+   private static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      String oldCooldowns = vars.servant_card_skill_cooldowns;
+      String oldEnds = vars.servant_card_skill_cooldown_ends;
+      ServantCardTransformManager.setSkillCooldownUntil(player, vars, 5, GilgameshDivineShield.cooldownUntil(player));
+      if (!java.util.Objects.equals(oldCooldowns, vars.servant_card_skill_cooldowns)
+         || !java.util.Objects.equals(oldEnds, vars.servant_card_skill_cooldown_ends)) {
+         vars.syncPlayerVariables(player);
+      }
    }
 
    public static boolean isVaultAction(String id) {
@@ -218,6 +229,7 @@ public final class ServantCardGilgameshSkills {
          Vec3 aim = center.subtract(start).normalize();
          GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], 35.0F);
          p.setHomingTarget(target);
+         p.setEffectStride(3);
          p.setLaunchDelay(16); level.addFreshEntity(p);
       }
    }
@@ -227,8 +239,11 @@ public final class ServantCardGilgameshSkills {
       player.clearFire();
    }
 
-   public static void performDivineShield(ServerPlayer player) {
-      GilgameshDivineShield.activate(player);
+   public static boolean performDivineShield(ServerPlayer player) {
+      if (GilgameshDivineShield.isActive(player)) {
+         return GilgameshDivineShield.deactivate(player);
+      }
+      return GilgameshDivineShield.activate(player);
    }
 
    public static void performClairvoyance(ServerPlayer player) {
@@ -266,13 +281,13 @@ public final class ServantCardGilgameshSkills {
 
    public static void performLaughVault(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) level.playSound(null, player.blockPosition(), ModSounds.GILGAMESH_VOICE_MONGREL.get(), SoundSource.PLAYERS, 1.5F, 1.0F);
-      castProjectiles(player, 96, 128.0, 48.0F);
+      castProjectiles(player, 48, 128.0, 48.0F);
       for (int round = 1; round < 4; round++) {
          int delay = round * 16;
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             if (player.isAlive() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id) && hasKey(player)) {
-               castProjectiles(player, 96, 128.0, 48.0F);
+               castProjectiles(player, 48, 128.0, 48.0F);
             }
          });
       }
@@ -288,7 +303,8 @@ public final class ServantCardGilgameshSkills {
       Vec3 right = look.cross(new Vec3(0, 1, 0)); if (right.lengthSqr() < 0.01) right = new Vec3(1, 0, 0); right = right.normalize();
       Vec3 up = right.cross(look).normalize(); LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 40, 3);
       Vec3 point = target == null ? player.getEyePosition().add(look.scale(30)) : target.getEyePosition();
-      for (int i = 0; i < count; i++) { double x = (level.random.nextDouble() - .5) * spread; double y = (level.random.nextDouble() - .5) * spread * .5; Vec3 start = player.getEyePosition().add(right.scale(x)).add(up.scale(y)); Vec3 aim = point.subtract(start).normalize(); GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], damage); p.setLaunchDelay(8 + i % 8 * 3); level.addFreshEntity(p); }
+      int effectStride = count >= 48 ? 4 : count >= 18 ? 2 : 1;
+      for (int i = 0; i < count; i++) { double x = (level.random.nextDouble() - .5) * spread; double y = (level.random.nextDouble() - .5) * spread * .5; Vec3 start = player.getEyePosition().add(right.scale(x)).add(up.scale(y)); Vec3 aim = point.subtract(start).normalize(); GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], damage); p.setEffectStride(effectStride); p.setLaunchDelay(8 + i % 8 * 3); level.addFreshEntity(p); }
       level.playSound(null, player.blockPosition(), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 1.2F, 1.25F);
    }
 
@@ -300,6 +316,10 @@ public final class ServantCardGilgameshSkills {
       try {
          net.minecraft.world.entity.Entity entity = level.getEntity(java.util.UUID.fromString(raw));
          if (!(entity instanceof LivingEntity target) || !target.isAlive()) return;
+         if (ServantMasterTargeting.isContractMaster(player, target)) {
+            player.getPersistentData().remove(CHAIN_TARGET);
+            return;
+         }
          target.invulnerableTime = 0; target.hurt(player.damageSources().magic(), 8.0F); target.invulnerableTime = 0;
          for (int i = 0; i < 3; i++) {
             Vec3 start = player.getEyePosition().add((i - 1) * 1.4, 1.0 + i * .4, 0);

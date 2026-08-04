@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Type Moon World servant action profile",
+  "type": "object",
+  "required": ["servant", "actions"],
+  "properties": {
+    "servant": {"type": "string"},
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {"type": "string"},
+          "tags": {"type": "array", "items": {"enum": ["melee", "projectile", "area", "noble_phantasm", "guard", "evade", "interrupt", "heal", "control", "summon", "launcher", "pursuit", "intercept", "gap_closer", "anti_air", "counter", "finisher", "terrain_break"]}},
+          "minimum_range": {"type": "number", "minimum": 0},
+          "maximum_range": {"type": "number", "minimum": 0},
+          "mana_cost": {"type": "number", "minimum": 0},
+          "stamina_cost": {"type": "number", "minimum": 0},
+          "terrain_impact": {"enum": ["none", "chip", "small", "medium", "heavy", "np"]},
+          "maneuver": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "movement": {"enum": ["none", "pursuit", "intercept", "gap_closer"]},
+              "control": {"type": "string"},
+              "pursuit_window": {"type": "integer", "minimum": 0, "maximum": 60},
+              "combo_cost": {"type": "integer", "minimum": 0, "maximum": 8},
+              "interrupt_level": {"type": "integer", "minimum": 0, "maximum": 5},
+              "horizontal_force": {"type": "number", "minimum": 0, "maximum": 5},
+              "vertical_force": {"type": "number", "minimum": 0, "maximum": 3},
+              "approach_range": {"type": "number", "minimum": 0, "maximum": 48},
+              "damage_scale": {"type": "number", "minimum": 0, "maximum": 5},
+              "interrupt_resistance": {"type": "integer", "minimum": 0, "maximum": 5}
+            }
+          }
+        }
+      }
+    }
+  }
+}

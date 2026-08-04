@@ -38,11 +38,13 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -53,6 +55,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
@@ -64,6 +67,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
@@ -75,10 +79,12 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
@@ -91,6 +97,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
@@ -103,6 +111,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatKnowledgeService;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
@@ -135,13 +145,16 @@ public class CommonEvents {
    private static final Map<String, Set<UUID>> SHIKI_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
 
    @SubscribeEvent
-   public static void onPlayerTickPre(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
-      if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer serverPlayer)) {
+   public static void onZhaoYunHakuryuMount(EntityMountEvent event) {
+      if (!event.isMounting() || event.getLevel().isClientSide()) return;
+      if (!(event.getEntityBeingMounted() instanceof ZhaoYunHakuryuEntity mount)
+         || !(event.getEntityMounting() instanceof Player player)) {
          return;
       }
-      TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.master_active && !vars.servant_card_transformed) {
-         ServantCardTransformManager.normalizeFood(serverPlayer);
+      // Force-mount calls bypass Entity.canAddPassenger, so enforce the
+      // Zhao Yun master/card-owner rule at the NeoForge mount event too.
+      if (!mount.canPlayerMount(player)) {
+         event.setCanceled(true);
       }
    }
 
@@ -302,7 +315,25 @@ public class CommonEvents {
    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
       if (!event.getEntity().level().isClientSide) {
          Player player = event.getEntity();
+         // Hakuryu accepts two passengers, so the vanilla dismount path can
+         // occasionally leave the master attached when Zhao Yun occupies the
+         // first seat. Handle the master's Shift request on the server as a
+         // final authority; the client mixin still provides immediate input
+         // prediction.
+         if (player instanceof ServerPlayer serverPlayer
+            && player.isShiftKeyDown()
+            && player.getVehicle() instanceof ZhaoYunHakuryuEntity) {
+            player.stopRiding();
+         }
+         if (player.hasEffect(ModMobEffects.PETRIFIED)) {
+            player.setDeltaMovement(Vec3.ZERO);
+            player.hurtMarked = true;
+            player.setSprinting(false);
+            player.stopUsingItem();
+         }
          if (player instanceof ServerPlayer serverPlayer) {
+            MuramasaDissolutionService.tick(serverPlayer);
+            RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
@@ -405,6 +436,28 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         // Creative and spectator players are globally non-combat targets.
+         // Do this before servant damage redirection so custom effects cannot
+         // transfer damage away from the protected player or otherwise mutate
+         // the event first.
+         if (event.getEntity() instanceof Player player
+            && (player.isCreative() || player.isSpectator())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
+         if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
+            event.setCanceled(false);
+            event.setAmount(Float.MAX_VALUE);
+            event.setInvulnerabilityTicks(0);
+            for (DamageContainer.Reduction reduction : DamageContainer.Reduction.values()) {
+               event.addReductionModifier(reduction, (container, amount) -> 0.0F);
+            }
+            return;
+         }
+         if (tryRedirectZhaoYunMountDamage(event)) return;
+         if (tryRedirectZhaoYunRescueDamage(event)) return;
+         applyZhaoYunRescueDefense(event);
          if (event.getSource().getEntity() instanceof ServerPlayer attacker
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.isShadowHassan(attacker)) {
             if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(attacker)) {
@@ -413,9 +466,7 @@ public class CommonEvents {
             }
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(attacker);
          }
-         if (EntityUtils.isSpectatorPlayer(event.getEntity())) {
-            event.setCanceled(true);
-         } else {
+         {
             if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) {
                tryRedirectMedusaPegasusDamage(event.getEntity(), event);
                return;
@@ -451,15 +502,28 @@ public class CommonEvents {
             }
             handleContenderBulletDamage(event, directEntity);
             if (event.getSource().getEntity() instanceof LivingEntity attacker) {
-               event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
-               event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+               boolean qinggangSecondHit = event.getSource().is(
+                  net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes.QINGGANG_SECOND_HIT);
+               if (!qinggangSecondHit) {
+                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+                  event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+               }
             }
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
             if (event.getEntity() instanceof ServerPlayer player) {
+               if (!fanaticDefensePiercing && RubyStaffItem.tryAbsorbShield(player, event)) {
+                  return;
+               }
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
+               if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(player, event.getSource())) {
+                  CombatKnowledgeService.observeProjectileNegation(player, (Projectile)directEntity);
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  return;
+               }
                if (vars.servant_card_transformed && "enkidu".equals(vars.servant_card_id)
                   && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardEnkiduSkills.isEnumaElishActive(player)
                   && !fanaticDefensePiercing
@@ -492,9 +556,6 @@ public class CommonEvents {
                if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
                   return;
                }
-               if (vars.servant_card_transformed && player.getHealth() - event.getAmount() <= 0.0F) {
-                  MasterServantLinkService.onServantDeath(player, vars);
-               }
                if (vars.servant_card_transformed
                   && vars.servant_card_death_release
                   && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
@@ -509,16 +570,6 @@ public class CommonEvents {
                   event.setAmount(0.0F);
                   MasterStateManager.tryRevive(player, vars);
                   return;
-               }
-               if (vars.master_active && player.getHealth() - event.getAmount() <= 0.0F) {
-                  ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
-                  if (servant != null) {
-                     MasterServantLinkService.breakLink(player, servant, false);
-                  } else {
-                     vars.master_servant_uuid = "";
-                     MasterServantLinkService.clearSnapshot(vars);
-                     vars.syncPlayerVariables(player);
-                  }
                }
             }
             if (event.getEntity() instanceof LivingEntity living) {
@@ -723,6 +774,89 @@ public class CommonEvents {
       clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
    }
 
+   private static boolean tryRedirectZhaoYunMountDamage(LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F) return false;
+      Entity attacker = event.getSource().getEntity();
+      Entity direct = event.getSource().getDirectEntity();
+      if (event.getEntity() instanceof ZhaoYunHakuryuEntity mount && mount.isAlive()) {
+         // Zhao Yun, the master/owner, and current passengers must not hurt
+         // their own Hakuryu. Enemy damage is allowed through; during
+         // Changbanpo the entity's hurt() method reduces it to 5%.
+         if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+         }
+         return false;
+      }
+      LivingEntity passenger = event.getEntity();
+      if (!(passenger.getVehicle() instanceof ZhaoYunHakuryuEntity mount)
+         || !mount.isAlive() || !mount.shouldRedirectPassengerDamage(passenger)) {
+         return false;
+      }
+      if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      // Mounted Zhao Yun/card owner and Hakuryu share one health pool: attacks
+      // against riders are transferred to Hakuryu. This keeps the horse's
+      // 2000 HP meaningful, and NP damage reduction is applied by mount.hurt().
+      float redirected = event.getAmount();
+      event.setCanceled(true);
+      event.setAmount(0.0F);
+      mount.hurt(event.getSource(), redirected);
+      return true;
+   }
+
+   private static boolean tryRedirectZhaoYunRescueDamage(LivingIncomingDamageEvent event) {
+      if (event.getEntity() instanceof LivingEntity protectedEntity
+         && protectedEntity.level() instanceof ServerLevel level
+         && event.getAmount() > 0.0F) {
+         // A card Zhao Yun can protect a friendly player target. The target
+         // UUID and expiry are kept on Zhao Yun's persistent data.
+         for (ServerPlayer protector : level.players()) {
+               var protectorVars = protector.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               if (!protectorVars.servant_card_transformed || !"zhao_yun_rider".equals(protectorVars.servant_card_id)) continue;
+               var data = protector.getPersistentData();
+               if (data.getLong(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_RESCUE_UNTIL) <= level.getGameTime()
+                  || !data.hasUUID(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_RESCUE_TARGET)
+                  || !data.getUUID(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.TAG_RESCUE_TARGET).equals(protectedEntity.getUUID())) continue;
+               float redirected = event.getAmount() * 0.8F;
+               event.setAmount(event.getAmount() - redirected);
+               protector.hurt(event.getSource(), redirected);
+               return false;
+         }
+      }
+      if (!(event.getEntity() instanceof ServerPlayer master) || event.getEntity().getVehicle() instanceof ZhaoYunHakuryuEntity
+         || !(master.level() instanceof ServerLevel level) || event.getAmount() <= 0.0F) {
+         return false;
+      }
+      ZhaoYunRiderEntity protector = level.getEntitiesOfClass(ZhaoYunRiderEntity.class,
+         master.getBoundingBox().inflate(16.0), rider -> rider.isAlive()
+            && rider.getEntityMaster() == master && rider.isRescueProtecting(level.getGameTime())).stream().findFirst().orElse(null);
+      if (protector == null) return false;
+      float redirected = event.getAmount() * 0.8F;
+      event.setAmount(event.getAmount() - redirected);
+      protector.hurt(event.getSource(), redirected);
+      return false;
+   }
+
+   /**
+    * Single Rider Rescue used to stack a 50%-class resistance effect. Keep
+    * the visible Resistance I effect, then apply the remaining factor here so
+    * the total reduction is exactly 30% (0.8 * 0.875 = 0.7).
+    */
+   private static void applyZhaoYunRescueDefense(LivingIncomingDamageEvent event) {
+      if (!(event.getEntity() instanceof LivingEntity entity)
+         || event.getAmount() <= 0.0F
+         || entity.getPersistentData().getLong("ZhaoYunRescueDefenseUntil")
+            <= entity.level().getGameTime()) {
+         return;
+      }
+      event.setAmount(event.getAmount() * 0.875F);
+   }
+
    @SubscribeEvent
    public static void onDefinitionSnapshotLogin(PlayerLoggedInEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) DefinitionSnapshotService.send(player);
@@ -870,11 +1004,8 @@ public class CommonEvents {
       }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
-         if (!fanaticDefensePiercing && data.getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
-            && !CuChulainnCombatHelper.isMovementRestricted(servant)
-            && !event.getSource().is(DamageTypeTags.IS_EXPLOSION)
-            && event.getSource().getDirectEntity() instanceof Projectile projectile
-            && projectile.getOwner() != servant) {
+         if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())
+            && event.getSource().getDirectEntity() instanceof Projectile projectile) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.END_ROD,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
@@ -883,6 +1014,7 @@ public class CommonEvents {
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
                   12, 0.3, 0.4, 0.3, 0.03);
             }
+            CombatKnowledgeService.observeProjectileNegation(servant, projectile);
             event.setCanceled(true);
             return;
          }
@@ -1105,7 +1237,7 @@ public class CommonEvents {
       }
    }
 
-   @SubscribeEvent
+   @SubscribeEvent(priority = EventPriority.LOWEST)
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
          if (event.getEntity() instanceof Player player) {
@@ -1114,18 +1246,17 @@ public class CommonEvents {
 
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (vars.servant_card_transformed) {
+            // Contract loss is committed only after every higher-priority death
+            // handler has had a chance to cancel the event (revive/protection).
+            if (!event.isCanceled() && vars.servant_card_transformed) {
+               if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+                  net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.clear(player);
+               }
+               MasterServantLinkService.onServantDeath(player, vars);
                ServantCardTransformManager.prepareVanishingEquipment(player, vars);
             }
-            if (vars.master_active) {
-               ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
-               if (servant != null) {
-                  MasterServantLinkService.breakLink(player, servant, false);
-               } else {
-                  vars.master_servant_uuid = "";
-                  MasterServantLinkService.clearSnapshot(vars);
-                  vars.syncPlayerVariables(player);
-               }
+            if (!event.isCanceled() && vars.master_active) {
+               MasterServantLinkService.onMasterLost(player, vars);
             }
          }
 

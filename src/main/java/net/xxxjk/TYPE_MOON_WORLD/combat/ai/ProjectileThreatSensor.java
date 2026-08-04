@@ -5,6 +5,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
+import java.util.Set;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
 
 public final class ProjectileThreatSensor {
    private static final int MAX_PROJECTILES = 32;
@@ -28,7 +30,9 @@ public final class ProjectileThreatSensor {
          Vec3 closest = projectile.position().add(velocity.scale(impactTicks));
          double dangerRadius = observer.getBbWidth() * 0.65 + 0.85;
          if (closest.distanceToSqr(center) > dangerRadius * dangerRadius) continue;
-         if (best == null || impactTicks < best.impactTicks()) best = new IncomingProjectile(projectile, impactTicks, closest);
+         if (best == null || impactTicks < best.impactTicks()) {
+            best = new IncomingProjectile(projectile, impactTicks, closest, ProjectileThreatClassifier.classify(projectile));
+         }
       }
       return best;
    }
@@ -39,5 +43,14 @@ public final class ProjectileThreatSensor {
       return !(owner instanceof LivingEntity living && observer.isAlliedTo(living));
    }
 
-   public record IncomingProjectile(Projectile projectile, double impactTicks, Vec3 closestPoint) { }
+   public record IncomingProjectile(Projectile projectile, double impactTicks, Vec3 closestPoint,
+                                    Set<FactBypass> bypasses) {
+      public IncomingProjectile(Projectile projectile, double impactTicks, Vec3 closestPoint) {
+         this(projectile, impactTicks, closestPoint, ProjectileThreatClassifier.classify(projectile));
+      }
+
+      public IncomingProjectile {
+         bypasses = bypasses == null ? Set.of() : Set.copyOf(bypasses);
+      }
+   }
 }

@@ -16,6 +16,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCapabilityResolver;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 
 public final class CuChulainnCombatHelper {
    public static final String PROTECTION_FROM_ARROWS_TAG = "CuProtectionFromArrows";
@@ -89,7 +91,14 @@ public final class CuChulainnCombatHelper {
    }
 
    public static boolean isMovementRestricted(LivingEntity entity) {
-      return entity.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) || entity.getTicksFrozen() > 0;
+      return !ServantCapabilityResolver.isMobile(entity);
+   }
+
+   public static boolean hasActiveProtectionFromArrows(LivingEntity entity) {
+      var definition = ServantIdentityHelper.definitionOf(entity);
+      return entity != null && definition != null && CuChulainnEntity.SERVANT_KEY.equals(definition.id())
+         && entity.getPersistentData().getBoolean(PROTECTION_FROM_ARROWS_TAG)
+         && !isMovementRestricted(entity);
    }
 
    public static boolean tryNegateMedeaSmallMagic(CuChulainnEntity entity, DamageSource source, float amount) {

@@ -8,6 +8,7 @@
     "berserk_health_ratio": 0.0,
     "berserk_damage_multiplier": 1.0
   },
+  "tactical": {"style":"sniper","minimum_range":18,"preferred_range":32,"maximum_range":48,"reposition_distance":18,"pursuit_aggression":0.1,"intercept_bias":5,"vertical_mobility":0.4,"recovery_tendency":0.7,"collateral_caution":1.0,"maximum_terrain_impact":"small"},
   "social": {"talk_interval": 0, "greeting_probability": 0.0},
   "command": {"base_obedience_rate": 0.95, "favor_multiplier": 0.005},
   "environment": {"liked_biomes": [], "disliked_biomes": [], "preferred_weather": "clear"}

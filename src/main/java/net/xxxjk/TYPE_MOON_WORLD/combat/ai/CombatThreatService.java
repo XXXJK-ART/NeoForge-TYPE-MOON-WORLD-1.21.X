@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -31,6 +32,15 @@ public final class CombatThreatService {
       threats.add(threat);
    }
 
+   /** Removes stale telegraphs when an approach action is surrendered to melee. */
+   public static void clearForSource(ServerLevel level, UUID sourceUuid) {
+      if (level == null || sourceUuid == null) return;
+      List<CombatThreat> threats = THREATS.get(level.dimension());
+      if (threats == null) return;
+      threats.removeIf(threat -> sourceUuid.equals(threat.sourceUuid()));
+      if (threats.isEmpty()) THREATS.remove(level.dimension());
+   }
+
    public static CombatThreat publishWindup(LivingEntity caster, LivingEntity target, ResourceLocation actionId,
                                              int windupTicks, boolean ranged, int danger) {
       if (!(caster.level() instanceof ServerLevel level)) return null;
@@ -55,9 +65,25 @@ public final class CombatThreatService {
       return result;
    }
 
+   public static CombatThreat incoming(ServerLevel level, LivingEntity target, long now, long maximumTicks,
+                                       Predicate<CombatThreat> filter) {
+      if (level == null || target == null) return null;
+      CombatThreat best = null;
+      for (CombatThreat threat : nearby(level, target.position(), 64.0, now)) {
+         if (threat.sourceUuid().equals(target.getUUID()) || threat.ticksToImpact(now) > maximumTicks
+            || filter != null && !filter.test(threat)) continue;
+         boolean targeted = target.getUUID().equals(threat.targetUuid());
+         if (!targeted && !threat.threatens(target.getEyePosition(), target.getBbWidth() * 0.65)) continue;
+         if (best == null || threat.ticksToImpact(now) < best.ticksToImpact(now)
+            || threat.ticksToImpact(now) == best.ticksToImpact(now) && threat.danger() > best.danger()) best = threat;
+      }
+      return best;
+   }
+
    @SubscribeEvent
    public static void tick(LevelTickEvent.Post event) {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
+      if (level.getGameTime() % 20L != 0L) return;
       List<CombatThreat> threats = THREATS.get(level.dimension());
       if (threats == null) return;
       long now = level.getGameTime();

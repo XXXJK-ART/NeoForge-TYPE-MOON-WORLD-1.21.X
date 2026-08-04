@@ -1,0 +1,62 @@
+{
+  "duration": 14.0,
+  "emitters": [
+    {
+      "start_time": 0.0, "end_time": 10.0, "rate": 760, "particle_lifetime": 0.55,
+      "binding": {"mode":"entity_look","offset":[0,0.08,0],"rotate_with_entity":true},
+      "component": {"type":"circle","radius":1.0,"segments":180},
+      "color_over_life": [{"t":0,"color":"#22AADDFF"},{"t":0.2,"color":"#AA66CCFF"},{"t":0.72,"color":"#CCFF4400"},{"t":1,"color":"#00FF2200"}],
+      "size_over_life": [{"t":0,"size":0.02},{"t":0.35,"size":0.11},{"t":0.82,"size":0.07},{"t":1,"size":0.01}],
+      "transform_over_life":[{"t":0,"rot":[0.7071,0,0,0.7071],"scale":[0.2,0.2,0.2]},{"t":1,"rot":[0.7071,0,0,0.7071],"scale":[25,25,25]}],
+      "blend":"ADDITIVE",
+      "vanilla_particles":[{"type":"flame","count":2,"spread":[0.15,0.1,0.15],"offset":[0,0,0],"speed":0.04,"chance":0.8}]
+    },
+    {
+      "start_time": 0.0, "end_time": 10.0, "rate": 300, "particle_lifetime": 0.8,
+      "binding": {"mode":"entity_look","offset":[0,0.2,0],"rotate_with_entity":true},
+      "component": {"type":"sphere","radius":1.6,"sample_count":120},
+      "color_over_life": [{"t":0,"color":"#00FF4400"},{"t":0.25,"color":"#AAFF6600"},{"t":0.8,"color":"#8866DDFF"},{"t":1,"color":"#00000000"}],
+      "size_over_life": [{"t":0,"size":0.018},{"t":0.45,"size":0.09},{"t":1,"size":0.01}],
+      "blend":"ADDITIVE",
+      "vanilla_particles":[{"type":"soul_fire_flame","count":1,"spread":[0.12,0.12,0.12],"offset":[0,0,0],"speed":0.03,"chance":0.8}]
+    },
+    {
+      "start_time": 10.0, "end_time": 10.8, "rate": 1800, "particle_lifetime": 0.7,
+      "binding": {"mode":"entity_look","offset":[0,0.45,0],"rotate_with_entity":true},
+      "component": {"type":"sphere","radius":11.0,"sample_count":260},
+      "color_over_life": [{"t":0,"color":"#AAEEEEEE"},{"t":0.18,"color":"#AA66DDFF"},{"t":0.52,"color":"#CCFFFFFF"},{"t":1,"color":"#00FFFFFF"}],
+      "size_over_life": [{"t":0,"size":0.015},{"t":0.35,"size":0.11},{"t":1,"size":0.01}],
+      "blend":"ADDITIVE",
+      "vanilla_particles":[
+        {"type":"end_rod","count":2,"spread":[0.25,0.25,0.25],"offset":[0,0,0],"speed":0.12,"chance":0.7},
+        {"type":"crit","count":2,"spread":[0.3,0.3,0.3],"offset":[0,0,0],"speed":0.08,"chance":0.7}
+      ]
+    },
+    {
+      "start_time": 10.0, "end_time": 14.0, "rate": 760, "particle_lifetime": 0.5,
+      "binding": {"mode":"entity_look","offset":[0,0.08,0],"rotate_with_entity":true},
+      "component": {"type":"circle","radius":1.0,"segments":180},
+      "color_over_life": [{"t":0,"color":"#CCFF4400"},{"t":0.25,"color":"#AAFF6600"},{"t":0.72,"color":"#AA66CCFF"},{"t":1,"color":"#00AADDFF"}],
+      "size_over_life": [{"t":0,"size":0.025},{"t":0.35,"size":0.11},{"t":0.82,"size":0.06},{"t":1,"size":0.01}],
+      "transform_over_life":[{"t":0,"rot":[0.7071,0,0,0.7071],"scale":[25,25,25]},{"t":1,"rot":[0.7071,0,0,0.7071],"scale":[0.2,0.2,0.2]}],
+      "blend":"ADDITIVE",
+      "vanilla_particles":[{"type":"flame","count":2,"spread":[0.15,0.1,0.15],"offset":[0,0,0],"speed":0.02,"chance":0.8}]
+    },
+    {
+      "start_time": 10.0, "end_time": 14.0, "rate": 620, "particle_lifetime": 0.55,
+      "binding": {"mode":"entity_look","offset":[0,0.9,0.35],"rotate_with_entity":true},
+      "component": {"type":"sphere","radius":1.1,"sample_count":140},
+      "color_over_life": [{"t":0,"color":"#00FFFFFF"},{"t":0.2,"color":"#AA66DDFF"},{"t":0.6,"color":"#CCFF4400"},{"t":1,"color":"#00FFFFFF"}],
+      "size_over_life": [{"t":0,"size":0.02},{"t":0.4,"size":0.13},{"t":1,"size":0.01}],
+      "blend":"ADDITIVE",
+      "vanilla_particles":[
+        {"type":"flame","count":2,"spread":[0.18,0.18,0.18],"offset":[0,0,0],"speed":0.07,"chance":0.8},
+        {"type":"end_rod","count":1,"spread":[0.12,0.12,0.12],"offset":[0,0,0],"speed":0.1,"chance":0.7},
+        {"type":"soul_fire_flame","count":1,"spread":[0.12,0.12,0.12],"offset":[0,0,0],"speed":0.04,"chance":0.6}
+      ]
+    }
+  ],
+  "environment": [
+    {"type":"screen_tint","color":"#66330000","start":0.0,"end":14.0,"fade_in":0.8,"fade_out":0.8,"intensity":0.35,"radius":25}
+  ]
+}

@@ -68,6 +68,11 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       this.renderStatModifierTooltip(guiGraphics, mouseX, mouseY);
    }
 
+   @Override
+   public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+   }
+
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
       RenderSystem.enableBlend();

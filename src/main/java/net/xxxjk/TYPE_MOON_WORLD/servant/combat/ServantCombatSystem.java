@@ -26,9 +26,11 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -36,8 +38,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -45,6 +49,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 
 public final class ServantCombatSystem {
    private static final String TAG_PREFIX = "TypeMoonCombat";
@@ -103,6 +108,19 @@ public final class ServantCombatSystem {
 
       if (isUntargetable(entity)) {
          entity.setTarget(null);
+      }
+
+      ServantCombatMotionService.MotionState motionState = ServantCombatMotionService.state(entity);
+      // Bellerophon owns Pegasus movement while Medusa is mounted.  The rider
+      // is intentionally airborne, so the generic airborne gate must not
+      // suppress her combat helper and leave the mount stationary.
+      boolean medusaMounted = entity instanceof MedusaEntity medusa && medusa.isRidingPegasus();
+      if (!medusaMounted && (motionState == ServantCombatMotionService.MotionState.AIRBORNE
+         || motionState == ServantCombatMotionService.MotionState.WALL_STAGGER
+         || motionState == ServantCombatMotionService.MotionState.GROUND_STAGGER
+         || motionState == ServantCombatMotionService.MotionState.TECH_PROTECTED)) {
+         entity.getNavigation().stop();
+         return true;
       }
 
       if (cannotAct(entity)) {
@@ -208,6 +226,9 @@ public final class ServantCombatSystem {
 
       if (!event.isCanceled()) {
          recordIncomingDamage(servant, event.getAmount());
+         double fraction = event.getAmount() / Math.max(1.0F, servant.getMaxHealth());
+         int interruptPower = Math.max(1, Math.min(5, 1 + (int)Math.floor(fraction / 0.05)));
+         net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor.interrupt(servant, interruptPower, now);
          consumePoiseFromControl(servant, event.getAmount() >= servant.getMaxHealth() * 0.08F ? 10.0 : 0.0);
       }
    }
@@ -277,6 +298,23 @@ public final class ServantCombatSystem {
    public static boolean canUseNoblePhantasm(ServantEntity entity) {
       ServantDefinition definition = entity.getDefinition();
       return definition != null && (isBerserker(definition) || getPhase(entity) == ServantCombatPhase.DECISIVE);
+   }
+
+   public static double currentStamina(ServantEntity entity) {
+      if (entity == null) return 0.0;
+      CompoundTag data = entity.getPersistentData();
+      if (!data.contains(TAG_STAMINA)) {
+         initializeResources(entity, data, entity.getDefinition() == null ? null : entity.getDefinition().parameters());
+      }
+      return Math.max(0.0, data.getDouble(TAG_STAMINA));
+   }
+
+   public static boolean tryConsumeStamina(ServantEntity entity, double amount) {
+      double cost = Math.max(0.0, amount);
+      double available = currentStamina(entity);
+      if (available + 1.0E-6 < cost) return false;
+      entity.getPersistentData().putDouble(TAG_STAMINA, Math.max(0.0, available - cost));
+      return true;
    }
 
    public static boolean isDamageBoosted(ServantEntity entity) {
@@ -428,7 +466,8 @@ public final class ServantCombatSystem {
       attacker.getNavigation().stop();
       triggerLauncherAnimation(attacker);
       float damage = (float)(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.8F * damageScale);
-      if (target.hurt(attacker.damageSources().mobAttack(attacker), damage)) {
+      if (!ServantMasterProtection.isProtectedMaster(attacker, target)
+         && target.hurt(attacker.damageSources().mobAttack(attacker), damage)) {
          addComboDamage(attacker, target, damage);
       }
 
@@ -448,14 +487,11 @@ public final class ServantCombatSystem {
          data.putLong(TAG_COMBAT_CONTROL_START, now);
          combatAge = 0L;
       }
-      boolean canKnockback = combatAge >= 100L
-         && now - data.getLong(TAG_LAST_KNOCKBACK_TICK) >= 90L
-         && attacker.getRandom().nextInt(100) < (heavy ? 45 : 28);
-      int launchChance = heavy ? 10 : 5;
+      boolean canKnockback = combatAge >= 40L
+         && now - data.getLong(TAG_LAST_KNOCKBACK_TICK) >= 72L;
       boolean realLaunch = canKnockback
-         && combatAge >= 160L
-         && now - data.getLong(TAG_LAST_LAUNCH_TICK) >= 200L
-         && attacker.getRandom().nextInt(100) < launchChance;
+         && combatAge >= 80L
+         && now - data.getLong(TAG_LAST_LAUNCH_TICK) >= (heavy ? 120L : 145L);
       if (!canKnockback) {
          target.hasImpulse = true;
          target.hurtMarked = true;
@@ -470,18 +506,14 @@ public final class ServantCombatSystem {
       }
       double horizontalPower = 1.55 + distance * 0.16;
       double verticalPower = realLaunch ? 0.92 + distance * 0.05 : 0.14;
-      target.setDeltaMovement(horizontal.x * horizontalPower, verticalPower, horizontal.z * horizontalPower);
-      target.hasImpulse = true;
-      target.hurtMarked = true;
+      TerrainImpactProfile.Tier impactTier = heavy
+         ? TerrainImpactProfile.Tier.HEAVY : realLaunch ? TerrainImpactProfile.Tier.MEDIUM : TerrainImpactProfile.Tier.SMALL;
+      ServantCombatMotionService.launch(attacker, target, horizontal, horizontalPower, verticalPower,
+         impactTier, realLaunch ? 28 : 16);
       if (target instanceof ServantEntity servantTarget) {
          servantTarget.faceVector(horizontal.scale(-1.0));
          applyStun(servantTarget, ServantCombatFormulas.launcherHitstunTicks(params));
          consumePoiseFromControl(servantTarget, ServantCombatFormulas.launcherPoiseCost(params));
-      }
-      double terrainScale = terrainBreakScale(attacker);
-      breakSoftBlocksAlongPath(attacker, target.position(), horizontal, distance * terrainScale, terrainScale);
-      if (realLaunch) {
-         scheduleLaunchImpactCrater(target, horizontalPower >= 2.0 || verticalPower >= 1.15, terrainScale);
       }
       schedulePursuit(attacker, target);
    }
@@ -495,7 +527,7 @@ public final class ServantCombatSystem {
          return;
       }
 
-      TYPE_MOON_WORLD.queueServerWork(8, () -> {
+      TYPE_MOON_WORLD.queueServerWork(6, () -> {
          if (!attacker.isAlive() || !target.isAlive() || cannotAct(attacker) || attacker.isPerformingAction() || attacker.isRoaring() || attacker.isSlamming()) {
             return;
          }
@@ -505,22 +537,8 @@ public final class ServantCombatSystem {
          if (tryInterruptPursuit(attacker, target)) {
             return;
          }
-         Vec3 dir = target.position().subtract(attacker.position());
-         Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
-         if (horizontal.lengthSqr() > 1.0E-4) {
-            horizontal = horizontal.normalize();
-            Vec3 arrive = target.position().subtract(horizontal.scale(1.6));
-            attacker.teleportTo(arrive.x, arrive.y, arrive.z);
-            attacker.faceVector(horizontal);
-            attacker.setDeltaMovement(horizontal.scale(1.15).add(0.0, 0.05, 0.0));
-         }
          triggerPursuitAnimation(attacker);
-         float damage = (float)(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9F);
-         target.invulnerableTime = 0;
-         if (target.hurt(attacker.damageSources().mobAttack(attacker), damage)) {
-            addComboDamage(attacker, target, damage);
-         }
-         target.invulnerableTime = 0;
+         ServantManeuverService.maneuver(attacker, target, attacker.level().getGameTime(), 2.5, 0.85);
       });
    }
 
@@ -551,8 +569,9 @@ public final class ServantCombatSystem {
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {
          return false;
       }
+      boolean zhaoYun = servant instanceof ZhaoYunRiderEntity;
       double dodgeCost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45) : ServantCombatFormulas.dodgeMpCost(params);
-      if (servant.getCurrentMp() < dodgeCost) {
+      if (!zhaoYun && servant.getCurrentMp() < dodgeCost) {
          return false;
       }
       int agility = ServantCombatFormulas.agilityStep(params);
@@ -563,7 +582,9 @@ public final class ServantCombatSystem {
       if (agility < 3 && !urgent) {
          return false;
       }
-      servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
+      if (!zhaoYun) {
+         servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
+      }
       servant.getPersistentData().putLong(TAG_LAST_DODGE_TICK, now);
       int invulnTicks = ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0);
       if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {

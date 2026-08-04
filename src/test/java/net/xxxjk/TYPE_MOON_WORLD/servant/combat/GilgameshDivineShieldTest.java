@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 
 class GilgameshDivineShieldTest {
    @Test
-   void constantsMatchTheFifteenSecondTwoThousandHpDesign() {
-      assertEquals(300, GilgameshDivineShield.DURATION_TICKS);
+   void constantsMatchThePersistentTwoThousandHpDesign() {
+      assertEquals(600, GilgameshDivineShield.COOLDOWN_TICKS);
       assertEquals(2000.0F, GilgameshDivineShield.MAX_HP);
       assertEquals(0.80F, GilgameshDivineShield.NON_PROJECTILE_ABSORPTION);
    }

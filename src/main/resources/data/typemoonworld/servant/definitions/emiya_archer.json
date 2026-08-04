@@ -18,24 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/emiya_archer.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/emiya_archer.png",
-    "animation": "typemoonworld:animations/emiya_archer.animation.json",
-    "animations": {
-      "idle": "animation.emiya_archer.idle",
-      "walk": "animation.emiya_archer.walk",
-      "slash": "animation.emiya_archer.slash",
-      "sweep": "animation.emiya_archer.sweep",
-      "uppercut": "animation.emiya_archer.uppercut",
-      "horizontal_swing": "animation.emiya_archer.horizontal_swing",
-      "charge": "animation.emiya_archer.charge",
-      "projection": "animation.emiya_archer.projection",
-      "twin_flurry": "animation.emiya_archer.twin_flurry",
-      "mind_eye_step": "animation.emiya_archer.mind_eye_step",
-      "rho_aias": "animation.emiya_archer.rho_aias",
-      "bow_shot": "animation.emiya_archer.bow_shot",
-      "ubw_chant": "animation.emiya_archer.ubw_chant"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

@@ -29,12 +29,41 @@ class ServantCardSkillLayoutTest {
    }
 
    @Test
-   void gilgameshDivineShieldMatchesItsFifteenSecondDuration() {
+   void gilgameshDivineShieldIsAResourceToggle() {
       ServantCardSkillAction action = ServantCardSkillLayout.actionFor("gilgamesh", 5, false);
       assertNotNull(action);
       assertEquals("gilgamesh_divine_shield", action.effectId());
       assertEquals(30.0, action.mpCost());
-      assertEquals(300, action.cooldownTicks());
+      assertEquals(0, action.cooldownTicks());
+   }
+
+   @Test
+   void casterGilgameshUsesIndependentSupportAndCannonLayout() {
+      String[] effects = {
+         "caster_gilgamesh_slate_volley",
+         "caster_gilgamesh_leader",
+         "caster_gilgamesh_return",
+         "caster_gilgamesh_item_creation",
+         "caster_gilgamesh_workshop",
+         "caster_gilgamesh_cannon_calibration"
+      };
+      double[] costs = {0.0, 20.0, 15.0, 0.0, 0.0, 0.0};
+      int[] cooldowns = {24, 35 * 20, 30 * 20, 0, 80, 20};
+      for (int slot = 0; slot <= 5; slot++) {
+         ServantCardSkillAction action = ServantCardSkillLayout.actionFor("gilgamesh_caster", slot, false);
+         assertNotNull(action, "slot " + slot);
+         assertEquals(effects[slot], action.effectId(), "slot " + slot + " effect");
+         assertEquals(costs[slot], action.mpCost(), "slot " + slot + " MP");
+         assertEquals(cooldowns[slot], action.cooldownTicks(), "slot " + slot + " cooldown");
+      }
+
+      ServantCardSkillAction noble = ServantCardSkillLayout.actionFor("gilgamesh_caster", 9, false);
+      assertNotNull(noble);
+      assertEquals("caster_gilgamesh_royal_cannon", noble.effectId());
+      assertEquals(0.0, noble.mpCost());
+      assertEquals(0, noble.cooldownTicks());
+      assertEquals(false, ServantCardTransformManager.isNoblePhantasmAction("gilgamesh_caster", 9));
+      assertEquals(false, ServantCardTransformManager.usesSharedNoblePhantasmCooldown("gilgamesh_caster", 9));
    }
 
    @Test

@@ -72,7 +72,7 @@
     "special_principles": ["spare_pigs"],
     "starting_favor": 50.0
   },
-  "ai_config": "default_assassin",
+  "ai_config": "cursed_arm_hassan_ai",
   "spawn_egg": {
     "primary": 1775773,
     "secondary": 7216940

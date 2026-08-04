@@ -22,8 +22,11 @@ public final class GilgameshVaultScreen extends Screen {
    public boolean isPauseScreen() { return false; }
 
    @Override
+   public void renderBackground(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
+   }
+
+   @Override
    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
-      super.render(gui, mouseX, mouseY, partialTick);
       int cx = this.width / 2;
       int cy = this.height / 2 + 8;
       int panelX = cx - 112;
@@ -42,6 +45,7 @@ public final class GilgameshVaultScreen extends Screen {
          if (used) gui.fill(x + 2, y + 2, x + SLOT - 2, y + SLOT - 2, 0xAA10151B);
          if (hovered) gui.renderTooltip(this.font, stack, mouseX, mouseY);
       }
+      super.render(gui, mouseX, mouseY, partialTick);
    }
 
    @Override

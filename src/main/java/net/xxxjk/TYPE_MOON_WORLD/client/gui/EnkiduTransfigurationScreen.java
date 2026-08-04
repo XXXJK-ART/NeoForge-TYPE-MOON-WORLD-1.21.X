@@ -28,6 +28,10 @@ public class EnkiduTransfigurationScreen extends Screen {
    }
 
    @Override
+   public void renderBackground(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
+   }
+
+   @Override
    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
       int centerX = this.width / 2;
       int centerY = this.height / 2 + 8;

@@ -11,5 +11,9 @@
       "effect_type": "damage_resistance",
       "params": { "duration_ticks": 60, "amplifier": 3.0 }
     }
-  ]
+  ],
+  "ai": {"facts": [
+    {"type": "prediction", "strength": 0.8},
+    {"type": "shield", "strength": 0.7}
+  ]}
 }

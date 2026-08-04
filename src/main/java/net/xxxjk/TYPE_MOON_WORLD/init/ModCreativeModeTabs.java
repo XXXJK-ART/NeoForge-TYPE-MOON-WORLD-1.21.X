@@ -26,6 +26,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SUPERVISOR_COMMAND_SPELL);
                         output.accept(ModItems.SINGLE_COMMAND_SPELL);
                         output.accept(ModItems.SERVANT_CARD_RELEASE);
+                        output.accept(ModItems.CHALK);
+                        output.accept(ModBlocks.SUMMONING_CIRCLE);
                         output.accept(ModItems.RANDOM_START_ATTRIBUTES);
                         output.accept(ModBlocks.ARTIFICIAL_LEYLINE_BLOCK);
                         output.accept(ModItems.MASTER_CARD_TOHSAKA_RIN);
@@ -48,6 +50,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH);
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER.get()));
                         output.accept(ModItems.SERVANT_CARD_GAWAIN);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
@@ -56,16 +59,21 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN);
                         output.accept(ModItems.SERVANT_CARD_ARASH);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER);
+                        output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_HEAD);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_HEAD);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_CHEST);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_LEGS);
                         output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_MEDEA_HEAD);
                         output.accept(ModItems.SERVANT_CARD_MEDEA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA_HEAD);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_HEAD);
@@ -76,12 +84,17 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU_HEAD);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_LEGS);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH_LEGS);
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_HEAD.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_CHEST.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_LEGS.get()));
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS_HEAD);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_CHEST);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_LEGS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
@@ -96,6 +109,11 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_LEGS);
                     }).build());
 
     public static final Supplier<CreativeModeTab> RELICS_TAB = CREATIVE_MODE_TAB.register("relics_tab",
@@ -115,6 +133,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_PHILOSOPHERS_STONE);
                         output.accept(ModItems.RELIC_GOLDEN_FLEECE);
                         output.accept(ModItems.RELIC_ATO_CRADLE);
+                        output.accept(ModItems.SEA_BEAST_BONE);
+                        output.accept(ModItems.ODA_MATCHLOCK_CATALYST);
+                        output.accept(ModItems.BROKEN_BOWSTRING);
+                        output.accept(ModBlocks.AGE_OF_GODS_DIRT);
                         output.accept(ModItems.GEM_NECKLACE);
                         output.accept(ModItems.AVALON);
                     }).build());
@@ -215,8 +237,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EXCALIBUR2);
                         output.accept(ModItems.BIZEN_NAGAMITSU);
                         output.accept(ModItems.GAE_BULG);
+                        output.accept(ModItems.YAJIAO_QIANG);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
+                        output.accept(ModItems.RUBY_STAFF);
                         output.accept(ModItems.NAMELESS_CHAIN_DAGGER);
                         output.accept(ModItems.DIRK_SMALL_KNIFE);
                         output.accept(ModItems.GAN_JIANG);
@@ -225,6 +249,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MO_YE_OVEREDGE);
                         output.accept(ModItems.NAMELESS_BOW);
                         output.accept(ModItems.ARASH_BOW);
+                        output.accept(ModItems.GILGAMESH_SLATE);
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);
@@ -377,9 +402,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
                         output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.ZHAO_YUN_RIDER_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
+                        output.accept(ModItems.GILGAMESH_CASTER_SPAWN_EGG);
                         output.accept(ModItems.GAWAIN_SPAWN_EGG);
+                        output.accept(ModItems.SENKO_MURAMASA_SPAWN_EGG);
                         output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
                         output.accept(ModItems.PARACELSUS_SPAWN_EGG);
                         output.accept(ModItems.PALE_RIDER_SPAWN_EGG);

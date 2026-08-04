@@ -23,6 +23,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PathfinderMob;
@@ -35,7 +36,9 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -61,6 +64,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -143,6 +147,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int walkAnimationGraceTicks = 0;
    private long tacticalAiHandledTick = Long.MIN_VALUE;
    @Nullable private UUID masterUuid;
+   private String contractId = "";
    private ServantCommandMode commandMode = ServantCommandMode.FOLLOW;
    private BlockPos stayAnchor = BlockPos.ZERO;
    private boolean masterNoblePhantasmPermission;
@@ -239,8 +244,18 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       setPersistenceRequired();
    }
 
+   public String getContractId() {
+      return contractId;
+   }
+
+   public void setContractId(String id) {
+      contractId = id == null ? "" : id;
+   }
+
    public void unbindMaster() {
       this.masterUuid = null;
+      this.contractId = "";
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.clearContractTags(this);
       this.commandMode = ServantCommandMode.FOLLOW;
       this.stayAnchor = blockPosition();
       this.masterNoblePhantasmPermission = false;
@@ -295,6 +310,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void tick() {
       super.tick();
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
+      if (!this.level().isClientSide && this.tickCount == 1) {
+         this.equipNpcServantCardArmor();
+      }
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
       GawainCombatHelper.tickSharedBuffCleanup(this);
@@ -555,6 +573,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       if (!this.level().isClientSide()) {
          this.applyDefinitionAttributes(true);
          this.equipDefaultWeapon();
+         this.equipNpcServantCardArmor();
       }
       return result;
    }
@@ -623,6 +642,46 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          ResourceLocation rl = ResourceLocation.parse(weaponId);
          BuiltInRegistries.ITEM.getOptional(rl).ifPresent(item -> this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item)));
       }, () -> {});
+   }
+
+   private void equipNpcServantCardArmor() {
+      String id = this.getServantId();
+      if (!usesHumanoidServantSkin(id)) {
+         return;
+      }
+      if (hasHumanoidServantCardHelmet(id)) {
+         equipNpcServantCardArmorSlot(EquipmentSlot.HEAD);
+      }
+      equipNpcServantCardArmorSlot(EquipmentSlot.CHEST);
+      equipNpcServantCardArmorSlot(EquipmentSlot.LEGS);
+   }
+
+   private void equipNpcServantCardArmorSlot(EquipmentSlot slot) {
+      Item armor = ModItems.getServantCardArmor(this.getServantId(), slot);
+      if (armor == Items.AIR || this.getItemBySlot(slot).is(armor)) {
+         return;
+      }
+      this.setItemSlot(slot, new ItemStack(armor));
+      this.setDropChance(slot, 0.0F);
+   }
+
+   private static boolean usesHumanoidServantSkin(String servantId) {
+      return switch (servantId == null ? "" : servantId) {
+         case "arash", "artoria_pendragon", "cu_chulainn", "gilgamesh_caster", "emiya_archer",
+            "enkidu", "fanatic_assassin", "nightingale", "gawain", "gilgamesh", "li_shuwen",
+            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa",
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
+   }
+
+   private static boolean hasHumanoidServantCardHelmet(String servantId) {
+      return switch (servantId == null ? "" : servantId) {
+         case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
+            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
    }
 
    @Override
@@ -971,6 +1030,25 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return;
       }
 
+      // Zhao Yun's basic attack chain is a four-part spear routine. Keep the
+      // common attack entry point so all normal combat AI can use the extra
+      // weapon work without registering a separate attack sound.
+      if (this instanceof ZhaoYunRiderEntity && this.hasActionAnimation("spear_flourish")
+         && this.hasActionAnimation("spear_dance")) {
+         String animation = switch (this.basicAttackVariant++ & 3) {
+            case 0 -> "uppercut";
+            case 1 -> "horizontal_swing";
+            case 2 -> "spear_flourish";
+            default -> "spear_dance";
+         };
+         this.triggerNamedActionAnimation(animation);
+         if (this.level() instanceof ServerLevel sl) {
+            sl.playSound(null, this.getX(), this.getY(), this.getZ(),
+               SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.1F, 0.9F);
+         }
+         return;
+      }
+
       boolean hasDiagonal = this.hasActionAnimation("uppercut");
       boolean hasHorizontal = this.hasActionAnimation("horizontal_swing");
       if (!hasDiagonal && !hasHorizontal) {
@@ -1012,6 +1090,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource cause) {
       super.die(cause);
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onEntityServantDeath(this);
       ServantVoiceHelper.tryPlayFail(this);
       this.entityData.set(SPIRITUAL_DISSOLVING, true);
       this.spiritualDissolveTicks = 0;
@@ -1122,6 +1201,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       tag.putDouble("Favor", this.getFavor());
       tag.putDouble("CurrentMp", this.getCurrentMp());
       if (masterUuid != null) tag.putUUID("EntityMaster", masterUuid);
+      if (!contractId.isBlank()) tag.putString("EntityContractId", contractId);
       tag.putString("EntityCommandMode", commandMode.name());
       tag.putLong("EntityStayAnchor", stayAnchor.asLong());
       tag.putBoolean("EntityNpPermission", masterNoblePhantasmPermission);
@@ -1140,6 +1220,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(FAVOR, (float) tag.getDouble("Favor"));
       this.entityData.set(CURRENT_MP, (float) tag.getDouble("CurrentMp"));
       this.masterUuid = tag.hasUUID("EntityMaster") ? tag.getUUID("EntityMaster") : null;
+      this.contractId = tag.getString("EntityContractId");
       this.commandMode = ServantCommandMode.byName(tag.getString("EntityCommandMode"));
       this.stayAnchor = tag.contains("EntityStayAnchor") ? BlockPos.of(tag.getLong("EntityStayAnchor")) : blockPosition();
       this.masterNoblePhantasmPermission = tag.getBoolean("EntityNpPermission");
@@ -1152,6 +1233,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
       this.equipDefaultWeapon();
       this.applyDefinitionAttributes(false);
+      this.equipNpcServantCardArmor();
    }
 
    // ======================== Getters / Setters ========================

@@ -1,0 +1,163 @@
+{
+    "format_version":  "1.12.0",
+    "minecraft:geometry":  [
+                               {
+                                   "description":  {
+                                                       "identifier":  "geometry.unknown",
+                                                       "texture_width":  128,
+                                                       "texture_height":  128,
+                                                       "visible_bounds_width":  3,
+                                                       "visible_bounds_height":  3.5,
+                                                       "visible_bounds_offset":  [
+                                                                                     0,
+                                                                                     1.25,
+                                                                                     0
+                                                                                 ]
+                                                   },
+                                   "bones":  [
+                                                 {
+                                                     "name":  "bone",
+                                                     "pivot":  [
+                                                                   0,
+                                                                   24,
+                                                                   0
+                                                               ]
+                                                 },
+                                                 {
+                                                     "name":  "bipedHead",
+                                                     "parent":  "bone",
+                                                     "pivot":  [
+                                                                   0,
+                                                                   24,
+                                                                   0
+                                                               ]
+                                                 },
+                                                 {
+                                                     "name":  "armorHead",
+                                                     "parent":  "bipedHead",
+                                                     "pivot":  [
+                                                                   0,
+                                                                   24,
+                                                                   0
+                                                               ]
+                                                 },
+                                                 {
+                                                     "name":  "bone5",
+                                                     "parent":  "armorHead",
+                                                     "pivot":  [
+                                                                   0,
+                                                                   32.3958,
+                                                                   3.82298
+                                                               ],
+                                                     "cubes":  [
+                                                                   {
+                                                                       "origin":  [
+                                                                                      -1.5,
+                                                                                      30.8958,
+                                                                                      2.32298
+                                                                                  ],
+                                                                       "size":  [
+                                                                                    3,
+                                                                                    3,
+                                                                                    3
+                                                                                ],
+                                                                       "pivot":  [
+                                                                                     0,
+                                                                                     32.3958,
+                                                                                     3.82298
+                                                                                 ],
+                                                                       "rotation":  [
+                                                                                        -120.04689,
+                                                                                        -28.52908,
+                                                                                        -38.81627
+                                                                                    ],
+                                                                       "uv":  [
+                                                                                  78,
+                                                                                  94
+                                                                              ]
+                                                                   },
+                                                                   {
+                                                                       "origin":  [
+                                                                                      -1.5,
+                                                                                      11,
+                                                                                      6
+                                                                                  ],
+                                                                       "size":  [
+                                                                                    3,
+                                                                                    22,
+                                                                                    2
+                                                                                ],
+                                                                       "pivot":  [
+                                                                                     0,
+                                                                                     26,
+                                                                                     7
+                                                                                 ],
+                                                                       "rotation":  [
+                                                                                        7.5,
+                                                                                        0,
+                                                                                        0
+                                                                                    ],
+                                                                       "uv":  [
+                                                                                  58,
+                                                                                  52
+                                                                              ]
+                                                                   },
+                                                                   {
+                                                                       "origin":  [
+                                                                                      0.5,
+                                                                                      12.0385,
+                                                                                      5.58737
+                                                                                  ],
+                                                                       "size":  [
+                                                                                    2,
+                                                                                    21,
+                                                                                    2
+                                                                                ],
+                                                                       "pivot":  [
+                                                                                     1.5,
+                                                                                     22.5385,
+                                                                                     6.58737
+                                                                                 ],
+                                                                       "rotation":  [
+                                                                                        7.5,
+                                                                                        0,
+                                                                                        -2.5
+                                                                                    ],
+                                                                       "uv":  [
+                                                                                  59,
+                                                                                  52
+                                                                              ],
+                                                                       "mirror":  true
+                                                                   },
+                                                                   {
+                                                                       "origin":  [
+                                                                                      -2.5,
+                                                                                      12.0385,
+                                                                                      5.58737
+                                                                                  ],
+                                                                       "size":  [
+                                                                                    2,
+                                                                                    21,
+                                                                                    2
+                                                                                ],
+                                                                       "pivot":  [
+                                                                                     -1.5,
+                                                                                     22.5385,
+                                                                                     6.58737
+                                                                                 ],
+                                                                       "rotation":  [
+                                                                                        7.5,
+                                                                                        0,
+                                                                                        2.5
+                                                                                    ],
+                                                                       "uv":  [
+                                                                                  59,
+                                                                                  52
+                                                                              ]
+                                                                   }
+                                                               ]
+                                                 }
+                                             ]
+                               }
+                           ]
+}

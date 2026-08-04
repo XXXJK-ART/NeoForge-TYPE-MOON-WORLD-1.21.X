@@ -1,7 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -61,10 +63,14 @@ public final class ServantCardPaleRiderSkills {
    public static final String DOMAIN_PROXY_TAG = "PaleRiderCardDomainProxyUuid";
    private static final String SOUL_LIBRARY_TAG = "PaleRiderCardSoulLibrary";
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
+   private static final Map<ServerPlayer, Long> LAST_POSSESSION_INPUT_TICKS = new WeakHashMap<>();
+   private static final Map<ServerPlayer, PaleRiderStateMessage> LAST_SENT_STATES = new WeakHashMap<>();
 
    private ServantCardPaleRiderSkills() {}
 
    public static void initialize(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      LAST_POSSESSION_INPUT_TICKS.remove(player);
+      LAST_SENT_STATES.remove(player);
       removeLegacyProxy(player);
       PaleRiderInfectionService.cleanse(player, false);
       player.getPersistentData().putInt(SPAWN_MODE_TAG, 0);
@@ -79,6 +85,8 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      LAST_POSSESSION_INPUT_TICKS.remove(player);
+      LAST_SENT_STATES.remove(player);
       removeLegacyProxy(player);
       releasePossession(player);
       if (player.level() instanceof ServerLevel level) {
@@ -123,7 +131,7 @@ public final class ServantCardPaleRiderSkills {
       }
 
       if (player.level() instanceof ServerLevel level) {
-         tickDomainMounts(player, level);
+         if (player.tickCount % 10 == Math.floorMod(player.getId(), 10)) tickDomainMounts(player, level);
          LivingEntity domainAnchor = getDomainAnchor(player);
          if (domainAnchor != null) {
             if (isUnderworldActive(player) && player.tickCount % 10 == 0) {
@@ -138,20 +146,25 @@ public final class ServantCardPaleRiderSkills {
                if (player.tickCount % 80 == 0) VFXServerEffects.spawn(level, "pale_rider_calamity_sustain", domainAnchor, 40.0);
             }
          }
-         if (player.tickCount % 20 == 0) {
-            sendIfSupported(player, new PaleRiderStateMessage(countControlled(level, player.getUUID()), host != null,
-               isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG)));
-         }
+          if (player.tickCount % 20 == 0) {
+             PaleRiderStateMessage state = new PaleRiderStateMessage(countControlled(level, player.getUUID()), host != null,
+                isUnderworldActive(player), isCalamityActive(player), player.getPersistentData().getBoolean(STEALTH_TAG));
+             if (!state.equals(LAST_SENT_STATES.get(player)) || player.tickCount % 100 == 0) {
+                sendIfSupported(player, state);
+                LAST_SENT_STATES.put(player, state);
+             }
+          }
       }
-      if (player.tickCount % 5 == 0) vars.syncServantCardRuntime(player);
    }
 
    public static boolean spawnMenu(ServerPlayer player, boolean crouching) {
+      if (!isActiveCard(player)) return false;
       sendIfSupported(player, new PaleRiderOpenScreenMessage(crouching ? 1 : 0, List.of()));
       return true;
    }
 
    public static boolean spawn(ServerPlayer player, int mode) {
+      if (!isActiveCard(player)) return false;
       if (!(player.level() instanceof ServerLevel level)) return false;
       int spawnCount = mode == 1 ? 5 : 1;
       if (!PaleRiderInfectionService.hasControlCapacity(player, spawnCount)) return false;
@@ -193,6 +206,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean openPossession(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       if (findStoredHost(player) != null) {
          releasePossession(player);
          sendIfSupported(player, new PaleRiderOpenScreenMessage(5, List.of()));
@@ -205,6 +219,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean possess(ServerPlayer player, int entityId) {
+      if (!isActiveCard(player)) return false;
       if (!(player.level() instanceof ServerLevel level)) return false;
       Entity entity = level.getEntity(entityId);
       if (!(entity instanceof Mob mob) || PaleRiderInfectionService.isForbiddenPossessionHost(mob)
@@ -218,6 +233,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean releasePossession(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       UUID hostUuid = player.getPersistentData().hasUUID(HOST_TAG) ? player.getPersistentData().getUUID(HOST_TAG) : null;
       Mob host = player.level() instanceof ServerLevel level && hostUuid != null && level.getEntity(hostUuid) instanceof Mob mob ? mob : null;
       if (host != null) host.getPersistentData().remove("PaleRiderPossessed");
@@ -239,6 +255,13 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static void applyPossessionInput(ServerPlayer player, PaleRiderPossessionInputMessage input) {
+      if (!isActiveCard(player) || input == null
+         || !Float.isFinite(input.forward()) || !Float.isFinite(input.strafe())
+         || !Float.isFinite(input.vertical()) || !Float.isFinite(input.yaw())
+         || !Float.isFinite(input.pitch())) return;
+      long now = player.level().getGameTime();
+      Long previousTick = LAST_POSSESSION_INPUT_TICKS.put(player, now);
+      if (previousTick != null && previousTick == now) return;
       Mob host = getPossessedHost(player);
       if (host == null || !host.isAlive()) return;
       if (PaleRiderInfectionService.isStationaryAnchor(host)) {
@@ -246,9 +269,10 @@ public final class ServantCardPaleRiderSkills {
          return;
       }
       float yaw = input.yaw();
+      float pitch = Math.max(-90.0F, Math.min(90.0F, input.pitch()));
       host.setYRot(yaw);
       host.setYHeadRot(yaw);
-      host.setXRot(input.pitch());
+      host.setXRot(pitch);
       double angle = Math.toRadians(yaw);
       Vec3 forward = new Vec3(-Math.sin(angle), 0.0, Math.cos(angle));
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
@@ -266,26 +290,30 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean openCommand(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       sendIfSupported(player, new PaleRiderOpenScreenMessage(3, List.of()));
       return true;
    }
 
-   private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
+   public static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
       if (NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
          PacketDistributor.sendToPlayer(player, payload);
       }
    }
 
    public static void setCommand(ServerPlayer player, int command) {
+      if (!isActiveCard(player)) return;
       player.getPersistentData().putInt(COMMAND_TAG, Math.max(COMMAND_FREE, Math.min(COMMAND_LETHAL, command)));
    }
 
    public static void togglePerfectConcealment(ServerPlayer player) {
+      if (!isActiveCard(player)) return;
       player.getPersistentData().putBoolean(STEALTH_TAG, true);
       player.getPersistentData().putLong(STEALTH_UNTIL_TAG, player.level().getGameTime() + 200L);
    }
 
    public static boolean transfer(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       HitResult hit = player.pick(64.0, 0.0F, false);
       if (!(hit instanceof BlockHitResult block)) return false;
       BlockPos target = block.getBlockPos().relative(block.getDirection());
@@ -295,6 +323,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean plagueRush(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       Vec3 dir = player.getLookAngle().multiply(1.0, 0.0, 1.0);
       if (dir.lengthSqr() < 0.01) return false;
       dir = dir.normalize();
@@ -314,6 +343,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean ashStep(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       HitResult hit = player.pick(16.0, 0.0F, false);
       if (!(hit instanceof BlockHitResult block)) return false;
       BlockPos pos = block.getBlockPos().relative(block.getDirection());
@@ -322,6 +352,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean deathPulse(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       if (!(player.level() instanceof ServerLevel level)) return false;
       LivingEntity actor = getPossessedHost(player);
       if (actor == null) actor = player;
@@ -337,6 +368,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean toggleUnderworld(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       LivingEntity previousAnchor = getDomainAnchor(player);
       Vec3 previousOrigin = previousAnchor == null ? player.position() : previousAnchor.position();
       boolean active = !isUnderworldActive(player);
@@ -355,6 +387,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static boolean toggleCalamity(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
       LivingEntity previousAnchor = getDomainAnchor(player);
       Vec3 previousOrigin = previousAnchor == null ? player.position() : previousAnchor.position();
       boolean active = !isCalamityActive(player);
@@ -377,6 +410,10 @@ public final class ServantCardPaleRiderSkills {
    public static boolean isPossessing(ServerPlayer player) { return getPossessedHost(player) != null; }
    public static boolean isUnderworldActive(ServerPlayer player) { return player.getPersistentData().getBoolean(UNDERWORLD_TAG); }
    public static boolean isCalamityActive(ServerPlayer player) { return player.getPersistentData().getBoolean(CALAMITY_TAG); }
+
+   private static boolean isActiveCard(ServerPlayer player) {
+      return player != null && PaleRiderInfectionService.isPaleRiderCardPlayer(player);
+   }
 
    public static List<Mob> controlledMobs(ServerPlayer player) {
       return player.level() instanceof ServerLevel level ? controlled(level, player.getUUID()).stream().filter(Mob.class::isInstance).map(Mob.class::cast).toList() : List.of();
@@ -409,6 +446,20 @@ public final class ServantCardPaleRiderSkills {
          echo.discard();
       }
       if (changed) saveSoulLibrary(player, library);
+   }
+
+   public static void cleanupPreviousLevel(ServerPlayer player, ServerLevel level) {
+      if (player == null || level == null) return;
+      returnAllLivingSouls(player, level);
+      for (LivingEntity entity : controlled(level, player.getUUID())) {
+         if (entity instanceof OwnedPaleRiderMob || entity instanceof PaleRiderCrowEntity) entity.discard();
+         else PaleRiderInfectionService.cleanse(entity, false);
+      }
+      cleanupDomainEntities(player, level);
+      player.getPersistentData().remove(HOST_TAG);
+      player.getPersistentData().remove(DOMAIN_PROXY_TAG);
+      LAST_POSSESSION_INPUT_TICKS.remove(player);
+      LAST_SENT_STATES.remove(player);
    }
 
    public static LivingEntity findSoulEchoTarget(ServerPlayer player, SoulEchoEntity echo) {

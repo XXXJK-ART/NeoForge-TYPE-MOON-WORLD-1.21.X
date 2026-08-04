@@ -1,0 +1,1 @@
+{"id":"karma_sever_b","display_name":"Karma Sever B","display_name_zh":"宿业断斩 B","type":"active","mp_cost":35,"cooldown_ticks":500,"duration_ticks":0,"effects":[{"effect_type":"true_damage","params":{"amount":42}},{"effect_type":"remove_beneficial_effects","params":{"enabled":true}}]}

@@ -1,1 +1,1 @@
-{"id":"tengu_strategy_a","display_name":"Tengu Strategy A","display_name_zh":"\u5929\u72d7\u7684\u5175\u6cd5 A","type":"passive","effects":[]}
+{"id":"tengu_strategy_a","display_name":"Tengu Strategy A","display_name_zh":"\u5929\u72d7\u7684\u5175\u6cd5 A","type":"passive","effects":[],"ai":{"facts":[{"type":"prediction","strength":0.7},{"type":"pursuit","strength":0.65}]}}

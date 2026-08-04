@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SpiderCutterItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.JapaneseSwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
@@ -50,6 +51,11 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NightingaleGunItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.OdaMatchlockCatalystItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -57,6 +63,10 @@ public class ModItems {
 
     private static DeferredItem<Item> registerSimpleItem(String name) {
         return ITEMS.register(name, () -> new Item(new Item.Properties()));
+    }
+
+    private static DeferredItem<Item> registerSummoningRelic(String name) {
+        return ITEMS.register(name, () -> new SummoningRelicItem(new Item.Properties().rarity(Rarity.RARE)));
     }
 
     private static DeferredItem<Item> registerJapaneseSword(String name, double damage, double speed, double interactionRange) {
@@ -96,6 +106,11 @@ public class ModItems {
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "temple_stone_sword_axe_speed"),
                                             -3.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "temple_stone_sword_axe_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
@@ -156,6 +171,12 @@ public class ModItems {
     public static final DeferredItem<Item> DRAGON_FANG = registerSimpleItem("dragon_fang");
     public static final DeferredItem<Item> DRAGONS_REVERSE_SCALE = registerSimpleItem("dragons_reverse_scale");
     public static final DeferredItem<Item> EVIL_BONE = registerSimpleItem("evil_bone");
+    public static final DeferredItem<Item> SEA_BEAST_BONE = registerSummoningRelic("sea_beast_bone");
+    public static final DeferredItem<Item> ODA_MATCHLOCK_CATALYST = ITEMS.register("oda_matchlock_catalyst",
+            () -> new OdaMatchlockCatalystItem(new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> BROKEN_BOWSTRING = registerSummoningRelic("broken_bowstring");
+    public static final DeferredItem<Item> CHALK = ITEMS.register("chalk",
+            () -> new ChalkItem(new Item.Properties().stacksTo(64)));
     public static final DeferredItem<Item> HOLY_GRAIL = ITEMS.register("holy_grail",
             () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> PHOENIX_FEATHER = registerSimpleItem("phoenix_feather");
@@ -234,9 +255,9 @@ public class ModItems {
     public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
 
-    public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSimpleItem("relic_apocalypse");
-    public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSimpleItem("relic_apocalypse_page");
-    public static final DeferredItem<Item> RELIC_FIRST_SNAKE_SKIN = registerSimpleItem("relic_first_snake_skin");
+    public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSummoningRelic("relic_apocalypse");
+    public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSummoningRelic("relic_apocalypse_page");
+    public static final DeferredItem<Item> RELIC_FIRST_SNAKE_SKIN = registerSummoningRelic("relic_first_snake_skin");
     public static final DeferredItem<Item> RELIC_HAJIQUAN_MANUAL = ITEMS.register("relic_hajiquan_manual",
             () -> new BajiquanManualItem(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> GANRYU_MANUAL = ITEMS.register("ganryu_manual",
@@ -250,16 +271,16 @@ public class ModItems {
     public static final DeferredItem<Item> SPARRING_INVITATION = ITEMS.register("sparring_invitation",
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> RELIC_VALKYRIE_ARROWHEAD = registerSimpleItem("relic_valkyrie_arrowhead");
-    public static final DeferredItem<Item> RELIC_BRONZE_MIRROR = registerSimpleItem("relic_bronze_mirror");
-    public static final DeferredItem<Item> RELIC_ROUND_TABLE_FRAGMENT = registerSimpleItem("relic_round_table_fragment");
-    public static final DeferredItem<Item> RELIC_TSUBURA_SHIP_PLANK = registerSimpleItem("relic_tsubura_ship_plank");
-    public static final DeferredItem<Item> RELIC_BIZEN_TSUBA = registerSimpleItem("relic_bizen_tsuba");
-    public static final DeferredItem<Item> RELIC_OLD_MAN_MASK = registerSimpleItem("relic_old_man_mask");
-    public static final DeferredItem<Item> RELIC_BANDAGE = registerSimpleItem("relic_bandage");
-    public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSimpleItem("relic_philosophers_stone");
-    public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSimpleItem("relic_golden_fleece");
-    public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSimpleItem("relic_ato_cradle");
-    public static final DeferredItem<Item> GEM_NECKLACE = registerSimpleItem("gem_necklace");
+    public static final DeferredItem<Item> RELIC_BRONZE_MIRROR = registerSummoningRelic("relic_bronze_mirror");
+    public static final DeferredItem<Item> RELIC_ROUND_TABLE_FRAGMENT = registerSummoningRelic("relic_round_table_fragment");
+    public static final DeferredItem<Item> RELIC_TSUBURA_SHIP_PLANK = registerSummoningRelic("relic_tsubura_ship_plank");
+    public static final DeferredItem<Item> RELIC_BIZEN_TSUBA = registerSummoningRelic("relic_bizen_tsuba");
+    public static final DeferredItem<Item> RELIC_OLD_MAN_MASK = registerSummoningRelic("relic_old_man_mask");
+    public static final DeferredItem<Item> RELIC_BANDAGE = registerSummoningRelic("relic_bandage");
+    public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSummoningRelic("relic_philosophers_stone");
+    public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSummoningRelic("relic_golden_fleece");
+    public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSummoningRelic("relic_ato_cradle");
+    public static final DeferredItem<Item> GEM_NECKLACE = registerSummoningRelic("gem_necklace");
     public static final DeferredItem<Item> MYSTIC_MERCURY = ITEMS.register("mystic_mercury",
             () -> new MysticMercuryItem(new Item.Properties().rarity(Rarity.RARE)));
 
@@ -276,11 +297,25 @@ public class ModItems {
     public static final DeferredItem<Item> GILGAMESH_VAJRA = ITEMS.register("gilgamesh_vajra",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "vajra"));
     public static final DeferredItem<Item> GILGAMESH_FANGTIAN_HUAJI = ITEMS.register("gilgamesh_fangtian_huaji",
-            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1), "fangtian_huaji"));
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_fangtian_huaji_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build()), "fangtian_huaji"));
     public static final DeferredItem<Item> GILGAMESH_SPIRAL_SWORD = ITEMS.register("gilgamesh_spiral_sword",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> GILGAMESH_GAE_BULG = ITEMS.register("gilgamesh_gae_bulg",
-            () -> new GilgameshHarmlessGaeBulgItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+            () -> new GilgameshHarmlessGaeBulgItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gilgamesh_gae_bulg_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
@@ -294,6 +329,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA = registerServantCard("oda_nobunaga");
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU = registerServantCard("enkidu");
     public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH = registerServantCard("gilgamesh");
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CASTER = registerServantCard("gilgamesh_caster");
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN = registerServantCard("gawain");
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS = registerServantCard("paracelsus");
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");
@@ -302,11 +338,15 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN = registerServantCard("fanatic_assassin");
     public static final DeferredItem<Item> SERVANT_CARD_ARASH = registerServantCard("arash");
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE = registerServantCard("nightingale");
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER = registerServantCard("zhao_yun_rider");
+    public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA = registerServantCard("senko_muramasa");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_HEAD = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_CHEST = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_LEGS = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_HEAD = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_CHEST = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_LEGS = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_CU_CHULAINN_CHEST = registerServantArmor("cu_chulainn", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -326,12 +366,17 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA_CHEST = registerServantArmor("oda_nobunaga", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA_LEGS = registerServantArmor("oda_nobunaga", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ODA_NOBUNAGA_HEAD = registerServantArmor("oda_nobunaga", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_HEAD = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_CHEST = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU_LEGS = registerServantArmor("enkidu", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CHEST = registerServantArmor("gilgamesh", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_LEGS = registerServantArmor("gilgamesh", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CASTER_HEAD = registerServantArmor("gilgamesh_caster", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CASTER_CHEST = registerServantArmor("gilgamesh_caster", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CASTER_LEGS = registerServantArmor("gilgamesh_caster", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN_CHEST = registerServantArmor("gawain", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN_LEGS = registerServantArmor("gawain", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS_HEAD = registerServantArmor("paracelsus", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS_CHEST = registerServantArmor("paracelsus", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS_LEGS = registerServantArmor("paracelsus", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN_CHEST = registerServantArmor("li_shuwen", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -346,6 +391,11 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_HEAD = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_CHEST = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_LEGS = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA_CHEST = registerServantArmor("senko_muramasa", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA_LEGS = registerServantArmor("senko_muramasa", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
     private static DeferredItem<Item> registerServantCard(String servantId) {
         return ITEMS.register("servant_card_" + servantId,
@@ -716,6 +766,30 @@ public class ModItems {
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hecates_staff_speed"),
                                             0.6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hecates_staff_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> RUBY_STAFF = ITEMS.register("ruby_staff",
+            () -> new RubyStaffItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_damage"),
+                                            7.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_speed"),
+                                            0.6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> NAMELESS_CHAIN_DAGGER = ITEMS.register("nameless_chain_dagger",
             () -> new NamelessChainDaggerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1)
@@ -805,6 +879,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> ARASH_BOW = ITEMS.register("arash_bow",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> GILGAMESH_SLATE = ITEMS.register("gilgamesh_slate",
+            () -> new GilgameshSlateItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
     public static final DeferredItem<Item> PSEUDO_SPIRAL_SWORD = ITEMS.register("pseudo_spiral_sword",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant(), "pseudo_spiral_sword"));
     public static final DeferredItem<Item> CRIMSON_HOUND = ITEMS.register("crimson_hound",
@@ -835,6 +911,25 @@ public class ModItems {
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "mercury_sword_speed"),
                                             1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> YAJIAO_QIANG = ITEMS.register("yajiao_qiang",
+            () -> new YajiaoQiangItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_damage"),
+                                            12.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_speed"),
+                                            1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "yajiao_qiang_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
@@ -946,12 +1041,18 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ODA_NOBUNAGA, 0xB01818, 0xF4C430));
     public static final DeferredItem<Item> USHIWAKAMARU_RIDER_SPAWN_EGG = ITEMS.register("ushiwakamaru_rider_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.USHIWAKAMARU_RIDER, 0x4A1E38, 0xE9C9D5));
+    public static final DeferredItem<Item> ZHAO_YUN_RIDER_SPAWN_EGG = ITEMS.register("zhao_yun_rider_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ZHAO_YUN_RIDER, 0xDDEEFF, 0x33AA66));
     public static final DeferredItem<Item> ENKIDU_SPAWN_EGG = ITEMS.register("enkidu_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
     public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GILGAMESH, 0xD4AF37, 0xB11226));
+    public static final DeferredItem<Item> GILGAMESH_CASTER_SPAWN_EGG = ITEMS.register("gilgamesh_caster_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GILGAMESH_CASTER, 0xE4B94E, 0x2D4A7A));
     public static final DeferredItem<Item> GAWAIN_SPAWN_EGG = ITEMS.register("gawain_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GAWAIN, 0xC0C0C0, 0xFFD700));
+    public static final DeferredItem<Item> SENKO_MURAMASA_SPAWN_EGG = ITEMS.register("senko_muramasa_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SENKO_MURAMASA, 0xFF3300, 0x444444));
     public static final DeferredItem<Item> LI_SHUWEN_SPAWN_EGG = ITEMS.register("li_shuwen_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LI_SHUWEN, 0x1A1A1A, 0xD8D0C8));
     public static final DeferredItem<Item> PARACELSUS_SPAWN_EGG = ITEMS.register("paracelsus_spawn_egg",
@@ -1005,8 +1106,8 @@ public class ModItems {
         return switch (servantId == null ? "" : servantId) {
             case "pale_rider" -> Items.AIR;
             case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
-            case "artoria_pendragon" -> (legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
-            case "sasaki_kojiro" -> (legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();
+            case "artoria_pendragon" -> (head ? SERVANT_CARD_ARTORIA_PENDRAGON_HEAD : legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
+            case "sasaki_kojiro" -> (head ? SERVANT_CARD_SASAKI_KOJIRO_HEAD : legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();
             case "cu_chulainn" -> (legs ? SERVANT_CARD_CU_CHULAINN_LEGS : SERVANT_CARD_CU_CHULAINN_CHEST).get();
             case "medea" -> (head ? SERVANT_CARD_MEDEA_HEAD : legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();
             case "medusa" -> (head ? SERVANT_CARD_MEDUSA_HEAD : legs ? SERVANT_CARD_MEDUSA_LEGS : SERVANT_CARD_MEDUSA_CHEST).get();
@@ -1014,16 +1115,19 @@ public class ModItems {
             case "shadow_hassan" -> head ? SHADOW_HASSAN_MASK.get() : net.minecraft.world.item.Items.AIR;
             case "heracles" -> (legs ? SERVANT_CARD_HERACLES_LEGS : SERVANT_CARD_HERACLES_CHEST).get();
             case "oda_nobunaga" -> (head ? SERVANT_CARD_ODA_NOBUNAGA_HEAD : legs ? SERVANT_CARD_ODA_NOBUNAGA_LEGS : SERVANT_CARD_ODA_NOBUNAGA_CHEST).get();
-            case "enkidu" -> (legs ? SERVANT_CARD_ENKIDU_LEGS : SERVANT_CARD_ENKIDU_CHEST).get();
+            case "enkidu" -> (head ? SERVANT_CARD_ENKIDU_HEAD : legs ? SERVANT_CARD_ENKIDU_LEGS : SERVANT_CARD_ENKIDU_CHEST).get();
             case "gilgamesh" -> (legs ? SERVANT_CARD_GILGAMESH_LEGS : SERVANT_CARD_GILGAMESH_CHEST).get();
+            case "gilgamesh_caster" -> (head ? SERVANT_CARD_GILGAMESH_CASTER_HEAD : legs ? SERVANT_CARD_GILGAMESH_CASTER_LEGS : SERVANT_CARD_GILGAMESH_CASTER_CHEST).get();
             case "gawain" -> (legs ? SERVANT_CARD_GAWAIN_LEGS : SERVANT_CARD_GAWAIN_CHEST).get();
-            case "paracelsus" -> (legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
+            case "paracelsus" -> (head ? SERVANT_CARD_PARACELSUS_HEAD : legs ? SERVANT_CARD_PARACELSUS_LEGS : SERVANT_CARD_PARACELSUS_CHEST).get();
             case "li_shuwen" -> (head ? SERVANT_CARD_LI_SHUWEN_HEAD : legs ? SERVANT_CARD_LI_SHUWEN_LEGS : SERVANT_CARD_LI_SHUWEN_CHEST).get();
             case "ushiwakamaru_rider" -> (head ? SERVANT_CARD_USHIWAKAMARU_RIDER_HEAD : legs ? SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS : SERVANT_CARD_USHIWAKAMARU_RIDER_CHEST).get();
             case "fanatic_assassin" -> head ? SERVANT_CARD_FANATIC_ASSASSIN_HEAD.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
             case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
+            case "zhao_yun_rider" -> (head ? SERVANT_CARD_ZHAO_YUN_RIDER_HEAD : legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();
+            case "senko_muramasa" -> (legs ? SERVANT_CARD_SENKO_MURAMASA_LEGS : SERVANT_CARD_SENKO_MURAMASA_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

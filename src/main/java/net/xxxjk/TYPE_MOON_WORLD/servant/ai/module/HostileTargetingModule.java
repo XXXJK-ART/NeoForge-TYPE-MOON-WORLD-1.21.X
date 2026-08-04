@@ -28,12 +28,15 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.MoralAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
 
 public final class HostileTargetingModule implements ServantAiModule {
    private static final String LAST_TARGET_SCAN_TICK = "ServantLastTargetScanTick";
@@ -112,9 +115,10 @@ public final class HostileTargetingModule implements ServantAiModule {
       if (bestTarget != null) {
          entity.setTarget(bestTarget);
          ServantTargetingService.remember(entity, bestTarget, gameTick);
-      } else if (currentTarget != null) {
-         ServantTargetingService.forget(entity);
-         entity.setTarget(null);
+      } else if (currentTarget != null && ServantTargetingService.canRetain(entity, currentTarget, gameTick)) {
+         // Preserve a valid combat memory through short LOS/pathing gaps.  The
+         // targeting service will clear it only after the explicit memory TTL.
+         ServantTargetingService.remember(entity, currentTarget, gameTick);
       }
    }
 
@@ -131,6 +135,9 @@ public final class HostileTargetingModule implements ServantAiModule {
          return false;
       }
       if (EntityUtils.isImmunePlayerTarget(target)) {
+         return false;
+      }
+      if (ServantMasterTargeting.isContractMaster(entity, target)) {
          return false;
       }
       double maxDistanceSqr = aggressionRange * aggressionRange * 1.35;
@@ -219,6 +226,9 @@ public final class HostileTargetingModule implements ServantAiModule {
          score += 15.0;
       }
 
+      score += CombatMatchupEvaluator.targetAdjustment(entity, target,
+         AiBrain.blackboard(entity).opponent(target.getUUID()));
+
       return score;
    }
 
@@ -234,6 +244,7 @@ public final class HostileTargetingModule implements ServantAiModule {
          || !other.isAlive()
          || other == self
          || EntityUtils.isImmunePlayerTarget(other)
+         || ServantMasterTargeting.isContractMaster(self, other)
          || other.isAlliedTo(self)
          || self.isAlliedTo(other)
          || CursedArmHassanCombatHelper.shouldAvoidPassiveFellowHassanTarget(self, other)

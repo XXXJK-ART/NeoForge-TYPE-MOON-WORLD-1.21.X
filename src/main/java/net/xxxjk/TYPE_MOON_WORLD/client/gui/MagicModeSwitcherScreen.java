@@ -304,6 +304,10 @@ public class MagicModeSwitcherScreen extends Screen {
       }
    }
 
+   @Override
+   public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   }
+
    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       int itemWidth = 50;
       int itemHeight = 50;

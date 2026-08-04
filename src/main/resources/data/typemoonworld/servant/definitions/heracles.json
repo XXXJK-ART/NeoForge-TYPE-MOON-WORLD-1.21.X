@@ -75,7 +75,7 @@
     "combat": "frenzied",
     "starting_favor": 10.0
   },
-  "ai_config": "default_berserker",
+  "ai_config": "heracles_ai",
   "spawn_egg": {
     "primary": 13789512,
     "secondary": 13369344

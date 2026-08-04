@@ -1,0 +1,1 @@
+{"id":"seven_in_seven_out_b_plus_plus","display_name":"Seven In Seven Out B++","display_name_zh":"七进七出 B++","type":"passive","mp_cost":0,"cooldown_ticks":60,"duration_ticks":80,"effects":[{"effect_type":"breakthrough_mobility","params":{"speed_bonus":0.25,"max_stacks":7}}]}

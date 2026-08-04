@@ -1,0 +1,28 @@
+{
+  "servant": "tmw_test_addon:test_servant",
+  "actions": [
+    {
+      "id": "tmw_test_addon:test_servant/pursuit_slash",
+      "tags": ["melee", "pursuit", "launcher"],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 3,
+      "stamina_cost": 8,
+      "timing": {"windup": 5, "active": 3, "recovery": 7},
+      "threat": {"shape": "cone", "radius": 2, "length": 5, "danger": 2},
+      "terrain_impact": "small",
+      "maneuver": {
+        "movement": "pursuit",
+        "control": "launcher",
+        "pursuit_window": 20,
+        "combo_cost": 1,
+        "interrupt_level": 2,
+        "horizontal_force": 1.0,
+        "vertical_force": 0.4,
+        "approach_range": 16,
+        "damage_scale": 0.75,
+        "interrupt_resistance": 2
+      }
+    }
+  ]
+}

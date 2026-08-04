@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import org.jetbrains.annotations.NotNull;
 
 public class TypeMoonWorldModVariables {
@@ -81,6 +82,8 @@ public class TypeMoonWorldModVariables {
       public static void onPlayerLoggedInSyncPlayerVariables(PlayerLoggedInEvent event) {
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            MasterServantLinkService.consumePendingTransitions(player);
+            MasterServantLinkService.repairPlayerLink(player, vars);
             if (vars.master_card_active && !vars.master_active) {
                MasterStateManager.release(player);
             }
@@ -271,6 +274,8 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_transformed = original.servant_card_transformed;
             clone.servant_card_id = original.servant_card_id;
             clone.servant_card_master_uuid = original.servant_card_master_uuid;
+            clone.servant_card_contract_id = original.servant_card_contract_id;
+            clone.servant_card_contract_state = original.servant_card_contract_state;
             clone.servant_card_mana = original.servant_card_mana;
             clone.servant_card_max_mana = original.servant_card_max_mana;
             clone.servant_card_mana_regen = original.servant_card_mana_regen;
@@ -305,12 +310,15 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_medea_heal_charm_stock = original.servant_card_medea_heal_charm_stock;
             clone.servant_card_paracelsus_stone_stock = original.servant_card_paracelsus_stone_stock;
             clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
+            clone.servant_card_arash_arrow_stock = original.servant_card_arash_arrow_stock;
+            clone.servant_card_royal_cannon_ammo = original.servant_card_royal_cannon_ammo;
             clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
             clone.servant_card_medusa_mystic_eyes_active = original.servant_card_medusa_mystic_eyes_active;
             clone.servant_card_hassan_cloak_broken = original.servant_card_hassan_cloak_broken;
             clone.servant_card_hassan_zabaniya_animation_until = original.servant_card_hassan_zabaniya_animation_until;
             clone.master_active = original.master_active;
             clone.master_servant_uuid = original.master_servant_uuid;
+            clone.master_servant_contract_id = original.master_servant_contract_id;
             clone.master_command_spells = original.master_command_spells;
             clone.master_command_spell_style = original.master_command_spell_style;
             clone.master_command_spell_pose_active = false;
@@ -331,12 +339,36 @@ public class TypeMoonWorldModVariables {
             clone.master_servant_link_decay = original.master_servant_link_decay;
             clone.master_servant_link_drawing_mana = original.master_servant_link_drawing_mana;
             clone.master_servant_independent_ticks = original.master_servant_independent_ticks;
+            clone.master_servant_survival_state = original.master_servant_survival_state;
+            clone.master_servant_survival_ticks = original.master_servant_survival_ticks;
             clone.master_servant_backlash_ticks = original.master_servant_backlash_ticks;
+            clone.master_servant_master_position_valid = original.master_servant_master_position_valid;
+            clone.master_servant_master_position_online = original.master_servant_master_position_online;
+            clone.master_servant_master_dimension = original.master_servant_master_dimension;
+            clone.master_servant_master_x = original.master_servant_master_x;
+            clone.master_servant_master_y = original.master_servant_master_y;
+            clone.master_servant_master_z = original.master_servant_master_z;
+            clone.master_servant_servant_position_valid = original.master_servant_servant_position_valid;
+            clone.master_servant_servant_position_online = original.master_servant_servant_position_online;
+            clone.master_servant_servant_dimension = original.master_servant_servant_dimension;
+            clone.master_servant_servant_x = original.master_servant_servant_x;
+            clone.master_servant_servant_y = original.master_servant_servant_y;
+            clone.master_servant_servant_z = original.master_servant_servant_z;
+            clone.servant_card_food_snapshot_valid = original.servant_card_food_snapshot_valid;
+            clone.servant_card_saved_food_level = original.servant_card_saved_food_level;
+            clone.servant_card_saved_saturation = original.servant_card_saved_saturation;
+            clone.servant_card_saved_exhaustion = original.servant_card_saved_exhaustion;
+            clone.servant_card_last_combat_tick = original.servant_card_last_combat_tick;
             clone.master_artificial_leyline_dimension = original.master_artificial_leyline_dimension;
             clone.master_artificial_leyline_x = original.master_artificial_leyline_x;
             clone.master_artificial_leyline_y = original.master_artificial_leyline_y;
             clone.master_artificial_leyline_z = original.master_artificial_leyline_z;
             clone.master_artificial_leyline_bonus_active = original.master_artificial_leyline_bonus_active;
+            clone.servant_card_artificial_leyline_dimension = original.servant_card_artificial_leyline_dimension;
+            clone.servant_card_artificial_leyline_x = original.servant_card_artificial_leyline_x;
+            clone.servant_card_artificial_leyline_y = original.servant_card_artificial_leyline_y;
+            clone.servant_card_artificial_leyline_z = original.servant_card_artificial_leyline_z;
+            clone.servant_card_artificial_leyline_bonus_active = original.servant_card_artificial_leyline_bonus_active;
             clone.master_card_active = original.master_card_active;
             clone.master_card_id = original.master_card_id;
             clone.master_card_saved_variables = original.master_card_saved_variables.copy();
@@ -347,7 +379,7 @@ public class TypeMoonWorldModVariables {
 
          if (original.master_card_active) {
             clone.master_active = true;
-            clone.master_servant_uuid = original.master_servant_uuid;
+            clone.master_servant_uuid = event.isWasDeath() ? "" : original.master_servant_uuid;
             clone.master_card_active = original.master_card_active;
             clone.master_card_id = original.master_card_id;
             clone.master_card_saved_variables = original.master_card_saved_variables.copy();
@@ -380,7 +412,21 @@ public class TypeMoonWorldModVariables {
       double master_servant_link_partner_max_hp,
       String master_servant_link_state,
       double master_servant_link_decay,
-      boolean master_servant_link_drawing_mana
+      boolean master_servant_link_drawing_mana,
+      String master_servant_survival_state,
+      int master_servant_survival_ticks,
+      boolean master_servant_master_position_valid,
+      boolean master_servant_master_position_online,
+      String master_servant_master_dimension,
+      double master_servant_master_x,
+      double master_servant_master_y,
+      double master_servant_master_z,
+      boolean master_servant_servant_position_valid,
+      boolean master_servant_servant_position_online,
+      String master_servant_servant_dimension,
+      double master_servant_servant_x,
+      double master_servant_servant_y,
+      double master_servant_servant_z
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ManaSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_sync")
@@ -403,6 +449,20 @@ public class TypeMoonWorldModVariables {
             buffer.writeUtf(message.master_servant_link_state == null ? "none" : message.master_servant_link_state, 48);
             buffer.writeDouble(message.master_servant_link_decay);
             buffer.writeBoolean(message.master_servant_link_drawing_mana);
+            buffer.writeUtf(message.master_servant_survival_state == null ? "none" : message.master_servant_survival_state, 48);
+            buffer.writeVarInt(Math.max(0, message.master_servant_survival_ticks));
+            buffer.writeBoolean(message.master_servant_master_position_valid);
+            buffer.writeBoolean(message.master_servant_master_position_online);
+            buffer.writeUtf(message.master_servant_master_dimension == null ? "" : message.master_servant_master_dimension, 256);
+            buffer.writeDouble(message.master_servant_master_x);
+            buffer.writeDouble(message.master_servant_master_y);
+            buffer.writeDouble(message.master_servant_master_z);
+            buffer.writeBoolean(message.master_servant_servant_position_valid);
+            buffer.writeBoolean(message.master_servant_servant_position_online);
+            buffer.writeUtf(message.master_servant_servant_dimension == null ? "" : message.master_servant_servant_dimension, 256);
+            buffer.writeDouble(message.master_servant_servant_x);
+            buffer.writeDouble(message.master_servant_servant_y);
+            buffer.writeDouble(message.master_servant_servant_z);
          },
          buffer -> new TypeMoonWorldModVariables.ManaSyncMessage(
             buffer.readDouble(),
@@ -420,7 +480,21 @@ public class TypeMoonWorldModVariables {
             buffer.readDouble(),
             buffer.readUtf(48),
             buffer.readDouble(),
-            buffer.readBoolean()
+            buffer.readBoolean(),
+            buffer.readUtf(48),
+            buffer.readVarInt(),
+            buffer.readBoolean(),
+            buffer.readBoolean(),
+            buffer.readUtf(256),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readBoolean(),
+            buffer.readBoolean(),
+            buffer.readUtf(256),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readDouble()
          )
       );
 
@@ -441,7 +515,21 @@ public class TypeMoonWorldModVariables {
             vars.master_servant_link_partner_max_hp,
             vars.master_servant_link_state,
             vars.master_servant_link_decay,
-            vars.master_servant_link_drawing_mana
+            vars.master_servant_link_drawing_mana,
+            vars.master_servant_survival_state,
+            vars.master_servant_survival_ticks,
+            vars.master_servant_master_position_valid,
+            vars.master_servant_master_position_online,
+            vars.master_servant_master_dimension,
+            vars.master_servant_master_x,
+            vars.master_servant_master_y,
+            vars.master_servant_master_z,
+            vars.master_servant_servant_position_valid,
+            vars.master_servant_servant_position_online,
+            vars.master_servant_servant_dimension,
+            vars.master_servant_servant_x,
+            vars.master_servant_servant_y,
+            vars.master_servant_servant_z
          );
       }
 
@@ -472,6 +560,20 @@ public class TypeMoonWorldModVariables {
                   vars.master_servant_link_state = message.master_servant_link_state == null ? "none" : message.master_servant_link_state;
                   vars.master_servant_link_decay = message.master_servant_link_decay;
                   vars.master_servant_link_drawing_mana = message.master_servant_link_drawing_mana;
+                   vars.master_servant_survival_state = message.master_servant_survival_state == null ? "none" : message.master_servant_survival_state;
+                   vars.master_servant_survival_ticks = Math.max(0, message.master_servant_survival_ticks);
+                   vars.master_servant_master_position_valid = message.master_servant_master_position_valid;
+                   vars.master_servant_master_position_online = message.master_servant_master_position_online;
+                   vars.master_servant_master_dimension = message.master_servant_master_dimension == null ? "" : message.master_servant_master_dimension;
+                   vars.master_servant_master_x = message.master_servant_master_x;
+                   vars.master_servant_master_y = message.master_servant_master_y;
+                   vars.master_servant_master_z = message.master_servant_master_z;
+                   vars.master_servant_servant_position_valid = message.master_servant_servant_position_valid;
+                   vars.master_servant_servant_position_online = message.master_servant_servant_position_online;
+                   vars.master_servant_servant_dimension = message.master_servant_servant_dimension == null ? "" : message.master_servant_servant_dimension;
+                   vars.master_servant_servant_x = message.master_servant_servant_x;
+                   vars.master_servant_servant_y = message.master_servant_servant_y;
+                   vars.master_servant_servant_z = message.master_servant_servant_z;
                }
             );
          }
@@ -512,6 +614,8 @@ public class TypeMoonWorldModVariables {
       int medeaHealCharmStock,
       int paracelsusStoneStock,
       int paracelsusDiamondShieldStock,
+      int arashArrowStock,
+      int royalCannonAmmo,
       String enkiduPoints,
       boolean medusaMysticEyesActive,
       boolean hassanCloakBroken,
@@ -559,6 +663,8 @@ public class TypeMoonWorldModVariables {
             buffer.writeVarInt(message.medeaHealCharmStock);
             buffer.writeVarInt(message.paracelsusStoneStock);
             buffer.writeVarInt(message.paracelsusDiamondShieldStock);
+            buffer.writeVarInt(message.arashArrowStock);
+            buffer.writeVarInt(message.royalCannonAmmo);
             buffer.writeUtf(message.enkiduPoints == null ? "" : message.enkiduPoints, MAX_POINTS_LENGTH);
             buffer.writeBoolean(message.medusaMysticEyesActive);
             buffer.writeBoolean(message.hassanCloakBroken);
@@ -593,6 +699,8 @@ public class TypeMoonWorldModVariables {
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readBoolean(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
@@ -640,6 +748,8 @@ public class TypeMoonWorldModVariables {
             vars.servant_card_medea_heal_charm_stock,
             vars.servant_card_paracelsus_stone_stock,
             vars.servant_card_paracelsus_diamond_shield_stock,
+            vars.servant_card_arash_arrow_stock,
+            vars.servant_card_royal_cannon_ammo,
             vars.servant_card_enkidu_transfiguration_points,
             vars.servant_card_medusa_mystic_eyes_active,
             vars.servant_card_hassan_cloak_broken,
@@ -692,6 +802,8 @@ public class TypeMoonWorldModVariables {
                   vars.servant_card_medea_heal_charm_stock = Math.max(0, message.medeaHealCharmStock);
                   vars.servant_card_paracelsus_stone_stock = Math.max(0, message.paracelsusStoneStock);
                   vars.servant_card_paracelsus_diamond_shield_stock = Math.max(0, message.paracelsusDiamondShieldStock);
+                  vars.servant_card_arash_arrow_stock = Mth.clamp(message.arashArrowStock, 0, 5000);
+                  vars.servant_card_royal_cannon_ammo = Mth.clamp(message.royalCannonAmmo, 0, 5000);
                   vars.servant_card_enkidu_transfiguration_points = message.enkiduPoints == null ? "" : message.enkiduPoints;
                   vars.servant_card_medusa_mystic_eyes_active = message.medusaMysticEyesActive;
                   vars.servant_card_hassan_cloak_broken = message.hassanCloakBroken;
@@ -937,6 +1049,8 @@ public class TypeMoonWorldModVariables {
       public boolean servant_card_transformed = false;
       public String servant_card_id = "";
       public String servant_card_master_uuid = "";
+      public String servant_card_contract_id = "";
+      public String servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
       public double servant_card_mana = 0.0;
       public double servant_card_max_mana = 0.0;
       public double servant_card_mana_regen = 0.0;
@@ -973,6 +1087,8 @@ public class TypeMoonWorldModVariables {
       public int servant_card_medea_heal_charm_stock = 0;
       public int servant_card_paracelsus_stone_stock = 0;
       public int servant_card_paracelsus_diamond_shield_stock = 0;
+      public int servant_card_arash_arrow_stock = 0;
+      public int servant_card_royal_cannon_ammo = 0;
       public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       public boolean servant_card_medusa_mystic_eyes_active = false;
       public boolean servant_card_hassan_cloak_broken = false;
@@ -980,6 +1096,7 @@ public class TypeMoonWorldModVariables {
       public boolean origin_bullet_sealed = false;
       public boolean master_active = false;
       public String master_servant_uuid = "";
+      public String master_servant_contract_id = "";
       public int master_command_spells = 0;
       public String master_command_spell_style = "default";
       public boolean master_command_spell_pose_active = false;
@@ -1000,12 +1117,36 @@ public class TypeMoonWorldModVariables {
       public double master_servant_link_decay = 0.0;
       public boolean master_servant_link_drawing_mana = false;
       public int master_servant_independent_ticks = 0;
+      public String master_servant_survival_state = "none";
+      public int master_servant_survival_ticks = 0;
       public int master_servant_backlash_ticks = 0;
+      public boolean master_servant_master_position_valid = false;
+      public boolean master_servant_master_position_online = false;
+      public String master_servant_master_dimension = "";
+      public double master_servant_master_x = 0.0;
+      public double master_servant_master_y = 0.0;
+      public double master_servant_master_z = 0.0;
+      public boolean master_servant_servant_position_valid = false;
+      public boolean master_servant_servant_position_online = false;
+      public String master_servant_servant_dimension = "";
+      public double master_servant_servant_x = 0.0;
+      public double master_servant_servant_y = 0.0;
+      public double master_servant_servant_z = 0.0;
+      public boolean servant_card_food_snapshot_valid = false;
+      public int servant_card_saved_food_level = 20;
+      public float servant_card_saved_saturation = 5.0F;
+      public float servant_card_saved_exhaustion = 0.0F;
+      public long servant_card_last_combat_tick = Long.MIN_VALUE;
       public String master_artificial_leyline_dimension = "";
       public int master_artificial_leyline_x = 0;
       public int master_artificial_leyline_y = 0;
       public int master_artificial_leyline_z = 0;
       public boolean master_artificial_leyline_bonus_active = false;
+      public String servant_card_artificial_leyline_dimension = "";
+      public int servant_card_artificial_leyline_x = 0;
+      public int servant_card_artificial_leyline_y = 0;
+      public int servant_card_artificial_leyline_z = 0;
+      public boolean servant_card_artificial_leyline_bonus_active = false;
       public boolean master_card_active = false;
       public String master_card_id = "";
       public CompoundTag master_card_saved_variables = new CompoundTag();
@@ -1970,6 +2111,9 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("servant_card_transformed", this.servant_card_transformed);
          nbt.putString("servant_card_id", this.servant_card_id == null ? "" : this.servant_card_id);
          nbt.putString("servant_card_master_uuid", this.servant_card_master_uuid == null ? "" : this.servant_card_master_uuid);
+         nbt.putString("servant_card_contract_id", this.servant_card_contract_id == null ? "" : this.servant_card_contract_id);
+         nbt.putString("servant_card_contract_state",
+            MasterServantLinkService.sanitizeServantContractState(this.servant_card_contract_state));
          nbt.putDouble("servant_card_mana", this.servant_card_mana);
          nbt.putDouble("servant_card_max_mana", this.servant_card_max_mana);
          nbt.putDouble("servant_card_mana_regen", this.servant_card_mana_regen);
@@ -2007,6 +2151,7 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("servant_card_medea_heal_charm_stock", this.servant_card_medea_heal_charm_stock);
          nbt.putInt("servant_card_paracelsus_stone_stock", this.servant_card_paracelsus_stone_stock);
          nbt.putInt("servant_card_paracelsus_diamond_shield_stock", this.servant_card_paracelsus_diamond_shield_stock);
+         nbt.putInt("servant_card_arash_arrow_stock", this.servant_card_arash_arrow_stock);
          nbt.putString("servant_card_enkidu_transfiguration_points", this.servant_card_enkidu_transfiguration_points == null ? "6,6,6,6,6" : this.servant_card_enkidu_transfiguration_points);
          nbt.putBoolean("servant_card_medusa_mystic_eyes_active", this.servant_card_medusa_mystic_eyes_active);
          nbt.putBoolean("servant_card_hassan_cloak_broken", this.servant_card_hassan_cloak_broken);
@@ -2014,6 +2159,7 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("origin_bullet_sealed", this.origin_bullet_sealed);
          nbt.putBoolean("master_active", this.master_active);
          nbt.putString("master_servant_uuid", this.master_servant_uuid == null ? "" : this.master_servant_uuid);
+         nbt.putString("master_servant_contract_id", this.master_servant_contract_id == null ? "" : this.master_servant_contract_id);
          nbt.putInt("master_command_spells", this.master_command_spells);
          nbt.putString("master_command_spell_style", this.master_command_spell_style == null || this.master_command_spell_style.isBlank() ? "default" : this.master_command_spell_style);
          nbt.putBoolean("master_command_spell_pose_active", this.master_command_spell_pose_active);
@@ -2034,12 +2180,36 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("master_servant_link_decay", this.master_servant_link_decay);
          nbt.putBoolean("master_servant_link_drawing_mana", this.master_servant_link_drawing_mana);
          nbt.putInt("master_servant_independent_ticks", this.master_servant_independent_ticks);
+         nbt.putString("master_servant_survival_state", this.master_servant_survival_state == null ? "none" : this.master_servant_survival_state);
+         nbt.putInt("master_servant_survival_ticks", this.master_servant_survival_ticks);
          nbt.putInt("master_servant_backlash_ticks", this.master_servant_backlash_ticks);
+         nbt.putBoolean("master_servant_master_position_valid", this.master_servant_master_position_valid);
+         nbt.putBoolean("master_servant_master_position_online", this.master_servant_master_position_online);
+         nbt.putString("master_servant_master_dimension", this.master_servant_master_dimension == null ? "" : this.master_servant_master_dimension);
+         nbt.putDouble("master_servant_master_x", this.master_servant_master_x);
+         nbt.putDouble("master_servant_master_y", this.master_servant_master_y);
+         nbt.putDouble("master_servant_master_z", this.master_servant_master_z);
+         nbt.putBoolean("master_servant_servant_position_valid", this.master_servant_servant_position_valid);
+         nbt.putBoolean("master_servant_servant_position_online", this.master_servant_servant_position_online);
+         nbt.putString("master_servant_servant_dimension", this.master_servant_servant_dimension == null ? "" : this.master_servant_servant_dimension);
+         nbt.putDouble("master_servant_servant_x", this.master_servant_servant_x);
+         nbt.putDouble("master_servant_servant_y", this.master_servant_servant_y);
+         nbt.putDouble("master_servant_servant_z", this.master_servant_servant_z);
+         nbt.putBoolean("servant_card_food_snapshot_valid", this.servant_card_food_snapshot_valid);
+         nbt.putInt("servant_card_saved_food_level", this.servant_card_saved_food_level);
+         nbt.putFloat("servant_card_saved_saturation", this.servant_card_saved_saturation);
+         nbt.putFloat("servant_card_saved_exhaustion", this.servant_card_saved_exhaustion);
+         nbt.putLong("servant_card_last_combat_tick", this.servant_card_last_combat_tick);
          nbt.putString("master_artificial_leyline_dimension", this.master_artificial_leyline_dimension == null ? "" : this.master_artificial_leyline_dimension);
          nbt.putInt("master_artificial_leyline_x", this.master_artificial_leyline_x);
          nbt.putInt("master_artificial_leyline_y", this.master_artificial_leyline_y);
          nbt.putInt("master_artificial_leyline_z", this.master_artificial_leyline_z);
          nbt.putBoolean("master_artificial_leyline_bonus_active", this.master_artificial_leyline_bonus_active);
+         nbt.putString("servant_card_artificial_leyline_dimension", this.servant_card_artificial_leyline_dimension == null ? "" : this.servant_card_artificial_leyline_dimension);
+         nbt.putInt("servant_card_artificial_leyline_x", this.servant_card_artificial_leyline_x);
+         nbt.putInt("servant_card_artificial_leyline_y", this.servant_card_artificial_leyline_y);
+         nbt.putInt("servant_card_artificial_leyline_z", this.servant_card_artificial_leyline_z);
+         nbt.putBoolean("servant_card_artificial_leyline_bonus_active", this.servant_card_artificial_leyline_bonus_active);
          nbt.putBoolean("master_card_active", this.master_card_active);
          nbt.putString("master_card_id", this.master_card_id == null ? "" : this.master_card_id);
          nbt.put("master_card_saved_variables", this.master_card_saved_variables == null ? new CompoundTag() : this.master_card_saved_variables.copy());
@@ -2316,6 +2486,10 @@ public class TypeMoonWorldModVariables {
          this.servant_card_transformed = nbt.getBoolean("servant_card_transformed");
          this.servant_card_id = nbt.contains("servant_card_id") ? nbt.getString("servant_card_id") : "";
          this.servant_card_master_uuid = nbt.contains("servant_card_master_uuid") ? nbt.getString("servant_card_master_uuid") : "";
+         this.servant_card_contract_id = nbt.contains("servant_card_contract_id") ? nbt.getString("servant_card_contract_id") : "";
+         this.servant_card_contract_state = nbt.contains("servant_card_contract_state")
+            ? MasterServantLinkService.sanitizeServantContractState(nbt.getString("servant_card_contract_state"))
+            : "";
          this.servant_card_mana = nbt.getDouble("servant_card_mana");
          this.servant_card_max_mana = nbt.getDouble("servant_card_max_mana");
          this.servant_card_mana_regen = nbt.getDouble("servant_card_mana_regen");
@@ -2353,6 +2527,7 @@ public class TypeMoonWorldModVariables {
          this.servant_card_medea_heal_charm_stock = nbt.contains("servant_card_medea_heal_charm_stock") ? nbt.getInt("servant_card_medea_heal_charm_stock") : 0;
          this.servant_card_paracelsus_stone_stock = nbt.contains("servant_card_paracelsus_stone_stock") ? nbt.getInt("servant_card_paracelsus_stone_stock") : 0;
          this.servant_card_paracelsus_diamond_shield_stock = nbt.contains("servant_card_paracelsus_diamond_shield_stock") ? nbt.getInt("servant_card_paracelsus_diamond_shield_stock") : 0;
+         this.servant_card_arash_arrow_stock = nbt.contains("servant_card_arash_arrow_stock") ? Mth.clamp(nbt.getInt("servant_card_arash_arrow_stock"), 0, 5000) : 0;
          this.servant_card_enkidu_transfiguration_points = nbt.contains("servant_card_enkidu_transfiguration_points") ? nbt.getString("servant_card_enkidu_transfiguration_points") : "6,6,6,6,6";
          this.servant_card_medusa_mystic_eyes_active = nbt.getBoolean("servant_card_medusa_mystic_eyes_active");
          this.servant_card_hassan_cloak_broken = nbt.getBoolean("servant_card_hassan_cloak_broken");
@@ -2360,6 +2535,7 @@ public class TypeMoonWorldModVariables {
          this.origin_bullet_sealed = nbt.getBoolean("origin_bullet_sealed");
          this.master_active = nbt.getBoolean("master_active");
          this.master_servant_uuid = nbt.contains("master_servant_uuid") ? nbt.getString("master_servant_uuid") : "";
+         this.master_servant_contract_id = nbt.contains("master_servant_contract_id") ? nbt.getString("master_servant_contract_id") : "";
          this.master_command_spells = nbt.contains("master_command_spells") ? nbt.getInt("master_command_spells") : 0;
          this.master_command_spell_style = nbt.contains("master_command_spell_style") ? nbt.getString("master_command_spell_style") : "default";
          if (this.master_command_spell_style == null || this.master_command_spell_style.isBlank()) {
@@ -2382,13 +2558,47 @@ public class TypeMoonWorldModVariables {
          this.master_servant_link_state = nbt.contains("master_servant_link_state") ? nbt.getString("master_servant_link_state") : "none";
          this.master_servant_link_decay = nbt.contains("master_servant_link_decay") ? nbt.getDouble("master_servant_link_decay") : 0.0;
          this.master_servant_link_drawing_mana = nbt.getBoolean("master_servant_link_drawing_mana");
-         this.master_servant_independent_ticks = nbt.contains("master_servant_independent_ticks") ? nbt.getInt("master_servant_independent_ticks") : 0;
+         this.master_servant_independent_ticks = 0;
+         this.master_servant_survival_state = nbt.contains("master_servant_survival_state") ? nbt.getString("master_servant_survival_state") : "none";
+         this.master_servant_survival_ticks = nbt.contains("master_servant_survival_state")
+            ? Math.max(0, nbt.getInt("master_servant_survival_ticks")) : 0;
+         if (!nbt.contains("servant_card_contract_state")) {
+            if (!this.servant_card_master_uuid.isBlank()) {
+               this.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_CONTRACTED;
+            } else if (!MasterServantLinkService.SURVIVAL_NONE.equals(this.master_servant_survival_state)) {
+               this.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_MASTERLESS;
+            } else {
+               this.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
+            }
+         }
          this.master_servant_backlash_ticks = nbt.contains("master_servant_backlash_ticks") ? nbt.getInt("master_servant_backlash_ticks") : 0;
+         this.master_servant_master_position_valid = nbt.getBoolean("master_servant_master_position_valid");
+         this.master_servant_master_position_online = nbt.getBoolean("master_servant_master_position_online");
+         this.master_servant_master_dimension = nbt.contains("master_servant_master_dimension") ? nbt.getString("master_servant_master_dimension") : "";
+         this.master_servant_master_x = nbt.contains("master_servant_master_x") ? nbt.getDouble("master_servant_master_x") : 0.0;
+         this.master_servant_master_y = nbt.contains("master_servant_master_y") ? nbt.getDouble("master_servant_master_y") : 0.0;
+         this.master_servant_master_z = nbt.contains("master_servant_master_z") ? nbt.getDouble("master_servant_master_z") : 0.0;
+         this.master_servant_servant_position_valid = nbt.getBoolean("master_servant_servant_position_valid");
+         this.master_servant_servant_position_online = nbt.getBoolean("master_servant_servant_position_online");
+         this.master_servant_servant_dimension = nbt.contains("master_servant_servant_dimension") ? nbt.getString("master_servant_servant_dimension") : "";
+         this.master_servant_servant_x = nbt.contains("master_servant_servant_x") ? nbt.getDouble("master_servant_servant_x") : 0.0;
+         this.master_servant_servant_y = nbt.contains("master_servant_servant_y") ? nbt.getDouble("master_servant_servant_y") : 0.0;
+         this.master_servant_servant_z = nbt.contains("master_servant_servant_z") ? nbt.getDouble("master_servant_servant_z") : 0.0;
+         this.servant_card_food_snapshot_valid = nbt.getBoolean("servant_card_food_snapshot_valid");
+         this.servant_card_saved_food_level = nbt.contains("servant_card_saved_food_level") ? nbt.getInt("servant_card_saved_food_level") : 20;
+         this.servant_card_saved_saturation = nbt.contains("servant_card_saved_saturation") ? nbt.getFloat("servant_card_saved_saturation") : 5.0F;
+         this.servant_card_saved_exhaustion = nbt.contains("servant_card_saved_exhaustion") ? nbt.getFloat("servant_card_saved_exhaustion") : 0.0F;
+         this.servant_card_last_combat_tick = nbt.contains("servant_card_last_combat_tick") ? nbt.getLong("servant_card_last_combat_tick") : Long.MIN_VALUE;
          this.master_artificial_leyline_dimension = nbt.contains("master_artificial_leyline_dimension") ? nbt.getString("master_artificial_leyline_dimension") : "";
          this.master_artificial_leyline_x = nbt.contains("master_artificial_leyline_x") ? nbt.getInt("master_artificial_leyline_x") : 0;
          this.master_artificial_leyline_y = nbt.contains("master_artificial_leyline_y") ? nbt.getInt("master_artificial_leyline_y") : 0;
          this.master_artificial_leyline_z = nbt.contains("master_artificial_leyline_z") ? nbt.getInt("master_artificial_leyline_z") : 0;
          this.master_artificial_leyline_bonus_active = nbt.getBoolean("master_artificial_leyline_bonus_active");
+         this.servant_card_artificial_leyline_dimension = nbt.contains("servant_card_artificial_leyline_dimension") ? nbt.getString("servant_card_artificial_leyline_dimension") : "";
+         this.servant_card_artificial_leyline_x = nbt.contains("servant_card_artificial_leyline_x") ? nbt.getInt("servant_card_artificial_leyline_x") : 0;
+         this.servant_card_artificial_leyline_y = nbt.contains("servant_card_artificial_leyline_y") ? nbt.getInt("servant_card_artificial_leyline_y") : 0;
+         this.servant_card_artificial_leyline_z = nbt.contains("servant_card_artificial_leyline_z") ? nbt.getInt("servant_card_artificial_leyline_z") : 0;
+         this.servant_card_artificial_leyline_bonus_active = nbt.getBoolean("servant_card_artificial_leyline_bonus_active");
          this.master_card_active = nbt.getBoolean("master_card_active");
          this.master_card_id = nbt.contains("master_card_id") ? nbt.getString("master_card_id") : "";
          this.master_card_saved_variables = nbt.contains("master_card_saved_variables", 10)

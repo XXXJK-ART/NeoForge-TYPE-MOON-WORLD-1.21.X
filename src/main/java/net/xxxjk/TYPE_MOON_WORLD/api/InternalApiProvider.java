@@ -610,7 +610,17 @@ public final class InternalApiProvider implements ApiProvider {
       public boolean register(ResourceLocation id, net.xxxjk.typemoonworld.api.AiTacticProfile profile) {
          return valid(id, namespace) && ExtensionApiRegistry.registerAi(id, profile);
       }
+      public boolean registerAdvanced(ResourceLocation id, net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile profile) {
+         return valid(id, namespace) && ExtensionApiRegistry.registerAdvancedAi(id, profile);
+      }
       public net.xxxjk.typemoonworld.api.AiTacticProfile profile(ResourceLocation id) { return valid(id, namespace) ? ExtensionApiRegistry.ai(id) : null; }
+      public net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile advancedProfile(ResourceLocation id) {
+         if (!valid(id, namespace)) return null;
+         var advanced = ExtensionApiRegistry.advancedAi(id);
+         if (advanced != null) return advanced;
+         var base = ExtensionApiRegistry.ai(id);
+         return base == null ? null : net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile.compatible(base);
+      }
       public java.util.List<ResourceLocation> profiles() { return ExtensionApiRegistry.aiIds().stream().filter(id -> valid(id, namespace)).toList(); }
       public net.xxxjk.typemoonworld.api.AiTactic choose(ResourceLocation id, double distance, double healthRatio, java.util.Random random) {
          var profile = profile(id); if (profile == null) return null;

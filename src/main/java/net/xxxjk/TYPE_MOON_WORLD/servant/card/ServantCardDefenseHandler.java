@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 
 public final class ServantCardDefenseHandler {
    private static final String TAG_PREFIX = "ServantCardCombat";
@@ -98,6 +99,12 @@ public final class ServantCardDefenseHandler {
          return true;
       }
       if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return false;
+      }
+      if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
+         event.setCanceled(false);
+         event.setAmount(Float.MAX_VALUE);
+         event.setInvulnerabilityTicks(0);
          return false;
       }
       if (OriginBulletHelper.isOriginBulletDamage(event.getSource())) {
@@ -207,6 +214,9 @@ public final class ServantCardDefenseHandler {
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
          && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+         if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+            ServantCardZhaoYunSkills.recordBreakthroughDefense(player);
+         }
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -218,6 +228,9 @@ public final class ServantCardDefenseHandler {
 
       Float reduced = divineDefenseBroken || specialNoblePhantasmDamage ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
+         if ("zhao_yun_rider".equals(vars.servant_card_id)) {
+            ServantCardZhaoYunSkills.recordBreakthroughDefense(player);
+         }
          if (reduced <= 0.0F) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -449,8 +462,9 @@ public final class ServantCardDefenseHandler {
       if (player.getRandom().nextDouble() > chance) {
          return false;
       }
+      boolean zhaoYun = "zhao_yun_rider".equals(vars.servant_card_id);
       double cost = Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * ("emiya_archer".equals(vars.servant_card_id) ? 0.55 : 1.0));
-      if (!ServantCardManaService.consume(player, vars, cost)) {
+      if (!zhaoYun && !ServantCardManaService.consume(player, vars, cost)) {
          return false;
       }
       data.putLong(TAG_LAST_DODGE_TICK, now);

@@ -7,10 +7,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 
 public final class AiBlackboard {
    public static final int MAX_OPPONENTS = 8;
    public static final int MAX_ACTIONS_PER_OPPONENT = 8;
+   public static final int MAX_FACTS_PER_OPPONENT = 24;
    public static final long MEMORY_TICKS = 600L;
 
    private final LinkedHashMap<UUID, OpponentMemory> opponents = new LinkedHashMap<>(16, 0.75F, true);
@@ -44,7 +46,27 @@ public final class AiBlackboard {
       OpponentMemory memory = opponents.get(id);
       if (memory == null) return OpponentSnapshot.EMPTY;
       return new OpponentSnapshot(memory.lastSeenTick, memory.lastDistance, memory.totalObservedDamage,
-         memory.defendedActions, memory.actions.size(), memory.repeatCount());
+         memory.defendedActions, memory.actions.size(), memory.repeatCount(), memory.knownFacts);
+   }
+
+   public void revealFact(UUID opponent, FactType type, double strength, long now) {
+      if (opponent == null || type == null || type == FactType.UNKNOWN) return;
+      OpponentMemory memory = opponents.computeIfAbsent(opponent, ignored -> new OpponentMemory());
+      memory.lastSeenTick = now;
+      memory.knownFacts.remove(type);
+      memory.knownFacts.put(type, Math.max(0.0, Math.min(1.0, strength)));
+      while (memory.knownFacts.size() > MAX_FACTS_PER_OPPONENT) {
+         Iterator<FactType> iterator = memory.knownFacts.keySet().iterator();
+         if (!iterator.hasNext()) break;
+         iterator.next();
+         iterator.remove();
+      }
+      trimOpponents();
+   }
+
+   public double knownFactStrength(UUID opponent, FactType type) {
+      OpponentMemory memory = opponents.get(opponent);
+      return memory == null || type == null ? 0.0 : memory.knownFacts.getOrDefault(type, 0.0);
    }
 
    boolean commitmentBlocks(AiIntent candidate, long now) {
@@ -95,6 +117,7 @@ public final class AiBlackboard {
       double totalObservedDamage;
       int defendedActions;
       final Deque<ActionSample> actions = new ArrayDeque<>();
+      final LinkedHashMap<FactType, Double> knownFacts = new LinkedHashMap<>(32, 0.75F, true);
 
       int repeatCount() {
          ResourceLocation last = null;
@@ -113,7 +136,25 @@ public final class AiBlackboard {
    private record ActionSample(ResourceLocation action, long tick, double distance, double damage, boolean defended) { }
 
    public record OpponentSnapshot(long lastSeenTick, double lastDistance, double observedDamage,
-                                  int defendedActions, int observedActions, int repeatCount) {
-      public static final OpponentSnapshot EMPTY = new OpponentSnapshot(0L, 0.0, 0.0, 0, 0, 0);
+                                  int defendedActions, int observedActions, int repeatCount,
+                                  Map<FactType, Double> knownFacts) {
+      public static final OpponentSnapshot EMPTY = new OpponentSnapshot(0L, 0.0, 0.0, 0, 0, 0, Map.of());
+
+      public OpponentSnapshot(long lastSeenTick, double lastDistance, double observedDamage,
+                              int defendedActions, int observedActions, int repeatCount) {
+         this(lastSeenTick, lastDistance, observedDamage, defendedActions, observedActions, repeatCount, Map.of());
+      }
+
+      public OpponentSnapshot {
+         knownFacts = knownFacts == null ? Map.of() : Map.copyOf(knownFacts);
+      }
+
+      public double knownFactStrength(FactType type) {
+         return type == null ? 0.0 : knownFacts.getOrDefault(type, 0.0);
+      }
+
+      public boolean knows(FactType type) {
+         return knownFactStrength(type) > 0.0;
+      }
    }
 }

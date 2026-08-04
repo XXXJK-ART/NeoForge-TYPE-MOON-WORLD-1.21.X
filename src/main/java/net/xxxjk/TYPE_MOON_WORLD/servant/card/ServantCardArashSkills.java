@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.UUID;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -42,9 +43,12 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashAimHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import org.joml.Vector3f;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class ServantCardArashSkills {
+   private static final DustParticleOptions HEAVY_ARROW_RED = new DustParticleOptions(
+      new Vector3f(1.0F, 0.04F, 0.015F), 2.8F);
    public static final double CHANT_MOVE_RADIUS = 0.0;
    public static final int STELLA_LOCKED_HOTBAR_SLOT = 0;
    public static final float CHANT_LOOK_TOLERANCE = 3.0F;
@@ -66,6 +70,7 @@ public final class ServantCardArashSkills {
    private static final String REFUND_MASTER_MANA = "ServantCardArashStellaRefundMasterMana";
    private static final String REFUND_COOLDOWN = "ServantCardArashStellaRefundCooldown";
    private static final String REFUND_COOLDOWN_END = "ServantCardArashStellaRefundCooldownEnd";
+   private static final String REFUND_ARROWS = "ServantCardArashStellaRefundArrows";
    private static final String SACRIFICE_ACTIVE = "ServantCardArashStellaSacrifice";
    private static final String SACRIFICE_TICKS = "ServantCardArashStellaSacrificeTicks";
    private static final String SACRIFICE_MAX_HEALTH = "ServantCardArashStellaSacrificeMaxHealth";
@@ -80,6 +85,8 @@ public final class ServantCardArashSkills {
 
    public static void initialize(ServerPlayer player) {
       clearRuntimeTags(player);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_arash_arrow_stock = ArashCombatRules.INITIAL_ARROW_COUNT;
       applyStoutHealth(player, true);
    }
 
@@ -103,7 +110,12 @@ public final class ServantCardArashSkills {
    }
 
    public static boolean performArrowRain(ServerPlayer player) {
-      if (!hasRequiredBow(player) || !(player.level() instanceof ServerLevel level)) return false;
+      boolean grandRain = player != null && player.isCrouching();
+      int arrowCount = grandRain ? ArashCombatRules.CROUCH_RAIN_ARROW_COUNT : ArashCombatRules.RAIN_ARROW_COUNT;
+      int arrowCost = grandRain ? ArashCombatRules.CROUCH_ARROW_RAIN_COST : ArashCombatRules.ARROW_RAIN_COST;
+      double spreadRadius = grandRain ? ArashCombatRules.CROUCH_RAIN_SPREAD_RADIUS : ArashCombatRules.RAIN_SPREAD_RADIUS;
+      if (!hasRequiredBow(player) || !(player.level() instanceof ServerLevel level)
+         || !consumeArrows(player, arrowCost)) return false;
       Vec3 look = player.getLookAngle().normalize();
       Vec3 start = player.getEyePosition().add(look.scale(0.65));
       HitResult lookedAt = EntityUtils.getRayTraceTarget(player, ArashAimHelper.AUTO_AIM_RANGE);
@@ -112,11 +124,14 @@ public final class ServantCardArashSkills {
       LivingEntity autoAimTarget = lookedAt instanceof EntityHitResult entityHit
          && entityHit.getEntity() instanceof LivingEntity living
          && EntityUtils.isValidCombatTarget(player, living) ? living
-         : ArashAimHelper.findTargetNearPoint(player, lookedAtPosition, ArashAimHelper.ARROW_RAIN_ASSIST_RADIUS);
+         : ArashAimHelper.findTargetNearPoint(player, lookedAtPosition, grandRain
+            ? ArashCombatRules.CROUCH_RAIN_ASSIST_RADIUS : ArashAimHelper.ARROW_RAIN_ASSIST_RADIUS);
       Vec3 target = autoAimTarget == null ? lookedAtPosition : predictedRainTarget(start, autoAimTarget);
-      for (int i = 0; i < ArashCombatRules.RAIN_ARROW_COUNT; i++) {
-         Vec3 spread = new Vec3(player.getRandom().nextGaussian() * 2.2,
-            player.getRandom().nextGaussian() * 1.1, player.getRandom().nextGaussian() * 2.2);
+      for (int i = 0; i < arrowCount; i++) {
+         double angle = player.getRandom().nextDouble() * Math.PI * 2.0;
+         double radius = Math.sqrt(player.getRandom().nextDouble()) * spreadRadius;
+         Vec3 spread = new Vec3(Math.cos(angle) * radius,
+            player.getRandom().nextGaussian() * (grandRain ? 2.5 : 1.1), Math.sin(angle) * radius);
          Vec3 delta = target.add(spread).subtract(start);
          double time = Math.max(12.0, delta.horizontalDistance() / 2.2);
          Vec3 motion = new Vec3(delta.x / time, delta.y / time + 0.025 * time, delta.z / time);
@@ -131,29 +146,60 @@ public final class ServantCardArashSkills {
    }
 
    public static boolean performSmallEnergyArrow(ServerPlayer player) {
-      return fireDirect(player, ArashParticleArrowEntity.SMALL_ENERGY,
+      return consumeArrows(player, ArashCombatRules.ENERGY_ARROW_COST)
+         && fireDirect(player, ArashParticleArrowEntity.SMALL_ENERGY,
          (float)ArashCombatRules.SMALL_ENERGY_DAMAGE, 3.0);
    }
 
    public static boolean performLargeEnergyArrow(ServerPlayer player) {
-      return fireDirect(player, ArashParticleArrowEntity.LARGE_ENERGY,
+      return consumeArrows(player, ArashCombatRules.ENERGY_ARROW_COST)
+         && fireDirect(player, ArashParticleArrowEntity.LARGE_ENERGY,
          (float)ArashCombatRules.LARGE_ENERGY_DAMAGE, 2.7);
+   }
+
+   public static boolean performArrowCreation(ServerPlayer player) {
+      if (!isArash(player)) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_arash_arrow_stock >= ArashCombatRules.MAX_ARROW_COUNT) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_arrows_full"), true);
+         return false;
+      }
+      vars.servant_card_arash_arrow_stock = Math.min(ArashCombatRules.MAX_ARROW_COUNT,
+         vars.servant_card_arash_arrow_stock + ArashCombatRules.ARROW_CREATION_AMOUNT);
+      vars.syncServantCardRuntime(player);
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(),
+            10, 0.28, 0.45, 0.28, 0.04);
+      }
+      return true;
+   }
+
+   public static boolean consumeBasicArrow(ServerPlayer player) {
+      return isArash(player) && !isPlayerChanting(player)
+         && consumeArrows(player, ArashCombatRules.NORMAL_ARROW_COST);
+   }
+
+   public static boolean hasArrows(ServerPlayer player, int amount) {
+      if (!isArash(player)) return true;
+      return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_arash_arrow_stock >= amount;
+   }
+
+   private static boolean consumeArrows(ServerPlayer player, int amount) {
+      if (!isArash(player) || amount <= 0) return amount <= 0;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_arash_arrow_stock < amount) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_no_arrows"), true);
+         return false;
+      }
+      vars.servant_card_arash_arrow_stock -= amount;
+      vars.syncServantCardRuntime(player);
+      return true;
    }
 
    public static boolean performBowChargedArrowNoCooldown(ServerPlayer player, boolean heavy) {
       if (!isArash(player) || isPlayerChanting(player) || !hasRequiredBow(player)) return false;
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double cost = heavy ? ArashCombatRules.LARGE_ENERGY_MANA : ArashCombatRules.SMALL_ENERGY_MANA;
-      ServantCardManaService.ManaSnapshot snapshot = ServantCardManaService.snapshot(player, vars);
-      if (!ServantCardManaService.consume(player, vars, cost)) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
-         return false;
-      }
       boolean fired = heavy ? performLargeEnergyArrow(player) : performSmallEnergyArrow(player);
-      if (!fired) {
-         ServantCardManaService.restore(player, vars, snapshot);
-         return false;
-      }
+      if (!fired) return false;
       ServantCardVoiceHelper.tryPlaySkill(player, heavy ? "arash_energy_large" : "arash_energy_small");
       return true;
    }
@@ -167,8 +213,12 @@ public final class ServantCardArashSkills {
       arrow.setPos(start.x, start.y - 0.1, start.z);
       arrow.setDeltaMovement(direction.scale(speed));
       level.addFreshEntity(arrow);
-      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z,
-         variant == ArashParticleArrowEntity.LARGE_ENERGY ? 44 : 24, 0.3, 0.3, 0.3, 0.1);
+      if (variant == ArashParticleArrowEntity.LARGE_ENERGY) {
+         level.sendParticles(HEAVY_ARROW_RED, start.x, start.y, start.z, 44, 0.3, 0.3, 0.3, 0.1);
+         level.sendParticles(ParticleTypes.FLAME, start.x, start.y, start.z, 18, 0.24, 0.24, 0.24, 0.06);
+      } else {
+         level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 24, 0.3, 0.3, 0.3, 0.1);
+      }
       return true;
    }
 
@@ -190,8 +240,12 @@ public final class ServantCardArashSkills {
          return false;
       }
       captureRefundSnapshot(player, vars);
-      if (!ServantCardManaService.consumeNoblePhantasm(player, vars, action.mpCost())) {
+      if (!consumeArrows(player, ArashCombatRules.STELLA_ARROW_COST)) {
          clearRefundSnapshot(player);
+         return false;
+      }
+      if (!ServantCardManaService.consumeNoblePhantasm(player, vars, action.mpCost())) {
+         restoreRefundSnapshot(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
@@ -362,6 +416,7 @@ public final class ServantCardArashSkills {
       data.putDouble(REFUND_MANA, vars.servant_card_mana);
       data.putInt(REFUND_COOLDOWN, vars.servant_card_np_cooldown);
       data.putLong(REFUND_COOLDOWN_END, vars.servant_card_np_cooldown_end);
+      data.putInt(REFUND_ARROWS, vars.servant_card_arash_arrow_stock);
       ServerPlayer master = ServantCardManaService.getMaster(player, vars);
       if (master != null) {
          data.putUUID(REFUND_MASTER, master.getUUID());
@@ -377,6 +432,7 @@ public final class ServantCardArashSkills {
       vars.servant_card_mana = data.getDouble(REFUND_MANA);
       vars.servant_card_np_cooldown = data.getInt(REFUND_COOLDOWN);
       vars.servant_card_np_cooldown_end = data.getLong(REFUND_COOLDOWN_END);
+      vars.servant_card_arash_arrow_stock = data.getInt(REFUND_ARROWS);
       vars.syncPlayerVariables(player);
       if (data.hasUUID(REFUND_MASTER) && player.getServer() != null) {
          ServerPlayer master = player.getServer().getPlayerList().getPlayer(data.getUUID(REFUND_MASTER));
@@ -413,6 +469,7 @@ public final class ServantCardArashSkills {
       data.remove(REFUND_MASTER_MANA);
       data.remove(REFUND_COOLDOWN);
       data.remove(REFUND_COOLDOWN_END);
+      data.remove(REFUND_ARROWS);
    }
 
    private static boolean isDiseaseEffect(Holder<MobEffect> effect) {

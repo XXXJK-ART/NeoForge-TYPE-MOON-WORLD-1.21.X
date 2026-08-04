@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardLoadoutManager {
@@ -69,6 +70,7 @@ public final class ServantCardLoadoutManager {
          }
          case "gilgamesh" -> {
          }
+         case "gilgamesh_caster" -> main = stack(ModItems.GILGAMESH_SLATE.get());
          case "sasaki_kojiro" -> main = stack(ModItems.BIZEN_NAGAMITSU.get());
          case "oda_nobunaga" -> main = stack(ModItems.HESHIKIRI_HASEBE.get());
          case "gawain" -> main = stack(ModItems.EXCALIBUR_GALLATIN.get());
@@ -76,6 +78,8 @@ public final class ServantCardLoadoutManager {
          case "ushiwakamaru_rider" -> main = stack(ModItems.SPIDER_CUTTER.get());
          case "arash" -> main = stack(ModItems.ARASH_BOW.get());
          case "nightingale" -> main = stack(ModItems.NIGHTINGALE_GUN.get());
+         case "zhao_yun_rider" -> main = stack(ModItems.YAJIAO_QIANG.get());
+         case "senko_muramasa" -> main = MuramasaCombatHelper.projectedStack(ModItems.MURAMASA.get());
          default -> {
          }
       }

@@ -1,12 +1,13 @@
 package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
 
 import java.util.Comparator;
+import java.util.List;
 import javax.annotation.Nullable;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
 
-/** Scores data-driven actions while legacy executors remain responsible for animation and damage. */
+/** Scores explicitly shared data-driven actions while legacy helpers remain compatible. */
 public final class ServantActionPlanner {
    private ServantActionPlanner() { }
 
@@ -14,26 +15,23 @@ public final class ServantActionPlanner {
    public static AiActionDescriptor select(ServantEntity entity, LivingEntity target, ServantCombatPhase phase,
                                            ServantActionProfile profile, AiBlackboard blackboard) {
       if (target == null || profile == null) return null;
+      List<AiActionDescriptor> candidates = candidates(entity, target, phase, profile, blackboard);
+      return candidates.isEmpty() ? null : candidates.getFirst();
+   }
+
+   public static List<AiActionDescriptor> candidates(ServantEntity entity, LivingEntity target,
+                                                      ServantCombatPhase phase, ServantActionProfile profile,
+                                                      AiBlackboard blackboard) {
+      if (entity == null || target == null || profile == null) return List.of();
       double distance = entity.distanceTo(target);
       AiBlackboard.OpponentSnapshot memory = blackboard == null
          ? AiBlackboard.OpponentSnapshot.EMPTY
          : blackboard.opponent(target.getUUID());
       return profile.actions().stream()
-         .filter(action -> distance >= action.minimumRange() && distance <= action.maximumRange())
-         .filter(action -> entity.getCurrentMp() >= action.manaCost())
-         .max(Comparator.comparingDouble(action -> utility(entity, target, phase, profile, action, distance, memory)))
-         .orElse(null);
-   }
-
-   public static void publishActiveThreat(ServantEntity entity, LivingEntity target, AiActionDescriptor action, long now) {
-      if (!(entity.level() instanceof ServerLevel level) || action == null || entity.getAttackSwingTicks() != 6) return;
-      AiActionDescriptor.ThreatSpec spec = action.threat();
-      if (spec.danger() <= 0) return;
-      var timing = action.timing();
-      CombatThreatService.publish(level, new CombatThreat(action.id(), entity.getUUID(), target == null ? null : target.getUUID(),
-         entity.getEyePosition(), target == null ? entity.getLookAngle() : target.getEyePosition().subtract(entity.getEyePosition()),
-         spec.shape(), spec.radius(), spec.length(), spec.danger(), now, now + timing.windupTicks(),
-         now + timing.windupTicks() + timing.activeTicks(), spec.blockable(), spec.dodgeable(), spec.interruptible()));
+         .filter(action -> ServantPlannedActionExecutor.canExecute(entity, target, action, entity.level().getGameTime()))
+         .sorted(Comparator.comparingDouble((AiActionDescriptor action) ->
+            utility(entity, target, phase, profile, action, distance, memory)).reversed())
+         .toList();
    }
 
    private static double utility(ServantEntity entity, LivingEntity target, ServantCombatPhase phase,
@@ -59,6 +57,16 @@ public final class ServantActionPlanner {
          && (action.tags().contains(AiActionDescriptor.Tag.GUARD) || action.tags().contains(AiActionDescriptor.Tag.EVADE))) {
          score += 30.0;
       }
+      if (ServantCombatMotionService.canPursue(entity, target)) {
+         if (action.tags().contains(AiActionDescriptor.Tag.PURSUIT)
+            || action.tags().contains(AiActionDescriptor.Tag.INTERCEPT)
+            || action.tags().contains(AiActionDescriptor.Tag.ANTI_AIR)) score += 55.0;
+         if (action.tags().contains(AiActionDescriptor.Tag.HEAL)
+            || action.tags().contains(AiActionDescriptor.Tag.GUARD)) score -= 20.0;
+      }
+      if (ServantCombatMotionService.isRecovering(target)
+         && (action.tags().contains(AiActionDescriptor.Tag.FINISHER)
+            || action.tags().contains(AiActionDescriptor.Tag.LAUNCHER))) score -= 45.0;
       if (action.tags().contains(AiActionDescriptor.Tag.NOBLE_PHANTASM)) score += phase.ordinal() >= ServantCombatPhase.DECISIVE.ordinal() ? 45.0 : -80.0;
       if (action.tags().contains(AiActionDescriptor.Tag.HEAL)) score += entity.getHealth() < entity.getMaxHealth() * 0.45F ? 40.0 : -50.0;
       if (action.terrainTier().ordinal() >= net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.HEAVY.ordinal()
@@ -66,18 +74,23 @@ public final class ServantActionPlanner {
       if (action.threat().collateralRadius() > 0.0) {
          double radius = action.threat().collateralRadius();
          long allies = entity.level().getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(radius), entity::isAlliedTo).size();
-         double collateralMultiplier = Math.max(0.65, 1.0 - environmentComfort * 0.15);
+         double caution = net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalProfileResolver.resolve(entity).collateralCaution();
+         double collateralMultiplier = 0.35 + caution * 1.3;
          score -= allies * 35.0 * collateralMultiplier;
       }
-      if (entity.level() instanceof ServerLevel && BattlefieldAreaService.isHostileArea(entity, target.position())) {
+      if (!entity.level().isClientSide() && BattlefieldAreaService.isHostileArea(entity, target.position())) {
          if (action.tags().contains(AiActionDescriptor.Tag.CONTROL) || action.tags().contains(AiActionDescriptor.Tag.NOBLE_PHANTASM)) score += 28.0;
          else score -= 12.0;
       }
       if (target instanceof ServantEntity rival) {
          for (ServantActionProfile.RivalRule rule : profile.rivals()) {
-            if (rule.opponentServant().equals(rival.getServantId())) score *= rule.actionWeights().getOrDefault(action.id().toString(), 1.0);
+            if (rule.opponentServant().equals(rival.getServantId()) && phase.ordinal() >= rule.minimumPhase().ordinal()) {
+               score *= rule.actionWeights().getOrDefault(action.id().toString(), 1.0);
+            }
          }
       }
+      double matchup = CombatMatchupEvaluator.actionMultiplier(entity, target, action, memory);
+      score += (matchup - 1.0) * 55.0;
       return score;
    }
 }

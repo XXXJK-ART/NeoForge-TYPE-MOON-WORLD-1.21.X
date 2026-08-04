@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,8 +27,10 @@ public record ServantCardReleaseMessage() implements CustomPacketPayload {
    }
 
    public static void handleData(ServantCardReleaseMessage message, IPayloadContext context) {
+      if (context.flow() != PacketFlow.SERVERBOUND) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player) {
+         if (context.player() instanceof ServerPlayer player
+            && ServerPacketRateLimiter.allow(player, "servant_card_release", 10)) {
             if (!ServantCardTransformManager.release(player, false)) {
                MasterStateManager.release(player);
             }

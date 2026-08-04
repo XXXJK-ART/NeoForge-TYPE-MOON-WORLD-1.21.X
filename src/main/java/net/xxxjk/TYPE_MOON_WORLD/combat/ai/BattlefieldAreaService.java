@@ -61,6 +61,7 @@ public final class BattlefieldAreaService {
    @SubscribeEvent
    public static void tick(LevelTickEvent.Post event) {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
+      if (level.getGameTime() % 20L != 0L) return;
       List<Area> areas = AREAS.get(level.dimension());
       if (areas != null) {
          long now = level.getGameTime();

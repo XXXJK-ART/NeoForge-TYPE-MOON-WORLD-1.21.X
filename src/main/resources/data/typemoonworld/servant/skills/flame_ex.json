@@ -1,0 +1,1 @@
+{"id":"flame_ex","display_name":"Flame EX","display_name_zh":"焰 EX","type":"active","mp_cost":0,"cooldown_ticks":600,"duration_ticks":300,"effects":[{"effect_type":"restore_mp","params":{"amount":100}},{"effect_type":"attack_mp_gain","params":{"amount":10}}]}

@@ -99,6 +99,10 @@ public final class TypeMoonWorldGameTests {
       helper.assertTrue(firstTarget != null && secondTarget != null, "Could not create clone targets");
       firstTarget.setNoAi(true);
       secondTarget.setNoAi(true);
+      firstTarget.setInvulnerable(true);
+      secondTarget.setInvulnerable(true);
+      firstTarget.setPersistenceRequired();
+      secondTarget.setPersistenceRequired();
       firstTarget.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
       secondTarget.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
       firstTarget.setHealth(1000.0F);
@@ -114,7 +118,14 @@ public final class TypeMoonWorldGameTests {
             "Eight-Boat Leap did not retain its original target UUID; mp=" + rider.getCurrentMp()
                + ", phase=" + rider.getCombatPhase() + ", target=" + rider.getTarget()
                + ", until=" + rider.getPersistentData().getLong("UshiwakamaruEightBoatUntil")
-               + ", last=" + rider.getPersistentData().getLong("UshiwakamaruLastEightBoat"));
+               + ", last=" + rider.getPersistentData().getLong("UshiwakamaruLastEightBoat")
+               + ", tactical=" + rider.wasTacticalAiHandledThisTick()
+               + ", noAi=" + rider.isNoAi()
+               + ", selected=" + rider.getPersistentData().getString("TypeMoonAiSelectedAction")
+               + ", aiPhase=" + rider.getPersistentData().getString("TypeMoonAiCombatPhase")
+               + ", memory=" + rider.getPersistentData().hasUUID("ServantCombatTargetMemory")
+               + ", riderPos=" + rider.position() + ", targetPos=" + firstTarget.position()
+               + ", targetAlive=" + firstTarget.isAlive());
          helper.assertTrue(firstTarget.isAlive(), "Eight-Boat original target died before the cleanup check");
          helper.assertTrue(level.getEntity(firstTarget.getUUID()) == firstTarget,
             "Eight-Boat original target was missing from the level UUID index");
@@ -168,10 +179,290 @@ public final class TypeMoonWorldGameTests {
       var master = TypeMoonWorldApi.master(masterPlayer);
       helper.assertTrue(servant.transform(ResourceLocation.fromNamespaceAndPath("typemoonworld", "artoria_pendragon")), "servant transform failed");
       helper.assertTrue(master.activate(), "master activation failed");
+      masterPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
       helper.assertTrue(master.bind(servantPlayer), "master contract failed");
       helper.assertTrue(master.boundServant() != null && servant.transformed(), "contract state was not persisted");
       helper.assertTrue(servant.release(), "servant release failed");
       helper.assertTrue(master.release(), "master release failed");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void terminatedPlayerContractDoesNotStartMasterLoss(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master), "master activation failed");
+      master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(master, servant), "contract failed");
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.terminateContract(master, servant);
+      var masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      var servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      helper.assertTrue(masterVars.master_servant_uuid.isEmpty() && servantVars.servant_card_master_uuid.isEmpty(),
+         "contract UUIDs were not cleared symmetrically");
+      helper.assertTrue("none".equals(servantVars.master_servant_survival_state)
+         && masterVars.master_servant_backlash_ticks == 0, "normal termination incorrectly caused death state");
+      helper.assertTrue("masterless".equals(servantVars.servant_card_contract_state),
+         "terminated contract did not leave a masterless servant");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void servantManaRegenUsesThreeContractStates(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      var servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      helper.assertTrue("native".equals(servantVars.servant_card_contract_state),
+         "fresh servant card was not native");
+      servantVars.servant_card_mana = servantVars.servant_card_max_mana - 20.0;
+      double nativeMana = servantVars.servant_card_mana;
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.tick(servant, servantVars);
+      helper.assertTrue(servantVars.servant_card_mana > nativeMana,
+         "native servant did not regenerate its own mana");
+
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master),
+         "master activation failed");
+      var masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      masterVars.master_card_active = true;
+      masterVars.player_mana_egenerated_every_moment = 10.0;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(master, servant),
+         "contract failed");
+      servantVars.servant_card_mana = servantVars.servant_card_max_mana - 20.0;
+      double contractedMana = servantVars.servant_card_mana;
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.tick(servant, servantVars);
+      helper.assertTrue("contracted".equals(servantVars.servant_card_contract_state)
+         && servantVars.servant_card_mana > contractedMana,
+         "contracted servant did not use in-range master mana regeneration");
+
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.terminateContract(master, servant);
+      servantVars.servant_card_mana = servantVars.servant_card_max_mana - 20.0;
+      double masterlessMana = servantVars.servant_card_mana;
+      for (int i = 0; i < 20; i++) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.tick(servant, servantVars);
+      }
+      helper.assertTrue("masterless".equals(servantVars.servant_card_contract_state)
+         && Math.abs(servantVars.servant_card_mana - masterlessMana) < 1.0E-9,
+         "masterless servant regenerated passive mana");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void servantCardCanRestoreMpFromManaMedia(GameTestHelper helper) {
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      var vars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_mana = 0.0;
+      servant.getInventory().add(new net.minecraft.world.item.ItemStack(ModItems.MAGIC_FRAGMENTS.get()));
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService.restoreFromInventory(servant, vars),
+         "servant card did not consume mana media");
+      helper.assertTrue(Math.abs(vars.servant_card_mana - 10.0) < 1.0E-9
+         && servant.getInventory().countItem(ModItems.MAGIC_FRAGMENTS.get()) == 0,
+         "mana media did not restore the servant card MP pool");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void masterCanHealFromVanillaFood(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master),
+         "master activation failed");
+      master.getFoodData().setFoodLevel(20);
+      master.getFoodData().setSaturation(5.0F);
+      master.setHealth(master.getMaxHealth() - 10.0F);
+      float damagedHealth = master.getHealth();
+      var naturalRegen = helper.getLevel().getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_NATURAL_REGENERATION);
+      boolean previousNaturalRegen = naturalRegen.get();
+      try {
+         naturalRegen.set(true, helper.getLevel().getServer());
+         for (int i = 0; i < 40; i++) master.getFoodData().tick(master);
+         helper.assertTrue(master.getFoodData().getFoodLevel() >= 18 && master.getHealth() > damagedHealth,
+            "master hunger was locked or vanilla food regeneration did not heal");
+      } finally {
+         naturalRegen.set(previousNaturalRegen, helper.getLevel().getServer());
+      }
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void masterLossForcesHeraclesDeathOnTick200(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "heracles"),
+         "Heracles transform failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master), "master activation failed");
+      master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(master, servant), "contract failed");
+      var masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      var servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onMasterLost(master, masterVars);
+      helper.assertTrue("forced_death".equals(servantVars.master_servant_survival_state),
+         "servant without Independent Action did not enter forced death");
+      for (int i = 0; i < 199; i++) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, servantVars);
+      }
+      helper.assertTrue(servant.isAlive() && servant.getPersistentData().getInt("GodHandLives") > 0,
+         "Heracles died or spent God Hand before tick 200");
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, servantVars);
+      helper.assertTrue(!servant.isAlive() && servant.getPersistentData().getInt("GodHandLives") == 0,
+         "forced death was prevented by God Hand");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void independentActionAndDistanceKeepContractRules(GameTestHelper helper) {
+      var firstMaster = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "gilgamesh"),
+         "Gilgamesh transform failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(firstMaster), "master activation failed");
+      firstMaster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(firstMaster, servant), "contract failed");
+      var firstMasterVars = firstMaster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      var servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      float health = servant.getHealth();
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onMasterLost(firstMaster, firstMasterVars);
+      for (int i = 0; i < 100; i++) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, servantVars);
+      }
+      helper.assertTrue("independent_action".equals(servantVars.master_servant_survival_state)
+         && servant.getHealth() == health, "Independent Action grace damaged the servant");
+
+      var secondMaster = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(secondMaster), "second master activation failed");
+      secondMaster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(secondMaster, servant), "recontract failed");
+      helper.assertTrue("none".equals(servantVars.master_servant_survival_state), "recontract did not cancel survival timer");
+      var secondMasterVars = secondMaster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      servant.setPos(secondMaster.getX() + 200.0, secondMaster.getY(), secondMaster.getZ());
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, servantVars);
+      helper.assertTrue(servantVars.master_servant_master_position_valid
+         && servantVars.master_servant_master_position_online
+         && servantVars.master_servant_master_dimension.equals(secondMaster.level().dimension().location().toString())
+         && Math.abs(servantVars.master_servant_master_x - secondMaster.getX()) < 0.001,
+         "servant did not retain a live master position sense at long range");
+      helper.assertTrue(servant.getUUID().toString().equals(secondMasterVars.master_servant_uuid)
+         && secondMaster.getUUID().toString().equals(servantVars.servant_card_master_uuid),
+         "long distance broke the contract UUIDs");
+      helper.assertTrue(!net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.canUseMasterMana(
+         servant, servantVars, secondMaster) && servant.getHealth() == health,
+         "long distance still supplied mana or changed health");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void independentActionExpiryStartsUnavoidableTenSecondDeath(GameTestHelper helper) {
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "gilgamesh"),
+         "Independent Action servant transform failed");
+      var vars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.master_servant_survival_state = "independent_action";
+      vars.master_servant_survival_ticks = 1;
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, vars);
+      helper.assertTrue("forced_death".equals(vars.master_servant_survival_state)
+         && vars.master_servant_survival_ticks == 200 && servant.isAlive(),
+         "Independent Action expiry did not begin a fresh 200-tick death countdown");
+      for (int i = 0; i < 199; i++) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, vars);
+      }
+      helper.assertTrue(servant.isAlive(), "Independent Action servant died before countdown tick 200");
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.tick(servant, vars);
+      helper.assertTrue(!servant.isAlive(), "Independent Action servant survived countdown tick 200");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void playerCardContractsRejectSameRolesAndAllowEitherDirection(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      var otherMaster = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      var otherServant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master), "master activation failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(otherMaster), "second master activation failed");
+      master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      otherMaster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(otherServant, "medusa"),
+         "second servant transform failed");
+      helper.assertTrue(!net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bindByContract(master, otherMaster),
+         "Master Card to Master Card contract was accepted");
+      helper.assertTrue(!net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bindByContract(servant, otherServant),
+         "Servant Card to Servant Card contract was accepted");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bindByContract(servant, master),
+         "Servant Card to Master Card interaction direction was rejected");
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onServantLost(
+         servant, servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
+      helper.assertTrue(master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_servant_backlash_ticks == 1200,
+         "master did not receive the servant-death sensation backlash");
+      helper.assertTrue(!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(master, "medea"),
+         "Servant Card activated while Master Card was active");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void servantOutOfCombatHealingUsesOwnMana(GameTestHelper helper) {
+      var servant = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      var vars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      servant.setHealth(servant.getMaxHealth() - 20.0F);
+      vars.servant_card_mana = 50.0;
+      vars.servant_card_last_combat_tick = servant.level().getGameTime() - 200L;
+      servant.tickCount = 20;
+      float beforeHealth = servant.getHealth();
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHealthService.tick(servant, vars);
+      helper.assertTrue(Math.abs(vars.servant_card_mana - 49.0) < 0.001,
+         "out-of-combat heal did not consume exactly one servant mana");
+      helper.assertTrue(Math.abs(servant.getHealth() - (beforeHealth + servant.getMaxHealth() * 0.005F)) < 0.01F,
+         "out-of-combat heal amount was not 0.5% max health");
+
+      servant.invulnerableTime = 0;
+      boolean damageApplied = servant.hurt(servant.damageSources().genericKill(), 1.0F);
+      helper.assertTrue(damageApplied && vars.servant_card_last_combat_tick == servant.level().getGameTime(),
+         "final applied damage was not recorded as combat");
+      double manaAfterDamage = vars.servant_card_mana;
+      float healthAfterDamage = servant.getHealth();
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHealthService.tick(servant, vars);
+      helper.assertTrue(Math.abs(vars.servant_card_mana - manaAfterDamage) < 0.001
+         && Math.abs(servant.getHealth() - healthAfterDamage) < 0.001F,
+         "new effective damage did not reset the combat timer");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void servantFoodSnapshotRestoresAndMasterFoodIsUntouched(GameTestHelper helper) {
+      var servant = helper.makeMockServerPlayerInLevel();
+      servant.getFoodData().setFoodLevel(7);
+      servant.getFoodData().setSaturation(2.0F);
+      servant.getFoodData().setExhaustion(3.0F);
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "artoria_pendragon"),
+         "servant transform failed");
+      var servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.tick(servant, servantVars);
+      helper.assertTrue(servant.getFoodData().getFoodLevel() == 17 && servant.getFoodData().getSaturationLevel() == 0.0F,
+         "servant form did not suppress vanilla hunger healing");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.release(servant, false),
+         "servant release failed");
+      helper.assertTrue(servant.getFoodData().getFoodLevel() == 7
+         && servant.getFoodData().getSaturationLevel() == 2.0F
+         && servant.getFoodData().getExhaustionLevel() == 3.0F,
+         "servant release did not restore the food snapshot");
+
+      var master = helper.makeMockServerPlayerInLevel();
+      master.getFoodData().setFoodLevel(6);
+      master.getFoodData().setSaturation(1.0F);
+      master.getFoodData().setExhaustion(2.0F);
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master), "master activation failed");
+      var masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.tick(master, masterVars);
+      helper.assertTrue(master.getFoodData().getFoodLevel() == 6
+         && master.getFoodData().getSaturationLevel() == 1.0F
+         && master.getFoodData().getExhaustionLevel() == 2.0F,
+         "master tick still normalizes hunger");
       helper.succeed();
    }
 
@@ -202,6 +493,24 @@ public final class TypeMoonWorldGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void entityServantDeathIsFeltByMaster(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master), "master activation failed");
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(helper.getLevel(),
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "artoria_pendragon"), helper.absolutePos(new BlockPos(2, 2, 2)));
+      helper.assertTrue(summoned instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity,
+         "entity servant summon failed");
+      var servant = (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)summoned;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bindEntityServant(master, servant),
+         "entity servant contract failed");
+      servant.die(servant.damageSources().genericKill());
+      var vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      helper.assertTrue(vars.master_servant_uuid.isEmpty() && vars.master_servant_backlash_ticks == 1200,
+         "entity servant death did not break the link and notify the master");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
    public static void launchedTargetIsRememberedAndPursued(GameTestHelper helper) {
       BlockPos servantPos = helper.absolutePos(new BlockPos(2, 20, 2));
       var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(helper.getLevel(),
@@ -228,6 +537,113 @@ public final class TypeMoonWorldGameTests {
             "servant base follow range was not expanded for launched targets: " + baseFollowRange);
          helper.succeed();
       });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void combatMotionTracksLaunchPursuitAndControlDecay(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level,
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "artoria_pendragon"),
+         helper.absolutePos(new BlockPos(2, 20, 2)));
+      helper.assertTrue(summoned instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity,
+         "could not create servant for combat-motion test");
+      var servant = (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)summoned;
+      servant.setNoAi(true);
+      var target = helper.spawn(EntityType.ZOMBIE, new BlockPos(6, 20, 2));
+      target.setNoAi(true);
+
+      var first = net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.launch(
+         servant, target, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0), 1.2, 0.5,
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL, 24);
+      helper.assertTrue(first.applied() && first.controlDepth() == 1,
+         "first launch was not registered as a fresh control action");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.isLaunched(target),
+         "launched state was not stored on the target");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.canPursue(servant, target),
+         "launch did not open an attacker-bound pursuit window");
+
+      var second = net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.launch(
+         servant, target, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0), 1.2, 0.5,
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL, 24);
+      helper.assertTrue(second.applied() && second.controlDepth() == 2,
+         "consecutive launch did not increase control depth");
+      helper.assertTrue(Math.abs(second.controlScale() - 0.72) < 0.0001,
+         "second launch did not apply the expected control decay: " + second.controlScale());
+      helper.assertTrue(second.horizontalPower() < first.horizontalPower()
+            && second.verticalPower() < first.verticalPower(),
+         "control decay did not reduce the repeated launch force");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void combatMotionResolvesARealWallImpactAfterFlight(GameTestHelper helper) {
+      var level = helper.getLevel();
+      BlockPos attackerPos = helper.absolutePos(new BlockPos(2, 20, 2));
+      BlockPos wall = helper.absolutePos(new BlockPos(8, 20, 2));
+      for (int x = 4; x <= 8; x++) {
+         for (int z = 1; z <= 3; z++) {
+            level.setBlock(helper.absolutePos(new BlockPos(x, 19, z)),
+               net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+         }
+      }
+      for (int y = 0; y < 3; y++) {
+         level.setBlock(wall.above(y), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+      }
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level,
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "artoria_pendragon"), attackerPos);
+      helper.assertTrue(summoned instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity,
+         "could not create wall-impact attacker");
+      var attacker = (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)summoned;
+      attacker.setNoAi(true);
+      var targetEntity = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level,
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "emiya_archer"),
+         helper.absolutePos(new BlockPos(5, 20, 2)));
+      helper.assertTrue(targetEntity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity,
+         "could not create wall-impact servant target");
+      var target = (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)targetEntity;
+      var launch = net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.launch(
+         attacker, target, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0), 2.6, 0.35,
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.MEDIUM, 24);
+      helper.assertTrue(launch.applied(), "wall-impact launch was rejected");
+      helper.assertTrue(level.getBlockState(wall).is(net.minecraft.world.level.block.Blocks.STONE),
+         "launch call damaged a wall before flight");
+      helper.runAfterDelay(12, () -> {
+         helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.state(target)
+               == net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.MotionState.WALL_STAGGER,
+            "target did not enter wall stagger after a real swept collision: state="
+               + net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.state(target)
+               + ", position=" + target.position() + ", motion=" + target.getDeltaMovement());
+         helper.assertTrue(!level.getBlockState(wall).is(net.minecraft.world.level.block.Blocks.STONE),
+            "real wall impact did not damage the collision surface");
+         helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.canPursue(attacker, target),
+            "wall impact removed the attacker's pursuit window");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void allServantsLoadDedicatedBoundedTacticalProfiles(GameTestHelper helper) {
+      var profileIds = new java.util.HashSet<String>();
+      var definitions = ServantDataRegistry.getAll();
+      helper.assertTrue(definitions.size() == 20,
+         "expected 20 servant definitions, found " + definitions.size());
+      for (var definition : definitions.values()) {
+         String profileId = definition.aiConfigId();
+         var profile = ServantAiDefinitionRegistry.get(profileId);
+         helper.assertTrue(profile != null,
+            "missing tactical profile for " + definition.id() + ": " + profileId);
+         helper.assertTrue(profileIds.add(profileId),
+            "servants share a tactical profile instead of using dedicated behavior: " + profileId);
+         var tactical = profile.tactical();
+         helper.assertTrue(tactical.minimumRange() <= tactical.preferredRange()
+               && tactical.preferredRange() <= tactical.maximumRange(),
+            "invalid tactical range order for " + profileId);
+         helper.assertTrue(tactical.maximumRange() <= 48.0,
+            "tactical range exceeds the 48-block normal-combat limit for " + profileId);
+      }
+      helper.assertTrue(profileIds.size() == 20,
+         "not all servants loaded an independent tactical profile");
+      helper.succeed();
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 60)
@@ -394,7 +810,7 @@ public final class TypeMoonWorldGameTests {
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 100)
+   @GameTest(template = "ancient_temple", timeoutTicks = 480)
    public static void fiftyCombatNpcArbitrationStress(GameTestHelper helper) {
       var level = helper.getLevel();
       var target = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(6, 2, 6));
@@ -413,13 +829,23 @@ public final class TypeMoonWorldGameTests {
          }
       }
       helper.assertTrue(spawned == 50, "could not spawn the 50-NPC stress group");
-      helper.runAfterDelay(30, () -> {
+      helper.runAfterDelay(420, () -> {
          var servants = level.getEntitiesOfClass(net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class,
             new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(48.0));
          helper.assertTrue(servants.size() >= 50, "combat arbitration lost NPCs during stress run: " + servants.size());
+         long maxDisconnected = servants.stream().mapToLong(servant ->
+            net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService.disconnectedTicks(
+               servant, level.getGameTime())).max().orElse(0L);
+         helper.assertTrue(maxDisconnected <= net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService.MAX_DISCONNECTED_TICKS,
+            "combat tempo exceeded the no-contact deadline: " + maxDisconnected);
+         helper.assertTrue(servants.stream().noneMatch(servant -> servant.getY() > target.getY() + 16.0),
+            "combat stress group accumulated an invalid flight height");
          var metrics = net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction.lastMetrics(level);
          helper.assertTrue(metrics.checkedBlocks() <= net.xxxjk.TYPE_MOON_WORLD.Config.terrainChecksPerTick,
             "terrain queue exceeded its voxel check cap: " + metrics.checkedBlocks());
+         helper.assertTrue(metrics.queuedJobs()
+               <= net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction.maximumQueuedJobsPerDimension(),
+            "terrain queue exceeded its per-dimension job cap: " + metrics.queuedJobs());
          long physicalDebris = level.getEntitiesOfClass(net.minecraft.world.entity.item.FallingBlockEntity.class,
             new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(48.0),
             net.xxxjk.TYPE_MOON_WORLD.world.terrain.PhysicalTerrainDebrisService::isPhysicalDebris).size();

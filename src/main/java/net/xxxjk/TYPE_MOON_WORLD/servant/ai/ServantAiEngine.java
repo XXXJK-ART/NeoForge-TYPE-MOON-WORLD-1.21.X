@@ -29,6 +29,7 @@ public final class ServantAiEngine {
    }
 
    public void tick(ServantEntity entity) {
+      net.xxxjk.TYPE_MOON_WORLD.combat.ai.EvasionMovementService.tickAirState(entity);
       ServantDefinition definition = entity.getDefinition();
       if (definition == null) {
          return;
@@ -52,6 +53,16 @@ public final class ServantAiEngine {
          } catch (Exception e) {
             TYPE_MOON_WORLD.LOGGER.error("Servant AI module {} failed", module.getClass().getSimpleName(), e);
          }
+      }
+      // Legacy helpers have many early returns.  Run the shared tempo guard after
+      // them so cooldowns and failed casts can never leave a servant idle forever.
+      ServantCombatTempoService.enforceLegacy(entity, entity.getTarget(), gameTick);
+      // Keep orientation deterministic at the end of the tick.  Individual skills
+      // may return early, but a valid target should still be the facing authority.
+      LivingEntity finalTarget = entity.getTarget();
+      if (finalTarget != null && finalTarget.isAlive()
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting.isContractMaster(entity, finalTarget)) {
+         entity.getLookControl().setLookAt(finalTarget, 45.0F, 45.0F);
       }
    }
 }

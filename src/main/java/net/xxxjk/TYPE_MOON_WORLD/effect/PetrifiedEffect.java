@@ -32,6 +32,8 @@ public class PetrifiedEffect extends UncurableEffect {
    public boolean applyEffectTick(LivingEntity entity, int amplifier) {
       entity.setSprinting(false);
       entity.stopUsingItem();
+      entity.setDeltaMovement(0.0, 0.0, 0.0);
+      entity.hurtMarked = true;
       if (entity instanceof Mob mob) {
          mob.getNavigation().stop();
          mob.setTarget(null);

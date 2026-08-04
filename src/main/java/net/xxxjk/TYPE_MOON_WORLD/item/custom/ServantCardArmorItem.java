@@ -29,15 +29,21 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class ServantCardArmorItem extends ArmorItem implements GeoItem {
    private final String servantId;
+   private final EquipmentSlot slot;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public ServantCardArmorItem(Properties properties, String servantId, EquipmentSlot slot) {
       super(ArmorMaterials.LEATHER, typeFor(slot), properties);
       this.servantId = servantId;
+      this.slot = slot;
    }
 
    public String servantId() {
       return this.servantId;
+   }
+
+   public EquipmentSlot armorSlot() {
+      return this.slot;
    }
 
    public String servantId(ItemStack stack) {
@@ -57,8 +63,9 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       ServantCardRegistry.Entry entry = ServantCardRegistry.byId(this.servantId);
       return (entry != null && entry.hasRealArmor()) || switch (this.servantId) {
          case "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
-            "gilgamesh", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
-         case "fanatic_assassin", "arash", "nightingale" -> true;
+            "enkidu",
+            "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
+         case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
          default -> false;
       };
    }
@@ -99,6 +106,10 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          animation = hassanArmorAnimation(state);
       } else if ("li_shuwen".equals(this.servantId)) {
          animation = liShuwenArmorAnimation(state);
+      } else if ("gilgamesh_caster".equals(this.servantId)) {
+         animation = casterGilgameshArmorAnimation(state);
+      } else if ("senko_muramasa".equals(this.servantId)) {
+         animation = "animation";
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
          || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)
@@ -152,6 +163,18 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          return "Jacket";
       }
       return ratio <= 0.666F ? "sunglasses" : "animation";
+   }
+
+   private String casterGilgameshArmorAnimation(AnimationState<ServantCardArmorItem> state) {
+      Entity entity = state.getData(DataTickets.ENTITY);
+      if (!(entity instanceof LivingEntity living)) {
+         return "standing";
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed && "gilgamesh_caster".equals(vars.servant_card_id) && vars.servant_card_flying) {
+         return living.getDeltaMovement().horizontalDistanceSqr() > 0.01 ? "fly" : "float_idle";
+      }
+      return living.getDeltaMovement().horizontalDistanceSqr() > 0.012 ? "walk" : "standing";
    }
 
    @Override

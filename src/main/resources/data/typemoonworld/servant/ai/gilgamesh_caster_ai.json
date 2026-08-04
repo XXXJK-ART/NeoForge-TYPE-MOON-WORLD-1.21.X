@@ -1,0 +1,8 @@
+{
+  "movement": {"follow_distance": 8.0, "wander_radius": 15.0, "likes_high_places": true},
+  "combat": {"preferred_attack_distance": 22.0, "retreat_health_ratio": 0.55, "melee_preference": 0.05, "berserk_health_ratio": 0.1, "berserk_damage_multiplier": 1.0},
+  "tactical": {"style": "controller", "minimum_range": 8, "preferred_range": 24, "maximum_range": 44, "reposition_distance": 18, "pursuit_aggression": 0.18, "intercept_bias": 4, "vertical_mobility": 1.0, "recovery_tendency": 0.95, "collateral_caution": 0.55, "maximum_terrain_impact": "medium"},
+  "social": {"talk_interval": 360, "greeting_probability": 0.04},
+  "command": {"base_obedience_rate": 0.90, "favor_multiplier": 0.004},
+  "environment": {"liked_biomes": [], "disliked_biomes": [], "preferred_weather": "any"}
+}

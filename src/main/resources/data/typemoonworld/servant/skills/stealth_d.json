@@ -11,5 +11,6 @@
       "effect_type": "stealth_passive",
       "params": {}
     }
-  ]
+  ],
+  "ai": {"facts": [{"type": "concealment", "strength": 0.55}]}
 }

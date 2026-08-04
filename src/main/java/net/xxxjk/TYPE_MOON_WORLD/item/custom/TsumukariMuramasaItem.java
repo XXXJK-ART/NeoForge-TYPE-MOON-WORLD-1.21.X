@@ -32,8 +32,14 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -155,6 +161,10 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseTicks) {
       if (livingEntity instanceof ServerPlayer player) {
          int useDuration = this.getUseDuration(stack, livingEntity) - remainingUseTicks;
+         if (isMuramasaCard(player)) {
+            tickCardCharge(level, player, useDuration);
+            return;
+         }
          int currentCharge = useDuration;
          if (useDuration > 100) {
             currentCharge = 100;
@@ -207,6 +217,10 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
       super.releaseUsing(stack, level, livingEntity, timeCharged);
       if (!level.isClientSide && livingEntity instanceof Player player) {
          int useDuration = this.getUseDuration(stack, livingEntity) - timeCharged;
+         if (player instanceof ServerPlayer serverPlayer && isMuramasaCard(serverPlayer)) {
+            releaseCardCharge(serverPlayer, level, useDuration);
+            return;
+         }
          int charge = useDuration;
          if (useDuration > 100) {
             charge = 100;
@@ -216,7 +230,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
                int color = MagicCircuitColorHelper.ensureColor(serverPlayer);
                spawnReleaseAirwaves(serverLevel, serverPlayer, charge, color);
-               MuramasaSlashHandler.initiate(
+               MuramasaSlashHandler.initiateTsumukari(
                   serverLevel, serverPlayer, charge, this.getMaxSlashDistance(), this.getMaxSlashWidth(), this.getMaxSlashHeight()
                );
                TsumukariWaveProjectileEntity projectile = new TsumukariWaveProjectileEntity(serverLevel, serverPlayer, charge, color);
@@ -226,13 +240,111 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + charge / 100.0F);
          }
 
-         if (charge > 60) {
+         if (charge >= 60 && player instanceof ServerPlayer serverPlayer && !hasDivinity(serverPlayer)) {
             level.explode(null, player.getX(), player.getY(), player.getZ(), 10.0F, true, ExplosionInteraction.TNT);
-            if (!player.isCreative()) {
-               player.kill();
-            }
+            MuramasaDissolutionService.schedule(serverPlayer);
          }
       }
+   }
+
+   private static void tickCardCharge(Level level, ServerPlayer player, int useDuration) {
+      int charge = Math.max(0, Math.min(30, useDuration));
+      int percent = Math.round(charge * 100.0F / 30.0F);
+      player.displayClientMessage(
+         Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", percent)
+            .withStyle(percent >= 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED),
+         true
+      );
+      level.playSound(
+         null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE,
+         SoundSource.PLAYERS, 0.5F, 1.0F + percent / 100.0F
+      );
+      if (level instanceof ServerLevel serverLevel) {
+         double radius = 1.0 + percent / 50.0;
+         int particleCount = 2 + percent / 10;
+         for (int i = 0; i < particleCount; i++) {
+            double angle = Math.PI * 2.0 * i / particleCount + level.getGameTime() * 0.2;
+            double px = player.getX() + radius * Math.cos(angle);
+            double pz = player.getZ() + radius * Math.sin(angle);
+            double py = player.getY() + 0.6 + level.random.nextDouble() * 1.2;
+            serverLevel.sendParticles(
+               percent >= 60 ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.FLAME,
+               px, py, pz, 1, 0.0, 0.04, 0.0, 0.05
+            );
+         }
+      }
+      if (charge == 30 && useDuration == 30) {
+         level.playSound(null, player.getX(), player.getY(), player.getZ(),
+            SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.5F, 2.0F);
+      }
+   }
+
+   private static void releaseCardCharge(ServerPlayer player, Level level, int useDuration) {
+      int charge = Math.max(0, Math.min(30, useDuration));
+      if (charge <= 0) {
+         return;
+      }
+      int percent = Math.round(charge * 100.0F / 30.0F);
+      double cost = 1000.0 * percent / 100.0;
+      boolean paid = consumeCardMana(player, cost);
+      boolean delayedDissolution = percent >= 60 && !hasDivinity(player);
+      boolean forcedDeath = !paid && !delayedDissolution;
+
+      if (level instanceof ServerLevel serverLevel) {
+         int color = MagicCircuitColorHelper.ensureColor(player);
+         level.playSound(null, player.getX(), player.getY(), player.getZ(),
+            ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get(), SoundSource.VOICE, 1.0F, 1.0F);
+         spawnReleaseAirwaves(serverLevel, player, percent, color);
+         MuramasaSlashHandler.initiateTsumukari(serverLevel, player, percent, 300, 10, 100);
+         serverLevel.addFreshEntity(new TsumukariWaveProjectileEntity(serverLevel, player, percent, color));
+      }
+      level.playSound(null, player.getX(), player.getY(), player.getZ(),
+         SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + percent / 100.0F);
+      if (delayedDissolution) {
+         MuramasaDissolutionService.schedule(player);
+      }
+      if (level instanceof ServerLevel serverLevel && forcedDeath) {
+         serverLevel.sendParticles(ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1.0, player.getZ(),
+            4, 0.6, 0.8, 0.6, 0.0);
+         serverLevel.sendParticles(ParticleTypes.LAVA, player.getX(), player.getY() + 0.8, player.getZ(),
+            40, 1.0, 0.8, 1.0, 0.04);
+         if (!player.isCreative()) {
+            player.kill();
+         }
+      }
+   }
+
+   private static boolean consumeCardMana(ServerPlayer player, double amount) {
+      if (amount <= 0.0) {
+         return true;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars =
+         player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double own = Math.min(vars.servant_card_mana, amount);
+      vars.servant_card_mana -= own;
+      double remaining = amount - own;
+      ServerPlayer master = ServantCardManaService.getMaster(player, vars);
+      if (remaining > 0.0 && master != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
+         TypeMoonWorldModVariables.PlayerVariables masterVars =
+            master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double masterCost = Math.min(masterVars.player_mana, remaining);
+         masterVars.player_mana -= masterCost;
+         remaining -= masterCost;
+         masterVars.syncMana(master);
+      }
+      vars.syncMana(player);
+      return remaining <= 1.0E-6;
+   }
+
+   private static boolean isMuramasaCard(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars =
+         player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id);
+   }
+
+   private static boolean hasDivinity(ServerPlayer player) {
+      return ServantIdentityHelper.hasTrait(player, ServantTraitTag.DIVINE)
+         || ServantIdentityHelper.hasTrait(player, ServantTraitTag.CELESTIAL);
    }
 
    private static void spawnReleaseAirwaves(ServerLevel level, ServerPlayer player, int charge, int color) {

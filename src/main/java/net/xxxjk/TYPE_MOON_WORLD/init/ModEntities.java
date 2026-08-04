@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
@@ -70,14 +71,18 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SenkoMuramasaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
@@ -119,12 +124,14 @@ public class ModEntities {
       "arash_particle_arrow",
       () -> Builder.<ArashParticleArrowEntity>of(
             (entityType, level) -> new ArashParticleArrowEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC)
-         .sized(0.25F, 0.25F).clientTrackingRange(192).updateInterval(1).build("arash_particle_arrow")
+         .sized(0.25F, 0.25F).clientTrackingRange(8).updateInterval(1).build("arash_particle_arrow")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ArashStellaControllerEntity>> ARASH_STELLA_CONTROLLER = ENTITY_TYPES.register(
       "arash_stella_controller",
       () -> Builder.<ArashStellaControllerEntity>of(ArashStellaControllerEntity::new, MobCategory.MISC)
-         .sized(1.0F, 1.0F).clientTrackingRange(256).updateInterval(1).build("arash_stella_controller")
+         // The controller is server-authoritative; visuals are sent as nearby particles.
+         // Keep its no-op client entity cheap on multiplayer servers.
+         .sized(1.0F, 1.0F).clientTrackingRange(64).updateInterval(2).build("arash_stella_controller")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH = ENTITY_TYPES.register(
       "muramasa_slash",
@@ -447,6 +454,10 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaArcherEntity>> EMIYA_ARCHER = ENTITY_TYPES.register(
       "emiya_archer", () -> Builder.of(EmiyaArcherEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("emiya_archer")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<SenkoMuramasaEntity>> SENKO_MURAMASA = ENTITY_TYPES.register(
+      "senko_muramasa", () -> Builder.of(SenkoMuramasaEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).build("senko_muramasa")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<ArashEntity>> ARASH = ENTITY_TYPES.register(
       "arash", () -> Builder.of(ArashEntity::new, MobCategory.CREATURE)
          .sized(0.6F, 1.85F).clientTrackingRange(256).updateInterval(1).build("arash")
@@ -460,11 +471,23 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<UshiwakamaruRiderEntity>> USHIWAKAMARU_RIDER = ENTITY_TYPES.register(
       "ushiwakamaru_rider", () -> Builder.of(UshiwakamaruRiderEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ushiwakamaru_rider")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunRiderEntity>> ZHAO_YUN_RIDER = ENTITY_TYPES.register(
+      "zhao_yun_rider", () -> Builder.of(ZhaoYunRiderEntity::new, MobCategory.CREATURE)
+         .sized(0.7F, 1.9F).clientTrackingRange(64).build("zhao_yun_rider")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunHakuryuEntity>> ZHAO_YUN_HAKURYU = ENTITY_TYPES.register(
+      "zhao_yun_hakuryu", () -> Builder.of(ZhaoYunHakuryuEntity::new, MobCategory.CREATURE)
+         .sized(2.2F, 2.4F).clientTrackingRange(64).build("zhao_yun_hakuryu")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
       "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshEntity>> GILGAMESH = ENTITY_TYPES.register(
       "gilgamesh", () -> Builder.of(GilgameshEntity::new, MobCategory.CREATURE).sized(0.6F, 1.82F).clientTrackingRange(64).build("gilgamesh")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<CasterGilgameshEntity>> GILGAMESH_CASTER = ENTITY_TYPES.register(
+      "gilgamesh_caster", () -> Builder.of(CasterGilgameshEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.82F).clientTrackingRange(96).updateInterval(1).build("gilgamesh_caster")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GawainEntity>> GAWAIN = ENTITY_TYPES.register(
       "gawain", () -> Builder.of(GawainEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("gawain")
@@ -592,6 +615,11 @@ public class ModEntities {
       "gilgamesh_ea_beam",
       () -> Builder.<GilgameshEaBeamEntity>of(GilgameshEaBeamEntity::new, MobCategory.MISC)
          .sized(15.0F, 8.0F).clientTrackingRange(256).updateInterval(1).build("gilgamesh_ea_beam")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<RoyalCannonProjectileEntity>> ROYAL_CANNON_PROJECTILE = ENTITY_TYPES.register(
+      "royal_cannon_projectile",
+      () -> Builder.<RoyalCannonProjectileEntity>of(RoyalCannonProjectileEntity::new, MobCategory.MISC)
+         .sized(0.28F, 0.28F).clientTrackingRange(64).updateInterval(1).build("royal_cannon_projectile")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EmiyaThrownWeaponEntity>> EMIYA_THROWN_WEAPON = ENTITY_TYPES.register(
       "emiya_thrown_weapon",

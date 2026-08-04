@@ -638,7 +638,7 @@ public final class ServantCardMedeaSkills {
          return;
       }
       data.putLong(MINOR_MAGIC_LAST_TICK_TAG, now);
-      LivingEntity target = findLookTarget(player, 24.0, 2.2);
+      LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(player, 24.0, 2.2);
       if (target == null) {
          return;
       }

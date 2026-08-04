@@ -77,6 +77,10 @@ public class MedeaCraftSelectScreen extends Screen {
    }
 
    @Override
+   public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   }
+
+   @Override
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       int itemWidth = 78;
       int itemHeight = 58;

@@ -31,6 +31,10 @@ public class MasterCommandSpellScreen extends Screen {
    }
 
    @Override
+   public void renderBackground(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
+   }
+
+   @Override
    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
       this.renderBackground(gui, mouseX, mouseY, partialTick);
       GuiUtils.renderScreenBackdrop(gui, this.width, this.height);

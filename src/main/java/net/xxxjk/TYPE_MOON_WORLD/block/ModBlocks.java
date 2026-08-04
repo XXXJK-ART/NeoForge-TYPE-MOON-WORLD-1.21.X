@@ -17,12 +17,23 @@ import net.xxxjk.TYPE_MOON_WORLD.block.custom.GreenTransparentBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.MuramasaBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.SummoningCircleBlock;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaBlockItem;
 
 public class ModBlocks {
    public static final Blocks BLOCKS = DeferredRegister.createBlocks("typemoonworld");
    public static final DeferredBlock<Block> MURAMASA_BLOCK = registerBlock("redswordblock", () -> new MuramasaBlock(Properties.of()));
+   public static final DeferredBlock<SummoningCircleBlock> SUMMONING_CIRCLE = registerBlock(
+      "summoning_circle",
+      () -> new SummoningCircleBlock(
+         Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.WHITE_CARPET)
+            .noOcclusion().noLootTable().strength(0.1F).lightLevel(SummoningCircleBlock::activeLight)
+      )
+   );
+   public static final DeferredBlock<Block> AGE_OF_GODS_DIRT = registerBlock(
+      "age_of_gods_dirt", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DIRT))
+   );
    public static final DeferredBlock<Block> SPIRIT_VEIN_NODE = registerBlock(
       "spirit_vein_node",
       () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE).lightLevel(s -> 5))

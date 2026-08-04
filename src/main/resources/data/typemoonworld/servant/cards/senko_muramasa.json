@@ -1,0 +1,15 @@
+{
+  "servant_id": "typemoonworld:senko_muramasa",
+  "actions": [
+    {"slot": 0, "action": "typemoonworld:muramasa_forge", "translation_key": "skill.typemoonworld.servant_card.muramasa_forge"},
+    {"slot": 1, "action": "typemoonworld:muramasa_workshop", "translation_key": "skill.typemoonworld.servant_card.muramasa_workshop"},
+    {"slot": 2, "action": "typemoonworld:muramasa_trial_slash", "translation_key": "skill.typemoonworld.servant_card.muramasa_trial_slash"},
+    {"slot": 3, "action": "typemoonworld:muramasa_karma_eye", "translation_key": "skill.typemoonworld.servant_card.muramasa_karma_eye"},
+    {"slot": 4, "action": "typemoonworld:muramasa_flame", "translation_key": "skill.typemoonworld.servant_card.muramasa_flame"},
+    {"slot": 5, "action": "typemoonworld:muramasa_projection_volley", "translation_key": "skill.typemoonworld.servant_card.muramasa_projection_volley"},
+    {"slot": 6, "action": "typemoonworld:muramasa_temper", "translation_key": "skill.typemoonworld.servant_card.muramasa_temper"},
+    {"slot": 7, "action": "typemoonworld:muramasa_karma_slash", "translation_key": "skill.typemoonworld.servant_card.muramasa_karma_slash"},
+    {"slot": 8, "action": "typemoonworld:muramasa_sword_field", "translation_key": "skill.typemoonworld.servant_card.muramasa_sword_field"},
+    {"slot": 9, "action": "typemoonworld:muramasa_no_gen_kensai", "translation_key": "skill.typemoonworld.servant_card.muramasa_no_gen_kensai"}
+  ]
+}

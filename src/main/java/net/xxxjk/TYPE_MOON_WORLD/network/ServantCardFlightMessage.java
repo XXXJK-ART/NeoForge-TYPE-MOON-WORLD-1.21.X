@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,8 +31,12 @@ public record ServantCardFlightMessage(boolean toggle, float forward, float stra
    }
 
    public static void handleData(ServantCardFlightMessage message, IPayloadContext context) {
+      if (context.flow() != PacketFlow.SERVERBOUND
+         || !Float.isFinite(message.forward) || !Float.isFinite(message.strafe) || !Float.isFinite(message.vertical)) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player) {
+         if (context.player() instanceof ServerPlayer player
+            && ServerPacketRateLimiter.allow(player, message.toggle ? "servant_card_flight_toggle" : "servant_card_flight_input",
+               message.toggle ? 4 : 1)) {
             ServantCardFlightController.setInput(player, message.toggle, message.forward, message.strafe, message.vertical);
          }
       });

@@ -18,7 +18,7 @@ public final class ServantAiDefinitionLoader extends SimpleJsonResourceReloadLis
       for (var entry : resources.entrySet()) {
          ServantAiDefinition.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
             .resultOrPartial(error -> net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error("Invalid servant AI {}: {}", entry.getKey(), error))
-            .ifPresent(value -> loaded.put(entry.getKey().toString(), new ServantAiDefinition(entry.getKey().toString(), value.movement(), value.combat(), value.social(), value.command(), value.environment())));
+            .ifPresent(value -> loaded.put(entry.getKey().toString(), new ServantAiDefinition(entry.getKey().toString(), value.movement(), value.combat(), value.tactical(), value.social(), value.command(), value.environment())));
       }
       ServantAiDefinitionRegistry.reload(loaded);
    }

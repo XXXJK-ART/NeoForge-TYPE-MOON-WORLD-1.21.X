@@ -29,17 +29,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/medusa.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/medusa.png",
-    "animation": "typemoonworld:animations/medusa.animation.json",
-    "animations": {
-      "idle": "animation.medusa.idle",
-      "walk": "animation.medusa.walk",
-      "uppercut": "animation.medusa.uppercut",
-      "horizontal_swing": "animation.medusa.horizontal_swing",
-      "bend_over": "animation.medusa.bend_over",
-      "remove_blindfold": "animation.medusa.remove_blindfold"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {
@@ -85,7 +77,7 @@
     "combat": "cautious",
     "starting_favor": 60.0
   },
-  "ai_config": "default_rider",
+  "ai_config": "medusa_ai",
   "spawn_egg": {
     "primary": 2825285,
     "secondary": 13090274

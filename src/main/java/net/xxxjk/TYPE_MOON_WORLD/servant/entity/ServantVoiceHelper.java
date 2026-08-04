@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 
 public final class ServantVoiceHelper {
    private static final String GLOBAL_VOICE_TICK_TAG = "TypeMoonVoiceGlobalTick";
+   private static final String VOICE_LOCK_UNTIL_TAG = "TypeMoonVoiceLockUntil";
    private static final String CATEGORY_VOICE_TICK_PREFIX = "TypeMoonVoice.";
    private static final int GLOBAL_VOICE_COOLDOWN = 40;
    private static final int ATTACK_VOICE_COOLDOWN = 90;
@@ -22,7 +23,13 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
-      if (isSasakiKojiro(servant)) {
+      if (isCasterGilgamesh(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) return;
+         SoundEvent sound = servant.getRandom().nextBoolean()
+            ? ModSounds.CASTER_GILGAMESH_VOICE_ATTACK_1.get()
+            : ModSounds.CASTER_GILGAMESH_VOICE_ATTACK_2.get();
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, sound);
+      } else if (isSasakiKojiro(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
          }
@@ -108,6 +115,9 @@ public final class ServantVoiceHelper {
       } else if (isNightingale(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_ATTACK.get());
+      } else if (isMuramasa(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get());
       }
    }
 
@@ -141,7 +151,14 @@ public final class ServantVoiceHelper {
          return;
       }
 
-      if (isSasakiKojiro(servant)) {
+      if (isCasterGilgamesh(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.1F, 1.0F,
+            servant.getRandom().nextBoolean()
+               ? ModSounds.CASTER_GILGAMESH_VOICE_VICTORY.get()
+               : ModSounds.CASTER_GILGAMESH_VOICE_VICTORY_2.get());
+      } else if (servant instanceof ZhaoYunRiderEntity) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_VICTORY.get());
+      } else if (isSasakiKojiro(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SASAKI_KOJIRO_VOICE_VICTORY.get());
       } else if (isHeracles(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.15F, 0.92F, ModSounds.HERACLES_VOICE_VICTORY.get());
@@ -177,12 +194,21 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_VICTORY.get());
       } else if (isNightingale(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_VICTORY.get());
+      } else if (isMuramasa(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_VICTORY.get());
       }
    }
 
    public static void tryPlayFail(ServantEntity servant) {
       if (isArash(servant) && servant.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_SACRIFICE)) return;
-      if (isSasakiKojiro(servant)) {
+      if (isCasterGilgamesh(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F,
+            servant.getRandom().nextBoolean()
+               ? ModSounds.CASTER_GILGAMESH_VOICE_FAIL_1.get()
+               : ModSounds.CASTER_GILGAMESH_VOICE_FAIL_2.get());
+      } else if (servant instanceof ZhaoYunRiderEntity) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_FAIL.get());
+      } else if (isSasakiKojiro(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.SASAKI_KOJIRO_VOICE_FAIL.get());
       } else if (isHeracles(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.15F, 0.9F, ModSounds.HERACLES_VOICE_FAIL.get());
@@ -218,6 +244,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.05F, ModSounds.USHIWAKAMARU_RIDER_VOICE_FAIL.get());
       } else if (isNightingale(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_FAIL.get());
+      } else if (isMuramasa(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_FAIL.get());
       }
    }
 
@@ -230,6 +258,16 @@ public final class ServantVoiceHelper {
    public static void tryPlayUshiwakamaruNp(UshiwakamaruRiderEntity servant) {
       if (isUshiwakamaru(servant)) {
          playVoiceForced(servant, "ushiwakamaru_np", 1.15F, 1.0F, ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get());
+      }
+   }
+
+   public static void tryPlayZhaoYunNp(ZhaoYunRiderEntity servant) {
+      playVoiceForced(servant, "zhao_yun_np", 1.1F, 1.0F, ModSounds.ZHAO_YUN_VOICE_NP.get());
+      if (servant.level() instanceof ServerLevel serverLevel) {
+         // The source clip is about sixteen seconds long. Suppress ordinary
+         // and forced servant voices for its duration so the chant/release
+         // callout cannot be masked by combat barks.
+         servant.getPersistentData().putLong(VOICE_LOCK_UNTIL_TAG, serverLevel.getGameTime() + 320L);
       }
    }
 
@@ -361,6 +399,32 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "oda_np", 1.1F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_NP.get());
    }
 
+   public static void tryPlayMuramasaNp(ServantEntity servant) {
+      if (isMuramasa(servant)) {
+         playVoiceForced(servant, "muramasa_np", 1.15F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_NP.get());
+      }
+   }
+
+   public static void tryPlayMuramasaTsumukari(ServantEntity servant) {
+      if (isMuramasa(servant)) {
+         playVoiceForced(servant, "muramasa_tsumukari", 1.2F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get());
+      }
+   }
+
+   public static void tryPlayCasterGilgameshShot(ServantEntity servant) {
+      if (isCasterGilgamesh(servant)) {
+         playCasterVoice(servant, "caster_gilgamesh_shot", 80, 0.95F, 1.0F,
+            ModSounds.CASTER_GILGAMESH_VOICE_SHOT.get());
+      }
+   }
+
+   public static void tryPlayCasterGilgameshNp(ServantEntity servant) {
+      if (isCasterGilgamesh(servant)) {
+         playCasterVoice(servant, "caster_gilgamesh_np", 200, 1.35F, 1.0F,
+            ModSounds.CASTER_GILGAMESH_VOICE_NP.get());
+      }
+   }
+
    public static void tryPlayOdaNobunagaHajun(ServantEntity servant) {
       if (!isOdaNobunaga(servant)) {
          return;
@@ -444,6 +508,9 @@ public final class ServantVoiceHelper {
 
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
+      if (now < data.getLong(VOICE_LOCK_UNTIL_TAG)) {
+         return;
+      }
       if (now - data.getLong(GLOBAL_VOICE_TICK_TAG) < GLOBAL_VOICE_COOLDOWN) {
          return;
       }
@@ -466,14 +533,33 @@ public final class ServantVoiceHelper {
 
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
+      if (now < data.getLong(VOICE_LOCK_UNTIL_TAG) && !"zhao_yun_np".equals(category)) {
+         return;
+      }
       data.putLong(GLOBAL_VOICE_TICK_TAG, now);
       data.putLong(CATEGORY_VOICE_TICK_PREFIX + category, now);
       float finalPitch = pitch + (servant.getRandom().nextFloat() - 0.5F) * 0.08F;
       serverLevel.playSound(null, servant.getX(), servant.getY(), servant.getZ(), sound, SoundSource.HOSTILE, volume, finalPitch);
    }
 
+   private static void playCasterVoice(ServantEntity servant, String category, int cooldownTicks,
+                                       float volume, float pitch, SoundEvent sound) {
+      if (servant != null && servant.level() instanceof ServerLevel serverLevel) {
+         String categoryTag = CATEGORY_VOICE_TICK_PREFIX + category;
+         CompoundTag data = servant.getPersistentData();
+         if (!data.contains(categoryTag)) {
+            data.putLong(categoryTag, serverLevel.getGameTime() - cooldownTicks);
+         }
+      }
+      playVoice(servant, category, cooldownTicks, volume, pitch, sound);
+   }
+
    private static boolean isSasakiKojiro(ServantEntity servant) {
       return servant != null && SasakiKojiroEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isCasterGilgamesh(ServantEntity servant) {
+      return servant != null && CasterGilgameshEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isPaleRider(ServantEntity servant) {
@@ -546,5 +632,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isNightingale(ServantEntity servant) {
       return servant != null && NightingaleEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isMuramasa(ServantEntity servant) {
+      return servant != null && SenkoMuramasaEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

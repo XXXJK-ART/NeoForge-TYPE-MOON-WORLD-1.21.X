@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:translucent",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "typemoonworld:block/summoning_circle",
+    "circle": "typemoonworld:block/summoning_circle"
+  },
+  "elements": [
+    {
+      "from": [-16, 0, -16],
+      "to": [32, 0.25, 32],
+      "shade": false,
+      "faces": {
+        "up": {
+          "uv": [0, 0, 16, 16],
+          "texture": "#circle"
+        }
+      }
+    }
+  ]
+}

@@ -18,19 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/cu_chulainn.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/cu_chulainn.png",
-    "animation": "typemoonworld:animations/cu_chulainn.animation.json",
-    "animations": {
-      "idle": "animation.cu_chulainn.idle",
-      "walk": "animation.cu_chulainn.walk",
-      "slash": "animation.cu_chulainn.slash",
-      "sweep": "animation.cu_chulainn.sweep",
-      "uppercut": "animation.cu_chulainn.slash",
-      "horizontal_swing": "animation.cu_chulainn.horizontal_swing",
-      "gae_bolg_throw": "animation.cu_chulainn.gae_bolg_throw",
-      "rune_cast": "animation.cu_chulainn.rune_cast"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {
@@ -78,7 +68,7 @@
     "special_principles": ["spare_canines"],
     "starting_favor": 55.0
   },
-  "ai_config": "default_lancer",
+  "ai_config": "cu_chulainn_ai",
   "spawn_egg": {
     "primary": 2842567,
     "secondary": 13160669

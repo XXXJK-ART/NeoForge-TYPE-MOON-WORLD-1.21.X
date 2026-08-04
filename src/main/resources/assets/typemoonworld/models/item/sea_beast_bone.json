@@ -1,0 +1,4 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {"layer0": "typemoonworld:item/sea_beast_bone"}
+}

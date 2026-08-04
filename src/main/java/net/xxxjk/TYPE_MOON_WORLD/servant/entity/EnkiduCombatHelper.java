@@ -58,6 +58,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public final class EnkiduCombatHelper {
+   private static final int VOLLEY_EFFECT_STRIDE = 4;
    private static final String TAG_MODE = "EnkiduMode";
    private static final String TAG_LAST_TRANSFIGURATION = "EnkiduLastTransfiguration";
    private static final String TAG_LAST_PRESENCE = "EnkiduLastPresence";
@@ -1785,7 +1786,9 @@ public final class EnkiduCombatHelper {
          }
          ItemStack stack = randomWeapon(entity, volley);
          float damage = applyAgeOfBabylonDivinitySpecialAttack(entity, target, weaponDamage(stack, volley));
-         spawnAgeOfBabylonGate(level, spawn, volley);
+         if (!volley || globalIndex % VOLLEY_EFFECT_STRIDE == 0) {
+            spawnAgeOfBabylonGate(level, spawn, volley);
+         }
          final Vec3 finalSpawn = spawn;
          final Vec3 finalAimPoint = aimPoint;
          final ItemStack finalStack = stack;
@@ -1802,6 +1805,7 @@ public final class EnkiduCombatHelper {
                projectile = EnkiduEarthWeaponProjectileEntity.weapon(serverLevel, entity, finalStack, finalDamage, target, volley ? 0.22F : 0.16F, true);
             }
             projectile.setPos(finalSpawn.x, finalSpawn.y, finalSpawn.z);
+            projectile.setHeavyInteractions(!volley || globalIndex % VOLLEY_EFFECT_STRIDE == 0);
             double shotSpeed = speed + entity.getRandom().nextDouble() * (volley ? 0.72 : 0.42);
             if (finalStack.is(Items.BOW) || finalStack.is(Items.CROSSBOW)) {
                projectile.setDeltaMovement(0.0, 0.135, 0.0);
@@ -1813,7 +1817,9 @@ public final class EnkiduCombatHelper {
             }
             projectile.alignToMotion();
             serverLevel.addFreshEntity(projectile);
-            spawnEarthWeaponBirthFx(serverLevel, finalSpawn, volley);
+            if (!volley || globalIndex % VOLLEY_EFFECT_STRIDE == 0) {
+               spawnEarthWeaponBirthFx(serverLevel, finalSpawn, volley);
+            }
          });
       }
       level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.HOSTILE, volley ? 1.4F : 0.75F, 1.35F);
@@ -1829,7 +1835,9 @@ public final class EnkiduCombatHelper {
          Vec3 spawn = groundSpawn(level, target.position().add(Math.cos(angle) * radius, 0.0, Math.sin(angle) * radius));
          ItemStack stack = randomWeapon(entity, volley);
          float damage = applyAgeOfBabylonDivinitySpecialAttack(entity, target, weaponDamage(stack, volley));
-         spawnAgeOfBabylonGate(level, spawn, volley);
+         if (!volley || globalIndex % VOLLEY_EFFECT_STRIDE == 0) {
+            spawnAgeOfBabylonGate(level, spawn, volley);
+         }
          final Vec3 finalSpawn = spawn;
          final ItemStack finalStack = stack;
          final float finalDamage = damage;
@@ -1845,10 +1853,13 @@ public final class EnkiduCombatHelper {
                projectile = EnkiduEarthWeaponProjectileEntity.weapon(serverLevel, entity, finalStack, finalDamage, target, volley ? 0.28F : 0.18F, true);
             }
             projectile.setPos(finalSpawn.x, finalSpawn.y, finalSpawn.z);
+            projectile.setHeavyInteractions(!volley || globalIndex % VOLLEY_EFFECT_STRIDE == 0);
             projectile.setDeltaMovement(0.0, 0.15, 0.0);
             projectile.alignToMotion();
             serverLevel.addFreshEntity(projectile);
-            spawnEarthWeaponBirthFx(serverLevel, finalSpawn, volley);
+            if (!volley || globalIndex % VOLLEY_EFFECT_STRIDE == 0) {
+               spawnEarthWeaponBirthFx(serverLevel, finalSpawn, volley);
+            }
          });
       }
       level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.HOSTILE, volley ? 1.45F : 0.8F, 1.22F);
@@ -2507,6 +2518,10 @@ public final class EnkiduCombatHelper {
       float before = target.getHealth();
       target.hurt(entity.damageSources().magic(), amount);
       target.invulnerableTime = 0;
+      // Do not let the no-defense fallback overwrite a God Hand revival.
+      if (target.getPersistentData().getBoolean("GodHandActive")) {
+         return;
+      }
       float expected = before - amount;
       if (target.isAlive() && target.getHealth() > expected) {
          target.setHealth(Math.max(0.0F, expected));

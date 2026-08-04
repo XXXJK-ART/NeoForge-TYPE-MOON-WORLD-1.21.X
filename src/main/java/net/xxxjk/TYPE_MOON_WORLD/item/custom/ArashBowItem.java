@@ -29,7 +29,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public final class ArashBowItem extends net.minecraft.world.item.Item implements GeoItem {
    public static final int CHARGED_ARROW_TICKS = 40;
-   public static final int HEAVY_CHARGED_ARROW_TICKS = 80;
+   public static final int HEAVY_CHARGED_ARROW_TICKS = 60;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public ArashBowItem(Properties properties) { super(properties); }
@@ -38,7 +38,13 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       if (hand != InteractionHand.MAIN_HAND) return InteractionResultHolder.pass(stack);
-      if (level instanceof ServerLevel serverLevel) fireBasicArrow(serverLevel, player);
+      if (level instanceof ServerLevel serverLevel) {
+         if (player instanceof ServerPlayer serverPlayer && ServantCardArashSkills.isArash(serverPlayer)
+            && !ServantCardArashSkills.consumeBasicArrow(serverPlayer)) {
+            return InteractionResultHolder.fail(stack);
+         }
+         fireBasicArrow(serverLevel, player);
+      }
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
    }

@@ -1,0 +1,13 @@
+{
+  "id": "changbanpo_no_ikki_gake",
+  "display_name": "Changbanpo no Ikki-gake",
+  "display_name_zh": "长坂坡一骑驱",
+  "rank": "EX",
+  "type": "anti_personnel",
+  "mp_cost": 80,
+  "cooldown_ticks": 800,
+  "range": 100,
+  "duration_ticks": 300,
+  "base_damage": 500,
+  "effects": [{"effect_type":"control_immunity"},{"effect_type":"break_blocks_except_bedrock"},{"effect_type":"protect_master"}]
+}

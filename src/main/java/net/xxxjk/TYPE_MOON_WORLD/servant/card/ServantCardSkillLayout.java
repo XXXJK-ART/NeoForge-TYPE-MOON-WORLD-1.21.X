@@ -90,6 +90,7 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
             case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
             case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
+            case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 240);
             case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
             default -> null;
          };
@@ -145,6 +146,17 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Enuma Elish", "enuma_elish", 120.0, 3600);
             default -> null;
          };
+         case "gilgamesh_caster" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("石板射击", "caster_gilgamesh_slate_volley", 0.0, 18);
+            case 0 -> new ServantCardSkillAction("石板连射", "caster_gilgamesh_slate_volley", 0.0, 24);
+            case 1 -> new ServantCardSkillAction("领袖气质 A+", "caster_gilgamesh_leader", 20.0, 35 * 20);
+            case 2 -> new ServantCardSkillAction("王的回归 A", "caster_gilgamesh_return", 15.0, 30 * 20);
+            case 3 -> new ServantCardSkillAction("道具作成（伪）", "caster_gilgamesh_item_creation", 0.0, 0);
+            case 4 -> new ServantCardSkillAction("阵地建造 A", "caster_gilgamesh_workshop", 0.0, 80);
+            case 5 -> new ServantCardSkillAction("王之号炮：单轮校准", "caster_gilgamesh_cannon_calibration", 0.0, 20);
+            case 9 -> new ServantCardSkillAction("王之号炮", "caster_gilgamesh_royal_cannon", 0.0, 0);
+            default -> null;
+         };
          case "gilgamesh" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("近战小技能", "gilgamesh_melee", 0.0, 18);
             case 0 -> new ServantCardSkillAction("王律键", "gilgamesh_key", 0.0, 0);
@@ -152,10 +164,10 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction(crouching ? "大规模王之宝库" : "王之宝库", crouching ? "gilgamesh_grand_vault" : "gilgamesh_vault", crouching ? 80.0 : 34.0, crouching ? 200 : 100);
             case 3 -> new ServantCardSkillAction("环敌王之宝库", "gilgamesh_ring_vault", 55.0, 300);
             case 4 -> new ServantCardSkillAction("解毒的灵药", "gilgamesh_elixir", 45.0, 600);
-            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 300);
+            case 5 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 0);
             case 6 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
             case 7 -> new ServantCardSkillAction("王者威仪", "gilgamesh_charisma", 40.0, 360);
-            case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 240.0, 600);
+            case 8 -> new ServantCardSkillAction("大规模王之宝库", "gilgamesh_laugh_vault", 80.0, 600);
             case 9 -> new ServantCardSkillAction("伊伽莉玛 & 修尔夏伽那", "gilgamesh_cross_slash", 300.0, 120 * 20);
             default -> null;
          };
@@ -222,9 +234,10 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "arash" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Arrow Rain", "arash_arrow_rain", 8.0, 160);
+            case 0 -> new ServantCardSkillAction(crouching ? "Grand Arrow Rain" : "Arrow Rain", "arash_arrow_rain", 8.0, 160);
             case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
             case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
+            case 3 -> new ServantCardSkillAction("Arrow Construction", "arash_arrow_creation", 1.0, 0);
             case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
             default -> null;
          };
@@ -232,6 +245,33 @@ public final class ServantCardSkillLayout {
             case 0 -> new ServantCardSkillAction("Nursing of Steel A", "nightingale_steel_nursing", 15.0, 200);
             case 1 -> new ServantCardSkillAction("Angel's Cry EX", "nightingale_angel_cry", 10.0, 300);
             case 9 -> new ServantCardSkillAction("Nightingale Pledge", "nightingale_pledge", 50.0, 600);
+            default -> null;
+         };
+         case "zhao_yun_rider" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("Dragon Gall Spear Art", "zhao_yun_spear_combo", 0.0, 20);
+            case 0 -> new ServantCardSkillAction("Summon Hakuryu", "zhao_yun_summon_hakuryu", 20.0, 0);
+            case 1 -> new ServantCardSkillAction("涯角枪·破阵", "zhao_yun_spear_breakthrough", 16.0, 120);
+            case 2 -> new ServantCardSkillAction("单骑救主 A", "zhao_yun_rescue", 30.0, 400);
+            case 3 -> new ServantCardSkillAction("龙回首·横扫", "zhao_yun_dragon_sweep", 20.0, 160);
+            case 4 -> new ServantCardSkillAction("白龙突进", "zhao_yun_mounted_rush", 18.0, 160);
+            case 5 -> new ServantCardSkillAction("龙胆闪", "zhao_yun_dragon_flash", 22.0, 200);
+            case 6 -> new ServantCardSkillAction("七探蛇盘", "zhao_yun_seven_probe", 28.0, 280);
+            case 7 -> new ServantCardSkillAction("白龙踏阵", "zhao_yun_hakuryu_trample", 26.0, 320);
+            case 8 -> new ServantCardSkillAction("青釭剑 C", "zhao_yun_qinggang", 50.0, 400);
+            case 9 -> new ServantCardSkillAction("长坂坡一骑驱 EX", "zhao_yun_changbanpo", 150.0, 1200);
+            default -> null;
+         };
+         case "senko_muramasa" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("锻造", "muramasa_forge", 0.0, 0);
+            case 1 -> new ServantCardSkillAction("阵地建造", "muramasa_workshop", 30.0, 1200);
+            case 2 -> new ServantCardSkillAction("试斩 B+", "muramasa_trial_slash", 10.0, 500);
+            case 3 -> new ServantCardSkillAction("业之瞳 A", "muramasa_karma_eye", 15.0, 600);
+            case 4 -> new ServantCardSkillAction("焰 EX", "muramasa_flame", 0.0, 600);
+            case 5 -> new ServantCardSkillAction("投影连刃", "muramasa_projection_volley", 25.0, 400);
+            case 6 -> new ServantCardSkillAction("锻火淬身", "muramasa_temper", 20.0, 600);
+            case 7 -> new ServantCardSkillAction("宿业断斩", "muramasa_karma_slash", 35.0, 500);
+            case 8 -> new ServantCardSkillAction("刀剑荒野·试制", "muramasa_sword_field", 40.0, 600);
+            case 9 -> new ServantCardSkillAction("无元剑制", "muramasa_no_gen_kensai", 50.0, 3600);
             default -> null;
          };
          default -> null;

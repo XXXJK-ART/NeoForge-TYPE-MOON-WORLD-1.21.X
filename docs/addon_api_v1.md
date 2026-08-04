@@ -136,6 +136,17 @@ allocation hooks on the NeoForge event bus.
 
 `addon.ai()` registers weighted tactical profiles. A profile can choose an action by distance and
 health ratio; the runtime AI uses the same follow/retreat values for data and code profiles.
+Existing `AiTacticProfile` registrations remain compatible. Addons that want cinematic movement,
+route interception and recovery policy can call `registerAdvanced` with an
+`AdvancedAiTacticProfile`; its base profile still owns weighted action selection. The advanced
+fields describe behavior rather than granting abilities, so teleport, flight and destructive
+actions must still be implemented and registered by the addon.
+
+Data actions under `data/<namespace>/servant/actions` enter the shared tick-driven executor only
+when they declare `maneuver`; legacy actions without it remain owned by their combat helper. The
+optional `approach_range`, `damage_scale`, and `interrupt_resistance` fields control bounded path
+approach, shared hit damage, and windup interruption resistance. Semantic tags such as `counter`,
+`anti_air`, `finisher`, and `terrain_break` are runtime conditions rather than cosmetic weights.
 `addon.projections()` registers item and structure executors, while addon-owned entities remain
 ordinary NeoForge registrations. `addon.projectiles()` is the NP special-projectile hook.
 
@@ -163,3 +174,9 @@ read `DefinitionSnapshotStore.current()` and never trust local-only definitions.
 `DataProvider.saveStable`. `test-addon/` is a standalone fixture covering generated servants,
 cards, magic, AI, projection, command spells, projectiles and GUI controls. Built-in GameTests
 verify that the Codec registries are populated and magic definitions are available after reload.
+
+Skill JSON may optionally declare `ai.facts`. Facts influence bounded action utility, target
+matchup scoring, positioning, and defensive intent; they never implement the described effect.
+Old JSON and the eight-argument `ServantSkillDefinition` constructor remain compatible. Addons
+should declare facts only for effects their executor or combat helper actually enforces, including
+the matching `requires` and `bypassed_by` conditions for conditional defenses.

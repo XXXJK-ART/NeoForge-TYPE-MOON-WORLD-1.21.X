@@ -192,7 +192,10 @@ public final class ServantCardTraitService {
          data.putFloat("ClairvoyanceAccuracyBonus", 0.30F);
          data.putFloat("ClairvoyanceCritBonus", 0.10F);
       }
-      if (hasSkill(definition, "independent_action_b")) {
+      if (hasSkill(definition, "independent_action_a")) {
+         data.putBoolean("IndependentActionActive", true);
+         data.putFloat("IndependentActionCritDamageBonus", 0.12F);
+      } else if (hasSkill(definition, "independent_action_b")) {
          data.putBoolean("IndependentActionActive", true);
          data.putFloat("IndependentActionCritDamageBonus", 0.08F);
       } else if (hasSkill(definition, "independent_action_c")) {

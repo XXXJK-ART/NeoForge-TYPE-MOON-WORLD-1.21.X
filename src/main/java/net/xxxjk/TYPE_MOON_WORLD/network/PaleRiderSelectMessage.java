@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,8 +15,14 @@ public record PaleRiderSelectMessage(int entityId) implements CustomPacketPayloa
       (buf, msg) -> buf.writeVarInt(msg.entityId), buf -> new PaleRiderSelectMessage(buf.readVarInt()));
    @Override public Type<PaleRiderSelectMessage> type() { return TYPE; }
    public static void handleData(PaleRiderSelectMessage msg, IPayloadContext ctx) {
-      ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer player && ServantCardPaleRiderSkills.possess(player, msg.entityId))
-         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
-            new PaleRiderOpenScreenMessage(4, java.util.List.of(new PaleRiderOpenScreenMessage.Target(msg.entityId, 0, 0, ""))), new CustomPacketPayload[0]); });
+      if (ctx.flow() != PacketFlow.SERVERBOUND || msg.entityId < 0) return;
+      ctx.enqueueWork(() -> {
+         if (ctx.player() instanceof ServerPlayer player
+            && ServerPacketRateLimiter.allow(player, "pale_rider_select", 4)
+            && ServantCardPaleRiderSkills.possess(player, msg.entityId)) {
+            ServantCardPaleRiderSkills.sendIfSupported(player,
+               new PaleRiderOpenScreenMessage(4, java.util.List.of(new PaleRiderOpenScreenMessage.Target(msg.entityId, 0, 0, ""))));
+         }
+      });
    }
 }

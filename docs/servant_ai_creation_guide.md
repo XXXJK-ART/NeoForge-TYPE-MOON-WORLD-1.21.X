@@ -156,6 +156,25 @@ public class ExampleServantRenderer extends BaseServantRenderer<ExampleServantEn
 
 ## 7. AI 制作顺序
 
+### 7.0 战术配置与连续交战
+
+`servant/ai` 的 `tactical` 段负责战斗方式，而不负责凭空授予技能。`style` 决定基础换位语法，
+距离带决定常规站位，`pursuit_aggression` 和 `intercept_bias` 分别控制追击积极度与提前封路程度。
+`maximum_terrain_impact` 是普通碰撞破坏上限，宝具自身的地形效果仍由宝具实现负责。
+
+需要让某个动作进入统一击飞/追击链时，在 `servant/actions` 中增加 `launcher`、`pursuit`、
+`intercept` 等标签并声明 `maneuver`。没有 `maneuver` 的旧动作继续由原 Combat Helper 执行，
+因此旧数据包不需要迁移。追击动作必须有前摇、冷却和 `pursuit_window`，不能用传送修复寻路失败。
+
+共享动作按服务器 tick 执行 `APPROACH -> WINDUP -> ACTIVE -> RECOVERY`。`timing.windup`、
+`timing.active`、`timing.recovery` 分别控制三个战斗阶段；接近失败不会扣除 MP、耐力或提交冷却。
+`maneuver.approach_range` 是允许开始寻路的最远距离，缺省等于 `maximum_range`；
+`damage_scale` 控制共享命中的攻击倍率；`interrupt_resistance` 控制前摇抗打断等级，缺省继承
+`interrupt_level`。普通战线的 `approach_range` 不能超过 48 格。
+
+`counter` 只在敌方有效前摇中候选，`anti_air` 只针对浮空或高差目标，`finisher` 只针对撞墙或
+落地硬直，`terrain_break` 只在真实命中后触发。不要把这些标签当作单纯的权重提示。
+
 推荐把 AI 分成三层：
 
 ### 7.1 通用层
@@ -627,3 +646,20 @@ src/main/resources/assets/typemoonworld/animations/xxx.animation.json
 - 能复用 GEO 模型和动画
 
 后面再加 AI 专属逻辑、领域、特攻和华丽特效，就会顺很多。
+
+## 17. 能力事实与战斗认知
+
+技能定义可以声明可选的 `ai.facts`。能力事实只描述已经由效果或 Helper 实现的能力，不能单独赋予伤害、免疫、位移或控制效果。
+
+```json
+"ai": {
+  "facts": [{
+    "type": "projectile_negation",
+    "strength": 1.0,
+    "requires": ["mobile"],
+    "bypassed_by": ["immobilize", "explosion", "piercing"]
+  }]
+}
+```
+
+自身 AI 立即读取完整技能事实；敌方隐藏被动只在技能前摇、免疫触发或实际战斗结果中被确认。旧技能省略 `ai` 时保持兼容，`magic_resistance`、`revive`、`adaptive_defense` 等通用效果会自动推导。独特被动应显式配置事实与真实失效条件。

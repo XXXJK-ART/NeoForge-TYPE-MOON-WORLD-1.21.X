@@ -173,7 +173,7 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
    private void applyToTarget(LivingEntity target, Vec3 center) {
       float finalDamage = this.damage;
       if (this.getOwner() instanceof LivingEntity owner) {
-         finalDamage = MercurySwordMagicAmplifier.amplifyDamage(owner, finalDamage);
+         finalDamage = MercurySwordMagicAmplifier.amplifyElementalDamage(owner, this.getElement(), finalDamage);
       }
       if (!this.pierceArmor) {
          finalDamage = MagicResistanceHelper.applyMagicDamageReduction(target, this.damageSources().magic(), finalDamage);

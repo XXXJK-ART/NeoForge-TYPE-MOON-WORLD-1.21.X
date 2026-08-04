@@ -13,9 +13,10 @@ public final class FanaticAssassinRules {
    public static final float MARROW_DAMAGE = 150.0F;
    public static final double HAIR_RANGE = 8.0;
    public static final float HAIR_DAMAGE = 100.0F;
-   public static final double COMPUTER_RANGE = 1.8;
-   public static final float COMPUTER_DAMAGE = 150.0F;
+   public static final double COMPUTER_RANGE = 2.0;
+   public static final float COMPUTER_DAMAGE = 200.0F;
    public static final double COMPUTER_SPLASH_RADIUS = 2.0;
+   public static final float COMPUTER_SPLASH_DAMAGE = 50.0F;
    public static final float COMPUTER_BACKLASH = 20.0F;
    public static final float TOXIN_DAMAGE_PER_SECOND = 10.0F;
    public static final int JINN_MAX_HEALTH = 200;
@@ -77,7 +78,7 @@ public final class FanaticAssassinRules {
 
    public static float computerSplashDamage(double distance) {
       if (distance < 0.0 || distance > COMPUTER_SPLASH_RADIUS) return 0.0F;
-      return (float)(COMPUTER_DAMAGE * (1.0 - distance / COMPUTER_SPLASH_RADIUS));
+      return COMPUTER_SPLASH_DAMAGE;
    }
 
    public static int jinnForm(double distance) {

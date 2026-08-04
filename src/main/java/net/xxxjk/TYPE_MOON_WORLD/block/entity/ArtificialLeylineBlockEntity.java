@@ -90,17 +90,30 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
          player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.artificial_leyline.binding", this.bindProgress / 20, 30), true);
       }
       if (this.bindProgress >= BIND_TICKS) {
+         ServerPlayer previousOwner = this.ownerUuid == null ? null
+            : level.getServer().getPlayerList().getPlayer(this.ownerUuid);
+         if (previousOwner != null && !previousOwner.getUUID().equals(player.getUUID())) {
+            clearPlayerBonus(previousOwner);
+         }
          this.ownerUuid = player.getUUID();
          this.capturedServantUuid = null;
          this.bindingPlayerUuid = null;
          this.lastBindInteractTick = 0L;
          this.bindProgress = 0;
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         vars.master_artificial_leyline_dimension = player.level().dimension().location().toString();
-         vars.master_artificial_leyline_x = this.worldPosition.getX();
-         vars.master_artificial_leyline_y = this.worldPosition.getY();
-         vars.master_artificial_leyline_z = this.worldPosition.getZ();
-         vars.master_artificial_leyline_bonus_active = true;
+         if (vars.master_active) {
+            vars.master_artificial_leyline_dimension = player.level().dimension().location().toString();
+            vars.master_artificial_leyline_x = this.worldPosition.getX();
+            vars.master_artificial_leyline_y = this.worldPosition.getY();
+            vars.master_artificial_leyline_z = this.worldPosition.getZ();
+            vars.master_artificial_leyline_bonus_active = true;
+         } else {
+            vars.servant_card_artificial_leyline_dimension = player.level().dimension().location().toString();
+            vars.servant_card_artificial_leyline_x = this.worldPosition.getX();
+            vars.servant_card_artificial_leyline_y = this.worldPosition.getY();
+            vars.servant_card_artificial_leyline_z = this.worldPosition.getZ();
+            vars.servant_card_artificial_leyline_bonus_active = true;
+         }
          vars.syncPlayerVariables(player);
          player.level().playSound(null, this.worldPosition, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.2F, 1.15F);
          this.setChanged();
@@ -112,8 +125,7 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.master_artificial_leyline_bonus_active = false;
-      vars.master_artificial_leyline_dimension = "";
+      clearPlayerBonus(player);
       vars.syncPlayerVariables(player);
       this.ownerUuid = null;
       this.setChanged();
@@ -121,7 +133,9 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
 
    private boolean canBind(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars.master_active && this.ownerUuid == null && this.capturedServantUuid == null;
+      return (vars.master_active || vars.servant_card_transformed && !vars.master_active)
+         && this.capturedServantUuid == null
+         && !player.isSpectator();
    }
 
    private void validateOwner(ServerLevel level) {
@@ -135,18 +149,45 @@ public class ArtificialLeylineBlockEntity extends BlockEntity {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      boolean valid = vars.master_active
+      boolean masterBinding = vars.master_active
          && vars.master_artificial_leyline_bonus_active
          && level.dimension().location().toString().equals(vars.master_artificial_leyline_dimension)
          && vars.master_artificial_leyline_x == this.worldPosition.getX()
          && vars.master_artificial_leyline_y == this.worldPosition.getY()
          && vars.master_artificial_leyline_z == this.worldPosition.getZ();
+      boolean servantBinding = vars.servant_card_transformed && !vars.master_active
+         && vars.servant_card_artificial_leyline_bonus_active
+         && level.dimension().location().toString().equals(vars.servant_card_artificial_leyline_dimension)
+         && vars.servant_card_artificial_leyline_x == this.worldPosition.getX()
+         && vars.servant_card_artificial_leyline_y == this.worldPosition.getY()
+         && vars.servant_card_artificial_leyline_z == this.worldPosition.getZ();
+      boolean valid = masterBinding || servantBinding;
       if (!valid) {
-         vars.master_artificial_leyline_bonus_active = false;
-         vars.syncPlayerVariables(player);
+         clearPlayerBonus(player);
          this.ownerUuid = null;
          this.setChanged();
       }
+   }
+
+   public boolean isOwnedBy(UUID uuid) {
+      return uuid != null && uuid.equals(this.ownerUuid);
+   }
+
+   public void clearBindingOnDestroy(ServerLevel level) {
+      if (this.ownerUuid == null) return;
+      ServerPlayer player = level.getServer().getPlayerList().getPlayer(this.ownerUuid);
+      if (player != null) clearPlayerBonus(player);
+      this.ownerUuid = null;
+      this.setChanged();
+   }
+
+   private static void clearPlayerBonus(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.master_artificial_leyline_bonus_active = false;
+      vars.master_artificial_leyline_dimension = "";
+      vars.servant_card_artificial_leyline_bonus_active = false;
+      vars.servant_card_artificial_leyline_dimension = "";
+      vars.syncPlayerVariables(player);
    }
 
    private void tryCaptureServant(ServerLevel level, BlockPos pos) {

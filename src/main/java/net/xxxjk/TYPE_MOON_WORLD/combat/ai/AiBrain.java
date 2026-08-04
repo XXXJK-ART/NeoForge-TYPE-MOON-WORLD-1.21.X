@@ -37,15 +37,27 @@ public final class AiBrain {
    }
 
    public Resolution resolve() {
-      AiIntentArbitrator.Selection selection = AiIntentArbitrator.select(intents,
-         intent -> blackboard.commitmentBlocks(intent, now));
-      if (!selection.hasPrimary()) {
-         return new Resolution(false, null, List.of(), blackboard.hasActiveCommitment(now));
+      return resolve(intents, blackboard, now);
+   }
+
+   static Resolution resolve(List<AiIntent> intents, AiBlackboard blackboard, long now) {
+      List<AiIntent> remaining = new ArrayList<>(intents);
+      while (!remaining.isEmpty()) {
+         AiIntentArbitrator.Selection selection = AiIntentArbitrator.select(remaining,
+            intent -> blackboard.commitmentBlocks(intent, now));
+         if (!selection.hasPrimary()) break;
+         if (!selection.primary().executor().getAsBoolean()) {
+            remaining.remove(selection.primary());
+            continue;
+         }
+         List<AiIntent> executedAuxiliaries = new ArrayList<>();
+         for (AiIntent auxiliary : selection.auxiliaries()) {
+            if (auxiliary.executor().getAsBoolean()) executedAuxiliaries.add(auxiliary);
+         }
+         blackboard.commit(selection.primary(), now);
+         return new Resolution(true, selection.primary(), List.copyOf(executedAuxiliaries), false);
       }
-      selection.primary().executor().run();
-      for (AiIntent auxiliary : selection.auxiliaries()) auxiliary.executor().run();
-      blackboard.commit(selection.primary(), now);
-      return new Resolution(true, selection.primary(), selection.auxiliaries(), false);
+      return new Resolution(false, null, List.of(), blackboard.hasActiveCommitment(now));
    }
 
    public Mob entity() {

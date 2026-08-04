@@ -63,39 +63,29 @@ class ArashResourcesTest {
    }
 
    @Test
-   void modelTexturesBowAndAnimationsAreValid() throws Exception {
-      JsonObject bodyGeo = json("assets/typemoonworld/geo/arash.geo.json");
-      JsonObject bodyDescription = bodyGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject().getAsJsonObject("description");
-      assertEquals("geometry.arash", bodyDescription.get("identifier").getAsString());
-      assertEquals(128, bodyDescription.get("texture_width").getAsInt());
-      assertEquals(128, bodyDescription.get("texture_height").getAsInt());
+   void npcUsesSteveSkinAndNoLongerUsesGeckoModel() throws Exception {
+      String renderer = Files.readString(JAVA.resolve("client/renderer/HumanoidServantRenderer.java"));
+      String client = Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java"));
+      String definition = Files.readString(RESOURCES.resolve("data/typemoonworld/servant/definitions/arash.json"));
+      assertTrue(renderer.contains("HumanoidMobRenderer"));
+      assertTrue(renderer.contains("ModelLayers.PLAYER"));
+      assertTrue(renderer.contains("HumanoidArmorLayer"));
+      assertTrue(client.contains("ModEntities.ARASH.get(), context -> new HumanoidServantRenderer<>(context, \"arash\")"));
+      assertEquals("", JsonParser.parseString(definition).getAsJsonObject().getAsJsonObject("model").get("geometry").getAsString());
+      assertEquals("", JsonParser.parseString(definition).getAsJsonObject().getAsJsonObject("model").get("animation").getAsString());
+      assertTrue(Files.notExists(JAVA.resolve("client/renderer/ArashRenderer.java")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/geo/arash.geo.json")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/animations/arash.animation.json")));
+      var body = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/entity/arash.png").toFile());
+      assertNotNull(body);
+      assertEquals(64, body.getWidth());
+      assertEquals(64, body.getHeight());
       JsonObject bowGeo = json("assets/typemoonworld/geo/arash_bow.geo.json");
       assertEquals("geometry.arash_bow", bowGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
          .getAsJsonObject("description").get("identifier").getAsString());
-      var body = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/entity/arash.png").toFile());
       var bow = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/item/arash_bow.png").toFile());
-      assertNotNull(body); assertNotNull(bow);
-      assertEquals(128, body.getWidth()); assertEquals(128, body.getHeight());
+      assertNotNull(bow);
       assertEquals(64, bow.getWidth()); assertEquals(64, bow.getHeight());
-      JsonObject animations = json("assets/typemoonworld/animations/arash.animation.json").getAsJsonObject("animations");
-      for (String key : List.of("idle", "walk", "bow_shot", "arrow_rain", "energy_small", "energy_large", "stella_chant", "stella_release")) {
-         assertTrue(animations.has("animation.arash." + key), key);
-      }
-      JsonObject bowShot = animations.getAsJsonObject("animation.arash.bow_shot");
-      assertEquals(0.25, bowShot.get("animation_length").getAsDouble());
-      JsonObject bowShotBones = bowShot.getAsJsonObject("bones");
-      for (String bone : List.of("body", "right arm", "bone2", "left arm", "bone6")) {
-         assertTrue(bowShotBones.has(bone), "bow shot is missing animated bone " + bone);
-      }
-      assertTrue(animations.getAsJsonObject("animation.arash.arrow_rain").getAsJsonObject("bones")
-         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.1").get(0).getAsDouble() <= -140.0);
-      assertTrue(animations.getAsJsonObject("animation.arash.energy_small").getAsJsonObject("bones")
-         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.08").get(0).getAsDouble() <= -110.0);
-      assertTrue(animations.getAsJsonObject("animation.arash.energy_large").getAsJsonObject("bones")
-         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.14").get(0).getAsDouble() <= -125.0);
-      JsonObject root = animations.getAsJsonObject("animation.arash.idle").getAsJsonObject("bones").getAsJsonObject("bone");
-      assertEquals(-3.0, root.getAsJsonArray("position").get(1).getAsDouble());
-      assertEquals(0.88, root.getAsJsonArray("scale").get(0).getAsDouble());
    }
 
    @Test
@@ -181,11 +171,16 @@ class ArashResourcesTest {
       String cardSkills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       assertTrue(cardSkills.contains("player.setPos(anchorX, anchorY, anchorZ)"));
       assertTrue(cardSkills.contains("player.setDeltaMovement(Vec3.ZERO)"));
+      assertTrue(cardSkills.contains("data.putInt(REFUND_ARROWS, vars.servant_card_arash_arrow_stock)"));
+      assertTrue(cardSkills.contains("vars.servant_card_arash_arrow_stock = data.getInt(REFUND_ARROWS)"));
+      assertTrue(cardSkills.contains("data.remove(REFUND_ARROWS)"));
       String terrain = Files.readString(JAVA.resolve("world/terrain/DeferredTerrainDestruction.java"));
       assertTrue(terrain.contains("queueAdvancingCylinder"));
+      assertTrue(terrain.contains("queueAdvancingSkyRift"));
       assertTrue(terrain.contains("currentSide * currentSide + currentY * currentY > radiusSqr"));
       assertTrue(terrain.contains("scarDepthAt"));
       assertTrue(terrain.contains("MOTION_BLOCKING_NO_LEAVES"));
+      assertTrue(terrain.contains("WORLD_SURFACE"));
       assertTrue(terrain.contains("queueExpandingSphere"));
       for (String protectedBlock : List.of("NETHER_PORTAL", "END_PORTAL", "COMMAND_BLOCK", "STRUCTURE_BLOCK", "JIGSAW")) {
          assertTrue(terrain.contains(protectedBlock), protectedBlock);
@@ -207,6 +202,12 @@ class ArashResourcesTest {
       assertTrue(combat.contains("now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)"));
       assertTrue(combat.contains("lockAttackFacing"));
       assertTrue(combat.contains("arash.faceVector(offset)"));
+      assertTrue(combat.contains("consumeCraftedArrows(ArashCombatRules.ARROW_RAIN_COST)"));
+      assertTrue(combat.contains("consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)"));
+      String entity = Files.readString(JAVA.resolve("servant/entity/ArashEntity.java"));
+      assertTrue(entity.contains("INITIAL_ARROW_COUNT"));
+      assertTrue(entity.contains("tickArrowCreation"));
+      assertTrue(entity.contains("ARROW_CREATION_THRESHOLD"));
       String commonSkills = Files.readString(JAVA.resolve("servant/skill/CommonServantSkills.java"));
       assertTrue(!commonSkills.contains("ArashVirtualArrows"));
    }
@@ -221,16 +222,18 @@ class ArashResourcesTest {
       String client = Files.readString(JAVA.resolve("client/ServantCardClientEvents.java"));
       assertTrue(bow.contains("fireBasicArrow(serverLevel, player)"));
       assertTrue(bow.contains("CHARGED_ARROW_TICKS = 40"));
-      assertTrue(bow.contains("HEAVY_CHARGED_ARROW_TICKS = 80"));
+      assertTrue(bow.contains("HEAVY_CHARGED_ARROW_TICKS = 60"));
       assertTrue(bow.contains("performBowChargedArrowNoCooldown"));
       assertTrue(!bow.contains("triggerAction(serverPlayer, slot)"));
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));
-      assertTrue(!arrow.contains("maxLifeTicks"));
-      assertTrue(!arrow.contains("tickCount >"));
+      assertTrue(arrow.contains("MAX_VISIBLE_FLIGHT_DISTANCE = 128.0"));
+      assertTrue(arrow.contains("distanceTraveled + this.getDeltaMovement().length()"));
       assertTrue(arrow.contains("addFlightParticle(GREEN, this.position())"));
-      assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_GREEN : CHARGED_GREEN, center)"));
-      assertTrue(arrow.contains("addParticle(particle, true"),
-         "Arash arrow trails must bypass the vanilla 32 block particle distance cutoff");
+      assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_RED : CHARGED_GREEN, center)"));
+      assertTrue(arrow.contains("addParticle(particle, false"),
+         "Arash arrow trails must stop outside the client's normal visible particle distance");
+      assertTrue(arrow.contains("LARGE_ENERGY ? HEAVY_RED : GREEN"));
+      assertTrue(entitiesForTest().contains("clientTrackingRange(8)"));
       assertTrue(arrow.contains("terrainDestructionRadius(this.getVariant())"));
       assertTrue(arrow.contains("queueExpandingSphere(level, impactPosition, terrainRadius, null)"));
       assertTrue(arrow.contains("terrain.advanceTo(terrainRadius)"));
@@ -240,6 +243,8 @@ class ArashResourcesTest {
       assertTrue(skills.contains("ArashAimHelper.findTargetNearPoint"));
       assertTrue(skills.contains("lookedAt.getLocation()"));
       assertTrue(skills.contains("ArashAimHelper.autoAimDirection"));
+      assertTrue(skills.contains("CROUCH_RAIN_ARROW_COUNT"));
+      assertTrue(skills.contains("CROUCH_RAIN_SPREAD_RADIUS"));
       assertTrue(combat.contains("ArashAimHelper.leadDirection"));
       assertTrue(combat.contains("ArashAimHelper.predictionOffset"));
       assertTrue(aim.contains("AUTO_AIM_ANGLE_DEGREES = 8.0"));
@@ -247,9 +252,19 @@ class ArashResourcesTest {
       assertTrue(aim.contains("target.getDeltaMovement()"));
       assertTrue(client.contains("ModItems.ARASH_BOW"));
       assertTrue(client.contains("float magnification = 2.0F + zoomSteps"));
+      String hud = Files.readString(JAVA.resolve("client/screens/ServantCardHud.java"));
+      assertTrue(hud.contains("drawArashArrows"));
+      assertTrue(hud.contains("servant_card_arash_arrow_stock"));
+      String variables = Files.readString(JAVA.resolve("network/TypeMoonWorldModVariables.java"));
+      assertTrue(variables.contains("servant_card_arash_arrow_stock"));
+      assertTrue(variables.contains("arashArrowStock"));
    }
 
    private static JsonObject json(String relative) throws Exception {
       return JsonParser.parseString(Files.readString(RESOURCES.resolve(relative))).getAsJsonObject();
+   }
+
+   private static String entitiesForTest() throws Exception {
+      return Files.readString(JAVA.resolve("init/ModEntities.java"));
    }
 }

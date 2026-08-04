@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,6 +25,7 @@ import net.neoforged.neoforge.event.level.LevelEvent.Unload;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -31,11 +34,28 @@ public class MuramasaSlashHandler {
    private static final List<MuramasaSlashHandler.SlashInstance> ACTIVE_SLASHES = new ArrayList<>();
 
    public static void initiate(ServerLevel level, ServerPlayer player, int charge, int maxDist, int maxWidth, int maxHeight) {
-      if (charge > 0) {
-         Vec3 look = player.getLookAngle();
+      initiate(level, (LivingEntity)player, charge, maxDist, maxWidth, maxHeight);
+   }
+
+   public static void initiate(ServerLevel level, LivingEntity owner, int charge, int maxDist, int maxWidth, int maxHeight) {
+      if (charge > 0 && owner != null) {
+         Vec3 look = owner.getLookAngle();
          ACTIVE_SLASHES.add(
             new MuramasaSlashHandler.SlashInstance(
-               player.getUUID(), level.dimension(), player.position().add(0.0, player.getEyeHeight() * 0.5, 0.0), look, charge, maxDist, maxWidth, maxHeight
+               owner.getUUID(), level.dimension(), owner.position().add(0.0, owner.getEyeHeight() * 0.5, 0.0),
+               look, charge, maxDist, maxWidth, maxHeight, false
+            )
+         );
+      }
+   }
+
+   public static void initiateTsumukari(ServerLevel level, LivingEntity owner, int charge, int maxDist, int maxWidth, int maxHeight) {
+      if (charge > 0 && owner != null) {
+         Vec3 look = owner.getLookAngle();
+         ACTIVE_SLASHES.add(
+            new MuramasaSlashHandler.SlashInstance(
+               owner.getUUID(), level.dimension(), owner.position().add(0.0, owner.getEyeHeight() * 0.5, 0.0),
+               look, charge, maxDist, maxWidth, maxHeight, true
             )
          );
       }
@@ -147,19 +167,34 @@ public class MuramasaSlashHandler {
 
          for (Entity e : level.getEntities(null, box)) {
             if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID) && !EntityUtils.isImmunePlayerTarget(e)) {
-                  float damage = slash.fixedGeometry ? 1500.0F : 20.0F + slash.charge * 5.0F;
+                  float damage = slash.causalSeverance
+                     ? Float.MAX_VALUE
+                     : slash.fixedGeometry ? 1500.0F : 20.0F + slash.charge * 5.0F;
                   Entity attackerEntity = level.getEntity(slash.playerUUID);
                   if (attackerEntity instanceof LivingEntity attacker) {
-                  // 满蓄力斩断因果：标记目标，跳过一切复活/不死效果
-                  if (!slash.fixedGeometry && slash.charge >= 100 && living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servantTarget) {
+                  if (slash.causalSeverance) {
+                     markCausalSeverance(living);
+                     level.sendParticles(ParticleTypes.REVERSE_PORTAL, living.getX(), living.getY() + living.getBbHeight() / 2, living.getZ(), 30, 0.5, 0.5, 0.5, 0.3);
+                     level.sendParticles(ParticleTypes.SOUL, living.getX(), living.getY() + 1.0, living.getZ(), 15, 0.3, 0.3, 0.3, 0.1);
+                  } else if (!slash.fixedGeometry && slash.charge >= 100
+                     && living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servantTarget) {
                      servantTarget.getPersistentData().putBoolean("CausalSevered", true);
-                     // 斩断因果粒子特效
                      level.sendParticles(ParticleTypes.REVERSE_PORTAL, living.getX(), living.getY() + living.getBbHeight() / 2, living.getZ(), 30, 0.5, 0.5, 0.5, 0.3);
                      level.sendParticles(ParticleTypes.SOUL, living.getX(), living.getY() + 1.0, living.getZ(), 15, 0.3, 0.3, 0.3, 0.1);
                   }
                   living.invulnerableTime = 0;
-                  living.hurt(level.damageSources().indirectMagic(attacker, attacker), damage);
+                  DamageSource source = slash.causalSeverance
+                     ? level.damageSources().source(MuramasaDamageTypes.TSUMUKARI_MURAMASA, attacker, attacker)
+                     : level.damageSources().indirectMagic(attacker, attacker);
+                  living.hurt(source, damage);
                   living.invulnerableTime = 0;
+                  if (slash.causalSeverance && living.isAlive()) {
+                     living.setHealth(0.0F);
+                     living.die(source);
+                     if (living.isAlive()) {
+                        living.die(level.damageSources().genericKill());
+                     }
+                  }
                   if (attacker instanceof Player player) EntityUtils.triggerSwarmAnger(level, player, living);
                } else {
                   living.invulnerableTime = 0;
@@ -189,6 +224,27 @@ public class MuramasaSlashHandler {
                ParticleTypes.LARGE_SMOKE, center.x, chunkY, center.z, 2, currentWidthDouble / 2.0, currentStepHeight / 2.0, currentWidthDouble / 2.0, 0.05
             );
          }
+      }
+   }
+
+   private static void markCausalSeverance(LivingEntity target) {
+      CompoundTag data = target.getPersistentData();
+      data.putBoolean("CausalSevered", true);
+      data.putBoolean("GodHandActive", false);
+      data.putInt("GodHandLives", 0);
+      data.putBoolean("BattleContinuationActive", false);
+      data.remove("BattleContinuationRecoveryActive");
+      data.remove("BattleContinuationLastHealTick");
+      data.remove("GawainGutsReady");
+      data.remove("ServantCardGawainBeltReady");
+      data.remove("GodHandReviveLockUntil");
+      data.remove("GodHandHighDamageReviveUntil");
+      if (target instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars =
+            player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         vars.servant_card_death_release = false;
+         vars.master_revive_available = false;
+         vars.syncPlayerVariables(player);
       }
    }
 
@@ -274,12 +330,14 @@ public class MuramasaSlashHandler {
       final int height;
       final boolean fixedGeometry;
       final boolean burnPass;
+      final boolean causalSeverance;
       final Runnable completion;
       final long variationSeed;
       double currentDistance = 0.0;
 
       SlashInstance(
-         UUID playerUUID, ResourceKey<Level> dimension, Vec3 startPos, Vec3 direction, int charge, int maxDistLimit, int maxWidthLimit, int maxHeightLimit
+         UUID playerUUID, ResourceKey<Level> dimension, Vec3 startPos, Vec3 direction,
+         int charge, int maxDistLimit, int maxWidthLimit, int maxHeightLimit, boolean causalSeverance
       ) {
          this.playerUUID = playerUUID;
          this.dimension = dimension;
@@ -292,6 +350,7 @@ public class MuramasaSlashHandler {
          this.height = Math.min(maxHeightLimit, Math.max(5, charge));
          this.fixedGeometry = false;
          this.burnPass = false;
+         this.causalSeverance = causalSeverance;
          this.completion = null;
          this.variationSeed = mix64(Double.doubleToLongBits(startPos.x)
             ^ Double.doubleToLongBits(startPos.y) ^ Double.doubleToLongBits(startPos.z));
@@ -311,6 +370,7 @@ public class MuramasaSlashHandler {
          this.height = height;
          this.fixedGeometry = fixedGeometry;
          this.burnPass = burnPass;
+         this.causalSeverance = false;
          this.completion = completion;
          this.variationSeed = mix64(Double.doubleToLongBits(startPos.x)
             ^ Double.doubleToLongBits(startPos.y) ^ Double.doubleToLongBits(startPos.z)

@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
@@ -136,6 +137,10 @@ public final class MedeaCombatHelper {
 
    public static void tick(MedeaEntity entity, ServantAiContext context) {
       LivingEntity target = context.target();
+      if (target != null && ServantMasterTargeting.isContractMaster(entity, target)) {
+         target = null;
+         entity.setTarget(null);
+      }
       if (target == null || target.isDeadOrDying()) {
          target = entity.getTarget();
       }
@@ -144,7 +149,8 @@ public final class MedeaCombatHelper {
          if (target != null
             && target.isAlive()
             && !target.isAlliedTo(entity)
-            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)) {
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)
+            && !ServantMasterTargeting.isContractMaster(entity, target)) {
             entity.setTarget(target);
          }
       }
@@ -383,12 +389,12 @@ public final class MedeaCombatHelper {
          if (targetVars.servant_card_transformed) {
             net.minecraft.server.level.ServerPlayer master = MasterStateManager.getMaster(targetPlayer, targetVars);
             if (master != null) {
-               MasterServantLinkService.breakLink(master, targetPlayer, true);
+               MasterServantLinkService.terminateContract(master, targetPlayer);
             }
          } else if (targetVars.master_active) {
             net.minecraft.server.level.ServerPlayer servant = MasterServantLinkService.getLinkedServant(targetPlayer, targetVars);
             if (servant != null) {
-               MasterServantLinkService.breakLink(targetPlayer, servant, true);
+               MasterServantLinkService.terminateContract(targetPlayer, servant);
             }
          }
       }
@@ -624,6 +630,7 @@ public final class MedeaCombatHelper {
          other -> other != entity
             && other.isAlive()
             && !other.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, other)
             && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
       );
       if (!targets.contains(target)) {
@@ -716,7 +723,9 @@ public final class MedeaCombatHelper {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          entity.getBoundingBox().inflate(3.2),
-         target -> target != entity && target.isAlive() && !target.isAlliedTo(entity) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)
+         target -> target != entity && target.isAlive() && !target.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, target)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)
       )) {
          Vec3 push = living.position().subtract(entity.position()).normalize().scale(1.2);
          living.push(push.x, 0.35, push.z);
@@ -1050,7 +1059,9 @@ public final class MedeaCombatHelper {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          entity.getBoundingBox().inflate(4.0),
-         other -> other != entity && other.isAlive() && !other.isAlliedTo(entity) && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
+         other -> other != entity && other.isAlive() && !other.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, other)
+            && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
       )) {
          Vec3 push = living.position().subtract(entity.position());
          if (push.lengthSqr() < 1.0E-4) {
@@ -1598,6 +1609,7 @@ public final class MedeaCombatHelper {
          other -> other != entity
             && other.isAlive()
             && !other.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, other)
             && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
       ).size();
    }
@@ -1743,7 +1755,8 @@ public final class MedeaCombatHelper {
          return target;
       }
       LivingEntity hurtBy = entity.getLastHurtByMob();
-      if (hurtBy != null && hurtBy.isAlive() && !hurtBy.isAlliedTo(entity) && entity.distanceToSqr(hurtBy) <= 5.0 * 5.0) {
+      if (hurtBy != null && hurtBy.isAlive() && !hurtBy.isAlliedTo(entity)
+         && !ServantMasterTargeting.isContractMaster(entity, hurtBy) && entity.distanceToSqr(hurtBy) <= 5.0 * 5.0) {
          return hurtBy;
       }
       return entity.level().getEntitiesOfClass(
@@ -1752,6 +1765,7 @@ public final class MedeaCombatHelper {
          other -> other != entity
             && other.isAlive()
             && !other.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, other)
             && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(other)
       ).stream().findFirst().orElse(null);
    }
@@ -1847,6 +1861,7 @@ public final class MedeaCombatHelper {
          candidate -> candidate != entity
             && candidate.isAlive()
             && !candidate.isAlliedTo(entity)
+            && !ServantMasterTargeting.isContractMaster(entity, candidate)
             && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(candidate)
       ).stream().findFirst().orElse(null);
    }

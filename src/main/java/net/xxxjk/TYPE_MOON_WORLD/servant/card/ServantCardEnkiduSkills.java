@@ -76,6 +76,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import static net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.*;
 
 public final class ServantCardEnkiduSkills {
+   private static final int VOLLEY_EFFECT_STRIDE = 4;
    private static final String BOUND_UNTIL = "ServantCardEnkiduBoundUntil";
    private static final String BOUND_OWNER = "ServantCardEnkiduBoundOwner";
    private static final String BOUND_X = "ServantCardEnkiduBoundX";
@@ -866,6 +867,12 @@ public final class ServantCardEnkiduSkills {
       float before = target.getHealth();
       target.hurt(player.damageSources().magic(), amount);
       target.invulnerableTime = 0;
+      // The normal damage event may have consumed a Twelve Trials life and
+      // restored the target. Do not apply the fixed-damage fallback on top of
+      // that revival.
+      if (target.getPersistentData().getBoolean("GodHandActive")) {
+         return;
+      }
       float expected = before - amount;
       if (target.isAlive() && target.getHealth() > expected) {
          target.setHealth(Math.max(0.0F, expected));
@@ -1140,6 +1147,7 @@ public final class ServantCardEnkiduSkills {
       double sideSpacing = count >= 80 ? 3.8 : 3.15;
       double rowSpacing = count >= 80 ? 3.35 : 2.75;
       for (int i = 0; i < count; i++) {
+         int globalIndex = batch * count + i;
          int row = i / columns;
          int col = i % columns;
          double forwardOffset = -(row - (rows - 1) * 0.42) * rowSpacing - player.getRandom().nextDouble() * 1.45;
@@ -1148,9 +1156,12 @@ public final class ServantCardEnkiduSkills {
          Vec3 aimPoint = targetCenter.add(side.scale((player.getRandom().nextDouble() - 0.5) * 7.0)).add(forward.scale((player.getRandom().nextDouble() - 0.5) * 5.0)).add(0.0, (player.getRandom().nextDouble() - 0.5) * 2.1, 0.0);
          ItemStack stack = AGE_WEAPONS[(i + batch) % AGE_WEAPONS.length].copy();
          float finalDamage = applyAgeOfBabylonDivinitySpecialAttack(player, target, damage);
-         spawnAgeGate(level, spawn, true);
-         int delay = 6 + ((batch * count + i) % 4);
-         TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, finalDamage, spawn, aimPoint, speed, true));
+         boolean showEffect = globalIndex % VOLLEY_EFFECT_STRIDE == 0;
+         if (showEffect) {
+            spawnAgeGate(level, spawn, true);
+         }
+         int delay = 6 + (globalIndex % 4);
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, finalDamage, spawn, aimPoint, speed, true, showEffect));
       }
       level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.PLAYERS, 1.2F, 1.35F);
    }
@@ -1158,14 +1169,18 @@ public final class ServantCardEnkiduSkills {
    private static void spawnAgeOfBabylonAroundTarget(ServerPlayer player, ServerLevel level, LivingEntity target, int count, int batch, float damage, float speed) {
       Vec3 targetCenter = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       for (int i = 0; i < count; i++) {
+         int globalIndex = batch * count + i;
          double angle = (Math.PI * 2.0 * i) / Math.max(1, count) + player.getRandom().nextDouble() * 0.28;
          double radius = 7.5 + player.getRandom().nextDouble() * 7.0;
          Vec3 spawn = groundSpawn(level, target.position().add(Math.cos(angle) * radius, 0.0, Math.sin(angle) * radius));
          ItemStack stack = AGE_WEAPONS[(i + batch) % AGE_WEAPONS.length].copy();
-         spawnAgeGate(level, spawn, true);
-         int delay = 6 + ((batch * count + i) % 5);
+         boolean showEffect = globalIndex % VOLLEY_EFFECT_STRIDE == 0;
+         if (showEffect) {
+            spawnAgeGate(level, spawn, true);
+         }
+         int delay = 6 + (globalIndex % 5);
          float finalDamage = applyAgeOfBabylonDivinitySpecialAttack(player, target, damage);
-         TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, finalDamage, spawn, targetCenter, speed, true));
+         TYPE_MOON_WORLD.queueServerWork(delay, () -> spawnAgeProjectile(player, level, target, stack, finalDamage, spawn, targetCenter, speed, true, showEffect));
       }
    }
 
@@ -1180,7 +1195,7 @@ public final class ServantCardEnkiduSkills {
       return boundByPlayer ? damage + 8.0F : damage;
    }
 
-   private static void spawnAgeProjectile(ServerPlayer player, ServerLevel level, LivingEntity target, ItemStack stack, float damage, Vec3 spawn, Vec3 aimPoint, float speed, boolean volley) {
+   private static void spawnAgeProjectile(ServerPlayer player, ServerLevel level, LivingEntity target, ItemStack stack, float damage, Vec3 spawn, Vec3 aimPoint, float speed, boolean volley, boolean showEffect) {
       if (!player.isAlive()) {
          return;
       }
@@ -1191,11 +1206,14 @@ public final class ServantCardEnkiduSkills {
          projectile = EnkiduEarthWeaponProjectileEntity.weapon(level, player, stack, damage, target, volley ? 0.22F : 0.16F, true);
       }
       projectile.setPos(spawn.x, spawn.y, spawn.z);
+      projectile.setHeavyInteractions(!volley || showEffect);
       Vec3 aim = aimPoint.subtract(spawn);
       projectile.setDeltaMovement(aim.lengthSqr() > 1.0E-4 ? aim.normalize().scale(speed + player.getRandom().nextDouble() * 0.7) : new Vec3(0.0, 0.15, 0.0));
       projectile.alignToMotion();
       level.addFreshEntity(projectile);
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, spawn.x, spawn.y + 0.25, spawn.z, 6, 0.2, 0.18, 0.2, 0.05);
+      if (showEffect) {
+         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, spawn.x, spawn.y + 0.25, spawn.z, 4, 0.2, 0.18, 0.2, 0.05);
+      }
    }
 
    private static Vec3 groundSpawn(ServerLevel level, Vec3 approximate) {

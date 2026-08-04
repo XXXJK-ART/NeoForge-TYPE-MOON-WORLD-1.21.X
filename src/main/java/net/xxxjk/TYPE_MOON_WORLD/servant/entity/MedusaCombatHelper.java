@@ -701,7 +701,7 @@ public final class MedusaCombatHelper {
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isChargeVictim(entity, target, TAG_BELLEROPHON_HIT_UNTIL, now))) {
          victim.getPersistentData().putLong(TAG_BELLEROPHON_HIT_UNTIL, now + 20L);
          pullTowardPegasusHead(pegasus, victim, forward, 1.35, 0.3);
-         victim.hurt(entity.damageSources().generic(), 300.0F);
+         hurtPegasusVictim(entity, victim, 300.0F);
          pushAway(pegasus, victim, 0.65, 0.35);
          if (entity.isEyesReleased()) {
             victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0, false, true, true));
@@ -714,9 +714,16 @@ public final class MedusaCombatHelper {
       AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(1.9, 1.1, 1.9);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isChargeVictim(entity, target, TAG_PEGASUS_COLLISION_HIT_UNTIL, now))) {
          victim.getPersistentData().putLong(TAG_PEGASUS_COLLISION_HIT_UNTIL, now + 10L);
-         victim.hurt(entity.damageSources().generic(), 50.0F);
+         hurtPegasusVictim(entity, victim, 50.0F);
          pushAway(pegasus, victim, 1.0, 0.3);
       }
+   }
+
+   private static boolean hurtPegasusVictim(MedusaEntity entity, LivingEntity victim, float damage) {
+      victim.invulnerableTime = 0;
+      boolean hurt = victim.hurt(entity.damageSources().mobAttack(entity), damage);
+      victim.invulnerableTime = 0;
+      return hurt;
    }
 
    private static void emitShockwave(MedusaEntity entity, MedusaPegasusEntity pegasus) {
@@ -725,7 +732,7 @@ public final class MedusaCombatHelper {
       }
       AABB area = pegasus.getBoundingBox().inflate(5.0, 2.0, 5.0);
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, target -> target != entity && target != pegasus && target.isAlive() && !target.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(target))) {
-         victim.hurt(entity.damageSources().generic(), 100.0F);
+         hurtPegasusVictim(entity, victim, 100.0F);
          pushAway(pegasus, victim, 1.2, 0.55);
       }
       level.sendParticles(ParticleTypes.EXPLOSION, pegasus.getX(), pegasus.getY() + 0.4, pegasus.getZ(), 6, 1.8, 0.4, 1.8, 0.0);

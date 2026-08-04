@@ -1,0 +1,1 @@
+{"id":"single_rider_rescue_a","display_name":"Single Rider Rescue A","display_name_zh":"单骑救主 A","type":"active","mp_cost":20,"cooldown_ticks":400,"duration_ticks":1200,"effects":[{"effect_type":"protect_master","params":{"damage_redirect":0.8,"defense_bonus":0.5}}]}

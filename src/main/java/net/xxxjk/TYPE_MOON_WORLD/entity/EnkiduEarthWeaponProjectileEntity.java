@@ -40,6 +40,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> WEAPON_KIND = SynchedEntityData.defineId(EnkiduEarthWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private final Set<Integer> hitEntities = new HashSet<>();
    private int brokenBlocks;
+   private boolean heavyInteractions = true;
 
    public EnkiduEarthWeaponProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -70,6 +71,10 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       this.entityData.set(HOMING_STRENGTH, homingStrength);
       this.entityData.set(GROUND_BORN, groundBorn);
       this.entityData.set(WEAPON_KIND, weaponKind);
+   }
+
+   public void setHeavyInteractions(boolean heavyInteractions) {
+      this.heavyInteractions = heavyInteractions;
    }
 
    @Override
@@ -104,13 +109,17 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       tickGroundRiseAndHoming();
       updatePoseFromMotion();
       if (this.level() instanceof ServerLevel level) {
-         if (this.tickCount % 2 == 0) {
-            level.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY(), this.getZ(), 2, 0.04, 0.04, 0.04, 0.01);
+         if ((this.tickCount + this.getId() & 15) == 0) {
+            level.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY(), this.getZ(), 1, 0.04, 0.04, 0.04, 0.01);
             level.sendParticles(ParticleTypes.ENCHANTED_HIT, this.getX(), this.getY(), this.getZ(), 1, 0.03, 0.03, 0.03, 0.01);
          }
          tickBowOrCrossbow(level);
-         interceptNearbyProjectile(level);
-         breakLowHardnessBlocks(level);
+         if (this.heavyInteractions && (this.tickCount + this.getId() & 3) == 0) {
+            interceptNearbyProjectile(level);
+         }
+         if (this.heavyInteractions && (this.tickCount & 1) == 0) {
+            breakLowHardnessBlocks(level);
+         }
       }
       if (this.tickCount > 100) {
          this.discard();
@@ -308,6 +317,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       this.entityData.set(GROUND_BORN, tag.getBoolean("GroundBorn"));
       this.entityData.set(WEAPON_KIND, tag.getInt("WeaponKind"));
       this.brokenBlocks = tag.getInt("BrokenBlocks");
+      this.heavyInteractions = !tag.contains("HeavyInteractions") || tag.getBoolean("HeavyInteractions");
    }
 
    @Override
@@ -318,5 +328,6 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       tag.putBoolean("GroundBorn", this.entityData.get(GROUND_BORN));
       tag.putInt("WeaponKind", this.entityData.get(WEAPON_KIND));
       tag.putInt("BrokenBlocks", this.brokenBlocks);
+      tag.putBoolean("HeavyInteractions", this.heavyInteractions);
    }
 }

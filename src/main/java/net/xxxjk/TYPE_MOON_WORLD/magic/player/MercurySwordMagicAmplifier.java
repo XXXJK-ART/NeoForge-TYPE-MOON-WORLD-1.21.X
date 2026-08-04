@@ -5,7 +5,9 @@ import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 public final class MercurySwordMagicAmplifier {
+   private static final int ELEMENT_FIRE = 0;
    public static final float DAMAGE_MULTIPLIER = 1.25F;
+   public static final float RUBY_STAFF_FIRE_DAMAGE_MULTIPLIER = 1.35F;
    public static final float DURATION_MULTIPLIER = 1.2F;
    public static final double RADIUS_FLAT_BONUS = 1.5;
    public static final double RADIUS_MAX_MULTIPLIER = 1.25;
@@ -25,8 +27,31 @@ public final class MercurySwordMagicAmplifier {
       return stack != null && !stack.isEmpty() && stack.is(ModItems.MERCURY_SWORD.get());
    }
 
+   public static boolean isRubyStaff(ItemStack stack) {
+      return stack != null && !stack.isEmpty() && stack.is(ModItems.RUBY_STAFF.get());
+   }
+
+   public static boolean isHoldingRubyStaff(LivingEntity entity) {
+      if (entity == null) {
+         return false;
+      }
+      return isRubyStaff(entity.getMainHandItem()) || isRubyStaff(entity.getOffhandItem());
+   }
+
    public static float amplifyDamage(LivingEntity entity, float damage) {
       return isHolding(entity) ? damage * DAMAGE_MULTIPLIER : damage;
+   }
+
+   public static float amplifyElementalDamage(LivingEntity entity, int element, float damage) {
+      float amplified = amplifyDamage(entity, damage);
+      if (isFireElement(element) && isHoldingRubyStaff(entity)) {
+         amplified *= RUBY_STAFF_FIRE_DAMAGE_MULTIPLIER;
+      }
+      return amplified;
+   }
+
+   private static boolean isFireElement(int element) {
+      return element == ELEMENT_FIRE;
    }
 
    public static double amplifyRadius(LivingEntity entity, double radius) {

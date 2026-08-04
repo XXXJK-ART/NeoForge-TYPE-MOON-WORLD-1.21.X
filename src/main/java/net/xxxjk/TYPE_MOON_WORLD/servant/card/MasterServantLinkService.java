@@ -1,17 +1,32 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import java.util.Collection;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 
 public final class MasterServantLinkService {
+   public enum UnlinkReason {
+      CONTRACT_TERMINATED,
+      MASTER_LOST,
+      SERVANT_LOST
+   }
+
    public static final double NORMAL_RANGE = 60.0;
    public static final double BREAK_RANGE = 150.0;
    public static final String STATE_NONE = "none";
@@ -19,33 +34,38 @@ public final class MasterServantLinkService {
    public static final String STATE_UNSTABLE = "unstable";
    public static final String STATE_BROKEN = "broken";
    public static final String STATE_INDEPENDENT = "independent_action";
-   private static final ResourceLocation LINK_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_link_health_penalty");
-   private static final ResourceLocation LINK_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_link_attack_penalty");
-   private static final ResourceLocation LINK_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_link_speed_penalty");
-   private static final ResourceLocation LINK_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_link_armor_penalty");
-   private static final ResourceLocation MASTER_BACKLASH_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "master_servant_death_backlash");
+   public static final String STATE_FORCED_DEATH = "forced_death";
+   public static final String STATE_DECAYING = "decaying";
+   public static final String SURVIVAL_NONE = "none";
+   public static final String SURVIVAL_FORCED_DEATH = "forced_death";
+   public static final String SURVIVAL_INDEPENDENT = "independent_action";
+   public static final String SURVIVAL_DECAYING = "decaying";
+   public static final String SERVANT_CONTRACT_NATIVE = "native";
+   public static final String SERVANT_CONTRACT_CONTRACTED = "contracted";
+   public static final String SERVANT_CONTRACT_MASTERLESS = "masterless";
+   public static final int FORCED_DEATH_TICKS = 200;
+   public static final float DECAY_DAMAGE_PER_SECOND = 5.0F;
+   private static final String CONTRACT_TAG_PREFIX = "tmw_contract_";
+
+   private static final ResourceLocation LINK_HEALTH_ID = id("servant_card_link_health_penalty");
+   private static final ResourceLocation LINK_ATTACK_ID = id("servant_card_link_attack_penalty");
+   private static final ResourceLocation LINK_SPEED_ID = id("servant_card_link_speed_penalty");
+   private static final ResourceLocation LINK_ARMOR_ID = id("servant_card_link_armor_penalty");
+   private static final ResourceLocation MASTER_BACKLASH_HEALTH_ID = id("master_servant_death_backlash");
 
    private MasterServantLinkService() {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.master_servant_backlash_ticks > 0) {
-         vars.master_servant_backlash_ticks--;
-         applyMasterBacklash(player, vars.master_servant_backlash_ticks > 0);
-      } else {
-         applyMasterBacklash(player, false);
-      }
-      if (!vars.master_active && !vars.servant_card_transformed) {
-         if (hasSnapshot(vars)) {
-            clearSnapshot(vars);
-         }
-         removeServantPenalties(player);
-         return;
-      }
+      tickBacklash(player, vars);
+      removeLegacyServantPenalties(player);
       if (vars.master_active) {
          tickMaster(player, vars);
       } else if (vars.servant_card_transformed) {
          tickServant(player, vars);
+      } else {
+         clearSnapshot(vars);
+         clearSurvival(vars);
       }
    }
 
@@ -67,39 +87,19 @@ public final class MasterServantLinkService {
    }
 
    public static double noblePhantasmCostMultiplier(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
-      ServerPlayer master = getLinkedMaster(servant, servantVars);
-      LinkInfo info = info(servant, servantVars, master);
-      if (!info.linked()) {
-         return 1.0;
-      }
-      return info.broken() ? Double.POSITIVE_INFINITY : 1.0 + info.decay();
+      return 1.0;
    }
 
    public static double linkedRegenMultiplier(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (vars.servant_card_transformed) {
-         ServerPlayer master = getLinkedMaster(player, vars);
-         LinkInfo info = info(player, vars, master);
-         if (!info.linked() || info.broken()) {
-            return 0.0;
-         }
-         return 0.5 * (1.0 - 0.5 * info.decay());
-      }
-      if (vars.master_active) {
-         ServerPlayer servant = getLinkedServant(player, vars);
-         if (servant == null) {
-            return 1.0;
-         }
-         TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         LinkInfo info = info(servant, servantVars, player);
-         return info.broken() ? 1.0 : 0.5 * (1.0 - 0.5 * info.decay());
+         LinkInfo info = info(player, vars, getLinkedMaster(player, vars));
+         return !info.linked() || info.broken() ? 0.0 : 0.5 * (1.0 - info.decay());
       }
       return 1.0;
    }
 
    public static void markDrawingMasterMana(ServerPlayer master, ServerPlayer servant) {
-      if (master == null || servant == null) {
-         return;
-      }
+      if (master == null || servant == null) return;
       TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       masterVars.master_servant_link_drawing_mana = true;
@@ -116,58 +116,347 @@ public final class MasterServantLinkService {
       }
    }
 
-   public static void breakLink(ServerPlayer master, ServerPlayer servant, boolean independentAction) {
-      if (master != null) {
-         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (servant != null && servant.getUUID().toString().equals(masterVars.master_servant_uuid)) {
-            masterVars.master_servant_uuid = "";
+   public static void terminateContract(ServerPlayer master, ServerPlayer servant) {
+      unlink(master, servant, UnlinkReason.CONTRACT_TERMINATED);
+   }
+
+   public static String establishContract(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars,
+                                          ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
+      String id = sanitizeUuid(masterVars.master_servant_contract_id);
+      if (id.isBlank()) id = sanitizeUuid(servantVars.servant_card_contract_id);
+      if (id.isBlank()) id = UUID.randomUUID().toString();
+      masterVars.master_servant_contract_id = id;
+      servantVars.servant_card_contract_id = id;
+      setContractTag(master, id);
+      setContractTag(servant, id);
+      return id;
+   }
+
+   public static void establishEntityContract(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars,
+                                               ServantEntity servant) {
+      String id = sanitizeUuid(masterVars.master_servant_contract_id);
+      if (id.isBlank()) id = UUID.randomUUID().toString();
+      masterVars.master_servant_contract_id = id;
+      setContractTag(master, id);
+      setContractTag(servant, id);
+      servant.setContractId(id);
+   }
+
+   public static void clearPlayerContract(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      clearContractTags(player);
+      vars.master_servant_contract_id = "";
+      vars.servant_card_contract_id = "";
+   }
+
+   public static void clearEntityContract(ServantEntity servant) {
+      clearContractTags(servant);
+      servant.setContractId("");
+   }
+
+   public static void setContractTag(Entity entity, String id) {
+      if (entity == null) return;
+      clearContractTags(entity);
+      if (!isBlank(id)) entity.addTag(CONTRACT_TAG_PREFIX + id);
+   }
+
+   public static void clearContractTags(Entity entity) {
+      if (entity == null) return;
+      for (String tag : new java.util.ArrayList<>(entity.getTags())) {
+         if (tag.equals(CONTRACT_TAG_PREFIX) || tag.startsWith(CONTRACT_TAG_PREFIX)) entity.removeTag(tag);
+      }
+   }
+
+   public static String contractTagPrefix() {
+      return CONTRACT_TAG_PREFIX;
+   }
+
+   public static void consumePendingTransitions(ServerPlayer player) {
+      if (player != null && player.getServer() != null) {
+         PlayerLinkTransitionData.get(player.getServer()).consume(player);
+      }
+   }
+
+   public static void repairPlayerLink(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null || player.getServer() == null) return;
+      boolean hadServantContractReference = !isBlank(vars.servant_card_master_uuid);
+      vars.servant_card_contract_state = sanitizeServantContractState(vars.servant_card_contract_state);
+      vars.master_servant_uuid = sanitizeUuid(vars.master_servant_uuid);
+      vars.servant_card_master_uuid = sanitizeUuid(vars.servant_card_master_uuid);
+      vars.master_servant_contract_id = sanitizeUuid(vars.master_servant_contract_id);
+      vars.servant_card_contract_id = sanitizeUuid(vars.servant_card_contract_id);
+      if (!vars.master_active) {
+         vars.master_servant_uuid = "";
+         vars.master_servant_contract_id = "";
+         clearContractTags(player);
+      }
+      if (!vars.servant_card_transformed) {
+         vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_id = "";
+         vars.servant_card_contract_state = SERVANT_CONTRACT_NATIVE;
+         clearContractTags(player);
+         clearSurvival(vars);
+         clearMasterPosition(vars);
+      } else if (SURVIVAL_DECAYING.equals(vars.master_servant_survival_state)) {
+         // Old saves used an endless damage state. Migrate it to the current ten-second death countdown.
+         vars.master_servant_survival_state = SURVIVAL_FORCED_DEATH;
+         vars.master_servant_survival_ticks = FORCED_DEATH_TICKS;
+      } else if (!isValidSurvival(vars.master_servant_survival_state)
+         || (!SURVIVAL_DECAYING.equals(vars.master_servant_survival_state) && vars.master_servant_survival_ticks <= 0)) {
+         clearSurvival(vars);
+      } else if (SURVIVAL_INDEPENDENT.equals(vars.master_servant_survival_state)) {
+         // Versions before the Minecraft-time rule stored wall-clock seconds as ticks (72x too large).
+         int currentDuration = independentDurationTicks(vars.servant_card_id);
+         if (currentDuration > 0 && vars.master_servant_survival_ticks > currentDuration) {
+            vars.master_servant_survival_ticks = Math.max(1, vars.master_servant_survival_ticks / 72);
          }
+      }
+
+      UUID servantId = parse(vars.master_servant_uuid);
+      if (servantId != null) {
+         ServerPlayer servant = player.getServer().getPlayerList().getPlayer(servantId);
+         if (servant != null) {
+            TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (!servantVars.servant_card_transformed || !player.getUUID().toString().equals(servantVars.servant_card_master_uuid)) {
+               vars.master_servant_uuid = "";
+               vars.master_servant_contract_id = "";
+               clearContractTags(player);
+            } else {
+               establishContract(player, vars, servant, servantVars);
+               servantVars.syncPlayerVariables(servant);
+            }
+         }
+      }
+
+      UUID masterId = parse(vars.servant_card_master_uuid);
+      if (masterId != null) {
+         ServerPlayer master = player.getServer().getPlayerList().getPlayer(masterId);
+         if (master != null) {
+            TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (!masterVars.master_active || !player.getUUID().toString().equals(masterVars.master_servant_uuid)) {
+               vars.servant_card_master_uuid = "";
+               vars.servant_card_contract_id = "";
+               clearContractTags(player);
+               clearMasterPosition(vars);
+            } else {
+               establishContract(master, masterVars, player, vars);
+               masterVars.syncPlayerVariables(master);
+            }
+         }
+      }
+      if (vars.servant_card_transformed) {
+         if (!isBlank(vars.servant_card_master_uuid)) {
+            vars.servant_card_contract_state = SERVANT_CONTRACT_CONTRACTED;
+         } else if (hadServantContractReference
+            || SERVANT_CONTRACT_CONTRACTED.equals(vars.servant_card_contract_state)
+            || isSurvivalActive(vars)) {
+            vars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
+         }
+         if (isBlank(vars.servant_card_master_uuid)
+            && SURVIVAL_NONE.equals(vars.master_servant_survival_state)) {
+            clearMasterPosition(vars);
+         }
+      }
+   }
+
+   public static void onMasterLost(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars) {
+      if (master == null || masterVars == null || isBlank(masterVars.master_servant_uuid)) {
+         if (masterVars != null) {
+            masterVars.master_servant_contract_id = "";
+            clearContractTags(master);
+            clearSnapshot(masterVars);
+         }
+         return;
+      }
+      UUID servantId = parse(masterVars.master_servant_uuid);
+      ServerPlayer servant = servantId == null || master.getServer() == null
+         ? null : master.getServer().getPlayerList().getPlayer(servantId);
+      if (servant != null) {
+         unlink(master, servant, UnlinkReason.MASTER_LOST);
+      } else {
+         if (servantId != null && master.getServer() != null) {
+            PlayerLinkTransitionData.get(master.getServer()).queue(
+               servantId, master.getUUID(), UnlinkReason.MASTER_LOST);
+         }
+         masterVars.master_servant_uuid = "";
+         masterVars.master_servant_contract_id = "";
+         clearContractTags(master);
          clearSnapshot(masterVars);
          masterVars.syncPlayerVariables(master);
       }
-      if (servant != null) {
-         TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         servantVars.servant_card_master_uuid = "";
-         if (independentAction && servantVars.servant_card_transformed) {
-            startIndependentAction(servant, servantVars);
-         } else {
+   }
+
+   public static void onServantLost(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
+      if (servant == null || servantVars == null || isBlank(servantVars.servant_card_master_uuid)) {
+         if (servantVars != null) {
+            servantVars.servant_card_master_uuid = "";
+            servantVars.servant_card_contract_id = "";
+            clearContractTags(servant);
             clearSnapshot(servantVars);
-            removeServantPenalties(servant);
+            clearSurvival(servantVars);
          }
+         return;
+      }
+      UUID masterId = parse(servantVars.servant_card_master_uuid);
+      ServerPlayer master = masterId == null || servant.getServer() == null
+         ? null : servant.getServer().getPlayerList().getPlayer(masterId);
+      if (master != null) {
+         unlink(master, servant, UnlinkReason.SERVANT_LOST);
+      } else {
+         if (masterId != null && servant.getServer() != null) {
+            PlayerLinkTransitionData.get(servant.getServer()).queue(
+               masterId, servant.getUUID(), UnlinkReason.SERVANT_LOST);
+         }
+         servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_id = "";
+         clearContractTags(servant);
+         servantVars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
+         clearSnapshot(servantVars);
+         clearMasterPosition(servantVars);
+         clearSurvival(servantVars);
          servantVars.syncPlayerVariables(servant);
       }
    }
 
    public static void onServantDeath(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
-      ServerPlayer master = getLinkedMaster(servant, servantVars);
-      if (master != null) {
-         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         masterVars.master_servant_backlash_ticks = Math.max(masterVars.master_servant_backlash_ticks, 1200);
-         applyMasterBacklash(master, true);
-         masterVars.syncPlayerVariables(master);
-         breakLink(master, servant, false);
-      } else {
-         servantVars.servant_card_master_uuid = "";
-         clearSnapshot(servantVars);
-         removeServantPenalties(servant);
-         servantVars.syncPlayerVariables(servant);
-      }
+      onServantLost(servant, servantVars);
    }
 
-   public static void startIndependentAction(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables vars) {
-      int duration = independentDurationTicks(servant);
-      vars.master_servant_independent_ticks = Math.max(vars.master_servant_independent_ticks, duration);
-      vars.master_servant_link_state = STATE_INDEPENDENT;
+   public static void onEntityServantDeath(ServantEntity servant) {
+      if (servant == null || servant.getMasterUuid() == null || servant.getServer() == null) return;
+      UUID masterId = servant.getMasterUuid();
+      ServerPlayer master = servant.getServer().getPlayerList().getPlayer(masterId);
+      if (master != null) {
+         TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (servant.getUUID().toString().equals(vars.master_servant_uuid)) {
+            vars.master_servant_uuid = "";
+            vars.master_servant_contract_id = "";
+            clearContractTags(master);
+            clearSnapshot(vars);
+            if (vars.master_active) applyServantLossToMaster(master, vars);
+            vars.syncPlayerVariables(master);
+         }
+      } else {
+         PlayerLinkTransitionData.get(servant.getServer()).queue(
+            masterId, servant.getUUID(), UnlinkReason.SERVANT_LOST);
+      }
+      clearContractTags(servant);
+      servant.setContractId("");
+      servant.unbindMaster();
+   }
+
+   public static void unlink(ServerPlayer master, ServerPlayer servant, UnlinkReason reason) {
+      TypeMoonWorldModVariables.PlayerVariables masterVars = master == null ? null
+         : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      TypeMoonWorldModVariables.PlayerVariables servantVars = servant == null ? null
+         : servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      boolean paired = master != null && servant != null && masterVars != null && servantVars != null
+         && servant.getUUID().toString().equals(masterVars.master_servant_uuid)
+         && master.getUUID().toString().equals(servantVars.servant_card_master_uuid);
+
+      if (masterVars != null && (servant == null || servant.getUUID().toString().equals(masterVars.master_servant_uuid))) {
+         masterVars.master_servant_uuid = "";
+         clearSnapshot(masterVars);
+         masterVars.master_servant_contract_id = "";
+         clearContractTags(master);
+      }
+      if (servantVars != null && (master == null || master.getUUID().toString().equals(servantVars.servant_card_master_uuid))) {
+         servantVars.servant_card_master_uuid = "";
+         servantVars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
+         clearSnapshot(servantVars);
+         clearMasterPosition(servantVars);
+         servantVars.servant_card_contract_id = "";
+         clearContractTags(servant);
+      }
+
+      if (paired && reason == UnlinkReason.MASTER_LOST && servantVars.servant_card_transformed) {
+         startMasterLossSurvival(servant, servantVars);
+      } else if (servantVars != null) {
+         clearSurvival(servantVars);
+      }
+      if (paired && reason == UnlinkReason.SERVANT_LOST && masterVars.master_active) {
+         applyServantLossToMaster(master, masterVars);
+      }
+
+      if (masterVars != null) masterVars.syncPlayerVariables(master);
+      if (servantVars != null) servantVars.syncPlayerVariables(servant);
+   }
+
+   static void applyPendingTransition(ServerPlayer player, UUID partnerId, UnlinkReason reason) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (reason == UnlinkReason.MASTER_LOST) {
+         if (!partnerId.toString().equals(vars.servant_card_master_uuid)) return;
+         vars.servant_card_master_uuid = "";
+         vars.servant_card_contract_id = "";
+         clearContractTags(player);
+         vars.servant_card_contract_state = SERVANT_CONTRACT_MASTERLESS;
+         clearSnapshot(vars);
+         clearMasterPosition(vars);
+         if (vars.servant_card_transformed) startMasterLossSurvival(player, vars);
+      } else if (reason == UnlinkReason.SERVANT_LOST) {
+         if (!partnerId.toString().equals(vars.master_servant_uuid)) return;
+         vars.master_servant_uuid = "";
+         vars.master_servant_contract_id = "";
+         clearContractTags(player);
+         clearSnapshot(vars);
+         if (vars.master_active) applyServantLossToMaster(player, vars);
+      }
+      vars.syncPlayerVariables(player);
+   }
+
+   public static void startMasterLossSurvival(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables vars) {
+      int duration = independentDurationTicks(vars.servant_card_id);
+      if (duration > 0) {
+         vars.master_servant_survival_state = SURVIVAL_INDEPENDENT;
+         vars.master_servant_survival_ticks = duration;
+         vars.master_servant_link_state = STATE_INDEPENDENT;
+      } else {
+         vars.master_servant_survival_state = SURVIVAL_FORCED_DEATH;
+         vars.master_servant_survival_ticks = FORCED_DEATH_TICKS;
+         vars.master_servant_link_state = STATE_FORCED_DEATH;
+      }
+      vars.master_servant_independent_ticks = 0;
       vars.master_servant_link_decay = 1.0;
-      servant.getPersistentData().putBoolean("MasterServantIndependentActionState", true);
-      applyServantPenalties(servant, 1.0);
+      servant.getPersistentData().putBoolean("MasterServantIndependentActionState",
+         SURVIVAL_INDEPENDENT.equals(vars.master_servant_survival_state));
+   }
+
+   public static void clearSurvival(TypeMoonWorldModVariables.PlayerVariables vars) {
+      vars.master_servant_survival_state = SURVIVAL_NONE;
+      vars.master_servant_survival_ticks = 0;
+      vars.master_servant_independent_ticks = 0;
+   }
+
+   public static boolean isSurvivalActive(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return vars != null && !SURVIVAL_NONE.equals(sanitizeSurvival(vars.master_servant_survival_state));
+   }
+
+   public static String sanitizeServantContractState(String state) {
+      if (SERVANT_CONTRACT_CONTRACTED.equals(state) || SERVANT_CONTRACT_MASTERLESS.equals(state)) {
+         return state;
+      }
+      return SERVANT_CONTRACT_NATIVE;
+   }
+
+   private static void tickBacklash(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars.master_servant_backlash_ticks > 0) {
+         vars.master_servant_backlash_ticks--;
+         applyMasterBacklash(player, vars.master_servant_backlash_ticks > 0);
+      } else {
+         applyMasterBacklash(player, false);
+      }
    }
 
    private static void tickMaster(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.master_servant_link_drawing_mana = false;
       ServerPlayer servant = getLinkedServant(master, vars);
-      if (servant == null) {
+      LivingEntity entityServant = servant == null ? MasterStateManager.getBoundServantEntity(master, vars) : servant;
+      if (entityServant == null) {
          clearSnapshot(vars);
+         clearServantPosition(vars);
+         return;
+      }
+      if (servant == null) {
+         updateEntitySnapshot(master, vars, entityServant);
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -179,75 +468,91 @@ public final class MasterServantLinkService {
       vars.master_servant_link_drawing_mana = false;
       ServerPlayer master = getLinkedMaster(servant, vars);
       LinkInfo info = info(servant, vars, master);
-      if (info.linked() && info.broken()) {
-         breakLink(master, servant, true);
+      if (info.linked()) {
+         vars.servant_card_contract_state = SERVANT_CONTRACT_CONTRACTED;
+         clearSurvival(vars);
+         servant.getPersistentData().remove("MasterServantIndependentActionState");
+         vars.master_servant_link_state = info.state();
+         vars.master_servant_link_decay = info.decay();
+         captureMasterPosition(master, vars);
+         if (servant.tickCount % 20 == 0) vars.syncMana(servant);
          return;
       }
-      if (vars.master_servant_independent_ticks > 0) {
-         vars.master_servant_independent_ticks--;
+
+      if (!isBlank(vars.servant_card_master_uuid)) {
+         vars.master_servant_master_position_online = false;
+         if (servant.tickCount % 20 == 0) vars.syncMana(servant);
+      }
+
+      String survival = sanitizeSurvival(vars.master_servant_survival_state);
+      if (SURVIVAL_FORCED_DEATH.equals(survival)) {
+         vars.master_servant_link_state = STATE_FORCED_DEATH;
+         vars.master_servant_link_decay = 1.0;
+         if (--vars.master_servant_survival_ticks <= 0) forceMasterlessDeath(servant);
+         return;
+      }
+      if (SURVIVAL_INDEPENDENT.equals(survival)) {
          vars.master_servant_link_state = STATE_INDEPENDENT;
          vars.master_servant_link_decay = 1.0;
-         applyServantPenalties(servant, 1.0);
-         if (servant.tickCount % 20 == 0) {
-            servant.hurt(servant.damageSources().magic(), 5.0F);
-         }
-         if (vars.master_servant_independent_ticks <= 0) {
-            ServantCardTransformManager.release(servant, true);
+         if (--vars.master_servant_survival_ticks <= 0) {
+            vars.master_servant_survival_state = SURVIVAL_FORCED_DEATH;
+            vars.master_servant_survival_ticks = FORCED_DEATH_TICKS;
+            vars.master_servant_link_state = STATE_FORCED_DEATH;
+            servant.getPersistentData().remove("MasterServantIndependentActionState");
          }
          return;
       }
-      servant.getPersistentData().remove("MasterServantIndependentActionState");
-      if (!info.linked()) {
-         clearSnapshot(vars);
-         removeServantPenalties(servant);
+      if (SURVIVAL_DECAYING.equals(survival)) {
+         vars.master_servant_survival_state = SURVIVAL_FORCED_DEATH;
+         vars.master_servant_survival_ticks = FORCED_DEATH_TICKS;
+         vars.master_servant_link_state = STATE_FORCED_DEATH;
+         vars.master_servant_link_decay = 1.0;
          return;
       }
-      applyServantPenalties(servant, info.decay());
+      clearSnapshot(vars);
+   }
+
+   private static void forceMasterlessDeath(ServerPlayer servant) {
+      var data = servant.getPersistentData();
+      data.putBoolean("MasterLossForcedDeath", true);
+      data.putBoolean("CausalSevered", true);
+      data.putInt("GodHandLives", 0);
+      data.remove("GodHandActive");
+      data.remove("BattleContinuationActive");
+      data.remove("BattleContinuationRecoveryActive");
+      data.remove("EmiyaStyleBattleContinuationActive");
+      servant.kill();
    }
 
    private static LinkInfo info(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars, ServerPlayer master) {
-      if (servant == null || master == null || servantVars == null) {
-         return new LinkInfo(false, true, 1.0, STATE_NONE);
-      }
+      if (servant == null || master == null || servantVars == null) return LinkInfo.NONE;
       TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!servantVars.servant_card_transformed || !masterVars.master_active) {
-         return new LinkInfo(false, true, 1.0, STATE_NONE);
-      }
-      if (!isContractedPair(master, masterVars, servant, servantVars)) {
-         return new LinkInfo(false, true, 1.0, STATE_NONE);
-      }
+      if (!servantVars.servant_card_transformed || !masterVars.master_active
+         || !isContractedPair(master, masterVars, servant, servantVars)) return LinkInfo.NONE;
       if (servant.level().dimension() != master.level().dimension()) {
          return new LinkInfo(true, true, 1.0, STATE_BROKEN);
       }
       double distanceSqr = servant.distanceToSqr(master);
-      if (distanceSqr > BREAK_RANGE * BREAK_RANGE) {
+      if (distanceSqr >= BREAK_RANGE * BREAK_RANGE) {
          return new LinkInfo(true, true, 1.0, STATE_BROKEN);
       }
       if (distanceSqr <= NORMAL_RANGE * NORMAL_RANGE) {
          return new LinkInfo(true, false, 0.0, STATE_NORMAL);
       }
       double distance = Math.sqrt(distanceSqr);
-      double decay = Mth.clamp((distance - NORMAL_RANGE) / (BREAK_RANGE - NORMAL_RANGE), 0.0, 1.0);
-      return new LinkInfo(true, false, decay, decay > 0.0 ? STATE_UNSTABLE : STATE_NORMAL);
+      double decay = 1.0 - manaSupplyFraction(distance, true);
+      return new LinkInfo(true, false, decay, STATE_UNSTABLE);
    }
 
-   private static boolean isContractedPair(
-      ServerPlayer master,
-      TypeMoonWorldModVariables.PlayerVariables masterVars,
-      ServerPlayer servant,
-      TypeMoonWorldModVariables.PlayerVariables servantVars
-   ) {
+   private static boolean isContractedPair(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars,
+                                           ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
       return servant.getUUID().toString().equals(masterVars.master_servant_uuid)
          && master.getUUID().toString().equals(servantVars.servant_card_master_uuid);
    }
 
-   private static void updateSnapshots(
-      ServerPlayer master,
-      TypeMoonWorldModVariables.PlayerVariables masterVars,
-      ServerPlayer servant,
-      TypeMoonWorldModVariables.PlayerVariables servantVars,
-      LinkInfo info
-   ) {
+   private static void updateSnapshots(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars,
+                                       ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars,
+                                       LinkInfo info) {
       masterVars.master_servant_link_partner_uuid = servant.getUUID().toString();
       masterVars.master_servant_link_partner_hp = servant.getHealth();
       masterVars.master_servant_link_partner_max_hp = servant.getMaxHealth();
@@ -255,7 +560,6 @@ public final class MasterServantLinkService {
       masterVars.master_servant_link_partner_max_mana = servantVars.servant_card_max_mana;
       masterVars.master_servant_link_state = info.state();
       masterVars.master_servant_link_decay = info.decay();
-
       servantVars.master_servant_link_partner_uuid = master.getUUID().toString();
       servantVars.master_servant_link_partner_hp = master.getHealth();
       servantVars.master_servant_link_partner_max_hp = master.getMaxHealth();
@@ -263,6 +567,7 @@ public final class MasterServantLinkService {
       servantVars.master_servant_link_partner_max_mana = masterVars.player_max_mana;
       servantVars.master_servant_link_state = info.state();
       servantVars.master_servant_link_decay = info.decay();
+      captureMasterPosition(master, servantVars);
       if (master.tickCount % 20 == 0) {
          masterVars.syncMana(master);
          servantVars.syncMana(servant);
@@ -278,88 +583,150 @@ public final class MasterServantLinkService {
       vars.master_servant_link_state = STATE_NONE;
       vars.master_servant_link_decay = 0.0;
       vars.master_servant_link_drawing_mana = false;
+      clearServantPosition(vars);
    }
 
-   private static boolean hasSnapshot(TypeMoonWorldModVariables.PlayerVariables vars) {
-      return (vars.master_servant_link_partner_uuid != null && !vars.master_servant_link_partner_uuid.isBlank())
-         || vars.master_servant_link_partner_hp != 0.0
-         || vars.master_servant_link_partner_max_hp != 0.0
-         || vars.master_servant_link_partner_mana != 0.0
-         || vars.master_servant_link_partner_max_mana != 0.0
-         || (vars.master_servant_link_state != null && !STATE_NONE.equals(vars.master_servant_link_state))
-         || vars.master_servant_link_decay != 0.0
-         || vars.master_servant_link_drawing_mana;
+   private static void updateEntitySnapshot(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars,
+                                             LivingEntity servant) {
+      vars.master_servant_link_partner_uuid = servant.getUUID().toString();
+      vars.master_servant_link_partner_hp = servant.getHealth();
+      vars.master_servant_link_partner_max_hp = servant.getMaxHealth();
+      vars.master_servant_link_partner_mana = 0.0;
+      vars.master_servant_link_partner_max_mana = 0.0;
+      vars.master_servant_link_state = STATE_NORMAL;
+      vars.master_servant_link_decay = 0.0;
+      captureServantPosition(servant, vars);
+      if (master.tickCount % 20 == 0) vars.syncMana(master);
    }
 
-   private static int independentDurationTicks(ServerPlayer servant) {
-      if (servant.getPersistentData().getBoolean("IndependentActionAActive")) {
-         return 7 * 24 * 60 * 60 * 20;
-      }
-      if (servant.getPersistentData().getBoolean("IndependentActionActive")) {
-         float crit = servant.getPersistentData().getFloat("IndependentActionCritDamageBonus");
-         return crit >= 0.075F ? 48 * 60 * 60 * 20 : 24 * 60 * 60 * 20;
-      }
-      return 60 * 20;
+   static void captureMasterPosition(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables servantVars) {
+      if (master == null || servantVars == null) return;
+      servantVars.master_servant_master_position_valid = true;
+      servantVars.master_servant_master_position_online = true;
+      servantVars.master_servant_master_dimension = master.level().dimension().location().toString();
+      servantVars.master_servant_master_x = master.getX();
+      servantVars.master_servant_master_y = master.getY();
+      servantVars.master_servant_master_z = master.getZ();
    }
 
-   private static void applyServantPenalties(ServerPlayer player, double decay) {
-      double penalty = Mth.clamp(decay, 0.0, 1.0) * 0.2;
-      addMultiplier(player.getAttribute(Attributes.MAX_HEALTH), LINK_HEALTH_ID, -penalty);
-      addMultiplier(player.getAttribute(Attributes.ATTACK_DAMAGE), LINK_ATTACK_ID, -penalty);
-      addMultiplier(player.getAttribute(Attributes.MOVEMENT_SPEED), LINK_SPEED_ID, -penalty);
-      addMultiplier(player.getAttribute(Attributes.ARMOR), LINK_ARMOR_ID, -penalty);
-      if (player.getHealth() > player.getMaxHealth()) {
-         player.setHealth(player.getMaxHealth());
-      }
+   static void captureServantPosition(LivingEntity servant, TypeMoonWorldModVariables.PlayerVariables masterVars) {
+      if (servant == null || masterVars == null) return;
+      masterVars.master_servant_servant_position_valid = true;
+      masterVars.master_servant_servant_position_online = servant.isAlive() && !servant.isRemoved();
+      masterVars.master_servant_servant_dimension = servant.level().dimension().location().toString();
+      masterVars.master_servant_servant_x = servant.getX();
+      masterVars.master_servant_servant_y = servant.getY();
+      masterVars.master_servant_servant_z = servant.getZ();
    }
 
-   private static void removeServantPenalties(ServerPlayer player) {
+   public static void clearServantPosition(TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars == null) return;
+      vars.master_servant_servant_position_valid = false;
+      vars.master_servant_servant_position_online = false;
+      vars.master_servant_servant_dimension = "";
+      vars.master_servant_servant_x = 0.0;
+      vars.master_servant_servant_y = 0.0;
+      vars.master_servant_servant_z = 0.0;
+   }
+
+   public static void clearMasterPosition(TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars == null) return;
+      vars.master_servant_master_position_valid = false;
+      vars.master_servant_master_position_online = false;
+      vars.master_servant_master_dimension = "";
+      vars.master_servant_master_x = 0.0;
+      vars.master_servant_master_y = 0.0;
+      vars.master_servant_master_z = 0.0;
+   }
+
+   static int independentDurationTicks(String servantId) {
+      ServantDefinition definition = ServantDataRegistry.get(servantId);
+      return definition == null ? 0 : independentDurationTicksForSkills(definition.skillIds());
+   }
+
+   static int independentDurationTicksForSkills(Collection<String> skillIds) {
+      if (skillIds == null) return 0;
+      // Independent Action is measured in Minecraft days, not wall-clock seconds.
+      if (skillIds.contains("independent_action_a")) return 7 * 24000;
+      if (skillIds.contains("independent_action_b")) return 2 * 24000;
+      if (skillIds.contains("independent_action_c")) return 24000;
+      return 0;
+   }
+
+   static double manaSupplyFraction(double distance, boolean sameDimension) {
+      if (!sameDimension || !Double.isFinite(distance) || distance >= BREAK_RANGE) return 0.0;
+      if (distance <= NORMAL_RANGE) return 1.0;
+      return Mth.clamp((BREAK_RANGE - distance) / (BREAK_RANGE - NORMAL_RANGE), 0.0, 1.0);
+   }
+
+   private static void applyServantLossToMaster(ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables vars) {
+      vars.master_servant_backlash_ticks = Math.max(vars.master_servant_backlash_ticks, 1200);
+      applyMasterBacklash(master, true);
+      master.displayClientMessage(Component.translatable("message.typemoonworld.master.servant_lost")
+         .withStyle(ChatFormatting.DARK_RED), false);
+      master.playNotifySound(SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.2F, 0.65F);
+   }
+
+   private static void removeLegacyServantPenalties(ServerPlayer player) {
       remove(player.getAttribute(Attributes.MAX_HEALTH), LINK_HEALTH_ID);
       remove(player.getAttribute(Attributes.ATTACK_DAMAGE), LINK_ATTACK_ID);
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), LINK_SPEED_ID);
       remove(player.getAttribute(Attributes.ARMOR), LINK_ARMOR_ID);
+      if (player.getHealth() > player.getMaxHealth()) player.setHealth(player.getMaxHealth());
    }
 
    private static void applyMasterBacklash(ServerPlayer player, boolean active) {
       AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
-      if (attribute == null) {
-         return;
-      }
+      if (attribute == null) return;
       AttributeModifier existing = attribute.getModifier(MASTER_BACKLASH_HEALTH_ID);
       if (active) {
-         if (existing == null || existing.amount() != -0.2 || existing.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+         if (existing == null || existing.amount() != -0.2
+            || existing.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
             attribute.removeModifier(MASTER_BACKLASH_HEALTH_ID);
-            attribute.addPermanentModifier(new AttributeModifier(MASTER_BACKLASH_HEALTH_ID, -0.2, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+            attribute.addPermanentModifier(new AttributeModifier(
+               MASTER_BACKLASH_HEALTH_ID, -0.2, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
          }
       } else if (existing != null) {
          attribute.removeModifier(MASTER_BACKLASH_HEALTH_ID);
       }
-      if (player.getHealth() > player.getMaxHealth()) {
-         player.setHealth(player.getMaxHealth());
-      }
-   }
-
-   private static void addMultiplier(AttributeInstance attribute, ResourceLocation id, double amount) {
-      if (attribute == null) {
-         return;
-      }
-      AttributeModifier existing = attribute.getModifier(id);
-      if (Math.abs(amount) > 1.0E-6) {
-         if (existing == null || existing.amount() != amount || existing.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
-            attribute.removeModifier(id);
-            attribute.addPermanentModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
-         }
-      } else if (existing != null) {
-         attribute.removeModifier(id);
-      }
+      if (player.getHealth() > player.getMaxHealth()) player.setHealth(player.getMaxHealth());
    }
 
    private static void remove(AttributeInstance attribute, ResourceLocation id) {
-      if (attribute != null && attribute.getModifier(id) != null) {
-         attribute.removeModifier(id);
+      if (attribute != null && attribute.getModifier(id) != null) attribute.removeModifier(id);
+   }
+
+   private static ResourceLocation id(String path) {
+      return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, path);
+   }
+
+   private static UUID parse(String value) {
+      try {
+         return isBlank(value) ? null : UUID.fromString(value);
+      } catch (IllegalArgumentException ignored) {
+         return null;
       }
    }
 
+   private static String sanitizeUuid(String value) {
+      UUID parsed = parse(value);
+      return parsed == null ? "" : parsed.toString();
+   }
+
+   private static boolean isBlank(String value) {
+      return value == null || value.isBlank();
+   }
+
+   private static String sanitizeSurvival(String value) {
+      return isValidSurvival(value) ? value : SURVIVAL_NONE;
+   }
+
+   private static boolean isValidSurvival(String value) {
+      return SURVIVAL_FORCED_DEATH.equals(value) || SURVIVAL_INDEPENDENT.equals(value)
+         || SURVIVAL_DECAYING.equals(value) || SURVIVAL_NONE.equals(value);
+   }
+
    private record LinkInfo(boolean linked, boolean broken, double decay, String state) {
+      private static final LinkInfo NONE = new LinkInfo(false, true, 1.0, STATE_NONE);
    }
 }

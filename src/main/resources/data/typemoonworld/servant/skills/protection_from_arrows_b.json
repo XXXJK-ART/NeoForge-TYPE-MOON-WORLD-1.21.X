@@ -6,5 +6,13 @@
   "mp_cost": 0,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": []
+  "effects": [],
+  "ai": {
+    "facts": [{
+      "type": "projectile_negation",
+      "strength": 1.0,
+      "requires": ["mobile"],
+      "bypassed_by": ["immobilize", "stun", "freeze", "explosion", "piercing", "sure_hit"]
+    }]
+  }
 }

@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,8 +29,11 @@ public record ServantCardJumpMessage(float forward, float strafe) implements Cus
    }
 
    public static void handleData(ServantCardJumpMessage message, IPayloadContext context) {
+      if (context.flow() != PacketFlow.SERVERBOUND
+         || !Float.isFinite(message.forward) || !Float.isFinite(message.strafe)) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player) {
+         if (context.player() instanceof ServerPlayer player
+            && ServerPacketRateLimiter.allow(player, "servant_card_jump", 4)) {
             ServantCardTransformManager.bigJump(player, message.forward, message.strafe);
          }
       });

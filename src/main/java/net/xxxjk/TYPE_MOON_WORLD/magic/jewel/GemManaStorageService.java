@@ -18,11 +18,16 @@ public final class GemManaStorageService {
    public static ItemStack storeIntoGem(ServerPlayer player, InteractionHand hand, ItemStack heldStack, Item fullGemItem, GemType type, GemQuality quality) {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int manaAmount = getStorageManaAmount(heldStack, type, quality);
-      if (vars.player_mana < manaAmount) {
+      double availableMana = vars.servant_card_transformed ? vars.servant_card_mana : vars.player_mana;
+      if (availableMana < manaAmount) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          return heldStack;
       } else {
-         vars.player_mana -= manaAmount;
+         if (vars.servant_card_transformed) {
+            vars.servant_card_mana -= manaAmount;
+         } else {
+            vars.player_mana -= manaAmount;
+         }
          vars.syncMana(player);
          Item targetFullGem = fullGemItem;
          if (GemEngravingService.getEngravedMagicId(heldStack) != null) {
@@ -40,7 +45,11 @@ public final class GemManaStorageService {
    public static ItemStack withdrawFromGem(ServerPlayer player, InteractionHand hand, ItemStack heldStack, Item emptyGemItem, GemType type, GemQuality quality) {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int manaAmount = getStorageManaAmount(heldStack, type, quality);
-      vars.player_mana += manaAmount;
+      if (vars.servant_card_transformed) {
+         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + manaAmount);
+      } else {
+         vars.player_mana += manaAmount;
+      }
       vars.syncMana(player);
       Item targetEmptyGem = emptyGemItem;
       if (GemEngravingService.getEngravedMagicId(heldStack) != null) {
@@ -50,7 +59,7 @@ public final class GemManaStorageService {
       ItemStack emptied = new ItemStack(targetEmptyGem);
       GemEngravingService.copyEngravingData(heldStack, emptied);
       ItemStack result = replaceHeldSingle(player, hand, heldStack, emptied);
-      if (vars.player_mana > vars.player_max_mana) {
+      if (!vars.servant_card_transformed && vars.player_mana > vars.player_max_mana) {
          ChatFormatting color = ChatFormatting.YELLOW;
          if (vars.player_mana > vars.player_max_mana * 1.25) {
             color = ChatFormatting.DARK_RED;

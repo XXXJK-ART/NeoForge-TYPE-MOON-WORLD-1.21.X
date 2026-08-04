@@ -18,32 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/oda_nobunaga.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/oda_nobunaga.png",
-    "animation": "typemoonworld:animations/oda_nobunaga.animation.json",
-    "animations": {
-      "idle": "animation.oda_nobunaga.idle",
-      "walk": "animation.oda_nobunaga.walk",
-      "slash": "animation.oda_nobunaga.hasebe_slash",
-      "sweep": "animation.oda_nobunaga.fire_command",
-      "uppercut": "animation.oda_nobunaga.hasebe_slash",
-      "horizontal_swing": "animation.oda_nobunaga.fire_command",
-      "charge": "animation.oda_nobunaga.strategy",
-      "projection": "animation.oda_nobunaga.summon_guns",
-      "twin_flurry": "animation.oda_nobunaga.fire_command",
-      "mind_eye_step": "animation.oda_nobunaga.step_back",
-      "rho_aias": "animation.oda_nobunaga.maou",
-      "bow_shot": "animation.oda_nobunaga.rifle_shot",
-      "ubw_chant": "animation.oda_nobunaga.hajun_chant",
-      "summon_guns": "animation.oda_nobunaga.summon_guns",
-      "fire_command": "animation.oda_nobunaga.fire_command",
-      "maou": "animation.oda_nobunaga.maou",
-      "step_back": "animation.oda_nobunaga.step_back",
-      "hasebe_slash": "animation.oda_nobunaga.hasebe_slash",
-      "strategy": "animation.oda_nobunaga.strategy",
-      "hajun_chant": "animation.oda_nobunaga.hajun_chant",
-      "hajun_release": "animation.oda_nobunaga.hajun_release"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

@@ -12,6 +12,7 @@ public final class ServantCardRegistry {
       new Entry("nightingale", "Florence Nightingale (Berserker)", "\u5357\u4e01\u683c\u5c14\uff08Berserker\uff09", true),
       new Entry("shadow_hassan", "Hassan of the Shadow", "\u5e7d\u5f0b\u4e4b\u54c8\u6851", false),
       new Entry("gilgamesh", "Gilgamesh", "Gilgamesh", true),
+      new Entry("gilgamesh_caster", "Gilgamesh (Caster)", "\u5409\u5c14\u4f3d\u7f8e\u4ec0\uff08Caster\uff09", true),
       new Entry("emiya_archer", "Emiya Archer", "卫宫", true),
       new Entry("artoria_pendragon", "Artoria Pendragon", "阿尔托莉雅", false),
       new Entry("sasaki_kojiro", "Sasaki Kojiro", "佐佐木小次郎", false),
@@ -26,7 +27,9 @@ public final class ServantCardRegistry {
       new Entry("paracelsus", "Paracelsus", "帕拉塞尔苏斯", true),
       new Entry("li_shuwen", "Li Shuwen", "李书文", true),
       new Entry("pale_rider", "Pale Rider", "苍白骑士", false),
-      new Entry("ushiwakamaru_rider", "Ushiwakamaru (Rider)", "牛若丸（Rider）", true)
+      new Entry("ushiwakamaru_rider", "Ushiwakamaru (Rider)", "牛若丸（Rider）", true),
+      new Entry("zhao_yun_rider", "Zhao Yun (Rider)", "赵云（Rider）", true),
+      new Entry("senko_muramasa", "Senko Muramasa (Saber)", "千子村正", true)
    );
 
    private ServantCardRegistry() {

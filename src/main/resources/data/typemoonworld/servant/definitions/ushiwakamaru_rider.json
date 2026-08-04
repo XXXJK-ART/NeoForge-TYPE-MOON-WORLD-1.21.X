@@ -13,20 +13,9 @@
     "luck": "A", "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/ushiwakamaru_rider.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/ushiwakamaru_rider.png",
-    "animation": "typemoonworld:animations/ushiwakamaru_rider.animation.json",
-    "animations": {
-      "idle": "animation.ushiwakamaru_rider.standing",
-      "walk": "animation.ushiwakamaru_rider.walk",
-      "slash": "animation.ushiwakamaru_rider.slash",
-      "dash": "animation.ushiwakamaru_rider.dash",
-      "shield": "animation.ushiwakamaru_rider.shield",
-      "command": "animation.ushiwakamaru_rider.command",
-      "six_secret": "animation.ushiwakamaru_rider.six_secret",
-      "eight_boat": "animation.ushiwakamaru_rider.eight_boat",
-      "spider_slayer": "animation.ushiwakamaru_rider.spider_slayer"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},

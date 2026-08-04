@@ -8,7 +8,7 @@ import software.bernie.geckolib.model.GeoModel;
 
 public class MysteriousSwordsmanModel extends GeoModel<MysteriousSwordsmanEntity> {
    @Override public ResourceLocation getModelResource(MysteriousSwordsmanEntity object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/sasaki_kojiro.geo.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/servant_card_sasaki_kojiro.geo.json");
    }
 
    @Override public ResourceLocation getTextureResource(MysteriousSwordsmanEntity object) {
@@ -16,7 +16,7 @@ public class MysteriousSwordsmanModel extends GeoModel<MysteriousSwordsmanEntity
    }
 
    @Override public ResourceLocation getAnimationResource(MysteriousSwordsmanEntity object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/sasaki_kojiro.animation.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/servant_card_sasaki_kojiro.animation.json");
    }
 
    @Override

@@ -17,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.neoforged.neoforge.common.Tags;
 
 public final class PaleRiderInfectionService {
@@ -41,7 +42,8 @@ public final class PaleRiderInfectionService {
    }
 
    public static boolean infect(LivingEntity target, LivingEntity owner, int addedLevels) {
-      if (target == null || owner == null || !target.isAlive() || target == owner || target.isAlliedTo(owner)) {
+      if (target == null || owner == null || !target.isAlive() || target == owner || target.isAlliedTo(owner)
+         || ServantMasterTargeting.isContractMaster(owner, target)) {
          return false;
       }
       if (isPaleRiderCardPlayer(target) || isStoutArash(target)) {
@@ -108,6 +110,12 @@ public final class PaleRiderInfectionService {
       }
       LivingEntity owner = getOwner(serverLevel, target);
       if (owner == null || !owner.isAlive()) {
+         cleanse(target, false);
+         return;
+      }
+      // A contract master is never affected by plague, including infections
+      // created before the contract relation was established.
+      if (ServantMasterTargeting.isContractMaster(owner, target)) {
          cleanse(target, false);
          return;
       }
@@ -468,6 +476,7 @@ public final class PaleRiderInfectionService {
    private static boolean canReceiveInfection(LivingEntity target, LivingEntity source, LivingEntity owner) {
       if (isStoutArash(target)
          || target == source || target == owner || !target.isAlive() || isPaleRiderCardPlayer(target)
+         || ServantMasterTargeting.isContractMaster(owner, target)
          || arePaleRiderAllies(owner, target)
          || net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target)) {
          return false;
@@ -506,6 +515,7 @@ public final class PaleRiderInfectionService {
 
    private static boolean isValidCommandTarget(Mob mob, LivingEntity owner, LivingEntity target) {
       return target != null && target != mob && target.isAlive() && !arePaleRiderAllies(owner, target)
+         && !ServantMasterTargeting.isContractMaster(owner, target)
          && !net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(target);
    }
 

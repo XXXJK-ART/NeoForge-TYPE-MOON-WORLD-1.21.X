@@ -165,7 +165,7 @@
         "-DignoreList\u003dmixinextras-neoforge-0.5.3.jar,client-extra,neoforge-",
         "-Djava.net.preferIPv6Addresses\u003dsystem"
       ],
-      "cwd": "${workspaceFolder}\\runs\\gameTestServer",
+      "cwd": "${workspaceFolder}\\run-gametest",
       "env": {
         "MOD_CLASSES": "NeoForge-TYPE-MOON-WORLD-1.21.X%%H:\\Minecraft\\JAVAmod\\MOD\\NeoForge-TYPE-MOON-WORLD-1.21.X\\bin\\main"
       },

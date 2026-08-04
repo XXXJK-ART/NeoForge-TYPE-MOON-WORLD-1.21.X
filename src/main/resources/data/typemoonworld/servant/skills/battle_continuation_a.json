@@ -15,5 +15,6 @@
       "effect_type": "damage_immunity",
       "params": { "duration_ticks": 100, "cooldown_ticks": 6000 }
     }
-  ]
+  ],
+  "ai": {"facts": [{"type": "revive", "strength": 0.8, "requires": ["low_health"]}]}
 }

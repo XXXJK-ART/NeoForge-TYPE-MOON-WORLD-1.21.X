@@ -68,6 +68,10 @@ public class GemGravityModeSelectScreen extends Screen {
       }
    }
 
+   @Override
+   public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   }
+
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       int itemWidth = 50;
       int itemHeight = 50;

@@ -28,6 +28,7 @@ import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -99,11 +100,16 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
 
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          boolean isMaxCharge = currentCharge >= 100;
-         if (!isMaxCharge && !(vars.player_mana >= 10.0)) {
+         boolean muramasaCard = isMuramasaCard(player);
+         boolean canPay = isMaxCharge
+            || (muramasaCard
+               ? ServantCardManaService.consumeSilently(player, vars, 5.0)
+               : vars.player_mana >= 10.0);
+         if (!canPay) {
             player.releaseUsingItem();
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          } else {
-            if (!isMaxCharge) {
+            if (!isMaxCharge && !muramasaCard) {
                vars.player_mana -= 10.0;
                vars.syncMana(player);
             }
@@ -198,6 +204,12 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
          livingEntity.addEffect(new MobEffectInstance(MobEffects.HUNGER, 20, 0, false, false));
          livingEntity.addEffect(new MobEffectInstance(MobEffects.UNLUCK, 20, 1, false, false));
       }
+   }
+
+   private static boolean isMuramasaCard(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars =
+         player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id);
    }
 
    public int getMaxManaCost() {

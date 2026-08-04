@@ -1,0 +1,45 @@
+{
+  "id": "gilgamesh_caster",
+  "display_name": "Gilgamesh",
+  "display_name_zh": "\u5409\u5c14\u4f3d\u7f8e\u4ec0",
+  "class_type": "caster",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "caster", "male", "human", "sapient", "lawful", "good", "divine", "king"],
+  "parameters": {
+    "endurance": "D",
+    "strength": "C",
+    "agility": "C",
+    "magic": "B",
+    "luck": "A"
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/caster_gilgamesh.png",
+    "animation": ""
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.82, "eye_height": 1.64},
+    "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
+    "default_weapon": "typemoonworld:gilgamesh_slate",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": []
+  },
+  "skills": [
+    "magic_resistance_c",
+    "caster_gilgamesh_wand_dominion",
+    "territory_creation_a_caster_gilgamesh",
+    "item_creation_fake_a",
+    "divinity_b"
+  ],
+  "noble_phantasm": "royal_cannon",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "lawful",
+    "morality": "good",
+    "social": "normal",
+    "combat": "controller",
+    "starting_favor": 50.0
+  },
+  "ai_config": "gilgamesh_caster_ai",
+  "spawn_egg": {"primary": 14988366, "secondary": 2962042}
+}

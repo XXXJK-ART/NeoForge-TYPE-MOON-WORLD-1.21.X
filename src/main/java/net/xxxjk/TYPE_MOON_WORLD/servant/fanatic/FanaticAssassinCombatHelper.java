@@ -41,6 +41,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import org.joml.Vector3f;
 
 public final class FanaticAssassinCombatHelper {
@@ -91,7 +92,15 @@ public final class FanaticAssassinCombatHelper {
          candidate -> isValidTarget(entity, candidate)
             && (entity.isNervesActive() || entity.distanceToSqr(candidate) <= 16.0 || entity.getSensing().hasLineOfSight(candidate)))
          .stream().max(Comparator.comparingDouble(candidate -> targetScore(entity, candidate))).orElse(null);
-      entity.setTarget(best);
+      // A scan can legitimately miss a target for a few ticks behind terrain.
+      // Keep the combat memory until it is actually dead or stale instead of
+      // dropping the target and restarting the encounter.
+      if (best != null) {
+         entity.setTarget(best);
+      } else if (current != null && current.isAlive()
+         && now - entity.getPersistentData().getLong("FanaticLastCombatTick") <= 240L) {
+         entity.setTarget(current);
+      }
    }
 
    public static void tick(FanaticAssassinEntity entity, ServantAiContext context) {
@@ -104,26 +113,13 @@ public final class FanaticAssassinCombatHelper {
       }
       long now = context.gameTick();
       entity.getPersistentData().putLong("FanaticLastCombatTick", now);
-      entity.revealForCombat();
       entity.getLookControl().setLookAt(target, 45.0F, 45.0F);
 
-      boolean retreating = entity.getPersistentData().getBoolean(RETREATING);
-      if (FanaticAssassinRules.shouldRetreat(entity.getCurrentMp(), entity.getMaxMp())) {
-         entity.getPersistentData().putBoolean(RETREATING, true);
-         retreating = true;
-      }
-      if (retreating && !FanaticAssassinRules.recoveredFromRetreat(entity.getCurrentMp(), entity.getMaxMp())) {
-         clearCombo(entity);
-         if (canCast(entity, "Nerves", FanaticAssassinRules.NERVES_MP, FanaticAssassinRules.NERVES_COOLDOWN, now)) {
-            castNerves(entity, now);
-         }
-         retreat(entity, target, now);
-         return;
-      }
-      if (retreating) {
-         entity.getPersistentData().remove(RETREATING);
-      }
+      // MP only gates techniques.  The assassin must keep closing and using its
+      // poison blade/basic attack when empty instead of entering a retreat loop.
+      entity.getPersistentData().remove(RETREATING);
       if (now < entity.getPersistentData().getLong(BUSY_UNTIL)) return;
+      if (tryConcealedApproach(entity, target, now)) return;
       if (continueCombo(entity, target, now)) return;
 
       double distance = entity.distanceTo(target);
@@ -725,13 +721,36 @@ public final class FanaticAssassinCombatHelper {
    }
 
    private static void commit(FanaticAssassinEntity entity, String key, int mp, long now,
-                              int technique, String animation, int visualDuration) {
+                               int technique, String animation, int visualDuration) {
+      entity.revealForCombat();
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - mp));
       entity.getPersistentData().putLong("FanaticLast" + key, now);
       entity.getPersistentData().putLong(BUSY_UNTIL, now + Math.min(24, visualDuration));
       entity.setActiveTechnique(technique, now + visualDuration);
       entity.triggerNamedActionAnimation(animation);
       entity.getNavigation().stop();
+   }
+
+   private static boolean tryConcealedApproach(FanaticAssassinEntity entity, LivingEntity target, long now) {
+      double distance = entity.distanceTo(target);
+      if (!entity.isPresenceConcealed() || distance < 4.0 || distance > 11.0
+         || now - entity.getPersistentData().getLong("FanaticLastShadowStep") < 70L) return false;
+      Vec3 look = target.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (look.lengthSqr() < 1.0E-5) look = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (look.lengthSqr() < 1.0E-5) return false;
+      Vec3 destination = target.position().subtract(look.normalize().scale(1.7));
+      Vec3 offset = destination.subtract(entity.position());
+      if (!entity.level().noCollision(entity, entity.getBoundingBox().move(offset))) return false;
+      entity.getPersistentData().putLong("FanaticLastShadowStep", now);
+      entity.getNavigation().stop();
+      entity.teleportTo(destination.x, target.getY(), destination.z);
+      entity.fallDistance = 0.0F;
+      entity.faceToward(target.position());
+      if (entity.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SQUID_INK, entity.getX(), entity.getY() + 0.8, entity.getZ(),
+            14, 0.35, 0.65, 0.35, 0.03);
+      }
+      return true;
    }
 
    private static boolean canCast(FanaticAssassinEntity entity, String key, int mp, int cooldown, long now) {
@@ -748,8 +767,13 @@ public final class FanaticAssassinCombatHelper {
 
    public static boolean isValidTarget(FanaticAssassinEntity entity, LivingEntity candidate) {
       if (candidate == null || candidate == entity || !candidate.isAlive() || EntityUtils.isImmunePlayerTarget(candidate)
-         || entity.isAlliedTo(candidate) || candidate.isAlliedTo(entity)) return false;
+         || entity.isAlliedTo(candidate) || candidate.isAlliedTo(entity)
+         || ServantMasterTargeting.isContractMaster(entity, candidate)) return false;
       if (isDoctrineTarget(candidate)) return true;
+      // A hostile NPC should not wait for the player to land the first hit.
+      // Contract masters and allied players were filtered above, so every
+      // remaining player is a valid active combat target.
+      if (candidate instanceof Player) return true;
       if (candidate instanceof Enemy) return true;
       if (entity.getLastHurtByMob() == candidate && entity.tickCount - entity.getLastHurtByMobTimestamp() <= 200) return true;
       return candidate instanceof Mob mob && mob.getTarget() == entity;

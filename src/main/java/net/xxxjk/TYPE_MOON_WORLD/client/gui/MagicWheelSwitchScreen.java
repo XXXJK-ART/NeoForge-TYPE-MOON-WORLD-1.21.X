@@ -54,6 +54,10 @@ public class MagicWheelSwitchScreen extends Screen {
       }
    }
 
+   @Override
+   public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   }
+
    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       int centerX = this.width / 2;
       int centerY = (int)(this.height * 0.45F);

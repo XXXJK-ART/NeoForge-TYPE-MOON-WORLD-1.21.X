@@ -17,7 +17,7 @@ public final class ServantSkillDefinitionLoader extends SimpleJsonResourceReload
       Map<String, ServantSkillDefinition> loaded = new LinkedHashMap<>();
       for (var entry : resources.entrySet()) ServantSkillDefinition.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
          .resultOrPartial(error -> net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error("Invalid servant skill {}: {}", entry.getKey(), error))
-         .ifPresent(value -> loaded.put(entry.getKey().toString(), new ServantSkillDefinition(entry.getKey().toString(), value.displayName(), value.displayNameZh(), value.type(), value.mpCost(), value.cooldownTicks(), value.durationTicks(), value.effects())));
+         .ifPresent(value -> loaded.put(entry.getKey().toString(), new ServantSkillDefinition(entry.getKey().toString(), value.displayName(), value.displayNameZh(), value.type(), value.mpCost(), value.cooldownTicks(), value.durationTicks(), value.effects(), value.ai())));
       ServantSkillDataRegistry.reload(loaded);
    }
 }

@@ -10,7 +10,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -104,8 +103,8 @@ public final class ServantCardNightingaleSkills {
          if (data.getLong(VOICE_END) > 0L && now >= data.getLong(VOICE_END)) stopVoice(player);
          return;
       }
-      if (!player.isAlive() || hasInterruptingControl(player)) {
-         interrupt(player);
+      if (!player.isAlive()) {
+         clear(player, false);
          return;
       }
       player.setPos(data.getDouble(CAST_X), data.getDouble(CAST_Y), data.getDouble(CAST_Z));
@@ -171,12 +170,6 @@ public final class ServantCardNightingaleSkills {
          }
       }
       return best;
-   }
-
-   private static boolean hasInterruptingControl(ServerPlayer player) {
-      return player.hasEffect(ModMobEffects.PETRIFIED)
-         || player.hasEffect(ModMobEffects.BINDING)
-         || player.hasEffect(ModMobEffects.STAGGER);
    }
 
    private static void captureRefundSnapshot(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

@@ -14,5 +14,6 @@ public final class BajiquanClientStateEvents {
       BajiquanPoseClient.clear();
       GanryuPoseClient.clear();
       CircleRealmClient.clear();
+      ObserverConcealmentClient.clear();
    }
 }

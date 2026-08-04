@@ -38,7 +38,7 @@
       "particle_role": "ENKIDU_EARTH_WEAPON_RISE",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "block", "block": "minecraft:dirt", "count": 1, "spread": [1.2, 0.15, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 },
+        { "type": "poof", "count": 1, "spread": [1.2, 0.15, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 },
         { "type": "happy_villager", "count": 1, "spread": [1.0, 0.4, 1.0], "offset": [0.0, 0.3, 0.0], "speed": 0.03, "chance": 0.35 }
       ]
     },
@@ -55,8 +55,8 @@
       "binding": { "mode": "entity_yaw", "offset": [0.0, 0.8, 3.0], "rotate_with_entity": true },
       "component": {
         "type": "line",
-        "from": [0.0, 0.0, 0.0],
-        "to": [0.0, 0.4, 14.0],
+        "start": [0.0, 0.0, 0.0],
+        "end": [0.0, 0.4, 14.0],
         "segments": 180
       },
       "color_over_life": [

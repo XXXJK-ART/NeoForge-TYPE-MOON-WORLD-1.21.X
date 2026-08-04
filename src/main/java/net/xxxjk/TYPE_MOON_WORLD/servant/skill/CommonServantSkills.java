@@ -5,6 +5,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 
 public final class CommonServantSkills {
    private CommonServantSkills() {
@@ -19,6 +20,7 @@ public final class CommonServantSkills {
       registry.register("artoria_instinct_a", CommonServantSkills::executeArtoriaInstinctA, "typemoonworld_core");
       registry.register("mana_burst_a", CommonServantSkills::executeManaBurstA, "typemoonworld_core");
       registry.register("charisma_b", CommonServantSkills::executeCharismaB, "typemoonworld_core");
+      registry.register("independent_action_a", CommonServantSkills::executeIndependentActionA, "typemoonworld_core");
       registry.register("independent_action_b", CommonServantSkills::executeIndependentActionB, "typemoonworld_core");
       registry.register("riding_a_plus", CommonServantSkills::executeRidingAPlus, "typemoonworld_core");
       registry.register("independent_action_c", CommonServantSkills::executeIndependentActionC, "typemoonworld_core");
@@ -52,6 +54,27 @@ public final class CommonServantSkills {
       registry.register("solar_rebuke", CommonServantSkills::executeGawainSolarRebuke, "typemoonworld_core");
       registry.register("radiant_field", CommonServantSkills::executeGawainRadiantField, "typemoonworld_core");
       registry.register("flame_tornado", CommonServantSkills::executeGawainFlameTornado, "typemoonworld_core");
+      registry.register("dragon_gall_ex", CommonServantSkills::executeDragonGallEx, "typemoonworld_core");
+      registry.register("single_rider_rescue_a", CommonServantSkills::executeSingleRiderRescueA, "typemoonworld_core");
+      registry.register("seven_in_seven_out_b_plus_plus", CommonServantSkills::executeSevenInSevenOut, "typemoonworld_core");
+   }
+
+   private static ServantExecutionResult executeDragonGallEx(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().putBoolean("ZhaoYunDragonGallSkill", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeSingleRiderRescueA(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().putBoolean("ZhaoYunRescueSkill", true);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeSevenInSevenOut(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().putBoolean("ZhaoYunSevenOutSkill", true);
+      return ServantExecutionResult.SUCCESS;
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
@@ -109,8 +132,9 @@ public final class CommonServantSkills {
       }
 
       entity.getPersistentData().putBoolean("RidingAPlusActive", true);
-      entity.getPersistentData().putFloat("RidingAPlusSpeedBonus", 0.5F);
-      entity.getPersistentData().putFloat("RidingAPlusArmorBonus", 0.2F);
+      boolean zhaoYun = entity instanceof ZhaoYunRiderEntity;
+      entity.getPersistentData().putFloat("RidingAPlusSpeedBonus", zhaoYun ? 0.3F : 0.5F);
+      entity.getPersistentData().putFloat("RidingAPlusArmorBonus", zhaoYun ? 0.15F : 0.2F);
       return ServantExecutionResult.SUCCESS;
    }
 
@@ -198,6 +222,14 @@ public final class CommonServantSkills {
 
       entity.getPersistentData().putBoolean("IndependentActionActive", true);
       entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.08F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeIndependentActionA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) return ServantExecutionResult.FAILED;
+      entity.getPersistentData().putBoolean("IndependentActionActive", true);
+      entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.12F);
       return ServantExecutionResult.SUCCESS;
    }
 

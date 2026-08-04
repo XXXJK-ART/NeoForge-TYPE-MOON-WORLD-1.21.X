@@ -18,18 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/paracelsus.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/paracelsus.png",
-    "animation": "typemoonworld:animations/paracelsus.animation.json",
-    "animations": {
-      "idle": "standing",
-      "walk": "walk",
-      "idle_cast": "animation.paracelsus.cast",
-      "uppercut": "animation.paracelsus.attack",
-      "horizontal_swing": "animation.paracelsus.attack",
-      "rune_cast": "animation.paracelsus.cast",
-      "charge": "animation.paracelsus.cast"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {
@@ -56,7 +47,7 @@
     "combat": "cautious",
     "starting_favor": 60.0
   },
-  "ai_config": "default_caster_paracelsus",
+  "ai_config": "paracelsus_ai",
   "spawn_egg": {
     "primary": 11118873,
     "secondary": 16768418
