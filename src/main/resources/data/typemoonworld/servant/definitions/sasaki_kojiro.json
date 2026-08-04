@@ -18,18 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/sasaki_kojiro.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/sasaki_kojiro.png",
-    "animation": "typemoonworld:animations/sasaki_kojiro.animation.json",
-    "animations": {
-      "idle": "animation.sasaki_kojiro.idle",
-      "walk": "animation.sasaki_kojiro.walk",
-      "sweep": "animation.sasaki_kojiro.horizontal_swing",
-      "slash": "animation.sasaki_kojiro.slash_diagonal",
-      "uppercut": "animation.sasaki_kojiro.slash_diagonal",
-      "horizontal_swing": "animation.sasaki_kojiro.horizontal_swing",
-      "tsurigameshi": "animation.sasaki_kojiro.swallow_return"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

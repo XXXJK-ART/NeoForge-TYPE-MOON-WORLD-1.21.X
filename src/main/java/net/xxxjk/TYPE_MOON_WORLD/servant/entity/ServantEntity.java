@@ -23,6 +23,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PathfinderMob;
@@ -35,7 +36,9 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -61,6 +64,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -306,6 +310,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public void tick() {
       super.tick();
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
+      if (!this.level().isClientSide && this.tickCount == 1) {
+         this.equipNpcServantCardArmor();
+      }
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
       GawainCombatHelper.tickSharedBuffCleanup(this);
@@ -566,6 +573,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       if (!this.level().isClientSide()) {
          this.applyDefinitionAttributes(true);
          this.equipDefaultWeapon();
+         this.equipNpcServantCardArmor();
       }
       return result;
    }
@@ -634,6 +642,46 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          ResourceLocation rl = ResourceLocation.parse(weaponId);
          BuiltInRegistries.ITEM.getOptional(rl).ifPresent(item -> this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item)));
       }, () -> {});
+   }
+
+   private void equipNpcServantCardArmor() {
+      String id = this.getServantId();
+      if (!usesHumanoidServantSkin(id)) {
+         return;
+      }
+      if (hasHumanoidServantCardHelmet(id)) {
+         equipNpcServantCardArmorSlot(EquipmentSlot.HEAD);
+      }
+      equipNpcServantCardArmorSlot(EquipmentSlot.CHEST);
+      equipNpcServantCardArmorSlot(EquipmentSlot.LEGS);
+   }
+
+   private void equipNpcServantCardArmorSlot(EquipmentSlot slot) {
+      Item armor = ModItems.getServantCardArmor(this.getServantId(), slot);
+      if (armor == Items.AIR || this.getItemBySlot(slot).is(armor)) {
+         return;
+      }
+      this.setItemSlot(slot, new ItemStack(armor));
+      this.setDropChance(slot, 0.0F);
+   }
+
+   private static boolean usesHumanoidServantSkin(String servantId) {
+      return switch (servantId == null ? "" : servantId) {
+         case "arash", "artoria_pendragon", "cu_chulainn", "gilgamesh_caster", "emiya_archer",
+            "enkidu", "fanatic_assassin", "nightingale", "gawain", "gilgamesh", "li_shuwen",
+            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa",
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
+   }
+
+   private static boolean hasHumanoidServantCardHelmet(String servantId) {
+      return switch (servantId == null ? "" : servantId) {
+         case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
+            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
    }
 
    @Override
@@ -1185,6 +1233,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
       this.equipDefaultWeapon();
       this.applyDefinitionAttributes(false);
+      this.equipNpcServantCardArmor();
    }
 
    // ======================== Getters / Setters ========================

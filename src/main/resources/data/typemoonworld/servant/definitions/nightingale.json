@@ -13,17 +13,9 @@
     "luck": "A", "luck_plus": true
   },
   "model": {
-    "geometry": "typemoonworld:geo/nightingale.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/nightingale.png",
-    "animation": "typemoonworld:animations/nightingale.animation.json",
-    "animations": {
-      "idle": "animation.nightingale.idle",
-      "walk": "animation.nightingale.walk",
-      "shoot": "animation.nightingale.shoot",
-      "heal": "animation.nightingale.heal",
-      "buff": "animation.nightingale.buff",
-      "noble_phantasm": "animation.nightingale.noble_phantasm"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},

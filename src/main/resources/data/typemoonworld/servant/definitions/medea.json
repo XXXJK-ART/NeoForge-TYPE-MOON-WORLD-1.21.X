@@ -27,19 +27,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/medea.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/medea.png",
-    "animation": "typemoonworld:animations/medea.animation.json",
-    "animations": {
-      "idle": "standing",
-      "walk": "standing",
-      "fly": "fly",
-      "uppercut": "animation.medea.cast_ascend",
-      "horizontal_swing": "animation.medea.cast_sweep",
-      "teleport_behind": "animation.medea.teleport_behind",
-      "charge": "animation.medea.hex_barrage",
-      "rune_cast": "animation.medea.rune_cast"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

@@ -13,30 +13,9 @@
     "luck": "B", "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/zhao_yun_rider.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/zhao_yun_rider.png",
-    "animation": "typemoonworld:animations/zhao_yun_rider.animation.json",
-    "animations": {
-      "idle": "standing",
-      "walk": "walk",
-      "riding": "riding",
-      "spear_strike": "spear_strike",
-      "uppercut": "spear_spin",
-      "horizontal_swing": "spear_sweep",
-      "spear_flourish": "spear_flourish",
-      "spear_dance": "spear_dance",
-      "spear_lunging_thrust": "spear_lunging_thrust",
-      "spear_driving_slash": "spear_driving_slash",
-      "spear_sweeping_advance": "spear_sweeping_advance",
-      "mounted_lance_charge": "mounted_lance_charge",
-      "mounted_sweeping_pass": "mounted_sweeping_pass",
-      "mounted_dragon_rein": "mounted_dragon_rein",
-      "dragon_gall": "dragon_gall",
-      "riding_burst": "riding_burst",
-      "rescue": "rescue",
-      "seven_out": "seven_out",
-      "changbanpo_no_ikki_gake": "changbanpo_no_ikki_gake"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.7, "height": 1.9, "eye_height": 1.7},

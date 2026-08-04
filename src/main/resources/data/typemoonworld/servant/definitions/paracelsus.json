@@ -18,18 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/paracelsus.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/paracelsus.png",
-    "animation": "typemoonworld:animations/paracelsus.animation.json",
-    "animations": {
-      "idle": "standing",
-      "walk": "walk",
-      "idle_cast": "animation.paracelsus.cast",
-      "uppercut": "animation.paracelsus.attack",
-      "horizontal_swing": "animation.paracelsus.attack",
-      "rune_cast": "animation.paracelsus.cast",
-      "charge": "animation.paracelsus.cast"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

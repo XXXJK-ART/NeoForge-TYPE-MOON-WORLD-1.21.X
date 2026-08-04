@@ -18,17 +18,9 @@
     "luck_plus": true
   },
   "model": {
-    "geometry": "typemoonworld:geo/artoria_pendragon.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/artoria_pendragon.png",
-    "animation": "typemoonworld:animations/artoria_pendragon.animation.json",
-    "animations": {
-      "idle": "animation.artoria_pendragon.idle",
-      "walk": "animation.artoria_pendragon.walk",
-      "sweep": "animation.artoria_pendragon.sweep",
-      "slash": "animation.artoria_pendragon.slash",
-      "uppercut": "animation.artoria_pendragon.uppercut",
-      "horizontal_swing": "animation.artoria_pendragon.horizontal_swing"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

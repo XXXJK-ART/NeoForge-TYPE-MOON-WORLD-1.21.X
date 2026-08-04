@@ -13,28 +13,9 @@
     "luck": "A", "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/gilgamesh.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/gilgamesh.png",
-    "animation": "typemoonworld:animations/gilgamesh.animation.json",
-    "animations": {
-      "idle": "animation.gilgamesh.idle",
-      "walk": "animation.gilgamesh.walk",
-      "fly": "animation.gilgamesh.fly",
-      "float_idle": "animation.gilgamesh.fly",
-      "slash": "animation.gilgamesh.basic_attack",
-      "gate_single": "animation.gilgamesh.basic_attack",
-      "gate_small": "animation.gilgamesh.gate_cast",
-      "gate_large": "animation.gilgamesh.gate_barrage",
-      "gate_of_babylon": "animation.gilgamesh.gate_barrage",
-      "gate_duel": "animation.gilgamesh.gate_duel",
-      "durandal_slash": "animation.gilgamesh.basic_attack",
-      "chain_of_heaven": "animation.gilgamesh.chain_cast",
-      "ea_unlock": "animation.gilgamesh.ea_channel",
-      "ea_release": "animation.gilgamesh.ea_channel",
-      "igalima_slash": "animation.gilgamesh.cross_slash",
-      "sulsagana_slash": "animation.gilgamesh.cross_slash",
-      "np": "animation.gilgamesh.ea_channel"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.82, "eye_height": 1.64},

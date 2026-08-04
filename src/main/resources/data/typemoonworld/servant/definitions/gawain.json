@@ -18,20 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/gawain.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/gawain.png",
-    "animation": "typemoonworld:animations/gawain.animation.json",
-    "animations": {
-      "idle": "animation.gawain.idle",
-      "walk": "animation.gawain.walk",
-      "slash": "animation.gawain.slash",
-      "uppercut": "animation.gawain.uppercut",
-      "horizontal_swing": "animation.gawain.horizontal_swing",
-      "sweep": "animation.gawain.sweep",
-      "charge": "animation.gawain.charge",
-      "gallatin_chant": "animation.gawain.gallatin_chant",
-      "gallatin_release": "animation.gawain.gallatin_release"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

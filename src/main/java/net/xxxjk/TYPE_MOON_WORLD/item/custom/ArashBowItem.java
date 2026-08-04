@@ -29,7 +29,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public final class ArashBowItem extends net.minecraft.world.item.Item implements GeoItem {
    public static final int CHARGED_ARROW_TICKS = 40;
-   public static final int HEAVY_CHARGED_ARROW_TICKS = 80;
+   public static final int HEAVY_CHARGED_ARROW_TICKS = 60;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public ArashBowItem(Properties properties) { super(properties); }

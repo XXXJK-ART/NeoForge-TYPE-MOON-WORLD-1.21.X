@@ -18,27 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/enkidu.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/enkidu.png",
-    "animation": "typemoonworld:animations/enkidu.animation.json",
-    "animations": {
-      "idle": "animation.enkidu.standing",
-      "walk": "animation.enkidu.walk",
-      "fly": "animation.enkidu.float_idle",
-      "float_idle": "animation.enkidu.float_idle",
-      "slash": "animation.enkidu.slash",
-      "sweep": "animation.enkidu.sweep",
-      "uppercut": "animation.enkidu.uppercut",
-      "horizontal_swing": "animation.enkidu.horizontal_swing",
-      "charge": "animation.enkidu.charge",
-      "transfiguration": "animation.enkidu.transfiguration",
-      "presence_detection": "animation.enkidu.presence_detection",
-      "perfect_form": "animation.enkidu.perfect_form",
-      "chain_of_heaven": "animation.enkidu.chain_of_heaven",
-      "age_of_babylon": "animation.enkidu.age_of_babylon",
-      "enkidu_enuma_elish": "animation.enkidu.enkidu_enuma_elish",
-      "np": "animation.enkidu.enkidu_enuma_elish"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

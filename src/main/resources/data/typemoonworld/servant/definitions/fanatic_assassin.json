@@ -16,22 +16,9 @@
     "luck": "D", "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/fanatic_assassin.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/fanatic_assassin.png",
-    "animation": "typemoonworld:animations/fanatic_assassin.animation.json",
-    "animations": {
-      "idle": "animation.fanatic_assassin.standing",
-      "walk": "animation.fanatic_assassin.walk",
-      "melee": "animation.fanatic_assassin.melee",
-      "heartbeat": "animation.fanatic_assassin.heartbeat",
-      "marrow": "animation.fanatic_assassin.marrow",
-      "hair": "animation.fanatic_assassin.hair",
-      "temperature": "animation.fanatic_assassin.temperature",
-      "nerves": "animation.fanatic_assassin.nerves",
-      "computer": "animation.fanatic_assassin.computer",
-      "toxin": "animation.fanatic_assassin.toxin",
-      "jinn": "animation.fanatic_assassin.jinn"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},

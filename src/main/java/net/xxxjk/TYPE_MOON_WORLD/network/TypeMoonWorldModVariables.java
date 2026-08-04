@@ -311,6 +311,7 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_paracelsus_stone_stock = original.servant_card_paracelsus_stone_stock;
             clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
             clone.servant_card_arash_arrow_stock = original.servant_card_arash_arrow_stock;
+            clone.servant_card_royal_cannon_ammo = original.servant_card_royal_cannon_ammo;
             clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
             clone.servant_card_medusa_mystic_eyes_active = original.servant_card_medusa_mystic_eyes_active;
             clone.servant_card_hassan_cloak_broken = original.servant_card_hassan_cloak_broken;
@@ -614,6 +615,7 @@ public class TypeMoonWorldModVariables {
       int paracelsusStoneStock,
       int paracelsusDiamondShieldStock,
       int arashArrowStock,
+      int royalCannonAmmo,
       String enkiduPoints,
       boolean medusaMysticEyesActive,
       boolean hassanCloakBroken,
@@ -662,6 +664,7 @@ public class TypeMoonWorldModVariables {
             buffer.writeVarInt(message.paracelsusStoneStock);
             buffer.writeVarInt(message.paracelsusDiamondShieldStock);
             buffer.writeVarInt(message.arashArrowStock);
+            buffer.writeVarInt(message.royalCannonAmmo);
             buffer.writeUtf(message.enkiduPoints == null ? "" : message.enkiduPoints, MAX_POINTS_LENGTH);
             buffer.writeBoolean(message.medusaMysticEyesActive);
             buffer.writeBoolean(message.hassanCloakBroken);
@@ -696,6 +699,7 @@ public class TypeMoonWorldModVariables {
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readBoolean(),
+            buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
@@ -745,6 +749,7 @@ public class TypeMoonWorldModVariables {
             vars.servant_card_paracelsus_stone_stock,
             vars.servant_card_paracelsus_diamond_shield_stock,
             vars.servant_card_arash_arrow_stock,
+            vars.servant_card_royal_cannon_ammo,
             vars.servant_card_enkidu_transfiguration_points,
             vars.servant_card_medusa_mystic_eyes_active,
             vars.servant_card_hassan_cloak_broken,
@@ -798,6 +803,7 @@ public class TypeMoonWorldModVariables {
                   vars.servant_card_paracelsus_stone_stock = Math.max(0, message.paracelsusStoneStock);
                   vars.servant_card_paracelsus_diamond_shield_stock = Math.max(0, message.paracelsusDiamondShieldStock);
                   vars.servant_card_arash_arrow_stock = Mth.clamp(message.arashArrowStock, 0, 5000);
+                  vars.servant_card_royal_cannon_ammo = Mth.clamp(message.royalCannonAmmo, 0, 5000);
                   vars.servant_card_enkidu_transfiguration_points = message.enkiduPoints == null ? "" : message.enkiduPoints;
                   vars.servant_card_medusa_mystic_eyes_active = message.medusaMysticEyesActive;
                   vars.servant_card_hassan_cloak_broken = message.hassanCloakBroken;
@@ -1082,6 +1088,7 @@ public class TypeMoonWorldModVariables {
       public int servant_card_paracelsus_stone_stock = 0;
       public int servant_card_paracelsus_diamond_shield_stock = 0;
       public int servant_card_arash_arrow_stock = 0;
+      public int servant_card_royal_cannon_ammo = 0;
       public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       public boolean servant_card_medusa_mystic_eyes_active = false;
       public boolean servant_card_hassan_cloak_broken = false;

@@ -64,6 +64,8 @@ public final class ServantCardVoiceHelper {
          case "invisible_air_hammer", "invisible_air_release" -> ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get();
          case "enuma_elish" -> ModSounds.ENKIDU_VOICE_NP.get();
          case "gilgamesh_cross_slash" -> ModSounds.GILGAMESH_VOICE_ATTACK.get();
+         case "caster_gilgamesh_cannon_calibration", "caster_gilgamesh_royal_cannon" -> ModSounds.CASTER_GILGAMESH_VOICE_NP.get();
+         case "caster_gilgamesh_leader", "caster_gilgamesh_return", "caster_gilgamesh_workshop", "caster_gilgamesh_item_creation" -> ModSounds.CASTER_GILGAMESH_VOICE_SHOT.get();
          case "gallatin_spark" -> ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get();
          case "flame_tornado" -> ModSounds.GAWAIN_VOICE_FIRE_ATTACK.get();
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();

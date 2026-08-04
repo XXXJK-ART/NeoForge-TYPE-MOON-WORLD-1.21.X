@@ -13,15 +13,9 @@
     "luck": "A"
   },
   "model": {
-    "geometry": "typemoonworld:geo/caster_gilgamesh.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/caster_gilgamesh.png",
-    "animation": "typemoonworld:animations/caster_gilgamesh.animation.json",
-    "animations": {
-      "idle": "animation.caster_gilgamesh.idle",
-      "walk": "animation.caster_gilgamesh.walk",
-      "fly": "animation.caster_gilgamesh.fly",
-      "float_idle": "animation.caster_gilgamesh.float_idle"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.82, "eye_height": 1.64},

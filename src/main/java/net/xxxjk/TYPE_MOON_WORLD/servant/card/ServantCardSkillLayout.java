@@ -146,6 +146,17 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Enuma Elish", "enuma_elish", 120.0, 3600);
             default -> null;
          };
+         case "gilgamesh_caster" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("石板射击", "caster_gilgamesh_slate_volley", 0.0, 18);
+            case 0 -> new ServantCardSkillAction("石板连射", "caster_gilgamesh_slate_volley", 0.0, 24);
+            case 1 -> new ServantCardSkillAction("领袖气质 A+", "caster_gilgamesh_leader", 20.0, 35 * 20);
+            case 2 -> new ServantCardSkillAction("王的回归 A", "caster_gilgamesh_return", 15.0, 30 * 20);
+            case 3 -> new ServantCardSkillAction("道具作成（伪）", "caster_gilgamesh_item_creation", 0.0, 0);
+            case 4 -> new ServantCardSkillAction("阵地建造 A", "caster_gilgamesh_workshop", 0.0, 80);
+            case 5 -> new ServantCardSkillAction("王之号炮：单轮校准", "caster_gilgamesh_cannon_calibration", 0.0, 20);
+            case 9 -> new ServantCardSkillAction("王之号炮", "caster_gilgamesh_royal_cannon", 0.0, 0);
+            default -> null;
+         };
          case "gilgamesh" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("近战小技能", "gilgamesh_melee", 0.0, 18);
             case 0 -> new ServantCardSkillAction("王律键", "gilgamesh_key", 0.0, 0);

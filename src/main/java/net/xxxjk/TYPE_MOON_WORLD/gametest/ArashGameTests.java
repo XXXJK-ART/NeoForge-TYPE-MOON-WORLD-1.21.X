@@ -58,6 +58,44 @@ public final class ArashGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void advancingSkyRiftClearsTunnelCoreUpwardAndPreservesEdges(GameTestHelper helper) {
+      BlockPos relativeOrigin = new BlockPos(3, 7, 3);
+      for (int along = 0; along <= 2; along++) {
+         BlockPos center = relativeOrigin.offset(along, 0, 0);
+         helper.setBlock(center, Blocks.STONE);
+         helper.setBlock(center.above(1), Blocks.STONE);
+         helper.setBlock(center.above(2), Blocks.STONE);
+         helper.setBlock(center.above(3), Blocks.BEDROCK);
+         helper.setBlock(center.above(4), Blocks.STONE);
+         helper.setBlock(center.below(1), Blocks.STONE);
+         helper.setBlock(center.offset(0, 2, 2), Blocks.STONE);
+         helper.setBlock(center.offset(0, 2, 3), Blocks.STONE);
+      }
+      BlockPos absoluteOrigin = helper.absolutePos(relativeOrigin);
+      var skyRift = DeferredTerrainDestruction.queueAdvancingSkyRift(helper.getLevel(),
+         new Vec3(absoluteOrigin.getX() + 0.5, absoluteOrigin.getY() + 0.5, absoluteOrigin.getZ() + 0.5),
+         new Vec3(1.0, 0.0, 0.0), 2.0, 2, null);
+      skyRift.advanceTo(2.0);
+      skyRift.seal();
+      helper.runAfterDelay(20, () -> {
+         BlockPos center = relativeOrigin.offset(1, 0, 0);
+         helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(center)).isAir(),
+            "Advancing sky rift did not clear the trajectory center");
+         helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(center.above(2))).isAir(),
+            "Advancing sky rift did not clear blocks above the tunnel core");
+         helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(center.above(3))).is(Blocks.BEDROCK),
+            "Advancing sky rift destroyed protected bedrock");
+         helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(center.below(1))).is(Blocks.STONE),
+            "Advancing sky rift incorrectly cleared blocks below the trajectory center");
+         helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(center.offset(0, 2, 2))).isAir(),
+            "Advancing sky rift did not clear the main tunnel radius");
+         helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(center.offset(0, 2, 3))).is(Blocks.STONE),
+            "Advancing sky rift incorrectly cleared beyond the main tunnel radius");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
    public static void chargedArrowImpactsDestroyScaledTerrainAndPreserveBedrock(GameTestHelper helper) {
       var level = helper.getLevel();
       var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 8, 8));
@@ -359,8 +397,8 @@ public final class ArashGameTests {
       var instant = level.getEntitiesOfClass(ArashParticleArrowEntity.class,
          player.getBoundingBox().inflate(5.0), arrow -> arrow.getVariant() == ArashParticleArrowEntity.NORMAL);
       helper.assertTrue(instant.size() == 1, "Right click did not immediately fire exactly one normal arrow");
-      helper.assertTrue(Math.abs(instant.get(0).getDamageForGameTest() - 10.0F) < 0.001F,
-         "Instant arrow damage was not 10");
+      helper.assertTrue(Math.abs(instant.get(0).getDamageForGameTest() - 15.0F) < 0.001F,
+         "Instant arrow damage was not 15");
 
       double manaBeforeCharge = vars.servant_card_mana;
       String cooldownsBeforeCharge = vars.servant_card_skill_cooldowns;
@@ -374,9 +412,9 @@ public final class ArashGameTests {
       helper.assertTrue(charged.size() == 1 && Math.abs(charged.get(0).getDamageForGameTest() - 30.0F) < 0.001F,
          "Two-second charged arrow was not 30 damage");
       helper.assertTrue(heavy.size() == 1 && Math.abs(heavy.get(0).getDamageForGameTest() - 60.0F) < 0.001F,
-         "Four-second heavy charged arrow was not 60 damage");
-      helper.assertTrue(Math.abs(vars.servant_card_mana - (manaBeforeCharge - 28.0)) < 0.001,
-         "Bow-charged arrows did not consume their normal skill MP");
+         "Three-second heavy charged arrow was not 60 damage");
+      helper.assertTrue(Math.abs(vars.servant_card_mana - manaBeforeCharge) < 0.001,
+         "Bow-charged arrows incorrectly consumed MP");
       helper.assertTrue(java.util.Objects.equals(cooldownsBeforeCharge, vars.servant_card_skill_cooldowns)
             && java.util.Objects.equals(cooldownEndsBeforeCharge, vars.servant_card_skill_cooldown_ends),
          "Bow-charged arrows incorrectly changed skill cooldowns");

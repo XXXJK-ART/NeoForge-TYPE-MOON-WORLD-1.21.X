@@ -50,6 +50,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH);
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER.get()));
                         output.accept(ModItems.SERVANT_CARD_GAWAIN);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
@@ -62,8 +63,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_HEAD);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_HEAD);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_CHEST);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO_LEGS);
                         output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_CHEST);
@@ -80,12 +83,17 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ODA_NOBUNAGA_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_ENKIDU_HEAD);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ENKIDU_LEGS);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH_LEGS);
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_HEAD.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_CHEST.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_LEGS.get()));
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_PARACELSUS_HEAD);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_CHEST);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS_LEGS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN_CHEST);
@@ -100,6 +108,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_HEAD);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_CHEST);
@@ -239,6 +248,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.NAMELESS_BOW);
                         output.accept(ModItems.ARASH_BOW);
                         output.accept(ModItems.GILGAMESH_SLATE);
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_HEAD.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_CHEST.get()));
+                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_LEGS.get()));
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);

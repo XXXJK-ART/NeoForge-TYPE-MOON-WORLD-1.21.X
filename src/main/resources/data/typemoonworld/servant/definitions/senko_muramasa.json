@@ -13,19 +13,9 @@
     "luck": "B"
   },
   "model": {
-    "geometry": "typemoonworld:geo/senko_muramasa.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/senko_muramasa.png",
-    "animation": "typemoonworld:animations/senko_muramasa.animation.json",
-    "animations": {
-      "idle": "animation.senko_muramasa.idle",
-      "walk": "animation.senko_muramasa.walk",
-      "charge": "animation.senko_muramasa.charge",
-      "sweep": "animation.senko_muramasa.sweep",
-      "slash": "animation.senko_muramasa.slash",
-      "uppercut": "animation.senko_muramasa.uppercut",
-      "horizontal_swing": "animation.senko_muramasa.horizontal_swing",
-      "np": "animation.senko_muramasa.np"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},

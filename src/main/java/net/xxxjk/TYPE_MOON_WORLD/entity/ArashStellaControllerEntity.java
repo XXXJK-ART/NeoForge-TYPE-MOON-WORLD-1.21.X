@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -29,6 +30,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.world.chunk.TicketController;
+import net.neoforged.neoforge.common.world.chunk.TicketHelper;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
@@ -39,10 +41,16 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import org.joml.Vector3f;
+import org.slf4j.Logger;
 
 public final class ArashStellaControllerEntity extends Entity {
    public static final TicketController CHUNK_TICKETS = new TicketController(
-      ResourceLocation.fromNamespaceAndPath("typemoonworld", "arash_stella"));
+      ResourceLocation.fromNamespaceAndPath("typemoonworld", "arash_stella"),
+      ArashStellaControllerEntity::validateLoadedTickets);
+   private static final Logger LOGGER = LogUtils.getLogger();
+   private static final int CHUNK_TICKET_REFRESH_TICKS = 8;
+   private static final double CHUNK_TICKET_BACK_DISTANCE = 128.0;
+   private static final double CHUNK_TICKET_AHEAD_DISTANCE = 256.0;
    private static final int STAGE_CHANT = 0;
    private static final int STAGE_FLIGHT = 1;
    private static final int STAGE_EXPLOSION = 2;
@@ -68,10 +76,12 @@ public final class ArashStellaControllerEntity extends Entity {
    private final Set<UUID> allies = new HashSet<>();
    private final Set<UUID> lineHits = new HashSet<>();
    private transient DeferredTerrainDestruction.AdvancingCylinder cylinder;
+   private transient DeferredTerrainDestruction.AdvancingSkyRift skyRift;
    private transient DeferredTerrainDestruction.ExpandingSphere sphere;
    private boolean finalDamageDone;
    private boolean released;
    private boolean ticketsReleased;
+   private int lastTicketRefreshTick = -CHUNK_TICKET_REFRESH_TICKS;
 
    public ArashStellaControllerEntity(EntityType<? extends ArashStellaControllerEntity> type, Level level) {
       super(type, level);
@@ -82,6 +92,7 @@ public final class ArashStellaControllerEntity extends Entity {
       if (!(arash.level() instanceof ServerLevel level) || arash.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_USED)
          || arash.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_CHANTING)
          || arash.getCurrentMp() < 100.0 || !arash.hasMasterNoblePhantasmPermission()) return false;
+      if (hasActiveController(level, arash.getUUID())) return false;
       List<LivingEntity> hostiles = level.getEntitiesOfClass(LivingEntity.class, arash.getBoundingBox().inflate(64.0),
          living -> ArashCombatHelper.isTarget(arash, living));
       boolean surrounded = hostiles.size() >= 8;
@@ -116,6 +127,7 @@ public final class ArashStellaControllerEntity extends Entity {
          || ServantCardArashSkills.isPlayerChanting(player) || !player.getMainHandItem().is(ModItems.ARASH_BOW.get())) {
          return false;
       }
+      if (hasActiveController(level, player.getUUID())) return false;
       Vec3 flat = player.getLookAngle().multiply(1.0, 0.0, 1.0);
       if (flat.lengthSqr() < 1.0E-6) return false;
       flat = flat.normalize();
@@ -157,6 +169,8 @@ public final class ArashStellaControllerEntity extends Entity {
          else if (stage == STAGE_FLIGHT) tickFlight(level);
          else tickExplosion(level);
       } catch (RuntimeException exception) {
+         LOGGER.error("Arash Stella controller failed on the server; aborting safely (entity={}, stage={}, tick={})",
+            getUUID(), stage, stageTicks, exception);
          abort(level, true);
       }
    }
@@ -164,6 +178,7 @@ public final class ArashStellaControllerEntity extends Entity {
    private void tickChant(ServerLevel level) {
       LivingEntity caster = getCaster(level);
       if (caster == null || !caster.isAlive()) { abort(level, false); return; }
+      updateChunkTickets(level, 0.0, stellaProfile());
       if (playerCaster) {
          if (!(caster instanceof ServerPlayer player) || !ServantCardArashSkills.isPlayerChanting(player)) {
             abort(level, false);
@@ -175,12 +190,7 @@ public final class ArashStellaControllerEntity extends Entity {
          arash.faceVector(direction);
       }
       spawnChantEffects(level, caster, stageTicks);
-      int chunksPerTick = playerCaster ? (playerReleaseRequested ? 16 : 4) : 2;
-      for (int requested = 0; requested < chunksPerTick && preloadIndex < chunks.size(); requested++) {
-         long packed = chunks.get(preloadIndex++);
-         CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), true, true);
-         forcedChunks.add(packed);
-      }
+      preloadIndex = chunks.size();
       stageTicks++;
 
       if (playerCaster) {
@@ -239,8 +249,8 @@ public final class ArashStellaControllerEntity extends Entity {
          Math.min(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS, chargeTicks));
       List<Long> required = computeChunks(origin, direction, stellaProfile());
       chunks.clear();
-      for (long packed : required) if (!forcedChunks.contains(packed)) chunks.add(packed);
-      preloadIndex = 0;
+      chunks.addAll(required);
+      preloadIndex = chunks.size();
    }
 
    private ArashCombatRules.StellaProfile stellaProfile() {
@@ -253,6 +263,7 @@ public final class ArashStellaControllerEntity extends Entity {
       released = true;
       stage = STAGE_FLIGHT;
       stageTicks = 0;
+      lastTicketRefreshTick = -CHUNK_TICKET_REFRESH_TICKS;
       if (caster instanceof ArashEntity arash) {
          arash.getPersistentData().remove(ArashEntity.TAG_STELLA_CHANTING);
          arash.beginStellaSacrifice();
@@ -266,6 +277,8 @@ public final class ArashStellaControllerEntity extends Entity {
       level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y, origin.z, 3, 0, 0, 0, 0);
       this.cylinder = DeferredTerrainDestruction.queueAdvancingCylinder(level, origin, direction,
          profile.length(), profile.terrainRadius(), profile.scarRadius(), null);
+      this.skyRift = DeferredTerrainDestruction.queueAdvancingSkyRift(level, origin, direction,
+         profile.length(), profile.terrainRadius(), null);
    }
 
    public void forceReleaseForGameTest() {
@@ -288,14 +301,21 @@ public final class ArashStellaControllerEntity extends Entity {
 
    private void tickFlight(ServerLevel level) {
       ArashCombatRules.StellaProfile profile = stellaProfile();
+      double currentDistance = profile.distanceAtTick(stageTicks);
+      updateChunkTickets(level, currentDistance, profile);
       if (cylinder == null) {
          cylinder = DeferredTerrainDestruction.queueAdvancingCylinder(level, origin, direction,
             profile.length(), profile.terrainRadius(), profile.scarRadius(), null);
       }
-      double previous = profile.distanceAtTick(stageTicks);
+      if (skyRift == null) {
+         skyRift = DeferredTerrainDestruction.queueAdvancingSkyRift(level, origin, direction,
+            profile.length(), profile.terrainRadius(), null);
+      }
+      double previous = currentDistance;
       stageTicks++;
       double current = profile.distanceAtTick(stageTicks);
       cylinder.advanceTo(current);
+      skyRift.advanceTo(current);
       damageSegment(level, previous, current);
       Vec3 point = origin.add(direction.scale(current));
       this.setPos(point.x, point.y, point.z);
@@ -303,6 +323,8 @@ public final class ArashStellaControllerEntity extends Entity {
       if (stageTicks >= profile.flightTicks()) {
          cylinder.advanceTo(profile.length());
          cylinder.seal();
+         skyRift.advanceTo(profile.length());
+         skyRift.seal();
          stage = STAGE_EXPLOSION;
          stageTicks = 0;
          this.setPos(point.x, point.y, point.z);
@@ -312,6 +334,8 @@ public final class ArashStellaControllerEntity extends Entity {
    private void tickExplosion(ServerLevel level) {
       ArashCombatRules.StellaProfile profile = stellaProfile();
       Vec3 center = origin.add(direction.scale(profile.length()));
+      // Keep the final flight window alive while the deferred cylinder finishes.
+      if (forcedChunks.isEmpty()) updateChunkTickets(level, profile.length(), profile);
       if (!finalDamageDone) {
          finalDamageDone = true;
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
@@ -333,9 +357,9 @@ public final class ArashStellaControllerEntity extends Entity {
       stageTicks++;
       sphere.advanceTo(profile.explosionRadiusAtTick(stageTicks));
       if (stageTicks >= profile.explosionTicks()) sphere.seal();
-      if (stageTicks % 2 == 0) {
+      if (stageTicks % 4 == 0) {
          double radius = profile.explosionRadiusAtTick(stageTicks);
-         spawnSphereShell(level, center, radius);
+         spawnSphereShell(level, center, radius, 48);
       }
       if (sphere.isComplete()) finish(level);
    }
@@ -433,22 +457,24 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    private void spawnMeteorTrail(ServerLevel level, double distance) {
+      if ((this.tickCount & 1) != 0) return;
       Vec3 head = origin.add(direction.scale(distance));
       level.sendParticles(WHITE, head.x, head.y, head.z, 28, 1.05, 1.05, 1.05, 0.08);
       level.sendParticles(GREEN, head.x, head.y, head.z, 52, 2.25, 2.25, 2.25, 0.12);
       level.sendParticles(GOLD, head.x, head.y, head.z, 24, 1.35, 1.35, 1.35, 0.09);
       level.sendParticles(ParticleTypes.FIREWORK, head.x, head.y, head.z, 20, 2.8, 2.8, 2.8, 0.16);
-      for (int i = 3; i <= 210; i += 6) {
+      for (int i = 6; i <= 180; i += 12) {
          Vec3 trail = head.subtract(direction.scale(i));
          level.sendParticles(i < 75 ? GREEN : i < 150 ? GOLD : WHITE,
-            trail.x, trail.y, trail.z, 3, i * 0.024, i * 0.024, i * 0.024, 0.015);
+            trail.x, trail.y, trail.z, 5, i * 0.024, i * 0.024, i * 0.024, 0.015);
       }
-      if (this.tickCount % 2 == 0) {
-         for (double radius : new double[]{3.0, 6.0, 9.0}) {
-            spawnCrossSectionRing(level, head, radius, this.tickCount * 0.14 + radius, radius < 5.0 ? WHITE : GREEN, 36);
+      if (this.tickCount % 4 == 0) {
+         for (double radius : new double[]{3.5, 7.0}) {
+            spawnCrossSectionRing(level, head, radius, this.tickCount * 0.14 + radius,
+               radius < 5.0 ? WHITE : GREEN, 18);
          }
-         level.sendParticles(RED, head.x, head.y - 6.0, head.z, 36, 9.0, 1.2, 9.0, 0.06);
-         level.sendParticles(ParticleTypes.LARGE_SMOKE, head.x, head.y - 5.5, head.z, 28, 8.0, 1.0, 8.0, 0.045);
+         level.sendParticles(RED, head.x, head.y - 6.0, head.z, 24, 7.0, 1.0, 7.0, 0.06);
+         level.sendParticles(ParticleTypes.LARGE_SMOKE, head.x, head.y - 5.5, head.z, 18, 6.0, 0.9, 6.0, 0.045);
       }
    }
 
@@ -471,9 +497,9 @@ public final class ArashStellaControllerEntity extends Entity {
       }
    }
 
-   private static void spawnSphereShell(ServerLevel level, Vec3 center, double radius) {
+   private static void spawnSphereShell(ServerLevel level, Vec3 center, double radius, int points) {
       if (radius <= 0.0) return;
-      for (int i = 0; i < 96; i++) {
+      for (int i = 0; i < points; i++) {
          double u = level.random.nextDouble() * 2.0 - 1.0;
          double angle = level.random.nextDouble() * Math.PI * 2.0;
          double horizontal = Math.sqrt(1.0 - u * u);
@@ -483,20 +509,29 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    private void abort(ServerLevel level, boolean refund) {
-      LivingEntity caster = getCaster(level);
-      if (caster instanceof ArashEntity arash) {
-         arash.getPersistentData().remove(ArashEntity.TAG_STELLA_CHANTING);
-         if (!released && refund) {
-            arash.setCurrentMp(Math.min(arash.getMaxMp(), arash.getCurrentMp() + 100.0));
-            arash.getPersistentData().remove(ArashEntity.TAG_STELLA_USED);
+      try {
+         LivingEntity caster = getCaster(level);
+         if (caster instanceof ArashEntity arash) {
+            arash.getPersistentData().remove(ArashEntity.TAG_STELLA_CHANTING);
+            if (!released && refund) {
+               arash.setCurrentMp(Math.min(arash.getMaxMp(), arash.getCurrentMp() + 100.0));
+               arash.getPersistentData().remove(ArashEntity.TAG_STELLA_USED);
+            }
+         } else if (caster instanceof ServerPlayer player) {
+            if (!released && refund) ServantCardArashSkills.abortPlayerChantTechnical(player);
+            else ServantCardArashSkills.abortPlayerChantNoRefund(player);
          }
-      } else if (caster instanceof ServerPlayer player) {
-         if (!released && refund) ServantCardArashSkills.abortPlayerChantTechnical(player);
-         else ServantCardArashSkills.abortPlayerChantNoRefund(player);
+      } catch (RuntimeException exception) {
+         LOGGER.warn("Failed to restore Arash Stella caster state during abort (entity={})", getUUID(), exception);
+      } finally {
+         try {
+            stopAllStellaSounds(level);
+         } catch (RuntimeException exception) {
+            LOGGER.warn("Failed to stop Arash Stella sounds during abort (entity={})", getUUID(), exception);
+         }
+         releaseTickets(level);
+         this.discard();
       }
-      stopAllStellaSounds(level);
-      releaseTickets(level);
-      this.discard();
    }
 
    private void finish(ServerLevel level) {
@@ -516,8 +551,83 @@ public final class ArashStellaControllerEntity extends Entity {
    private void releaseTickets(ServerLevel level) {
       if (ticketsReleased) return;
       ticketsReleased = true;
-      for (long packed : forcedChunks) {
-         CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), false, true);
+      for (long packed : new ArrayList<>(forcedChunks)) {
+         safeForceChunk(level, packed, false);
+      }
+      forcedChunks.clear();
+   }
+
+   private void updateChunkTickets(ServerLevel level, double distance, ArashCombatRules.StellaProfile profile) {
+      if (ticketsReleased || profile == null) return;
+      if (stageTicks - lastTicketRefreshTick < CHUNK_TICKET_REFRESH_TICKS) return;
+      lastTicketRefreshTick = stageTicks;
+
+      LinkedHashSet<Long> desired = new LinkedHashSet<>();
+      double from = Math.max(0.0, distance - CHUNK_TICKET_BACK_DISTANCE);
+      double to = Math.min(profile.length(), distance + CHUNK_TICKET_AHEAD_DISTANCE);
+      Vec3 side = new Vec3(-direction.z, 0.0, direction.x);
+      for (double sampleDistance = from; sampleDistance <= to + 1.0E-6; sampleDistance += 8.0) {
+         Vec3 point = origin.add(direction.scale(sampleDistance));
+         for (double offset : new double[]{-profile.scarRadius(), -profile.terrainRadius(), 0.0,
+            profile.terrainRadius(), profile.scarRadius()}) {
+            Vec3 sample = point.add(side.scale(offset));
+            desired.add(ChunkPos.asLong((int)Math.floor(sample.x) >> 4, (int)Math.floor(sample.z) >> 4));
+         }
+      }
+      if (to >= profile.length() - 1.0E-6) {
+         Vec3 end = origin.add(direction.scale(profile.length()));
+         int minX = (int)Math.floor(end.x - profile.endRadius()) >> 4;
+         int maxX = (int)Math.floor(end.x + profile.endRadius()) >> 4;
+         int minZ = (int)Math.floor(end.z - profile.endRadius()) >> 4;
+         int maxZ = (int)Math.floor(end.z + profile.endRadius()) >> 4;
+         for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) desired.add(ChunkPos.asLong(x, z));
+         }
+      }
+
+      for (long packed : new ArrayList<>(forcedChunks)) {
+         if (!desired.contains(packed)) {
+            safeForceChunk(level, packed, false);
+            forcedChunks.remove(packed);
+         }
+      }
+      for (long packed : desired) {
+         if (!forcedChunks.contains(packed) && safeForceChunk(level, packed, true)) {
+            forcedChunks.add(packed);
+         }
+      }
+   }
+
+   private boolean safeForceChunk(ServerLevel level, long packed, boolean add) {
+      if (level == null || level.isClientSide()) return false;
+      try {
+         CHUNK_TICKETS.forceChunk(level, this, ChunkPos.getX(packed), ChunkPos.getZ(packed), add, false);
+         return true;
+      } catch (RuntimeException exception) {
+         LOGGER.warn("Could not {} Arash Stella chunk ticket at {} (entity={})",
+            add ? "add" : "remove", packed, getUUID(), exception);
+         return false;
+      }
+   }
+
+   private static boolean hasActiveController(ServerLevel level, UUID casterId) {
+      if (level == null || casterId == null) return false;
+      Entity caster = level.getEntity(casterId);
+      if (caster == null) return false;
+      for (ArashStellaControllerEntity controller : level.getEntitiesOfClass(
+         ArashStellaControllerEntity.class,
+         caster.getBoundingBox().inflate(8.0),
+         candidate -> !candidate.isRemoved() && casterId.equals(candidate.casterId))) {
+         return true;
+      }
+      return false;
+   }
+
+   private static void validateLoadedTickets(ServerLevel level, TicketHelper helper) {
+      for (UUID owner : List.copyOf(helper.getEntityTickets().keySet())) {
+         if (!(level.getEntity(owner) instanceof ArashStellaControllerEntity)) {
+            helper.removeAllTickets(owner);
+         }
       }
    }
 
@@ -641,9 +751,15 @@ public final class ArashStellaControllerEntity extends Entity {
 
    @Override
    protected void readAdditionalSaveData(CompoundTag tag) {
-      stage = tag.getInt("Stage"); stageTicks = tag.getInt("StageTicks"); preloadIndex = tag.getInt("PreloadIndex");
-      origin = new Vec3(tag.getDouble("OriginX"), tag.getDouble("OriginY"), tag.getDouble("OriginZ"));
-      direction = new Vec3(tag.getDouble("DirectionX"), tag.getDouble("DirectionY"), tag.getDouble("DirectionZ"));
+      stage = Math.max(STAGE_CHANT, Math.min(STAGE_EXPLOSION, tag.getInt("Stage")));
+      stageTicks = Math.max(0, tag.getInt("StageTicks"));
+      preloadIndex = Math.max(0, tag.getInt("PreloadIndex"));
+      Vec3 loadedOrigin = new Vec3(tag.getDouble("OriginX"), tag.getDouble("OriginY"), tag.getDouble("OriginZ"));
+      Vec3 loadedDirection = new Vec3(tag.getDouble("DirectionX"), tag.getDouble("DirectionY"), tag.getDouble("DirectionZ"));
+      origin = finite(loadedOrigin) ? loadedOrigin : position();
+      Vec3 horizontalDirection = new Vec3(loadedDirection.x, 0.0, loadedDirection.z);
+      direction = finite(horizontalDirection) && horizontalDirection.lengthSqr() > 1.0E-6
+         ? horizontalDirection.normalize() : new Vec3(0.0, 0.0, 1.0);
       if (tag.hasUUID("Caster")) casterId = tag.getUUID("Caster");
       teamName = tag.getString("Team");
       chunks.clear(); for (long packed : tag.getLongArray("Chunks")) chunks.add(packed);
@@ -660,6 +776,11 @@ public final class ArashStellaControllerEntity extends Entity {
          : ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;
       readUuids(tag.getList("Allies", Tag.TAG_INT_ARRAY), allies);
       readUuids(tag.getList("LineHits", Tag.TAG_INT_ARRAY), lineHits);
+      lastTicketRefreshTick = -CHUNK_TICKET_REFRESH_TICKS;
+   }
+
+   private static boolean finite(Vec3 value) {
+      return value != null && Double.isFinite(value.x) && Double.isFinite(value.y) && Double.isFinite(value.z);
    }
 
    private static ListTag writeUuids(Set<UUID> ids) {

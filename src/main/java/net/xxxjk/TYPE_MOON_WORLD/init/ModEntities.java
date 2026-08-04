@@ -129,7 +129,9 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<ArashStellaControllerEntity>> ARASH_STELLA_CONTROLLER = ENTITY_TYPES.register(
       "arash_stella_controller",
       () -> Builder.<ArashStellaControllerEntity>of(ArashStellaControllerEntity::new, MobCategory.MISC)
-         .sized(1.0F, 1.0F).clientTrackingRange(256).updateInterval(1).build("arash_stella_controller")
+         // The controller is server-authoritative; visuals are sent as nearby particles.
+         // Keep its no-op client entity cheap on multiplayer servers.
+         .sized(1.0F, 1.0F).clientTrackingRange(64).updateInterval(2).build("arash_stella_controller")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MuramasaSlashProjectileEntity>> MURAMASA_SLASH = ENTITY_TYPES.register(
       "muramasa_slash",

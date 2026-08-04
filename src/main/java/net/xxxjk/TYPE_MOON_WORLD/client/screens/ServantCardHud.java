@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCasterGilgameshSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 
 @EventBusSubscriber({Dist.CLIENT})
@@ -121,6 +122,7 @@ public class ServantCardHud {
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
       drawArashArrows(gui, minecraft, vars, guiWidth, 36);
+      drawCasterGilgameshRoyalCannon(gui, minecraft, vars, guiWidth, 36);
       drawGilgameshOmniscience(gui, minecraft, vars);
    }
 
@@ -201,7 +203,7 @@ public class ServantCardHud {
    }
 
    private static void drawFlightStatus(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
-      if (!"medea".equals(vars.servant_card_id) && !"enkidu".equals(vars.servant_card_id) && !"oda_nobunaga".equals(vars.servant_card_id) && !"gilgamesh".equals(vars.servant_card_id)) return;
+      if (!"medea".equals(vars.servant_card_id) && !"enkidu".equals(vars.servant_card_id) && !"oda_nobunaga".equals(vars.servant_card_id) && !"gilgamesh".equals(vars.servant_card_id) && !"gilgamesh_caster".equals(vars.servant_card_id)) return;
       long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
       long high = vars.servant_card_flight_mode == 2
          ? Math.max(0L, vars.servant_card_high_flight_until - now)
@@ -368,6 +370,7 @@ public class ServantCardHud {
          int drawX = x;
          int drawY = y + i * 8;
          int ticks = i == 9 && !"gilgamesh".equals(vars.servant_card_id)
+            && !"gilgamesh_caster".equals(vars.servant_card_id)
             && !"ushiwakamaru_rider".equals(vars.servant_card_id) ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
@@ -467,6 +470,28 @@ public class ServantCardHud {
          drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.arash_empty"),
             x, y + 16, 0xFFFF7777, 0.50F);
       }
+   }
+
+   private static void drawCasterGilgameshRoyalCannon(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int guiWidth, int y) {
+      if (!"gilgamesh_caster".equals(vars.servant_card_id)) return;
+      int maxAmmo = ServantCardCasterGilgameshSkills.MAX_AMMO;
+      int ammo = Math.max(0, Math.min(maxAmmo, vars.servant_card_royal_cannon_ammo));
+      int panelWidth = 112;
+      int x = guiWidth - panelWidth - 6;
+      int outline = ammo < ServantCardCasterGilgameshSkills.CANNON_SHOTS_PER_ROUND ? 0xFFFF4040 : 0xFFECC84A;
+      gui.fill(x - 3, y - 4, guiWidth - 5, y + 25, 0x66000000);
+      gui.renderOutline(x - 3, y - 4, panelWidth + 1, 29, outline);
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.royal_cannon"),
+         x, y - 2, 0xFFFFD85C, 0.62F);
+      int color = ammo < ServantCardCasterGilgameshSkills.CANNON_SHOTS_PER_ROUND ? 0xFFFF5555 : ammo < 100 ? 0xFFFFAA55 : 0xFFFFFFFF;
+      drawScaledString(gui, minecraft,
+         Component.translatable("hud.typemoonworld.servant_card.royal_cannon_ammo", ammo, maxAmmo),
+         x, y + 8, color, 0.62F);
+      int barWidth = panelWidth - 8;
+      int barY = y + 19;
+      gui.fill(x, barY, x + barWidth, barY + 3, 0xAA2A2414);
+      int fill = (int)(barWidth * Math.max(0.0F, Math.min(1.0F, ammo / (float)maxAmmo)));
+      gui.fill(x, barY, x + fill, barY + 3, ammo < ServantCardCasterGilgameshSkills.CANNON_SHOTS_PER_ROUND ? 0xFFFF5555 : 0xFFFFC928);
    }
 
    private static void drawScaledString(GuiGraphics gui, Minecraft minecraft, Component text, int x, int y, int color, float scale) {

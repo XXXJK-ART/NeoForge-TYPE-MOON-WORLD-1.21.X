@@ -16,19 +16,9 @@
     "luck": "D", "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/arash.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/arash.png",
-    "animation": "typemoonworld:animations/arash.animation.json",
-    "animations": {
-      "idle": "animation.arash.idle",
-      "walk": "animation.arash.walk",
-      "bow_shot": "animation.arash.bow_shot",
-      "arrow_rain": "animation.arash.arrow_rain",
-      "energy_small": "animation.arash.energy_small",
-      "energy_large": "animation.arash.energy_large",
-      "stella_chant": "animation.arash.stella_chant",
-      "stella_release": "animation.arash.stella_release"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.85, "eye_height": 1.67},

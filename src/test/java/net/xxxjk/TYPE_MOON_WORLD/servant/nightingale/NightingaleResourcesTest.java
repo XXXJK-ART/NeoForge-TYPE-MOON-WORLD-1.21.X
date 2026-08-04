@@ -45,24 +45,20 @@ class NightingaleResourcesTest {
 
    @Test
    void modelsAnimationsTexturesAndItemModelArePresent() throws Exception {
-      JsonObject bodyGeo = json("assets/typemoonworld/geo/nightingale.geo.json");
       JsonObject gunGeo = json("assets/typemoonworld/geo/nightingale_gun.geo.json");
-      assertEquals("geometry.nightingale", bodyGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
-         .getAsJsonObject("description").get("identifier").getAsString());
+      JsonObject definitionModel = json("data/typemoonworld/servant/definitions/nightingale.json")
+         .getAsJsonObject("model");
+      assertEquals("", definitionModel.get("geometry").getAsString());
+      assertEquals("", definitionModel.get("animation").getAsString());
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/geo/nightingale.geo.json")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/animations/nightingale.animation.json")));
       assertEquals("geometry.nightingale_gun", gunGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
          .getAsJsonObject("description").get("identifier").getAsString());
       json("assets/typemoonworld/models/item/nightingale_gun.json");
       json("assets/typemoonworld/models/item/nightingale_spawn_egg.json");
-      JsonObject animations = json("assets/typemoonworld/animations/nightingale.animation.json").getAsJsonObject("animations");
-      for (String action : List.of("idle", "walk", "shoot", "heal", "buff", "noble_phantasm")) {
-         assertTrue(animations.has("animation.nightingale." + action), action);
-         JsonObject root = animations.getAsJsonObject("animation.nightingale." + action).getAsJsonObject("bones").getAsJsonObject("bone");
-         assertEquals(-8.0, root.getAsJsonArray("position").get(1).getAsDouble());
-         assertEquals(0.7, root.getAsJsonArray("scale").get(0).getAsDouble());
-      }
       var body = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/entity/nightingale.png").toFile());
       var gun = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/item/nightingale_gun.png").toFile());
-      assertNotNull(body); assertEquals(128, body.getWidth()); assertEquals(128, body.getHeight());
+      assertNotNull(body); assertEquals(64, body.getWidth()); assertEquals(64, body.getHeight());
       assertNotNull(gun); assertEquals(32, gun.getWidth()); assertEquals(32, gun.getHeight());
    }
 
@@ -92,7 +88,8 @@ class NightingaleResourcesTest {
       assertTrue(items.contains("NIGHTINGALE_GUN") && items.contains("NIGHTINGALE_SPAWN_EGG"));
       assertTrue(items.contains("SERVANT_CARD_NIGHTINGALE")
          && items.contains("SERVANT_CARD_NIGHTINGALE_CHEST") && items.contains("SERVANT_CARD_NIGHTINGALE_LEGS"));
-      assertTrue(client.contains("NightingaleRenderer::new") && client.contains("NightingaleBulletRenderer::new"));
+      assertTrue(client.contains("ModEntities.NIGHTINGALE.get(), context -> new HumanoidServantRenderer<>(context, \"nightingale\")"));
+      assertTrue(client.contains("NightingaleBulletRenderer::new"));
       assertTrue(events.contains("EventPriority.HIGHEST") && events.contains("EventPriority.LOWEST"));
       for (String lang : List.of("en_us", "zh_cn")) {
          JsonObject language = json("assets/typemoonworld/lang/" + lang + ".json");

@@ -4,7 +4,7 @@ public final class ArashCombatRules {
    public static final int INITIAL_ARROW_COUNT = 500;
    public static final int MAX_ARROW_COUNT = 5000;
    public static final int ARROW_CREATION_THRESHOLD = 1000;
-   public static final int ARROW_CREATION_AMOUNT = 10;
+   public static final int ARROW_CREATION_AMOUNT = 100;
    public static final double ARROW_CREATION_MANA_COST = 1.0;
    public static final int ARROW_CREATION_INTERVAL = 20;
    public static final int NORMAL_ARROW_COST = 1;
@@ -26,7 +26,7 @@ public final class ArashCombatRules {
    public static final double APPROACH_THRESHOLD = 56.0;
    public static final double CROSSOVER_TRIGGER_RANGE = 7.0;
    public static final int CROSSOVER_COOLDOWN = 60;
-   public static final float NORMAL_ARROW_DAMAGE = 10.0F;
+   public static final float NORMAL_ARROW_DAMAGE = 15.0F;
    public static final int NORMAL_ARROW_INTERVAL = 5;
    public static final float RAIN_ARROW_DAMAGE = 13.2F;
    public static final int RAIN_ARROW_COUNT = 100;

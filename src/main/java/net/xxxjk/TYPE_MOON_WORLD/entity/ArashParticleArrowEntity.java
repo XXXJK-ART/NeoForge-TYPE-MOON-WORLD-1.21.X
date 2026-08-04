@@ -15,6 +15,7 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -78,6 +79,9 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       this.setNoGravity(this.getVariant() != RAIN);
       Vec3 previousPosition = this.position();
       if (this.level() instanceof ServerLevel level) {
+         if (this.getVariant() == RAIN || this.getVariant() == NORMAL) {
+            applyHoming(level);
+         }
          Vec3 nextPosition = previousPosition.add(this.getDeltaMovement());
          if (this.distanceTraveled + this.getDeltaMovement().length() > MAX_VISIBLE_FLIGHT_DISTANCE
             || !level.hasChunkAt(BlockPos.containing(nextPosition))) {
@@ -88,9 +92,70 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       super.tick();
       if (!this.level().isClientSide && !this.isRemoved()) {
          this.distanceTraveled += previousPosition.distanceTo(this.position());
+         if ((this.getVariant() == SMALL_ENERGY || this.getVariant() == LARGE_ENERGY)
+            && tryWideEnergyHit((ServerLevel)this.level(), previousPosition, this.position())) {
+            return;
+         }
       }
       if (this.level().isClientSide) {
          spawnFlightTrail();
+      }
+   }
+
+   /**
+    * Charged arrows use a deliberately generous 3x3x3 collision volume. The
+    * swept box also catches targets between ticks instead of requiring the
+    * projectile's tiny visual core to overlap the entity exactly.
+    */
+   private boolean tryWideEnergyHit(ServerLevel level, Vec3 previousPosition, Vec3 currentPosition) {
+      AABB sweep = new AABB(previousPosition, currentPosition).inflate(1.5);
+      LivingEntity closest = null;
+      double closestDistance = Double.MAX_VALUE;
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, sweep,
+         entity -> canHitEntity(entity) && entity.isAlive())) {
+         double distance = target.distanceToSqr(currentPosition);
+         if (distance < closestDistance) {
+            closestDistance = distance;
+            closest = target;
+         }
+      }
+      if (closest == null) return false;
+      closest.invulnerableTime = 0;
+      closest.hurt(this.damageSources().thrown(this, this.getOwner()), this.entityData.get(DAMAGE));
+      impact(closest.position());
+      return true;
+   }
+
+   /** Apply a small horizontal steering correction to normal and rain arrows. */
+   private void applyHoming(ServerLevel level) {
+      Vec3 motion = this.getDeltaMovement();
+      Vec3 horizontalMotion = new Vec3(motion.x, 0.0, motion.z);
+      if (horizontalMotion.lengthSqr() < 1.0E-6) return;
+      LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
+      if (owner == null) return;
+      LivingEntity target = null;
+      double nearest = Double.MAX_VALUE;
+      double searchRadius = this.getVariant() == RAIN ? 8.0 : 10.0;
+      double verticalRadius = this.getVariant() == RAIN ? 4.0 : 3.0;
+      for (LivingEntity candidate : level.getEntitiesOfClass(LivingEntity.class,
+         this.getBoundingBox().inflate(searchRadius, verticalRadius, searchRadius),
+         entity -> entity != owner && entity.isAlive() && canHitEntity(entity)
+            && EntityUtils.isValidCombatTarget(owner, entity))) {
+         double distance = candidate.distanceToSqr(this);
+         if (distance < nearest) {
+            nearest = distance;
+            target = candidate;
+         }
+      }
+      if (target == null) return;
+      Vec3 desired = target.position().subtract(this.position());
+      Vec3 desiredHorizontal = new Vec3(desired.x, 0.0, desired.z);
+      if (desiredHorizontal.lengthSqr() < 1.0E-6) return;
+      desiredHorizontal = desiredHorizontal.normalize().scale(horizontalMotion.length());
+      double steering = this.getVariant() == RAIN ? 0.08 : 0.05;
+      Vec3 corrected = horizontalMotion.scale(1.0 - steering).add(desiredHorizontal.scale(steering));
+      if (corrected.lengthSqr() > 1.0E-6) {
+         this.setDeltaMovement(corrected.x, motion.y, corrected.z);
       }
    }
 

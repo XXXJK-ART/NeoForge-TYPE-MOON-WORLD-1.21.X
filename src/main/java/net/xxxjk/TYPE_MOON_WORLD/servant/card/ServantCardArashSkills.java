@@ -198,18 +198,8 @@ public final class ServantCardArashSkills {
 
    public static boolean performBowChargedArrowNoCooldown(ServerPlayer player, boolean heavy) {
       if (!isArash(player) || isPlayerChanting(player) || !hasRequiredBow(player)) return false;
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double cost = heavy ? ArashCombatRules.LARGE_ENERGY_MANA : ArashCombatRules.SMALL_ENERGY_MANA;
-      ServantCardManaService.ManaSnapshot snapshot = ServantCardManaService.snapshot(player, vars);
-      if (!ServantCardManaService.consume(player, vars, cost)) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
-         return false;
-      }
       boolean fired = heavy ? performLargeEnergyArrow(player) : performSmallEnergyArrow(player);
-      if (!fired) {
-         ServantCardManaService.restore(player, vars, snapshot);
-         return false;
-      }
+      if (!fired) return false;
       ServantCardVoiceHelper.tryPlaySkill(player, heavy ? "arash_energy_large" : "arash_energy_small");
       return true;
    }

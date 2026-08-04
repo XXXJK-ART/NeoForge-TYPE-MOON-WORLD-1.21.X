@@ -690,7 +690,8 @@ public class TypeMoonWorldModKeyMappings {
          if (jumpDown && !servantJumpDown) {
             long now = System.currentTimeMillis();
             boolean flightServant = "medea".equals(vars.servant_card_id) || "oda_nobunaga".equals(vars.servant_card_id)
-               || "enkidu".equals(vars.servant_card_id) || "gilgamesh".equals(vars.servant_card_id);
+               || "enkidu".equals(vars.servant_card_id) || "gilgamesh".equals(vars.servant_card_id)
+               || "gilgamesh_caster".equals(vars.servant_card_id);
             if (flightServant && now - servantLastJumpTapMs <= 280L && !sneakDown && !backDown) {
                PacketDistributor.sendToServer(new ServantCardFlightMessage(true, 0.0F, 0.0F, 0.0F), new CustomPacketPayload[0]);
                servantLastJumpTapMs = 0L;

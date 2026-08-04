@@ -63,39 +63,29 @@ class ArashResourcesTest {
    }
 
    @Test
-   void modelTexturesBowAndAnimationsAreValid() throws Exception {
-      JsonObject bodyGeo = json("assets/typemoonworld/geo/arash.geo.json");
-      JsonObject bodyDescription = bodyGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject().getAsJsonObject("description");
-      assertEquals("geometry.arash", bodyDescription.get("identifier").getAsString());
-      assertEquals(128, bodyDescription.get("texture_width").getAsInt());
-      assertEquals(128, bodyDescription.get("texture_height").getAsInt());
+   void npcUsesSteveSkinAndNoLongerUsesGeckoModel() throws Exception {
+      String renderer = Files.readString(JAVA.resolve("client/renderer/HumanoidServantRenderer.java"));
+      String client = Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java"));
+      String definition = Files.readString(RESOURCES.resolve("data/typemoonworld/servant/definitions/arash.json"));
+      assertTrue(renderer.contains("HumanoidMobRenderer"));
+      assertTrue(renderer.contains("ModelLayers.PLAYER"));
+      assertTrue(renderer.contains("HumanoidArmorLayer"));
+      assertTrue(client.contains("ModEntities.ARASH.get(), context -> new HumanoidServantRenderer<>(context, \"arash\")"));
+      assertEquals("", JsonParser.parseString(definition).getAsJsonObject().getAsJsonObject("model").get("geometry").getAsString());
+      assertEquals("", JsonParser.parseString(definition).getAsJsonObject().getAsJsonObject("model").get("animation").getAsString());
+      assertTrue(Files.notExists(JAVA.resolve("client/renderer/ArashRenderer.java")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/geo/arash.geo.json")));
+      assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/animations/arash.animation.json")));
+      var body = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/entity/arash.png").toFile());
+      assertNotNull(body);
+      assertEquals(64, body.getWidth());
+      assertEquals(64, body.getHeight());
       JsonObject bowGeo = json("assets/typemoonworld/geo/arash_bow.geo.json");
       assertEquals("geometry.arash_bow", bowGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
          .getAsJsonObject("description").get("identifier").getAsString());
-      var body = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/entity/arash.png").toFile());
       var bow = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/item/arash_bow.png").toFile());
-      assertNotNull(body); assertNotNull(bow);
-      assertEquals(128, body.getWidth()); assertEquals(128, body.getHeight());
+      assertNotNull(bow);
       assertEquals(64, bow.getWidth()); assertEquals(64, bow.getHeight());
-      JsonObject animations = json("assets/typemoonworld/animations/arash.animation.json").getAsJsonObject("animations");
-      for (String key : List.of("idle", "walk", "bow_shot", "arrow_rain", "energy_small", "energy_large", "stella_chant", "stella_release")) {
-         assertTrue(animations.has("animation.arash." + key), key);
-      }
-      JsonObject bowShot = animations.getAsJsonObject("animation.arash.bow_shot");
-      assertEquals(0.25, bowShot.get("animation_length").getAsDouble());
-      JsonObject bowShotBones = bowShot.getAsJsonObject("bones");
-      for (String bone : List.of("body", "right arm", "bone2", "left arm", "bone6")) {
-         assertTrue(bowShotBones.has(bone), "bow shot is missing animated bone " + bone);
-      }
-      assertTrue(animations.getAsJsonObject("animation.arash.arrow_rain").getAsJsonObject("bones")
-         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.1").get(0).getAsDouble() <= -140.0);
-      assertTrue(animations.getAsJsonObject("animation.arash.energy_small").getAsJsonObject("bones")
-         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.08").get(0).getAsDouble() <= -110.0);
-      assertTrue(animations.getAsJsonObject("animation.arash.energy_large").getAsJsonObject("bones")
-         .getAsJsonObject("right arm").getAsJsonObject("rotation").getAsJsonArray("0.14").get(0).getAsDouble() <= -125.0);
-      JsonObject root = animations.getAsJsonObject("animation.arash.idle").getAsJsonObject("bones").getAsJsonObject("bone");
-      assertEquals(-3.0, root.getAsJsonArray("position").get(1).getAsDouble());
-      assertEquals(0.88, root.getAsJsonArray("scale").get(0).getAsDouble());
    }
 
    @Test
@@ -186,9 +176,11 @@ class ArashResourcesTest {
       assertTrue(cardSkills.contains("data.remove(REFUND_ARROWS)"));
       String terrain = Files.readString(JAVA.resolve("world/terrain/DeferredTerrainDestruction.java"));
       assertTrue(terrain.contains("queueAdvancingCylinder"));
+      assertTrue(terrain.contains("queueAdvancingSkyRift"));
       assertTrue(terrain.contains("currentSide * currentSide + currentY * currentY > radiusSqr"));
       assertTrue(terrain.contains("scarDepthAt"));
       assertTrue(terrain.contains("MOTION_BLOCKING_NO_LEAVES"));
+      assertTrue(terrain.contains("WORLD_SURFACE"));
       assertTrue(terrain.contains("queueExpandingSphere"));
       for (String protectedBlock : List.of("NETHER_PORTAL", "END_PORTAL", "COMMAND_BLOCK", "STRUCTURE_BLOCK", "JIGSAW")) {
          assertTrue(terrain.contains(protectedBlock), protectedBlock);
@@ -230,7 +222,7 @@ class ArashResourcesTest {
       String client = Files.readString(JAVA.resolve("client/ServantCardClientEvents.java"));
       assertTrue(bow.contains("fireBasicArrow(serverLevel, player)"));
       assertTrue(bow.contains("CHARGED_ARROW_TICKS = 40"));
-      assertTrue(bow.contains("HEAVY_CHARGED_ARROW_TICKS = 80"));
+      assertTrue(bow.contains("HEAVY_CHARGED_ARROW_TICKS = 60"));
       assertTrue(bow.contains("performBowChargedArrowNoCooldown"));
       assertTrue(!bow.contains("triggerAction(serverPlayer, slot)"));
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));

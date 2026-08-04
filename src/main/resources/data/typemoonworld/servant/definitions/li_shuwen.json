@@ -18,23 +18,9 @@
     "luck_plus": false
   },
   "model": {
-    "geometry": "typemoonworld:geo/li_shuwen.geo.json",
+    "geometry": "",
     "texture": "typemoonworld:textures/entity/li_shuwen.png",
-    "animation": "typemoonworld:animations/li_shuwen.animation.json",
-    "animations": {
-      "idle": "animation.li_shuwen.idle",
-      "walk": "animation.li_shuwen.walk",
-      "punch": "animation.li_shuwen.punch",
-      "step": "animation.li_shuwen.step",
-      "wu_er_da": "animation.li_shuwen.wu_er_da",
-      "pursuit": "animation.li_shuwen.step",
-      "charge": "animation.li_shuwen.step",
-      "interrupt": "animation.li_shuwen.punch",
-      "uppercut": "animation.li_shuwen.punch",
-      "horizontal_swing": "animation.li_shuwen.punch",
-      "slash": "animation.li_shuwen.punch",
-      "sweep": "animation.li_shuwen.step"
-    }
+    "animation": ""
   },
   "specialization": {
     "dimensions": {

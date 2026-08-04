@@ -41,14 +41,14 @@ class ArashRulesTest {
       assertEquals(500, ArashCombatRules.INITIAL_ARROW_COUNT);
       assertEquals(5000, ArashCombatRules.MAX_ARROW_COUNT);
       assertEquals(1000, ArashCombatRules.ARROW_CREATION_THRESHOLD);
-      assertEquals(10, ArashCombatRules.ARROW_CREATION_AMOUNT);
+      assertEquals(100, ArashCombatRules.ARROW_CREATION_AMOUNT);
       assertEquals(1.0, ArashCombatRules.ARROW_CREATION_MANA_COST);
       assertEquals(1, ArashCombatRules.NORMAL_ARROW_COST);
       assertEquals(1, ArashCombatRules.ENERGY_ARROW_COST);
       assertEquals(100, ArashCombatRules.ARROW_RAIN_COST);
       assertEquals(500, ArashCombatRules.CROUCH_ARROW_RAIN_COST);
       assertEquals(1, ArashCombatRules.STELLA_ARROW_COST);
-      assertEquals(10.0F, ArashCombatRules.NORMAL_ARROW_DAMAGE);
+      assertEquals(15.0F, ArashCombatRules.NORMAL_ARROW_DAMAGE);
       assertEquals(5, ArashCombatRules.NORMAL_ARROW_INTERVAL);
       assertEquals(100, ArashCombatRules.RAIN_ARROW_COUNT);
       assertEquals(500, ArashCombatRules.CROUCH_RAIN_ARROW_COUNT);
@@ -65,7 +65,7 @@ class ArashRulesTest {
       assertEquals(2, ArashCombatRules.terrainDestructionRadius(2));
       assertEquals(4, ArashCombatRules.terrainDestructionRadius(3));
       assertEquals(40, ArashBowItem.CHARGED_ARROW_TICKS);
-      assertEquals(80, ArashBowItem.HEAVY_CHARGED_ARROW_TICKS);
+      assertEquals(60, ArashBowItem.HEAVY_CHARGED_ARROW_TICKS);
    }
 
    @Test

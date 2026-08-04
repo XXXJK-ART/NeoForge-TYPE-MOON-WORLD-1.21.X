@@ -113,6 +113,9 @@ public final class ServantCardTransformManager {
       if ("gilgamesh".equals(servantId)) {
          ServantCardGilgameshSkills.reset(player);
       }
+      if ("gilgamesh_caster".equals(servantId)) {
+         ServantCardCasterGilgameshSkills.initialize(player, vars);
+      }
       if ("zhao_yun_rider".equals(servantId)) {
          ServantCardZhaoYunSkills.initialize(player);
       }
@@ -170,6 +173,7 @@ public final class ServantCardTransformManager {
       if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
       if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
       if ("zhao_yun_rider".equals(vars.servant_card_id)) ServantCardZhaoYunSkills.clear(player);
+      if ("gilgamesh_caster".equals(vars.servant_card_id)) ServantCardCasterGilgameshSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
       MasterServantLinkService.onServantLost(player, vars);
       vars.servant_card_transformed = false;
@@ -280,6 +284,7 @@ public final class ServantCardTransformManager {
          case "pale_rider" -> ServantCardPaleRiderSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
+         case "gilgamesh_caster" -> ServantCardCasterGilgameshSkills.tick(player, vars);
          case "emiya_archer" -> {
             ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
             ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
@@ -312,6 +317,7 @@ public final class ServantCardTransformManager {
       ServantCardFanaticAssassinSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
+      ServantCardCasterGilgameshSkills.clear(player);
       ServantCardArashSkills.clear(player);
       ServantCardNightingaleSkills.clear(player, false);
       ServantCardZhaoYunSkills.clear(player);
@@ -902,11 +908,17 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean servantCardHasHeadArmor(String servantId) {
-      return "medusa".equals(servantId)
+      return "artoria_pendragon".equals(servantId)
+         || "sasaki_kojiro".equals(servantId)
+         || "enkidu".equals(servantId)
+         || "medusa".equals(servantId)
          || "cursed_arm_hassan".equals(servantId)
          || "li_shuwen".equals(servantId)
          || "oda_nobunaga".equals(servantId)
-         || "ushiwakamaru_rider".equals(servantId);
+         || "paracelsus".equals(servantId)
+         || "ushiwakamaru_rider".equals(servantId)
+         || "zhao_yun_rider".equals(servantId)
+         || "gilgamesh_caster".equals(servantId);
 
    }
 
@@ -1344,6 +1356,27 @@ public final class ServantCardTransformManager {
          case "gilgamesh_charisma" -> ServantCardGilgameshSkills.performCharisma(player);
          case "gilgamesh_laugh_vault" -> ServantCardGilgameshSkills.performLaughVault(player);
          case "gilgamesh_cross_slash" -> ServantCardGilgameshSkills.performCrossSlash(player);
+         case "caster_gilgamesh_slate_volley" -> {
+            if (!ServantCardCasterGilgameshSkills.performSlateVolley(player)) return false;
+         }
+         case "caster_gilgamesh_leader" -> {
+            if (!ServantCardCasterGilgameshSkills.performLeader(player)) return false;
+         }
+         case "caster_gilgamesh_return" -> {
+            if (!ServantCardCasterGilgameshSkills.performReturn(player)) return false;
+         }
+         case "caster_gilgamesh_item_creation" -> {
+            if (!ServantCardCasterGilgameshSkills.performItemCreation(player, vars)) return false;
+         }
+         case "caster_gilgamesh_workshop" -> {
+            if (!ServantCardCasterGilgameshSkills.performWorkshop(player)) return false;
+         }
+         case "caster_gilgamesh_cannon_calibration" -> {
+            if (!ServantCardCasterGilgameshSkills.performCannonCalibration(player, vars)) return false;
+         }
+         case "caster_gilgamesh_royal_cannon" -> {
+            if (!ServantCardCasterGilgameshSkills.toggleRoyalCannon(player, vars)) return false;
+         }
          case "gallatin_spark" -> ServantCardGawainSkills.performGawainGallatinSpark(player);
          case "solar_rebuke" -> ServantCardGawainSkills.performGawainSolarRebuke(player);
          case "radiant_field" -> ServantCardGawainSkills.performGawainRadiantField(player);
@@ -1426,7 +1459,7 @@ public final class ServantCardTransformManager {
    static boolean isNoblePhantasmAction(String servantId, int slot) {
       return isUshiwakamaruNoblePhantasmSlot(servantId, slot)
          || "zhao_yun_rider".equals(servantId) && (slot == 8 || slot == 9)
-         || slot == 9 && !"gilgamesh".equals(servantId);
+         || slot == 9 && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId);
    }
 
    static boolean isUshiwakamaruNoblePhantasmSlot(String servantId, int slot) {
@@ -1434,7 +1467,7 @@ public final class ServantCardTransformManager {
    }
 
    static boolean usesSharedNoblePhantasmCooldown(String servantId, int slot) {
-      return slot == 9 && !"gilgamesh".equals(servantId)
+      return slot == 9 && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId)
          && !isUshiwakamaruNoblePhantasmSlot(servantId, slot);
    }
 
