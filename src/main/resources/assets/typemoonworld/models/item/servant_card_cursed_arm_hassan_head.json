@@ -1,6 +1,4 @@
-﻿{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "typemoonworld:item/servant_card_armor/cursed_arm_hassan_head"
-  }
+{
+  "parent": "typemoonworld:item/servant_armor_generic_head"
 }
+

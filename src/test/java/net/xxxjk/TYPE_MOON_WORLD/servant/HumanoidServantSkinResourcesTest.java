@@ -9,14 +9,28 @@ import com.google.gson.JsonParser;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 
 class HumanoidServantSkinResourcesTest {
    private static final Path RESOURCES = Path.of("src/main/resources");
    private static final Path JAVA = Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD");
+   private static final Pattern LITERAL_RESOURCE_LOCATION = Pattern.compile(
+      "ResourceLocation\\.fromNamespaceAndPath\\(\"typemoonworld\",\\s*\"([^\"]+\\.(?:geo|animation)\\.json|textures/[^\"]+?\\.png)\"\\)"
+   );
 
    private record HumanoidServant(String entityField, String servantId, String textureName) {}
+
+   private static int firstNonWhitespaceByte(byte[] bytes) {
+      for (byte b : bytes) {
+         int value = b & 0xFF;
+         if (value != ' ' && value != '\n' && value != '\r' && value != '\t') {
+            return value;
+         }
+      }
+      return -1;
+   }
 
    private static final List<HumanoidServant> CONVERTED = List.of(
       new HumanoidServant("ARASH", "arash", "arash"),
@@ -97,6 +111,50 @@ class HumanoidServantSkinResourcesTest {
    }
 
    @Test
+   void resourceJsonFilesStartWithStrictJsonBytes() throws Exception {
+      try (var paths = Files.walk(RESOURCES)) {
+         paths.filter(path -> path.getFileName().toString().endsWith(".json"))
+            .forEach(path -> {
+               try {
+                  byte[] bytes = Files.readAllBytes(path);
+                  assertFalse(bytes.length >= 3
+                     && bytes[0] == (byte)0xEF
+                     && bytes[1] == (byte)0xBB
+                     && bytes[2] == (byte)0xBF, path + " has a UTF-8 BOM");
+                  assertFalse(bytes.length >= 2
+                     && ((bytes[0] == (byte)0xFF && bytes[1] == (byte)0xFE)
+                        || (bytes[0] == (byte)0xFE && bytes[1] == (byte)0xFF)),
+                     path + " has a UTF-16 BOM");
+                  for (int i = 0; i < Math.min(bytes.length, 128); i++) {
+                     assertFalse(bytes[i] == 0, path + " contains a NUL byte near the start");
+                  }
+                  int first = firstNonWhitespaceByte(bytes);
+                  assertTrue(first == '{' || first == '[', path + " does not start with JSON");
+               } catch (Exception exception) {
+                  throw new AssertionError(path.toString(), exception);
+               }
+            });
+      }
+   }
+
+   @Test
+   void literalJavaGeoModelResourcesExist() throws Exception {
+      try (var paths = Files.walk(JAVA)) {
+         paths.filter(path -> path.getFileName().toString().endsWith(".java")).forEach(path -> {
+            try {
+               var matcher = LITERAL_RESOURCE_LOCATION.matcher(Files.readString(path));
+               while (matcher.find()) {
+                  Path resource = RESOURCES.resolve("assets/typemoonworld").resolve(matcher.group(1));
+                  assertTrue(Files.isRegularFile(resource), path + " -> " + matcher.group(1));
+               }
+            } catch (Exception exception) {
+               throw new AssertionError(path.toString(), exception);
+            }
+         });
+      }
+   }
+
+   @Test
    void packagedResourcePathsUseMinecraftSafeCharacters() throws Exception {
       for (String rootName : List.of("assets", "data")) {
          Path root = RESOURCES.resolve(rootName);
@@ -115,6 +173,23 @@ class HumanoidServantSkinResourcesTest {
          JsonParser.parseString(Files.readString(model));
       }
 
+      Path itemModels = RESOURCES.resolve("assets/typemoonworld/models/item");
+      try (var paths = Files.list(itemModels)) {
+         paths.filter(path -> path.getFileName().toString().matches("servant_card_.+_(head|chest|legs)\\.json"))
+            .forEach(path -> {
+               try {
+                  String fileName = path.getFileName().toString();
+                  String slot = fileName.substring(fileName.lastIndexOf('_') + 1, fileName.length() - ".json".length());
+                  var model = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
+                  assertEquals("typemoonworld:item/servant_armor_generic_" + slot,
+                     model.get("parent").getAsString(), fileName);
+                  assertFalse(model.toString().contains("typemoonworld:item/servant_card_armor/"), fileName);
+               } catch (Exception exception) {
+                  throw new AssertionError(path.toString(), exception);
+               }
+            });
+      }
+
       Path effects = RESOURCES.resolve("assets/typemoonworld/effects");
       try (var paths = Files.walk(effects)) {
          paths.filter(path -> path.getFileName().toString().endsWith(".json")).forEach(path -> {
@@ -124,6 +199,8 @@ class HumanoidServantSkinResourcesTest {
                assertFalse(json.contains("\"type\": \"electric_spark\""), path.toString());
                assertFalse(json.contains("\"type\": \"block\""), path.toString());
                assertFalse(json.contains("\"block\": \"minecraft:"), path.toString());
+               assertFalse(json.contains("\"from\":"), path.toString());
+               assertFalse(json.contains("\"to\":"), path.toString());
             } catch (Exception exception) {
                throw new AssertionError(path.toString(), exception);
             }

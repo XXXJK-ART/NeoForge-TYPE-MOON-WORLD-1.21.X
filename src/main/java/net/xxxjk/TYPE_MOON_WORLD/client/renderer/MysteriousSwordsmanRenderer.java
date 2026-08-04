@@ -18,7 +18,7 @@ public class MysteriousSwordsmanRenderer extends GeoEntityRenderer<MysteriousSwo
       this.withScale(0.95F);
       this.addRenderLayer(new BlockAndItemGeoLayer<MysteriousSwordsmanEntity>(this) {
          @Override protected ItemStack getStackForBone(GeoBone bone, MysteriousSwordsmanEntity animatable) {
-            return "right arm".equals(bone.getName()) ? animatable.getMainHandItem() : ItemStack.EMPTY;
+            return "bone7".equals(bone.getName()) ? animatable.getMainHandItem() : ItemStack.EMPTY;
          }
 
          @Override protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, MysteriousSwordsmanEntity animatable) {

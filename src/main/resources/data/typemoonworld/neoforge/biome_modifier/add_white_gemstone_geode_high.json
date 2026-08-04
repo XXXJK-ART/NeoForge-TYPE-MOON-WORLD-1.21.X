@@ -1,4 +1,4 @@
-﻿{
+{
   "type": "neoforge:add_features",
   "biomes": "#typemoonworld:has_white_gemstone_ore",
   "features": "typemoonworld:geode_white_gemstone_high_placed",
