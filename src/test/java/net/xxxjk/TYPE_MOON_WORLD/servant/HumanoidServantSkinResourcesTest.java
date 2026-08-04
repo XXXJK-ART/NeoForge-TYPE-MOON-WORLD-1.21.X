@@ -181,9 +181,20 @@ class HumanoidServantSkinResourcesTest {
                   String fileName = path.getFileName().toString();
                   String slot = fileName.substring(fileName.lastIndexOf('_') + 1, fileName.length() - ".json".length());
                   var model = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-                  assertEquals("typemoonworld:item/servant_armor_generic_" + slot,
-                     model.get("parent").getAsString(), fileName);
-                  assertFalse(model.toString().contains("typemoonworld:item/servant_card_armor/"), fileName);
+                  String parent = model.get("parent").getAsString();
+                  if (parent.equals("typemoonworld:item/servant_armor_generic_" + slot)) {
+                     assertEquals("servant_card_cursed_arm_hassan_legs.json", fileName);
+                     return;
+                  }
+                  assertEquals("minecraft:item/generated", parent, fileName);
+                  String layer0 = model.getAsJsonObject("textures").get("layer0").getAsString();
+                  assertTrue(layer0.startsWith("typemoonworld:item/servant_card_armor/"), fileName);
+                  Path texture = RESOURCES.resolve("assets/typemoonworld/textures")
+                     .resolve(layer0.substring("typemoonworld:".length()) + ".png");
+                  assertTrue(Files.isRegularFile(texture), fileName);
+                  var image = ImageIO.read(texture.toFile());
+                  assertTrue(image.getWidth() <= 128 && image.getHeight() <= 128,
+                     fileName + " preview is " + image.getWidth() + "x" + image.getHeight());
                } catch (Exception exception) {
                   throw new AssertionError(path.toString(), exception);
                }
