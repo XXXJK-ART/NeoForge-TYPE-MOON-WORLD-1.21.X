@@ -216,7 +216,7 @@ public class ElementalMagicFieldEntity extends Entity {
       if (amount <= 0.0F || this.tickCount % 20 != 0) {
          return;
       }
-      float damage = ownerEntity == null ? amount : MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, amount);
+      float damage = ownerEntity == null ? amount : MercurySwordMagicAmplifier.amplifyElementalDamage(ownerEntity, this.entityData.get(ELEMENT), amount);
       DamageSource source = this.damageSources().magic();
       target.invulnerableTime = 0;
       target.hurt(source, damage);

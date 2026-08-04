@@ -1,4 +1,4 @@
-{
+﻿{
 	"format_version": "1.12.0",
 	"minecraft:geometry": [
 		{
@@ -26,13 +26,13 @@
 					"pivot": [0, 24, 0]
 				},
 				{
-					"name": "头",
+                    "name": "caster_head",
 					"parent": "armorHead",
 					"pivot": [0, 24, 0]
 				},
 				{
 					"name": "bone2",
-					"parent": "头",
+                    "parent": "caster_head",
 					"pivot": [0, 12, -1],
 					"rotation": [-5, 0, 0],
 					"cubes": [
@@ -280,7 +280,7 @@
 				},
 				{
 					"name": "bone3",
-					"parent": "头",
+                    "parent": "caster_head",
 					"pivot": [3, 1, -5],
 					"rotation": [-9.78197, -2.49048, -5.00474],
 					"cubes": [
@@ -342,7 +342,7 @@
 				},
 				{
 					"name": "bone4",
-					"parent": "头",
+                    "parent": "caster_head",
 					"pivot": [-2, 0, -4],
 					"rotation": [-7.11041, 2.20517, 3.16419],
 					"cubes": [
@@ -400,7 +400,7 @@
 				},
 				{
 					"name": "bone5",
-					"parent": "头",
+                    "parent": "caster_head",
 					"pivot": [0, 0, 1],
 					"cubes": [
 						{
@@ -421,7 +421,7 @@
 				},
 				{
 					"name": "bone6",
-					"parent": "头",
+                    "parent": "caster_head",
 					"pivot": [0, 0, 0.25],
 					"cubes": [
 						{
@@ -596,7 +596,7 @@
 				},
 				{
 					"name": "bone7",
-					"parent": "头",
+                    "parent": "caster_head",
 					"pivot": [0, 12, -1],
 					"rotation": [-5, 0, 0],
 					"cubes": [
@@ -829,18 +829,18 @@
 					"pivot": [0, 24, 0]
 				},
 				{
-					"name": "上半身",
+                    "name": "caster_upper_body",
 					"parent": "armorBody",
 					"pivot": [0, 24, 0]
 				},
 				{
-					"name": "身体",
-					"parent": "上半身",
+					"name": "韬綋",
+                    "parent": "caster_upper_body",
 					"pivot": [0, 0, 0]
 				},
 				{
-					"name": "衣服",
-					"parent": "身体",
+					"name": "琛ｆ湇",
+					"parent": "韬綋",
 					"pivot": [0, 24, 0],
 					"cubes": [
 						{
@@ -946,7 +946,7 @@
 					]
 				},
 				{
-					"name": "腰带",
+					"name": "鑵板甫",
 					"parent": "armorBody",
 					"pivot": [0, 3, 0],
 					"cubes": [
@@ -1094,7 +1094,7 @@
 				},
 				{
 					"name": "bone8",
-					"parent": "腰带",
+					"parent": "鑵板甫",
 					"pivot": [0, 3, -1],
 					"cubes": [
 						{
@@ -1305,7 +1305,7 @@
 				},
 				{
 					"name": "bone13",
-					"parent": "腰带",
+					"parent": "鑵板甫",
 					"pivot": [-5, 13.5, 0],
 					"rotation": [0, -5, -15],
 					"cubes": [
@@ -1353,7 +1353,7 @@
 				},
 				{
 					"name": "bone9",
-					"parent": "腰带",
+					"parent": "鑵板甫",
 					"pivot": [5, 13.5, 0],
 					"rotation": [0, 5, 15],
 					"cubes": [
@@ -1410,7 +1410,7 @@
 					"pivot": [-5, 22, 0]
 				},
 				{
-					"name": "手",
+                    "name": "caster_right_hand",
 					"parent": "armorRightArm",
 					"pivot": [-5, 22, 0],
 					"cubes": [

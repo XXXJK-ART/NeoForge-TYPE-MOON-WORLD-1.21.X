@@ -73,6 +73,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_CU_CHULAINN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_MEDEA_HEAD);
                         output.accept(ModItems.SERVANT_CARD_MEDEA_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_MEDUSA_HEAD);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_MEDUSA_LEGS);
                         output.accept(ModItems.SERVANT_CARD_CURSED_ARM_HASSAN_HEAD);
@@ -239,6 +240,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.YAJIAO_QIANG);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
+                        output.accept(ModItems.RUBY_STAFF);
                         output.accept(ModItems.NAMELESS_CHAIN_DAGGER);
                         output.accept(ModItems.DIRK_SMALL_KNIFE);
                         output.accept(ModItems.GAN_JIANG);
@@ -248,10 +250,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.NAMELESS_BOW);
                         output.accept(ModItems.ARASH_BOW);
                         output.accept(ModItems.GILGAMESH_SLATE);
-                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER.get()));
-                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_HEAD.get()));
-                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_CHEST.get()));
-                        output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER_LEGS.get()));
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
                         output.accept(ModItems.PARACELSUS_SWORD);

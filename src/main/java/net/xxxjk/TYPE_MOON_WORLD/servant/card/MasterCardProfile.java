@@ -278,7 +278,7 @@ public final class MasterCardProfile {
             vars.proficiency_fire_magic = Math.max(vars.proficiency_fire_magic, 75.0);
          }, player -> {
             giveHighGemKit(player);
-            give(player, new ItemStack(ModItems.MERCURY_SWORD.get()));
+            give(player, new ItemStack(ModItems.RUBY_STAFF.get()));
          });
          default -> null;
       };

@@ -1432,6 +1432,8 @@
     "gui.typemoonworld.time_alter.multiplier": "Multiplier",
     "item.typemoonworld.mercury_sword": "Mercury Sword",
     "item.typemoonworld.mercury_sword.desc": "Amplifies normal magecraft while held; right-click releases a short-range elemental beam.",
+    "item.typemoonworld.ruby_staff": "Ruby Staff",
+    "item.typemoonworld.ruby_staff.desc": "Amplifies basic fire elemental magecraft; charge right-click for 5 seconds to release a fire array, or crouch-charge to hold a 500-point shield.",
     "item.typemoonworld.thompson_contender": "Thompson Contender",
     "item.typemoonworld.thompson_contender.desc": "Right-click to load or fire. Loaded rounds cannot be unloaded.",
     "item.typemoonworld.thompson_contender.loaded": "Loaded: %s",

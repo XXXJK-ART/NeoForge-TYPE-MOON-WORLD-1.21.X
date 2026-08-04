@@ -51,7 +51,7 @@ class CasterGilgameshResourcesTest {
    }
 
    @Test
-   void modelSlateAndVoiceResourcesExist() {
+   void modelSlateAndVoiceResourcesExist() throws Exception {
       List<String> resources = List.of(
          "assets/typemoonworld/textures/entity/caster_gilgamesh.png",
          "assets/typemoonworld/geo/gilgamesh_slate.geo.json",
@@ -65,7 +65,6 @@ class CasterGilgameshResourcesTest {
          "assets/typemoonworld/geo/servant_card_gilgamesh_caster.geo.json",
          "assets/typemoonworld/animations/servant_card_gilgamesh_caster.animation.json",
          "assets/typemoonworld/textures/models/armor/servant_card_gilgamesh_caster.png",
-         "assets/typemoonworld/textures/models/armor/servant_card_gilgamesh_caster_head.png",
          "assets/typemoonworld/textures/item/card_faces_3d/servant/gilgamesh_caster_card.png",
          "assets/typemoonworld/textures/item/servant_card_armor/gilgamesh_caster_head.png",
          "assets/typemoonworld/textures/item/servant_card_armor/gilgamesh_caster_chest.png",
@@ -75,6 +74,14 @@ class CasterGilgameshResourcesTest {
       for (String resource : resources) {
          assertTrue(Files.isRegularFile(ROOT.resolve(resource)), resource);
       }
+      JsonObject armorGeo = readJson("assets/typemoonworld/geo/servant_card_gilgamesh_caster.geo.json");
+      assertTrue(armorGeo.toString().contains("caster_head"));
+      assertTrue(armorGeo.toString().contains("caster_upper_body"));
+      assertTrue(armorGeo.toString().contains("caster_right_hand"));
+      String armorModel = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/client/model/ServantCardArmorModel.java"));
+      assertTrue(armorModel.contains("\"gilgamesh_caster\".equals(servantId)"));
+      assertTrue(armorModel.contains("animations/empty.animation.json"));
 
       for (String voice : List.of("np", "shot", "attack1", "attack2", "fail1", "fail2",
          "mongrel", "victory1", "victory2")) {
@@ -96,6 +103,14 @@ class CasterGilgameshResourcesTest {
       assertEquals(5, GilgameshSlateItem.CROUCH_SHOT_COUNT);
       assertEquals(5.0F, GilgameshSlateItem.MIN_SHOT_DAMAGE);
       assertEquals(10.0F, GilgameshSlateItem.MAX_SHOT_DAMAGE);
+   }
+
+   @Test
+   void casterGilgameshServantCardItemsStayOutOfMainCreativeTab() throws Exception {
+      String tabs = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/init/ModCreativeModeTabs.java"));
+      String mainTab = tabs.substring(tabs.indexOf("TYPE_MOON_WORLD_TAB"));
+      assertTrue(mainTab.contains("ModItems.GILGAMESH_SLATE"));
+      assertFalse(mainTab.contains("SERVANT_CARD_GILGAMESH_CASTER"));
    }
 
    @Test

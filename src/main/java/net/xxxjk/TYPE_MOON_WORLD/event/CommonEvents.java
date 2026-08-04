@@ -79,6 +79,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -332,6 +333,7 @@ public class CommonEvents {
          }
          if (player instanceof ServerPlayer serverPlayer) {
             MuramasaDissolutionService.tick(serverPlayer);
+            RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
@@ -510,6 +512,9 @@ public class CommonEvents {
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
             if (event.getEntity() instanceof ServerPlayer player) {
+               if (!fanaticDefensePiercing && RubyStaffItem.tryAbsorbShield(player, event)) {
+                  return;
+               }
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );

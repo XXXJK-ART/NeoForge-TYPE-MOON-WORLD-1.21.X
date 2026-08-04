@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HeshikiriHasebeItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SpiderCutterItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.JapaneseSwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
@@ -768,6 +769,25 @@ public class ModItems {
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hecates_staff_range"),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> RUBY_STAFF = ITEMS.register("ruby_staff",
+            () -> new RubyStaffItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_damage"),
+                                            7.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_speed"),
+                                            0.6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_range"),
                                             2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));

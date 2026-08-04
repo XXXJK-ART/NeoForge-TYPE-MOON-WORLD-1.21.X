@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -82,35 +83,146 @@ class HumanoidServantSkinResourcesTest {
    }
 
    @Test
+   void servantCardArmorGeoFilesAreValidJson() throws Exception {
+      Path geoRoot = RESOURCES.resolve("assets/typemoonworld/geo");
+      try (var paths = Files.list(geoRoot)) {
+         List<Path> geoFiles = paths
+            .filter(path -> path.getFileName().toString().endsWith(".geo.json"))
+            .toList();
+         assertFalse(geoFiles.isEmpty());
+         for (Path geoFile : geoFiles) {
+            JsonParser.parseString(Files.readString(geoFile));
+         }
+      }
+   }
+
+   @Test
    void generatedHairHelmetsAndLongHairCounterRotationAreWired() throws Exception {
       List<String> hairHelmets = List.of(
          "artoria_pendragon", "sasaki_kojiro", "enkidu", "ushiwakamaru_rider",
-         "oda_nobunaga", "medusa", "zhao_yun_rider", "paracelsus", "gilgamesh_caster"
+         "oda_nobunaga", "medusa", "zhao_yun_rider", "paracelsus", "li_shuwen"
       );
       for (String servantId : hairHelmets) {
+         Path itemHead = RESOURCES.resolve(
+            "assets/typemoonworld/textures/item/servant_card_armor/" + servantId + "_head.png");
+         Path modelHead = RESOURCES.resolve(
+            "assets/typemoonworld/textures/models/armor/servant_card_" + servantId + "_head.png");
+         Path headGeo = RESOURCES.resolve(
+            "assets/typemoonworld/geo/servant_card_" + servantId + "_head.geo.json");
+         Path armor = RESOURCES.resolve(
+            "assets/typemoonworld/textures/models/armor/servant_card_" + servantId + ".png");
          assertTrue(Files.isRegularFile(RESOURCES.resolve(
             "assets/typemoonworld/models/item/servant_card_" + servantId + "_head.json")), servantId);
-         assertTrue(Files.isRegularFile(RESOURCES.resolve(
-            "assets/typemoonworld/textures/item/servant_card_armor/" + servantId + "_head.png")), servantId);
-         assertTrue(Files.isRegularFile(RESOURCES.resolve(
-            "assets/typemoonworld/textures/models/armor/servant_card_" + servantId + "_head.png")), servantId);
+         assertTrue(Files.isRegularFile(itemHead), servantId);
+         assertTrue(Files.isRegularFile(modelHead), servantId);
+         assertTrue(Files.isRegularFile(headGeo), servantId);
+         assertTrue(Files.mismatch(modelHead, armor) != -1, servantId);
+         var texture = ImageIO.read(modelHead.toFile());
+         var description = JsonParser.parseString(Files.readString(headGeo)).getAsJsonObject()
+            .getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject().getAsJsonObject("description");
+         assertEquals(description.get("texture_width").getAsInt(), texture.getWidth(), servantId);
+         assertEquals(description.get("texture_height").getAsInt(), texture.getHeight(), servantId);
       }
 
       String armorModel = Files.readString(JAVA.resolve("client/model/ServantCardArmorModel.java"));
+      assertTrue(armorModel.contains("_head.geo.json"));
+      assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
       assertTrue(armorModel.contains(
+         "case \"artoria_pendragon\", \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\","));
+      assertTrue(armorModel.contains(
+         "\"sasaki_kojiro\", \"ushiwakamaru_rider\", \"zhao_yun_rider\", \"li_shuwen\" -> true"));
+      assertTrue(armorModel.contains(
+         "case \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\" -> true"));
+      assertFalse(armorModel.contains(
          "case \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\", \"gilgamesh_caster\" -> true"));
-      assertTrue(armorModel.contains("counterRotateHair(\"hair1\", pitchRad, 0.55F)"));
-      assertTrue(armorModel.contains("counterRotateHair(\"hair2\", pitchRad, 0.85F)"));
-      assertTrue(armorModel.contains("counterRotateHair(\"bone4\", pitchRad, 0.75F)"));
+      assertTrue(armorModel.contains("counterRotateHair(\"hair\", pitchRad, 1.25F)"));
+      assertTrue(armorModel.contains("counterRotateHair(\"hair1\", pitchRad, 1.35F)"));
+      assertTrue(armorModel.contains("counterRotateHair(\"hair2\", pitchRad, 1.35F)"));
+      assertTrue(armorModel.contains("counterRotateHair(\"bone4\", pitchRad, 1.25F)"));
 
       String armorItem = Files.readString(JAVA.resolve("item/custom/ServantCardArmorItem.java"));
       assertTrue(armorItem.contains("\"enkidu\","));
 
       String armorRenderer = Files.readString(JAVA.resolve("client/renderer/ServantCardArmorRenderer.java"));
-      assertTrue(armorRenderer.contains("withScale(1.02F, 1.02F)"));
+      assertTrue(armorRenderer.contains("withScale(0.95F, 0.95F)"));
 
-      String humanoidRenderer = Files.readString(JAVA.resolve("client/renderer/HumanoidServantRenderer.java"));
-      assertTrue(humanoidRenderer.contains("case \"oda_nobunaga\" -> 0.84F"));
-      assertTrue(humanoidRenderer.contains("case \"enkidu\" -> 0.88F"));
+      String medusaGeo = Files.readString(RESOURCES.resolve(
+         "assets/typemoonworld/geo/servant_card_medusa.geo.json"));
+      assertTrue(medusaGeo.contains("\"eye mask\""));
+      assertTrue(medusaGeo.contains("23.48868"));
+
+      String liShuwenGeo = Files.readString(RESOURCES.resolve(
+         "assets/typemoonworld/geo/servant_card_li_shuwen.geo.json"));
+      assertTrue(liShuwenGeo.contains("\"galasses\""));
+      assertTrue(liShuwenGeo.contains("26.47306"));
+      assertTrue(liShuwenGeo.contains("-3.95026"));
+      assertTrue(liShuwenGeo.contains("-5.11692"));
+
+      String liShuwenHeadGeo = Files.readString(RESOURCES.resolve(
+         "assets/typemoonworld/geo/servant_card_li_shuwen_head.geo.json"));
+      assertTrue(liShuwenHeadGeo.contains("-3.95026"));
+      assertTrue(liShuwenHeadGeo.contains("-5.11692"));
+   }
+
+   @Test
+   void hairHelmetTexturesStaySeparateAndClean() throws Exception {
+      var artoriaHead = ImageIO.read(RESOURCES.resolve(
+         "assets/typemoonworld/textures/models/armor/servant_card_artoria_pendragon_head.png").toFile());
+      int artoriaOpaque = 0;
+      for (int y = 0; y < artoriaHead.getHeight(); y++) {
+         for (int x = 0; x < artoriaHead.getWidth(); x++) {
+            int argb = artoriaHead.getRGB(x, y);
+            int alpha = (argb >>> 24) & 0xFF;
+            if (alpha == 0) continue;
+            artoriaOpaque++;
+            int red = (argb >>> 16) & 0xFF;
+            int green = (argb >>> 8) & 0xFF;
+            int blue = argb & 0xFF;
+            assertFalse(blue > Math.max(red, green) + 20, x + "," + y);
+         }
+      }
+      assertEquals(24, artoriaOpaque);
+
+      var artoriaGeo = JsonParser.parseString(Files.readString(RESOURCES.resolve(
+         "assets/typemoonworld/geo/servant_card_artoria_pendragon_head.geo.json"))).getAsJsonObject();
+      int ahogeCubeCount = artoriaGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
+         .getAsJsonArray("bones").get(1).getAsJsonObject().getAsJsonArray("cubes").size();
+      assertEquals(artoriaOpaque, ahogeCubeCount);
+
+      var odaHead = ImageIO.read(RESOURCES.resolve(
+         "assets/typemoonworld/textures/models/armor/servant_card_oda_nobunaga_head.png").toFile());
+      for (int y = 0; y < odaHead.getHeight(); y++) {
+         for (int x = 0; x < odaHead.getWidth(); x++) {
+            int argb = odaHead.getRGB(x, y);
+            int alpha = (argb >>> 24) & 0xFF;
+            if (alpha == 0) continue;
+            int red = (argb >>> 16) & 0xFF;
+            int green = (argb >>> 8) & 0xFF;
+            int blue = argb & 0xFF;
+            int max = Math.max(red, Math.max(green, blue));
+            int min = Math.min(red, Math.min(green, blue));
+            assertTrue(max <= 70 && max - min <= 18, x + "," + y);
+         }
+      }
+   }
+
+   @Test
+   void humanoidServantsUseApproximateOriginalHeightScale() throws Exception {
+      String renderer = Files.readString(JAVA.resolve("client/renderer/HumanoidServantRenderer.java"));
+      assertTrue(renderer.contains("case \"oda_nobunaga\" -> 0.800F"));
+      assertTrue(renderer.contains("case \"artoria_pendragon\" -> 0.811F"));
+      assertTrue(renderer.contains("case \"fanatic_assassin\", \"medea\" -> 0.858F"));
+      assertTrue(renderer.contains("case \"nightingale\" -> 0.868F"));
+      assertTrue(renderer.contains("case \"li_shuwen\" -> 0.874F"));
+      assertTrue(renderer.contains("case \"senko_muramasa\" -> 0.879F"));
+      assertTrue(renderer.contains("case \"ushiwakamaru_rider\" -> 0.884F"));
+      assertTrue(renderer.contains("case \"medusa\" -> 0.905F"));
+      assertTrue(renderer.contains("case \"emiya_archer\" -> 0.921F"));
+      assertTrue(renderer.contains("case \"sasaki_kojiro\" -> 0.926F"));
+      assertTrue(renderer.contains("case \"gawain\" -> 0.947F"));
+      assertTrue(renderer.contains("case \"enkidu\", \"gilgamesh\", \"gilgamesh_caster\" -> 0.958F"));
+      assertTrue(renderer.contains("case \"paracelsus\" -> 0.963F"));
+      assertTrue(renderer.contains("case \"zhao_yun_rider\" -> 0.968F"));
+      assertTrue(renderer.contains("case \"arash\", \"cu_chulainn\" -> 0.974F"));
    }
 }

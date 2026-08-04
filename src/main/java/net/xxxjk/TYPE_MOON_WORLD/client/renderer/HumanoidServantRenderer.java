@@ -47,14 +47,21 @@ public final class HumanoidServantRenderer<T extends ServantEntity> extends Huma
 
    private static float visualScale(String servantId) {
       return switch (servantId == null ? "" : servantId) {
-         case "oda_nobunaga" -> 0.84F;
-         case "artoria_pendragon" -> 0.86F;
-         case "enkidu" -> 0.88F;
-         case "medea" -> 0.91F;
-         case "li_shuwen", "nightingale" -> 0.92F;
-         case "senko_muramasa", "ushiwakamaru_rider", "fanatic_assassin" -> 0.93F;
-         case "medusa" -> 0.96F;
-         case "sasaki_kojiro" -> 0.98F;
+         case "oda_nobunaga" -> 0.800F;
+         case "artoria_pendragon" -> 0.811F;
+         case "fanatic_assassin", "medea" -> 0.858F;
+         case "nightingale" -> 0.868F;
+         case "li_shuwen" -> 0.874F;
+         case "senko_muramasa" -> 0.879F;
+         case "ushiwakamaru_rider" -> 0.884F;
+         case "medusa" -> 0.905F;
+         case "emiya_archer" -> 0.921F;
+         case "sasaki_kojiro" -> 0.926F;
+         case "gawain" -> 0.947F;
+         case "enkidu", "gilgamesh", "gilgamesh_caster" -> 0.958F;
+         case "paracelsus" -> 0.963F;
+         case "zhao_yun_rider" -> 0.968F;
+         case "arash", "cu_chulainn" -> 0.974F;
          default -> 1.0F;
       };
    }

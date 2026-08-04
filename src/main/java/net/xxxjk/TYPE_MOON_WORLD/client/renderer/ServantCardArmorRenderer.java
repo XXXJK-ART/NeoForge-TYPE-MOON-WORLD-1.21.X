@@ -10,7 +10,7 @@ import software.bernie.geckolib.renderer.GeoArmorRenderer;
 public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorItem> {
    public ServantCardArmorRenderer() {
       super(new ServantCardArmorModel());
-      withScale(1.02F, 1.02F);
+      withScale(0.95F, 0.95F);
    }
 
    @Override

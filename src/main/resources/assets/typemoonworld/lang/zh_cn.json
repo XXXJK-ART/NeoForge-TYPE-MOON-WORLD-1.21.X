@@ -1485,6 +1485,8 @@
     "gui.typemoonworld.time_alter.multiplier": "倍率",
     "item.typemoonworld.mercury_sword": "水银剑",
     "item.typemoonworld.mercury_sword.desc": "手持时强化普通魔术，右键释放短距元素魔术弹。",
+    "item.typemoonworld.ruby_staff": "红宝石手杖",
+    "item.typemoonworld.ruby_staff.desc": "手持时强化基础火元素魔术；右键蓄力5秒喷发火炎阵，蹲下蓄力展开500点护盾。",
     "item.typemoonworld.thompson_contender": "汤普森竞争者手枪",
     "item.typemoonworld.thompson_contender.desc": "右键装填或发射，装入后不能退弹。",
     "item.typemoonworld.thompson_contender.loaded": "膛内：%s",
