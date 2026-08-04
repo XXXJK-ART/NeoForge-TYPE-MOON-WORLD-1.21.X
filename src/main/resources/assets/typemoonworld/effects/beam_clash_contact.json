@@ -35,7 +35,7 @@
       "particle_role": "BEAM_CLASH_CORE",
       "vanilla_particles": [
         { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.35 },
-        { "type": "electric_spark", "count": 2, "spread": [1.2, 1.2, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.14, "chance": 0.7 }
+        { "type": "crit", "count": 2, "spread": [1.2, 1.2, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.14, "chance": 0.7 }
       ]
     },
     {

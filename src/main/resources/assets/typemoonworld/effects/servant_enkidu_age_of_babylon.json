@@ -38,7 +38,7 @@
       "particle_role": "ENKIDU_EARTH_WEAPON_RISE",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "block", "block": "minecraft:dirt", "count": 1, "spread": [1.2, 0.15, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 },
+        { "type": "poof", "count": 1, "spread": [1.2, 0.15, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 },
         { "type": "happy_villager", "count": 1, "spread": [1.0, 0.4, 1.0], "offset": [0.0, 0.3, 0.0], "speed": 0.03, "chance": 0.35 }
       ]
     },

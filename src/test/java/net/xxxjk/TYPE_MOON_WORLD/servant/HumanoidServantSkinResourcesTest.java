@@ -97,6 +97,41 @@ class HumanoidServantSkinResourcesTest {
    }
 
    @Test
+   void packagedResourcePathsUseMinecraftSafeCharacters() throws Exception {
+      for (String rootName : List.of("assets", "data")) {
+         Path root = RESOURCES.resolve(rootName);
+         try (var paths = Files.walk(root)) {
+            paths.filter(Files::isRegularFile).forEach(path -> {
+               String relative = root.relativize(path).toString().replace('\\', '/');
+               assertTrue(relative.matches("[a-z0-9_./-]+"), rootName + "/" + relative);
+            });
+         }
+      }
+
+      for (String slot : List.of("head", "chest", "legs", "feet")) {
+         Path model = RESOURCES.resolve(
+            "assets/typemoonworld/models/item/servant_armor_generic_" + slot + ".json");
+         assertTrue(Files.isRegularFile(model), slot);
+         JsonParser.parseString(Files.readString(model));
+      }
+
+      Path effects = RESOURCES.resolve("assets/typemoonworld/effects");
+      try (var paths = Files.walk(effects)) {
+         paths.filter(path -> path.getFileName().toString().endsWith(".json")).forEach(path -> {
+            try {
+               String json = Files.readString(path);
+               assertFalse(json.contains("\"type\": \"enchant\""), path.toString());
+               assertFalse(json.contains("\"type\": \"electric_spark\""), path.toString());
+               assertFalse(json.contains("\"type\": \"block\""), path.toString());
+               assertFalse(json.contains("\"block\": \"minecraft:"), path.toString());
+            } catch (Exception exception) {
+               throw new AssertionError(path.toString(), exception);
+            }
+         });
+      }
+   }
+
+   @Test
    void generatedHairHelmetsAndLongHairCounterRotationAreWired() throws Exception {
       List<String> hairHelmets = List.of(
          "artoria_pendragon", "sasaki_kojiro", "enkidu", "ushiwakamaru_rider",
@@ -127,6 +162,7 @@ class HumanoidServantSkinResourcesTest {
       String armorModel = Files.readString(JAVA.resolve("client/model/ServantCardArmorModel.java"));
       assertTrue(armorModel.contains("_head.geo.json"));
       assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
+      assertTrue(armorModel.contains("return EMPTY_ANIMATION;"));
       assertTrue(armorModel.contains(
          "case \"artoria_pendragon\", \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\","));
       assertTrue(armorModel.contains(
@@ -173,11 +209,16 @@ class HumanoidServantSkinResourcesTest {
          for (int x = 0; x < artoriaHead.getWidth(); x++) {
             int argb = artoriaHead.getRGB(x, y);
             int alpha = (argb >>> 24) & 0xFF;
-            if (alpha == 0) continue;
-            artoriaOpaque++;
             int red = (argb >>> 16) & 0xFF;
             int green = (argb >>> 8) & 0xFF;
             int blue = argb & 0xFF;
+            if (alpha == 0) {
+               assertEquals(0, red, x + "," + y);
+               assertEquals(0, green, x + "," + y);
+               assertEquals(0, blue, x + "," + y);
+               continue;
+            }
+            artoriaOpaque++;
             assertFalse(blue > Math.max(red, green) + 20, x + "," + y);
          }
       }
@@ -185,9 +226,28 @@ class HumanoidServantSkinResourcesTest {
 
       var artoriaGeo = JsonParser.parseString(Files.readString(RESOURCES.resolve(
          "assets/typemoonworld/geo/servant_card_artoria_pendragon_head.geo.json"))).getAsJsonObject();
-      int ahogeCubeCount = artoriaGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
-         .getAsJsonArray("bones").get(1).getAsJsonObject().getAsJsonArray("cubes").size();
-      assertEquals(artoriaOpaque, ahogeCubeCount);
+      var artoriaGeometry = artoriaGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject();
+      assertEquals("geometry.artoria_ahoge", artoriaGeometry.getAsJsonObject("description")
+         .get("identifier").getAsString());
+      var ahogeCubes = artoriaGeometry
+         .getAsJsonArray("bones").get(1).getAsJsonObject().getAsJsonArray("cubes");
+      assertEquals(1, ahogeCubes.size());
+      var ahogeCube = ahogeCubes.get(0).getAsJsonObject();
+      var ahogeSize = ahogeCube.getAsJsonArray("size");
+      assertEquals(6, ahogeSize.get(0).getAsInt());
+      assertEquals(5, ahogeSize.get(1).getAsInt());
+      assertEquals(0, ahogeSize.get(2).getAsInt());
+
+      var artoriaArmorGeo = JsonParser.parseString(Files.readString(RESOURCES.resolve(
+         "assets/typemoonworld/geo/servant_card_artoria_pendragon.geo.json"))).getAsJsonObject();
+      var artoriaArmorBones = artoriaArmorGeo.getAsJsonArray("minecraft:geometry")
+         .get(0).getAsJsonObject().getAsJsonArray("bones");
+      for (var boneElement : artoriaArmorBones) {
+         var bone = boneElement.getAsJsonObject();
+         if ("armorHead".equals(bone.get("name").getAsString())) {
+            assertFalse(bone.has("cubes"));
+         }
+      }
 
       var odaHead = ImageIO.read(RESOURCES.resolve(
          "assets/typemoonworld/textures/models/armor/servant_card_oda_nobunaga_head.png").toFile());
@@ -202,6 +262,25 @@ class HumanoidServantSkinResourcesTest {
             int max = Math.max(red, Math.max(green, blue));
             int min = Math.min(red, Math.min(green, blue));
             assertTrue(max <= 70 && max - min <= 18, x + "," + y);
+         }
+      }
+
+      var odaGeo = JsonParser.parseString(Files.readString(RESOURCES.resolve(
+         "assets/typemoonworld/geo/servant_card_oda_nobunaga_head.geo.json"))).getAsJsonObject();
+      var odaBones = odaGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
+         .getAsJsonArray("bones");
+      for (var boneElement : odaBones) {
+         var bone = boneElement.getAsJsonObject();
+         if (!"hair1".equals(bone.get("name").getAsString()) || !bone.has("cubes")) continue;
+         for (var cubeElement : bone.getAsJsonArray("cubes")) {
+            var cube = cubeElement.getAsJsonObject();
+            var size = cube.getAsJsonArray("size");
+            var uv = cube.getAsJsonArray("uv");
+            boolean zeroSize = size.get(0).getAsDouble() == 0.0
+               || size.get(1).getAsDouble() == 0.0
+               || size.get(2).getAsDouble() == 0.0;
+            assertFalse(zeroSize && uv != null && uv.size() == 2
+               && uv.get(0).getAsInt() == 0 && uv.get(1).getAsInt() == 0);
          }
       }
    }

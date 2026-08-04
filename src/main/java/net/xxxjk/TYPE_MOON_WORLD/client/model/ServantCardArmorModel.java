@@ -43,6 +43,9 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getAnimationResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
+      if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+         return EMPTY_ANIMATION;
+      }
       if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
          return EMPTY_ANIMATION;
       }

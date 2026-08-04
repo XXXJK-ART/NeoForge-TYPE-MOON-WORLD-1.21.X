@@ -71,7 +71,7 @@
       "particle_role": "BEAM_CLASH_SHOCKWAVE",
       "vanilla_particles": [
         { "type": "cloud", "count": 1, "spread": [1.1, 0.12, 1.1], "offset": [0.0, 0.0, 0.0], "speed": 0.05, "chance": 0.5 },
-        { "type": "electric_spark", "count": 2, "spread": [1.8, 1.0, 1.8], "offset": [0.0, 0.2, 0.0], "speed": 0.2, "chance": 0.65 }
+        { "type": "crit", "count": 2, "spread": [1.8, 1.0, 1.8], "offset": [0.0, 0.2, 0.0], "speed": 0.2, "chance": 0.65 }
       ]
     }
   ]

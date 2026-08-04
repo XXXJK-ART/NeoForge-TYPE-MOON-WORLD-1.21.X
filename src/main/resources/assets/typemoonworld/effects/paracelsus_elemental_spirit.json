@@ -37,7 +37,7 @@
       "particle_role": "PARACELSUS_SPIRIT_CORE",
       "vanilla_particles": [
         { "type": "end_rod", "count": 2, "spread": [0.2, 0.2, 0.2], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.65 },
-        { "type": "enchant", "count": 2, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.45 }
+        { "type": "end_rod", "count": 2, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.45 }
       ]
     },
     {
