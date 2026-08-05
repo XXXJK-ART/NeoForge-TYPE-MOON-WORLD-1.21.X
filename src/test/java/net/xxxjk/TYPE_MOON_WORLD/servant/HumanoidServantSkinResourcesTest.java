@@ -303,6 +303,12 @@ class HumanoidServantSkinResourcesTest {
 
       String armorRenderer = Files.readString(JAVA.resolve("client/renderer/ServantCardArmorRenderer.java"));
       assertTrue(armorRenderer.contains("withScale(0.95F, 0.95F)"));
+      assertTrue(armorRenderer.contains("public void prepForRender(Entity entity, ItemStack itemStack"));
+      assertTrue(armorRenderer.contains(
+         "super.prepForRender(entity, itemStack, equipmentSlot, original, bufferSource, partialTick"));
+      assertTrue(armorRenderer.contains("public void actuallyRender(PoseStack poseStack"));
+      assertTrue(armorRenderer.contains("private void applyArmorSlotVisibility()"));
+      assertTrue(armorRenderer.contains("applyArmorSlotVisibility();"));
 
       String medusaGeo = Files.readString(RESOURCES.resolve(
          "assets/typemoonworld/geo/servant_card_medusa.geo.json"));
@@ -493,6 +499,7 @@ class HumanoidServantSkinResourcesTest {
    void npcArmorSyncAndTacticalScansStayLowFrequency() throws Exception {
       String servantEntity = Files.readString(JAVA.resolve("servant/entity/ServantEntity.java"));
       assertTrue(servantEntity.contains("this.equipNpcServantCardArmor(this.tickCount % 200 == 0)"));
+      assertTrue(servantEntity.contains("implements GeoEntity"));
 
       String maneuver = Files.readString(JAVA.resolve("servant/ai/ServantManeuverService.java"));
       assertEquals(1, countMatches(maneuver, Pattern.compile("getEntitiesOfClass\\(LivingEntity\\.class")));
