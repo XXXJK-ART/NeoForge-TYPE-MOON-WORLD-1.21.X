@@ -819,6 +819,7 @@ public class ChantHandler {
       int progress = vars.ubw_chant_progress;
       double cost = 50.0;
       String chantText = "";
+      boolean emiyaServantCardChant = isEmiyaServantCardChant(vars);
       if (progress == 1) {
          ServerLevel ubwLevel = UBWInstanceManager.getOrCreateFreshPlayerInstance(player);
          if (ubwLevel == null) {
@@ -838,17 +839,23 @@ public class ChantHandler {
          chantText = "\u00A7bI have created over a thousand blades.";
          spawnVisualSwords(player, vars, 10, 10.0);
       } else if (progress == 4) {
-         chantText = "\u00A7bUnaware of loss.";
+         chantText = emiyaServantCardChant ? "\u00A7bUnknown to Death." : "\u00A7bUnaware of loss.";
       } else if (progress == 5) {
-         chantText = "\u00A7bNor aware of gain.";
+         chantText = emiyaServantCardChant ? "\u00A7bNor known to Life." : "\u00A7bNor aware of gain.";
       } else if (progress == 6) {
-         chantText = "\u00A7bWithstood pain to create weapons, waiting for one's arrival.";
+         chantText = emiyaServantCardChant
+            ? "\u00A7bHave withstood pain to create many weapons."
+            : "\u00A7bWithstood pain to create weapons, waiting for one's arrival.";
       } else if (progress == 7) {
-         chantText = "\u00A7bI have no regrets.";
+         chantText = emiyaServantCardChant
+            ? "\u00A7bYet, those hands will never hold anything."
+            : "\u00A7bI have no regrets.";
       } else if (progress == 8) {
-         chantText = "\u00A7bThis is the only path.";
+         chantText = emiyaServantCardChant ? "\u00A7bSo as I pray." : "\u00A7bThis is the only path.";
       } else if (progress == 9) {
-         chantText = "\u00A7bMy whole life was,";
+         chantText = emiyaServantCardChant
+            ? "\u00A7b\u2014\u2014\u3010Unlimited Blade Works\u3011."
+            : "\u00A7bMy whole life was,";
       } else if (progress > 9) {
          if (UBWInstanceManager.ensureRegisteredPlayerInstance(player) == null) {
             int attempts = PENDING_UBW_ACTIVATION_ATTEMPTS.merge(player.getUUID(), 1, Integer::sum);
@@ -882,6 +889,13 @@ public class ChantHandler {
       } else {
          interruptChant(player, vars, "message.typemoonworld.unlimited_blade_works.mana_depleted");
       }
+   }
+
+   private static boolean isEmiyaServantCardChant(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return vars != null
+         && vars.servant_card_transformed
+         && "emiya_archer".equals(vars.servant_card_id)
+         && vars.is_chanting_ubw;
    }
 
    private static boolean consumeUbwMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double cost) {

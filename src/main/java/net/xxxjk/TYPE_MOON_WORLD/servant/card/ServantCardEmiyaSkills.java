@@ -76,6 +76,8 @@ import static net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.*;
 
 @EventBusSubscriber(modid = "typemoonworld")
 public final class ServantCardEmiyaSkills {
+   private static final String EMIYA_UBW_FIRST_LINE = "\u00A7bI am the bone of my sword.";
+
    private static final String EMIYA_LAYERED_OLD_UNTIL = "ServantCardEmiyaLayeredProjectionUntil";
    private static final String EMIYA_LAYERED_ROUNDS = "ServantCardEmiyaLayeredProjectionRounds";
    private static final String EMIYA_LAYERED_NEXT_TICK = "ServantCardEmiyaLayeredProjectionNextTick";
@@ -130,6 +132,7 @@ public final class ServantCardEmiyaSkills {
       vars.ubw_chant_timer = 0;
       PlayerNoblePhantasmHelper.startServantCardVoiceSession(player, "emiya_archer", ModSounds.EMIYA_ARCHER_VOICE_UBW.get());
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0, false, true, true));
+      player.displayClientMessage(Component.literal(EMIYA_UBW_FIRST_LINE), true);
    }
    public static void equipPair(ServerPlayer player, net.minecraft.world.item.Item main, net.minecraft.world.item.Item off) {
       ItemStack mainStack = new ItemStack(main);
@@ -211,7 +214,7 @@ public final class ServantCardEmiyaSkills {
       PlayerNoblePhantasmHelper.startServantCardVoiceSession(player, "emiya_archer", ModSounds.EMIYA_ARCHER_VOICE_UBW.get());
       vars.syncPlayerVariables(player);
       spawnServantCardUbwChantFallingSwords(player);
-      player.displayClientMessage(Component.literal("\u00A7bI am the bone of my sword."), true);
+      player.displayClientMessage(Component.literal(EMIYA_UBW_FIRST_LINE), true);
       return true;
    }
 

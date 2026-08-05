@@ -85,9 +85,10 @@ class CasterGilgameshResourcesTest {
       assertTrue(headGeo.toString().contains("caster_head"));
       String armorModel = Files.readString(Path.of(
          "src/main/java/net/xxxjk/TYPE_MOON_WORLD/client/model/ServantCardArmorModel.java"));
-      assertTrue(armorModel.contains("\"gilgamesh_caster\".equals(servantId)"));
-      assertTrue(armorModel.contains("servant_card_gilgamesh_caster_head.geo.json"));
-      assertTrue(armorModel.contains("servant_card_gilgamesh_caster_head.png"));
+      assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
+      assertTrue(armorModel.contains("\"gilgamesh_caster\""));
+      assertTrue(armorModel.contains("geo/servant_card_\" + servantId + \"_head.geo.json"));
+      assertTrue(armorModel.contains("textures/models/armor/servant_card_\" + servantId + \"_head.png"));
       assertTrue(armorModel.contains("animations/empty.animation.json"));
 
       for (String voice : List.of("np", "shot", "attack1", "attack2", "fail1", "fail2",

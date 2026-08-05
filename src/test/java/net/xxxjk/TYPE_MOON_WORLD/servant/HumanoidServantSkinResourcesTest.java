@@ -253,7 +253,8 @@ class HumanoidServantSkinResourcesTest {
    void generatedHairHelmetsAndLongHairCounterRotationAreWired() throws Exception {
       List<String> hairHelmets = List.of(
          "artoria_pendragon", "sasaki_kojiro", "enkidu", "ushiwakamaru_rider",
-         "oda_nobunaga", "medusa", "zhao_yun_rider", "paracelsus", "li_shuwen"
+         "oda_nobunaga", "medusa", "zhao_yun_rider", "paracelsus", "li_shuwen",
+         "gilgamesh_caster"
       );
       for (String servantId : hairHelmets) {
          Path itemHead = RESOURCES.resolve(
@@ -285,6 +286,7 @@ class HumanoidServantSkinResourcesTest {
       assertTrue(armorModel.contains("counterRotateHair(\"hair1\", pitchRad, 1.35F)"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair2\", pitchRad, 1.35F)"));
       assertFalse(armorModel.contains("counterRotateHair(\"bone4\", pitchRad, 1.25F)"));
+      assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
 
       String armorItem = Files.readString(JAVA.resolve("item/custom/ServantCardArmorItem.java"));
       assertTrue(armorItem.contains("\"enkidu\","));
@@ -296,10 +298,8 @@ class HumanoidServantSkinResourcesTest {
          "super.prepForRender(entity, itemStack, equipmentSlot, original, bufferSource, partialTick"));
       assertTrue(armorRenderer.contains("public void actuallyRender(PoseStack poseStack"));
       assertTrue(armorRenderer.contains("private void applyArmorSlotVisibility()"));
-      assertTrue(armorRenderer.contains("usesLayeredHairTexture(animatable)"));
-      assertTrue(armorRenderer.contains("servant_card_\" + animatable.servantId() + \"_head.png"));
-      assertTrue(armorRenderer.contains("case \"oda_nobunaga\" -> setHidden(true, \"bone18\")"));
-      assertTrue(armorRenderer.contains("int texturedHairCubeCount = Math.min(2, cubes.size())"));
+      assertFalse(armorRenderer.contains("usesLayeredHairTexture(animatable)"));
+      assertFalse(armorRenderer.contains("renderingLayeredHairPass"));
       assertTrue(armorRenderer.contains("applyArmorSlotVisibility();"));
 
       String medusaGeo = Files.readString(RESOURCES.resolve(
