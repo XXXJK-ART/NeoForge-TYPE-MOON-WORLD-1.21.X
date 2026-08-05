@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatStyle;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcMagicCastBridge;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianCombatController;
+import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import org.jetbrains.annotations.Nullable;
 
@@ -69,6 +70,8 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    private static final String TAG_HAS_THOMPSON = "TypeMoonMagicianHasThompson";
    private static final String TAG_DUAL_SWORD = "TypeMoonMagicianDualSword";
    private static final String TAG_SWORD_TYPE = "TypeMoonMagicianSwordType";
+   private static final String TAG_MAGICIAN_RANK = "TypeMoonMagicianRank";
+   private static final String TAG_BRAND_COLOR = "TypeMoonMagicianBrandColor";
    public static final int SKIN_VARIANT_COUNT = 6;
    public static final int MELEE_POSE_NONE = 0;
    public static final int MELEE_POSE_PUNCH = 1;
@@ -87,6 +90,8 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    private static final int[] MALE_GIVEN_NAME_INDICES = new int[]{
       0, 1, 3, 5, 6, 8, 9, 11, 13, 15, 16, 18, 19, 21, 22, 23, 25, 26, 28, 30, 32, 35, 36, 38, 40, 42, 44, 45, 47, 49
    };
+   private MysticMagicianRank magicianRank;
+   private MysticMagicianRank.BrandColor brandColor;
    private static final String[] EUROPEAN_GIVEN_NAMES = new String[]{
       "Alexander",
       "Benjamin",
@@ -297,7 +302,15 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    };
 
    public MysticMagicianEntity(EntityType<? extends PathfinderMob> type, Level level) {
+      this(type, level, MysticMagicianRank.ADEPT);
+   }
+
+   public MysticMagicianEntity(
+      EntityType<? extends PathfinderMob> type, Level level, MysticMagicianRank magicianRank
+   ) {
       super(type, level);
+      this.magicianRank = magicianRank == null ? MysticMagicianRank.ADEPT : magicianRank;
+      this.brandColor = MysticMagicianRank.BrandColor.RED;
    }
 
    protected void registerGoals() {
@@ -350,6 +363,22 @@ public class MysticMagicianEntity extends HumanNpcEntity {
 
    public void setSkinVariant(int variant) {
       this.entityData.set(SKIN_VARIANT, Mth.positiveModulo(variant, 6));
+   }
+
+   public MysticMagicianRank getMagicianRank() {
+      return this.magicianRank == null ? MysticMagicianRank.ADEPT : this.magicianRank;
+   }
+
+   public void setMagicianRank(MysticMagicianRank rank) {
+      this.magicianRank = rank == null ? MysticMagicianRank.ADEPT : rank;
+   }
+
+   public MysticMagicianRank.BrandColor getBrandColor() {
+      return this.brandColor == null ? MysticMagicianRank.BrandColor.RED : this.brandColor;
+   }
+
+   public void setBrandColor(MysticMagicianRank.BrandColor color) {
+      this.brandColor = color == null ? MysticMagicianRank.BrandColor.RED : color;
    }
 
    public NpcCombatPersonality getCombatPersonality() {
@@ -550,6 +579,9 @@ public class MysticMagicianEntity extends HumanNpcEntity {
       NpcScaleHelper.ensureRandomScale(this);
       int variant = this.random.nextInt(6);
       this.setSkinVariant(variant);
+      if (this.getMagicianRank() == MysticMagicianRank.BRAND && this.brandColor == MysticMagicianRank.BrandColor.RED) {
+         this.setBrandColor(MysticMagicianRank.BrandColor.random(this.random));
+      }
       if (!this.hasCustomName()) {
          MysticMagicianEntity.GeneratedName generated = generateRandomName(this.random, isFemaleVariant(variant));
          this.setCustomName(
@@ -571,6 +603,8 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    public void addAdditionalSaveData(CompoundTag compound) {
       super.addAdditionalSaveData(compound);
       compound.putInt("SkinVariant", this.getSkinVariant());
+      compound.putString(TAG_MAGICIAN_RANK, this.getMagicianRank().id());
+      compound.putString(TAG_BRAND_COLOR, this.getBrandColor().id());
       compound.putInt("NpcPersonality", this.getCombatPersonality().id());
       compound.putInt("NpcCombatStyle", this.getCombatStyle().id());
       compound.putInt("NpcTemperament", this.getCombatTemperament().id());
@@ -588,6 +622,12 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    public void readAdditionalSaveData(CompoundTag compound) {
       super.readAdditionalSaveData(compound);
       this.setSkinVariant(compound.getInt("SkinVariant"));
+      if (compound.contains(TAG_MAGICIAN_RANK)) {
+         this.setMagicianRank(MysticMagicianRank.fromId(compound.getString(TAG_MAGICIAN_RANK)));
+      }
+      if (compound.contains(TAG_BRAND_COLOR)) {
+         this.setBrandColor(MysticMagicianRank.BrandColor.fromId(compound.getString(TAG_BRAND_COLOR)));
+      }
       if (compound.contains("NpcPersonality")) {
          this.setCombatPersonality(NpcCombatPersonality.fromId(compound.getInt("NpcPersonality")));
       }

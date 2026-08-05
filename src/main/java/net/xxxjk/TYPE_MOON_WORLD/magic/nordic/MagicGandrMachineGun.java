@@ -237,7 +237,7 @@ public final class MagicGandrMachineGun {
          Level level = player.level();
 
          for (int i = 0; i < BURST_COUNT; i++) {
-            shootRapidBullet(level, player, i, chargeSeconds);
+            shootRapidBullet(level, player, i, chargeSeconds, effectiveProficiency);
          }
 
          level.playSound(
@@ -247,11 +247,12 @@ public final class MagicGandrMachineGun {
       }
    }
 
-   private static void shootRapidBullet(Level level, ServerPlayer player, int shotIndex, int chargeSeconds) {
+   private static void shootRapidBullet(Level level, ServerPlayer player, int shotIndex, int chargeSeconds, double proficiency) {
       int pattern = Math.floorMod(shotIndex, 3);
       GanderProjectileEntity projectile = new GanderProjectileEntity(level, player);
       projectile.setNoGravity(true);
       projectile.setChargeSeconds(chargeSeconds);
+      projectile.setMagicSource("gandr_machine_gun", proficiency);
       projectile.setVisualScale(getProjectileScaleForCharge(chargeSeconds));
       projectile.setItem(new ItemStack(ModItems.GANDER.get()));
       Vec3 forward = EntityUtils.getAutoAimDirection(player, 48.0, 58.0);
@@ -321,7 +322,7 @@ public final class MagicGandrMachineGun {
             float speed = BARRAGE_PROJECTILE_SPEED_MIN + level.random.nextFloat() * (BARRAGE_PROJECTILE_SPEED_MAX - BARRAGE_PROJECTILE_SPEED_MIN);
             float inaccuracy = BARRAGE_PROJECTILE_INACCURACY_MIN
                + level.random.nextFloat() * (BARRAGE_PROJECTILE_INACCURACY_MAX - BARRAGE_PROJECTILE_INACCURACY_MIN);
-            shootBarrageBullet(level, player, spawnPos, direction, chargeSeconds, speed, inaccuracy);
+            shootBarrageBullet(level, player, spawnPos, direction, chargeSeconds, speed, inaccuracy, effectiveProficiency);
          }
 
          level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.PLAYERS, 0.65F, 1.25F);
@@ -329,10 +330,13 @@ public final class MagicGandrMachineGun {
       }
    }
 
-   private static void shootBarrageBullet(Level level, ServerPlayer player, Vec3 spawnPos, Vec3 direction, int chargeSeconds, float speed, float inaccuracy) {
+   private static void shootBarrageBullet(
+      Level level, ServerPlayer player, Vec3 spawnPos, Vec3 direction, int chargeSeconds, float speed, float inaccuracy, double proficiency
+   ) {
       GanderProjectileEntity projectile = new GanderProjectileEntity(level, player);
       projectile.setNoGravity(true);
       projectile.setChargeSeconds(chargeSeconds);
+      projectile.setMagicSource("gandr_machine_gun", proficiency);
       projectile.setVisualScale(getProjectileScaleForCharge(chargeSeconds));
       projectile.setItem(new ItemStack(ModItems.GANDER.get()));
       projectile.setPos(spawnPos);

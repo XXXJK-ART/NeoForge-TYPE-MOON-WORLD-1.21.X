@@ -284,7 +284,43 @@ public class ModEntities {
       "stone_man", () -> Builder.of(StoneManEntity::new, MobCategory.CREATURE).sized(1.0F, 2.5F).build("stone_man")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN = ENTITY_TYPES.register(
-      "mystic_magician", () -> Builder.of(MysticMagicianEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician")
+      "mystic_magician", () -> Builder.<MysticMagicianEntity>of(MysticMagicianEntity::new, MobCategory.MONSTER)
+         .sized(0.6F, 1.8F).build("mystic_magician")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_GRAND = ENTITY_TYPES.register(
+      "mystic_magician_grand",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.GRAND),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_grand")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_BRAND = ENTITY_TYPES.register(
+      "mystic_magician_brand",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.BRAND),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_brand")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_PRIDE = ENTITY_TYPES.register(
+      "mystic_magician_pride",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.PRIDE),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_pride")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_FES = ENTITY_TYPES.register(
+      "mystic_magician_fes",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.FES),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_fes")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_ADEPT = ENTITY_TYPES.register(
+      "mystic_magician_adept",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.ADEPT),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_adept")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_UMNOS = ENTITY_TYPES.register(
+      "mystic_magician_umnos",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.UMNOS),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_umnos")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_FRAME = ENTITY_TYPES.register(
+      "mystic_magician_frame",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.FRAME),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_frame")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<TheDeadEntity>> THE_DEAD = ENTITY_TYPES.register(
       "the_dead", () -> Builder.of(TheDeadEntity::new, MobCategory.MONSTER).sized(0.6F, 1.95F).build("the_dead")

@@ -2,7 +2,7 @@
   "id": "nero_chaos",
   "max_health": 400.0,
   "attack_damage": 20.0,
-  "movement_speed": 0.32,
+  "movement_speed": 0.42,
   "armor": 12.0,
   "armor_toughness": 4.0,
   "knockback_resistance": 0.30,

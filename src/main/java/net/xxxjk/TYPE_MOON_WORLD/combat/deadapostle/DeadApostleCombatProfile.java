@@ -30,7 +30,7 @@ public record DeadApostleCombatProfile(
 ) {
    public static DeadApostleCombatProfile neroChaos() {
       return new DeadApostleCombatProfile(
-         400.0, 20.0, 0.32, 12.0, 4.0, 0.30, 48.0,
+         400.0, 20.0, 0.42, 12.0, 4.0, 0.30, 48.0,
          140.0, 14.0, 0.35, 9.0,
          0.72, 0.90, 13, 9,
          170.0, 11.0, 10.0, 18

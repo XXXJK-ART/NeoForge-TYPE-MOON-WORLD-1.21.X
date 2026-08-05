@@ -24,6 +24,7 @@ class NeroChaosResourcesTest {
       assertEquals("nero_chaos", definition.get("id").getAsString());
       assertEquals(400.0, definition.get("max_health").getAsDouble());
       assertEquals(20.0, definition.get("attack_damage").getAsDouble());
+      assertEquals(0.42, definition.get("movement_speed").getAsDouble());
       assertEquals(170.0, definition.get("poise_max").getAsDouble());
       assertEquals(0.35, definition.get("block_reduction").getAsDouble());
       assertEquals(0.72, definition.get("dodge_chance").getAsDouble());
@@ -119,5 +120,26 @@ class NeroChaosResourcesTest {
       assertTrue(logic.contains("owner.reabsorbBeast(beast);"));
       assertTrue(logic.contains("owner.queueBeastRevival();"));
       assertTrue(system.contains("nero.spawnSuccessorFromOwnedBeast()"));
+   }
+
+   @Test
+   void neroReleasesMaximumBeastsWhenSurroundedAndDodgesProjectiles() throws Exception {
+      String nero = Files.readString(JAVA.resolve("entity/deadapostle/NeroChaosEntity.java"));
+      String rules = Files.readString(JAVA.resolve("combat/deadapostle/NeroChaosRules.java"));
+
+      assertTrue(rules.contains("SURROUNDED_ENEMY_COUNT = 5"));
+      assertTrue(rules.contains("nearbyEnemies >= SURROUNDED_ENEMY_COUNT ? MAX_ACTIVE_BEASTS"));
+      assertTrue(nero.contains("int nearbyEnemies = countNearbyEnemies(48.0)"));
+      assertTrue(nero.contains("(target == null || !target.isAlive()) && nearbyEnemies <= 0"));
+      assertTrue(nero.contains("NeroChaosRules.combatBeastTarget(getRemainingLives(), nearbyEnemies)"));
+      assertTrue(nero.contains("private int countNearbyEnemies(double radius)"));
+      assertTrue(nero.contains("tickBeastRelease(now);"));
+      assertTrue(nero.contains("CROWD_AOE_MIN_ENEMIES = 4"));
+      assertTrue(nero.contains("TAG_CROWD_AOE_COOLDOWN"));
+      assertTrue(nero.contains("tickCrowdAoe(now);"));
+      assertTrue(nero.contains("enemy.hurt(damageSources().mobAttack(this), CROWD_AOE_DAMAGE)"));
+      assertTrue(nero.contains("ProjectileThreatSensor.nearest(nero, 10.0, 8.0)"));
+      assertTrue(nero.contains("EvasionMovementService.tryEvade("));
+      assertTrue(nero.contains("return true;"));
    }
 }

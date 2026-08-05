@@ -13,7 +13,7 @@ class NeroChaosRulesTest {
 
       assertEquals(400.0, profile.maxHealth());
       assertEquals(20.0, profile.attackDamage());
-      assertEquals(0.32, profile.movementSpeed());
+      assertEquals(0.42, profile.movementSpeed());
       assertEquals(12.0, profile.armor());
       assertEquals(48.0, profile.followRange());
       assertEquals(170.0, profile.poiseMax());
@@ -40,6 +40,8 @@ class NeroChaosRulesTest {
       assertEquals(30, NeroChaosRules.combatBeastTarget(300));
       assertEquals(40, NeroChaosRules.combatBeastTarget(100));
       assertEquals(66, NeroChaosRules.combatBeastTarget(99));
+      assertEquals(20, NeroChaosRules.combatBeastTarget(666, 4));
+      assertEquals(66, NeroChaosRules.combatBeastTarget(666, 5));
       assertFalse(NeroChaosRules.shouldEnterChaosForm(100, 66));
       assertTrue(NeroChaosRules.shouldEnterChaosForm(99, 66));
       assertEquals(0, NeroChaosRules.clampBeastVariant(-1));

@@ -5,6 +5,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -29,6 +30,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 
@@ -46,6 +49,8 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Boolean> CHARGING_PREVIEW = SynchedEntityData.defineId(GanderProjectileEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Float> VISUAL_SCALE = SynchedEntityData.defineId(GanderProjectileEntity.class, EntityDataSerializers.FLOAT);
    private int chargeSeconds = 1;
+   private String sourceMagicId = "gander";
+   private double casterProficiency = 0.0;
 
    public GanderProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -83,6 +88,11 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
 
    public void setVisualScale(float scale) {
       this.entityData.set(VISUAL_SCALE, Math.max(0.01F, scale));
+   }
+
+   public void setMagicSource(String magicId, double proficiency) {
+      this.sourceMagicId = magicId == null || magicId.isBlank() ? "gander" : magicId;
+      this.casterProficiency = Math.max(0.0, Math.min(100.0, proficiency));
    }
 
    public float getVisualScale() {
@@ -160,10 +170,18 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                         curseDamage = MercurySwordMagicAmplifier.amplifyDamage(owner, curseDamage);
                      }
                      livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
+                     curseDamage = MagicResistanceHelper.applyMagicDamageReduction(
+                        livingTarget, this.damageSources().magic(), curseDamage, MagicComplexity.SIMPLE_ACTION,
+                        this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
                      livingTarget.hurt(this.damageSources().magic(), curseDamage);
-                     livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, amplifier, false, true, true));
-                     livingTarget.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, amplifier, false, true, true));
-                     livingTarget.addEffect(new MobEffectInstance(MobEffects.CONFUSION, Math.max(40, duration / 2), amplifier, false, true, true));
+                     int effectDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
+                        livingTarget, duration, MagicComplexity.SIMPLE_ACTION,
+                        this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+                     if (effectDuration > 0) {
+                        livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, effectDuration, amplifier, false, true, true));
+                        livingTarget.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, effectDuration, amplifier, false, true, true));
+                        livingTarget.addEffect(new MobEffectInstance(MobEffects.CONFUSION, Math.max(40, effectDuration / 2), amplifier, false, true, true));
+                     }
                   }
 
                   this.spawnImpactParticles(result.getLocation());
@@ -309,6 +327,22 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
          return !(this.getY() < this.level().getMinBuildHeight() - 16.0) && !(this.getY() > this.level().getMaxBuildHeight() + 32.0)
             ? !this.level().getWorldBorder().isWithinBounds(this.blockPosition())
             : true;
+      }
+   }
+
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putString("TypeMoonSourceMagicId", this.sourceMagicId);
+      tag.putDouble("TypeMoonCasterProficiency", this.casterProficiency);
+   }
+
+   public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      if (tag.contains("TypeMoonSourceMagicId")) {
+         this.sourceMagicId = tag.getString("TypeMoonSourceMagicId");
+      }
+      if (tag.contains("TypeMoonCasterProficiency")) {
+         this.casterProficiency = Math.max(0.0, Math.min(100.0, tag.getDouble("TypeMoonCasterProficiency")));
       }
    }
 }

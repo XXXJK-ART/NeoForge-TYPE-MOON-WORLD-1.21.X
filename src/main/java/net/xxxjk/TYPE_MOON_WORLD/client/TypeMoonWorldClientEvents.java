@@ -237,6 +237,13 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MERLIN.get(), MerlinRenderer::new);
       event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);
       event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_GRAND.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_BRAND.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_PRIDE.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_FES.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_ADEPT.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_UMNOS.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_FRAME.get(), MysticMagicianRenderer::new);
       event.registerEntityRenderer(ModEntities.THE_DEAD.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "the_dead"));
       event.registerEntityRenderer(ModEntities.GHOUL.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "ghoul"));
       event.registerEntityRenderer(ModEntities.LIVING_DEAD.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "living_dead"));

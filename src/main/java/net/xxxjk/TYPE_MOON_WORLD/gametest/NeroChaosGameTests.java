@@ -6,6 +6,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.NeroChaosRules;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -67,6 +68,26 @@ public final class NeroChaosGameTests {
             helper.assertTrue(nero.isAlive(), "Beast death should not directly kill Nero's body");
             helper.succeed();
          });
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void nearbyEnemyWithoutTargetStillGetsACombatPack(GameTestHelper helper) {
+      NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
+      var prey = helper.spawn(EntityType.ZOMBIE, new BlockPos(8, 8, 3));
+      prey.setNoAi(true);
+
+      helper.runAfterDelay(35, () -> {
+         long beasts = helper.getLevel().getEntitiesOfClass(
+            LivingEntity.class,
+            nero.getBoundingBox().inflate(96.0),
+            NeroChaosBeastLogic::isBeast
+         ).stream().filter(beast -> nero.getUUID().equals(NeroChaosBeastLogic.ownerUuid(beast))).count();
+         helper.assertTrue(nero.getTarget() == null || !nero.getTarget().isAlive(),
+            "This test must cover the nearby-enemy path without a target lock");
+         helper.assertTrue(beasts >= NeroChaosRules.FULL_COMBAT_BEAST_COUNT,
+            "Nero should summon a combat pack before fighting a nearby enemy");
+         helper.succeed();
       });
    }
 

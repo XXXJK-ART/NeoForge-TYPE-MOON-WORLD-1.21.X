@@ -102,6 +102,7 @@ public final class MagicGander {
             GanderProjectileEntity projectile = new GanderProjectileEntity(player.level(), player);
             projectile.setNoGravity(true);
             projectile.setChargeSeconds(chargeSeconds);
+            projectile.setMagicSource("gander", getEffectiveGanderProficiency(vars));
             projectile.setItem(new ItemStack(ModItems.GANDER.get()));
             Vec3 direction = EntityUtils.getAutoAimDirection(player, 48.0, 55.0);
             Vec3 spawnPos = getChargeAnchor(player).add(direction.scale(RELEASE_FORWARD_FROM_ANCHOR));

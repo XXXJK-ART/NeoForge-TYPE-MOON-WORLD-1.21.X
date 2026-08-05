@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 import java.util.LinkedList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -30,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
@@ -54,6 +56,8 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
    private Vec3 originPos = Vec3.ZERO;
    private boolean pierceArmor = false;
    private boolean cutLowHardnessBlocks = false;
+   private String sourceMagicId = "fire_magic";
+   private double casterProficiency = 0.0;
 
    public ElementalMagicProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -95,6 +99,11 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
       this.pierceArmor = pierceArmor;
       this.cutLowHardnessBlocks = cutLowHardnessBlocks;
       this.originPos = this.position();
+   }
+
+   public void setMagicSource(String magicId, double proficiency) {
+      this.sourceMagicId = magicId == null || magicId.isBlank() ? magicIdForElement(this.getElement()) : magicId;
+      this.casterProficiency = Math.max(0.0, Math.min(100.0, proficiency));
    }
 
    public int getElement() {
@@ -176,7 +185,10 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
          finalDamage = MercurySwordMagicAmplifier.amplifyElementalDamage(owner, this.getElement(), finalDamage);
       }
       if (!this.pierceArmor) {
-         finalDamage = MagicResistanceHelper.applyMagicDamageReduction(target, this.damageSources().magic(), finalDamage);
+         MagicComplexity complexity = this.radius > 0.0F ? MagicComplexity.TWO_VERSE : MagicComplexity.SIMPLE_ACTION;
+         finalDamage = MagicResistanceHelper.applyMagicDamageReduction(
+            target, this.damageSources().magic(), finalDamage, complexity,
+            this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
       }
       target.invulnerableTime = 0;
       target.hurt(this.damageSources().magic(), finalDamage);
@@ -186,7 +198,13 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
       }
       if (this.slowTicks > 0) {
          int amplifier = this.slowPercent >= 0.5F ? 2 : this.slowPercent >= 0.2F ? 0 : 0;
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MagicResistanceHelper.applyDebuffResistance(target, this.slowTicks), amplifier, false, true, true));
+         MagicComplexity complexity = this.radius > 0.0F ? MagicComplexity.TWO_VERSE : MagicComplexity.SIMPLE_ACTION;
+         int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
+            target, this.slowTicks, complexity,
+            this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+         if (duration > 0) {
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, amplifier, false, true, true));
+         }
       }
       if (this.knockback > 0.0F) {
          Vec3 away = target.position().subtract(center);
@@ -230,6 +248,31 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
          case ELEMENT_WIND -> ParticleTypes.CLOUD;
          case ELEMENT_EARTH -> ParticleTypes.POOF;
          default -> ParticleTypes.FLAME;
+      };
+   }
+
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putString("TypeMoonSourceMagicId", this.sourceMagicId);
+      tag.putDouble("TypeMoonCasterProficiency", this.casterProficiency);
+   }
+
+   public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      if (tag.contains("TypeMoonSourceMagicId")) {
+         this.sourceMagicId = tag.getString("TypeMoonSourceMagicId");
+      }
+      if (tag.contains("TypeMoonCasterProficiency")) {
+         this.casterProficiency = Math.max(0.0, Math.min(100.0, tag.getDouble("TypeMoonCasterProficiency")));
+      }
+   }
+
+   private static String magicIdForElement(int element) {
+      return switch (element) {
+         case ELEMENT_WATER -> "water_magic";
+         case ELEMENT_WIND -> "wind_magic";
+         case ELEMENT_EARTH -> "earth_magic";
+         default -> "fire_magic";
       };
    }
 }

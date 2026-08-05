@@ -47,7 +47,7 @@ public final class DeadApostleCombatProfileLoader extends SimpleJsonResourceRelo
       return new DeadApostleCombatProfile(
          number(json, "max_health", 400.0),
          number(json, "attack_damage", 20.0),
-         number(json, "movement_speed", 0.32),
+         number(json, "movement_speed", 0.42),
          number(json, "armor", 12.0),
          number(json, "armor_toughness", 4.0),
          number(json, "knockback_resistance", 0.30),

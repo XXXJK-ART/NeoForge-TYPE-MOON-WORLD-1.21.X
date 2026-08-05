@@ -377,6 +377,13 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MERLIN_SPAWN_EGG);
                         output.accept(ModItems.STONE_MAN_SPAWN_EGG);
                         output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_GRAND_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_BRAND_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_PRIDE_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_FES_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_ADEPT_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_UMNOS_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_FRAME_SPAWN_EGG);
                         output.accept(ModItems.THE_DEAD_SPAWN_EGG);
                         output.accept(ModItems.GHOUL_SPAWN_EGG);
                         output.accept(ModItems.LIVING_DEAD_SPAWN_EGG);

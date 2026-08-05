@@ -22,16 +22,18 @@ class MagicDefinitionDataTest {
       assertTrue(!parsed.crestAllowed());
       assertEquals("magic.addon.meteor.name", parsed.nameKey());
       assertTrue(parsed.requiredAttributes().isEmpty());
+      assertEquals(MagicComplexity.SIMPLE_ACTION, parsed.resolvedResistanceComplexity());
    }
 
    @Test
    void codecLoadsNamespacedAttributeRequirements() {
       MagicDefinitionData parsed = MagicDefinitionData.CODEC.parse(
          JsonOps.INSTANCE,
-         JsonParser.parseString("{\"required_attributes\":[\"typemoonworld:imaginary_number\"]}")
+         JsonParser.parseString("{\"required_attributes\":[\"typemoonworld:imaginary_number\"],\"resistance_complexity\":\"three_verse\"}")
       ).result().orElseThrow();
 
       assertEquals(java.util.List.of(MagicAttributes.IMAGINARY_NUMBER), parsed.requiredAttributes());
+      assertEquals(MagicComplexity.THREE_VERSE, parsed.resistanceComplexity());
    }
 
    @Test
@@ -44,5 +46,6 @@ class MagicDefinitionDataTest {
       assertEquals(0, data.cooldownTicks());
       assertEquals(0, data.npcGlobalCooldown());
       assertEquals(0, data.npcCooldown());
+      assertEquals(MagicComplexity.SIMPLE_ACTION, data.resolvedResistanceComplexity());
    }
 }

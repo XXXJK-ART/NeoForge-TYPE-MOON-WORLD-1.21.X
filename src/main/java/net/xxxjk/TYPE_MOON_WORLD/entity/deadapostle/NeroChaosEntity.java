@@ -52,6 +52,11 @@ public class NeroChaosEntity extends DeadApostleEntity {
    private static final String TAG_DEVOUR_COOLDOWN = "NeroChaosDevourCooldown";
    private static final String TAG_PENDING_BEAST_REVIVES = "NeroChaosPendingBeastRevives";
    private static final String TAG_NEXT_BEAST_REVIVE = "NeroChaosNextBeastRevive";
+   private static final String TAG_CROWD_AOE_COOLDOWN = "NeroChaosCrowdAoeCooldown";
+   private static final int CROWD_AOE_MIN_ENEMIES = 4;
+   private static final double CROWD_AOE_RADIUS = 6.25;
+   private static final long CROWD_AOE_COOLDOWN_TICKS = 100L;
+   private static final float CROWD_AOE_DAMAGE = 24.0F;
    private static final EntityDataAccessor<Integer> REMAINING_LIVES =
       SynchedEntityData.defineId(NeroChaosEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> CHAOS_FORM =
@@ -112,7 +117,9 @@ public class NeroChaosEntity extends DeadApostleEntity {
       if (DeadApostleCombatSystem.tick(this)) return;
       if (tickDevour(now)) return;
       tickChaosEnergy(now);
-      if (!isChaosForm()) tickBeastRelease(now);
+      // The chaos form must not leave Nero fighting alone if his combat beasts were lost.
+      tickBeastRelease(now);
+      tickCrowdAoe(now);
    }
 
    public String getCombatProfileId() {
@@ -300,10 +307,11 @@ public class NeroChaosEntity extends DeadApostleEntity {
       int active = countOwnedBeasts();
       int desired;
       LivingEntity target = getTarget();
-      if (target == null || !target.isAlive()) {
+      int nearbyEnemies = countNearbyEnemies(48.0);
+      if ((target == null || !target.isAlive()) && nearbyEnemies <= 0) {
          desired = 0;
       } else {
-         desired = NeroChaosRules.combatBeastTarget(getRemainingLives());
+         desired = NeroChaosRules.combatBeastTarget(getRemainingLives(), nearbyEnemies);
       }
       desired = Math.min(NeroChaosRules.MAX_ACTIVE_BEASTS, desired);
       while (active < desired && active < NeroChaosRules.MAX_ACTIVE_BEASTS && getRemainingLives() > 0) {
@@ -340,6 +348,46 @@ public class NeroChaosEntity extends DeadApostleEntity {
       return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(96.0),
          entity -> entity instanceof NeroChaosBeastLogic.NeroChaosBeastEntityMarker marker
             && getUUID().equals(marker.neroChaosOwnerUuid())).size();
+   }
+
+   private int countNearbyEnemies(double radius) {
+      return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(radius),
+         entity -> entity != this && entity.isAlive() && canAttack(entity)
+            && !isAlliedTo(entity)
+            && !entity.isAlliedTo(this)
+            && !EntityUtils.isImmunePlayerTarget(entity)).size();
+   }
+
+   private void tickCrowdAoe(long now) {
+      if (now % 20L != Math.floorMod(getId() + 7, 20)) return;
+      var data = getPersistentData();
+      if (now < data.getLong(TAG_CROWD_AOE_COOLDOWN)) return;
+      var enemies = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(CROWD_AOE_RADIUS),
+         entity -> entity != this && entity.isAlive() && canAttack(entity)
+            && !isAlliedTo(entity)
+            && !entity.isAlliedTo(this)
+            && !EntityUtils.isImmunePlayerTarget(entity));
+      if (enemies.size() < CROWD_AOE_MIN_ENEMIES || getRandom().nextFloat() > 0.35F) return;
+
+      data.putLong(TAG_CROWD_AOE_COOLDOWN, now + CROWD_AOE_COOLDOWN_TICKS);
+      swing(InteractionHand.MAIN_HAND);
+      for (LivingEntity enemy : enemies) {
+         enemy.invulnerableTime = 0;
+         enemy.hurt(damageSources().mobAttack(this), CROWD_AOE_DAMAGE);
+         Vec3 away = enemy.position().subtract(position()).multiply(1.0, 0.0, 1.0);
+         if (away.lengthSqr() < 1.0E-6) away = getLookAngle().multiply(1.0, 0.0, 1.0);
+         away = away.normalize();
+         enemy.setDeltaMovement(enemy.getDeltaMovement().add(away.x * 0.7, 0.18, away.z * 0.7));
+         enemy.hurtMarked = true;
+      }
+      if (level() instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY() + getBbHeight() * 0.52, getZ(),
+            6, 1.6, 0.35, 1.6, 0.0);
+         serverLevel.sendParticles(ParticleTypes.SMOKE, getX(), getY() + getBbHeight() * 0.35, getZ(),
+            28, 1.9, 0.25, 1.9, 0.04);
+         serverLevel.playSound(null, blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP,
+            SoundSource.HOSTILE, 1.0F, 0.7F);
+      }
    }
 
    private void tickBeastRevival(long now) {
@@ -506,6 +554,11 @@ public class NeroChaosEntity extends DeadApostleEntity {
       }
 
       @Override
+      public boolean requiresUpdateEveryTick() {
+         return true;
+      }
+
+      @Override
       public void tick() {
          LivingEntity target = nero.getTarget();
          if (target == null) return;
@@ -513,6 +566,7 @@ public class NeroChaosEntity extends DeadApostleEntity {
             nero.getNavigation().stop();
             return;
          }
+         if (tryDodgeIncomingProjectile()) return;
          nero.getLookControl().setLookAt(target, 35.0F, 35.0F);
          double distanceSqr = nero.distanceToSqr(target);
          if (distanceSqr > 16.0) {
@@ -521,6 +575,21 @@ public class NeroChaosEntity extends DeadApostleEntity {
             nero.getNavigation().stop();
             nero.getMoveControl().strafe(0.16F, 0.45F);
          }
+      }
+
+      private boolean tryDodgeIncomingProjectile() {
+         long now = nero.level().getGameTime();
+         if (nero.getPersistentData().getLong("TypeMoonAiProjectileScanTick") == now
+            || nero.tickCount % 3 != Math.floorMod(nero.getId(), 3)) return false;
+         net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatSensor.IncomingProjectile incoming =
+            net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatSensor.nearest(nero, 10.0, 8.0);
+         if (incoming == null) return false;
+         boolean moved = net.xxxjk.TYPE_MOON_WORLD.combat.ai.EvasionMovementService.tryEvade(
+            nero, incoming.projectile().position(), 5, true);
+         if (moved) {
+            nero.getNavigation().stop();
+         }
+         return moved;
       }
    }
 }

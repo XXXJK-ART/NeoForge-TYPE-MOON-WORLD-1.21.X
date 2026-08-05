@@ -527,9 +527,10 @@ public final class NpcMagicCastBridge {
          int fixedLevel = Mth.clamp(data.contains(TAG_FIXED_LEVEL) ? data.getInt(TAG_FIXED_LEVEL) : Mth.nextInt(random, LEVEL_MIN, LEVEL_MAX), LEVEL_MIN, LEVEL_MAX);
          data.putInt(TAG_FIXED_LEVEL, fixedLevel);
          data.putInt(TAG_COMBAT_LEVEL_BONUS, 0);
-         randomizeBaseStats(vars, random);
+         MysticMagicianRank rank = npc.getMagicianRank();
+         randomizeBaseStats(vars, random, rank);
          randomizeMagicAttributes(vars, random);
-         seedSelfKnowledge(vars, random, fixedLevel);
+         seedSelfKnowledge(npc, vars, random, fixedLevel, rank);
          seedCrestKnowledge(npc, vars, random);
          buildWheelEntries(npc, vars, random);
          vars.rebuildSelectedMagicsFromActiveWheel();
@@ -621,9 +622,12 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void randomizeBaseStats(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random) {
+   private static void randomizeBaseStats(
+      TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random, MysticMagicianRank rank
+   ) {
       vars.is_magus = true;
-      vars.player_max_mana = round1(100.0 + random.nextDouble() * 900.0);
+      MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
+      vars.player_max_mana = round1(resolvedRank.rollMana(random));
       vars.player_mana = vars.player_max_mana;
       vars.player_mana_egenerated_every_moment = round1(1.0 + random.nextDouble() * 9.0);
       vars.player_restore_magic_moment = round1(1.0 + random.nextDouble() * 9.0);
@@ -687,7 +691,14 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void seedSelfKnowledge(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random, int fixedLevel) {
+   private static void seedSelfKnowledge(
+      MysticMagicianEntity npc,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      RandomSource random,
+      int fixedLevel,
+      MysticMagicianRank rank
+   ) {
+      MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
       List<String> pool = new ArrayList<>();
 
       for (String id : NpcMagicFilterService.candidateMagicPool()) {
@@ -697,35 +708,48 @@ public final class NpcMagicCastBridge {
       }
 
       if (!pool.isEmpty()) {
-         Collections.shuffle(pool, new Random(random.nextLong()));
-         int max = Math.min(8, pool.size());
-         int selfCount = Mth.nextInt(random, 4, Math.max(4, max));
+         List<String> orderedPool = prioritizeMagicPool(pool, resolvedRank, npc.getBrandColor(), random);
+         int selfCount = Math.min(resolvedRank.rollMagicCount(random), orderedPool.size());
          boolean reinforcementPicked = false;
-         boolean reinforcementInPool = pool.remove("reinforcement");
+         boolean reinforcementInPool = orderedPool.remove("reinforcement");
          // 90% have reinforcement; 10% get ranged/control compensation and avoid melee preference.
-         if (reinforcementInPool && random.nextFloat() < 0.9F) {
+         if (reinforcementInPool && random.nextFloat() < (resolvedRank.prefersAdvancedMagic() ? 0.75F : 0.9F)) {
             vars.learned_magics.add("reinforcement");
-            seedSelfProficiency(vars, "reinforcement", random, fixedLevel);
+            seedSelfProficiency(vars, "reinforcement", random, resolvedRank, fixedLevel, false);
             reinforcementPicked = true;
          }
 
-         for (int i = 0; i < selfCount && i < pool.size(); i++) {
-            String magicId = pool.get(i);
+         int specialtyCount = resolvedRank == MysticMagicianRank.FES ? Mth.nextInt(random, 1, 2) : 0;
+         int selectedCount = 0;
+         for (String magicId : orderedPool) {
+            if (selectedCount >= selfCount) {
+               break;
+            }
+            if ("reinforcement".equals(magicId) || vars.learned_magics.contains(magicId)) {
+               continue;
+            }
+            boolean specialty = specialtyCount > 0 && isFesSpecialty(magicId);
             vars.learned_magics.add(magicId);
             ensurePrerequisites(vars, magicId);
-            seedSelfProficiency(vars, magicId, random, fixedLevel);
+            seedSelfProficiency(vars, magicId, random, resolvedRank, fixedLevel, specialty);
+            if (specialty) {
+               specialtyCount--;
+            }
+            selectedCount++;
          }
 
          if (!reinforcementPicked) {
-            String[] compensation = new String[]{"gandr_machine_gun", "jewel_machine_gun", "jewel_random_shoot", "gravity_magic", "gander"};
-            int compensationCount = Mth.nextInt(random, 2, 3);
+            String[] compensation = resolvedRank.prefersAdvancedMagic()
+               ? new String[]{"gandr_machine_gun", "jewel_machine_gun", "healing_magic", "gravity_magic", "suggestion_magic", "binding_magic", "gander"}
+               : new String[]{"gander", "magic_bullet", "fire_magic", "water_magic", "reinforcement"};
+            int compensationCount = resolvedRank == MysticMagicianRank.FRAME || resolvedRank == MysticMagicianRank.UMNOS ? 1 : 2;
             int added = 0;
 
             for (String extra : compensation) {
                if (NpcMagicFilterService.isMagicAllowedForNpc(extra) && !vars.learned_magics.contains(extra)) {
                   vars.learned_magics.add(extra);
                   ensurePrerequisites(vars, extra);
-                  seedSelfProficiency(vars, extra, random, fixedLevel);
+                  seedSelfProficiency(vars, extra, random, resolvedRank, fixedLevel, false);
                   added++;
                   if (added >= compensationCount) {
                      break;
@@ -736,9 +760,60 @@ public final class NpcMagicCastBridge {
 
          if (!vars.learned_magics.contains("gander")) {
             vars.learned_magics.add("gander");
-            vars.proficiency_gander = Math.max(vars.proficiency_gander, 35.0);
+            vars.proficiency_gander = Math.max(vars.proficiency_gander, resolvedRank == MysticMagicianRank.FRAME ? 20.0 : 35.0);
          }
       }
+   }
+
+   private static List<String> prioritizeMagicPool(
+      List<String> source,
+      MysticMagicianRank rank,
+      MysticMagicianRank.BrandColor brandColor,
+      RandomSource random
+   ) {
+      List<String> shuffled = new ArrayList<>(source);
+      Collections.shuffle(shuffled, new Random(random.nextLong()));
+      if (!rank.prefersAdvancedMagic()) {
+         return shuffled;
+      }
+
+      List<String> preferred = new ArrayList<>();
+      String[] advanced = new String[]{
+         "gandr_machine_gun", "jewel_machine_gun", "jewel_random_shoot",
+         "healing_magic", "gravity_magic", "binding_magic", "suggestion_magic",
+         "reinforcement"
+      };
+      for (String id : advanced) {
+         if (shuffled.remove(id)) {
+            preferred.add(id);
+         }
+      }
+      if (rank == MysticMagicianRank.BRAND) {
+         String brandPreferred = switch (brandColor == null ? MysticMagicianRank.BrandColor.RED : brandColor) {
+            case RED -> "fire_magic";
+            case BLUE -> "water_magic";
+            case YELLOW -> "earth_magic";
+            case ORANGE -> "jewel_random_shoot";
+            case PURPLE -> "suggestion_magic";
+            case GREEN -> "healing_magic";
+            case BLACK -> "gravity_magic";
+         };
+         if (shuffled.remove(brandPreferred)) {
+            preferred.add(0, brandPreferred);
+         }
+      }
+      preferred.addAll(shuffled);
+      return preferred;
+   }
+
+   private static boolean isFesSpecialty(String magicId) {
+      return switch (magicId) {
+         case "gandr_machine_gun", "jewel_machine_gun", "healing_magic",
+            "gravity_magic", "binding_magic", "suggestion_magic",
+            "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river",
+            "topaz_reinforcement", "cyan_wind" -> true;
+         default -> false;
+      };
    }
 
    private static void seedCrestKnowledge(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random) {
@@ -859,10 +934,18 @@ public final class NpcMagicCastBridge {
       vars.rebuildSelectedMagicsFromActiveWheel();
    }
 
-   private static void seedSelfProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, RandomSource random, int fixedLevel) {
-      double min = 10.0 + (Mth.clamp(fixedLevel, LEVEL_MIN, LEVEL_MAX) - 1) * 15.0;
-      double max = Math.min(100.0, min + 30.0);
-      double p = min + random.nextDouble() * Math.max(5.0, max - min);
+   private static void seedSelfProficiency(
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      String magicId,
+      RandomSource random,
+      MysticMagicianRank rank,
+      int fixedLevel,
+      boolean specialty
+   ) {
+      MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
+      double min = specialty ? resolvedRank.minSpecialtyProficiency() : resolvedRank.minProficiency();
+      double max = specialty ? resolvedRank.maxSpecialtyProficiency() : resolvedRank.maxProficiency();
+      double p = min + random.nextDouble() * Math.max(1.0, max - min);
       switch (magicId) {
          case "gander":
          case "gandr_machine_gun":
@@ -872,7 +955,7 @@ public final class NpcMagicCastBridge {
             vars.proficiency_gravity_magic = Math.max(vars.proficiency_gravity_magic, p);
             break;
          case "reinforcement":
-            double reinforcementFloor = 40.0 + (Mth.clamp(fixedLevel, LEVEL_MIN, LEVEL_MAX) - 1) * 10.0;
+            double reinforcementFloor = Math.max(40.0, min);
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, Math.max(p, reinforcementFloor));
             break;
          case "jewel_random_shoot":
@@ -2342,10 +2425,11 @@ public final class NpcMagicCastBridge {
                   int shotCount = Math.max(1, data.getInt(TAG_PENDING_MG_SHOT_COUNT));
                   if ("gandr_machine_gun".equals(magicId)) {
                      markCastingPose(npc, 8);
+                     double proficiency = vars == null ? 0.0 : vars.proficiency_gander;
                      if (mode == 1) {
-                        fireNpcBarrage(npc, target, shotCount, charge);
+                        fireNpcBarrage(npc, target, shotCount, charge, proficiency);
                      } else {
-                        fireGandrRapidWave(npc, target, charge);
+                        fireGandrRapidWave(npc, target, charge, proficiency);
                      }
                   } else if ("jewel_machine_gun".equals(magicId)) {
                      markCastingPose(npc, 8);
@@ -3843,6 +3927,7 @@ public final class NpcMagicCastBridge {
          GanderProjectileEntity projectile = new GanderProjectileEntity(caster.level(), caster);
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
+         projectile.setMagicSource("gander", proficiency);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
          projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          projectile.setPos(spawnPos);
@@ -3877,7 +3962,7 @@ public final class NpcMagicCastBridge {
          } else {
             markCastingPose(caster, 16);
             int chargeSeconds = getGanderChargeSeconds(proficiency);
-            fireNpcBarrage(caster, target, shotCountPerWave, chargeSeconds);
+            fireNpcBarrage(caster, target, shotCountPerWave, chargeSeconds, proficiency);
             startPendingMachineGun(
                caster, target, "gandr_machine_gun", waveCount - 1, 4, 1, chargeSeconds, shotCountPerWave
             );
@@ -3894,7 +3979,7 @@ public final class NpcMagicCastBridge {
          } else {
             markCastingPose(caster, 12);
             int chargeSeconds = getGanderChargeSeconds(proficiency);
-            fireGandrRapidWave(caster, target, chargeSeconds);
+            fireGandrRapidWave(caster, target, chargeSeconds, proficiency);
             startPendingMachineGun(
                caster, target, "gandr_machine_gun", waveCount - 1, 3, 0, chargeSeconds, 3
             );
@@ -3904,7 +3989,7 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void fireNpcBarrage(MysticMagicianEntity caster, LivingEntity target, int shotCount, int chargeSeconds) {
+   private static void fireNpcBarrage(MysticMagicianEntity caster, LivingEntity target, int shotCount, int chargeSeconds, double proficiency) {
       Level level = caster.level();
       Vec3 forward = getAimDirection(caster, target, 3.5, 0.0);
       faceCasterToDirection(caster, forward);
@@ -3930,6 +4015,7 @@ public final class NpcMagicCastBridge {
          GanderProjectileEntity projectile = new GanderProjectileEntity(level, caster);
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
+         projectile.setMagicSource("gandr_machine_gun", proficiency);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
          projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          projectile.setPos(spawn);
@@ -3938,7 +4024,7 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void fireGandrRapidWave(MysticMagicianEntity caster, LivingEntity target, int chargeSeconds) {
+   private static void fireGandrRapidWave(MysticMagicianEntity caster, LivingEntity target, int chargeSeconds, double proficiency) {
       Level level = caster.level();
       Vec3 forward = getAimDirection(caster, target, 3.8, 0.0);
       faceCasterToDirection(caster, forward);
@@ -3950,6 +4036,7 @@ public final class NpcMagicCastBridge {
          GanderProjectileEntity projectile = new GanderProjectileEntity(level, caster);
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
+         projectile.setMagicSource("gandr_machine_gun", proficiency);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
          projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i])).add(up.scale(RAPID_UP[i]));

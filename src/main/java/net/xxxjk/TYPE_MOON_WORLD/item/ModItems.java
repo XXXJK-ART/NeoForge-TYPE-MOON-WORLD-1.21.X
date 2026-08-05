@@ -987,6 +987,20 @@ public class ModItems {
 
     public static final DeferredItem<Item> MYSTIC_MAGICIAN_SPAWN_EGG = ITEMS.register("mystic_magician_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN, 0x000000, 0xC00000, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_GRAND_SPAWN_EGG = ITEMS.register("mystic_magician_grand_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_GRAND, 0x24113D, 0xF2D27A, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_BRAND_SPAWN_EGG = ITEMS.register("mystic_magician_brand_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_BRAND, 0x8B1E3F, 0xF6C453, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_PRIDE_SPAWN_EGG = ITEMS.register("mystic_magician_pride_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_PRIDE, 0x1D3B6D, 0x9BC6E4, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_FES_SPAWN_EGG = ITEMS.register("mystic_magician_fes_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_FES, 0x5B2B73, 0xD8A6F0, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_ADEPT_SPAWN_EGG = ITEMS.register("mystic_magician_adept_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_ADEPT, 0x315B3A, 0xB6D39A, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_UMNOS_SPAWN_EGG = ITEMS.register("mystic_magician_umnos_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_UMNOS, 0x42515C, 0xD3B98A, new Item.Properties()));
+    public static final DeferredItem<Item> MYSTIC_MAGICIAN_FRAME_SPAWN_EGG = ITEMS.register("mystic_magician_frame_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MYSTIC_MAGICIAN_FRAME, 0x5A5A5A, 0xC9C9C9, new Item.Properties()));
     public static final DeferredItem<Item> THE_DEAD_SPAWN_EGG = ITEMS.register("the_dead_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.THE_DEAD, 0x5C5C5C, 0x262626, new Item.Properties()));
     public static final DeferredItem<Item> GHOUL_SPAWN_EGG = ITEMS.register("ghoul_spawn_egg",

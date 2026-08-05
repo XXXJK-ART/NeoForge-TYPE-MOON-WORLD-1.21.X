@@ -25,6 +25,8 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicProficiencyContestHelper;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import org.joml.Vector3f;
 
 @EventBusSubscriber(
@@ -54,10 +56,38 @@ public class MagicGravityEffectHandler {
    }
 
    public static void applyGravityState(LivingEntity target, int mode, long untilGameTime, LivingEntity caster) {
+      double proficiency = MagicProficiencyContestHelper.resolveCasterProficiency(caster, "gravity_magic", 0.0);
+      applyGravityState(target, mode, untilGameTime, caster, proficiency);
+   }
+
+   public static void applyGravityState(LivingEntity target, int mode, long untilGameTime, LivingEntity caster, double casterProficiency) {
+      applyGravityStateInternal(target, mode, untilGameTime, caster, casterProficiency, false);
+   }
+
+   private static void applyGravityStateInternal(
+      LivingEntity target, int mode, long untilGameTime, LivingEntity caster, double casterProficiency, boolean skipProficiencyContest
+   ) {
       if (isHostileGravityState(target, mode, caster)) {
+         if (!skipProficiencyContest) {
+            MagicProficiencyContestHelper.Result contest = MagicProficiencyContestHelper.contest(
+               caster, target, "gravity_magic", casterProficiency, MagicComplexity.ONE_VERSE);
+            if (contest == MagicProficiencyContestHelper.Result.COUNTERED) {
+               clearGravityState(target);
+               long counterUntil = target.level().getGameTime() + Math.max(40L, Math.min(160L, untilGameTime - target.level().getGameTime()));
+               Double targetProficiency = MagicProficiencyContestHelper.getComparableMagicProficiency(target, "gravity_magic");
+               applyGravityStateInternal(caster, mode, counterUntil, target, targetProficiency == null ? 100.0 : targetProficiency, true);
+               playGravityCastFx(target, caster, mode);
+               return;
+            }
+            if (contest == MagicProficiencyContestHelper.Result.RESISTED) {
+               clearGravityState(target);
+               return;
+            }
+         }
          int adjustedDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
             target,
-            (int)Math.max(1L, untilGameTime - target.level().getGameTime())
+            (int)Math.max(1L, untilGameTime - target.level().getGameTime()),
+            MagicComplexity.ONE_VERSE
          );
          if (adjustedDuration <= 0) {
             clearGravityState(target);
@@ -93,7 +123,19 @@ public class MagicGravityEffectHandler {
    public static void applyLinkedSlow(LivingEntity target, int durationTicks, int amplifier, LivingEntity caster) {
       if (target != null) {
          if (isHostileGravityState(target, MagicGravity.MODE_HEAVY, caster)) {
-            durationTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, durationTicks);
+            double proficiency = MagicProficiencyContestHelper.resolveCasterProficiency(caster, "gravity_magic", 0.0);
+            MagicProficiencyContestHelper.Result contest = MagicProficiencyContestHelper.contest(
+               caster, target, "gravity_magic", proficiency, MagicComplexity.ONE_VERSE);
+            if (contest == MagicProficiencyContestHelper.Result.COUNTERED) {
+               applyLinkedSlow(caster, Math.min(120, Math.max(30, durationTicks)), amplifier, target);
+               clearLinkedSlowState(target, true);
+               return;
+            }
+            if (contest == MagicProficiencyContestHelper.Result.RESISTED) {
+               clearLinkedSlowState(target, true);
+               return;
+            }
+            durationTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, durationTicks, MagicComplexity.ONE_VERSE);
             if (durationTicks <= 0) {
                clearLinkedSlowState(target, true);
                return;
@@ -227,7 +269,7 @@ public class MagicGravityEffectHandler {
             tickLinkedSlow(living);
             int mode = getCurrentMode(living);
             if (mode != 0) {
-               if (MagicResistanceHelper.blocksHarmfulMagicEffect(living)
+               if (MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.ONE_VERSE)
                   && living.getPersistentData().hasUUID(TAG_CASTER_UUID)) {
                   clearGravityState(living);
                   return;
