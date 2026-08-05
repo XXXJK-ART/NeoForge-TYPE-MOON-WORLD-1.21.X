@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.model;
 
 import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import software.bernie.geckolib.model.GeoModel;
@@ -25,7 +26,29 @@ public final class GenericServantModel extends GeoModel<GenericServantEntity> {
       ServantDefinition definition = entity.getDefinition();
       if (definition == null) return fallback;
       String value = kind == 0 ? definition.modelGeometryPath() : kind == 1 ? definition.texturePath() : definition.animationPath();
-      ResourceLocation parsed = value == null ? null : ResourceLocation.tryParse(value);
-      return parsed == null ? fallback : parsed;
+      if (value == null || value.isBlank()) {
+         return fallback;
+      }
+
+      ResourceLocation parsed;
+      try {
+         parsed = ResourceLocation.tryParse(value.trim());
+      } catch (RuntimeException exception) {
+         TYPE_MOON_WORLD.LOGGER.warn("Ignoring invalid servant {} resource path '{}'", entity.getServantId(), value);
+         return fallback;
+      }
+
+      String requiredDirectory = switch (kind) {
+         case 0 -> "geo/";
+         case 1 -> "textures/";
+         default -> "animations/";
+      };
+      if (parsed == null || parsed.getPath().isBlank() || !parsed.getPath().startsWith(requiredDirectory)) {
+         TYPE_MOON_WORLD.LOGGER.warn(
+            "Ignoring invalid servant {} resource path '{}' (expected under {})",
+            entity.getServantId(), value, requiredDirectory);
+         return fallback;
+      }
+      return parsed;
    }
 }

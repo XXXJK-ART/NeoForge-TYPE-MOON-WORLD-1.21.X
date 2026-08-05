@@ -742,19 +742,22 @@ public final class MuramasaCombatHelper {
    private static void releaseTsumukari(SenkoMuramasaEntity entity, ServerLevel level, int percent) {
       CompoundTag data = entity.getPersistentData();
       data.putBoolean(TSUMUKARI_RELEASED, true);
-      double cost = 1000.0 * Math.max(0.0, Math.min(1.0, percent / 100.0));
-      double servantCost = Math.min(entity.getCurrentMp(), cost);
-      entity.setCurrentMp(entity.getCurrentMp() - servantCost);
-      double remaining = cost - servantCost;
-      ServerPlayer master = entity.getEntityMaster();
-      if (remaining > 0.0 && master != null) {
-         TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         double masterCost = Math.min(vars.player_mana, remaining);
-         vars.player_mana -= masterCost;
-         vars.syncMana(master);
-         remaining -= masterCost;
-      }
       boolean delayedDissolution = !hasDivinity(entity) && percent >= 60;
+      double remaining = 0.0;
+      if (!delayedDissolution) {
+         double cost = 1000.0 * Math.max(0.0, Math.min(1.0, percent / 100.0));
+         double servantCost = Math.min(entity.getCurrentMp(), cost);
+         entity.setCurrentMp(entity.getCurrentMp() - servantCost);
+         remaining = cost - servantCost;
+         ServerPlayer master = entity.getEntityMaster();
+         if (remaining > 0.0 && master != null) {
+            TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            double masterCost = Math.min(vars.player_mana, remaining);
+            vars.player_mana -= masterCost;
+            vars.syncMana(master);
+            remaining -= masterCost;
+         }
+      }
       if (remaining > 0.0 && !delayedDissolution) {
          data.putBoolean(CHARGE_FORCED_DEATH, true);
       }

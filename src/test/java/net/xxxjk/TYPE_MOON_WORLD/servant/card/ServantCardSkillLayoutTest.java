@@ -47,19 +47,18 @@ class ServantCardSkillLayoutTest {
          "caster_gilgamesh_item_creation",
          "caster_gilgamesh_workshop",
          "caster_gilgamesh_cannon_calibration",
-         "gilgamesh_clairvoyance"
+         "gilgamesh_clairvoyance",
+         "gilgamesh_divine_shield"
       };
-      double[] costs = {0.0, 0.0, 20.0, 15.0, 0.0, 0.0, 0.0, 18.0};
-      int[] cooldowns = {0, 24, 35 * 20, 30 * 20, 0, 80, 20, 160};
-      for (int slot = 0; slot <= 7; slot++) {
+      double[] costs = {0.0, 0.0, 20.0, 15.0, 0.0, 0.0, 0.0, 18.0, 30.0};
+      int[] cooldowns = {0, 24, 35 * 20, 30 * 20, 0, 80, 20, 160, 0};
+      for (int slot = 0; slot <= 8; slot++) {
          ServantCardSkillAction action = ServantCardSkillLayout.actionFor("gilgamesh_caster", slot, false);
          assertNotNull(action, "slot " + slot);
          assertEquals(effects[slot], action.effectId(), "slot " + slot + " effect");
          assertEquals(costs[slot], action.mpCost(), "slot " + slot + " MP");
          assertEquals(cooldowns[slot], action.cooldownTicks(), "slot " + slot + " cooldown");
       }
-      assertNull(ServantCardSkillLayout.actionFor("gilgamesh_caster", 8, false));
-
       ServantCardSkillAction noble = ServantCardSkillLayout.actionFor("gilgamesh_caster", 9, false);
       assertNotNull(noble);
       assertEquals("caster_gilgamesh_royal_cannon", noble.effectId());

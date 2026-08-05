@@ -55,7 +55,7 @@ public class MuramasaSlashHandler {
          ACTIVE_SLASHES.add(
             new MuramasaSlashHandler.SlashInstance(
                owner.getUUID(), level.dimension(), owner.position().add(0.0, owner.getEyeHeight() * 0.5, 0.0),
-               look, charge, maxDist, maxWidth, maxHeight, true
+               look, charge, maxDist, maxWidth, maxHeight, charge >= 60, charge >= 60
             )
          );
       }
@@ -145,7 +145,7 @@ public class MuramasaSlashHandler {
                float hardness = state.getDestroySpeed(level, pos);
                boolean isBreakable = hardness >= 0.0F;
                boolean canBreak;
-               if (slash.charge > 60) {
+               if (slash.charge >= 60) {
                   canBreak = isBreakable && !state.is(Blocks.BEDROCK);
                } else {
                   canBreak = isBreakable && hardness < 50.0F;
@@ -167,8 +167,8 @@ public class MuramasaSlashHandler {
 
          for (Entity e : level.getEntities(null, box)) {
             if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID) && !EntityUtils.isImmunePlayerTarget(e)) {
-                  float damage = slash.causalSeverance
-                     ? Float.MAX_VALUE
+                  float damage = slash.tsumukari
+                     ? tsumukariDamage(slash.charge)
                      : slash.fixedGeometry ? 1500.0F : 20.0F + slash.charge * 5.0F;
                   Entity attackerEntity = level.getEntity(slash.playerUUID);
                   if (attackerEntity instanceof LivingEntity attacker) {
@@ -176,7 +176,7 @@ public class MuramasaSlashHandler {
                      markCausalSeverance(living);
                      level.sendParticles(ParticleTypes.REVERSE_PORTAL, living.getX(), living.getY() + living.getBbHeight() / 2, living.getZ(), 30, 0.5, 0.5, 0.5, 0.3);
                      level.sendParticles(ParticleTypes.SOUL, living.getX(), living.getY() + 1.0, living.getZ(), 15, 0.3, 0.3, 0.3, 0.1);
-                  } else if (!slash.fixedGeometry && slash.charge >= 100
+                  } else if (slash.tsumukari && !slash.fixedGeometry && slash.charge >= 100
                      && living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servantTarget) {
                      servantTarget.getPersistentData().putBoolean("CausalSevered", true);
                      level.sendParticles(ParticleTypes.REVERSE_PORTAL, living.getX(), living.getY() + living.getBbHeight() / 2, living.getZ(), 30, 0.5, 0.5, 0.5, 0.3);
@@ -188,13 +188,6 @@ public class MuramasaSlashHandler {
                      : level.damageSources().indirectMagic(attacker, attacker);
                   living.hurt(source, damage);
                   living.invulnerableTime = 0;
-                  if (slash.causalSeverance && living.isAlive()) {
-                     living.setHealth(0.0F);
-                     living.die(source);
-                     if (living.isAlive()) {
-                        living.die(level.damageSources().genericKill());
-                     }
-                  }
                   if (attacker instanceof Player player) EntityUtils.triggerSwarmAnger(level, player, living);
                } else {
                   living.invulnerableTime = 0;
@@ -318,6 +311,14 @@ public class MuramasaSlashHandler {
       return (mix64(value) >>> 11) * 0x1.0p-53;
    }
 
+   private static float tsumukariDamage(int charge) {
+      int clampedCharge = Math.max(0, Math.min(100, charge));
+      if (clampedCharge < 60) {
+         return Math.max(1.0F, clampedCharge * 10.0F);
+      }
+      return 1000.0F + (clampedCharge - 60) * 25.0F;
+   }
+
    private static class SlashInstance {
       final UUID playerUUID;
       final ResourceKey<Level> dimension;
@@ -331,6 +332,7 @@ public class MuramasaSlashHandler {
       final boolean fixedGeometry;
       final boolean burnPass;
       final boolean causalSeverance;
+      final boolean tsumukari;
       final Runnable completion;
       final long variationSeed;
       double currentDistance = 0.0;
@@ -338,6 +340,15 @@ public class MuramasaSlashHandler {
       SlashInstance(
          UUID playerUUID, ResourceKey<Level> dimension, Vec3 startPos, Vec3 direction,
          int charge, int maxDistLimit, int maxWidthLimit, int maxHeightLimit, boolean causalSeverance
+      ) {
+         this(playerUUID, dimension, startPos, direction, charge, maxDistLimit, maxWidthLimit,
+            maxHeightLimit, causalSeverance, false);
+      }
+
+      SlashInstance(
+         UUID playerUUID, ResourceKey<Level> dimension, Vec3 startPos, Vec3 direction,
+         int charge, int maxDistLimit, int maxWidthLimit, int maxHeightLimit,
+         boolean causalSeverance, boolean tsumukari
       ) {
          this.playerUUID = playerUUID;
          this.dimension = dimension;
@@ -351,6 +362,7 @@ public class MuramasaSlashHandler {
          this.fixedGeometry = false;
          this.burnPass = false;
          this.causalSeverance = causalSeverance;
+         this.tsumukari = tsumukari;
          this.completion = null;
          this.variationSeed = mix64(Double.doubleToLongBits(startPos.x)
             ^ Double.doubleToLongBits(startPos.y) ^ Double.doubleToLongBits(startPos.z));
@@ -371,6 +383,7 @@ public class MuramasaSlashHandler {
          this.fixedGeometry = fixedGeometry;
          this.burnPass = burnPass;
          this.causalSeverance = false;
+         this.tsumukari = false;
          this.completion = completion;
          this.variationSeed = mix64(Double.doubleToLongBits(startPos.x)
             ^ Double.doubleToLongBits(startPos.y) ^ Double.doubleToLongBits(startPos.z)

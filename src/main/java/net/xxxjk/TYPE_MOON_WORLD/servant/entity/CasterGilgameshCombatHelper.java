@@ -10,10 +10,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -21,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -34,6 +37,7 @@ public final class CasterGilgameshCombatHelper {
    public static final int MAX_AMMO = 5000;
    public static final int STARTING_AMMO = 500;
    public static final int CANNON_SHOTS_PER_ROUND = 30;
+   public static final float CANNON_DAMAGE_PER_SHOT = 30.0F;
    public static final float CANNON_EXPLOSION_RADIUS = 3.0F;
    private static final String LAST_LEADER = "CasterGilgameshLastLeader";
    private static final String LAST_RETURN = "CasterGilgameshLastReturn";
@@ -60,6 +64,8 @@ public final class CasterGilgameshCombatHelper {
    private static final String[] GATE_WEAPONS = {"durandal", "gram", "vajra", "harpe", "fangtian_huaji", "pseudo_spiral_sword", "gae_bulg"};
    private static final long GATE_OF_BABYLON_COOLDOWN = 12L * 20L;
    private static final long FLIGHT_STALLED_TICKS = 8L * 20L;
+   private static final double DIVINE_SHIELD_MP_COST = 30.0;
+   private static final double DIVINE_SHIELD_DETECTION_RANGE = 24.0;
 
    private CasterGilgameshCombatHelper() {}
 
@@ -72,6 +78,7 @@ public final class CasterGilgameshCombatHelper {
       tickWorkshop(entity, level, data);
       tickTimedBuffs(entity, level, data, now);
       tickPhaseEntry(entity, level, data, now);
+      tickDivineShield(entity, level);
 
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive() || entity.isAlliedTo(target)) {
@@ -102,6 +109,34 @@ public final class CasterGilgameshCombatHelper {
          fireRoyalCannon(entity, level, target, data);
          data.putLong(LAST_CANNON_ROUND, now);
       }
+   }
+
+   private static void tickDivineShield(CasterGilgameshEntity entity, ServerLevel level) {
+      GilgameshDivineShield.tick(entity);
+      if (GilgameshDivineShield.isActive(entity)
+         || entity.getCurrentMp() < DIVINE_SHIELD_MP_COST
+         || GilgameshDivineShield.isOnCooldown(entity)) {
+         return;
+      }
+      boolean incomingProjectile = !level.getEntitiesOfClass(
+         Projectile.class,
+         entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),
+         projectile -> isIncomingHostileProjectile(entity, projectile)
+      ).isEmpty();
+      if (!incomingProjectile) return;
+
+      entity.setCurrentMp(entity.getCurrentMp() - DIVINE_SHIELD_MP_COST);
+      GilgameshDivineShield.activate(entity);
+   }
+
+   private static boolean isIncomingHostileProjectile(CasterGilgameshEntity entity, Projectile projectile) {
+      if (!projectile.isAlive() || projectile.getOwner() == entity) return false;
+      Entity owner = projectile.getOwner();
+      if (owner != null && (entity.isAlliedTo(owner) || owner.isAlliedTo(entity))) return false;
+
+      Vec3 towardGilgamesh = entity.getBoundingBox().getCenter().subtract(projectile.position());
+      Vec3 motion = projectile.getDeltaMovement();
+      return motion.lengthSqr() < 1.0E-6 || motion.dot(towardGilgamesh) > 0.0;
    }
 
    private static void initialize(CasterGilgameshEntity entity, CompoundTag data) {
@@ -314,7 +349,7 @@ public final class CasterGilgameshCombatHelper {
          data.putBoolean(FIRING_TAG, false);
          return;
       }
-      spawnRoyalCannonVolley(level, entity, target, CANNON_SHOTS_PER_ROUND, 20.0F, 1.0F, true);
+      spawnRoyalCannonVolley(level, entity, target, CANNON_SHOTS_PER_ROUND, CANNON_DAMAGE_PER_SHOT, 1.0F, true);
       data.putInt(AMMO_TAG, data.getInt(AMMO_TAG) - CANNON_SHOTS_PER_ROUND);
       entity.setCurrentMp(entity.getCurrentMp() - CANNON_SHOTS_PER_ROUND);
       entity.triggerNamedActionAnimation("standing");

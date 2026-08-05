@@ -51,7 +51,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePhantasmItem {
    private static final double CARD_MURAMASA_TOTAL_MANA_COST = 1000.0;
    private static final int CARD_MURAMASA_MAX_CHARGE_TICKS = 30;
-   private static final int CARD_MURAMASA_FREE_CHARGE_PERCENT = 60;
+   private static final int SPECIAL_CHARGE_PERCENT = 60;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public TsumukariMuramasaItem(Properties properties) {
@@ -172,16 +172,14 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
          }
 
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         boolean shouldPay = useDuration <= 100;
-         boolean paid = !shouldPay || (vars.servant_card_transformed
-            ? ServantCardManaService.consumeSilently(player, vars, getManaCostPerTick())
-            : consumePlayerMana(player, vars, getManaCostPerTick()));
+         boolean paid = useDuration > 100
+            || consumePlayerMana(player, vars, getManaCostPerTick());
          if (!paid) {
             player.releaseUsingItem();
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          } else {
             Component chargeText = Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", currentCharge)
-               .withStyle(currentCharge > 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED);
+               .withStyle(currentCharge >= SPECIAL_CHARGE_PERCENT ? ChatFormatting.DARK_RED : ChatFormatting.RED);
             player.displayClientMessage(chargeText, true);
             level.playSound(
                null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.5F, 1.0F + currentCharge / 100.0F
@@ -196,7 +194,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
                   double px = player.getX() + radius * Math.cos(angle);
                   double pz = player.getZ() + radius * Math.sin(angle);
                   double py = player.getY() + heightOffset + level.random.nextDouble() * 0.5;
-                  if (currentCharge > 60) {
+                  if (currentCharge >= SPECIAL_CHARGE_PERCENT) {
                      serverLevel.sendParticles(ParticleTypes.LAVA, px, py, pz, 1, 0.0, 0.0, 0.0, 0.0);
                      serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0.0, 0.0, 0.0, 0.05);
                   } else {
@@ -239,7 +237,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + charge / 100.0F);
          }
 
-         if (charge >= 60 && player instanceof ServerPlayer serverPlayer && !hasDivinity(serverPlayer)) {
+         if (charge >= SPECIAL_CHARGE_PERCENT && player instanceof ServerPlayer serverPlayer && !hasDivinity(serverPlayer)) {
             level.explode(null, player.getX(), player.getY(), player.getZ(), 10.0F, true, ExplosionInteraction.TNT);
             forceTsumukariDeath(serverPlayer, level);
          }
@@ -249,7 +247,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
    private static void tickCardCharge(Level level, ServerPlayer player, int useDuration) {
       int charge = Math.max(0, Math.min(CARD_MURAMASA_MAX_CHARGE_TICKS, useDuration));
       int percent = Math.round(charge * 100.0F / CARD_MURAMASA_MAX_CHARGE_TICKS);
-      if (percent < CARD_MURAMASA_FREE_CHARGE_PERCENT) {
+      if (percent < SPECIAL_CHARGE_PERCENT) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          double costPerTick = CARD_MURAMASA_TOTAL_MANA_COST / CARD_MURAMASA_MAX_CHARGE_TICKS;
          if (!ServantCardManaService.consumeSilently(player, vars, costPerTick)) {
@@ -260,7 +258,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
       }
       player.displayClientMessage(
          Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", percent)
-            .withStyle(percent >= 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED),
+            .withStyle(percent >= SPECIAL_CHARGE_PERCENT ? ChatFormatting.DARK_RED : ChatFormatting.RED),
          true
       );
       level.playSound(
@@ -276,7 +274,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             double pz = player.getZ() + radius * Math.sin(angle);
             double py = player.getY() + 0.6 + level.random.nextDouble() * 1.2;
             serverLevel.sendParticles(
-               percent >= 60 ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.FLAME,
+               percent >= SPECIAL_CHARGE_PERCENT ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.FLAME,
                px, py, pz, 1, 0.0, 0.04, 0.0, 0.05
             );
          }
@@ -293,7 +291,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
          return;
       }
       int percent = Math.round(charge * 100.0F / CARD_MURAMASA_MAX_CHARGE_TICKS);
-      boolean delayedDissolution = percent >= 60 && !hasDivinity(player);
+      boolean delayedDissolution = percent >= SPECIAL_CHARGE_PERCENT && !hasDivinity(player);
 
       if (level instanceof ServerLevel serverLevel) {
          int color = MagicCircuitColorHelper.ensureColor(player);

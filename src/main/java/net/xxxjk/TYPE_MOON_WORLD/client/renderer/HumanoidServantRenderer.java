@@ -12,14 +12,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import java.util.function.Function;
 
-public final class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMobRenderer<T, PlayerModel<T>> {
-   private final ResourceLocation texture;
+public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMobRenderer<T, PlayerModel<T>> {
+   private final Function<T, ResourceLocation> textureResolver;
 
    public HumanoidServantRenderer(EntityRendererProvider.Context context, String textureName) {
+      this(context, entity -> ResourceLocation.fromNamespaceAndPath(
+         TYPE_MOON_WORLD.MOD_ID, "textures/entity/" + textureName + ".png"));
+   }
+
+   protected HumanoidServantRenderer(EntityRendererProvider.Context context,
+                                     Function<T, ResourceLocation> textureResolver) {
       super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
-      this.texture = ResourceLocation.fromNamespaceAndPath(
-         TYPE_MOON_WORLD.MOD_ID, "textures/entity/" + textureName + ".png");
+      this.textureResolver = textureResolver;
       this.addLayer(new HumanoidArmorLayer<>(this,
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
@@ -42,11 +48,16 @@ public final class HumanoidServantRenderer<T extends ServantEntity> extends Huma
 
    @Override
    public ResourceLocation getTextureLocation(T entity) {
-      return this.texture;
+      return this.textureResolver.apply(entity);
    }
 
    private static float visualScale(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
+      String normalizedId = servantId == null ? "" : servantId;
+      int separator = normalizedId.indexOf(':');
+      if (separator >= 0) {
+         normalizedId = normalizedId.substring(separator + 1);
+      }
+      return switch (normalizedId) {
          case "oda_nobunaga" -> 0.800F;
          case "artoria_pendragon" -> 0.811F;
          case "fanatic_assassin", "medea" -> 0.858F;

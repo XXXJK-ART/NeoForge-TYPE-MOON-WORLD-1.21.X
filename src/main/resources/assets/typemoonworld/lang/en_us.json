@@ -1939,5 +1939,8 @@
     "skill.typemoonworld.servant_card.muramasa_sword_field": "Prototype Blade Wilderness",
     "skill.typemoonworld.servant_card.muramasa_no_gen_kensai": "No-Gen Kensai",
     "gui.typemoonworld.muramasa_forge.title": "Forge",
-    "gui.typemoonworld.muramasa_forge.select": "Select"
+    "gui.typemoonworld.muramasa_forge.select": "Select",
+    "message.typemoonworld.projection.requires_analysis": "§cAnalyze the item's construction before projecting it",
+    "message.typemoonworld.projection.cannot_project_bedrock": "§cCannot project bedrock",
+    "message.typemoonworld.structural_analysis.cannot_analyze_bedrock": "Cannot analyze bedrock"
 }

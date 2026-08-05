@@ -156,6 +156,7 @@ public final class ServantCardSkillLayout {
             case 5 -> new ServantCardSkillAction("阵地建造 A", "caster_gilgamesh_workshop", 0.0, 80);
             case 6 -> new ServantCardSkillAction("王之号炮：单轮校准", "caster_gilgamesh_cannon_calibration", 0.0, 20);
             case 7 -> new ServantCardSkillAction("千里眼", "gilgamesh_clairvoyance", 18.0, 160);
+            case 8 -> new ServantCardSkillAction("众神之盾", "gilgamesh_divine_shield", 30.0, 0);
             case 9 -> new ServantCardSkillAction("王之号炮", "caster_gilgamesh_royal_cannon", 0.0, 0);
             default -> null;
          };

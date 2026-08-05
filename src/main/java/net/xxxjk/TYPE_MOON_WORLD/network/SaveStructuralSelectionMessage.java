@@ -92,6 +92,15 @@ public record SaveStructuralSelectionMessage(String structureName, int minX, int
                                        if (blockItem != Items.AIR) {
                                           ItemStack analyzedStack = blockItem.getDefaultInstance();
                                           analyzedStack.setCount(1);
+                                          if (MagicStructuralAnalysis.isProjectionBanned(analyzedStack)) {
+                                             player.displayClientMessage(
+                                                Component.translatable(MagicStructuralAnalysis.isBedrock(analyzedStack)
+                                                   ? "message.typemoonworld.structural_analysis.cannot_analyze_bedrock"
+                                                   : "message.typemoonworld.structural_analysis.cannot_analyze_divine"),
+                                                true
+                                             );
+                                             return;
+                                          }
                                           totalCost += MagicStructuralAnalysis.calculateStructureCost(analyzedStack, var32.player_magic_attributes_sword);
                                           String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
                                           String blockStateProps = serializeBlockStateProperties(state);
