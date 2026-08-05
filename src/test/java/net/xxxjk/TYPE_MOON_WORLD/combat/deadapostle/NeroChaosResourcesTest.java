@@ -52,7 +52,7 @@ class NeroChaosResourcesTest {
          StandardCharsets.UTF_8);
 
       for (String id : new String[]{"NERO_CHAOS", "NERO_CHAOS_HOUND", "NERO_CHAOS_SERPENT",
-         "NERO_CHAOS_STAG", "NERO_CHAOS_BIRD"}) {
+         "NERO_CHAOS_STAG", "NERO_CHAOS_BIRD", "NERO_CHAOS_BEAR", "NERO_CHAOS_CAT", "NERO_CHAOS_BAT"}) {
          assertTrue(entities.contains(id));
          assertTrue(attributes.contains(id));
          assertTrue(client.contains(id));
@@ -60,6 +60,13 @@ class NeroChaosResourcesTest {
       assertTrue(items.contains("NERO_CHAOS_SPAWN_EGG"));
       assertTrue(creativeTab.contains("NERO_CHAOS_SPAWN_EGG"));
       assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos\": \"尼禄·卡欧斯\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_hound\": \"尼禄·卡欧斯之兽\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_serpent\": \"尼禄·卡欧斯之蛇\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_stag\": \"尼禄·卡欧斯之鹿\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_bird\": \"尼禄·卡欧斯之鸟\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_bear\": \"尼禄·卡欧斯之熊\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_cat\": \"尼禄·卡欧斯之猫\""));
+      assertTrue(zh.contains("\"entity.typemoonworld.nero_chaos_bat\": \"尼禄·卡欧斯之蝠\""));
       assertTrue(zh.contains("\"item.typemoonworld.nero_chaos_spawn_egg\": \"尼禄·卡欧斯（死徒二十七祖第十席）\""));
       assertTrue(Files.exists(RESOURCES.resolve(
          "assets/typemoonworld/models/item/nero_chaos_spawn_egg.json")));
@@ -70,9 +77,47 @@ class NeroChaosResourcesTest {
       String system = Files.readString(JAVA.resolve("combat/deadapostle/DeadApostleCombatSystem.java"));
       assertTrue(system.contains("NeroChaosEntity"));
       assertTrue(system.contains("NeroChaosBeastLogic"));
+      assertTrue(system.contains("tryConsumeLifeAndRevive"));
       assertTrue(!system.contains("DeadApostleEntity"));
       assertTrue(!system.contains("ServantEntity"));
       assertTrue(Files.exists(RESOURCES.resolve(
          "data/typemoonworld/dead_apostle/definitions/nero_chaos.json")));
+   }
+
+   @Test
+   void damagedNeroRegroupsBeastsInsteadOfDiscardingThem() throws Exception {
+      String system = Files.readString(JAVA.resolve("combat/deadapostle/DeadApostleCombatSystem.java"));
+      String logic = Files.readString(JAVA.resolve("entity/deadapostle/NeroChaosBeastLogic.java"));
+
+      assertTrue(system.contains("LivingDamageEvent.Post"));
+      assertTrue(system.contains("event.getNewDamage() > 0.0F"));
+      assertTrue(system.contains("NeroChaosBeastLogic.regroupOwnedBeasts(nero)"));
+      assertTrue(logic.contains("owner.getPersistentData().putLong(NeroChaosEntity.TAG_BEAST_REGROUP_UNTIL, until);"));
+      assertTrue(logic.contains("mob.setTarget(null);"));
+      assertTrue(logic.contains("returnToOwner(mob, owner, kind(mob));"));
+
+      String regroupBody = logic.substring(logic.indexOf("public static void regroupOwnedBeasts"));
+      regroupBody = regroupBody.substring(0, regroupBody.indexOf("private static LivingEntity findTarget"));
+      assertTrue(!regroupBody.contains(".discard("));
+      assertTrue(!regroupBody.contains(".remove("));
+   }
+
+   @Test
+   void neroBeastLivesAreStoredReleasedReabsorbedAndInherited() throws Exception {
+      String nero = Files.readString(JAVA.resolve("entity/deadapostle/NeroChaosEntity.java"));
+      String logic = Files.readString(JAVA.resolve("entity/deadapostle/NeroChaosBeastLogic.java"));
+      String system = Files.readString(JAVA.resolve("combat/deadapostle/DeadApostleCombatSystem.java"));
+
+      assertTrue(nero.contains("setRemainingLives(NeroChaosRules.consumeLife(getRemainingLives()))"));
+      assertTrue(nero.contains("public void reabsorbBeast(Mob beast)"));
+      assertTrue(nero.contains("setRemainingLives(NeroChaosRules.restoreLife(getRemainingLives()))"));
+      assertTrue(nero.contains("public void queueBeastRevival()"));
+      assertTrue(nero.contains("NeroChaosRules.BEAST_REVIVAL_DELAY_TICKS"));
+      assertTrue(nero.contains("public boolean spawnSuccessorFromOwnedBeast()"));
+      assertTrue(nero.contains("transferOwnedBeastsToSuccessor"));
+
+      assertTrue(logic.contains("owner.reabsorbBeast(beast);"));
+      assertTrue(logic.contains("owner.queueBeastRevival();"));
+      assertTrue(system.contains("nero.spawnSuccessorFromOwnedBeast()"));
    }
 }

@@ -28,20 +28,30 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.DeadApostleCombatProfile;
 import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.DeadApostleCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.NeroChaosRules;
 import net.xxxjk.TYPE_MOON_WORLD.entity.HumanNpcEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.NpcScaleHelper;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class NeroChaosEntity extends DeadApostleEntity {
    public static final String COMBAT_PROFILE_ID = "nero_chaos";
    public static final String TAG_REMAINING_LIVES = "NeroChaosRemainingLives";
    public static final String TAG_CHAOS_FORM = "NeroChaosChaosForm";
    public static final String TAG_CHAOS_ENERGY = "NeroChaosChaosEnergy";
+   public static final String TAG_BEAST_REGROUP_UNTIL = "NeroChaosBeastRegroupUntil";
+   private static final String TAG_FIXED_SCALE = "NeroChaosFixedScaleV1";
+   private static final String DEAD_APOSTLE_BODY_SCALE_V2 = "TypeMoonDeadApostleBodyScaleV2";
    private static final String TAG_DEVOUR_TARGET = "NeroChaosDevourTarget";
    private static final String TAG_DEVOUR_UNTIL = "NeroChaosDevourUntil";
    private static final String TAG_DEVOUR_COOLDOWN = "NeroChaosDevourCooldown";
+   private static final String TAG_PENDING_BEAST_REVIVES = "NeroChaosPendingBeastRevives";
+   private static final String TAG_NEXT_BEAST_REVIVE = "NeroChaosNextBeastRevive";
    private static final EntityDataAccessor<Integer> REMAINING_LIVES =
       SynchedEntityData.defineId(NeroChaosEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> CHAOS_FORM =
@@ -84,7 +94,8 @@ public class NeroChaosEntity extends DeadApostleEntity {
       goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 10.0F));
       goalSelector.addGoal(7, new RandomLookAroundGoal(this));
       targetSelector.addGoal(1, new HurtByTargetGoal(this));
-      targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+      targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
+         target -> !EntityUtils.isImmunePlayerTarget(target)));
       targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
       targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
       targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, HumanNpcEntity.class, true));
@@ -92,8 +103,13 @@ public class NeroChaosEntity extends DeadApostleEntity {
 
    @Override
    protected void customServerAiStep() {
-      if (DeadApostleCombatSystem.tick(this)) return;
+      ensureNeroScale();
       long now = level().getGameTime();
+      tickBeastRevival(now);
+      if (EntityUtils.isImmunePlayerTarget(getTarget())) {
+         setTarget(null);
+      }
+      if (DeadApostleCombatSystem.tick(this)) return;
       if (tickDevour(now)) return;
       tickChaosEnergy(now);
       if (!isChaosForm()) tickBeastRelease(now);
@@ -111,6 +127,10 @@ public class NeroChaosEntity extends DeadApostleEntity {
       int value = NeroChaosRules.clampLives(lives);
       entityData.set(REMAINING_LIVES, value);
       getPersistentData().putInt(TAG_REMAINING_LIVES, value);
+   }
+
+   public int getPendingBeastRevives() {
+      return Math.max(0, getPersistentData().getInt(TAG_PENDING_BEAST_REVIVES));
    }
 
    public boolean isChaosForm() {
@@ -139,6 +159,75 @@ public class NeroChaosEntity extends DeadApostleEntity {
       setDeltaMovement(0.0, 0.0, 0.0);
       getPersistentData().remove(DeadApostleCombatSystem.TAG_STUN_UNTIL);
       setChaosForm(false);
+   }
+
+   public boolean tryConsumeLifeAndRevive() {
+      int lives = getRemainingLives();
+      if (!NeroChaosRules.shouldReviveAfterLethal(lives, false)) {
+         return false;
+      }
+      setRemainingLives(NeroChaosRules.consumeLife(lives));
+      NeroChaosBeastLogic.regroupOwnedBeasts(this);
+      reviveFromDeath();
+      getPersistentData().putLong(DeadApostleCombatSystem.TAG_INVULN_UNTIL, level().getGameTime() + 20L);
+      if (level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, getX(), getY() + getBbHeight() * 0.58, getZ(),
+            36, 0.6, 0.75, 0.6, 0.12);
+         level.sendParticles(ParticleTypes.SMOKE, getX(), getY() + getBbHeight() * 0.45, getZ(),
+            28, 0.55, 0.55, 0.55, 0.025);
+         level.playSound(null, blockPosition(), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 0.9F, 0.65F);
+      }
+      return true;
+   }
+
+   public void queueBeastRevival() {
+      var data = getPersistentData();
+      int pending = Math.max(0, data.getInt(TAG_PENDING_BEAST_REVIVES));
+      if (getRemainingLives() + pending >= NeroChaosRules.MAX_LIVES) return;
+      data.putInt(TAG_PENDING_BEAST_REVIVES, Math.min(NeroChaosRules.MAX_LIVES, pending + 1));
+      if (data.getLong(TAG_NEXT_BEAST_REVIVE) <= level().getGameTime()) {
+         data.putLong(TAG_NEXT_BEAST_REVIVE, level().getGameTime() + NeroChaosRules.BEAST_REVIVAL_DELAY_TICKS);
+      }
+   }
+
+   public void reabsorbBeast(Mob beast) {
+      if (beast == null || beast.level() != level() || !beast.isAlive()) return;
+      if (!getUUID().equals(NeroChaosBeastLogic.ownerUuid(beast))) return;
+      setRemainingLives(NeroChaosRules.restoreLife(getRemainingLives()));
+      if (level() instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(ParticleTypes.SMOKE, beast.getX(), beast.getY() + beast.getBbHeight() * 0.5,
+            beast.getZ(), 8, 0.25, 0.25, 0.25, 0.02);
+      }
+      beast.discard();
+   }
+
+   public boolean spawnSuccessorFromOwnedBeast() {
+      if (!(level() instanceof ServerLevel serverLevel)) return false;
+      Mob successorBeast = findOwnedBeastForSuccession(serverLevel);
+      if (successorBeast == null) return false;
+
+      NeroChaosEntity successor = ModEntities.NERO_CHAOS.get().create(serverLevel);
+      if (successor == null) return false;
+      successor.moveTo(successorBeast.getX(), successorBeast.getY(), successorBeast.getZ(),
+         successorBeast.getYRot(), successorBeast.getXRot());
+      successor.setRemainingLives(getRemainingLives());
+      successor.entityData.set(CHAOS_ENERGY, getChaosEnergy());
+      successor.getPersistentData().putInt(TAG_PENDING_BEAST_REVIVES, getPendingBeastRevives());
+      long nextRevive = getPersistentData().getLong(TAG_NEXT_BEAST_REVIVE);
+      if (nextRevive > level().getGameTime()) {
+         successor.getPersistentData().putLong(TAG_NEXT_BEAST_REVIVE, nextRevive);
+      }
+      successor.reviveFromDeath();
+      LivingEntity target = getTarget();
+      if (target != null && target.isAlive() && !successor.isAlliedTo(target)) {
+         successor.setTarget(target);
+      }
+      serverLevel.addFreshEntity(successor);
+      transferOwnedBeastsToSuccessor(serverLevel, successor, successorBeast);
+      successorBeast.discard();
+      serverLevel.sendParticles(ParticleTypes.SMOKE, successor.getX(), successor.getY() + successor.getBbHeight() * 0.5,
+         successor.getZ(), 36, 0.5, 0.65, 0.5, 0.05);
+      return true;
    }
 
    public boolean isDevouring() {
@@ -187,6 +276,8 @@ public class NeroChaosEntity extends DeadApostleEntity {
       tag.putInt(TAG_REMAINING_LIVES, getRemainingLives());
       tag.putBoolean(TAG_CHAOS_FORM, isChaosForm());
       tag.putInt(TAG_CHAOS_ENERGY, getChaosEnergy());
+      tag.putInt(TAG_PENDING_BEAST_REVIVES, getPendingBeastRevives());
+      tag.putLong(TAG_NEXT_BEAST_REVIVE, getPersistentData().getLong(TAG_NEXT_BEAST_REVIVE));
    }
 
    @Override
@@ -195,16 +286,22 @@ public class NeroChaosEntity extends DeadApostleEntity {
       setRemainingLives(tag.contains(TAG_REMAINING_LIVES) ? tag.getInt(TAG_REMAINING_LIVES) : 666);
       entityData.set(CHAOS_FORM, tag.getBoolean(TAG_CHAOS_FORM));
       entityData.set(CHAOS_ENERGY, tag.contains(TAG_CHAOS_ENERGY) ? tag.getInt(TAG_CHAOS_ENERGY) : 100);
+      getPersistentData().putInt(TAG_PENDING_BEAST_REVIVES,
+         tag.contains(TAG_PENDING_BEAST_REVIVES) ? tag.getInt(TAG_PENDING_BEAST_REVIVES) : 0);
+      if (tag.contains(TAG_NEXT_BEAST_REVIVE)) {
+         getPersistentData().putLong(TAG_NEXT_BEAST_REVIVE, tag.getLong(TAG_NEXT_BEAST_REVIVE));
+      }
       refreshDimensions();
    }
 
    private void tickBeastRelease(long now) {
       if (now % 20L != Math.floorMod(getId(), 20)) return;
+      if (now < getPersistentData().getLong(TAG_BEAST_REGROUP_UNTIL)) return;
       int active = countOwnedBeasts();
       int desired;
       LivingEntity target = getTarget();
       if (target == null || !target.isAlive()) {
-         desired = 2 + getRandom().nextInt(4);
+         desired = 0;
       } else {
          desired = NeroChaosRules.combatBeastTarget(getRemainingLives());
       }
@@ -218,11 +315,14 @@ public class NeroChaosEntity extends DeadApostleEntity {
 
    private boolean spawnBeast() {
       if (!(level() instanceof ServerLevel serverLevel)) return false;
-      EntityType<? extends Mob> type = switch (getRandom().nextInt(4)) {
+      EntityType<? extends Mob> type = switch (getRandom().nextInt(7)) {
          case 0 -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_HOUND.get();
          case 1 -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_SERPENT.get();
          case 2 -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_STAG.get();
-         default -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_BIRD.get();
+         case 3 -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_BIRD.get();
+         case 4 -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_BEAR.get();
+         case 5 -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_CAT.get();
+         default -> net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS_BAT.get();
       };
       Mob beast = type.create(serverLevel);
       if (beast == null) return false;
@@ -231,7 +331,8 @@ public class NeroChaosEntity extends DeadApostleEntity {
       beast.moveTo(getX() + Math.cos(angle) * radius, getY(), getZ() + Math.sin(angle) * radius,
          getYRot(), 0.0F);
       NeroChaosBeastLogic.setOwner(beast, this);
-      serverLevel.addFreshEntity(beast);
+      if (!serverLevel.addFreshEntity(beast)) return false;
+      setRemainingLives(NeroChaosRules.consumeLife(getRemainingLives()));
       return true;
    }
 
@@ -239,6 +340,57 @@ public class NeroChaosEntity extends DeadApostleEntity {
       return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(96.0),
          entity -> entity instanceof NeroChaosBeastLogic.NeroChaosBeastEntityMarker marker
             && getUUID().equals(marker.neroChaosOwnerUuid())).size();
+   }
+
+   private void tickBeastRevival(long now) {
+      var data = getPersistentData();
+      int pending = Math.max(0, data.getInt(TAG_PENDING_BEAST_REVIVES));
+      if (pending <= 0) {
+         data.remove(TAG_NEXT_BEAST_REVIVE);
+         return;
+      }
+      long next = data.getLong(TAG_NEXT_BEAST_REVIVE);
+      if (next <= 0L) {
+         data.putLong(TAG_NEXT_BEAST_REVIVE, now + NeroChaosRules.BEAST_REVIVAL_DELAY_TICKS);
+         return;
+      }
+      if (now < next) return;
+      if (getRemainingLives() < NeroChaosRules.MAX_LIVES) {
+         setRemainingLives(NeroChaosRules.restoreLife(getRemainingLives()));
+      }
+      pending--;
+      if (pending > 0) {
+         data.putInt(TAG_PENDING_BEAST_REVIVES, pending);
+         data.putLong(TAG_NEXT_BEAST_REVIVE, now + NeroChaosRules.BEAST_REVIVAL_DELAY_TICKS);
+      } else {
+         data.remove(TAG_PENDING_BEAST_REVIVES);
+         data.remove(TAG_NEXT_BEAST_REVIVE);
+      }
+   }
+
+   private Mob findOwnedBeastForSuccession(ServerLevel serverLevel) {
+      Mob best = null;
+      double bestDistance = Double.MAX_VALUE;
+      for (Entity entity : serverLevel.getEntities().getAll()) {
+         if (!(entity instanceof Mob mob) || !mob.isAlive() || !NeroChaosBeastLogic.isBeast(mob)) continue;
+         if (!getUUID().equals(NeroChaosBeastLogic.ownerUuid(mob))) continue;
+         double distance = distanceToSqr(mob);
+         if (distance < bestDistance) {
+            best = mob;
+            bestDistance = distance;
+         }
+      }
+      return best;
+   }
+
+   private void transferOwnedBeastsToSuccessor(ServerLevel serverLevel, NeroChaosEntity successor, Mob absorbedBeast) {
+      for (Entity entity : serverLevel.getEntities().getAll()) {
+         if (!(entity instanceof Mob mob) || mob == absorbedBeast || !mob.isAlive()) continue;
+         if (!NeroChaosBeastLogic.isBeast(mob)) continue;
+         if (getUUID().equals(NeroChaosBeastLogic.ownerUuid(mob))) {
+            NeroChaosBeastLogic.setOwner(mob, successor);
+         }
+      }
    }
 
    private void tickChaosEnergy(long now) {
@@ -322,9 +474,17 @@ public class NeroChaosEntity extends DeadApostleEntity {
 
    private boolean isValidPrey(LivingEntity prey) {
       return prey.isAlive() && prey != this
+         && !EntityUtils.isImmunePlayerTarget(prey)
          && !(prey instanceof DeadApostleEntity)
          && !NeroChaosBeastLogic.isBeast(prey)
          && !isAlliedTo(prey);
+   }
+
+   private void ensureNeroScale() {
+      if (getPersistentData().getBoolean(TAG_FIXED_SCALE)) return;
+      NpcScaleHelper.setInheritedScale(this, 1.0);
+      getPersistentData().putBoolean(DEAD_APOSTLE_BODY_SCALE_V2, true);
+      getPersistentData().putBoolean(TAG_FIXED_SCALE, true);
    }
 
    private static final class NeroChaosCombatGoal extends net.minecraft.world.entity.ai.goal.Goal {

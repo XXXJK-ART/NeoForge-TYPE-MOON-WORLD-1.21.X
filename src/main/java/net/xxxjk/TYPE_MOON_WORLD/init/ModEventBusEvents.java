@@ -59,6 +59,9 @@ public class ModEventBusEvents {
       event.put(ModEntities.NERO_CHAOS_SERPENT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosSerpentEntity.createAttributes().build());
       event.put(ModEntities.NERO_CHAOS_STAG.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosStagEntity.createAttributes().build());
       event.put(ModEntities.NERO_CHAOS_BIRD.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBirdEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_BEAR.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBearEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_CAT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosCatEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_BAT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBatEntity.createAttributes().build());
       event.put(ModEntities.CHURCH_EXECUTOR.get(), ChurchExecutorEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_MASTER.get(), BajiquanMasterEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_APPRENTICE.get(), BajiquanApprenticeEntity.createAttributes().build());

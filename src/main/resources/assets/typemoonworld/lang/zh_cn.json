@@ -2108,6 +2108,13 @@
     "gui.typemoonworld.muramasa_forge.title": "锻造",
     "gui.typemoonworld.muramasa_forge.select": "选择",
     "entity.typemoonworld.nero_chaos": "尼禄·卡欧斯",
+    "entity.typemoonworld.nero_chaos_hound": "尼禄·卡欧斯之兽",
+    "entity.typemoonworld.nero_chaos_serpent": "尼禄·卡欧斯之蛇",
+    "entity.typemoonworld.nero_chaos_stag": "尼禄·卡欧斯之鹿",
+    "entity.typemoonworld.nero_chaos_bird": "尼禄·卡欧斯之鸟",
+    "entity.typemoonworld.nero_chaos_bear": "尼禄·卡欧斯之熊",
+    "entity.typemoonworld.nero_chaos_cat": "尼禄·卡欧斯之猫",
+    "entity.typemoonworld.nero_chaos_bat": "尼禄·卡欧斯之蝠",
     "item.typemoonworld.nero_chaos_spawn_egg": "尼禄·卡欧斯（死徒二十七祖第十席）"
 }
 

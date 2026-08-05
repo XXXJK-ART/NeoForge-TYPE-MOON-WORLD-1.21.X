@@ -31,14 +31,18 @@ class NeroChaosRulesTest {
       assertEquals(0, NeroChaosRules.clampLives(-1));
       assertEquals(665, NeroChaosRules.consumeLife(666));
       assertTrue(NeroChaosRules.shouldReviveAfterLethal(2, false));
-      assertFalse(NeroChaosRules.shouldReviveAfterLethal(1, false));
+      assertTrue(NeroChaosRules.shouldReviveAfterLethal(1, false));
       assertFalse(NeroChaosRules.shouldReviveAfterLethal(666, true));
+      assertEquals(666, NeroChaosRules.restoreLife(666));
+      assertEquals(1, NeroChaosRules.restoreLife(0));
 
       assertEquals(20, NeroChaosRules.combatBeastTarget(301));
       assertEquals(30, NeroChaosRules.combatBeastTarget(300));
       assertEquals(40, NeroChaosRules.combatBeastTarget(100));
-      assertEquals(50, NeroChaosRules.combatBeastTarget(99));
-      assertFalse(NeroChaosRules.shouldEnterChaosForm(100, 50));
-      assertTrue(NeroChaosRules.shouldEnterChaosForm(99, 50));
+      assertEquals(66, NeroChaosRules.combatBeastTarget(99));
+      assertFalse(NeroChaosRules.shouldEnterChaosForm(100, 66));
+      assertTrue(NeroChaosRules.shouldEnterChaosForm(99, 66));
+      assertEquals(0, NeroChaosRules.clampBeastVariant(-1));
+      assertEquals(4, NeroChaosRules.clampBeastVariant(99));
    }
 }

@@ -13,6 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -85,6 +86,12 @@ public final class DeadApostleCombatSystem {
          event.setCanceled(true);
          return;
       }
+      if (event.getAmount() >= nero.getHealth() && nero.tryConsumeLifeAndRevive()) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         data.putLong(TAG_INVULN_UNTIL, now + 20L);
+         return;
+      }
       DeadApostleCombatProfile profile = profile(nero.getCombatProfileId());
       boolean urgent = event.getAmount() >= nero.getMaxHealth() * 0.08F
          || source.getDirectEntity() instanceof Projectile
@@ -131,16 +138,24 @@ public final class DeadApostleCombatSystem {
       }
    }
 
+   @SubscribeEvent
+   public static void onDamageApplied(LivingDamageEvent.Post event) {
+      if (event.getEntity() instanceof NeroChaosEntity nero
+         && event.getNewDamage() > 0.0F
+         && !nero.level().isClientSide()) {
+         NeroChaosBeastLogic.regroupOwnedBeasts(nero);
+      }
+   }
+
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onLivingDeath(LivingDeathEvent event) {
       if (event.isCanceled()) return;
       if (event.getEntity() instanceof NeroChaosEntity nero) {
          if (isForcedDeath(event.getSource())) return;
-         int lives = nero.getRemainingLives();
-         if (NeroChaosRules.shouldReviveAfterLethal(lives, false)) {
-            nero.setRemainingLives(NeroChaosRules.consumeLife(lives));
-            nero.reviveFromDeath();
+         if (nero.tryConsumeLifeAndRevive()) {
             event.setCanceled(true);
+         } else if (nero.spawnSuccessorFromOwnedBeast()) {
+            nero.setRemainingLives(0);
          } else {
             nero.setRemainingLives(0);
          }
@@ -152,8 +167,7 @@ public final class DeadApostleCombatSystem {
 
    public static boolean isForcedDeath(DamageSource source) {
       return source.is(DamageTypes.GENERIC_KILL)
-         || source.is(DamageTypes.FELL_OUT_OF_WORLD)
-         || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
+         || source.is(DamageTypes.FELL_OUT_OF_WORLD);
    }
 
    private static boolean canReact(NeroChaosEntity entity, DamageSource source) {

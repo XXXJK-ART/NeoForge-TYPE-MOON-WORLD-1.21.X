@@ -35,6 +35,7 @@ import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.HumanNpcEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.NpcScaleHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class DeadApostleEntity extends Monster {
@@ -82,7 +83,8 @@ public abstract class DeadApostleEntity extends Monster {
       this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
+         target -> !EntityUtils.isImmunePlayerTarget(target)));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, HumanNpcEntity.class, true));
@@ -120,7 +122,9 @@ public abstract class DeadApostleEntity extends Monster {
 
    @Override
    public boolean canAttack(LivingEntity target) {
-      return !(target instanceof DeadApostleEntity) && super.canAttack(target);
+      return !EntityUtils.isImmunePlayerTarget(target)
+         && !(target instanceof DeadApostleEntity)
+         && super.canAttack(target);
    }
 
    @Override

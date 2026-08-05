@@ -1944,5 +1944,12 @@
     "message.typemoonworld.projection.cannot_project_bedrock": "§cCannot project bedrock",
     "message.typemoonworld.structural_analysis.cannot_analyze_bedrock": "Cannot analyze bedrock",
     "entity.typemoonworld.nero_chaos": "Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_hound": "Beast of Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_serpent": "Serpent of Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_stag": "Stag of Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_bird": "Bird of Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_bear": "Bear of Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_cat": "Cat of Nrvnqsr Chaos",
+    "entity.typemoonworld.nero_chaos_bat": "Bat of Nrvnqsr Chaos",
     "item.typemoonworld.nero_chaos_spawn_egg": "Nrvnqsr Chaos (Dead Apostle Ancestor, Tenth Seat) Spawn Egg"
 }

@@ -113,6 +113,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosHoundEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosSerpentEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosStagEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBirdEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBearEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosCatEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBatEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 
 public class ModEntities {
@@ -314,6 +317,18 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBirdEntity>> NERO_CHAOS_BIRD = ENTITY_TYPES.register(
       "nero_chaos_bird", () -> Builder.<NeroChaosBirdEntity>of(NeroChaosBirdEntity::new, MobCategory.MONSTER)
          .sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bird")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBearEntity>> NERO_CHAOS_BEAR = ENTITY_TYPES.register(
+      "nero_chaos_bear", () -> Builder.<NeroChaosBearEntity>of(NeroChaosBearEntity::new, MobCategory.MONSTER)
+         .sized(1.4F, 1.4F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bear")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosCatEntity>> NERO_CHAOS_CAT = ENTITY_TYPES.register(
+      "nero_chaos_cat", () -> Builder.<NeroChaosCatEntity>of(NeroChaosCatEntity::new, MobCategory.MONSTER)
+         .sized(0.6F, 0.7F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_cat")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBatEntity>> NERO_CHAOS_BAT = ENTITY_TYPES.register(
+      "nero_chaos_bat", () -> Builder.<NeroChaosBatEntity>of(NeroChaosBatEntity::new, MobCategory.MONSTER)
+         .sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bat")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ChurchExecutorEntity>> CHURCH_EXECUTOR = ENTITY_TYPES.register(
       "church_executor", () -> Builder.of(ChurchExecutorEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("church_executor")

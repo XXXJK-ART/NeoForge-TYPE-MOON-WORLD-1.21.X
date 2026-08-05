@@ -30,7 +30,7 @@ public final class NeroChaosGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 60)
-   public static void neroReleasesOwnedBeasts(GameTestHelper helper) {
+   public static void neroKeepsBeastsInsideWithoutEnemies(GameTestHelper helper) {
       NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
       helper.runAfterDelay(35, () -> {
          long beasts = helper.getLevel().getEntitiesOfClass(
@@ -38,29 +38,33 @@ public final class NeroChaosGameTests {
             nero.getBoundingBox().inflate(96.0),
             NeroChaosBeastLogic::isBeast
          ).stream().filter(beast -> nero.getUUID().equals(NeroChaosBeastLogic.ownerUuid(beast))).count();
-         helper.assertTrue(beasts >= 2 && beasts <= 5, "Non-combat Nero should release 2-5 scout beasts");
+         helper.assertTrue(beasts == 0, "Non-combat Nero should keep beasts inside");
+         helper.assertTrue(nero.getRemainingLives() == 666, "Stored beasts should still count as lives");
          helper.succeed();
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 30)
-   public static void beastDeathDebitsExactlyOneLifeAndLastLifeKillsNero(GameTestHelper helper) {
+   @GameTest(template = "ancient_temple", timeoutTicks = 80)
+   public static void releasedBeastsCostLivesAndDeadBeastsQueueRevival(GameTestHelper helper) {
       NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
-      var beast = helper.spawn(ModEntities.NERO_CHAOS_HOUND.get(), new BlockPos(6, 8, 3));
-      NeroChaosBeastLogic.setOwner(beast, nero);
-      nero.setRemainingLives(2);
-      beast.kill();
+      var prey = helper.spawn(EntityType.ZOMBIE, new BlockPos(8, 8, 3));
+      prey.setNoAi(true);
+      nero.setTarget(prey);
 
-      helper.runAfterDelay(1, () -> {
-         helper.assertTrue(nero.getRemainingLives() == 1, "Beast death should debit one life");
-         helper.assertTrue(nero.isAlive(), "Nero should remain alive while one life remains");
-
-         var lastBeast = helper.spawn(ModEntities.NERO_CHAOS_HOUND.get(), new BlockPos(6, 8, 4));
-         NeroChaosBeastLogic.setOwner(lastBeast, nero);
-         lastBeast.kill();
+      helper.runAfterDelay(35, () -> {
+         var beasts = helper.getLevel().getEntitiesOfClass(
+            LivingEntity.class,
+            nero.getBoundingBox().inflate(96.0),
+            NeroChaosBeastLogic::isBeast
+         ).stream().filter(beast -> nero.getUUID().equals(NeroChaosBeastLogic.ownerUuid(beast))).toList();
+         helper.assertTrue(!beasts.isEmpty(), "Combat Nero should release owned beasts");
+         helper.assertTrue(nero.getRemainingLives() == 666 - beasts.size(),
+            "Each released beast should immediately cost one stored life");
+         beasts.get(0).kill();
          helper.runAfterDelay(1, () -> {
-            helper.assertTrue(nero.getRemainingLives() == 0, "Last beast should consume the last life");
-            helper.assertTrue(!nero.isAlive(), "Nero should truly die at zero lives");
+            helper.assertTrue(nero.getPendingBeastRevives() == 1,
+               "A dead external beast should queue one delayed body revival");
+            helper.assertTrue(nero.isAlive(), "Beast death should not directly kill Nero's body");
             helper.succeed();
          });
       });
