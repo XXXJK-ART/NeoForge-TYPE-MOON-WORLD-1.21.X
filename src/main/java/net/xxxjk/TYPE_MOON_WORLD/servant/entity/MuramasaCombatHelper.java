@@ -82,6 +82,7 @@ public final class MuramasaCombatHelper {
    private static final ResourceLocationLike KNOCKBACK_ID = new ResourceLocationLike("muramasa_knockback");
    private static final int WEAPON_ROTATION_TICKS = 1200;
    private static final int CHARGE_TICKS = 30;
+   private static final int TSUMUKARI_SPECIAL_CHARGE_PERCENT = 10;
    private static final int NP_EXPAND_TICKS = 200;
    private static final int NP_COLLAPSE_TICKS = 80;
 
@@ -746,7 +747,7 @@ public final class MuramasaCombatHelper {
    private static void releaseTsumukari(SenkoMuramasaEntity entity, ServerLevel level, int percent) {
       CompoundTag data = entity.getPersistentData();
       data.putBoolean(TSUMUKARI_RELEASED, true);
-      boolean delayedDissolution = !hasDivinity(entity) && percent >= 60;
+      boolean delayedDissolution = !hasDivinity(entity) && percent >= TSUMUKARI_SPECIAL_CHARGE_PERCENT;
       double remaining = 0.0;
       if (!delayedDissolution) {
          double cost = 1000.0 * Math.max(0.0, Math.min(1.0, percent / 100.0));

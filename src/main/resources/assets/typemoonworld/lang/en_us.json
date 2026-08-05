@@ -1942,5 +1942,7 @@
     "gui.typemoonworld.muramasa_forge.select": "Select",
     "message.typemoonworld.projection.requires_analysis": "§cAnalyze the item's construction before projecting it",
     "message.typemoonworld.projection.cannot_project_bedrock": "§cCannot project bedrock",
-    "message.typemoonworld.structural_analysis.cannot_analyze_bedrock": "Cannot analyze bedrock"
+    "message.typemoonworld.structural_analysis.cannot_analyze_bedrock": "Cannot analyze bedrock",
+    "entity.typemoonworld.nero_chaos": "Nrvnqsr Chaos",
+    "item.typemoonworld.nero_chaos_spawn_egg": "Nrvnqsr Chaos (Dead Apostle Ancestor, Tenth Seat) Spawn Egg"
 }

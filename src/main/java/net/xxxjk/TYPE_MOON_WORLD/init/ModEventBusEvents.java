@@ -54,6 +54,11 @@ public class ModEventBusEvents {
       event.put(ModEntities.GHOUL.get(), DeadApostleEntity.attributes(40.0, 6.0, 4.0, 0.24).build());
       event.put(ModEntities.LIVING_DEAD.get(), DeadApostleEntity.attributes(100.0, 18.0, 12.0, 0.32).build());
       event.put(ModEntities.NIGHT_KIN.get(), DeadApostleEntity.attributes(150.0, 24.0, 16.0, 0.36).build());
+      event.put(ModEntities.NERO_CHAOS.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_HOUND.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosHoundEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_SERPENT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosSerpentEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_STAG.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosStagEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_BIRD.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBirdEntity.createAttributes().build());
       event.put(ModEntities.CHURCH_EXECUTOR.get(), ChurchExecutorEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_MASTER.get(), BajiquanMasterEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_APPRENTICE.get(), BajiquanApprenticeEntity.createAttributes().build());

@@ -108,6 +108,11 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.GhoulEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.LivingDeadEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NightKinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.TheDeadEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosHoundEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosSerpentEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosStagEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBirdEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 
 public class ModEntities {
@@ -289,6 +294,26 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<NightKinEntity>> NIGHT_KIN = ENTITY_TYPES.register(
       "night_kin", () -> Builder.of(NightKinEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("night_kin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosEntity>> NERO_CHAOS = ENTITY_TYPES.register(
+      "nero_chaos", () -> Builder.of(NeroChaosEntity::new, MobCategory.MONSTER).sized(0.6F, 1.95F)
+         .clientTrackingRange(64).updateInterval(1).build("nero_chaos")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosHoundEntity>> NERO_CHAOS_HOUND = ENTITY_TYPES.register(
+      "nero_chaos_hound", () -> Builder.<NeroChaosHoundEntity>of(NeroChaosHoundEntity::new, MobCategory.MONSTER)
+         .sized(0.8F, 0.7F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_hound")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosSerpentEntity>> NERO_CHAOS_SERPENT = ENTITY_TYPES.register(
+      "nero_chaos_serpent", () -> Builder.<NeroChaosSerpentEntity>of(NeroChaosSerpentEntity::new, MobCategory.MONSTER)
+         .sized(0.7F, 0.45F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_serpent")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosStagEntity>> NERO_CHAOS_STAG = ENTITY_TYPES.register(
+      "nero_chaos_stag", () -> Builder.<NeroChaosStagEntity>of(NeroChaosStagEntity::new, MobCategory.MONSTER)
+         .sized(1.0F, 1.4F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_stag")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBirdEntity>> NERO_CHAOS_BIRD = ENTITY_TYPES.register(
+      "nero_chaos_bird", () -> Builder.<NeroChaosBirdEntity>of(NeroChaosBirdEntity::new, MobCategory.MONSTER)
+         .sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bird")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ChurchExecutorEntity>> CHURCH_EXECUTOR = ENTITY_TYPES.register(
       "church_executor", () -> Builder.of(ChurchExecutorEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("church_executor")

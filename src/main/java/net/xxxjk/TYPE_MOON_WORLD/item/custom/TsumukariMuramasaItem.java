@@ -51,7 +51,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePhantasmItem {
    private static final double CARD_MURAMASA_TOTAL_MANA_COST = 1000.0;
    private static final int CARD_MURAMASA_MAX_CHARGE_TICKS = 30;
-   private static final int SPECIAL_CHARGE_PERCENT = 60;
+   static final int SPECIAL_CHARGE_PERCENT = 10;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public TsumukariMuramasaItem(Properties properties) {
@@ -247,7 +247,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
    private static void tickCardCharge(Level level, ServerPlayer player, int useDuration) {
       int charge = Math.max(0, Math.min(CARD_MURAMASA_MAX_CHARGE_TICKS, useDuration));
       int percent = Math.round(charge * 100.0F / CARD_MURAMASA_MAX_CHARGE_TICKS);
-      if (percent < SPECIAL_CHARGE_PERCENT) {
+      if (shouldConsumeMuramasaCardMana(percent)) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          double costPerTick = CARD_MURAMASA_TOTAL_MANA_COST / CARD_MURAMASA_MAX_CHARGE_TICKS;
          if (!ServantCardManaService.consumeSilently(player, vars, costPerTick)) {
@@ -283,6 +283,10 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
          level.playSound(null, player.getX(), player.getY(), player.getZ(),
             SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.5F, 2.0F);
       }
+   }
+
+   static boolean shouldConsumeMuramasaCardMana(int percent) {
+      return percent < SPECIAL_CHARGE_PERCENT;
    }
 
    private static void releaseCardCharge(ServerPlayer player, Level level, int useDuration) {

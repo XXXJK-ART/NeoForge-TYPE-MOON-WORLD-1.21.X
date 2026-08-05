@@ -16,6 +16,19 @@ class MuramasaSlashHandlerTest {
    }
 
    @Test
+   void tsumukariManaAndDamageSpecialThresholdsStaySeparate() {
+      assertEquals(10, MuramasaSlashHandler.TSUMUKARI_SPECIAL_CHARGE_PERCENT);
+      assertTrue(!MuramasaSlashHandler.isTsumukariSpecialCharge(9));
+      assertTrue(MuramasaSlashHandler.isTsumukariSpecialCharge(10));
+      assertEquals(60, MuramasaSlashHandler.TSUMUKARI_DAMAGE_SPECIAL_CHARGE_PERCENT);
+      assertTrue(!MuramasaSlashHandler.isTsumukariDamageCharge(59));
+      assertTrue(MuramasaSlashHandler.isTsumukariDamageCharge(60));
+      assertEquals(590.0F, MuramasaSlashHandler.tsumukariDamage(59));
+      assertEquals(1000.0F, MuramasaSlashHandler.tsumukariDamage(60));
+      assertEquals(2000.0F, MuramasaSlashHandler.tsumukariDamage(100));
+   }
+
+   @Test
    void regularMuramasaManaBudgetIsTwoHundred() throws Exception {
       String source = Files.readString(Path.of(
          "src/main/java/net/xxxjk/TYPE_MOON_WORLD/item/custom/MuramasaItem.java"));

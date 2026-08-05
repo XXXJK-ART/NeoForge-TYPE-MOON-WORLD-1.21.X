@@ -2106,6 +2106,8 @@
     "skill.typemoonworld.servant_card.muramasa_sword_field": "刀剑荒野·试制",
     "skill.typemoonworld.servant_card.muramasa_no_gen_kensai": "无元剑制",
     "gui.typemoonworld.muramasa_forge.title": "锻造",
-    "gui.typemoonworld.muramasa_forge.select": "选择"
+    "gui.typemoonworld.muramasa_forge.select": "选择",
+    "entity.typemoonworld.nero_chaos": "尼禄·卡欧斯",
+    "item.typemoonworld.nero_chaos_spawn_egg": "尼禄·卡欧斯（死徒二十七祖第十席）"
 }
 

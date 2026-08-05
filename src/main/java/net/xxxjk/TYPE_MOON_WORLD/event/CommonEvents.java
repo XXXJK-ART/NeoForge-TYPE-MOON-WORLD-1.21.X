@@ -115,6 +115,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatKnowledgeService;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
+import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.DeadApostleCombatProfileLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
@@ -182,6 +183,7 @@ public class CommonEvents {
       event.addListener(new ServantNoblePhantasmDefinitionLoader());
       event.addListener(new ServantAiDefinitionLoader());
       event.addListener(new ServantActionLoader());
+      event.addListener(new DeadApostleCombatProfileLoader());
    }
 
    @SubscribeEvent

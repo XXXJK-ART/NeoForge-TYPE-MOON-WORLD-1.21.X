@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 )
 public class MuramasaSlashHandler {
    private static final float MURAMASA_MAX_DAMAGE = 100.0F;
+   static final int TSUMUKARI_SPECIAL_CHARGE_PERCENT = 10;
+   static final int TSUMUKARI_DAMAGE_SPECIAL_CHARGE_PERCENT = 60;
    private static final List<MuramasaSlashHandler.SlashInstance> ACTIVE_SLASHES = new ArrayList<>();
 
    public static void initiate(ServerLevel level, ServerPlayer player, int charge, int maxDist, int maxWidth, int maxHeight) {
@@ -56,7 +58,7 @@ public class MuramasaSlashHandler {
          ACTIVE_SLASHES.add(
             new MuramasaSlashHandler.SlashInstance(
                owner.getUUID(), level.dimension(), owner.position().add(0.0, owner.getEyeHeight() * 0.5, 0.0),
-               look, charge, maxDist, maxWidth, maxHeight, charge >= 60, charge >= 60
+               look, charge, maxDist, maxWidth, maxHeight, isTsumukariDamageCharge(charge), isTsumukariDamageCharge(charge)
             )
          );
       }
@@ -146,7 +148,7 @@ public class MuramasaSlashHandler {
                float hardness = state.getDestroySpeed(level, pos);
                boolean isBreakable = hardness >= 0.0F;
                boolean canBreak;
-               if (slash.charge >= 60) {
+               if (isTsumukariSpecialCharge(slash.charge)) {
                   canBreak = isBreakable && !state.is(Blocks.BEDROCK);
                } else {
                   canBreak = isBreakable && hardness < 50.0F;
@@ -312,16 +314,24 @@ public class MuramasaSlashHandler {
       return (mix64(value) >>> 11) * 0x1.0p-53;
    }
 
-   private static float tsumukariDamage(int charge) {
+   static float tsumukariDamage(int charge) {
       int clampedCharge = Math.max(0, Math.min(100, charge));
-      if (clampedCharge < 60) {
+      if (!isTsumukariDamageCharge(clampedCharge)) {
          return Math.max(1.0F, clampedCharge * 10.0F);
       }
-      return 1000.0F + (clampedCharge - 60) * 25.0F;
+      return 1000.0F + (clampedCharge - TSUMUKARI_DAMAGE_SPECIAL_CHARGE_PERCENT) * 25.0F;
    }
 
    static float muramasaDamage(int charge) {
       return Math.min(MURAMASA_MAX_DAMAGE, 20.0F + Math.max(0, charge) * 5.0F);
+   }
+
+   static boolean isTsumukariSpecialCharge(int charge) {
+      return charge >= TSUMUKARI_SPECIAL_CHARGE_PERCENT;
+   }
+
+   static boolean isTsumukariDamageCharge(int charge) {
+      return charge >= TSUMUKARI_DAMAGE_SPECIAL_CHARGE_PERCENT;
    }
 
    private static class SlashInstance {

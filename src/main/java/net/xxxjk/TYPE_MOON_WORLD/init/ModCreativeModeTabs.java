@@ -381,6 +381,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GHOUL_SPAWN_EGG);
                         output.accept(ModItems.LIVING_DEAD_SPAWN_EGG);
                         output.accept(ModItems.NIGHT_KIN_SPAWN_EGG);
+                        output.accept(ModItems.NERO_CHAOS_SPAWN_EGG);
                         output.accept(ModItems.CHURCH_EXECUTOR_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_MASTER_SPAWN_EGG);
                         output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);

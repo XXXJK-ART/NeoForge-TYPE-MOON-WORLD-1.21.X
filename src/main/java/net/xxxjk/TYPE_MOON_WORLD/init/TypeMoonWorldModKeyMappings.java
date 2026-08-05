@@ -16,6 +16,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
 import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
@@ -145,6 +146,11 @@ public class TypeMoonWorldModKeyMappings {
       private static int lastProjectionCrestSlot = Integer.MIN_VALUE;
       private static String lastProjectionCrestEntryId = "";
       private static int lastProjectionCrestPayloadHash = 0;
+
+      @SubscribeEvent
+      public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+         clearClientInputState();
+      }
 
       @SubscribeEvent
       public static void onInteractionKey(InteractionKeyMappingTriggered event) {
@@ -294,10 +300,15 @@ public class TypeMoonWorldModKeyMappings {
          if (rightArmCastPoseTicks > 0) {
             rightArmCastPoseTicks--;
          }
+         if (Minecraft.getInstance().screen != null) {
+            clearClientInputState();
+            return;
+         }
 
          if (Minecraft.getInstance().screen == null) {
             Player player = Minecraft.getInstance().player;
             if (player == null) {
+               clearClientInputState();
                return;
             }
 
@@ -354,6 +365,7 @@ public class TypeMoonWorldModKeyMappings {
                handleServantCardControls(vars);
                return;
             }
+            clearServantCardInputState();
             if (TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH.isDown()) {
                if (!isModeSwitchDown) {
                   if (vars.is_magus
@@ -650,6 +662,7 @@ public class TypeMoonWorldModKeyMappings {
 
       private static void handleServantCardControls(TypeMoonWorldModVariables.PlayerVariables vars) {
          if (Minecraft.getInstance().screen != null) {
+            clearServantCardInputState();
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
@@ -727,6 +740,32 @@ public class TypeMoonWorldModKeyMappings {
             lastServantFlightVertical = Float.NaN;
          }
          servantJumpDown = jumpDown;
+      }
+
+      public static void clearClientInputState() {
+         clearServantCardInputState();
+         bajiquanJumpDown = false;
+         bajiquanCrouchDown = false;
+         ganryuJumpDown = false;
+         ganryuCrouchDown = false;
+         ganryuUseDown = false;
+         kendoJumpDown = false;
+         kendoCrouchDown = false;
+         kendoUseDown = false;
+      }
+
+      private static void clearServantCardInputState() {
+         servantJumpDown = false;
+         servantLastJumpTapMs = 0L;
+         servantFlightInputSendDelay = 0;
+         servantFlightInputKeepaliveChecks = 0;
+         lastServantFlightForward = Float.NaN;
+         lastServantFlightStrafe = Float.NaN;
+         lastServantFlightVertical = Float.NaN;
+         paleRiderInputSendDelay = 0;
+         for (int slot = 0; slot < servantCardHoldDown.length; slot++) {
+            servantCardHoldDown[slot] = false;
+         }
       }
 
       private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {

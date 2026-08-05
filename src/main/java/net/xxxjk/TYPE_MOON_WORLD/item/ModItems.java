@@ -995,6 +995,8 @@ public class ModItems {
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LIVING_DEAD, 0x6E7375, 0xA5A09A, new Item.Properties()));
     public static final DeferredItem<Item> NIGHT_KIN_SPAWN_EGG = ITEMS.register("night_kin_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NIGHT_KIN, 0x272733, 0x8C2636, new Item.Properties()));
+    public static final DeferredItem<Item> NERO_CHAOS_SPAWN_EGG = ITEMS.register("nero_chaos_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.NERO_CHAOS, 0x080808, 0x4A0A12, new Item.Properties()));
     public static final DeferredItem<Item> CHURCH_EXECUTOR_SPAWN_EGG = ITEMS.register("church_executor_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CHURCH_EXECUTOR, 0x202020, 0xD0D0D0, new Item.Properties()));
 
