@@ -25,7 +25,6 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.AvalonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BrokenPhantasmRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaProjectionItemRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.particle.RuneSigilParticle;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.HecatesStaffRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MercurySwordRenderer;
@@ -244,7 +243,6 @@ public class ClientModEventSubscriber {
       event.registerBlockEntityRenderer(ModBlockEntities.MURAMASA_BLOCK_ENTITY.get(), context -> new MuramasaBlockRenderer());
       event.registerBlockEntityRenderer(ModBlockEntities.UBW_WEAPON_BLOCK_ENTITY.get(), UBWWeaponBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.MURAMASA_SLASH.get(), MuramasaSlashProjectileRenderer::new);
-      event.registerEntityRenderer(ModEntities.GAE_BULG_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
    }
 
    @SubscribeEvent

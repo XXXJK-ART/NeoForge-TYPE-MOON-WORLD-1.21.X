@@ -24,6 +24,7 @@ import net.neoforged.neoforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import org.joml.Vector3f;
 
 @EventBusSubscriber(
@@ -53,6 +54,17 @@ public class MagicGravityEffectHandler {
    }
 
    public static void applyGravityState(LivingEntity target, int mode, long untilGameTime, LivingEntity caster) {
+      if (isHostileGravityState(target, mode, caster)) {
+         int adjustedDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
+            target,
+            (int)Math.max(1L, untilGameTime - target.level().getGameTime())
+         );
+         if (adjustedDuration <= 0) {
+            clearGravityState(target);
+            return;
+         }
+         untilGameTime = Math.min(untilGameTime, target.level().getGameTime() + adjustedDuration);
+      }
       CompoundTag tag = target.getPersistentData();
       long now = target.level().getGameTime();
       int currentMode = tag.contains(TAG_MODE) ? tag.getInt(TAG_MODE) : 0;
@@ -80,6 +92,13 @@ public class MagicGravityEffectHandler {
 
    public static void applyLinkedSlow(LivingEntity target, int durationTicks, int amplifier, LivingEntity caster) {
       if (target != null) {
+         if (isHostileGravityState(target, MagicGravity.MODE_HEAVY, caster)) {
+            durationTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, durationTicks);
+            if (durationTicks <= 0) {
+               clearLinkedSlowState(target, true);
+               return;
+            }
+         }
          CompoundTag tag = target.getPersistentData();
          long now = target.level().getGameTime();
          tag.putLong(TAG_LINKED_SLOW_UNTIL, now + Math.max(20, durationTicks));
@@ -208,6 +227,11 @@ public class MagicGravityEffectHandler {
             tickLinkedSlow(living);
             int mode = getCurrentMode(living);
             if (mode != 0) {
+               if (MagicResistanceHelper.blocksHarmfulMagicEffect(living)
+                  && living.getPersistentData().hasUUID(TAG_CASTER_UUID)) {
+                  clearGravityState(living);
+                  return;
+               }
                int stacks = getCurrentStacks(living);
                if (living.tickCount % AURA_INTERVAL_TICKS == 0) {
                   emitGravityAura(living, mode, stacks);
@@ -434,6 +458,11 @@ public class MagicGravityEffectHandler {
          Entity caster = serverLevel.getEntity(casterId);
          return !(caster instanceof LivingEntity living) || !living.isAlive() || living.isRemoved();
       }
+   }
+
+   private static boolean isHostileGravityState(LivingEntity target, int mode, LivingEntity caster) {
+      return target != null && caster != null && caster != target && mode != MagicGravity.MODE_NORMAL
+         && !caster.isAlliedTo(target) && !target.isAlliedTo(caster);
    }
 
    private static void writeCasterUuid(CompoundTag tag, String key, LivingEntity caster, LivingEntity target) {

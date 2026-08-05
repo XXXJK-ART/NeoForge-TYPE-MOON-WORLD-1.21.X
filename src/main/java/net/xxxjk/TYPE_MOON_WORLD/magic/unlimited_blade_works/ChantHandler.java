@@ -286,7 +286,6 @@ public class ChantHandler {
    public static void onPlayerTick(Post event) {
       if (!event.getEntity().level().isClientSide) {
          if (event.getEntity() instanceof ServerPlayer player) {
-            UBWInstanceManager.processPendingDeletions(player.getServer());
             processRemovalQueue(player);
             processRestorationQueue(player);
             processRefillQueue(player, (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
@@ -295,7 +294,7 @@ public class ChantHandler {
             );
             boolean isChanting = vars.is_chanting_ubw;
             boolean wasChanting = WAS_CHANTING.getOrDefault(player.getUUID(), false);
-            MagicSwordBarrelFullOpen.tick(player);
+            MagicSwordBarrelFullOpen.tick(player, vars);
             if (wasChanting && !isChanting && !vars.is_in_ubw) {
                clearVisualSwords(player);
                startTerrainRestoration(player);

@@ -58,7 +58,7 @@ public final class MasterServantLinkService {
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       tickBacklash(player, vars);
-      removeLegacyServantPenalties(player);
+      if (player.tickCount % 20 == 0) removeLegacyServantPenalties(player);
       if (vars.master_active) {
          tickMaster(player, vars);
       } else if (vars.servant_card_transformed) {

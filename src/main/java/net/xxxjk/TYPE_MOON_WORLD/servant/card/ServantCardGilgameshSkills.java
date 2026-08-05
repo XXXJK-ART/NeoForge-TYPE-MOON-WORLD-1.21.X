@@ -122,10 +122,6 @@ public final class ServantCardGilgameshSkills {
 
    public static boolean performKey(ServerPlayer player) {
       if (!hasKey(player)) {
-         if (player.getPersistentData().getBoolean(KEY)) {
-            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_required"), true);
-            return false;
-         }
          ItemStack key = markGilgameshGenerated(ServantCardTransformManager.markGeneratedItem(new ItemStack(ModItems.GILGAMESH_BAB_ILU.get()), true, false));
          player.setItemInHand(InteractionHand.MAIN_HAND, key);
          player.getPersistentData().putBoolean(KEY, true);
@@ -142,7 +138,7 @@ public final class ServantCardGilgameshSkills {
       if ((mask & (1 << index)) != 0) return false;
       ItemStack treasure = markGilgameshGenerated(ServantCardTransformManager.markGeneratedItem(treasureFor(index), true, false));
       ItemStack main = player.getMainHandItem();
-      if (main.is(ModItems.GILGAMESH_BAB_ILU.get())) {
+      if (main.is(ModItems.GILGAMESH_BAB_ILU.get()) && !isGenerated(main)) {
          if (!player.getInventory().add(main.copy())) return false;
       } else if (!main.isEmpty() && !player.getInventory().add(main.copy())) {
          return false;

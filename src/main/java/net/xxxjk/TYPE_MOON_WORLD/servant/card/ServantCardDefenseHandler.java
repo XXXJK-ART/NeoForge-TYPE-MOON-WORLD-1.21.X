@@ -138,7 +138,7 @@ public final class ServantCardDefenseHandler {
       if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
          return true;
       }
-      if ("gilgamesh".equals(vars.servant_card_id)) {
+      if ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id)) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
             player, event.getSource(), event.getAmount()
          );

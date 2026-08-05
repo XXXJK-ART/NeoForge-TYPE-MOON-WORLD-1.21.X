@@ -30,7 +30,14 @@ public final class GenericServantRenderer extends HumanoidServantRenderer<Generi
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/entity/empty.png");
       }
       return ResourceLocation.fromNamespaceAndPath(
-         TYPE_MOON_WORLD.MOD_ID, "textures/entity/" + servantId + ".png");
+         TYPE_MOON_WORLD.MOD_ID, "textures/entity/" + textureNameFor(servantId) + ".png");
+   }
+
+   private static String textureNameFor(String servantId) {
+      return switch (servantId) {
+         case "gilgamesh_caster" -> "caster_gilgamesh";
+         default -> servantId;
+      };
    }
 
    private static ResourceLocation parseTexture(String value) {

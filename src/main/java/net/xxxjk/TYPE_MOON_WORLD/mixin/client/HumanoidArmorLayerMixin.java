@@ -48,6 +48,7 @@ public abstract class HumanoidArmorLayerMixin {
       float headPitch,
       CallbackInfo ci
    ) {
+      CURRENT_ARMOR_STACK.remove();
       if (livingEntity instanceof net.minecraft.world.entity.player.Player player
          && ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
          ci.cancel();
@@ -76,16 +77,18 @@ public abstract class HumanoidArmorLayerMixin {
       float headPitch,
       CallbackInfo ci
    ) {
-      ItemStack stack = CURRENT_ARMOR_STACK.get();
-      if (hasProjectionTag(stack)) {
-         poseStack.pushPose();
-         poseStack.scale(1.01F, 1.01F, 1.01F);
-         VertexConsumer consumer = bufferSource.getBuffer(ReinforcementRenderType.getSkinRenderType(resolvePart(slot), livingEntity));
-         model.renderToBuffer(poseStack, consumer, FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ARMOR_PATTERN_COLOR);
-         poseStack.popPose();
+      try {
+         ItemStack stack = CURRENT_ARMOR_STACK.get();
+         if (hasProjectionTag(stack)) {
+            poseStack.pushPose();
+            poseStack.scale(1.01F, 1.01F, 1.01F);
+            VertexConsumer consumer = bufferSource.getBuffer(ReinforcementRenderType.getSkinRenderType(resolvePart(slot), livingEntity));
+            model.renderToBuffer(poseStack, consumer, FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ARMOR_PATTERN_COLOR);
+            poseStack.popPose();
+         }
+      } finally {
+         CURRENT_ARMOR_STACK.remove();
       }
-
-      CURRENT_ARMOR_STACK.remove();
    }
 
    @ModifyExpressionValue(

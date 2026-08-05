@@ -83,6 +83,10 @@ public class MagicSwordBarrelFullOpen {
 
    public static void tick(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      tick(player, vars);
+   }
+
+   public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (vars.is_sword_barrel_active) {
          boolean interrupt = false;
          if (!vars.is_magic_circuit_open) {

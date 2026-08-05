@@ -63,6 +63,7 @@ public final class ArashCombatRules {
    public static final int STELLA_SCAR_RADIUS = 18;
    public static final double STELLA_OUTER_RADIUS = 5.0;
    public static final double STELLA_CORE_RADIUS = 1.25;
+   public static final double STELLA_DAMAGE_RADIUS_PADDING = 2.0;
    public static final double STELLA_END_RADIUS = 50.0;
    public static final float STELLA_CORE_DAMAGE = 2000.0F;
    public static final float STELLA_OUTER_DAMAGE = 500.0F;

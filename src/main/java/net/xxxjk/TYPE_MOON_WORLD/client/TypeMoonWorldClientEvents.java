@@ -13,6 +13,7 @@ import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers;
+import net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Block;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item;
@@ -59,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedSkeletonHajunRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer;
@@ -209,6 +211,13 @@ public class TypeMoonWorldClientEvents {
             (net.minecraft.world.level.block.Block)ModBlocks.WHITE_GEMSTONE_BLOCK_HIGH.get()
          }
       );
+   }
+
+   @SubscribeEvent
+   public static void registerRenderBuffers(RegisterRenderBuffersEvent event) {
+      for (var renderType : ReinforcementRenderType.glintTypes()) {
+         event.registerRenderBuffer(renderType);
+      }
    }
 
    @SubscribeEvent

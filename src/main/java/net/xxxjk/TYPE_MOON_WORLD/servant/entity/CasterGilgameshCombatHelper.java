@@ -55,6 +55,7 @@ public final class CasterGilgameshCombatHelper {
    private static final String CENTER_Y = "CasterGilgameshWorkshopY";
    private static final String CENTER_Z = "CasterGilgameshWorkshopZ";
    private static final String WORKSHOP_MANA_TICK = "CasterGilgameshWorkshopManaTick";
+   private static final String LAST_DIVINE_SHIELD_SCAN = "CasterGilgameshLastDivineShieldScan";
    private static final ResourceLocation LEADER_ATTACK_ID =
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "caster_gilgamesh_leader_attack");
    private static final ResourceLocation WORKSHOP_ARMOR_ID =
@@ -66,6 +67,7 @@ public final class CasterGilgameshCombatHelper {
    private static final long FLIGHT_STALLED_TICKS = 8L * 20L;
    private static final double DIVINE_SHIELD_MP_COST = 30.0;
    private static final double DIVINE_SHIELD_DETECTION_RANGE = 24.0;
+   private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
 
    private CasterGilgameshCombatHelper() {}
 
@@ -113,11 +115,16 @@ public final class CasterGilgameshCombatHelper {
 
    private static void tickDivineShield(CasterGilgameshEntity entity, ServerLevel level) {
       GilgameshDivineShield.tick(entity);
+      CompoundTag data = entity.getPersistentData();
       if (GilgameshDivineShield.isActive(entity)
          || entity.getCurrentMp() < DIVINE_SHIELD_MP_COST
          || GilgameshDivineShield.isOnCooldown(entity)) {
          return;
       }
+      if (entity.tickCount - data.getInt(LAST_DIVINE_SHIELD_SCAN) < DIVINE_SHIELD_SCAN_INTERVAL) {
+         return;
+      }
+      data.putInt(LAST_DIVINE_SHIELD_SCAN, entity.tickCount);
       boolean incomingProjectile = !level.getEntitiesOfClass(
          Projectile.class,
          entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),
@@ -212,15 +219,19 @@ public final class CasterGilgameshCombatHelper {
 
    private static void tickTimedBuffs(CasterGilgameshEntity entity, ServerLevel level, CompoundTag data, long now) {
       GilgameshCombatHelper.tickClairvoyanceEx(entity, level, data);
-      if (now >= data.getLong(LEADER_UNTIL)) {
+      long leaderUntil = data.getLong(LEADER_UNTIL);
+      if (leaderUntil > 0L && now >= leaderUntil) {
+         data.remove(LEADER_UNTIL);
          for (LivingEntity ally : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(30.0),
             e -> e.isAlive() && (e == entity || e.isAlliedTo(entity)))) {
             AttributeInstance attack = ally.getAttribute(Attributes.ATTACK_DAMAGE);
             if (attack != null) attack.removeModifier(LEADER_ATTACK_ID);
          }
       }
-      if (now >= data.getLong(RETURN_UNTIL)) {
+      long returnUntil = data.getLong(RETURN_UNTIL);
+      if (returnUntil > 0L && now >= returnUntil) {
          data.remove("CasterGilgameshReturnTargets");
+         data.remove(RETURN_UNTIL);
       }
    }
 

@@ -53,6 +53,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEven
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -91,6 +92,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -194,6 +196,12 @@ public class CommonEvents {
          }
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
+            servant.ensureDefaultNpcServantCardArmor(false);
+            TYPE_MOON_WORLD.queueServerWork(1, () -> {
+               if (servant.isAlive() && servant.level() == serverLevel) {
+                  servant.ensureDefaultNpcServantCardArmor(true);
+               }
+            });
          }
          if (event.getEntity() instanceof RyougiShikiEntity shiki && event.getLevel() instanceof ServerLevel serverLevel) {
             trackShiki(shiki, serverLevel);
@@ -986,9 +994,10 @@ public class CommonEvents {
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
-      if (!fanaticDefensePiercing && !originBullet && servant instanceof GilgameshEntity gilgamesh) {
+      if (!fanaticDefensePiercing && !originBullet
+         && (servant instanceof GilgameshEntity || servant instanceof CasterGilgameshEntity)) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
-            gilgamesh, event.getSource(), event.getAmount()
+            servant, event.getSource(), event.getAmount()
          );
          if (shieldHit != null) {
             event.setAmount(shieldHit.remainingDamage());
@@ -1495,6 +1504,16 @@ public class CommonEvents {
    }
 
    @SubscribeEvent
+   public static void onLevelUnload(LevelEvent.Unload event) {
+      if (event.getLevel() instanceof ServerLevel serverLevel) {
+         String key = dimensionKey(serverLevel);
+         SUGGESTED_MOB_IDS_BY_DIMENSION.remove(key);
+         SERVANT_IDS_BY_DIMENSION.remove(key);
+         SHIKI_IDS_BY_DIMENSION.remove(key);
+      }
+   }
+
+   @SubscribeEvent
    public static void onLivingDrops(LivingDropsEvent event) {
       if (event.getEntity() instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -1541,6 +1560,9 @@ public class CommonEvents {
       Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(level));
       if (ids != null) {
          ids.remove(entity.getUUID());
+         if (ids.isEmpty()) {
+            SERVANT_IDS_BY_DIMENSION.remove(dimensionKey(level), ids);
+         }
       }
    }
 
@@ -1551,6 +1573,9 @@ public class CommonEvents {
       Set<UUID> ids = SHIKI_IDS_BY_DIMENSION.get(dimensionKey(level));
       if (ids != null) {
          ids.remove(entity.getUUID());
+         if (ids.isEmpty()) {
+            SHIKI_IDS_BY_DIMENSION.remove(dimensionKey(level), ids);
+         }
       }
    }
 
@@ -1634,13 +1659,21 @@ public class CommonEvents {
          return;
       }
       if (entity.level() instanceof ServerLevel level) {
-         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(dimensionKey(level));
+         String key = dimensionKey(level);
+         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(key);
          if (ids != null) {
             ids.remove(entity.getUUID());
+            if (ids.isEmpty()) {
+               SUGGESTED_MOB_IDS_BY_DIMENSION.remove(key, ids);
+            }
          }
       } else {
-         for (Set<UUID> ids : SUGGESTED_MOB_IDS_BY_DIMENSION.values()) {
+         for (Map.Entry<String, Set<UUID>> entry : SUGGESTED_MOB_IDS_BY_DIMENSION.entrySet()) {
+            Set<UUID> ids = entry.getValue();
             ids.remove(entity.getUUID());
+            if (ids.isEmpty()) {
+               SUGGESTED_MOB_IDS_BY_DIMENSION.remove(entry.getKey(), ids);
+            }
          }
       }
    }
@@ -1844,8 +1877,12 @@ public class CommonEvents {
             && effectInstance.getDuration() > 1
             && effectInstance.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL
             && !living.getPersistentData().getBoolean(EFFECT_RESISTANCE_REENTRY_TAG)) {
-            int adjustedDuration = MagicResistanceHelper.applyDebuffResistance(living, effectInstance.getDuration());
-            if (adjustedDuration < effectInstance.getDuration()) {
+            int adjustedDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(living, effectInstance.getDuration());
+            if (adjustedDuration <= 0) {
+               living.removeEffect(effectInstance.getEffect());
+               clearBasicMagecraftEffectTags(living, effectInstance.getEffect().value());
+               return;
+            } else if (adjustedDuration < effectInstance.getDuration()) {
                living.getPersistentData().putBoolean(EFFECT_RESISTANCE_REENTRY_TAG, true);
                try {
                   living.removeEffect(effectInstance.getEffect());

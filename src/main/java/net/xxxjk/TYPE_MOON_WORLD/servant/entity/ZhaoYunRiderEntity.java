@@ -67,7 +67,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private static final int NP_DURATION = 300;
    private static final int NP_CHANT_DURATION = 60;
    private static final int NP_COOLDOWN = 800;
-   private static final float NP_INITIAL_DAMAGE = 500.0F;
+   private static final float NP_INITIAL_DAMAGE = 200.0F;
    private static final double NP_INITIAL_DISTANCE = 50.0;
    private static final float NP_DAMAGE = 100.0F;
    private static final double CHANGBANPO_MP_COST = 150.0;
@@ -738,7 +738,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          double updatedDistance = initialDistance + travel;
          data.putDouble(TAG_NP_INITIAL_DISTANCE, updatedDistance);
          if (updatedDistance >= NP_INITIAL_DISTANCE - 1.0E-4) {
-            // The 500-damage opening dash ends at 50 blocks. Any later
+            // The 200-damage opening dash ends at 50 blocks. Any later
             // contacts during the remaining 15-second NP window deal 100.
             data.putBoolean(TAG_NP_INITIAL_CHARGE, false);
             data.putLong(TAG_NP_REASSESS_UNTIL, now + 20L);
@@ -747,7 +747,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             mount.setDeltaMovement(0.0, current.y, 0.0);
          }
       }
-      if (verticalVelocity < -0.08 && !hasSolidSupport(level, mount)) {
+      if (mount.getY() < level.getMinBuildHeight() - 4) {
          restoreNpSafePosition(mount);
          endChangbanpo();
          return;

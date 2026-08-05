@@ -68,8 +68,10 @@ public final class GilgameshCombatHelper {
    private static final String EA_SUMMON_END = "GilgameshEaSummonEnd";
    private static final String EA_DRAW_END = "GilgameshEaDrawEnd";
    private static final String EA_SUMMON_TARGET = "GilgameshEaSummonTarget";
+   private static final String LAST_DIVINE_SHIELD_SCAN = "GilgameshLastDivineShieldScan";
    public static final int EA_SUMMON_TICKS = 72;
    public static final int EA_DRAW_TICKS = 53;
+   private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
    private static final String LAST_CHARISMA = "GilgameshLastCharisma";
    private static final String ENKIDU_BARRAGE_REMAINING = "GilgameshEnkiduBarrageRemaining";
    private static final String ENKIDU_BARRAGE_NEXT = "GilgameshEnkiduBarrageNext";
@@ -188,6 +190,11 @@ public final class GilgameshCombatHelper {
          || GilgameshDivineShield.isOnCooldown(entity)) {
          return;
       }
+      CompoundTag data = entity.getPersistentData();
+      if (entity.tickCount - data.getInt(LAST_DIVINE_SHIELD_SCAN) < DIVINE_SHIELD_SCAN_INTERVAL) {
+         return;
+      }
+      data.putInt(LAST_DIVINE_SHIELD_SCAN, entity.tickCount);
       boolean incomingProjectile = !level.getEntitiesOfClass(
          Projectile.class,
          entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),

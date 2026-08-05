@@ -8,7 +8,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
@@ -315,6 +314,10 @@ public final class ServantManeuverService {
       List<ScoredDestination> result = new ArrayList<>(6);
       double movementLimit = Math.max(6.0, tactical.repositionDistance());
       int slotSign = ServantEngagementService.combatSlotSign(servant, target);
+      List<LivingEntity> nearbyAllies = tactical.collateralCaution() <= 0.0
+         ? List.of()
+         : servant.level().getEntitiesOfClass(LivingEntity.class,
+            target.getBoundingBox().inflate(Math.max(movementLimit, desiredRadius) + 4.0), servant::isAlliedTo);
       for (double angle : angles) {
          double radians = Math.toRadians(angle * slotSign);
          Vec3 direction = new Vec3(baseDirection.x * Math.cos(radians) - baseDirection.z * Math.sin(radians), 0.0,
@@ -332,8 +335,7 @@ public final class ServantManeuverService {
          boolean lineOfSight = hasLineOfSightFrom(servant, safe, target);
          boolean rangedStyle = "sniper".equals(tactical.style()) || "controller".equals(tactical.style())
             || "support".equals(tactical.style()) || "disaster".equals(tactical.style());
-         long allies = servant.level().getEntitiesOfClass(LivingEntity.class,
-            new AABB(safe, safe).inflate(3.0), servant::isAlliedTo).size();
+         long allies = countAlliesNear(nearbyAllies, safe, 3.0);
          double heightValue = Math.max(-3.0, Math.min(3.0, safe.y - target.getY())) * tactical.verticalMobility();
          Vec3 targetVelocity = target.getDeltaMovement().multiply(1.0, 0.0, 1.0);
          double interceptValue = targetVelocity.lengthSqr() < 1.0E-4 ? 0.0
@@ -346,6 +348,16 @@ public final class ServantManeuverService {
       }
       result.sort(Comparator.comparingDouble(ScoredDestination::score).reversed());
       return result;
+   }
+
+   private static long countAlliesNear(List<LivingEntity> allies, Vec3 center, double radius) {
+      if (allies.isEmpty()) return 0L;
+      double radiusSqr = radius * radius;
+      long count = 0L;
+      for (LivingEntity ally : allies) {
+         if (ally.isAlive() && ally.position().distanceToSqr(center) <= radiusSqr) count++;
+      }
+      return count;
    }
 
    private static boolean hasLineOfSightFrom(ServantEntity servant, Vec3 position, LivingEntity target) {

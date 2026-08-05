@@ -311,10 +311,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       super.tick();
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide && this.tickCount == 1) {
-         this.equipNpcServantCardArmor();
+         this.equipNpcServantCardArmor(true);
       } else if (!this.level().isClientSide && this.tickCount % 40 == 0
          && !GilgameshDuelState.isActive(this)) {
-         this.equipNpcServantCardArmor();
+         this.equipNpcServantCardArmor(this.tickCount % 200 == 0);
       }
       this.updateWalkAnimationState();
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
@@ -576,7 +576,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       if (!this.level().isClientSide()) {
          this.applyDefinitionAttributes(true);
          this.equipDefaultWeapon();
-         this.equipNpcServantCardArmor();
+         this.equipNpcServantCardArmor(false);
       }
       return result;
    }
@@ -648,20 +648,37 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void equipNpcServantCardArmor() {
+      this.equipNpcServantCardArmor(false);
+   }
+
+   public void ensureDefaultNpcServantCardArmor(boolean forceClientSync) {
+      this.equipNpcServantCardArmor(forceClientSync);
+   }
+
+   private void equipNpcServantCardArmor(boolean forceClientSync) {
       String id = this.getServantId();
       if (!usesHumanoidServantSkin(id)) {
          return;
       }
       if (hasHumanoidServantCardHelmet(id)) {
-         equipNpcServantCardArmorSlot(EquipmentSlot.HEAD);
+         equipNpcServantCardArmorSlot(EquipmentSlot.HEAD, forceClientSync);
       }
-      equipNpcServantCardArmorSlot(EquipmentSlot.CHEST);
-      equipNpcServantCardArmorSlot(EquipmentSlot.LEGS);
+      equipNpcServantCardArmorSlot(EquipmentSlot.CHEST, forceClientSync);
+      equipNpcServantCardArmorSlot(EquipmentSlot.LEGS, forceClientSync);
    }
 
-   private void equipNpcServantCardArmorSlot(EquipmentSlot slot) {
+   private void equipNpcServantCardArmorSlot(EquipmentSlot slot, boolean forceClientSync) {
       Item armor = ModItems.getServantCardArmor(this.getServantId(), slot);
-      if (armor == Items.AIR || this.getItemBySlot(slot).is(armor)) {
+      if (armor == Items.AIR) {
+         return;
+      }
+      if (this.getItemBySlot(slot).is(armor)) {
+         if (forceClientSync) {
+            ItemStack current = this.getItemBySlot(slot).copy();
+            this.setItemSlot(slot, ItemStack.EMPTY);
+            this.setItemSlot(slot, current);
+            this.setDropChance(slot, 0.0F);
+         }
          return;
       }
       this.setItemSlot(slot, new ItemStack(armor));
@@ -1236,7 +1253,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
       this.equipDefaultWeapon();
       this.applyDefinitionAttributes(false);
-      this.equipNpcServantCardArmor();
+      this.equipNpcServantCardArmor(false);
    }
 
    // ======================== Getters / Setters ========================

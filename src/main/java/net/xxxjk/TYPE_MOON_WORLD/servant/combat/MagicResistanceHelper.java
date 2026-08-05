@@ -114,6 +114,37 @@ public final class MagicResistanceHelper {
       return Math.max(1, Math.round(durationTicks * (1.0F - reduction)));
    }
 
+   /**
+    * Applies Fate-style resistance to low-mystery harmful magic state. Damage is
+    * intentionally handled by {@link #applyMagicDamageReduction}; this method is
+    * only for negative status duration.
+    */
+   public static int applyHarmfulMagicEffectResistance(LivingEntity entity, int durationTicks) {
+      if (entity == null || durationTicks <= 1) {
+         return durationTicks;
+      }
+      MagicResistanceRank rank = getMagicResistanceRank(entity);
+      if (rank.isAtLeast(MagicResistanceRank.B)) {
+         return 0;
+      }
+      int adjusted = applyDebuffResistance(entity, durationTicks);
+      int cap = harmfulMagicEffectDurationCap(rank);
+      return cap <= 0 ? adjusted : Math.max(1, Math.min(adjusted, cap));
+   }
+
+   public static boolean blocksHarmfulMagicEffect(LivingEntity entity) {
+      return getMagicResistanceRank(entity).isAtLeast(MagicResistanceRank.B);
+   }
+
+   public static int harmfulMagicEffectDurationCap(MagicResistanceRank rank) {
+      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
+         case A, B -> 0;
+         case C -> 80;
+         case D, E -> 100;
+         default -> Integer.MAX_VALUE;
+      };
+   }
+
    public static boolean hasMagicResistance(LivingEntity entity) {
       return getMagicResistanceRank(entity) != MagicResistanceRank.NONE;
    }

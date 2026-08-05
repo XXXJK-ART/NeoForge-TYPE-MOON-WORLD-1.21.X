@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import java.util.function.Consumer;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.client.model.HumanoidModel;
@@ -76,7 +77,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
       consumer.accept(new GeoRenderProvider() {
          private ServantCardArmorRenderer renderer;
-         private final Map<LivingEntity, ServantCardArmorRenderer> entityRenderers = new WeakHashMap<>();
+         private final Map<LivingEntity, EnumMap<EquipmentSlot, ServantCardArmorRenderer>> entityRenderers = new WeakHashMap<>();
 
          @Override
          @Nullable
@@ -90,7 +91,10 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
                }
                return this.renderer;
             }
-            return this.entityRenderers.computeIfAbsent(livingEntity, ignored -> new ServantCardArmorRenderer());
+            EquipmentSlot slot = equipmentSlot == null ? ServantCardArmorItem.this.slot : equipmentSlot;
+            EnumMap<EquipmentSlot, ServantCardArmorRenderer> renderers =
+               this.entityRenderers.computeIfAbsent(livingEntity, ignored -> new EnumMap<>(EquipmentSlot.class));
+            return renderers.computeIfAbsent(slot, ignored -> new ServantCardArmorRenderer());
          }
       });
    }

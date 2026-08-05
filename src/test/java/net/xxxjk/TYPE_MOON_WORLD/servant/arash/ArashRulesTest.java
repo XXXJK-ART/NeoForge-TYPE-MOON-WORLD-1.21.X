@@ -119,6 +119,7 @@ class ArashRulesTest {
       assertEquals(18, ArashCombatRules.STELLA_SCAR_RADIUS);
       assertEquals(1.25, ArashCombatRules.STELLA_CORE_RADIUS);
       assertEquals(5.0, ArashCombatRules.STELLA_OUTER_RADIUS);
+      assertEquals(2.0, ArashCombatRules.STELLA_DAMAGE_RADIUS_PADDING);
       assertEquals(50.0, ArashCombatRules.STELLA_END_RADIUS);
       assertEquals(25.0, ArashCombatRules.stellaExplosionRadiusAtTick(50));
       assertEquals(50.0, ArashCombatRules.stellaExplosionRadiusAtTick(100));
