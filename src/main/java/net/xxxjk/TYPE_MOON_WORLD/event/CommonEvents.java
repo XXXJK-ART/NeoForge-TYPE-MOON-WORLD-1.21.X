@@ -528,7 +528,7 @@ public class CommonEvents {
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
                if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(player, event.getSource())) {
-                  CombatKnowledgeService.observeProjectileNegation(player, (Projectile)directEntity);
+                  CombatKnowledgeService.observeProjectileNegation(player, directEntity);
                   event.setCanceled(true);
                   event.setAmount(0.0F);
                   return;
@@ -1062,8 +1062,7 @@ public class CommonEvents {
       }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
-         if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())
-            && event.getSource().getDirectEntity() instanceof Projectile projectile) {
+         if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.END_ROD,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
@@ -1072,7 +1071,7 @@ public class CommonEvents {
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
                   12, 0.3, 0.4, 0.3, 0.03);
             }
-            CombatKnowledgeService.observeProjectileNegation(servant, projectile);
+            CombatKnowledgeService.observeProjectileNegation(servant, event.getSource().getDirectEntity());
             event.setCanceled(true);
             return;
          }

@@ -260,10 +260,12 @@ public final class ServantCombatMotionService {
       TerrainImpactProfile.Tier tier = impactTier(data);
       double energy = Math.max(0.1, impactEnergy);
       boolean heavy = tier.ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal();
-      double radius = Math.min(heavy ? 4.5 : 3.0, Math.max(1.5, energy * (wallImpact ? 1.25 : 1.6)));
+      double radius = impactRadius(tier, energy, wallImpact);
       TerrainImpactProfile base = TerrainImpactProfile.of(tier);
+      int debrisCap = wallImpact ? heavy ? 32 : 18 : heavy ? 24 : 12;
+      int dustCap = wallImpact ? 64 : 48;
       TerrainImpactProfile profile = new TerrainImpactProfile(tier, radius, base.maximumHardness(),
-         Math.min(base.debrisCount(), heavy ? 24 : 12), Math.min(base.dustCount(), 48));
+         Math.min(base.debrisCount(), debrisCap), Math.min(base.dustCount(), dustCap));
       Vec3 direction = previous.lengthSqr() < 1.0E-4 ? target.getLookAngle() : previous.normalize();
       Vec3 center = wallImpact && collisionPoint != null ? collisionPoint
          : target.position().add(direction.scale(wallImpact ? 0.8 : 0.0))
@@ -280,7 +282,7 @@ public final class ServantCombatMotionService {
       target.setDeltaMovement(previous.x * (wallImpact ? -0.12 : 0.25), wallImpact ? Math.max(0.08, previous.y * 0.18) : 0.08,
          previous.z * (wallImpact ? -0.12 : 0.25));
       target.hurtMarked = true;
-      beginImpactStagger(target, level.getGameTime(), wallImpact ? 12 : 8, wallImpact);
+      beginImpactStagger(target, level.getGameTime(), wallImpact ? 16 : 10, wallImpact);
       if (source instanceof ServantEntity servant) {
          ServantCombatTempoService.recordContact(servant, target, wallImpact
             ? ServantCombatTempoService.ContactType.WALL
@@ -300,6 +302,16 @@ public final class ServantCombatMotionService {
       data.putLong(STAGGER_UNTIL, now + recoveryTicks);
       data.putLong(PURSUIT_UNTIL, Math.max(data.getLong(PURSUIT_UNTIL), now + recoveryTicks));
       data.putLong(RECOVERY_UNTIL, Math.max(data.getLong(RECOVERY_UNTIL), now + recoveryTicks));
+   }
+
+   public static double impactRadius(TerrainImpactProfile.Tier tier, double impactEnergy, boolean wallImpact) {
+      TerrainImpactProfile.Tier resolved = tier == null ? TerrainImpactProfile.Tier.SMALL : tier;
+      boolean heavy = resolved.ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal();
+      double energy = Math.max(0.1, impactEnergy);
+      if (wallImpact) {
+         return Math.min(heavy ? 6.5 : 4.25, Math.max(2.25, energy * 1.6));
+      }
+      return Math.min(heavy ? 4.5 : 3.0, Math.max(1.5, energy * 1.6));
    }
 
    private static void finishRecovery(LivingEntity target, long now) {

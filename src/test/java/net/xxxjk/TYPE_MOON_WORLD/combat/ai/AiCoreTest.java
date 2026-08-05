@@ -197,6 +197,8 @@ class AiCoreTest {
    void phaseThresholdsAreStableAndExplicit() {
       assertEquals(ServantCombatPhase.PROBING, ServantPhaseService.desiredPhase(1.0F, 59L, 1.0F));
       assertEquals(ServantCombatPhase.NORMAL, ServantPhaseService.desiredPhase(1.0F, 60L, 1.0F));
+      assertEquals(ServantCombatPhase.DECISIVE,
+         ServantPhaseService.desiredPhase(1.0F, ServantPhaseService.PROLONGED_COMBAT_DECISIVE_TICKS, 1.0F));
       assertEquals(ServantCombatPhase.DECISIVE, ServantPhaseService.desiredPhase(0.55F, 1L, 1.0F));
       assertEquals(ServantCombatPhase.LAST_STAND, ServantPhaseService.desiredPhase(0.25F, 1L, 3.0F));
       assertEquals("CAUTIOUS", DeadApostleTacticalState.determinePhase(true, 1.0F, 0.0F, 1.0F));

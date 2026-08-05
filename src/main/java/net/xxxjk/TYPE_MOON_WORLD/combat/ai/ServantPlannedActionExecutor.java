@@ -32,6 +32,7 @@ public final class ServantPlannedActionExecutor {
    private static final String ACTIVE_ACTION = "TypeMoonPlannedActionId";
    private static final int APPROACH_TIMEOUT = 30;
    private static final int MAX_STALLED_TICKS = 8;
+   private static final String APPROACH_PATH_PREFIX = "ServantPlannedActionApproach";
    private static final Map<ServantEntity, ActionRuntime> ACTIVE = new WeakHashMap<>();
 
    private ServantPlannedActionExecutor() { }
@@ -90,11 +91,13 @@ public final class ServantPlannedActionExecutor {
       ActionRuntime runtime = ACTIVE.get(entity);
       if (runtime == null) return false;
       if (!runtime.dimension.equals(entity.level().dimension().location())) {
+         if (runtime.stage == Stage.APPROACH) clearApproachMovement(entity);
          clear(entity);
          return false;
       }
       LivingEntity target = resolveTarget(entity, runtime.targetUuid);
       if (!entity.isAlive() || target == null || !EntityUtils.isValidCombatTarget(entity, target)) {
+         if (runtime.stage == Stage.APPROACH) clearApproachMovement(entity);
          clear(entity);
          return false;
       }
@@ -135,15 +138,11 @@ public final class ServantPlannedActionExecutor {
    public static boolean cancelForMeleeOverride(ServantEntity entity, long now) {
       ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
       if (runtime == null || runtime.stage != Stage.APPROACH) return false;
-      entity.getNavigation().stop();
-      ServantNavigationHelper.clearMovementState(entity);
+      clearApproachMovement(entity);
       if (entity.level() instanceof ServerLevel level) {
          CombatThreatService.clearForSource(level, entity.getUUID());
       }
       clear(entity);
-      entity.getPersistentData().remove("TypeMoonPlannedActionTargetX");
-      entity.getPersistentData().remove("TypeMoonPlannedActionTargetY");
-      entity.getPersistentData().remove("TypeMoonPlannedActionTargetZ");
       entity.getPersistentData().remove("TypeMoonPlannedActionStalledTicks");
       entity.getPersistentData().remove("TypeMoonCombatThreat");
       return true;
@@ -175,6 +174,7 @@ public final class ServantPlannedActionExecutor {
 
    private static boolean tickApproach(ServantEntity entity, LivingEntity target, ActionRuntime runtime, long now) {
       if (now > runtime.stageDeadline) {
+         clearApproachMovement(entity);
          clear(entity);
          return false;
       }
@@ -183,6 +183,7 @@ public final class ServantPlannedActionExecutor {
          ServantTacticalProfileResolver.resolve(entity));
       runtime.stalledTicks = moved ? 0 : runtime.stalledTicks + 1;
       if (runtime.stalledTicks >= MAX_STALLED_TICKS) {
+         clearApproachMovement(entity);
          clear(entity);
          return false;
       }
@@ -198,7 +199,7 @@ public final class ServantPlannedActionExecutor {
          return false;
       }
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - action.manaCost()));
-      entity.getNavigation().stop();
+      clearApproachMovement(entity);
       runtime.stage = Stage.WINDUP;
       runtime.snapshotDirection = target.getEyePosition().subtract(entity.getEyePosition());
       if (runtime.snapshotDirection.lengthSqr() < 1.0E-4) runtime.snapshotDirection = entity.getLookAngle();
@@ -354,8 +355,9 @@ public final class ServantPlannedActionExecutor {
    }
 
    private static void cancel(ServantEntity entity, ActionRuntime runtime, long now) {
-      entity.getNavigation().stop();
       boolean approachedOnly = runtime.stage == Stage.APPROACH;
+      if (approachedOnly) clearApproachMovement(entity);
+      else entity.getNavigation().stop();
       runtime.stage = Stage.CANCELLED;
       runtime.stageDeadline = approachedOnly
          ? now : now + Math.min(6, runtime.action.timing().recoveryTicks());
@@ -364,6 +366,10 @@ public final class ServantPlannedActionExecutor {
    private static void clear(ServantEntity entity) {
       ACTIVE.remove(entity);
       entity.getPersistentData().remove(ACTIVE_ACTION);
+   }
+
+   private static void clearApproachMovement(ServantEntity entity) {
+      ServantNavigationHelper.clearMovementState(entity, APPROACH_PATH_PREFIX);
    }
 
    private static void commit(ServantEntity entity, AiActionDescriptor action, long now) {

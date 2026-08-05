@@ -46,6 +46,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
@@ -102,7 +104,6 @@ public final class EnkiduCombatHelper {
    private static final String TAG_FLIGHT_UNTIL = "EnkiduFlightUntil";
    private static final String TAG_LAND_UNTIL = "EnkiduLandUntil";
    private static final String TAG_FLIGHT_WAS_AIRBORNE = "EnkiduFlightWasAirborne";
-   private static final String TAG_FLIGHT_LAST_CONTACT = "EnkiduFlightLastContact";
    private static final String TAG_NEXT_FLIGHT_TOGGLE = "EnkiduNextFlightToggle";
    private static final String TAG_UNREACHABLE_TICKS = "EnkiduUnreachableTicks";
    private static final String TAG_ENUMA_IMPACT_X = "EnkiduEnumaImpactX";
@@ -151,6 +152,7 @@ public final class EnkiduCombatHelper {
    private static final ResourceLocation MODE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "enkidu_mode_armor");
    private static final ResourceLocation MODE_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "enkidu_mode_speed");
    private static final ResourceLocation MODE_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "enkidu_mode_health");
+   private static final String TAG_LAST_PERSISTENT_TICK = "EnkiduLastPersistentStateTick";
 
    private static final ItemStack[] EARTH_WEAPONS = new ItemStack[] {
       new ItemStack(Items.IRON_SWORD), new ItemStack(Items.IRON_AXE), new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.IRON_SHOVEL),
@@ -168,15 +170,7 @@ public final class EnkiduCombatHelper {
       }
 
       long now = level.getGameTime();
-      tickBoundTargets(entity, level, now);
-      tickPerfectFormRegen(entity, level, now);
-      tickFireImmunity(entity, level, now);
-      tickPassivePresence(entity, level, now);
-      tickGroundManaRegen(entity, level, now);
-      tickGroundCombatResourceBoost(entity, now);
-      EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
-      tickNatureDropCleanup(entity, level, now);
-      tickEnumaWindup(entity, level, now);
+      tickPersistentState(entity);
       if (GilgameshDuelState.tickEnkidu(entity, level)) {
          return;
       }
@@ -251,6 +245,23 @@ public final class EnkiduCombatHelper {
       if (isFlying(entity) && distance >= 8.0) {
          trySmallAgeOfBabylon(entity, level, target, now);
       }
+   }
+
+   public static void tickPersistentState(EnkiduEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(TAG_LAST_PERSISTENT_TICK) && data.getLong(TAG_LAST_PERSISTENT_TICK) == now) return;
+      data.putLong(TAG_LAST_PERSISTENT_TICK, now);
+      tickBoundTargets(entity, level, now);
+      tickPerfectFormRegen(entity, level, now);
+      tickFireImmunity(entity, level, now);
+      tickPassivePresence(entity, level, now);
+      tickGroundManaRegen(entity, level, now);
+      tickGroundCombatResourceBoost(entity, now);
+      EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
+      tickNatureDropCleanup(entity, level, now);
+      tickEnumaWindup(entity, level, now);
    }
 
    public static boolean isFlying(EnkiduEntity entity) {
@@ -574,22 +585,15 @@ public final class EnkiduCombatHelper {
          data.remove(TAG_FLIGHT_WAS_AIRBORNE);
          data.remove(TAG_FLIGHT_UNTIL);
          data.remove(TAG_NEXT_FLIGHT_TOGGLE);
-         data.remove(TAG_FLIGHT_LAST_CONTACT);
          return;
       }
       double distance = entity.distanceTo(target);
-      if (!data.contains(TAG_FLIGHT_LAST_CONTACT)) {
-         data.putLong(TAG_FLIGHT_LAST_CONTACT, now);
-      }
-      if (distance <= 12.0 || entity.getSensing().hasLineOfSight(target)) {
-         data.putLong(TAG_FLIGHT_LAST_CONTACT, now);
-      } else if (isFlying(entity) && now - data.getLong(TAG_FLIGHT_LAST_CONTACT) >= 8L * 20L) {
+      if (isFlying(entity) && ServantCombatTempoService.disconnectedTicks(entity, now) >= 8L * 20L) {
          entity.setNoGravity(false);
          data.remove(TAG_FLIGHT_WAS_AIRBORNE);
          data.remove(TAG_FLIGHT_UNTIL);
          data.putLong(TAG_LAND_UNTIL, now + 120L);
          data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 200L);
-         data.putLong(TAG_FLIGHT_LAST_CONTACT, now);
          ServantNavigationHelper.moveToTargetThrottled(
             entity, target, 1.25, now, 2, 0.2, "EnkiduFlightStalled");
          return;
@@ -628,6 +632,7 @@ public final class EnkiduCombatHelper {
          }
       }
       if (isFlying(entity)) {
+         ServantFlightCombatService.markControlled(entity, now);
          entity.getNavigation().stop();
          entity.setNoGravity(true);
          double hoverY = ServantFlightHelper.desiredHoverY(entity, target);
@@ -640,7 +645,8 @@ public final class EnkiduCombatHelper {
          double radial = radialDistance < 9.0 ? 0.16 : radialDistance > 15.0 ? -0.14 : 0.0;
          Vec3 orbit = new Vec3(-away.z, 0.0, away.x).scale(0.11);
          double yMotion = ServantFlightHelper.verticalVelocityToward(entity.getY(), hoverY, 0.12, 0.025, 0.18, 0.24);
-         entity.setDeltaMovement(entity.getDeltaMovement().scale(0.65).add(away.scale(radial)).add(orbit).add(0.0, yMotion, 0.0));
+         Vec3 motion = entity.getDeltaMovement().scale(0.65).add(away.scale(radial)).add(orbit).add(0.0, yMotion, 0.0);
+         entity.setDeltaMovement(motion.x, ServantFlightHelper.clampVerticalSpeed(motion.y), motion.z);
       } else {
          entity.setNoGravity(false);
       }

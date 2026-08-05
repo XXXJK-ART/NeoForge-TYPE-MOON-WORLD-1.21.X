@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
    modid = "typemoonworld"
 )
 public class MuramasaSlashHandler {
+   private static final float MURAMASA_MAX_DAMAGE = 100.0F;
    private static final List<MuramasaSlashHandler.SlashInstance> ACTIVE_SLASHES = new ArrayList<>();
 
    public static void initiate(ServerLevel level, ServerPlayer player, int charge, int maxDist, int maxWidth, int maxHeight) {
@@ -169,7 +170,7 @@ public class MuramasaSlashHandler {
             if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID) && !EntityUtils.isImmunePlayerTarget(e)) {
                   float damage = slash.tsumukari
                      ? tsumukariDamage(slash.charge)
-                     : slash.fixedGeometry ? 1500.0F : 20.0F + slash.charge * 5.0F;
+                     : slash.fixedGeometry ? 1500.0F : muramasaDamage(slash.charge);
                   Entity attackerEntity = level.getEntity(slash.playerUUID);
                   if (attackerEntity instanceof LivingEntity attacker) {
                   if (slash.causalSeverance) {
@@ -317,6 +318,10 @@ public class MuramasaSlashHandler {
          return Math.max(1.0F, clampedCharge * 10.0F);
       }
       return 1000.0F + (clampedCharge - 60) * 25.0F;
+   }
+
+   static float muramasaDamage(int charge) {
+      return Math.min(MURAMASA_MAX_DAMAGE, 20.0F + Math.max(0, charge) * 5.0F);
    }
 
    private static class SlashInstance {

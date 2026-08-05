@@ -48,6 +48,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiEngine;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -346,6 +347,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    protected void customServerAiStep() {
       if (!this.level().isClientSide()) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantSpecialStateService.tickBeforeAi(this);
          if (this.hasEffect(ModMobEffects.PETRIFIED)) {
             this.getNavigation().stop();
             this.setTarget(null);
@@ -368,6 +370,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             super.customServerAiStep();
             this.aiEngine.tick(this);
          }
+         ServantFlightCombatService.tickIndependentController(this);
+         ServantFlightCombatService.tick(this);
          this.tickManaHealthConversion();
 
          /* 鍔ㄧ敾 tick 閫掑噺 */         
@@ -513,6 +517,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public boolean wasTacticalAiHandledThisTick() {
       return this.tacticalAiHandledTick == this.level().getGameTime();
+   }
+
+   /** Explicit basic-attack hook; special attacks should continue to use doHurtTarget directly. */
+   public boolean doBasicHurtTarget(LivingEntity target) {
+      return target != null && this.doHurtTarget(target);
    }
 
    private void tickNaturalHealthRegen() {

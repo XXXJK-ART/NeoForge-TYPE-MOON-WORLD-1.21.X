@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.fanatic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -98,6 +99,8 @@ class FanaticAssassinResourcesTest {
       String entity = Files.readString(JAVA.resolve("servant/entity/FanaticAssassinEntity.java"));
       assertTrue(entity.contains("FanaticTechniqueUntil"));
       assertTrue(entity.contains("addAdditionalSaveData"));
+      assertFalse(entity.contains("this.setPresenceConcealed(true)"));
+      assertFalse(entity.contains("FanaticAssassinRules.RECONCEAL_DELAY"));
       String jinnEntity = Files.readString(JAVA.resolve("servant/entity/FanaticAssassinJinnEntity.java"));
       assertTrue(jinnEntity.contains("FanaticJinnOwner"));
       assertTrue(jinnEntity.contains("FanaticJinnExpires"));

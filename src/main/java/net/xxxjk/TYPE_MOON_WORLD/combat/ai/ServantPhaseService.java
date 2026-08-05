@@ -4,6 +4,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public final class ServantPhaseService {
+   /** Long engagements eventually force the third, decisive phase even at full health. */
+   public static final long PROLONGED_COMBAT_DECISIVE_TICKS = 3000L;
    private static final String TAG_PHASE = "TypeMoonAiCombatPhase";
    private static final String TAG_PHASE_CHANGED = "TypeMoonAiPhaseChangedAt";
    private static final String TAG_COMBAT_STARTED = "TypeMoonAiCombatStartedAt";
@@ -42,7 +44,9 @@ public final class ServantPhaseService {
 
    public static ServantCombatPhase desiredPhase(float healthRatio, long combatTicks, float targetStrengthRatio) {
       if (healthRatio <= 0.25F) return ServantCombatPhase.LAST_STAND;
-      if (healthRatio <= 0.55F || targetStrengthRatio > 1.35F) return ServantCombatPhase.DECISIVE;
+      if (healthRatio <= 0.55F || targetStrengthRatio > 1.35F || combatTicks >= PROLONGED_COMBAT_DECISIVE_TICKS) {
+         return ServantCombatPhase.DECISIVE;
+      }
       if (combatTicks >= 60L) return ServantCombatPhase.NORMAL;
       return ServantCombatPhase.PROBING;
    }

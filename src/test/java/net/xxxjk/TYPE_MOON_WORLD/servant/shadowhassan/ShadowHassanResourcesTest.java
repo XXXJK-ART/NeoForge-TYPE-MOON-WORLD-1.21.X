@@ -129,6 +129,9 @@ class ShadowHassanResourcesTest {
       assertTrue(renderer.contains("if (entity.isPresenceConcealed()) return;"));
       assertTrue(renderer.contains("textures/entity/empty.png"));
       String entity = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/entity/ShadowHassanEntity.java"));
+      assertTrue(entity.contains("builder.define(PRESENCE_CONCEALED, false)"));
+      assertTrue(entity.contains("this.setPresenceConcealed(hasCombatTarget && !exposed)"));
+      assertFalse(entity.contains("this.setPresenceConcealed(true)"));
       assertTrue(entity.contains("this.setInvisible(concealed)"));
       assertTrue(entity.contains("this.setSilent(concealed)"));
       assertTrue(entity.contains("false, false, false"));

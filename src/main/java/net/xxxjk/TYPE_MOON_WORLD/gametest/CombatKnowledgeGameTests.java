@@ -14,6 +14,8 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 
@@ -51,6 +53,34 @@ public final class CombatKnowledgeGameTests {
       arrow.getPersistentData().putBoolean(ProjectileThreatClassifier.EXPLOSIVE_TAG, true);
       helper.assertTrue(!CombatMatchupEvaluator.negatesProjectileDamage(cu, normal),
          "explosive projectiles should bypass protection from arrows");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void protectionFromArrowsRecognizesGateOfBabylonWeapons(GameTestHelper helper) {
+      var level = helper.getLevel();
+      GilgameshEntity gilgamesh = ModEntities.GILGAMESH.get().create(level);
+      var cu = ModEntities.CU_CHULAINN.get().create(level);
+      helper.assertTrue(gilgamesh != null && cu != null, "failed to create Gate of Babylon matchup entities");
+      gilgamesh.setPos(helper.absolutePos(new net.minecraft.core.BlockPos(8, 1, 2)).getCenter());
+      cu.setPos(helper.absolutePos(new net.minecraft.core.BlockPos(2, 1, 2)).getCenter());
+      level.addFreshEntity(gilgamesh);
+      level.addFreshEntity(cu);
+      cu.getPersistentData().putBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG, true);
+
+      GilgameshGateWeaponProjectileEntity gate = new GilgameshGateWeaponProjectileEntity(
+         level, gilgamesh, gilgamesh.position(), new net.minecraft.world.phys.Vec3(-1.0, 0.0, 0.0), "durandal", 18.0F);
+      level.addFreshEntity(gate);
+      var normal = gilgamesh.damageSources().mobProjectile(gate, gilgamesh);
+      helper.assertTrue(CombatMatchupEvaluator.negatesProjectileDamage(cu, normal),
+         "mobile protection from arrows should recognize normal Gate weapons");
+
+      gate = new GilgameshGateWeaponProjectileEntity(
+         level, gilgamesh, gilgamesh.position(), new net.minecraft.world.phys.Vec3(-1.0, 0.0, 0.0), "vajra", 18.0F);
+      level.addFreshEntity(gate);
+      var explosive = gilgamesh.damageSources().mobProjectile(gate, gilgamesh);
+      helper.assertTrue(!CombatMatchupEvaluator.negatesProjectileDamage(cu, explosive),
+         "Vajra explosion should remain a projectile-negation bypass");
       helper.succeed();
    }
 }

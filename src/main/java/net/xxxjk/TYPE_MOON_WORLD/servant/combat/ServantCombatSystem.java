@@ -371,6 +371,15 @@ public final class ServantCombatSystem {
             return;
          }
 
+         // Do not let a healthy pair remain in an endless probing/normal loop.
+         // The tactical phase service has the same threshold; this mirrors it
+         // for legacy helpers that read the combat-system phase directly.
+         long combatDuration = now - data.getLong(TAG_COMBAT_CONTROL_START);
+         if (combatDuration >= net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService.PROLONGED_COMBAT_DECISIVE_TICKS
+            && ServantCombatPhase.fromId(data.getInt(TAG_PHASE)).id() < ServantCombatPhase.DECISIVE.id()) {
+            data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
+         }
+
          double healthRatio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
          if (!(entity instanceof GilgameshEntity) && target instanceof GilgameshEntity) {
             ServantCombatPhase desired = healthRatio <= (entity instanceof EmiyaArcherEntity ? 0.40 : 0.60)

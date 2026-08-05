@@ -17,6 +17,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantCardArmorRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -143,6 +144,11 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       Entity entity = state.getData(DataTickets.ENTITY);
       if (!(entity instanceof LivingEntity living)) {
          return false;
+      }
+      // NPC Medusa has no player-variable capability state.  Its synced entity
+      // state is authoritative for the head armor animation on clients.
+      if (living instanceof MedusaEntity medusa) {
+         return medusa.isEyesReleased();
       }
       TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "medusa".equals(vars.servant_card_id) && vars.servant_card_medusa_mystic_eyes_active;

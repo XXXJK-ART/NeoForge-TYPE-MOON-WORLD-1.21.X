@@ -53,6 +53,7 @@ public final class PaleRiderCombatHelper {
    private static final String TAG_NEXT_POSSESSION_SCAN = "PaleRiderNextPossessionScan";
    private static final String TAG_MINOR_SKILL_LOCK_UNTIL = "PaleRiderMinorSkillLockUntil";
    private static final String TAG_MINOR_SKILL_DAMAGE = "PaleRiderMinorSkillDamage";
+   private static final String TAG_LAST_PERSISTENT_STATE_TICK = "PaleRiderLastPersistentStateTick";
    private static final ResourceLocationId SPEED_ID = new ResourceLocationId("underworld_soul_speed");
    private static final net.minecraft.resources.ResourceLocation FEAR_ATTACK_ID =
       net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "pale_rider_fear_attack");
@@ -65,9 +66,19 @@ public final class PaleRiderCombatHelper {
    public static void tick(PaleRiderEntity rider) {
       if (!(rider.level() instanceof ServerLevel level)) return;
       long now = level.getGameTime();
+      tickPersistentState(rider);
+      tickPhaseAi(rider, level, now);
+   }
+
+   public static void tickPersistentState(PaleRiderEntity rider) {
+      if (!(rider.level() instanceof ServerLevel level) || !rider.isAlive()) return;
+      long now = level.getGameTime();
+      CompoundTag data = rider.getPersistentData();
+      if (data.contains(TAG_LAST_PERSISTENT_STATE_TICK) && data.getLong(TAG_LAST_PERSISTENT_STATE_TICK) == now) return;
+      data.putLong(TAG_LAST_PERSISTENT_STATE_TICK, now);
       rider.tickPossession();
-      if (now - rider.getPersistentData().getLong(TAG_LAST_FEAR_TICK) >= 20L) {
-         rider.getPersistentData().putLong(TAG_LAST_FEAR_TICK, now);
+      if (now - data.getLong(TAG_LAST_FEAR_TICK) >= 20L) {
+         data.putLong(TAG_LAST_FEAR_TICK, now);
          tickAuraAndInfections(rider, level);
       }
       tickUnderworld(rider, level, now);
@@ -81,7 +92,6 @@ public final class PaleRiderCombatHelper {
          rider.getPersistentData().putLong(TAG_LAST_CALAMITY_ENVIRONMENT, now);
          VFXServerEffects.spawn(level, "pale_rider_calamity_sustain", rider, 40.0);
       }
-      tickPhaseAi(rider, level, now);
    }
 
    private static void tickPhaseAi(PaleRiderEntity rider, ServerLevel level, long now) {

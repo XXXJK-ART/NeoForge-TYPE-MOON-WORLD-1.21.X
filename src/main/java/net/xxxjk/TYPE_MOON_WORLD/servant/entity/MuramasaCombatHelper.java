@@ -49,6 +49,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class MuramasaCombatHelper {
+   private static final String LAST_PASSIVE_STATE_TICK = "MuramasaLastPassiveStateTick";
    private static final String PROJECTED_TAG = "MuramasaProjectedWeapon";
    private static final String WEAPON_INDEX = "MuramasaWeaponIndex";
    private static final String LAST_WEAPON_TICK = "MuramasaLastWeaponTick";
@@ -92,6 +93,9 @@ public final class MuramasaCombatHelper {
          return;
       }
       long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PASSIVE_STATE_TICK) && data.getLong(LAST_PASSIVE_STATE_TICK) == now) return;
+      data.putLong(LAST_PASSIVE_STATE_TICK, now);
       MuramasaDissolutionService.tick(entity);
       if (!entity.isAlive()) {
          return;

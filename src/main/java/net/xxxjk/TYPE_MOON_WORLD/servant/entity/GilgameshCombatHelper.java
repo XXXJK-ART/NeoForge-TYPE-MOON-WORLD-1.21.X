@@ -23,6 +23,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
@@ -78,7 +80,7 @@ public final class GilgameshCombatHelper {
    private static final String ENKIDU_BARRAGE_COOLDOWN = "GilgameshEnkiduBarrageCooldown";
    private static final String FLIGHT_CYCLE_START = "GilgameshFlightCycleStart";
    private static final String FLIGHT_CYCLE_TARGET = "GilgameshFlightCycleTarget";
-   private static final String FLIGHT_LAST_CONTACT = "GilgameshFlightLastContact";
+   private static final String LAST_PERSISTENT_TICK = "GilgameshLastPersistentStateTick";
    private static final int FLIGHT_CYCLE_TICKS = 18 * 20;
    private static final int FLIGHT_ACTIVE_TICKS = 12 * 20;
    private static final long FLIGHT_STALLED_TICKS = 8 * 20L;
@@ -88,20 +90,7 @@ public final class GilgameshCombatHelper {
       if (!(entity.level() instanceof ServerLevel level)) return;
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      GilgameshDivineShield.tick(entity);
-      tryActivateDivineShield(entity, level);
-      if (!data.getBoolean("GilgameshPassivesInitialized")) {
-         data.putBoolean("GilgameshPassivesInitialized", true);
-         data.putFloat("MagicResistanceDamageReduction", 0.20F);
-         data.putFloat("GilgameshCommandObedienceMin", 0.20F);
-         data.putFloat("GilgameshCommandObedienceMax", 0.60F);
-         data.putBoolean("ClairvoyanceExActive", true);
-      }
-      tickClairvoyanceEx(entity, level, data);
-      updateMonotonicPhase(entity);
-      if (entity.tickCount % 20 == 0) {
-         entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
-      }
+      tickPersistentState(entity);
       // The finale owns the pair once it starts. Tick it before the normal
       // target/EA checks so a lost target cannot leave both servants frozen.
       if (GilgameshDuelState.tickGilgamesh(entity, level, now)) {
@@ -161,6 +150,29 @@ public final class GilgameshCombatHelper {
       }
       if (now - data.getLong(LAST_CHARISMA) >= 700 && entity.getCurrentMp() >= 20.0 && entity.getRandom().nextFloat() < 0.08F) {
          useCharisma(entity, level, data, now);
+      }
+   }
+
+   public static void tickPersistentState(GilgameshEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PERSISTENT_TICK) && data.getLong(LAST_PERSISTENT_TICK) == now) return;
+      data.putLong(LAST_PERSISTENT_TICK, now);
+      GilgameshDivineShield.tick(entity);
+      tryActivateDivineShield(entity, level);
+      if (!data.getBoolean("GilgameshPassivesInitialized")) {
+         data.putBoolean("GilgameshPassivesInitialized", true);
+         data.putFloat("MagicResistanceDamageReduction", 0.20F);
+         data.putFloat("GilgameshCommandObedienceMin", 0.20F);
+         data.putFloat("GilgameshCommandObedienceMax", 0.60F);
+         data.putBoolean("ClairvoyanceExActive", true);
+      }
+      tickClairvoyanceEx(entity, level, data);
+      updateMonotonicPhase(entity);
+      if (entity.tickCount % 20 == 0) {
+         entity.setCurrentMp(Math.min(entity.getMaxMp(),
+            entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
       }
    }
 
@@ -237,7 +249,6 @@ public final class GilgameshCombatHelper {
       if (!data.hasUUID(FLIGHT_CYCLE_TARGET) || !target.getUUID().equals(data.getUUID(FLIGHT_CYCLE_TARGET))) {
          data.putUUID(FLIGHT_CYCLE_TARGET, target.getUUID());
          data.putLong(FLIGHT_CYCLE_START, now);
-         data.putLong(FLIGHT_LAST_CONTACT, now);
       }
       long elapsed = Math.floorMod(now - data.getLong(FLIGHT_CYCLE_START), (long)FLIGHT_CYCLE_TICKS);
       if (elapsed >= FLIGHT_ACTIVE_TICKS) {
@@ -245,18 +256,18 @@ public final class GilgameshCombatHelper {
          return;
       }
       double distance = entity.distanceTo(target);
-      if (distance <= 14.0 || entity.getSensing().hasLineOfSight(target)) {
-         data.putLong(FLIGHT_LAST_CONTACT, now);
-      } else if (entity.isFlyingMode() && now - data.getLong(FLIGHT_LAST_CONTACT) >= FLIGHT_STALLED_TICKS) {
+      if (entity.isFlyingMode()
+         && ServantCombatTempoService.disconnectedTicks(entity, now) >= FLIGHT_STALLED_TICKS) {
          data.putLong(MELEE_UNTIL, now + 100L);
          data.putLong(FLIGHT_CYCLE_START, now + FLIGHT_ACTIVE_TICKS);
-         data.putLong(FLIGHT_LAST_CONTACT, now);
          enterGroundMode(entity);
          ServantNavigationHelper.moveToTargetThrottled(
             entity, target, 1.35, now, 2, 0.2, "GilgameshFlightStalled");
          return;
       }
       entity.setFlyingMode(true);
+      if (!entity.isFlyingMode()) return;
+      ServantFlightCombatService.markControlled(entity, now);
       entity.getNavigation().stop(); entity.fallDistance = 0.0F;
       double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
       Vec3 away = entity.position().subtract(target.position()).multiply(1, 0, 1);
@@ -270,7 +281,8 @@ public final class GilgameshCombatHelper {
          : distance > band.maximum() ? -0.12 : distance < band.minimum() ? 0.08 : 0.0;
       Vec3 orbit = new Vec3(-away.z, 0, away.x).scale(rangedDuel ? 0.14 : retreat ? 0.06 : 0.10);
       double vertical = net.minecraft.util.Mth.clamp((desiredY - entity.getY()) * 0.08, -0.22, 0.22);
-      entity.setDeltaMovement(entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0));
+      Vec3 motion = entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0);
+      entity.setDeltaMovement(motion.x, ServantFlightHelper.clampVerticalSpeed(motion.y), motion.z);
    }
 
    private static void enterGroundMode(GilgameshEntity entity) {

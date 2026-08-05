@@ -4,6 +4,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 
 /** Records facts only when combat makes them observable. */
@@ -21,11 +22,21 @@ public final class CombatKnowledgeService {
    }
 
    public static void observeProjectileNegation(LivingEntity defender, Projectile projectile) {
-      if (defender == null || projectile == null) return;
-      Entity owner = projectile.getOwner();
+      observeProjectileNegation(defender, (Entity) projectile);
+   }
+
+   public static void observeProjectileNegation(LivingEntity defender, Entity projectileLike) {
+      if (defender == null || projectileLike == null) return;
+      Entity owner = projectileOwner(projectileLike);
       if (!(owner instanceof Mob observer) || observer.isAlliedTo(defender)) return;
       long now = defender.level().getGameTime();
       AiBrain.blackboard(observer).revealFact(defender.getUUID(), FactType.PROJECTILE_NEGATION, 1.0, now);
       AiBrain.blackboard(observer).observe(defender.getUUID(), null, observer.distanceTo(defender), 0.0, true, now);
+   }
+
+   private static Entity projectileOwner(Entity projectileLike) {
+      if (projectileLike instanceof Projectile projectile) return projectile.getOwner();
+      if (projectileLike instanceof GilgameshGateWeaponProjectileEntity gate) return gate.getOwnerEntity();
+      return null;
    }
 }

@@ -196,9 +196,10 @@ public final class ServantManeuverService {
       double speed = Math.min(2.1, 1.25 + agility * 0.1 + tactical.pursuitAggression() * 0.3);
       servant.getLookControl().setLookAt(target, 50.0F, 40.0F);
       servant.setSprinting(true);
-      boolean moved = ServantNavigationHelper.moveToPositionThrottled(
+      ServantNavigationHelper.NavigationResult navigation = ServantNavigationHelper.moveToPositionDetailed(
          servant, safe, speed, now, 4, 0.4, "ServantPlannedActionApproach");
-      return moved || servant.onGround() && servant.distanceTo(target) <= 24.0
+      return navigation.accepted() || navigation != ServantNavigationHelper.NavigationResult.UNSAFE
+         && servant.onGround() && servant.distanceTo(target) <= 24.0
          && trySafeBurst(servant, safe, agility, now, tactical.verticalMobility());
    }
 

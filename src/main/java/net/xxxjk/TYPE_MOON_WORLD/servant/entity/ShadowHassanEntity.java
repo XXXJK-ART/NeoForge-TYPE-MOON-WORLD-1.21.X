@@ -59,7 +59,7 @@ public final class ShadowHassanEntity extends ServantEntity {
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
-      builder.define(PRESENCE_CONCEALED, true);
+      builder.define(PRESENCE_CONCEALED, false);
    }
 
    @Override
@@ -67,7 +67,7 @@ public final class ShadowHassanEntity extends ServantEntity {
                                        @Nullable SpawnGroupData spawnData) {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData);
       this.equipMask();
-      this.setPresenceConcealed(true);
+      this.setPresenceConcealed(false);
       return result;
    }
 
@@ -95,8 +95,10 @@ public final class ShadowHassanEntity extends ServantEntity {
       }
       if (this.tickCount % 20 == 0) saved.updateServant(this);
 
+      LivingEntity target = this.getTarget();
+      boolean hasCombatTarget = target != null && target.isAlive() && !target.isRemoved() && target.level() == level;
       boolean exposed = now < this.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
-      this.setPresenceConcealed(!exposed);
+      this.setPresenceConcealed(hasCombatTarget && !exposed);
       if (this.isTotalDarkness()) {
          this.getNavigation().stop();
          this.setDeltaMovement(Vec3.ZERO);
@@ -109,7 +111,6 @@ public final class ShadowHassanEntity extends ServantEntity {
          this.setCurrentMp(Math.min(this.getMaxMp(), this.getCurrentMp() + ShadowHassanRules.MANA_RESTORE_PER_SECOND));
       }
 
-      LivingEntity target = this.getTarget();
       if (!this.wasTacticalAiHandledThisTick()) {
          if (!this.isNoblePhantasmConsumed() && target != null && target.isAlive()
             && !ShadowHassanPursuitData.isPaleRider(target)
@@ -460,7 +461,7 @@ public final class ShadowHassanEntity extends ServantEntity {
       this.getPersistentData().putBoolean(TAG_NP_CONSUMED, tag.getBoolean(TAG_NP_CONSUMED));
       this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, tag.getLong(TAG_EXPOSED_UNTIL));
       this.getPersistentData().putLong(TAG_NEXT_SHADOW_STEP, tag.getLong(TAG_NEXT_SHADOW_STEP));
-      this.setPresenceConcealed(!tag.contains(TAG_CONCEALED) || tag.getBoolean(TAG_CONCEALED));
+      this.setPresenceConcealed(tag.contains(TAG_CONCEALED) && tag.getBoolean(TAG_CONCEALED));
       this.equipMask();
    }
 }

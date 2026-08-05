@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RatSwarmRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PaleRiderCrowRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PaleRiderRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShadowHassanRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShadowHassanDeathShadowRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SoulEchoRenderer;
@@ -264,7 +265,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), context -> new HumanoidServantRenderer<>(context, "gawain"));
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), context -> new HumanoidServantRenderer<>(context, "li_shuwen"));
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), context -> new HumanoidServantRenderer<>(context, "paracelsus"));
-      event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), PaleRiderRenderer::new);
       event.registerEntityRenderer(ModEntities.NIGHTINGALE.get(), context -> new HumanoidServantRenderer<>(context, "nightingale"));
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN.get(), ShadowHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), ShadowHassanDeathShadowRenderer::new);

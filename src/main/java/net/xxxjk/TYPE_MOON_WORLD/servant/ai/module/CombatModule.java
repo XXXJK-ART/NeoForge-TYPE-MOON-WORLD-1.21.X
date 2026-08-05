@@ -25,13 +25,16 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTargetingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
@@ -73,6 +76,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -354,6 +358,9 @@ public final class CombatModule implements ServantAiModule {
          EnkiduCombatHelper.tick(enkidu);
          return;
       }
+      if (entity instanceof CasterGilgameshEntity) {
+         return;
+      }
       if (entity instanceof GilgameshEntity gilgamesh) {
          GilgameshCombatHelper.tick(gilgamesh);
          return;
@@ -476,11 +483,12 @@ public final class CombatModule implements ServantAiModule {
             if (distance <= 4.0 && entity.isPerformingAction()) {
                return;
             }
-            if (distance <= 4.5 && hasLineOfSight && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
+            if (ServantCombatTempoService.canAttemptBasicAttack(entity, sharedTarget)
+               && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
                && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
                && context.gameTick() % 34 == 0) {
                entity.triggerAttackSwing();
-               boolean hit = entity.doHurtTarget(sharedTarget);
+               boolean hit = entity.doBasicHurtTarget(sharedTarget);
                ServantCombatTempoService.recordContact(entity, sharedTarget,
                   hit ? ServantCombatTempoService.ContactType.DAMAGE
                      : ServantCombatTempoService.ContactType.BLOCKED, context.gameTick());
@@ -877,33 +885,57 @@ public final class CombatModule implements ServantAiModule {
       }
 
       if (!gaeBolgWindingUp
-         && canGaeBolgArmy
-         && entity.getCurrentMp() > 0.0
-         && ServantCombatSystem.canUseNoblePhantasm(entity)
-         && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
-         AABB armyBox = entity.getBoundingBox().inflate(8.0);
-         int groupSize = entity.level().getEntitiesOfClass(
-            LivingEntity.class, armyBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
-         ).size();
-         boolean emergencyArmy = healthRatio <= 0.1 && target != null && target.isAlive();
-         boolean desperate = healthRatio <= 0.5;
-         boolean favorableWindow = distance >= 5.0 || groupSize >= 2 || desperate;
-         int armyChance = groupSize >= 3 ? 95 : 70;
-         double armyScale = desperate ? skillChanceScale * 1.25 : skillChanceScale;
-         if (emergencyArmy || favorableWindow && passesSkillChance(entity, armyChance, armyScale)) {
-            performGaeBolgArmy(entity, target);
-            return;
-         }
-      }
-
-      if (!gaeBolgWindingUp
          && canGaeBolg
          && entity.getCurrentMp() >= 10
          && ServantCombatSystem.canUseNoblePhantasm(entity)
          && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
-         if (distance <= 12.0 && (distance <= 3.0 || passesSkillChance(entity, 28, skillChanceScale))) {
-            performGaeBolg(entity, target, distance <= 3.0);
+         CuChulainnCombatRules.SingleGaeBolgPlan gaeBolgPlan = CuChulainnCombatRules.singleGaeBolgPlan(distance);
+         if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.MELEE) {
+            performGaeBolg(entity, target, true);
             return;
+         }
+         if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.CLOSE_FOR_MELEE) {
+            entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
+            entity.faceToward(target.position());
+            moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
+            return;
+         }
+         if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.PROJECTILE
+            && hasLineOfSight
+            && passesSkillChance(entity, 20, skillChanceScale)) {
+            performGaeBolg(entity, target, false);
+            return;
+         }
+      }
+
+      // The thrown anti-army form consumes the entire mana pool. Keep it behind both
+      // single-target forms and only reconsider it at a low-frequency final window.
+      if (!gaeBolgWindingUp
+         && canGaeBolgArmy
+         && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
+         long lastArmyDecision = data.getLong("CuLastArmyGaeBolgDecisionTick");
+         if (CuChulainnCombatRules.isArmyDecisionDue(tick, lastArmyDecision)) {
+            data.putLong("CuLastArmyGaeBolgDecisionTick", tick);
+            AABB armyBox = entity.getBoundingBox().inflate(8.0);
+            int groupSize = entity.level().getEntitiesOfClass(
+               LivingEntity.class, armyBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity)
+            ).size();
+            double mpRatio = entity.getCurrentMp() / Math.max(1.0, entity.getMaxMp());
+            boolean finalWindow = CuChulainnCombatRules.isArmyFinalWindow(
+               healthRatio,
+               ServantCombatSystem.getPhase(entity) == ServantCombatPhase.DECISIVE,
+               groupSize,
+               target.getMaxHealth(),
+               mpRatio
+            );
+            if (finalWindow && passesSkillChance(
+               entity,
+               CuChulainnCombatRules.armyUseChance(healthRatio, groupSize),
+               skillChanceScale
+            )) {
+               performGaeBolgArmy(entity, target);
+               return;
+            }
          }
       }
 
@@ -1014,7 +1046,10 @@ public final class CombatModule implements ServantAiModule {
             return;
          }
          data.putInt("LastBasicAttackTick", tick);
-         boolean hit = entity.doHurtTarget(target);
+         ServantNavigationHelper.stopIfMoving(entity);
+         entity.getLookControl().setLookAt(target, 65.0F, 55.0F);
+         entity.faceToward(target.position());
+         boolean hit = entity.doBasicHurtTarget(target);
          ServantCombatTempoService.recordContact(entity, target,
             hit ? ServantCombatTempoService.ContactType.DAMAGE
                : ServantCombatTempoService.ContactType.BLOCKED, tick);
@@ -1055,7 +1090,11 @@ public final class CombatModule implements ServantAiModule {
       entity.faceToward(target.position());
       if (ServantCombatSystem.cannotAct(entity) || entity.isPerformingAction()) return true;
       double distance = entity.distanceTo(target);
-      if (distance > 4.35) {
+      double contactDistance = ServantCombatTempoService.basicAttackReach(entity, target) + 0.15;
+      if (distance > contactDistance) {
+         if (ServantFlightCombatService.forceMeleeApproach(entity, target, now)) {
+            return true;
+         }
          entity.setSprinting(true);
          boolean moved = ServantNavigationHelper.moveToTargetThrottled(
             entity, target,
@@ -1071,7 +1110,10 @@ public final class CombatModule implements ServantAiModule {
          return true;
       }
       ServantNavigationHelper.stopIfMoving(entity);
-      return ServantCombatTempoService.tryBasicAttack(entity, target, now) || distance <= 4.35;
+      if (!ServantCombatTempoService.tryBasicAttack(entity, target, now)) {
+         ServantNavigationHelper.applyMeleePressureFootwork(entity, target, now);
+      }
+      return true;
    }
 
    /**
@@ -1276,9 +1318,8 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
       if (ServantCombatTempoService.inMeleePressure(entity, entity.level().getGameTime())) {
-         entity.getMoveControl().strafe(distance > 2.5 ? 0.42F : 0.16F,
-            entity.getRandom().nextBoolean() ? 0.14F : -0.14F);
-         entity.getLookControl().setLookAt(target, 40.0F, 35.0F);
+         ServantNavigationHelper.applyMeleePressureFootwork(
+            entity, target, entity.level().getGameTime());
          return;
       }
       float side = entity.getRandom().nextBoolean() ? 0.45F : -0.45F;

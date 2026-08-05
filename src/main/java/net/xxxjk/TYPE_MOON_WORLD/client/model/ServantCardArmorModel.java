@@ -19,10 +19,14 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getModelResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
-      if (isHeadSlot(animatable) && usesDedicatedHeadModel(servantId)) {
+      if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
-            "geo/servant_card_" + servantId + "_head.geo.json");
+            "geo/servant_card_gilgamesh_caster_head.geo.json");
       }
+      // Head-only assets are legacy hair overlays for several servants.  The
+      // complete model contains the matching hat/headpiece in the same
+      // armorHead subtree; ServantCardArmorRenderer hides every other slot,
+      // so using it here gives us hair and headwear without body duplication.
       return hasDedicatedArmor(servantId)
          ? ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "geo/servant_card_" + servantId + ".geo.json")
          : EMIYA_MODEL;
@@ -33,11 +37,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       String servantId = animatable == null ? "" : animatable.servantId();
       if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
-            "textures/models/armor/servant_card_gilgamesh_caster.png");
-      }
-      if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
-         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
-            "textures/models/armor/servant_card_" + servantId + "_head.png");
+            "textures/models/armor/servant_card_gilgamesh_caster_head.png");
       }
       return hasDedicatedArmor(servantId)
          ? ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/models/armor/servant_card_" + servantId + ".png")
@@ -47,10 +47,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getAnimationResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
-      if (isHeadSlot(animatable) && usesDedicatedHeadModel(servantId)) {
-         return EMPTY_ANIMATION;
-      }
-      if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
+      if (isHeadSlot(animatable)) {
          return EMPTY_ANIMATION;
       }
       return hasDedicatedArmor(servantId)
@@ -93,10 +90,13 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
          return;
       }
       float pitchRad = Mth.clamp(entityData.headPitch(), -40.0F, 40.0F) * (float)(Math.PI / 180.0);
+      // The hat/headpiece is a child of armorHead and follows the head. Long
+      // hair must cancel that vertical pitch locally, otherwise it clips
+      // through the face or hat when the servant looks up/down. Child bones
+      // inherit the correction from their nearest hair root.
       counterRotateHair("hair", pitchRad, 1.25F);
       counterRotateHair("hair1", pitchRad, 1.35F);
       counterRotateHair("hair2", pitchRad, 1.35F);
-      counterRotateHair("bone4", pitchRad, 1.25F);
    }
 
    private void counterRotateHair(String boneName, float pitchRad, float strength) {
@@ -104,18 +104,6 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (bone != null) {
          bone.setRotX(-pitchRad * strength);
       }
-   }
-
-   private static boolean usesDedicatedHeadModel(String servantId) {
-      return hasDedicatedHeadModel(servantId) || "gilgamesh_caster".equals(servantId);
-   }
-
-   private static boolean hasDedicatedHeadModel(String servantId) {
-      return switch (servantId) {
-         case "artoria_pendragon", "enkidu", "medusa", "oda_nobunaga", "paracelsus",
-            "sasaki_kojiro", "ushiwakamaru_rider", "zhao_yun_rider", "li_shuwen" -> true;
-         default -> false;
-      };
    }
 
    private static boolean usesLongHairCounterRotation(String servantId) {

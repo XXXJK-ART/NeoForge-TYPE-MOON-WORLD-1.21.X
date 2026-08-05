@@ -86,7 +86,8 @@ class CasterGilgameshResourcesTest {
       String armorModel = Files.readString(Path.of(
          "src/main/java/net/xxxjk/TYPE_MOON_WORLD/client/model/ServantCardArmorModel.java"));
       assertTrue(armorModel.contains("\"gilgamesh_caster\".equals(servantId)"));
-      assertTrue(armorModel.contains("usesDedicatedHeadModel(servantId)"));
+      assertTrue(armorModel.contains("servant_card_gilgamesh_caster_head.geo.json"));
+      assertTrue(armorModel.contains("servant_card_gilgamesh_caster_head.png"));
       assertTrue(armorModel.contains("animations/empty.animation.json"));
 
       for (String voice : List.of("np", "shot", "attack1", "attack2", "fail1", "fail2",
@@ -102,6 +103,35 @@ class CasterGilgameshResourcesTest {
       assertFalse(CasterGilgameshCombatHelper.FIRING_TAG.isBlank());
       assertEquals("RoyalCannonAmmo", CasterGilgameshCombatHelper.AMMO_TAG);
       assertEquals("RoyalCannonFiring", CasterGilgameshCombatHelper.FIRING_TAG);
+   }
+
+   @Test
+   void casterGilgameshMeleeModeUsesFangtianAndRestoresSlate() throws Exception {
+      assertEquals(80, CasterGilgameshCombatHelper.MELEE_DURATION_TICKS);
+      assertEquals(300, CasterGilgameshCombatHelper.MELEE_REUSE_TICKS);
+      String helper = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/CasterGilgameshCombatHelper.java"));
+      String entity = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/CasterGilgameshEntity.java"));
+      assertTrue(helper.contains("ModItems.GILGAMESH_FANGTIAN_HUAJI"));
+      assertTrue(helper.contains("ModItems.GILGAMESH_SLATE"));
+      assertTrue(helper.contains("tickIndependentMelee"));
+      assertTrue(entity.contains("CasterGilgameshCombatHelper.isMeleeMode(this)"));
+      assertTrue(entity.contains("25.0F"));
+   }
+
+   @Test
+   void specialStatesRunBeforeTacticalArbitration() throws Exception {
+      String servant = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/ServantEntity.java"));
+      String service = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/ai/ServantSpecialStateService.java"));
+      assertTrue(servant.contains("ServantSpecialStateService.tickBeforeAi(this)"));
+      for (String type : List.of("ArtoriaPendragonEntity", "CasterGilgameshEntity", "GilgameshEntity",
+         "EnkiduEntity", "MedusaEntity", "CursedArmHassanEntity", "EmiyaArcherEntity",
+         "OdaNobunagaEntity", "PaleRiderEntity")) {
+         assertTrue(service.contains("instanceof " + type), type);
+      }
    }
 
    @Test

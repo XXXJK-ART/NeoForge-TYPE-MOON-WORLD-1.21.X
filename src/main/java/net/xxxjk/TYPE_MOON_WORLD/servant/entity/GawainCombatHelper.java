@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.GawainSunlightRules;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
@@ -38,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 public final class GawainCombatHelper {
    private static final String TAG_SUN_BLESSING = "GawainSunBlessingActive";
    private static final String TAG_LAST_SUN_VFX = "GawainLastSunBlessingVfx";
+   private static final String TAG_LAST_SUN_CHECK = "GawainLastSunBlessingCheck";
    private static final String TAG_CHARISMA_UNTIL = "GawainCharismaUntil";
    private static final String TAG_LAST_CHARISMA_PULSE = "GawainLastCharismaPulse";
    private static final String TAG_LAST_BELT = "GawainLastBelt";
@@ -91,9 +93,7 @@ public final class GawainCombatHelper {
 
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      tickSunBlessing(entity, level, data, now);
-      tickCharisma(entity, level, data, now);
-      tickBeltManaRecovery(entity, level, data, now);
+      tickPassiveState(entity);
 
       LivingEntity target = context.target();
       if (target != null && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)) {
@@ -144,6 +144,18 @@ public final class GawainCombatHelper {
       return entity != null && entity.getPersistentData().getBoolean(TAG_SUN_BLESSING);
    }
 
+   /** Runs before tactical arbitration so every AI layer observes the current sunlight state. */
+   public static void tickPassiveState(GawainEntity entity) {
+      if (entity == null || !(entity.level() instanceof ServerLevel level)) return;
+      CompoundTag data = entity.getPersistentData();
+      long now = level.getGameTime();
+      if (data.contains(TAG_LAST_SUN_CHECK) && data.getLong(TAG_LAST_SUN_CHECK) == now) return;
+      data.putLong(TAG_LAST_SUN_CHECK, now);
+      tickSunBlessing(entity, level, data, now);
+      tickCharisma(entity, level, data, now);
+      tickBeltManaRecovery(entity, level, data, now);
+   }
+
    public static boolean tryConsumeGuts(GawainEntity entity) {
       if (entity == null || entity.level().isClientSide() || !entity.getPersistentData().getBoolean(TAG_GUTS_READY)) {
          return false;
@@ -169,9 +181,10 @@ public final class GawainCombatHelper {
    }
 
    private static void tickSunBlessing(GawainEntity entity, ServerLevel level, CompoundTag data, long now) {
-      boolean active = isUnderSun(level, entity.blockPosition());
+      boolean active = GawainSunlightRules.isActive(level, entity.blockPosition());
       boolean wasActive = data.getBoolean(TAG_SUN_BLESSING);
-      if (active != wasActive) {
+      boolean modifierMismatch = !sunModifiersMatch(entity, active);
+      if (active != wasActive || modifierMismatch) {
          float ratio = entity.getMaxHealth() > 0.0F ? entity.getHealth() / entity.getMaxHealth() : 1.0F;
          data.putBoolean(TAG_SUN_BLESSING, active);
          updateModifier(entity.getAttribute(Attributes.MAX_HEALTH), SUN_HEALTH_ID, active ? 2.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
@@ -179,7 +192,7 @@ public final class GawainCombatHelper {
          updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), SUN_SPEED_ID, active ? 2.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
          updateModifier(entity.getAttribute(Attributes.ARMOR), SUN_ARMOR_ID, active ? 2.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
          entity.setHealth(Math.max(1.0F, Math.min(entity.getMaxHealth(), entity.getMaxHealth() * ratio)));
-         spawnSunTransitionFx(entity, level, active);
+         if (active != wasActive) spawnSunTransitionFx(entity, level, active);
       }
       if (active && now - data.getLong(TAG_LAST_SUN_VFX) >= 38L) {
          data.putLong(TAG_LAST_SUN_VFX, now);
@@ -187,12 +200,19 @@ public final class GawainCombatHelper {
       }
    }
 
-   private static boolean isUnderSun(ServerLevel level, BlockPos pos) {
-      long dayTime = level.getDayTime() % 24000L;
-      return level.dimensionType().hasSkyLight()
-         && dayTime >= 0L && dayTime < 12000L
-         && !level.isRaining() && !level.isThundering()
-         && level.canSeeSky(pos.above());
+   private static boolean sunModifiersMatch(GawainEntity entity, boolean active) {
+      return modifierMatches(entity.getAttribute(Attributes.MAX_HEALTH), SUN_HEALTH_ID, active)
+         && modifierMatches(entity.getAttribute(Attributes.ATTACK_DAMAGE), SUN_ATTACK_ID, active)
+         && modifierMatches(entity.getAttribute(Attributes.MOVEMENT_SPEED), SUN_SPEED_ID, active)
+         && modifierMatches(entity.getAttribute(Attributes.ARMOR), SUN_ARMOR_ID, active);
+   }
+
+   private static boolean modifierMatches(AttributeInstance attribute, ResourceLocation id, boolean active) {
+      if (attribute == null) return !active;
+      AttributeModifier modifier = attribute.getModifier(id);
+      return active ? modifier != null
+         && modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+         && Math.abs(modifier.amount() - 2.0) < 1.0E-6 : modifier == null;
    }
 
    private static void tickCharisma(GawainEntity entity, ServerLevel level, CompoundTag data, long now) {

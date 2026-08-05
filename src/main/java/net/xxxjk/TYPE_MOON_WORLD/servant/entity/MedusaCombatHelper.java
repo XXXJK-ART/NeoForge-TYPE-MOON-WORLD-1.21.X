@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
 
 public final class MedusaCombatHelper {
+   private static final String TAG_LAST_PERSISTENT_STATE_TICK = "MedusaLastPersistentStateTick";
    public static final String TAG_LAST_COMBAT_ACTIVITY_TICK = "MedusaLastCombatActivityTick";
    private static final String TAG_EYES_RELEASE_UNTIL = "MedusaEyesReleaseUntil";
    private static final String TAG_LAST_CYBELE_TICK = "MedusaLastCybeleTick";
@@ -148,9 +149,7 @@ public final class MedusaCombatHelper {
 
    public static void tick(MedusaEntity entity, ServantAiContext context) {
       long now = context.gameTick();
-      tickTimedStates(entity, now);
-      tickBloodfort(entity, now);
-      tickCharmAttraction(entity, now);
+      tickPersistentState(entity);
 
       LivingEntity target = context.target();
       if (target == null || target.isDeadOrDying() || EntityUtils.isImmunePlayerTarget(target)) {
@@ -158,10 +157,6 @@ public final class MedusaCombatHelper {
       }
       if (target == null || target.isDeadOrDying() || EntityUtils.isImmunePlayerTarget(target)) {
          target = findEmergencyTarget(entity);
-      }
-
-      if (entity.isRidingPegasus() || entity.getPegasus() != null) {
-         tickBellerophon(entity, target, now);
       }
 
       if (target == null || target.isDeadOrDying() || EntityUtils.isImmunePlayerTarget(target)) {
@@ -175,8 +170,6 @@ public final class MedusaCombatHelper {
       updateCloseCombatBonuses(entity, true);
       entity.setCrouchPose(false);
       entity.getPersistentData().putLong(TAG_LAST_COMBAT_ACTIVITY_TICK, now);
-      tickRapidAssaultDamage(entity, now);
-
       double distance = entity.distanceTo(target);
       int nearbyEnemyCount = countNearbyHostiles(entity, 12.0);
       boolean highThreat = target.getMaxHealth() >= 120.0F
@@ -278,6 +271,24 @@ public final class MedusaCombatHelper {
       entity.hasImpulse = true;
       if (entity.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.15, entity.getZ(), 8, 0.3, 0.08, 0.3, 0.02);
+      }
+   }
+
+   public static void tickPersistentState(MedusaEntity entity) {
+      if (entity == null || !entity.isAlive() || entity.level().isClientSide()) return;
+      long now = entity.level().getGameTime();
+      var data = entity.getPersistentData();
+      if (data.contains(TAG_LAST_PERSISTENT_STATE_TICK) && data.getLong(TAG_LAST_PERSISTENT_STATE_TICK) == now) return;
+      data.putLong(TAG_LAST_PERSISTENT_STATE_TICK, now);
+      tickTimedStates(entity, now);
+      tickBloodfort(entity, now);
+      tickCharmAttraction(entity, now);
+      LivingEntity target = entity.getTarget();
+      if (entity.isRidingPegasus() || entity.getPegasus() != null) {
+         tickBellerophon(entity, target, now);
+      }
+      if (target != null && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)) {
+         tickRapidAssaultDamage(entity, now);
       }
    }
 
@@ -607,6 +618,7 @@ public final class MedusaCombatHelper {
       }
 
       pegasus.setFlyingMode(true);
+      pegasus.markFlightControlled(now);
       Vec3 desired = computePegasusVelocity(entity, pegasus, target, now);
       orientChargeActors(entity, pegasus, desired);
       pegasus.setDeltaMovement(desired);

@@ -137,7 +137,7 @@ public final class LiShuwenCombatHelper {
       }
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      if (data.getLong(TAG_LAST_SELF_STATE_TICK) == now) {
+      if (data.contains(TAG_LAST_SELF_STATE_TICK) && data.getLong(TAG_LAST_SELF_STATE_TICK) == now) {
          return;
       }
       data.putLong(TAG_LAST_SELF_STATE_TICK, now);

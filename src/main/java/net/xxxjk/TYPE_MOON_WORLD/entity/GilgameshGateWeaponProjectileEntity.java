@@ -65,6 +65,10 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    }
 
    public String getWeaponId() { return this.entityData.get(WEAPON_ID); }
+   /** Resolves the living owner for AI threat classification on the server. */
+   public LivingEntity getOwnerEntity() {
+      return this.level() instanceof net.minecraft.server.level.ServerLevel level ? getOwner(level) : null;
+   }
    public int getSourceStyle() { return this.entityData.get(SOURCE_STYLE); }
    public void setSourceStyle(int style) { this.entityData.set(SOURCE_STYLE, style); }
    public void setDuelToken(String token) { this.entityData.set(DUEL_TOKEN, token == null ? "" : token); }
