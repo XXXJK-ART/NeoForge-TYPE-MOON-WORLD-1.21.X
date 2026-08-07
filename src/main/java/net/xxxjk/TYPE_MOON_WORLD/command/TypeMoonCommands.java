@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 public class TypeMoonCommands {
+   private static final String MAGIC_ANALYSIS_MAGIC_ID = "magic_analysis";
    private static final String BASIC_JEWEL_MAGIC_ID = "jewel_magic_shoot";
    private static final String ADVANCED_JEWEL_MAGIC_ID = "jewel_magic_release";
    private static final String RANDOM_JEWEL_MAGIC_ID = "jewel_random_shoot";
@@ -65,7 +66,7 @@ public class TypeMoonCommands {
    private static final double ACCEPT_P_LT_30_MIN = 0.8;
    private static final double ACCEPT_P_LT_50_MIN = 0.9;
    private static final String[] PROFICIENCY_TYPES = new String[]{
-      "magic_analysis",
+      MAGIC_ANALYSIS_MAGIC_ID,
       "structural_analysis",
       "projection",
       "jewel_magic",
@@ -93,7 +94,7 @@ public class TypeMoonCommands {
       KendoCombatService.TENNEN_ID
    };
    private static final String[] ALL_MAGICS = new String[]{
-      "magic_analysis",
+      MAGIC_ANALYSIS_MAGIC_ID,
       BASIC_JEWEL_MAGIC_ID,
       ADVANCED_JEWEL_MAGIC_ID,
       RANDOM_JEWEL_MAGIC_ID,
@@ -123,6 +124,22 @@ public class TypeMoonCommands {
       BAPTISM_RITE_MAGIC_ID,
       BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID,
       STIGMA_MAGIC_ID,
+      "absorption",
+      "airflow_blade",
+      "andrasias",
+      "andrephius",
+      "antores",
+      "demon_god_gaze",
+      "detection",
+      "imaginary_displacement",
+      "imaginary_dive",
+      "imaginary_space",
+      "kimaris",
+      "nega_summon",
+      "orias",
+      "storage",
+      "storm",
+      "zagan",
       "bajiquan",
       "ganryu",
       KendoCombatService.HOKUSHIN_ID,
@@ -503,7 +520,7 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player stats mana|max_mana|regen|restore <value>"), false);
       ((CommandSourceStack)ctx.getSource())
          .sendSuccess(() -> Component.literal("/typemoon player attr earth|water|fire|wind|ether|none|imaginary_number|sword <true|false>"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player proficiency <type> <0-100>"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player proficiency <type> <0-100> (magic_analysis included)"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
@@ -697,6 +714,12 @@ public class TypeMoonCommands {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
             }
+         }
+
+         // Keep the newly introduced analysis magic part of the MAX preset even if
+         // the legacy command list is edited independently in a future release.
+         if (!vars.learned_magics.contains(MAGIC_ANALYSIS_MAGIC_ID)) {
+            vars.learned_magics.add(MAGIC_ANALYSIS_MAGIC_ID);
          }
 
          if (!vars.learned_magics.contains("reinforcement")) {
@@ -1031,7 +1054,7 @@ public class TypeMoonCommands {
          value = Math.max(0.0, Math.min(100.0, value));
          boolean validType = true;
          switch (type) {
-            case "magic_analysis":
+            case MAGIC_ANALYSIS_MAGIC_ID:
                vars.proficiency_magic_analysis = value;
                break;
             case "structural_analysis":

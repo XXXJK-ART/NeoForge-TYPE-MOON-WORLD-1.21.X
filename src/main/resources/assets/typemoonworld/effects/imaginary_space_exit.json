@@ -1,0 +1,37 @@
+{
+  "duration": 1.5,
+  "notes": "A collapsing indigo transition ring for leaving imaginary space.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.4,
+      "rate": 460,
+      "particle_lifetime": 0.65,
+      "position_variance": 0.03,
+      "velocity": [0.0, -0.03, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 88 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [6.0, 1.0, 6.0] },
+        { "t": 0.65, "scale": [2.0, 1.0, 2.0], "easing": "ease_in_cubic" },
+        { "t": 1.0, "scale": [0.15, 1.0, 0.15] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#AA7A45C4" },
+        { "t": 0.65, "color": "#885B2B9F" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.28 },
+        { "t": 0.65, "size": 0.14 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "IMAGINARY_SPACE_EXIT_RING",
+      "vanilla_particles": [
+        { "type": "reverse_portal", "count": 2, "spread": [1.2, 0.6, 1.2], "offset": [0.0, 0.4, 0.0], "speed": 0.03, "chance": 0.65 }
+      ]
+    }
+  ]
+}

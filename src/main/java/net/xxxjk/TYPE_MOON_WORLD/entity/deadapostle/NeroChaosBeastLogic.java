@@ -21,6 +21,7 @@ public final class NeroChaosBeastLogic {
    private static final String TAG_REGROUP_UNTIL = "NeroChaosBeastRegroupUntil";
    private static final String TAG_VARIANT = "NeroChaosBeastVariantV1";
    private static final String TAG_NEXT_ATTACK = "NeroChaosBeastNextAttack";
+   private static final String TAG_NEXT_LEAP = "NeroChaosBeastNextLeap";
 
    private NeroChaosBeastLogic() {
    }
@@ -109,7 +110,7 @@ public final class NeroChaosBeastLogic {
 
    public static boolean isAllied(Entity beast, Entity other) {
       NeroChaosEntity owner = beast instanceof Mob mob ? owner(mob) : null;
-      return other == owner || isAlliedToOwner(owner, other);
+      return other instanceof DeadApostleEntity || other == owner || isAlliedToOwner(owner, other);
    }
 
    public static boolean isAlliedToOwner(NeroChaosEntity owner, Entity other) {
@@ -141,7 +142,8 @@ public final class NeroChaosBeastLogic {
       }
 
       LivingEntity target = beast.getTarget();
-      if (target == null || !target.isAlive() || isAllied(beast, target) || EntityUtils.isImmunePlayerTarget(target)) {
+      if (target == null || !target.isAlive() || isAllied(beast, target)
+         || EntityUtils.isImmunePlayerTarget(target) || !owner.isCombatTarget(target)) {
          target = findTarget(beast, owner);
          beast.setTarget(target);
       }
@@ -209,10 +211,10 @@ public final class NeroChaosBeastLogic {
          return ownerTarget;
       }
       return beast.level().getEntitiesOfClass(
-            LivingEntity.class,
-            owner.getBoundingBox().inflate(48.0),
+         LivingEntity.class,
+         owner.getBoundingBox().inflate(48.0),
             target -> target != beast && target != owner && target.isAlive()
-               && !EntityUtils.isImmunePlayerTarget(target)
+               && owner.isCombatTarget(target)
                && !isAllied(beast, target)
          ).stream()
          .min((left, right) -> Double.compare(left.distanceToSqr(owner), right.distanceToSqr(owner)))
@@ -262,12 +264,19 @@ public final class NeroChaosBeastLogic {
    private static void handleStag(Mob beast, LivingEntity target, double distanceSqr, long now) {
       double speed = movementSpeed(beast, Kind.STAG);
       Vec3 packPoint = packPoint(beast, target, Kind.STAG);
+      if (!beast.onGround() && beast.getDeltaMovement().y > 0.22) {
+         Vec3 velocity = beast.getDeltaMovement();
+         beast.setDeltaMovement(velocity.x, 0.22, velocity.z);
+      }
       if (distanceSqr > 64.0) {
-         Vec3 leap = packPoint.subtract(beast.position()).multiply(1.0, 0.0, 1.0);
-         if (leap.lengthSqr() > 1.0E-6) {
-            leap = leap.normalize();
-            beast.setDeltaMovement(beast.getDeltaMovement().add(leap.x * 0.20, 0.12, leap.z * 0.20));
-            beast.hurtMarked = true;
+         if (beast.onGround() && now >= beast.getPersistentData().getLong(TAG_NEXT_LEAP)) {
+            Vec3 leap = packPoint.subtract(beast.position()).multiply(1.0, 0.0, 1.0);
+            if (leap.lengthSqr() > 1.0E-6) {
+               leap = leap.normalize();
+               beast.setDeltaMovement(leap.x * 0.34, 0.42, leap.z * 0.34);
+               beast.getPersistentData().putLong(TAG_NEXT_LEAP, now + 18L + beast.getRandom().nextInt(9));
+               beast.hurtMarked = true;
+            }
          }
          beast.getNavigation().moveTo(packPoint.x, target.getY(), packPoint.z, speed * 1.2);
       } else if (distanceSqr > 20.0) {

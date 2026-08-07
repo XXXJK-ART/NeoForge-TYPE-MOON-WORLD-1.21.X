@@ -42,12 +42,18 @@ public final class GenericMagicOptionsScreen extends Screen {
             EditBox edit = new EditBox(font, width / 2, y, 150, 20, Component.literal(option.key()));
             edit.setValue(initial); edit.setMaxLength(128); addRenderableWidget(edit); edits.put(option.key(), edit);
          } else {
-            addRenderableWidget(Button.builder(label(option, initial), button -> cycle(option, button)).bounds(width / 2, y, 150, 20).build());
+            addRenderableWidget(new NeonButton(width / 2, y, 150, 20, label(option, initial), button -> cycle(option, button), MagicUiColors.colorFor(magicId.getPath(), false))
+               .setArcaneStyle(true)
+               .setCompactStyle(true));
          }
          y += 26;
       }
-      addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> save()).bounds(width / 2 - 76, y + 6, 72, 20).build());
-      addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), button -> onClose()).bounds(width / 2 + 4, y + 6, 72, 20).build());
+      addRenderableWidget(new NeonButton(width / 2 - 76, y + 6, 72, 20, Component.translatable("gui.done"), button -> save(), GuiUtils.ARCANE_VALID)
+         .setArcaneStyle(true)
+         .setCompactStyle(true));
+      addRenderableWidget(new NeonButton(width / 2 + 4, y + 6, 72, 20, Component.translatable("gui.cancel"), button -> onClose(), GuiUtils.ARCANE_DANGER)
+         .setArcaneStyle(true)
+         .setCompactStyle(true));
    }
 
    private String read(MagicOption option, CompoundTag tag) {
@@ -86,11 +92,22 @@ public final class GenericMagicOptionsScreen extends Screen {
    @Override public void onClose() { if (minecraft != null) minecraft.setScreen(null); }
    @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
       GuiUtils.renderScreenBackdrop(graphics, this.width, this.height);
+      int formY = Math.max(34, this.height / 2 - this.options.size() * 13);
+      int panelX = this.width / 2 - 176;
+      int panelY = Math.max(18, formY - 32);
+      int panelH = Math.min(this.height - panelY - 12, Math.max(92, this.options.size() * 26 + 68));
+      int accent = MagicUiColors.colorFor(this.magicId.getPath(), false);
+      GuiUtils.renderArcaneWindow(graphics, panelX, panelY, 352, panelH, accent);
+      GuiUtils.renderArcanePanel(graphics, panelX + 10, panelY + 32, 332, Math.max(44, panelH - 44), accent);
    }
    @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
       super.render(graphics, mouseX, mouseY, partialTick);
-      graphics.drawCenteredString(font, title, width / 2, 14, 0xFFFFFF);
-      int y = Math.max(39, height / 2 - options.size() * 13);
-      for (MagicOption option : options) { graphics.drawString(font, Component.literal(option.key()), width / 2 - 158, y, 0xD7E3EE); y += 26; }
+      int formY = Math.max(34, this.height / 2 - this.options.size() * 13);
+      graphics.drawCenteredString(font, title, width / 2, Math.max(26, formY - 23), GuiUtils.ARCANE_TEXT);
+      int y = formY;
+      for (MagicOption option : options) {
+         graphics.drawString(font, Component.literal(option.key()), width / 2 - 158, y + 6, GuiUtils.ARCANE_TEXT_MUTED, false);
+         y += 26;
+      }
    }
 }

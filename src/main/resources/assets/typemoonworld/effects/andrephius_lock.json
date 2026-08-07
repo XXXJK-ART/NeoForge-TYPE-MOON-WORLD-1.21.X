@@ -1,0 +1,63 @@
+{
+  "duration": 1.0,
+  "notes": "Golden target marker shown before an Andrephius strike.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.0,
+      "rate": 520,
+      "particle_lifetime": 0.65,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.01,
+      "max_vanilla_particles_per_tick": 0,
+      "component": { "type": "circle", "radius": 1.0, "segments": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 1.0, 0.35] },
+        { "t": 0.35, "scale": [2.4, 1.0, 2.4], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [1.5, 1.0, 1.5] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF2A0" },
+        { "t": 0.18, "color": "#FFFFFFFF" },
+        { "t": 0.58, "color": "#FFFFD43B" },
+        { "t": 1.0, "color": "#00FF9F1C" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.32, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_LOCK_RING"
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 1.0,
+      "rate": 380,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, -0.03, 0.0],
+      "velocity_variance": 0.015,
+      "max_vanilla_particles_per_tick": 0,
+      "component": { "type": "line", "start": [0.0, 8.0, 0.0], "end": [0.0, 0.0, 0.0], "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.22, "color": "#CCFFF2A0" },
+        { "t": 0.72, "color": "#FFFFD43B" },
+        { "t": 1.0, "color": "#00FF9F1C" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.03 },
+        { "t": 0.4, "size": 0.16 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_LOCK_BEAM"
+    }
+  ]
+}

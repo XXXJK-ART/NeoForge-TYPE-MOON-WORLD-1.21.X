@@ -1,0 +1,38 @@
+{
+  "duration": 1.8,
+  "notes": "A restrained indigo transition ring for entering imaginary space.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.7,
+      "rate": 520,
+      "particle_lifetime": 0.8,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.06, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 96 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.2, 1.0, 0.2] },
+        { "t": 0.35, "scale": [3.0, 1.0, 3.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [6.0, 1.0, 6.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.18, "color": "#CCB99CFF" },
+        { "t": 0.72, "color": "#885B2B9F" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.35, "size": 0.28 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "IMAGINARY_SPACE_ENTER_RING",
+      "vanilla_particles": [
+        { "type": "portal", "count": 2, "spread": [1.4, 0.7, 1.4], "offset": [0.0, 0.6, 0.0], "speed": 0.03, "chance": 0.7 }
+      ]
+    }
+  ]
+}

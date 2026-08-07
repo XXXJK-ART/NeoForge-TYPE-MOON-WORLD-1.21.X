@@ -25,6 +25,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
             "geo/servant_card_" + servantId + ".geo.json");
       }
       if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+         if ("artoria_pendragon".equals(servantId)) {
+            return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+               "geo/servant_hair_artoria_pendragon.geo.json");
+         }
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "geo/servant_card_" + servantId + "_head.geo.json");
       }
@@ -41,6 +45,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
             "textures/models/armor/servant_card_" + servantId + ".png");
       }
       if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+         if ("artoria_pendragon".equals(servantId)) {
+            return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+               "textures/entity/servant_hair_artoria_pendragon.png");
+         }
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "textures/models/armor/servant_card_" + servantId + "_head.png");
       }
@@ -83,7 +91,11 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    }
 
    private static boolean usesFullHeadwearModel(String servantId) {
-      return "oda_nobunaga".equals(servantId);
+      return switch (servantId) {
+         case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
+            "ushiwakamaru_rider", "zhao_yun_rider", "gilgamesh_caster" -> true;
+         default -> false;
+      };
    }
 
    private static boolean isHeadSlot(ServantCardArmorItem animatable) {

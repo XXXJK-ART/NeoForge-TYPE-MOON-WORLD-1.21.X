@@ -1,0 +1,40 @@
+{
+  "duration": 0.32,
+  "notes": "Low-power Oriasn moving gale ring, refreshed by bounded server pulses.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 360,
+      "particle_lifetime": 0.34,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -1.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "circle", "radius": 1.0, "segments": 144 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.2, 1.0, 1.2] },
+        { "t": 1.0, "scale": [4.2, 1.0, 4.2], "easing": "ease_out_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.45, "color": "#C8FF6EB5" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.55, "size": 0.28 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "STORM_GALE_LOW_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [0.4, 0.06, 0.4], "offset": [0.0, 0.05, 0.0], "speed": 0.04, "chance": 0.55 }
+      ]
+    }
+  ]
+}

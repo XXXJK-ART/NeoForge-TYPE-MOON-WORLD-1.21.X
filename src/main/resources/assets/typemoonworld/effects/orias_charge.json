@@ -1,0 +1,82 @@
+{
+  "duration": 0.7,
+  "notes": "Short, repeatable Hualueke charge pulse bound to the caster. Server charge ticks control repetition and intensity.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.7,
+      "rate": 420,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.24,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.018, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": {
+        "mode": "entity_yaw",
+        "offset": [0.0, -1.02, 0.0],
+        "rotate_with_entity": false
+      },
+      "component": { "type": "circle", "radius": 1.0, "segments": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.75, 1.0, 0.75], "easing": "ease_out_cubic" },
+        { "t": 0.55, "scale": [3.8, 1.0, 3.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [4.6, 1.0, 4.6] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFF0B0" },
+        { "t": 0.3, "color": "#FFFF7A18" },
+        { "t": 0.72, "color": "#CCB52212" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.4, "size": 0.24 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_CHARGE_GROUND_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flame", "count": 1, "spread": [0.3, 0.4, 0.3], "offset": [0.0, 0.05, 0.0], "speed": 0.045, "chance": 0.75 },
+        { "type": "ash", "count": 1, "spread": [0.45, 0.45, 0.45], "offset": [0.0, 0.1, 0.0], "speed": 0.025, "chance": 0.45 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.7,
+      "rate": 260,
+      "particle_lifetime": 0.62,
+      "size_variance": 0.3,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.04,
+      "velocity": [0.0, -0.04, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": {
+        "mode": "entity_yaw",
+        "offset": [0.0, -0.2, 0.0],
+        "rotate_with_entity": false
+      },
+      "component": { "type": "helix", "radius": 2.2, "turns": 3.0, "height": 2.6, "segments": 144 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.45, 1.0, 1.45] },
+        { "t": 1.0, "scale": [0.18, 0.35, 0.18], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#99FF3A0A" },
+        { "t": 0.58, "color": "#FFFFA126" },
+        { "t": 1.0, "color": "#00FFCC66" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.55, "size": 0.2 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_CHARGE_INWARD_SPARKS",
+      "enable_trail": true
+    }
+  ]
+}

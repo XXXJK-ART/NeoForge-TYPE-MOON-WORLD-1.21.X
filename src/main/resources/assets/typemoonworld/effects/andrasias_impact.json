@@ -1,0 +1,179 @@
+{
+  "duration": 2.35,
+  "notes": "Andrasias impact inspired by a red diagonal shock field, white-hot ground burst, sparks and dark rock debris.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.55,
+      "rate": 760,
+      "particle_lifetime": 0.92,
+      "lifetime_variance": 0.18,
+      "size_variance": 0.28,
+      "position_variance": 0.05,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.18,
+      "max_vanilla_particles_per_tick": 7,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 240 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.25, 0.0], "scale": [0.18, 0.18, 0.18] },
+        { "t": 0.28, "pos": [0.0, 1.0, 0.0], "scale": [9.0, 5.0, 9.0], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 1.8, 0.0], "scale": [18.0, 9.0, 18.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.16, "color": "#FFFFF4E6" },
+        { "t": 0.36, "color": "#FFFF4B35" },
+        { "t": 0.74, "color": "#D9CE1020" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.24, "size": 0.95 },
+        { "t": 0.62, "size": 0.62 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDRASIAS_IMPACT_RED_SHOCK_FIELD",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.8, 0.0], "speed": 0.0, "chance": 0.72 },
+        { "type": "flame", "count": 2, "spread": [4.0, 1.5, 4.0], "offset": [0.0, 0.7, 0.0], "speed": 0.08, "chance": 0.66 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 1.32,
+      "rate": 640,
+      "particle_lifetime": 0.68,
+      "lifetime_variance": 0.14,
+      "size_variance": 0.18,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.16, 0.0],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 6,
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "(t - 0.5) * 30.0", "expr_y": "-1.8 + t * 10.0 + sin(time * 18.0 + t * tau * 2.0) * 0.7", "expr_z": "sin(time * 13.0 + t * tau * 1.5) * 4.0", "t_start": 0.0, "t_end": 1.0, "segments": 96 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.8, 0.8, 0.8] },
+        { "t": 0.42, "scale": [1.1, 1.1, 1.1] },
+        { "t": 1.0, "scale": [0.2, 0.2, 0.2] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF190E" },
+        { "t": 0.1, "color": "#D9FF4A3B" },
+        { "t": 0.42, "color": "#FFFFD6C4" },
+        { "t": 0.72, "color": "#C9FF2B18" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.28, "size": 0.36 },
+        { "t": 0.62, "size": 0.22 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDRASIAS_IMPACT_DIAGONAL_RED_RIBBONS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.04,
+      "end_time": 1.45,
+      "rate": 520,
+      "particle_lifetime": 0.74,
+      "lifetime_variance": 0.16,
+      "size_variance": 0.22,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.13,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "(0.5 - t) * 24.0", "expr_y": "-0.9 + t * 7.0 + cos(time * 16.0 + t * tau * 2.5) * 0.45", "expr_z": "cos(time * 11.0 + t * tau) * 5.0", "t_start": 0.0, "t_end": 1.0, "segments": 80 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF381C" },
+        { "t": 0.12, "color": "#B8FF6B3A" },
+        { "t": 0.48, "color": "#F0FFF0D0" },
+        { "t": 0.82, "color": "#AAE52A16" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.32, "size": 0.28 },
+        { "t": 0.66, "size": 0.16 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDRASIAS_IMPACT_CROSS_RIBBONS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.05,
+      "rate": 420,
+      "particle_lifetime": 0.56,
+      "lifetime_variance": 0.16,
+      "size_variance": 0.28,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.42, 0.0],
+      "velocity_variance": 0.32,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 170 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.15, 0.0], "scale": [0.3, 0.25, 0.3] },
+        { "t": 0.42, "pos": [0.0, 1.1, 0.0], "scale": [6.5, 2.6, 6.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 2.2, 0.0], "scale": [10.0, 4.0, 10.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.22, "color": "#FFFFE7C2" },
+        { "t": 0.56, "color": "#D9FF6B25" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.34, "size": 0.72 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDRASIAS_IMPACT_WHITE_HOT_CORE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "explosion_emitter", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.25, 0.0], "speed": 0.0, "chance": 0.74 },
+        { "type": "lava", "count": 2, "spread": [2.8, 1.3, 2.8], "offset": [0.0, 0.5, 0.0], "speed": 0.1, "chance": 0.62 }
+      ]
+    },
+    {
+      "start_time": 0.06,
+      "end_time": 2.1,
+      "rate": 350,
+      "particle_lifetime": 1.05,
+      "lifetime_variance": 0.22,
+      "size_variance": 0.17,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "circle", "radius": 1.0, "segments": 192 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.05, 0.0], "scale": [0.25, 1.0, 0.25] },
+        { "t": 0.43, "pos": [0.0, 0.08, 0.0], "scale": [7.0, 1.0, 7.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.1, 0.0], "scale": [13.0, 1.0, 13.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.22, "color": "#F0FF4A2A" },
+        { "t": 0.65, "color": "#A8B31411" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.38, "size": 0.38 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDRASIAS_IMPACT_GROUND_WAVE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [2.0, 0.08, 2.0], "offset": [0.0, 0.04, 0.0], "speed": 0.1, "chance": 0.72 },
+        { "type": "ash", "count": 1, "spread": [3.0, 0.15, 3.0], "offset": [0.0, 0.12, 0.0], "speed": 0.06, "chance": 0.62 }
+      ]
+    }
+  ]
+}

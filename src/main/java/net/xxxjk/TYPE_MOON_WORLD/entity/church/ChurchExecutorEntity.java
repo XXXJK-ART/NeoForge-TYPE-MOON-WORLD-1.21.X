@@ -112,7 +112,7 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
 
    private boolean isChurchTarget(LivingEntity target) {
       if (target instanceof ChurchExecutorEntity || target instanceof HumanNpcEntity) return false;
-      return target instanceof DeadApostleEntity || target instanceof Monster;
+      return DeadApostleEntity.isDeadApostle(target) || target instanceof Monster;
    }
 
    @Override public boolean isAlliedTo(Entity entity) { return entity instanceof ChurchExecutorEntity || super.isAlliedTo(entity); }
@@ -253,24 +253,29 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          tickBaptismChant();
          return;
       }
+      LivingEntity target = getTarget();
       if (magicCooldown <= 0 && hasHealingMagic() && tryCastHealingMagic()) {
          magicCooldown = 90;
       } else if (magicCooldown <= 0 && hasSpiritualHealing() && getHealth() < getMaxHealth() * 0.55F) {
          heal(4.0F + getPersistentData().getInt("ChurchSpiritualHealingProficiency") * 0.04F);
          magicCooldown = 100;
-      } else if (magicCooldown <= 0 && hasReinforcement() && getTarget() != null && tryCastReinforcement()) {
+      } else if (magicCooldown <= 0 && hasReinforcement() && target != null && tryCastReinforcement()) {
          magicCooldown = 80;
-      } else if (magicCooldown <= 0 && hasBaptism() && getTarget() instanceof DeadApostleEntity target
+      } else if (magicCooldown <= 0 && hasBaptism() && isDeadApostleTarget(target)
          && tryStartBaptism(target)) {
          magicCooldown = 160;
-      } else if (magicCooldown <= 0 && getTarget() != null && tryCastControlMagic()) {
+      } else if (magicCooldown <= 0 && target != null && tryCastControlMagic()) {
          magicCooldown = 100;
-      } else if (magicCooldown <= 0 && getTarget() instanceof DeadApostleEntity target) {
+      } else if (magicCooldown <= 0 && isDeadApostleTarget(target)) {
          if (hasSpiritualHealing()) {
             target.hurt(damageSources().magic(), 6.0F + getPersistentData().getInt("ChurchSpiritualHealingProficiency") * 0.06F);
             magicCooldown = 80;
          }
       }
+   }
+
+   private static boolean isDeadApostleTarget(LivingEntity target) {
+      return target != null && DeadApostleEntity.isDeadApostle(target);
    }
 
    private boolean tryStartBaptism(LivingEntity target) {

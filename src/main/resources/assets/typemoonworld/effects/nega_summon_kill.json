@@ -1,0 +1,72 @@
+{
+  "duration": 1.05,
+  "notes": "A compact negative-mana collapse and severed-contract afterimage for Nega Summon.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.88,
+      "rate": 460,
+      "particle_lifetime": 0.68,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.14,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 150 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.6, 2.2, 1.6] },
+        { "t": 0.36, "scale": [0.2, 0.28, 0.2], "easing": "ease_in_cubic" },
+        { "t": 1.0, "pos": [0.0, 1.5, 0.0], "scale": [2.8, 4.6, 2.8], "easing": "ease_out_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#E8DFA8FF" },
+        { "t": 0.22, "color": "#E89024CC" },
+        { "t": 0.56, "color": "#C8360758" },
+        { "t": 1.0, "color": "#0007000D" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.16 },
+        { "t": 0.34, "size": 0.36 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "NEGA_SUMMON_NEGATIVE_MANA_COLLAPSE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "soul", "count": 2, "spread": [0.45, 0.8, 0.45], "offset": [0.0, 0.6, 0.0], "speed": 0.08, "chance": 0.75 },
+        { "type": "reverse_portal", "count": 2, "spread": [0.65, 0.8, 0.65], "offset": [0.0, 0.6, 0.0], "speed": 0.06, "chance": 0.68 }
+      ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.9,
+      "rate": 220,
+      "particle_lifetime": 0.62,
+      "size_variance": 0.1,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "circle", "radius": 1.0, "segments": 144 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.3, 1.0, 0.3] },
+        { "t": 0.42, "scale": [2.8, 1.0, 2.8], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [4.0, 1.0, 4.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#F0F0D8FF" },
+        { "t": 0.32, "color": "#D97B16B5" },
+        { "t": 0.7, "color": "#A52B0645" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.42, "size": 0.22 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "NEGA_SUMMON_SEVERED_CONTRACT_WAVE"
+    }
+  ]
+}

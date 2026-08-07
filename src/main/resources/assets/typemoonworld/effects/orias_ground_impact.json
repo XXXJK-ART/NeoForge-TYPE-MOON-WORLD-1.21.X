@@ -1,0 +1,116 @@
+{
+  "duration": 5.2,
+  "notes": "Hualueke ground burst: molten core, spherical pressure front and layered ground waves.",
+  "emitters": [
+    {
+      "start_time": 0.85,
+      "end_time": 1.7,
+      "rate": 920,
+      "particle_lifetime": 0.85,
+      "size_variance": 0.38,
+      "lifetime_variance": 0.24,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.18, 0.0],
+      "velocity_variance": 0.3,
+      "max_vanilla_particles_per_tick": 10,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 280 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.2, 0.0], "scale": [0.2, 0.2, 0.2] },
+        { "t": 0.38, "pos": [0.0, 0.8, 0.0], "scale": [8.0, 8.0, 8.0], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 1.2, 0.0], "scale": [13.0, 9.0, 13.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.2, "color": "#FFFFC95A" },
+        { "t": 0.48, "color": "#FFFF4A12" },
+        { "t": 0.78, "color": "#BB9C1208" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.42 },
+        { "t": 0.32, "size": 1.65 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_GROUND_IMPACT_CORE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "explosion_emitter", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.2, 0.0], "speed": 0.0, "chance": 0.8 },
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.35, 0.0], "speed": 0.0, "chance": 0.9 },
+        { "type": "explosion", "count": 2, "spread": [1.0, 0.5, 1.0], "offset": [0.0, 0.5, 0.0], "speed": 0.0, "chance": 0.82 }
+      ]
+    },
+    {
+      "start_time": 0.9,
+      "end_time": 3.8,
+      "rate": 460,
+      "particle_lifetime": 1.15,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.22,
+      "position_variance": 0.045,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 220 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.25, 0.35] },
+        { "t": 0.5, "scale": [13.0, 8.5, 13.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [20.0, 10.0, 20.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.32, "color": "#BBC8C3BE" },
+        { "t": 0.62, "color": "#889F928A" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.18 },
+        { "t": 0.45, "size": 0.72 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ORIAS_GROUND_IMPACT_PRESSURE_SHELL",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 2, "spread": [1.0, 0.25, 1.0], "offset": [0.0, 0.5, 0.0], "speed": 0.075, "chance": 0.7 },
+        { "type": "large_smoke", "count": 1, "spread": [1.1, 0.4, 1.1], "offset": [0.0, 0.7, 0.0], "speed": 0.055, "chance": 0.58 }
+      ]
+    },
+    {
+      "start_time": 0.9,
+      "end_time": 5.2,
+      "rate": 260,
+      "particle_lifetime": 1.35,
+      "size_variance": 0.15,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "circle", "radius": 1.0, "segments": 220 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.5, 1.0, 0.5] },
+        { "t": 0.45, "scale": [16.0, 1.0, 16.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [28.0, 1.0, 28.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFE0A0" },
+        { "t": 0.28, "color": "#CCFF6A18" },
+        { "t": 0.62, "color": "#88851A0D" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.48, "size": 0.48 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_GROUND_IMPACT_HEAT_RINGS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [1.0, 0.06, 1.0], "offset": [0.0, 0.02, 0.0], "speed": 0.09, "chance": 0.72 },
+        { "type": "ash", "count": 1, "spread": [1.0, 0.1, 1.0], "offset": [0.0, 0.08, 0.0], "speed": 0.06, "chance": 0.55 }
+      ]
+    }
+  ]
+}

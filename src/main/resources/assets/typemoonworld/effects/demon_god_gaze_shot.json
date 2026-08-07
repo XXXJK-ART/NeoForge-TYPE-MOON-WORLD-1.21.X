@@ -1,0 +1,78 @@
+{
+  "duration": 0.42,
+  "notes": "Sparse sparks around the deterministic client-rendered gaze beam.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 120,
+      "particle_lifetime": 0.18,
+      "size_variance": 0.08,
+      "lifetime_variance": 0.04,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.0, 4.8],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 1,
+      "component": {
+        "type": "line",
+        "start": [0.0, 0.0, 0.0],
+        "end": [0.0, 0.0, 4.8],
+        "segments": 64
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF0FF" },
+        { "t": 0.1, "color": "#FFFFF0FF" },
+        { "t": 0.55, "color": "#FFFF179B" },
+        { "t": 1.0, "color": "#00B91BFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.25, "size": 0.14 },
+        { "t": 1.0, "size": 0.012 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DEMON_GOD_GAZE_SHOT_SPARKS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.03, 0.03, 0.03], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.12 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.32,
+      "rate": 72,
+      "particle_lifetime": 0.2,
+      "size_variance": 0.1,
+      "lifetime_variance": 0.05,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.0, 4.2],
+      "velocity_variance": 0.1,
+      "max_vanilla_particles_per_tick": 0,
+      "component": {
+        "type": "fractal_lightning",
+        "start": [0.0, 0.0, 0.0],
+        "end": [0.0, 0.0, 4.8],
+        "iterations": 3,
+        "roughness": 0.38,
+        "period": 3.0,
+        "density": 5.0,
+        "random_radius_min": 0.04,
+        "random_radius_max": 0.22,
+        "segments": 56
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF179B" },
+        { "t": 0.16, "color": "#FFFF3CC7" },
+        { "t": 0.62, "color": "#FFB91BFF" },
+        { "t": 1.0, "color": "#00B91BFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.28, "size": 0.09 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DEMON_GOD_GAZE_SHOT_ARC"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.NeroChaosRules;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -177,6 +178,41 @@ public final class NeroChaosGameTests {
       helper.runAfterDelay(5, () -> {
          helper.assertTrue(!prey.isAlive(), "Devour should fully finish an armored target");
          helper.assertTrue(nero.getHealth() >= 349.0F, "Devour should still heal after the kill");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 50)
+   public static void churchExecutorTargetsNeroBeastsAsDeadApostles(GameTestHelper helper) {
+      NeroChaosEntity owner = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(40, 8, 40));
+      var beast = helper.spawn(ModEntities.NERO_CHAOS_HOUND.get(), new BlockPos(8, 8, 3));
+      NeroChaosBeastLogic.setOwner(beast, owner);
+      var executor = helper.spawn(ModEntities.CHURCH_EXECUTOR.get(), new BlockPos(6, 8, 3));
+
+      helper.runAfterDelay(20, () -> {
+         helper.assertTrue(DeadApostleEntity.isDeadApostle(beast),
+            "Nero's beasts should belong to the dead apostle faction");
+         helper.assertTrue(executor.getTarget() == beast,
+            "Church executor should actively target Nero's beast");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void stagClearsNeutralTargetsAndDoesNotFlyUpward(GameTestHelper helper) {
+      NeroChaosEntity owner = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(40, 8, 40));
+      var stag = helper.spawn(ModEntities.NERO_CHAOS_STAG.get(), new BlockPos(8, 8, 3));
+      var cow = helper.spawn(EntityType.COW, new BlockPos(20, 8, 3));
+      cow.setNoAi(true);
+      NeroChaosBeastLogic.setOwner(stag, owner);
+      stag.setTarget(cow);
+      double startY = stag.getY();
+
+      helper.runAfterDelay(20, () -> {
+         helper.assertTrue(stag.getTarget() == null || !stag.getTarget().isAlive(),
+            "Stag should discard a neutral non-combat target");
+         helper.assertTrue(stag.getY() < startY + 3.0,
+            "Stag should not accumulate upward movement without an enemy: start=" + startY + ", now=" + stag.getY());
          helper.succeed();
       });
    }

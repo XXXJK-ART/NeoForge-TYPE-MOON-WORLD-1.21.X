@@ -1,0 +1,38 @@
+{
+  "duration": 0.38,
+  "notes": "Short compressed water blade impact.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.35,
+      "rate": 620,
+      "particle_lifetime": 0.32,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.06, 0.0],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -0.7, 0.0], "scale": [0.3, 1.0, 0.3] },
+        { "t": 0.44, "pos": [0.0, -0.25, 0.0], "scale": [10.0, 1.0, 10.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.05, 0.0], "scale": [16.0, 1.0, 16.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#F0FFFFFF" },
+        { "t": 0.35, "color": "#E88AEFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.38 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ZAGAN_WATER_IMPACT_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 4, "spread": [6.0, 0.7, 6.0], "offset": [0.0, 0.0, 0.0], "speed": 0.22, "chance": 0.8 }
+      ]
+    }
+  ]
+}

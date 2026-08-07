@@ -17,6 +17,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.BasicMagecraftHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -72,7 +73,8 @@ public final class MagicBaptismRite {
    }
 
    private static boolean isUndeadLike(LivingEntity target) {
-      return target.getType().is(EntityTypeTags.UNDEAD)
+      return DeadApostleEntity.isDeadApostle(target)
+         || target.getType().is(EntityTypeTags.UNDEAD)
          || target instanceof Zombie
          || target instanceof Skeleton
          || target instanceof Stray

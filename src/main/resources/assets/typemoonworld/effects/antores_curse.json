@@ -1,0 +1,72 @@
+{
+  "duration": 1.1,
+  "notes": "A single dark-red curse ring shown when Demon God Curse is applied.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.0,
+      "rate": 320,
+      "particle_lifetime": 0.72,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "helix", "radius": 1.0, "turns": 4.0, "height": 2.6, "segments": 160 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -1.2, 0.0], "scale": [0.2, 0.3, 0.2] },
+        { "t": 0.42, "pos": [0.0, -1.2, 0.0], "scale": [1.15, 1.0, 1.15], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, -0.9, 0.0], "scale": [1.5, 1.15, 1.5] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00100008" },
+        { "t": 0.14, "color": "#DD32000D" },
+        { "t": 0.5, "color": "#FFFF153D" },
+        { "t": 0.78, "color": "#AA690019" },
+        { "t": 1.0, "color": "#00100008" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.42, "size": 0.18 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DEMON_GOD_CURSE_RUNE",
+      "vanilla_particles": [
+        { "type": "witch", "count": 1, "spread": [0.5, 0.8, 0.5], "offset": [0.0, 0.0, 0.0], "speed": 0.02, "chance": 0.25 }
+      ]
+    },
+    {
+      "start_time": 0.06,
+      "end_time": 0.92,
+      "rate": 220,
+      "particle_lifetime": 0.62,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 0,
+      "component": { "type": "circle", "radius": 1.0, "segments": 140 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -1.0, 0.0], "scale": [0.3, 1.0, 0.3] },
+        { "t": 0.48, "pos": [0.0, -1.0, 0.0], "scale": [1.4, 1.0, 1.4], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, -0.85, 0.0], "scale": [2.1, 1.0, 2.1] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF204A" },
+        { "t": 0.2, "color": "#CCFF204A" },
+        { "t": 0.65, "color": "#9970001A" },
+        { "t": 1.0, "color": "#00100008" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.5, "size": 0.16 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DEMON_GOD_CURSE_RING"
+    }
+  ]
+}

@@ -56,7 +56,7 @@ public final class ChurchDeadApostleEvents {
    public static void onIncomingDamage(LivingIncomingDamageEvent event) {
       LivingEntity target = event.getEntity();
       LivingEntity attacker = ownerOf(event.getSource());
-      if (attacker != null && ((attacker instanceof DeadApostleEntity && target instanceof DeadApostleEntity)
+      if (attacker != null && ((DeadApostleEntity.isDeadApostle(attacker) && DeadApostleEntity.isDeadApostle(target))
          || (attacker instanceof ChurchExecutorEntity && target instanceof ChurchExecutorEntity))) {
          event.setCanceled(true);
          event.setAmount(0.0F);

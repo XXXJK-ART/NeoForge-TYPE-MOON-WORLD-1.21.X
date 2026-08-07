@@ -1,0 +1,107 @@
+{
+  "duration": 0.58,
+  "notes": "Low, wide, flat water vortex with horizontal rotating sheets.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.56,
+      "rate": 760,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.18,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "torus", "radius": 10.0, "tube_radius": 0.22, "u_segments": 80, "v_segments": 8 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -1.5, 0.0], "scale": [0.7, 0.42, 0.7] },
+        { "t": 0.48, "pos": [0.0, -0.7, 0.0], "scale": [1.0, 0.58, 1.0] },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [1.06, 0.68, 1.06] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#20FFFFFF" },
+        { "t": 0.2, "color": "#F0A9F7FF" },
+        { "t": 0.58, "color": "#D7289CEB" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.48, "size": 0.42 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ZAGAN_FLAT_OUTER_WATER_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 2, "spread": [8.0, 0.45, 8.0], "offset": [0.0, -0.7, 0.0], "speed": 0.13, "chance": 0.76 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.55,
+      "rate": 640,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.15,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 4,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.8 + 8.4 * t) * cos(t * tau * 3.0 + time * 22.0)",
+        "expr_y": "-1.15 + 3.0 * t + sin(t * tau * 2.0 + time * 15.0) * 0.15",
+        "expr_z": "(1.8 + 8.4 * t) * sin(t * tau * 3.0 + time * 22.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#28E9FFFFFF" },
+        { "t": 0.18, "color": "#E8FFFFFF" },
+        { "t": 0.62, "color": "#D84BC7F2" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.44, "size": 0.34 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ZAGAN_HORIZONTAL_WATER_SHEET",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.5,
+      "rate": 360,
+      "particle_lifetime": 0.42,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "torus", "radius": 4.8, "tube_radius": 0.16, "u_segments": 56, "v_segments": 8 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.1, 0.0], "scale": [0.7, 0.35, 0.7] },
+        { "t": 0.6, "pos": [0.0, 0.45, 0.0], "scale": [1.25, 0.55, 1.25] },
+        { "t": 1.0, "pos": [0.0, 0.65, 0.0], "scale": [1.0, 0.44, 1.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#D8EFFFFF" },
+        { "t": 0.45, "color": "#D84BA9E8" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.5, "size": 0.28 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ZAGAN_CENTER_VORTEX",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 2, "spread": [3.4, 0.6, 3.4], "offset": [0.0, 0.35, 0.0], "speed": 0.06, "chance": 0.72 }
+      ]
+    }
+  ]
+}

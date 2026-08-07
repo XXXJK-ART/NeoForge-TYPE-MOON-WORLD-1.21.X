@@ -30,6 +30,32 @@ class MagicLearningSystemTest {
    }
 
    @Test
+   void addonMagicsFollowTheNewDifficultyCurve() {
+      assertEquals(10, MagicLearningStrategy.complexity("detection"));
+      assertEquals(20, MagicLearningStrategy.complexity("airflow_blade"));
+      assertEquals(55, MagicLearningStrategy.complexity("imaginary_dive"));
+      assertEquals(70, MagicLearningStrategy.complexity("absorption"));
+      assertEquals(85, MagicLearningStrategy.complexity("imaginary_space"));
+      assertEquals(90, MagicLearningStrategy.complexity("antores"));
+      assertEquals(95, MagicLearningStrategy.complexity("nega_summon"));
+
+      assertEquals(1, MagicLearningStrategy.verses("detection"));
+      assertEquals(1, MagicLearningStrategy.verses("airflow_blade"));
+      assertEquals(3, MagicLearningStrategy.verses("imaginary_dive"));
+      assertEquals(4, MagicLearningStrategy.verses("absorption"));
+      assertEquals(5, MagicLearningStrategy.verses("antores"));
+      assertEquals(5, MagicLearningStrategy.verses("nega_summon"));
+
+      assertTrue(MagicLearningStrategy.canAnalyze("detection"));
+      assertTrue(MagicLearningStrategy.canAnalyze("nega_summon"));
+      assertFalse(MagicLearningStrategy.canLearnFromMaterial("detection"));
+      assertFalse(MagicLearningStrategy.canResearch("imaginary_space"));
+      assertFalse(MagicLearningStrategy.canCopy("storm"));
+      assertTrue(MagicLearningStrategy.isDivine("antores"));
+      assertTrue(MagicLearningStrategy.isDivine("nega_summon"));
+   }
+
+   @Test
    void timeAlterIsMaterialOnlyForInitialLearning() {
       assertFalse(MagicLearningStrategy.canAnalyze("time_alter"));
       assertTrue(MagicLearningStrategy.materialAllowed(false, "time_alter"));
@@ -82,7 +108,7 @@ class MagicLearningSystemTest {
    void analysisResearchCostsDependOnAnalysisProficiency() {
       assertEquals(600, MagicLearningStrategy.researchTicks("magic_analysis", 0.0));
       assertEquals(200, MagicLearningStrategy.researchTicks("magic_analysis", 100.0));
-      assertEquals(300.0, MagicLearningStrategy.researchManaCost("magic_analysis", 0.0), 1.0E-9);
-      assertEquals(1100.0, MagicLearningStrategy.researchManaCost("magic_analysis", 100.0), 1.0E-9);
+       assertEquals(150.0, MagicLearningStrategy.researchManaCost("magic_analysis", 0.0), 1.0E-9);
+       assertEquals(550.0, MagicLearningStrategy.researchManaCost("magic_analysis", 100.0), 1.0E-9);
    }
 }

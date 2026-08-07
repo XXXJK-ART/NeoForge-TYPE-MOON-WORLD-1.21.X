@@ -30,6 +30,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
@@ -601,6 +602,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
       super.render(guiGraphics, mouseX, mouseY, partialTicks);
+      this.renderSlotMarkers(guiGraphics);
       if (Basic_information_back_player_self.execute(this.entity) instanceof LivingEntity livingEntity) {
          this.renderEntityInInventoryFollowsAngle(
             guiGraphics,
@@ -635,6 +637,28 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
       if (this.presetDialogState == null) {
          this.renderTooltip(guiGraphics, mouseX, mouseY);
+      }
+   }
+
+   private void renderSlotMarkers(GuiGraphics guiGraphics) {
+      if (this.pageMode != 0) {
+         return;
+      }
+
+      for (int i = 0; i < this.menu.slots.size(); i++) {
+         if (!this.menu.slots.get(i).isActive()) {
+            continue;
+         }
+
+         int accent = i == 0 ? GuiUtils.ARCANE_CYAN : i == 1 ? GuiUtils.ARCANE_CREST : i >= 29 ? GuiUtils.ARCANE_GOLD : GuiUtils.ARCANE_TEXT_MUTED;
+         GuiUtils.renderArcaneSlotMarker(
+            guiGraphics,
+            this.leftPos + this.menu.slots.get(i).x - 1,
+            this.topPos + this.menu.slots.get(i).y - 1,
+            MagicalattributesMenu.SLOT_PIXEL_SIZE,
+            accent,
+            i < 2
+         );
       }
    }
 

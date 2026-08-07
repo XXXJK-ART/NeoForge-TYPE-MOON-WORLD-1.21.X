@@ -3,7 +3,8 @@ package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 import net.minecraft.client.gui.GuiGraphics;
 
 public class GuiUtils {
-   public static final int ARCANE_OVERLAY = 0xA8080B0F;
+   /** Opaque central base; the area outside it remains transparent. */
+   public static final int ARCANE_OVERLAY = 0xF010151B;
    public static final int ARCANE_BACKGROUND = 0xF010151B;
    public static final int ARCANE_HEADER = 0xF5161C23;
    public static final int ARCANE_PANEL = 0xE8171E26;
@@ -18,12 +19,15 @@ public class GuiUtils {
    public static final int ARCANE_TEXT_MUTED = 0xFF99A6B2;
 
    public static void renderScreenBackdrop(GuiGraphics guiGraphics, int width, int height) {
-      guiGraphics.fill(0, 0, width, height, ARCANE_OVERLAY);
-      guiGraphics.fill(0, 0, width, Math.max(1, height / 7), 0x40151D24);
-      guiGraphics.fill(0, Math.max(0, height - height / 8), width, height, 0x50070A0D);
-      int centerX = width / 2;
-      guiGraphics.fill(centerX - 1, 0, centerX, height, 0x1835C6D0);
-      guiGraphics.fill(0, height / 2, width, height / 2 + 1, 0x1235C6D0);
+      int baseWidth = Math.min(Math.max(420, width * 4 / 5), Math.max(1, width - 12));
+      int baseHeight = Math.min(Math.max(230, height * 4 / 5), Math.max(1, height - 12));
+      int baseX = (width - baseWidth) / 2;
+      int baseY = (height - baseHeight) / 2;
+      guiGraphics.fill(baseX, baseY, baseX + baseWidth, baseY + baseHeight, ARCANE_OVERLAY);
+      guiGraphics.renderOutline(baseX, baseY, baseWidth, baseHeight, ARCANE_BORDER);
+      if (baseWidth > 18) {
+         guiGraphics.fill(baseX + 8, baseY + 8, baseX + Math.min(baseWidth - 8, 96), baseY + 10, ARCANE_CYAN);
+      }
    }
 
    public static void renderArcaneWindow(GuiGraphics guiGraphics, int x, int y, int w, int h, int accentColor) {
@@ -85,10 +89,9 @@ public class GuiUtils {
    }
 
    public static void renderBackground(GuiGraphics guiGraphics, int x, int y, int w, int h) {
-      guiGraphics.fillGradient(x, y, x + w, y + h, -267382752, -268106480);
-      int borderColor = -16711681;
-      guiGraphics.renderOutline(x, y, w, h, borderColor);
-      guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, -2147418113);
+      guiGraphics.fill(x, y, x + w, y + h, ARCANE_BACKGROUND);
+      guiGraphics.renderOutline(x, y, w, h, ARCANE_BORDER);
+      guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, 0x5534404C);
    }
 
    public static void renderArcaneBackground(GuiGraphics guiGraphics, int x, int y, int w, int h) {
@@ -127,8 +130,35 @@ public class GuiUtils {
    }
 
    public static void renderArcaneSlot(GuiGraphics guiGraphics, int x, int y, int size, int accentColor, boolean active) {
-      guiGraphics.fill(x, y, x + size, y + size, active ? ARCANE_PANEL_ALT : 0xD015191F);
-      guiGraphics.renderOutline(x, y, size, size, active ? accentColor : ARCANE_BORDER);
-      guiGraphics.fill(x + 2, y + 2, x + 6, y + 3, active ? accentColor : ARCANE_TEXT_MUTED);
+      int outer = active ? accentColor : 0xFF41505D;
+      int inner = active ? 0xFF1A2830 : 0xFF11161B;
+      int glow = active ? 0xAAFFFFFF : 0xAA65717C;
+      int mark = active ? accentColor : 0xFF7A8793;
+      guiGraphics.fill(x, y, x + size, y + size, 0xF00A0E12);
+      guiGraphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, inner);
+      guiGraphics.renderOutline(x, y, size, size, outer);
+      if (size >= 6) {
+         guiGraphics.renderOutline(x + 1, y + 1, size - 2, size - 2, glow);
+      }
+      if (size >= 8) {
+         guiGraphics.fill(x + 2, y + 2, x + Math.min(size - 2, 6), y + 3, mark);
+         guiGraphics.fill(x + 2, y + 2, x + 3, y + Math.min(size - 2, 6), mark);
+         guiGraphics.fill(x + size - Math.min(size - 2, 6), y + size - 3, x + size - 2, y + size - 2, mark);
+         guiGraphics.fill(x + size - 3, y + size - Math.min(size - 2, 6), x + size - 2, y + size - 2, mark);
+      }
+   }
+
+   public static void renderArcaneSlotMarker(GuiGraphics guiGraphics, int x, int y, int size, int accentColor, boolean active) {
+      int border = active ? accentColor : 0xFFE1E8EF;
+      int shadow = active ? 0xAA0A0E12 : 0xCC0A0E12;
+      int tick = active ? accentColor : 0xFFF2F5F7;
+      guiGraphics.renderOutline(x - 1, y - 1, size + 2, size + 2, shadow);
+      guiGraphics.renderOutline(x, y, size, size, border);
+      if (size >= 8) {
+         guiGraphics.fill(x + 1, y + 1, x + 6, y + 2, tick);
+         guiGraphics.fill(x + 1, y + 1, x + 2, y + 6, tick);
+         guiGraphics.fill(x + size - 6, y + size - 2, x + size - 1, y + size - 1, tick);
+         guiGraphics.fill(x + size - 2, y + size - 6, x + size - 1, y + size - 1, tick);
+      }
    }
 }

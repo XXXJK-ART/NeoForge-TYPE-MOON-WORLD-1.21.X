@@ -1,0 +1,58 @@
+{
+  "duration": 1.05,
+  "notes": "Gold sigil bound behind the Hualueke caster during charge and release.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.05,
+      "rate": 960,
+      "particle_lifetime": 0.7,
+      "size_variance": 0.0,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.014,
+      "velocity": [0.0, 0.006, 0.0],
+      "velocity_variance": 0.01,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": {
+        "mode": "entity_yaw",
+        "offset": [0.0, -1.35, -1.45],
+        "rotate_with_entity": true
+      },
+      "component": {
+        "type": "image_mask",
+        "texture": "typemoonworld:textures/vfx/orias_sigil.png",
+        "width": 5.2,
+        "height": 5.15,
+        "u_segments": 112,
+        "v_segments": 112,
+        "threshold": 0.14,
+        "reveal": "NONE",
+        "use_mask_texture": false,
+        "sample_density_scale": 0.86,
+        "particle_size_multiplier": 0.78
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.82, 0.82, 0.82], "easing": "ease_out_cubic" },
+        { "t": 0.18, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 0.78, "scale": [1.03, 1.03, 1.03] },
+        { "t": 1.0, "scale": [0.9, 0.9, 0.9], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.14, "color": "#96FFD86A" },
+        { "t": 0.62, "color": "#88F0A51C" },
+        { "t": 0.88, "color": "#70C47718" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.032 },
+        { "t": 0.2, "size": 0.068 },
+        { "t": 0.72, "size": 0.052 },
+        { "t": 1.0, "size": 0.014 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_CASTER_SIGIL",
+      "enable_trail": false
+    }
+  ]
+}

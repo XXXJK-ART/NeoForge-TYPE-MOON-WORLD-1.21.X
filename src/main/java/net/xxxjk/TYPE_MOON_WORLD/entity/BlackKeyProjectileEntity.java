@@ -126,7 +126,8 @@ public class BlackKeyProjectileEntity extends ThrowableItemProjectile implements
    }
 
    public static boolean isUndead(LivingEntity target) {
-      return target instanceof DeadApostleEntity || target.getType().is(net.minecraft.tags.EntityTypeTags.UNDEAD);
+      return DeadApostleEntity.isDeadApostle(target)
+         || target.getType().is(net.minecraft.tags.EntityTypeTags.UNDEAD);
    }
 
    @Override

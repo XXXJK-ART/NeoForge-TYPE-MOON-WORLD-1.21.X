@@ -361,12 +361,21 @@ public class NeroChaosEntity extends DeadApostleEntity {
             && getUUID().equals(marker.neroChaosOwnerUuid())).size();
    }
 
+   public boolean isCombatTarget(LivingEntity target) {
+      return target != null && target != this && target.isAlive()
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && !isAlliedTo(target)
+         && !target.isAlliedTo(this)
+         && (target instanceof Player
+            || target instanceof Monster
+            || target instanceof Villager
+            || target instanceof IronGolem
+            || target instanceof HumanNpcEntity);
+   }
+
    private int countNearbyEnemies(double radius) {
       return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(radius),
-         entity -> entity != this && entity.isAlive() && canAttack(entity)
-            && !isAlliedTo(entity)
-            && !entity.isAlliedTo(this)
-            && !EntityUtils.isImmunePlayerTarget(entity)).size();
+         this::isCombatTarget).size();
    }
 
    private void tickCrowdAoe(long now) {
@@ -374,10 +383,7 @@ public class NeroChaosEntity extends DeadApostleEntity {
       var data = getPersistentData();
       if (now < data.getLong(TAG_CROWD_AOE_COOLDOWN)) return;
       var enemies = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(CROWD_AOE_RADIUS),
-         entity -> entity != this && entity.isAlive() && canAttack(entity)
-            && !isAlliedTo(entity)
-            && !entity.isAlliedTo(this)
-            && !EntityUtils.isImmunePlayerTarget(entity));
+         this::isCombatTarget);
       if (enemies.size() < CROWD_AOE_MIN_ENEMIES || getRandom().nextFloat() > 0.35F) return;
 
       data.putLong(TAG_CROWD_AOE_COOLDOWN, now + CROWD_AOE_COOLDOWN_TICKS);

@@ -1,1 +1,1 @@
-{"parent":"minecraft:block/cube_bottom_top","textures":{"top":"typemoonworld:block/gem_crafting_table_top","side":"typemoonworld:block/gem_crafting_table_side","bottom":"minecraft:block/oak_planks"}}
+{"parent":"minecraft:block/orientable_with_bottom","textures":{"top":"typemoonworld:block/magic_research_table_top","front":"typemoonworld:block/magic_research_table_front","side":"typemoonworld:block/magic_research_table_side","bottom":"minecraft:block/oak_planks"}}

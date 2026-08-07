@@ -1,0 +1,68 @@
+{
+  "duration": 0.82,
+  "notes": "Kimaris ice shell shattering on normal thaw.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.7,
+      "rate": 620,
+      "particle_lifetime": 0.72,
+      "size_variance": 0.13,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.18,
+      "max_vanilla_particles_per_tick": 7,
+      "component": { "type": "sphere", "radius": 1.0, "segments": 180 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.65, 0.45] },
+        { "t": 0.52, "scale": [1.7, 2.15, 1.7], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [2.35, 2.8, 2.35] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.3, "color": "#E68DE7FF" },
+        { "t": 0.72, "color": "#9D3C9FD5" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.48, "size": 0.3 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "KIMARIS_THAW_SHARDS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "snowflake", "count": 2, "spread": [0.55, 0.75, 0.55], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.8 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.78,
+      "rate": 220,
+      "particle_lifetime": 0.62,
+      "size_variance": 0.09,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.06,
+      "component": { "type": "circle", "radius": 1.0, "segments": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.55, 1.0, 0.55] },
+        { "t": 1.0, "scale": [2.8, 1.0, 2.8], "easing": "ease_out_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#D8FFFFFF" },
+        { "t": 0.55, "color": "#AD79DDF8" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.55, "size": 0.22 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "KIMARIS_THAW_WAVE",
+      "enable_trail": true
+    }
+  ]
+}

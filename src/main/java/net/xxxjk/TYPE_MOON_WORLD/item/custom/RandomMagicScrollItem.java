@@ -42,7 +42,7 @@ public class RandomMagicScrollItem extends Item {
             
             // Check Requirement
             if (requiredMagic != null && !requiredMagic.isEmpty()) {
-                if (!vars.learned_magics.contains(requiredMagic)) {
+                if (!MagicLearningStrategy.isLearned(vars, requiredMagic)) {
                     player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.requirement_not_met", 
                         Component.translatable("magic.typemoonworld." + requiredMagic + ".name")), true);
                     return InteractionResultHolder.fail(stack);

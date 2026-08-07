@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
+import com.example.typemoonaddon.TypeMoonAddon;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -167,6 +168,7 @@ public class TYPE_MOON_WORLD {
       ModMobEffects.register(modEventBus);
       ModParticles.register(modEventBus);
       ModSounds.register(modEventBus);
+      new TypeMoonAddon(modEventBus, modContainer);
       ModLootModifiers.register(modEventBus);
       ModBiomes.register(modEventBus);
       TypeMoonWorldModMenus.REGISTRY.register(modEventBus);

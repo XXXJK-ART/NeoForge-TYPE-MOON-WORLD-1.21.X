@@ -1,0 +1,49 @@
+{
+  "duration": 0.72,
+  "notes": "A short golden sigillum pulse bound behind the Andrephius caster during charge.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.68,
+      "rate": 960,
+      "particle_lifetime": 0.34,
+      "size_variance": 0.0,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.008,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.01,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -2.85, -0.82], "rotate_with_entity": true },
+      "component": {
+        "type": "image_mask",
+        "texture": "typemoonworld:textures/effects/andrephius_sigillum.png",
+        "width": 5.8,
+        "height": 5.8,
+        "u_segments": 128,
+        "v_segments": 128,
+        "threshold": 0.14,
+        "reveal": "NONE",
+        "use_mask_texture": false,
+        "sample_density_scale": 0.86,
+        "particle_size_multiplier": 0.78
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.82, 0.82, 0.82], "easing": "ease_out_cubic" },
+        { "t": 0.32, "scale": [1.04, 1.04, 1.04], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.9, 0.9, 0.9], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF1A0" },
+        { "t": 0.12, "color": "#90FFE8A0" },
+        { "t": 0.55, "color": "#78FFB52C" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.032 },
+        { "t": 0.35, "size": 0.068 },
+        { "t": 1.0, "size": 0.014 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_SIGILLUM_CHARGE"
+    }
+  ]
+}

@@ -18,8 +18,14 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 
 public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorItem> {
+   private ServantHairArmorRenderer hairRenderer;
+
    public ServantCardArmorRenderer() {
-      super(new ServantCardArmorModel());
+      this(new ServantCardArmorModel());
+   }
+
+   protected ServantCardArmorRenderer(GeoModel<ServantCardArmorItem> model) {
+      super(model);
       withScale(0.95F, 0.95F);
    }
 
@@ -44,6 +50,14 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       applyArmorSlotVisibility();
       super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer,
          isReRender, partialTick, packedLight, packedOverlay, colour);
+      if (!isReRender && shouldRenderNpcHair()) {
+         if (this.hairRenderer == null) {
+            this.hairRenderer = new ServantHairArmorRenderer();
+         }
+         this.hairRenderer.prepForRender(this.currentEntity, this.currentStack, EquipmentSlot.HEAD,
+            this.baseModel, bufferSource, partialTick, limbSwing, limbSwingAmount, netHeadYaw, headPitch);
+         this.hairRenderer.renderToBuffer(poseStack, buffer, packedLight, packedOverlay, colour);
+      }
    }
 
    @Override
@@ -84,30 +98,24 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
    private void applyHeadEquipmentVisibility() {
       // NPC servants keep their complete head model.  Only a player wearing
       // a servant card should avoid rendering the hair twice over the skin.
-      if (!(this.currentEntity instanceof Player)) {
-         return;
-      }
       if (!(this.currentStack.getItem() instanceof ServantCardArmorItem armor)) {
          return;
       }
       String servantId = armor.servantId();
       switch (servantId) {
-         case "gilgamesh_caster", "li_shuwen" -> {
-            // These dedicated head models contain only the actual headwear:
-            // Caster Gilgamesh's headpiece and Li Shuwen's glasses.
-         }
-         case "medusa" -> {
+         case "enkidu", "medusa", "oda_nobunaga" -> {
             hideBone("hair1");
             hideBone("hair2");
+            hideBone("bone11");
+            hideBone("bone14");
+            hideBone("bone5");
+            hideBone("bone15");
          }
-         case "oda_nobunaga" -> {
-            // Oda's independent head Geo is hair-only.  The complete armor
-            // Geo is used here so bone18 remains while the duplicate hair is
-            // hidden.
-            hideBone("hair1");
-            hideBone("hair2");
-         }
-         default -> setBoneVisible(this.head, false);
+         case "paracelsus" -> hideBone("hair");
+         case "sasaki_kojiro" -> hideBone("bone5");
+         case "ushiwakamaru_rider" -> hideBone("bone24");
+         case "zhao_yun_rider" -> hideBone("bone4");
+         default -> { }
       }
    }
 
@@ -115,7 +123,7 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       this.getGeoModel().getBone(name).ifPresent(bone -> bone.setHidden(true));
    }
 
-   private void revealBoneTree(@Nullable GeoBone bone) {
+   protected void revealBoneTree(@Nullable GeoBone bone) {
       if (bone == null) {
          return;
       }
@@ -124,6 +132,21 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       for (GeoBone child : bone.getChildBones()) {
          revealBoneTree(child);
       }
+   }
+
+   private boolean shouldRenderNpcHair() {
+      if (!(this.currentEntity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity)
+         || this instanceof ServantHairArmorRenderer
+         || this.currentEntity instanceof Player
+         || this.currentSlot != EquipmentSlot.HEAD
+         || !(this.currentStack.getItem() instanceof ServantCardArmorItem armor)) {
+         return false;
+      }
+      return switch (armor.servantId()) {
+         case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
    }
 
    @Override

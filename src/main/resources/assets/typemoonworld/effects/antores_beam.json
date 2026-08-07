@@ -1,0 +1,204 @@
+{
+  "duration": 0.82,
+  "notes": "A reference-style Antores torrent: broad black core, scarlet pressure sheath, torn side streams and rotating red fractures, aligned with one authoritative server beam.",
+  "emitters": [
+    {
+      "start_time": 0.06,
+      "end_time": 0.72,
+      "rate": 420,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.0, 10.0],
+      "velocity_variance": 0.14,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 60.0], "segments": 190 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.2, 0.2, 0.06] },
+        { "t": 0.2, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 0.78, "scale": [1.0, 1.0, 1.0] },
+        { "t": 1.0, "scale": [0.35, 0.35, 1.0], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.07, "color": "#FF050000" },
+        { "t": 0.36, "color": "#FF120000" },
+        { "t": 0.76, "color": "#EE020000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.28 },
+        { "t": 0.18, "size": 1.45 },
+        { "t": 0.7, "size": 1.1 },
+        { "t": 1.0, "size": 0.09 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ANTORES_BLACK_TORRENT_CORE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "electric_spark", "count": 1, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.2 }
+      ]
+    },
+    {
+      "start_time": 0.07,
+      "end_time": 0.74,
+      "rate": 340,
+      "particle_lifetime": 0.44,
+      "size_variance": 0.22,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.0, 11.0],
+      "velocity_variance": 0.16,
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 60.0], "segments": 180 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.22, 0.22, 0.05] },
+        { "t": 0.22, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [0.4, 0.4, 1.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF1600" },
+        { "t": 0.1, "color": "#DDFF2200" },
+        { "t": 0.42, "color": "#FFFF4A18" },
+        { "t": 0.76, "color": "#CCB70A00" },
+        { "t": 1.0, "color": "#00100000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.24, "size": 1.9 },
+        { "t": 0.72, "size": 1.3 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_SCARLET_PRESSURE_SHEATH",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.72,
+      "rate": 250,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.24,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, 7.0],
+      "velocity_variance": 0.18,
+      "component": {
+        "type": "fractal_lightning",
+        "start": [0.0, 0.0, 0.4],
+        "end": [0.0, 0.0, 60.0],
+        "iterations": 5,
+        "roughness": 0.62,
+        "period": 4,
+        "density": 7,
+        "randomize_start": true,
+        "randomize_end": true,
+        "random_radius_min": 0.25,
+        "random_radius_max": 2.2,
+        "segments": 170
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.15, 0.15, 0.08] },
+        { "t": 0.24, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.64, 0.64, 1.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.1, "color": "#EE170000" },
+        { "t": 0.44, "color": "#FF010000" },
+        { "t": 0.78, "color": "#DD390000" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.28, "size": 0.82 },
+        { "t": 0.76, "size": 0.52 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ANTORES_BLACK_TORN_STREAMS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.76,
+      "rate": 220,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, 9.0],
+      "velocity_variance": 0.14,
+      "component": {
+        "type": "fractal_lightning",
+        "start": [0.0, 0.0, 0.3],
+        "end": [0.0, 0.0, 60.0],
+        "iterations": 5,
+        "roughness": 0.5,
+        "period": 3,
+        "density": 6,
+        "randomize_start": true,
+        "randomize_end": true,
+        "random_radius_min": 0.15,
+        "random_radius_max": 1.45,
+        "segments": 150
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.18, 0.18, 0.08] },
+        { "t": 0.22, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [0.55, 0.55, 1.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF2400" },
+        { "t": 0.12, "color": "#FFFF6A20" },
+        { "t": 0.48, "color": "#EEFF1700" },
+        { "t": 0.8, "color": "#AA7A0000" },
+        { "t": 1.0, "color": "#00100000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.3, "size": 0.44 },
+        { "t": 1.0, "size": 0.028 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_SCARLET_TORN_EDGES",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.75,
+      "rate": 210,
+      "particle_lifetime": 0.44,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.0, 8.0],
+      "velocity_variance": 0.12,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.22 + 0.78 * t) * cos(t * 75.398 + time * 25.0)",
+        "expr_y": "(0.22 + 0.78 * t) * sin(t * 75.398 + time * 25.0)",
+        "expr_z": "60.0 * t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 160
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF0B0" },
+        { "t": 0.14, "color": "#FFFFD46B" },
+        { "t": 0.45, "color": "#EEFF3B08" },
+        { "t": 0.78, "color": "#AA560000" },
+        { "t": 1.0, "color": "#00100000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.38, "size": 0.2 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_ROTATING_GOLD_FRACTURE",
+      "enable_trail": true
+    }
+  ]
+}

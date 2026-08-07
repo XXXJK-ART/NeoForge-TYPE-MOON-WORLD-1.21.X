@@ -1,0 +1,76 @@
+{
+  "duration": 3.0,
+  "notes": "A self-contained storage prism that holds a creature before imaginary-space transport.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 3.0,
+      "rate": 950,
+      "particle_lifetime": 0.8,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.0, 0.0], "rotate_with_entity": true },
+      "component": { "type": "cuboid", "width": 1.0, "height": 1.0, "depth": 1.0, "mode": "EDGES", "segments": 96 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.25, 0.25, 0.25], "easing": "ease_out_cubic" },
+        { "t": 0.18, "scale": [1.55, 1.75, 1.55], "easing": "ease_out_back" },
+        { "t": 0.72, "scale": [1.4, 1.6, 1.4] },
+        { "t": 1.0, "scale": [0.18, 0.18, 0.18], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00B9E8FFFF" },
+        { "t": 0.12, "color": "#D9BDEBFFFF" },
+        { "t": 0.6, "color": "#A06CFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.2, "size": 0.16 },
+        { "t": 0.75, "size": 0.1 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "IMAGINARY_STORAGE_PRISM",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [1.15, 1.4, 1.15], "offset": [0.0, 0.0, 0.0], "speed": 0.025, "chance": 0.45 },
+        { "type": "portal", "count": 1, "spread": [0.8, 0.9, 0.8], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.35 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 3.0,
+      "rate": 720,
+      "particle_lifetime": 0.55,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.0, 0.0], "rotate_with_entity": true },
+      "component": { "type": "sphere", "radius": 1.0, "segments": 144 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.75, 0.9, 0.75] },
+        { "t": 0.5, "scale": [1.12, 1.35, 1.12] },
+        { "t": 1.0, "scale": [0.65, 0.8, 0.65] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00F0D8FFFF" },
+        { "t": 0.3, "color": "#886CB8FFFF" },
+        { "t": 0.8, "color": "#557B52D9FF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.35, "size": 0.09 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "IMAGINARY_STORAGE_AURA",
+      "enable_trail": true
+    }
+  ]
+}

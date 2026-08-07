@@ -1,0 +1,38 @@
+{
+  "duration": 0.75,
+  "notes": "A short target lock ring for Zagan.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.7,
+      "rate": 260,
+      "particle_lifetime": 0.5,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.03, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "circle", "radius": 1.0, "segments": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.05, 0.0], "scale": [0.35, 1.0, 0.35] },
+        { "t": 0.55, "pos": [0.0, 0.05, 0.0], "scale": [3.0, 1.0, 3.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.05, 0.0], "scale": [2.2, 1.0, 2.2] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#E8FFFFFF" },
+        { "t": 0.35, "color": "#D276EFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.27 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ZAGAN_TARGET_LOCK",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.8, 0.25, 0.8], "offset": [0.0, 0.1, 0.0], "speed": 0.04, "chance": 0.7 }
+      ]
+    }
+  ]
+}

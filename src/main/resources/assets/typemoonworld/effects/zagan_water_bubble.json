@@ -1,0 +1,52 @@
+{
+  "duration": 0.24,
+  "notes": "A bounded spherical water prison around Zagan's primary hit target. It is visual only and never spreads fluid.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.23,
+      "rate": 520,
+      "particle_lifetime": 0.28,
+      "lifetime_variance": 0.06,
+      "size_variance": 0.16,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": {
+        "mode": "entity_yaw",
+        "offset": [0.0, 0.0, 0.0],
+        "rotate_with_entity": false
+      },
+      "component": {
+        "type": "sphere",
+        "radius": 1.0,
+        "sample_count": 360
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [4.7, 4.7, 4.7] },
+        { "t": 0.48, "scale": [5.0, 5.0, 5.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [5.05, 5.05, 5.05] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00E9FFFF" },
+        { "t": 0.18, "color": "#B8C9F7FF" },
+        { "t": 0.54, "color": "#8A4AADEB" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.36, "size": 0.24 },
+        { "t": 0.78, "size": 0.16 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ZAGAN_BOUNDED_WATER_BUBBLE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 2, "spread": [3.8, 3.8, 3.8], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.55 },
+        { "type": "gust", "count": 1, "spread": [2.2, 2.2, 2.2], "offset": [0.0, 0.0, 0.0], "speed": 0.06, "chance": 0.4 }
+      ]
+    }
+  ]
+}

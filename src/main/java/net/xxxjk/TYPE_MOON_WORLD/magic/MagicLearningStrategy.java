@@ -1,6 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic;
 
 import java.util.Map;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -51,8 +54,32 @@ public final class MagicLearningStrategy {
       ,Map.entry("emerald_winter_river", new Rule(55, true, false, false, false, false, false))
       ,Map.entry("topaz_reinforcement", new Rule(55, true, false, false, false, false, false))
       ,Map.entry("cyan_wind", new Rule(55, true, false, false, false, false, false))
+      ,Map.entry("absorption", new Rule(70, true, false, false, false, false, false))
+      ,Map.entry("airflow_blade", new Rule(20, true, false, false, false, false, false))
+      ,Map.entry("andrasias", new Rule(82, true, false, false, false, false, false))
+      ,Map.entry("andrephius", new Rule(88, true, false, false, false, false, false))
+      ,Map.entry("antores", new Rule(90, true, false, false, false, false, true))
+      ,Map.entry("demon_god_gaze", new Rule(92, true, false, false, false, false, true))
+      ,Map.entry("detection", new Rule(10, true, false, false, false, false, false))
+      ,Map.entry("imaginary_displacement", new Rule(78, true, false, false, false, false, false))
+      ,Map.entry("imaginary_dive", new Rule(55, true, false, false, false, false, false))
+      ,Map.entry("imaginary_space", new Rule(85, true, false, false, false, false, false))
+      ,Map.entry("kimaris", new Rule(75, true, false, false, false, false, false))
+      ,Map.entry("nega_summon", new Rule(95, true, false, false, false, false, true))
+      ,Map.entry("orias", new Rule(80, true, false, false, false, false, false))
+      ,Map.entry("storage", new Rule(60, true, false, false, false, false, false))
+      ,Map.entry("storm", new Rule(72, true, false, false, false, false, false))
+      ,Map.entry("zagan", new Rule(78, true, false, false, false, false, false))
    );
    private static final Set<String> DEFAULT_ANALYZABLE = Set.of("projection", "structural_analysis", "reinforcement", "gravity_magic", "gander", "healing_magic", "magic_bullet", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic", "spiritual_healing", "baptism_rite", "black_key_fire_engraving", "stigma");
+   private static final Map<String, String> DISPLAY_ALIASES = Map.ofEntries(
+      Map.entry("reinforcement_self", "reinforcement"),
+      Map.entry("reinforcement_other", "reinforcement"),
+      Map.entry("reinforcement_item", "reinforcement"),
+      Map.entry("jewel_random_shoot", "jewel_magic_shoot"),
+      Map.entry("jewel_machine_gun", "jewel_magic_release"),
+      Map.entry("gandr_machine_gun", "gander")
+   );
 
    private static Rule rule(String id) { return RULES.getOrDefault(id, new Rule(50, true, false, false, false, false, false)); }
    public static int complexity(String id) { return rule(id).complexity(); }
@@ -67,8 +94,8 @@ public final class MagicLearningStrategy {
       return Integer.MAX_VALUE;
    }
    public static double researchManaCost(String id, double proficiency) {
-      if ("magic_analysis".equals(id)) return 300.0 + Math.max(0.0, Math.min(100.0, proficiency)) * 8.0;
-      return 300.0 + complexity(id) * 8.0;
+       if ("magic_analysis".equals(id)) return 150.0 + Math.max(0.0, Math.min(100.0, proficiency)) * 4.0;
+       return 150.0 + complexity(id) * 4.0;
    }
    public static int researchTicks(String id, double proficiency) {
       if ("magic_analysis".equals(id)) return 200 + (int)Math.round((100.0 - Math.max(0.0, Math.min(100.0, proficiency))) * 4.0);
@@ -108,5 +135,33 @@ public final class MagicLearningStrategy {
    }
    public static boolean isConcretePagePath(String path) {
       return RULES.entrySet().stream().anyMatch(entry -> entry.getValue().material() && pageItemPath(entry.getKey()).equals(path));
+   }
+
+   /** Returns the primary magic represented by a branch entry for UI and proficiency display. */
+   public static String normalizeDisplayId(String id) {
+      if (id == null) return "";
+      return DISPLAY_ALIASES.getOrDefault(id, id);
+   }
+
+   public static boolean isHiddenBranch(String id) {
+      return id != null && DISPLAY_ALIASES.containsKey(id);
+   }
+
+   /** De-duplicates learned IDs while retaining the first primary entry for display. */
+   public static List<String> displayMagicIds(Collection<String> ids) {
+      if (ids == null || ids.isEmpty()) return List.of();
+      LinkedHashSet<String> result = new LinkedHashSet<>();
+      for (String id : ids) {
+         if (id == null || id.isBlank()) continue;
+         result.add(normalizeDisplayId(id));
+      }
+      return List.copyOf(result);
+   }
+
+   public static boolean isLearned(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
+      if (vars == null || id == null || id.isBlank()) return false;
+      if (vars.learned_magics.contains(id)) return true;
+      String primary = normalizeDisplayId(id);
+      return vars.learned_magics.stream().anyMatch(learned -> primary.equals(normalizeDisplayId(learned)));
    }
 }

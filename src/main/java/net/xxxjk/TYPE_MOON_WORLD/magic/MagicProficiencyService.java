@@ -9,7 +9,7 @@ public final class MagicProficiencyService {
 
    public static double get(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null || id == null) return 0.0;
-      return switch (id) {
+      return switch (MagicLearningStrategy.normalizeDisplayId(id)) {
          case "magic_analysis" -> vars.proficiency_magic_analysis;
          case "structural_analysis" -> vars.proficiency_structural_analysis;
          case "projection" -> vars.proficiency_projection;
@@ -53,7 +53,7 @@ public final class MagicProficiencyService {
 
    public static void set(TypeMoonWorldModVariables.PlayerVariables vars, String id, double value) {
       value = Math.max(0.0, Math.min(100.0, Math.round(value * 100.0) / 100.0));
-      switch (id) {
+      switch (MagicLearningStrategy.normalizeDisplayId(id)) {
          case "magic_analysis" -> vars.proficiency_magic_analysis = value;
          case "structural_analysis" -> vars.proficiency_structural_analysis = value;
          case "projection" -> vars.proficiency_projection = value;

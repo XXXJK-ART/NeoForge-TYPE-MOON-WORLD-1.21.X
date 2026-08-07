@@ -57,6 +57,14 @@ public abstract class DeadApostleEntity extends Monster {
       }
    }
 
+   public static boolean isDeadApostle(LivingEntity entity) {
+      return entity instanceof DeadApostleEntity || NeroChaosBeastLogic.isBeast(entity);
+   }
+
+   public static boolean isDeadApostle(Entity entity) {
+      return entity instanceof LivingEntity living && isDeadApostle(living);
+   }
+
    public static AttributeSupplier.Builder attributes(double health, double attack, double armor, double speed) {
       return Monster.createMonsterAttributes()
          .add(Attributes.MAX_HEALTH, health)
@@ -117,13 +125,13 @@ public abstract class DeadApostleEntity extends Monster {
 
    @Override
    public boolean isAlliedTo(Entity entity) {
-      return entity instanceof DeadApostleEntity || super.isAlliedTo(entity);
+      return isDeadApostle(entity) || super.isAlliedTo(entity);
    }
 
    @Override
    public boolean canAttack(LivingEntity target) {
       return !EntityUtils.isImmunePlayerTarget(target)
-         && !(target instanceof DeadApostleEntity)
+         && !isDeadApostle(target)
          && super.canAttack(target);
    }
 
