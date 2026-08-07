@@ -5,13 +5,14 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Arrays;
@@ -38,7 +39,9 @@ public class MagicScrollItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
         
+        boolean reusableBook = isReusableBook();
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+            if (reusableBook && player.getCooldowns().isOnCooldown(this)) return InteractionResultHolder.fail(stack);
             TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
             // Check Requirement
@@ -62,51 +65,36 @@ public class MagicScrollItem extends Item {
                 return InteractionResultHolder.fail(stack);
             }
             
-            // Attempt to learn
-            if (player.getRandom().nextDouble() < successRate) {
+            String magicToLearn = unlearnedMagics.get(0);
+            if (!MagicLearningStrategy.materialAllowed(vars, magicToLearn)) {
+                player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
+                return InteractionResultHolder.fail(stack);
+            }
+            // Books are reusable and use the normal complexity/proficiency formula.
+            if (MagicLearningService.learnFromMaterial(serverPlayer, magicToLearn, player.getRandom().nextDouble())) {
                 if (learnAllAtOnce) {
                     for (String magicId : unlearnedMagics) {
-                        if (!vars.learned_magics.contains(magicId)) {
-                            vars.learned_magics.add(magicId);
-                        }
+                        MagicLearningService.grantFromMaterial(serverPlayer, magicId);
                     }
-                } else {
-                    String magicToLearn = unlearnedMagics.get(0);
-                    vars.learned_magics.add(magicToLearn);
                 }
-                vars.syncPlayerVariables(player);
-
-                if (learnAllAtOnce && unlearnedMagics.size() > 1) {
-                    for (String magicId : unlearnedMagics) {
-                        player.displayClientMessage(
-                                Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magicId + ".name")),
-                                true
-                        );
-                    }
-                } else {
-                    String learnedMagic = unlearnedMagics.get(0);
-                    player.displayClientMessage(
-                            Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + learnedMagic + ".name")),
-                            true
-                    );
-                }
-                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
                 
-                // Damage Item (Reduce Durability) instead of shrinking
-                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                if (reusableBook) player.getCooldowns().addCooldown(this, 100);
+                else stack.shrink(1);
                 return InteractionResultHolder.consume(stack);
             } else {
-                // Failed to learn
-                player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_failed"), true);
-                player.playNotifySound(SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
-                
-                // Damage Item (Reduce Durability)
-                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                if (reusableBook) player.getCooldowns().addCooldown(this, 100);
+                else stack.shrink(1);
                 return InteractionResultHolder.consume(stack);
             }
         }
         
         return InteractionResultHolder.pass(stack);
+    }
+
+    private boolean isReusableBook() {
+        var key = BuiltInRegistries.ITEM.getKey(this);
+        String path = key == null ? "" : key.getPath();
+        return path.startsWith("magic_book_") || path.startsWith("magic_scroll_") && !path.endsWith("_broken");
     }
 
     @Override

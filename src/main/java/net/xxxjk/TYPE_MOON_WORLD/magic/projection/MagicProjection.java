@@ -76,7 +76,7 @@ public class MagicProjection {
             double cost = applyProjectionMagicDiscount(player, calculateCost(target, swordAttributeActive, vars.proficiency_projection));
             if (ManaHelper.consumeOneTimeMagicCost(player, cost)) {
                if (!crestProjectionCast) {
-                  vars.proficiency_projection = Math.min(100.0, vars.proficiency_projection + 0.2);
+                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "projection", 0.2);
                }
 
                ItemStack projected = createProjectedItem(target, swordAttributeActive, player.level().getGameTime());

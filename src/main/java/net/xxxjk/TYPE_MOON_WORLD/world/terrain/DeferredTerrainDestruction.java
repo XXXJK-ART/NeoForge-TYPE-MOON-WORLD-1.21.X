@@ -138,7 +138,11 @@ public final class DeferredTerrainDestruction {
       return level == null ? new TickMetrics(0, 0L, 0) : LAST_METRICS.getOrDefault(level.dimension(), new TickMetrics(0, 0L, 0));
    }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
-      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel));
+      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel, 80.0F));
+   }
+   public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length,
+                                          double width, double height, boolean funnel, float maxHardness) {
+      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel, maxHardness));
    }
    public static void queueUpperHemisphere(ServerLevel level, Vec3 center, double radius, double minimumYExclusive, float maxHardness) {
       if (level != null && radius > 0) add(level, new UpperHemisphereJob(level, center, radius, minimumYExclusive, maxHardness));
@@ -773,9 +777,9 @@ public final class DeferredTerrainDestruction {
       }
    }
    private static final class DirectionalJob extends Job {
-      final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; int along, lateral, vertical;
-      DirectionalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean funnel){super(level);this.origin=origin;this.forward=direction.lengthSqr()<1e-6?new Vec3(0,0,1):direction.normalize();Vec3 worldUp=Math.abs(forward.y)>.95?new Vec3(0,0,1):new Vec3(0,1,0);this.right=forward.cross(worldUp).normalize();this.up=right.cross(forward).normalize();this.length=length;this.width=width;this.height=height;this.funnel=funnel;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
-      void advance(){double distance=along*.5,progress=distance/length;double factor;if(funnel)factor=progress<.35?Math.max(.08,progress/.35):progress>.8?Math.max(.1,1-(progress-.8)*4.5):1;else factor=Math.max(.18,Math.sin(Math.PI*Math.max(0,Math.min(1,progress))));double hw=width*.5*factor,hh=height*.5*factor;int lat=lateral,v=vertical;cursor();if(Math.abs(lat)>hw||Math.abs(v)>hh||distance<4)return;BlockPos p=BlockPos.containing(origin.add(forward.scale(distance)).add(right.scale(lat)).add(up.scale(v)));if(valid(p,80))level.removeBlock(p,false);}
+      final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; final float maxHardness; int along, lateral, vertical;
+      DirectionalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean funnel,float maxHardness){super(level);this.origin=origin;this.forward=direction.lengthSqr()<1e-6?new Vec3(0,0,1):direction.normalize();Vec3 worldUp=Math.abs(forward.y)>.95?new Vec3(0,0,1):new Vec3(0,1,0);this.right=forward.cross(worldUp).normalize();this.up=right.cross(forward).normalize();this.length=length;this.width=width;this.height=height;this.funnel=funnel;this.maxHardness=maxHardness;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
+      void advance(){double distance=along*.5,progress=distance/length;double factor;if(funnel)factor=progress<.35?Math.max(.08,progress/.35):progress>.8?Math.max(.1,1-(progress-.8)*4.5):1;else factor=Math.max(.18,Math.sin(Math.PI*Math.max(0,Math.min(1,progress))));double hw=width*.5*factor,hh=height*.5*factor;int lat=lateral,v=vertical;cursor();if(Math.abs(lat)>hw||Math.abs(v)>hh||distance<4)return;BlockPos p=BlockPos.containing(origin.add(forward.scale(distance)).add(right.scale(lat)).add(up.scale(v)));if(valid(p,maxHardness))level.removeBlock(p,false);}
       void cursor(){int maxLat=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++lateral>maxLat){lateral=-maxLat;if(++along>(int)Math.ceil(length*2))done=true;}}}
    }
    private static final class UpperHemisphereJob extends Job {

@@ -65,6 +65,7 @@ public class TypeMoonCommands {
    private static final double ACCEPT_P_LT_30_MIN = 0.8;
    private static final double ACCEPT_P_LT_50_MIN = 0.9;
    private static final String[] PROFICIENCY_TYPES = new String[]{
+      "magic_analysis",
       "structural_analysis",
       "projection",
       "jewel_magic",
@@ -92,6 +93,7 @@ public class TypeMoonCommands {
       KendoCombatService.TENNEN_ID
    };
    private static final String[] ALL_MAGICS = new String[]{
+      "magic_analysis",
       BASIC_JEWEL_MAGIC_ID,
       ADVANCED_JEWEL_MAGIC_ID,
       RANDOM_JEWEL_MAGIC_ID,
@@ -535,7 +537,9 @@ public class TypeMoonCommands {
          vars.player_magic_attributes_none = false;
          vars.player_magic_attributes_imaginary_number = false;
          vars.player_magic_attributes_sword = false;
+         vars.magic_analysis_active = false;
          vars.proficiency_structural_analysis = 0.0;
+         vars.proficiency_magic_analysis = 0.0;
          vars.proficiency_projection = 0.0;
          vars.proficiency_jewel_magic_shoot = 0.0;
          vars.proficiency_jewel_magic_release = 0.0;
@@ -649,6 +653,7 @@ public class TypeMoonCommands {
          vars.player_magic_attributes_imaginary_number = true;
          vars.player_magic_attributes_sword = true;
          vars.proficiency_structural_analysis = 100.0;
+         vars.proficiency_magic_analysis = 100.0;
          vars.proficiency_projection = 100.0;
          vars.proficiency_jewel_magic_shoot = 100.0;
          vars.proficiency_jewel_magic_release = 100.0;
@@ -1026,6 +1031,9 @@ public class TypeMoonCommands {
          value = Math.max(0.0, Math.min(100.0, value));
          boolean validType = true;
          switch (type) {
+            case "magic_analysis":
+               vars.proficiency_magic_analysis = value;
+               break;
             case "structural_analysis":
                vars.proficiency_structural_analysis = value;
                break;

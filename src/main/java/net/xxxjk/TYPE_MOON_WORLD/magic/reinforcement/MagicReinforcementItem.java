@@ -97,7 +97,7 @@ public class MagicReinforcementItem {
                if (Math.random() * 100.0 < failChancePercent) {
                   player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.failed"), true);
                   player.level().playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 1.0F, 1.0F);
-                  vars.proficiency_reinforcement = Math.min(100.0, vars.proficiency_reinforcement + 0.2);
+                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "reinforcement", 0.2);
                   vars.syncPlayerVariables(player);
                } else {
                   double cost = 50.0 * level;
@@ -179,7 +179,7 @@ public class MagicReinforcementItem {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.item.no_effect"), true);
                      }
 
-                     vars.proficiency_reinforcement = Math.min(100.0, vars.proficiency_reinforcement + 0.5);
+                     net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "reinforcement", 0.5);
                      vars.syncPlayerVariables(player);
                   }
                }

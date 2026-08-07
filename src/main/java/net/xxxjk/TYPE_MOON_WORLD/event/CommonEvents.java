@@ -341,6 +341,16 @@ public class CommonEvents {
             player.setSprinting(false);
             player.stopUsingItem();
          }
+         if (player instanceof ServerPlayer analysisPlayer) {
+            var analysisVars = analysisPlayer.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean activeMovementLock = net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.isActive(analysisVars)
+               && net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.get(analysisVars, "magic_analysis") < 75.0;
+            if (activeMovementLock || analysisVars.analysis_lock_ticks > 0) {
+               analysisPlayer.setDeltaMovement(0.0, analysisPlayer.getDeltaMovement().y, 0.0);
+               analysisPlayer.hurtMarked = true;
+               if (analysisVars.analysis_lock_ticks > 0) analysisVars.analysis_lock_ticks--;
+            }
+         }
          if (player instanceof ServerPlayer serverPlayer) {
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);

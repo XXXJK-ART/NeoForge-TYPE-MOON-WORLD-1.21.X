@@ -157,7 +157,7 @@ public class MagicStructuralAnalysis {
          } else {
             PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, target);
             if (!crestAnalysisCast) {
-               vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "structural_analysis", 0.5);
             }
 
             vars.syncPlayerVariables(player);
@@ -255,7 +255,7 @@ public class MagicStructuralAnalysis {
             } else {
                vars.analyzed_items.add(toSave);
                if (!crestAnalysisCast) {
-                  vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
+                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "structural_analysis", 0.5);
                }
 
                vars.syncPlayerVariables(player);
@@ -271,7 +271,7 @@ public class MagicStructuralAnalysis {
             double failCost = cost * 0.3;
             consumeAnalysisManaOrFail(player, vars, failCost);
             if (!crestAnalysisCast) {
-               vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.1);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "structural_analysis", 0.1);
             }
 
             vars.syncPlayerVariables(player);

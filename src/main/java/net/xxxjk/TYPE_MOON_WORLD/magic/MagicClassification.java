@@ -24,6 +24,7 @@ public final class MagicClassification {
       Map.entry("gandr_machine_gun", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("projection", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("structural_analysis", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("magic_analysis", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("broken_phantasm", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("gravity_magic", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("healing_magic", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),

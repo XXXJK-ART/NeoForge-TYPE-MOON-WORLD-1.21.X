@@ -43,10 +43,7 @@ public final class ElementalMagicHelper {
       }
       amount *= matchingAttribute(vars, magicId) ? 1.5 : 1.0;
       switch (magicId) {
-         case "fire_magic" -> vars.proficiency_fire_magic = Math.min(100.0, vars.proficiency_fire_magic + amount);
-         case "water_magic" -> vars.proficiency_water_magic = Math.min(100.0, vars.proficiency_water_magic + amount);
-         case "wind_magic" -> vars.proficiency_wind_magic = Math.min(100.0, vars.proficiency_wind_magic + amount);
-         case "earth_magic" -> vars.proficiency_earth_magic = Math.min(100.0, vars.proficiency_earth_magic + amount);
+         case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, magicId, amount);
       }
    }
 

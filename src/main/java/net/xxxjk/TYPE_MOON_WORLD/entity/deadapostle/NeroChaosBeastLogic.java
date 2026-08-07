@@ -26,13 +26,13 @@ public final class NeroChaosBeastLogic {
    }
 
    public enum Kind {
-      HOUND(80.0, 0.34, 10.0F, 10L, 2.0),
-      SERPENT(100.0, 0.28, 12.0F, 18L, 2.2),
-      STAG(120.0, 0.24, 25.0F, 28L, 2.7),
-      BIRD(80.0, 0.30, 10.0F, 20L, 2.0),
-      BEAR(150.0, 0.23, 28.0F, 32L, 3.1),
-      CAT(60.0, 0.42, 8.0F, 8L, 1.8),
-      BAT(45.0, 0.36, 7.0F, 9L, 1.7);
+      HOUND(80.0, 0.39, 14.0F, 9L, 2.1),
+      SERPENT(100.0, 0.33, 16.0F, 16L, 2.3),
+      STAG(120.0, 0.28, 30.0F, 26L, 2.9),
+      BIRD(80.0, 0.35, 13.0F, 18L, 2.1),
+      BEAR(150.0, 0.27, 34.0F, 30L, 3.2),
+      CAT(60.0, 0.47, 11.0F, 7L, 1.9),
+      BAT(45.0, 0.41, 9.0F, 8L, 1.8);
 
       private final double baseHealth;
       private final double baseSpeed;
@@ -141,8 +141,7 @@ public final class NeroChaosBeastLogic {
       }
 
       LivingEntity target = beast.getTarget();
-      if (target == null || !target.isAlive() || isAllied(beast, target)
-         || EntityUtils.isImmunePlayerTarget(target)) {
+      if (target == null || !target.isAlive() || isAllied(beast, target) || EntityUtils.isImmunePlayerTarget(target)) {
          target = findTarget(beast, owner);
          beast.setTarget(target);
       }
@@ -151,15 +150,13 @@ public final class NeroChaosBeastLogic {
          beast.getLookControl().setLookAt(target, 30.0F, 30.0F);
          double distanceSqr = beast.distanceToSqr(target);
          if (kind == Kind.BIRD || kind == Kind.BAT) {
-            flyToward(beast, target, movementSpeed(beast, kind));
-         } else if (distanceSqr > kind.reach * kind.reach) {
-            beast.getNavigation().moveTo(target, movementSpeed(beast, kind));
+            handleFlyer(beast, target, kind, distanceSqr, now);
+         } else if (kind == Kind.SERPENT) {
+            handleSerpent(beast, target, distanceSqr, now);
+         } else if (kind == Kind.STAG) {
+            handleStag(beast, target, distanceSqr, now);
          } else {
-            beast.getNavigation().stop();
-            if (now >= beast.getPersistentData().getLong(TAG_NEXT_ATTACK)) {
-               attack(beast, target, kind);
-               beast.getPersistentData().putLong(TAG_NEXT_ATTACK, now + attackCooldown(beast, kind));
-            }
+            handleSkirmisher(beast, target, kind, distanceSqr, now);
          }
       } else if (kind == Kind.BIRD || kind == Kind.BAT) {
          if (beast.distanceToSqr(owner) <= 16.0) {
@@ -205,6 +202,12 @@ public final class NeroChaosBeastLogic {
    }
 
    private static LivingEntity findTarget(Mob beast, NeroChaosEntity owner) {
+      LivingEntity ownerTarget = owner.getTarget();
+      if (ownerTarget != null && ownerTarget.isAlive() && ownerTarget != beast
+         && ownerTarget != owner && !EntityUtils.isImmunePlayerTarget(ownerTarget)
+         && !isAllied(beast, ownerTarget)) {
+         return ownerTarget;
+      }
       return beast.level().getEntitiesOfClass(
             LivingEntity.class,
             owner.getBoundingBox().inflate(48.0),
@@ -212,8 +215,101 @@ public final class NeroChaosBeastLogic {
                && !EntityUtils.isImmunePlayerTarget(target)
                && !isAllied(beast, target)
          ).stream()
-         .min((left, right) -> Double.compare(left.distanceToSqr(beast), right.distanceToSqr(beast)))
+         .min((left, right) -> Double.compare(left.distanceToSqr(owner), right.distanceToSqr(owner)))
          .orElse(null);
+   }
+
+   private static void handleSkirmisher(Mob beast, LivingEntity target, Kind kind, double distanceSqr, long now) {
+      double reachSqr = kind.reach * kind.reach;
+      double speed = movementSpeed(beast, kind);
+      Vec3 packPoint = packPoint(beast, target, kind);
+      if (distanceSqr > reachSqr) {
+         beast.getNavigation().moveTo(packPoint.x, target.getY(), packPoint.z, speed);
+         return;
+      }
+      beast.getNavigation().stop();
+      if (now >= beast.getPersistentData().getLong(TAG_NEXT_ATTACK)) {
+         attack(beast, target, kind);
+         beast.getPersistentData().putLong(TAG_NEXT_ATTACK, now + attackCooldown(beast, kind));
+      }
+      Vec3 orbit = target.position().subtract(beast.position()).multiply(1.0, 0.0, 1.0);
+      if (orbit.lengthSqr() > 1.0E-6) {
+         orbit = new Vec3(-orbit.z, 0.0, orbit.x).normalize();
+         beast.setDeltaMovement(beast.getDeltaMovement().add(orbit.x * 0.025, 0.0, orbit.z * 0.025));
+         beast.hurtMarked = true;
+      }
+      beast.getMoveControl().strafe(kind == Kind.CAT ? 0.34F : 0.24F, distanceSqr < 9.0 ? 0.78F : 0.52F);
+   }
+
+   private static void handleSerpent(Mob beast, LivingEntity target, double distanceSqr, long now) {
+      double speed = movementSpeed(beast, Kind.SERPENT);
+      Vec3 packPoint = packPoint(beast, target, Kind.SERPENT);
+      Vec3 away = beast.position().subtract(packPoint).multiply(1.0, 0.0, 1.0);
+      if (away.lengthSqr() < 1.0E-6) away = beast.getLookAngle().multiply(-1.0, 0.0, -1.0);
+      away = away.normalize();
+      if (distanceSqr < 12.0) {
+         beast.getNavigation().stop();
+         beast.setDeltaMovement(beast.getDeltaMovement().add(away.x * 0.10, 0.0, away.z * 0.10));
+      } else {
+         beast.getNavigation().moveTo(packPoint.x, target.getY(), packPoint.z, speed * 0.92);
+      }
+      if (distanceSqr <= Kind.SERPENT.reach * Kind.SERPENT.reach && now >= beast.getPersistentData().getLong(TAG_NEXT_ATTACK)) {
+         attack(beast, target, Kind.SERPENT);
+         beast.getPersistentData().putLong(TAG_NEXT_ATTACK, now + attackCooldown(beast, Kind.SERPENT));
+      }
+   }
+
+   private static void handleStag(Mob beast, LivingEntity target, double distanceSqr, long now) {
+      double speed = movementSpeed(beast, Kind.STAG);
+      Vec3 packPoint = packPoint(beast, target, Kind.STAG);
+      if (distanceSqr > 64.0) {
+         Vec3 leap = packPoint.subtract(beast.position()).multiply(1.0, 0.0, 1.0);
+         if (leap.lengthSqr() > 1.0E-6) {
+            leap = leap.normalize();
+            beast.setDeltaMovement(beast.getDeltaMovement().add(leap.x * 0.20, 0.12, leap.z * 0.20));
+            beast.hurtMarked = true;
+         }
+         beast.getNavigation().moveTo(packPoint.x, target.getY(), packPoint.z, speed * 1.2);
+      } else if (distanceSqr > 20.0) {
+         beast.getNavigation().moveTo(packPoint.x, target.getY(), packPoint.z, speed * 1.08);
+      } else if (distanceSqr < 8.0) {
+         beast.getNavigation().stop();
+         Vec3 away = beast.position().subtract(packPoint).multiply(1.0, 0.0, 1.0);
+         if (away.lengthSqr() > 1.0E-6) {
+            away = away.normalize();
+            beast.setDeltaMovement(beast.getDeltaMovement().add(away.x * 0.08, 0.0, away.z * 0.08));
+            beast.hurtMarked = true;
+         }
+      } else {
+         beast.getNavigation().moveTo(packPoint.x, target.getY(), packPoint.z, speed);
+      }
+      if (distanceSqr <= Kind.STAG.reach * Kind.STAG.reach && now >= beast.getPersistentData().getLong(TAG_NEXT_ATTACK)) {
+         attack(beast, target, Kind.STAG);
+         beast.getPersistentData().putLong(TAG_NEXT_ATTACK, now + attackCooldown(beast, Kind.STAG));
+      }
+   }
+
+   private static void handleFlyer(Mob beast, LivingEntity target, Kind kind, double distanceSqr, long now) {
+      double speed = movementSpeed(beast, kind);
+      Vec3 packPoint = packPoint(beast, target, kind);
+      if (distanceSqr > 49.0) {
+         flyToward(beast, packPoint, speed * 1.05);
+      } else if (distanceSqr < kind.reach * kind.reach) {
+         Vec3 lift = packPoint.add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(beast.position());
+         if (lift.lengthSqr() > 1.0E-6) {
+            Vec3 velocity = lift.normalize().scale(0.12 + speed * 0.14);
+            beast.setDeltaMovement(velocity.x, Math.max(velocity.y, 0.10), velocity.z);
+            beast.hurtMarked = true;
+         }
+      } else {
+         flyToward(beast, packPoint, speed);
+      }
+      if (distanceSqr <= kind.reach * kind.reach && now >= beast.getPersistentData().getLong(TAG_NEXT_ATTACK)) {
+         attack(beast, target, kind);
+         beast.getPersistentData().putLong(TAG_NEXT_ATTACK, now + attackCooldown(beast, kind));
+         beast.setDeltaMovement(beast.getDeltaMovement().add(0.0, 0.18, 0.0));
+         beast.hurtMarked = true;
+      }
    }
 
    private static void attack(Mob beast, LivingEntity target, Kind kind) {
@@ -232,13 +328,17 @@ public final class NeroChaosBeastLogic {
       }
    }
 
-   private static void flyToward(Mob beast, LivingEntity target, double speed) {
-      Vec3 delta = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(beast.position());
+   private static void flyToward(Mob beast, Vec3 destination, double speed) {
+      Vec3 delta = destination.add(0.0, 1.0, 0.0).subtract(beast.position());
       if (delta.lengthSqr() > 1.0E-6) {
          Vec3 velocity = delta.normalize().scale(0.16 + speed * 0.18);
          beast.setDeltaMovement(velocity);
          beast.hurtMarked = true;
       }
+   }
+
+   private static void flyToward(Mob beast, NeroChaosEntity owner, double speed) {
+      flyToward(beast, owner.position(), speed);
    }
 
    private static void returnToOwner(Mob beast, NeroChaosEntity owner, Kind kind) {
@@ -277,12 +377,30 @@ public final class NeroChaosBeastLogic {
 
    private static double movementSpeed(Mob beast, Kind kind) {
       double base = switch (kind) {
-         case STAG, BEAR -> 1.05;
-         case CAT -> 1.38;
-         case BAT -> 1.32;
-         default -> 1.25;
+         case STAG, BEAR -> 1.16;
+         case CAT -> 1.58;
+         case BAT -> 1.52;
+         default -> 1.38;
       };
       return base * variant(beast).speed;
+   }
+
+   private static Vec3 packPoint(Mob beast, LivingEntity target, Kind kind) {
+      Vec3 offset = packOffset(beast, kind);
+      return target.position().add(offset.x, 0.0, offset.z);
+   }
+
+   private static Vec3 packOffset(Mob beast, Kind kind) {
+      long seed = beast.getUUID().getMostSignificantBits() ^ beast.getUUID().getLeastSignificantBits()
+         ^ ((long)kind.ordinal() << 32);
+      double angle = ((seed & 4095L) / 4096.0) * Math.PI * 2.0;
+      double radius = switch (kind) {
+         case STAG, BEAR -> 3.6;
+         case SERPENT -> 3.0;
+         case BIRD, BAT -> 3.3;
+         default -> 2.4;
+      };
+      return new Vec3(Math.cos(angle) * radius, 0.0, Math.sin(angle) * radius);
    }
 
    private static long attackCooldown(Mob beast, Kind kind) {

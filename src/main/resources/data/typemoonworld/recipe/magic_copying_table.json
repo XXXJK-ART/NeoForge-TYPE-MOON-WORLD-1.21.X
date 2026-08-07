@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["PIP","PTP","PPP"],"key":{"I":{"item":"minecraft:ink_sac"},"P":{"item":"minecraft:oak_planks"},"T":{"item":"minecraft:crafting_table"}},"result":{"id":"typemoonworld:magic_copying_table","count":1}}

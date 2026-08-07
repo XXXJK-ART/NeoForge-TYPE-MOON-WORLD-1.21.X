@@ -84,6 +84,7 @@ public final class BuiltinMagicExecutors {
       }, "typemoonworld_core");
       registry.register("projection", ctx -> executeSimple(ctx, MagicProjection::execute), "typemoonworld_core");
       registry.register("structural_analysis", ctx -> executeSimple(ctx, MagicStructuralAnalysis::execute), "typemoonworld_core");
+      registry.register("magic_analysis", BuiltinMagicExecutors::executeMagicAnalysis, "typemoonworld_core");
       registry.register("broken_phantasm", ctx -> executeSimple(ctx, MagicBrokenPhantasm::execute), "typemoonworld_core");
       registry.register("unlimited_blade_works", ctx -> executeSimple(ctx, MagicUnlimitedBladeWorks::execute), "typemoonworld_core");
       registry.register("sword_barrel_full_open", ctx -> executeSimple(ctx, MagicSwordBarrelFullOpen::execute), "typemoonworld_core");
@@ -113,6 +114,13 @@ public final class BuiltinMagicExecutors {
       }
 
       return MagicExecutionResult.FAILED;
+   }
+
+   private static MagicExecutionResult executeMagicAnalysis(MagicExecutionContext context) {
+      TypeMoonWorldModVariables.PlayerVariables vars = context.vars();
+      vars.magic_analysis_active = !vars.magic_analysis_active;
+      vars.syncPlayerVariables(context.entity());
+      return MagicExecutionResult.SUCCESS;
    }
 
    private static MagicExecutionResult executeReinforcement(MagicExecutionContext context) {

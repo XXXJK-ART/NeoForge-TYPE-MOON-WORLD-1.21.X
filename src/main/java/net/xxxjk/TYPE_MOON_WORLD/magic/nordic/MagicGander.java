@@ -115,7 +115,7 @@ public final class MagicGander {
                   null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDER_DRAGON_SHOOT, SoundSource.PLAYERS, 0.7F, 1.1F + chargeSeconds * 0.05F
                );
             if (!crestCast) {
-               vars.proficiency_gander = Math.min(100.0, vars.proficiency_gander + 0.2 * chargeSeconds);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gander", 0.2 * chargeSeconds);
                vars.syncProficiency(player);
             }
 

@@ -123,7 +123,7 @@ public final class GemEngravingService {
                      }
 
                      setEngravedMagic(offhandStack, selectedMagic);
-                     vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + 0.3);
+                     net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_release", 0.3);
                      vars.syncPlayerVariables(player);
                      player.displayClientMessage(
                         Component.translatable("message.typemoonworld.gem.engrave.success", getMagicName(selectedMagic)), true
@@ -754,7 +754,7 @@ public final class GemEngravingService {
                }
 
                queueGravityActionbarResult(player, resultMessage);
-               vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.2);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gravity_magic", 0.2);
                vars.syncPlayerVariables(player);
                consumeHeldGem(player, hand, heldStack);
                return true;

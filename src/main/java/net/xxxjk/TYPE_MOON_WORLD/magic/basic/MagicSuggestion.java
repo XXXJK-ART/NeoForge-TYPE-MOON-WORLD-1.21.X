@@ -50,7 +50,7 @@ public final class MagicSuggestion {
 
       boolean success = applySuggestion(player, target, proficiency);
       if (success && !vars.isCurrentSelectionFromCrest("suggestion_magic")) {
-         vars.proficiency_suggestion_magic = Math.min(100.0, vars.proficiency_suggestion_magic + 0.18);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "suggestion_magic", 0.18);
       }
       player.displayClientMessage(
          Component.translatable(success ? "message.typemoonworld.magic.suggestion.success" : "message.typemoonworld.magic.suggestion.failed"),

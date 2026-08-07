@@ -77,6 +77,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.FirearmPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenGilgameshVaultScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GilgameshVaultSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicResearchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicCopyMessage;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ImplantMagicCrestMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
@@ -154,6 +157,7 @@ public class TYPE_MOON_WORLD {
       modEventBus.addListener(this::registerNetworking);
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
       NeoForge.EVENT_BUS.register(this);
+      NeoForge.EVENT_BUS.register(MagicAnalysisService.class);
       NeoForge.EVENT_BUS.addListener(this::registerCommands);
       ModCreativeModeTabs.register(modEventBus);
       ModItems.register(modEventBus);
@@ -258,6 +262,8 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(DeleteProjectionStructureMessage.TYPE, DeleteProjectionStructureMessage.STREAM_CODEC, DeleteProjectionStructureMessage::handleData);
       registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
+      registrar.playToServer(MagicResearchMessage.TYPE, MagicResearchMessage.STREAM_CODEC, MagicResearchMessage::handleData);
+      registrar.playToServer(MagicCopyMessage.TYPE, MagicCopyMessage.STREAM_CODEC, MagicCopyMessage::handleData);
       registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
       registrar.playToServer(GilgameshVaultSelectionMessage.TYPE, GilgameshVaultSelectionMessage.STREAM_CODEC, GilgameshVaultSelectionMessage::handleData);
       registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);

@@ -20,8 +20,8 @@ public class NeroChaosStagEntity extends Goat implements NeroChaosBeastLogic.Ner
    public static AttributeSupplier.Builder createAttributes() {
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 120.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.24)
-         .add(Attributes.ATTACK_DAMAGE, 25.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.28)
+         .add(Attributes.ATTACK_DAMAGE, 30.0)
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 

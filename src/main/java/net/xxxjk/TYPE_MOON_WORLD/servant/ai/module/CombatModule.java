@@ -12,10 +12,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
@@ -86,6 +88,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.CombatDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSpectacleService;
+import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 
 import java.util.List;
 
@@ -129,7 +133,16 @@ public final class CombatModule implements ServantAiModule {
 
    private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
       float hardness = state.getDestroySpeed(level, pos);
-      if (state.isAir() || hardness < 0.0F || state.is(Blocks.BEDROCK)) {
+      if (!Config.terrainDestructionEnabled || !Config.npcTerrainDestructionEnabled
+         || !level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)
+         || !level.getWorldBorder().isWithinBounds(pos) || !level.hasChunkAt(pos)
+         || level.getBlockEntity(pos) != null
+         || state.isAir() || hardness < 0.0F || state.is(ModTags.Blocks.TERRAIN_IMMUNE)
+         || state.is(Blocks.BEDROCK) || state.is(Blocks.NETHER_PORTAL) || state.is(Blocks.END_PORTAL)
+         || state.is(Blocks.END_PORTAL_FRAME) || state.is(Blocks.COMMAND_BLOCK)
+         || state.is(Blocks.CHAIN_COMMAND_BLOCK) || state.is(Blocks.REPEATING_COMMAND_BLOCK)
+         || state.is(Blocks.STRUCTURE_BLOCK) || state.is(Blocks.JIGSAW)
+         || state.getExplosionResistance(level, pos, null) >= 1200) {
          return false;
       }
       if (!level.removeBlock(pos, false)) {
@@ -1219,16 +1232,16 @@ public final class CombatModule implements ServantAiModule {
       }
       Vec3 start = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
       Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
-      for (double step = 0.0; step <= 1.0; step += 0.08) {
-         Vec3 sample = start.lerp(end, step);
-         BlockPos center = BlockPos.containing(sample);
-         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-1, -1, -1), center.offset(1, 1, 1))) {
-            BlockState state = serverLevel.getBlockState(pos);
-            float hardness = state.getDestroySpeed(serverLevel, pos);
-            if (!state.isAir() && hardness >= 0.0F && hardness < 50.0F && !state.is(Blocks.BEDROCK)) {
-               serverLevel.removeBlock(pos, false);
-            }
-         }
+      Vec3 direction = end.subtract(start).multiply(1.0, 0.0, 1.0);
+      if (direction.lengthSqr() > 1.0E-4) {
+         direction = direction.normalize();
+         TerrainImpactService.impactForwardBreakthrough(serverLevel, entity,
+            start.add(direction.scale(0.4)),
+            direction,
+            ServantCombatSpectacleService.breakthroughProfile(entity, target, true),
+            Math.max(3.0, Math.min(10.0, start.distanceTo(end))),
+            2,
+            3);
       }
       serverLevel.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.4, entity.getZ(), 12, 0.5, 0.2, 0.5, 0.05);
    }
@@ -1493,29 +1506,21 @@ public final class CombatModule implements ServantAiModule {
          }
       }
 
-      BlockPos center = entity.blockPosition();
       double terrainScale = terrainBreakScale(entity);
-      int stompRadiusBlocks = Math.max(1, (int)Math.ceil(3.0 * terrainScale));
-      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-stompRadiusBlocks, -1, -stompRadiusBlocks), center.offset(stompRadiusBlocks, 1, stompRadiusBlocks))) {
-         if (!isInIrregularBreakShape(sl, pos, center, 3.45 * terrainScale, 0.8, 0.75, 0.68)) {
-            continue;
-         }
-         BlockState state = sl.getBlockState(pos);
-         float hardness = state.getDestroySpeed(sl, pos);
-         if (!state.isAir() && hardness >= 0.0F && hardness < 30.0F && !state.is(Blocks.BEDROCK)) {
-            destroyBlockWithCombatFx(sl, pos, state, true);
-         }
-      }
-      for (int i = 0; i < 16; i++) {
-         double angle = (Math.PI * 2.0) * i / 16.0;
-         BlockPos ringPos = center.offset((int)Math.round(Math.cos(angle) * 4.0 * terrainScale), 0, (int)Math.round(Math.sin(angle) * 4.0 * terrainScale));
-         if (blockNoise(sl, ringPos) > 0.72) {
-            ringPos = ringPos.offset((int)Math.round(Math.cos(angle) * blockNoise(sl, ringPos.above())), 0, (int)Math.round(Math.sin(angle) * blockNoise(sl, ringPos.below())));
-         }
-         BlockState state = sl.getBlockState(ringPos);
-         float hardness = state.getDestroySpeed(sl, ringPos);
-         if (!state.isAir() && hardness >= 0.0F && hardness < 30.0F && !state.is(Blocks.BEDROCK)) {
-            destroyBlockWithCombatFx(sl, ringPos, state, true);
+      TerrainImpactService.impact(sl, entity,
+         entity.position().add(0.0, entity.getBbHeight() * 0.08, 0.0),
+         ServantCombatSpectacleService.routineGroundProfile(entity, entity.getTarget(), 0.72, false),
+         TerrainImpactService.Shape.UPPER_SURFACE_CRATER);
+      if (ServantCombatSpectacleService.isForcedBreaker(entity)) {
+         Vec3 forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+         if (forward.lengthSqr() > 1.0E-4) {
+            TerrainImpactService.impactForwardBreakthrough(sl, entity,
+               entity.position().add(forward.normalize().scale(1.0)).add(0.0, entity.getBbHeight() * 0.45, 0.0),
+               forward.normalize(),
+               ServantCombatSpectacleService.breakthroughProfile(entity, entity.getTarget(), true),
+               Math.max(2.0, 2.5 * terrainScale),
+               3,
+               3);
          }
       }
 
@@ -1707,9 +1712,11 @@ public final class CombatModule implements ServantAiModule {
       dir = dir.normalize();
       Vec3 center = entity.position().add(dir.scale(heavy ? 2.2 : 1.6))
          .add(0.0, entity.getBbHeight() * 0.5, 0.0);
-      boolean queued = TerrainImpactService.impact(sl, entity, center,
-         TerrainImpactProfile.of(heavy ? TerrainImpactProfile.Tier.HEAVY : TerrainImpactProfile.Tier.MEDIUM),
-         TerrainImpactService.Shape.AIR_SPHERE);
+      boolean queued = TerrainImpactService.impactWallTunnel(sl, entity, center, dir,
+         ServantCombatSpectacleService.breakthroughProfile(entity, target, heavy),
+         heavy ? 3.8 : 2.5,
+         heavy ? 3 : 2,
+         heavy ? 4 : 3);
       if (!queued) return false;
       data.putInt("LastCombatWallBreakTick", tick);
       Vec3 fx = entity.position().add(dir.scale(1.4)).add(0.0, entity.getBbHeight() * 0.42, 0.0);
@@ -1887,30 +1894,19 @@ public final class CombatModule implements ServantAiModule {
       if (!(entity.level() instanceof ServerLevel sl)) return;
       LivingEntity target = entity.getTarget();
       if (target == null) return;
-      Vec3 dir = target.position().subtract(entity.position()).normalize();
+      Vec3 dir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (dir.lengthSqr() < 1.0E-4) return;
+      dir = dir.normalize();
       entity.faceVector(dir);
-      BlockPos center = entity.blockPosition().above();
-      int broken = 0;
-      // 前方3格、中心±2格宽度；限制单次破坏数量，避免战斗 tick 里过量改方块。
-      for (int d = 1; d <= 3 && broken < 12; d++) {
-         for (int w = -2; w <= 2; w++) {
-            Vec3 perp = new Vec3(-dir.z, 0, dir.x).scale(w);
-            BlockPos pos = center.offset(
-               (int) Math.round(dir.x * d + perp.x),
-               0,
-               (int) Math.round(dir.z * d + perp.z));
-            BlockState state = sl.getBlockState(pos);
-            float hard = state.getDestroySpeed(sl, pos);
-            if (!state.isAir() && hard >= 0 && hard < 70 && !state.is(Blocks.BEDROCK)) {
-               sl.removeBlock(pos, false);
-               broken++;
-               if (broken >= 12) {
-                  break;
-               }
-            }
-         }
-      }
-      if (broken > 0) {
+      boolean queued = TerrainImpactService.impactForwardBreakthrough(sl, entity,
+         entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0).add(dir.scale(0.8)),
+         dir,
+         ServantCombatSpectacleService.breakthroughProfile(entity, target, true),
+         3.0,
+         3,
+         4);
+      // 前方破障统一走地形服务，兼容硬度、方块实体和保护配置。
+      if (queued) {
          // 挥砍粒子
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
             entity.getX() + dir.x * 2.0,
@@ -1939,6 +1935,15 @@ public final class CombatModule implements ServantAiModule {
       target.hurt(src, (float) dmg);
       Vec3 uppercutDir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       pushWithImpactCrater(sl, entity, target, uppercutDir, 1.35, 1.05, 2.0, 14);
+      Vec3 chestCenter = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
+      Vec3 forward = uppercutDir.lengthSqr() < 1.0E-4 ? entity.getLookAngle().multiply(1.0, 0.0, 1.0) : uppercutDir.normalize();
+      if (forward.lengthSqr() > 1.0E-4) {
+         TerrainImpactService.impactForwardBreakthrough(sl, entity, chestCenter, forward,
+            ServantCombatSpectacleService.breakthroughProfile(entity, target, false),
+            Math.max(2.1, 2.5 + terrainBreakScale(entity)),
+            2 + (ServantCombatSpectacleService.isForcedBreaker(entity) ? 1 : 0),
+            3 + (ServantCombatSpectacleService.isForcedBreaker(entity) ? 1 : 0));
+      }
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
          target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
          2, 0.0, 0.0, 0.0, 0.0);
@@ -1957,6 +1962,17 @@ public final class CombatModule implements ServantAiModule {
       double dmg = baseAtk * 1.2;
       DamageSource src = entity.damageSources().mobAttack(entity);
       Vec3 look = entity.getLookAngle();
+      Vec3 forward = look.multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() > 1.0E-4) {
+         forward = forward.normalize();
+         TerrainImpactService.impactWallTunnel(sl, entity,
+            entity.position().add(0.0, entity.getBbHeight() * 0.48, 0.0).add(forward.scale(0.95)),
+            forward,
+            ServantCombatSpectacleService.breakthroughProfile(entity, target, ServantCombatSpectacleService.isForcedBreaker(entity)),
+            Math.max(2.0, 3.8 + terrainBreakScale(entity)),
+            Math.max(2, (int)Math.ceil(1.5 + terrainBreakScale(entity))),
+            Math.max(3, (int)Math.ceil(2.0 + terrainBreakScale(entity) * 0.65)));
+      }
       AABB swingBox = entity.getBoundingBox().inflate(2.5).move(look.scale(1.0));
       List<LivingEntity> near = sl.getEntitiesOfClass(
          LivingEntity.class, swingBox,
@@ -2527,13 +2543,29 @@ public final class CombatModule implements ServantAiModule {
             pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, heavySlam ? 0.95 : 0.68, heavySlam ? 2.8 : 2.2, heavySlam ? 24 : 16);
          }
       }
+      TerrainImpactProfile slamProfile = ServantCombatSpectacleService.routineGroundProfile(
+         entity, entity.getTarget(), heavySlam ? 0.95 : 0.68, heavySlam);
+      Vec3 slamCenter = entity.position().add(0.0, entity.getBbHeight() * 0.08, 0.0);
+      TerrainImpactService.impact(sl, entity, slamCenter, slamProfile, TerrainImpactService.Shape.UPPER_SURFACE_CRATER);
+      if (ServantCombatSpectacleService.isForcedBreaker(entity)) {
+         Vec3 forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);
+         if (forward.lengthSqr() > 1.0E-4) {
+            forward = forward.normalize();
+            TerrainImpactService.impactForwardBreakthrough(sl, entity,
+               slamCenter.add(forward.scale(1.15)).add(0.0, entity.getBbHeight() * 0.15, 0.0),
+               forward,
+               ServantCombatSpectacleService.breakthroughProfile(entity, entity.getTarget(), true),
+               Math.max(2.25, slamRadius * 1.25),
+               heavySlam ? 4 : 3,
+               heavySlam ? 4 : 3);
+         }
+      }
       sl.sendParticles(ParticleTypes.EXPLOSION,
          entity.getX(), entity.getY() + 0.5, entity.getZ(),
          heavySlam ? 10 : 7, 2.6, 0.65, 2.6, 0.0);
       sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
          entity.getX(), entity.getY() + 0.25, entity.getZ(),
          heavySlam ? 90 : 58, slamRadius * 0.35, 0.45, slamRadius * 0.35, 0.06);
-      // triggerGroundSlam queues the crater through the shared terrain service.
    }
 
    /**
@@ -2548,29 +2580,19 @@ public final class CombatModule implements ServantAiModule {
       Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
       double sweepDamage = entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2;
       DamageSource src = entity.damageSources().mobAttack(entity);
-
-      int sweepBroken = 0;
       double terrainScale = terrainBreakScale(entity);
-      int sweepLimit = scaledBreakLimit(40, terrainScale);
-      for (double r = 0.5; r <= 5.0 * terrainScale && sweepBroken < sweepLimit; r += 0.5) {
-         for (double theta = -Math.PI / 2; theta <= Math.PI / 2; theta += Math.PI / 8) {
-            double x = look.x * Math.cos(theta) - look.z * Math.sin(theta);
-            double z = look.x * Math.sin(theta) + look.z * Math.cos(theta);
-            Vec3 offset = new Vec3(x, 0, z).normalize().scale(r);
-            BlockPos pos = BlockPos.containing(center.add(offset));
-            if (blockNoise(sl, pos) > 0.80 && r > 1.5) {
-               continue;
-            }
-            BlockState state = sl.getBlockState(pos);
-            if (!state.isAir() && (state.getDestroySpeed(sl, pos) >= 0.0F || state.getFluidState().isSource())) {
-               if (destroyBlockWithCombatFx(sl, pos, state, true)) {
-                  sweepBroken++;
-               }
-               if (sweepBroken >= sweepLimit) {
-                  break;
-               }
-            }
-         }
+      TerrainImpactProfile sweepProfile = ServantCombatSpectacleService.breakthroughProfile(
+         entity, entity.getTarget(), ServantCombatSpectacleService.isForcedBreaker(entity));
+      Vec3 forward = look.multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() > 1.0E-4) {
+         forward = forward.normalize();
+         TerrainImpactService.impactWallTunnel(sl, entity,
+            center.add(forward.scale(1.0)).add(0.0, entity.getBbHeight() * 0.10, 0.0),
+            forward,
+            sweepProfile,
+            Math.max(2.5, 4.0 * terrainScale),
+            Math.max(3, (int)Math.ceil(2.0 + terrainScale)),
+            Math.max(3, (int)Math.ceil(2.0 + terrainScale * 0.75)));
       }
 
       AABB sweepBox = entity.getBoundingBox().inflate(4.5).move(look.scale(2.0));

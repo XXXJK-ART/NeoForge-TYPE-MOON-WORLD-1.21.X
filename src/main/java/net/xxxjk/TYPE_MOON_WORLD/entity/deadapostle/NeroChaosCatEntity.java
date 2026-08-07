@@ -20,8 +20,8 @@ public class NeroChaosCatEntity extends Cat implements NeroChaosBeastLogic.NeroC
    public static AttributeSupplier.Builder createAttributes() {
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 60.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.42)
-         .add(Attributes.ATTACK_DAMAGE, 8.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.47)
+         .add(Attributes.ATTACK_DAMAGE, 11.0)
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 

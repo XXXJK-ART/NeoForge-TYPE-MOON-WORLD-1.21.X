@@ -22,8 +22,8 @@ public class NeroChaosBirdEntity extends Parrot implements NeroChaosBeastLogic.N
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 80.0)
          .add(Attributes.FLYING_SPEED, 0.48)
-         .add(Attributes.MOVEMENT_SPEED, 0.30)
-         .add(Attributes.ATTACK_DAMAGE, 10.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.35)
+         .add(Attributes.ATTACK_DAMAGE, 13.0)
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 

@@ -40,7 +40,7 @@ public final class MagicMagicBullet {
       fire(player, player.getLookAngle(), damage, slowPercent(proficiency), range(proficiency), speed(proficiency), element, 0.08F, proficiency);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.magic_bullet.cast"), true);
       if (!vars.isCurrentSelectionFromCrest("magic_bullet")) {
-         vars.proficiency_magic_bullet = Math.min(100.0, vars.proficiency_magic_bullet + 0.18);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "magic_bullet", 0.18);
       }
       return true;
    }

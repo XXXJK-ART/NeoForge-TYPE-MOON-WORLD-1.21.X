@@ -142,9 +142,9 @@ public final class PlayerMagicCastService {
       }
       if ("jewel_random_shoot".equals(magicId)) {
          cooldown = Math.max(1.0, JEWEL_BASE_COOLDOWN - vars.proficiency_jewel_magic_shoot * 0.2);
-         vars.proficiency_jewel_magic_shoot = Math.min(100.0, vars.proficiency_jewel_magic_shoot + 0.1);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_shoot", 0.1);
       } else if ("jewel_machine_gun".equals(magicId)) {
-         vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + 0.5);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_release", 0.5);
       } else if (isLegacyJewelMagic(magicId)) {
          cooldown = Math.max(1.0, JEWEL_BASE_COOLDOWN - vars.proficiency_jewel_magic_shoot * 0.2);
       }

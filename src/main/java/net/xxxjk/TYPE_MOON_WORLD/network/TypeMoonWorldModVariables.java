@@ -156,8 +156,11 @@ public class TypeMoonWorldModVariables {
          }
 
          clone.magic_cooldown = original.magic_cooldown;
+         clone.analysis_lock_ticks = original.analysis_lock_ticks;
+         clone.magic_analysis_active = original.magic_analysis_active;
          clone.reinforcement_level = original.reinforcement_level;
          clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
+         clone.proficiency_magic_analysis = original.proficiency_magic_analysis;
          clone.proficiency_projection = original.proficiency_projection;
          clone.proficiency_reinforcement = original.proficiency_reinforcement;
          clone.proficiency_jewel_magic_shoot = original.proficiency_jewel_magic_shoot;
@@ -965,8 +968,11 @@ public class TypeMoonWorldModVariables {
       public List<TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry> magic_wheels = new ArrayList<>();
       public int magic_system_data_version = 0;
       public double magic_cooldown = 0.0;
+      public int analysis_lock_ticks = 0;
+      public boolean magic_analysis_active = false;
       public int reinforcement_level = 1;
       public double proficiency_structural_analysis = 0.0;
+      public double proficiency_magic_analysis = 0.0;
       public double proficiency_projection = 0.0;
       public double proficiency_reinforcement = 0.0;
       public double proficiency_jewel_magic_shoot = 0.0;
@@ -2039,7 +2045,10 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("is_magic_circuit_open", this.is_magic_circuit_open);
          nbt.putDouble("magic_circuit_open_timer", this.magic_circuit_open_timer);
          nbt.putDouble("magic_cooldown", this.magic_cooldown);
+         nbt.putInt("analysis_lock_ticks", this.analysis_lock_ticks);
+         nbt.putBoolean("magic_analysis_active", this.magic_analysis_active);
          nbt.putDouble("proficiency_structural_analysis", this.proficiency_structural_analysis);
+         nbt.putDouble("proficiency_magic_analysis", this.proficiency_magic_analysis);
          nbt.putDouble("proficiency_projection", this.proficiency_projection);
          nbt.putDouble("proficiency_jewel_magic_shoot", this.proficiency_jewel_magic_shoot);
          nbt.putDouble("proficiency_jewel_magic_release", this.proficiency_jewel_magic_release);
@@ -2318,7 +2327,10 @@ public class TypeMoonWorldModVariables {
          this.is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
          this.magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
          this.magic_cooldown = nbt.getDouble("magic_cooldown");
+         this.analysis_lock_ticks = Math.max(0, nbt.getInt("analysis_lock_ticks"));
+         this.magic_analysis_active = nbt.getBoolean("magic_analysis_active");
          this.proficiency_structural_analysis = nbt.getDouble("proficiency_structural_analysis");
+         this.proficiency_magic_analysis = nbt.contains("proficiency_magic_analysis") ? nbt.getDouble("proficiency_magic_analysis") : 0.0;
          this.proficiency_projection = nbt.getDouble("proficiency_projection");
          this.proficiency_jewel_magic_shoot = nbt.getDouble("proficiency_jewel_magic_shoot");
          this.proficiency_jewel_magic_release = nbt.getDouble("proficiency_jewel_magic_release");
@@ -3249,6 +3261,7 @@ public class TypeMoonWorldModVariables {
 
    public record ProficiencySyncMessage(
       double structural_analysis,
+      double magic_analysis,
       double projection,
       double jewel_magic_shoot,
       double jewel_magic_release,
@@ -3275,6 +3288,7 @@ public class TypeMoonWorldModVariables {
       public static final StreamCodec<RegistryFriendlyByteBuf, TypeMoonWorldModVariables.ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
          (buffer, message) -> {
             buffer.writeDouble(message.structural_analysis);
+            buffer.writeDouble(message.magic_analysis);
             buffer.writeDouble(message.projection);
             buffer.writeDouble(message.jewel_magic_shoot);
             buffer.writeDouble(message.jewel_magic_release);
@@ -3315,6 +3329,7 @@ public class TypeMoonWorldModVariables {
             buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
+            buffer.readDouble(),
             buffer.readDouble()
          )
       );
@@ -3322,6 +3337,7 @@ public class TypeMoonWorldModVariables {
       public ProficiencySyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
          this(
             vars.proficiency_structural_analysis,
+            vars.proficiency_magic_analysis,
             vars.proficiency_projection,
             vars.proficiency_jewel_magic_shoot,
             vars.proficiency_jewel_magic_release,
@@ -3356,6 +3372,7 @@ public class TypeMoonWorldModVariables {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)context.player()
                      .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                   vars.proficiency_structural_analysis = message.structural_analysis;
+                  vars.proficiency_magic_analysis = message.magic_analysis;
                   vars.proficiency_projection = message.projection;
                   vars.proficiency_jewel_magic_shoot = message.jewel_magic_shoot;
                   vars.proficiency_jewel_magic_release = message.jewel_magic_release;

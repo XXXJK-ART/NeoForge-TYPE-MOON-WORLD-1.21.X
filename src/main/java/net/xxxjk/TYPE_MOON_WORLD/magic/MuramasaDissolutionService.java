@@ -14,13 +14,18 @@ public final class MuramasaDissolutionService {
    }
 
    public static void schedule(LivingEntity entity) {
+      schedule(entity, DISSOLUTION_DELAY_TICKS);
+   }
+
+   public static void schedule(LivingEntity entity, int delayTicks) {
       if (entity == null || entity.level().isClientSide()
          || entity instanceof Player player && player.isCreative()) {
          return;
       }
+      int clampedDelay = Math.max(1, delayTicks);
       entity.getPersistentData().putLong(
          DISSOLUTION_UNTIL,
-         entity.level().getGameTime() + DISSOLUTION_DELAY_TICKS
+         entity.level().getGameTime() + clampedDelay
       );
    }
 

@@ -161,6 +161,10 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_FRAGMENTS = ITEMS.register("magic_fragments",
             () -> new Magic_fragmentsItem(new Item.Properties()));
+    public static final DeferredItem<Item> UNKNOWN_MAGIC_PAGE = ITEMS.register("unknown_magic_page",
+            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MAGIC_WASTE_PAPER = ITEMS.register("magic_waste_paper",
+            () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));
@@ -555,6 +559,14 @@ public class ModItems {
     public static final DeferredItem<Item> MAGIC_SCROLL_PROJECTION_BROKEN = ITEMS.register("magic_scroll_projection_broken",
             () -> new MagicScrollItem(new Item.Properties().durability(5), 0.2, true, (String)null, 
                     "projection", "structural_analysis"));
+    public static final DeferredItem<Item> MAGIC_BOOK_PROJECTION = ITEMS.register("magic_book_projection",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, false, (String)null, "projection"));
+    public static final DeferredItem<Item> MAGIC_PAGE_PROJECTION = ITEMS.register("magic_page_projection",
+            () -> new RandomMagicScrollItem(new Item.Properties(), 0.5, (String)null, "projection"));
+    public static final DeferredItem<Item> MAGIC_BOOK_STRUCTURAL_ANALYSIS = ITEMS.register("magic_book_structural_analysis",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, false, (String)null, "structural_analysis"));
+    public static final DeferredItem<Item> MAGIC_PAGE_STRUCTURAL_ANALYSIS = ITEMS.register("magic_page_structural_analysis",
+            () -> new RandomMagicScrollItem(new Item.Properties(), 0.5, (String)null, "structural_analysis"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM = ITEMS.register("magic_scroll_broken_phantasm",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.5, false, "projection", // Require Projection

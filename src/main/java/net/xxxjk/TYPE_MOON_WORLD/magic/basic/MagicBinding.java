@@ -44,7 +44,7 @@ public final class MagicBinding {
 
       boolean success = applyBinding(player, target, proficiency);
       if (success && !vars.isCurrentSelectionFromCrest("binding_magic")) {
-         vars.proficiency_binding_magic = Math.min(100.0, vars.proficiency_binding_magic + 0.18);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "binding_magic", 0.18);
       }
       return success;
    }

@@ -20,8 +20,8 @@ public class NeroChaosSerpentEntity extends Silverfish implements NeroChaosBeast
    public static AttributeSupplier.Builder createAttributes() {
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 100.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.28)
-         .add(Attributes.ATTACK_DAMAGE, 12.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.33)
+         .add(Attributes.ATTACK_DAMAGE, 16.0)
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 

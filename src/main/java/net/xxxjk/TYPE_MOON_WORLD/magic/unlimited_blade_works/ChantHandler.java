@@ -354,7 +354,7 @@ public class ChantHandler {
                   vars.ubw_chant_timer = 0;
                   vars.ubw_chant_progress++;
                   if (vars.proficiency_unlimited_blade_works < 100.0) {
-                     vars.proficiency_unlimited_blade_works = Math.min(100.0, vars.proficiency_unlimited_blade_works + 0.05);
+                     net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "unlimited_blade_works", 0.05);
                      if (vars.proficiency_unlimited_blade_works >= 1.0 && !vars.learned_magics.contains("sword_barrel_full_open")) {
                         vars.learned_magics.add("sword_barrel_full_open");
                         player.displayClientMessage(

@@ -3,9 +3,12 @@ package net.xxxjk.TYPE_MOON_WORLD.gametest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.NeroChaosRules;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
@@ -153,6 +156,27 @@ public final class NeroChaosGameTests {
          helper.assertTrue(nero.getHealth() >= 349.0F,
             "Devour should restore 50 health after the target dies; Nero health=" + nero.getHealth()
                + ", prey health=" + prey.getHealth());
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void devourFinishesArmoredTargetsInsteadOfLeavingAThreadOfHealth(GameTestHelper helper) {
+      NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
+      var prey = helper.spawn(EntityType.ZOMBIE, new BlockPos(6, 8, 3));
+      prey.setNoAi(true);
+      prey.setHealth(12.0F);
+      nero.setHealth(300.0F);
+      prey.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+      prey.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+      prey.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+      prey.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
+      nero.getPersistentData().putUUID("NeroChaosDevourTarget", prey.getUUID());
+      nero.getPersistentData().putLong("NeroChaosDevourUntil", helper.getLevel().getGameTime() + 2L);
+
+      helper.runAfterDelay(5, () -> {
+         helper.assertTrue(!prey.isAlive(), "Devour should fully finish an armored target");
+         helper.assertTrue(nero.getHealth() >= 349.0F, "Devour should still heal after the kill");
          helper.succeed();
       });
    }

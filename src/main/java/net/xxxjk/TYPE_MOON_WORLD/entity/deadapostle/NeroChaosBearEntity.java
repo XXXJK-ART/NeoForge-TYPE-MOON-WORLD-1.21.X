@@ -20,8 +20,8 @@ public class NeroChaosBearEntity extends PolarBear implements NeroChaosBeastLogi
    public static AttributeSupplier.Builder createAttributes() {
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 150.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.23)
-         .add(Attributes.ATTACK_DAMAGE, 28.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.27)
+         .add(Attributes.ATTACK_DAMAGE, 34.0)
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 

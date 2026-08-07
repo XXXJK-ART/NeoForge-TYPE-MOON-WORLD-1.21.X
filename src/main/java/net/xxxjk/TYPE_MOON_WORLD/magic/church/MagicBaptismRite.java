@@ -54,7 +54,7 @@ public final class MagicBaptismRite {
       int chantTicks = chantTicks(proficiency);
       BaptismRiteEventHandler.start(player, targetId, proficiency, chantTicks);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.start", target.getDisplayName()), true);
-      vars.proficiency_baptism_rite = Math.min(100.0, vars.proficiency_baptism_rite + 0.16);
+      net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "baptism_rite", 0.16);
       vars.syncProficiency(player);
       return true;
    }

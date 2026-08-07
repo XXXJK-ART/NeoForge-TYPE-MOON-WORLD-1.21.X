@@ -56,6 +56,15 @@ public class Config {
    public static final IntValue MAX_PHYSICAL_TERRAIN_DEBRIS = BUILDER.comment(
       "Maximum active TYPE-MOON physical terrain debris entities per dimension")
       .defineInRange("maxPhysicalTerrainDebris", 48, 0, 128);
+   public static final DoubleValue COMBAT_SPECTACLE_INTENSITY = BUILDER.comment(
+      "Daily servant combat spectacle intensity. Raises non-NP knockback debris, wall tunnels and shallow craters.")
+      .defineInRange("combatSpectacleIntensity", 1.35, 0.5, 2.5);
+   public static final BooleanValue PROTECT_COMBAT_FOOTING = BUILDER.comment(
+      "Keep routine combat terrain impacts from digging out the attacker's own footing.")
+      .define("protectCombatFooting", true);
+   public static final IntValue MAX_CINEMATIC_CHAIN_IMPACTS = BUILDER.comment(
+      "Maximum chained wall impacts for heavy routine combat launches")
+      .defineInRange("maxCinematicChainImpacts", 4, 1, 6);
    public static final BooleanValue ARBITRATED_COMBAT_AI_ENABLED = BUILDER.comment("Enable intent arbitration for migrated combat NPCs")
       .define("arbitratedCombatAiEnabled", true);
    private static final ConfigValue<List<? extends String>> LEGACY_AI_ENTITY_STRINGS = BUILDER.comment(
@@ -82,6 +91,9 @@ public class Config {
    public static int terrainDebrisQuality = 1;
    public static boolean physicalTerrainDebrisEnabled = true;
    public static int maxPhysicalTerrainDebris = 48;
+   public static double combatSpectacleIntensity = 1.35;
+   public static boolean protectCombatFooting = true;
+   public static int maxCinematicChainImpacts = 4;
    public static boolean arbitratedCombatAiEnabled = true;
    public static Set<ResourceLocation> legacyAiEntityTypes = Set.of();
 
@@ -113,6 +125,9 @@ public class Config {
       terrainDebrisQuality = TERRAIN_DEBRIS_QUALITY.get();
       physicalTerrainDebrisEnabled = PHYSICAL_TERRAIN_DEBRIS_ENABLED.get();
       maxPhysicalTerrainDebris = MAX_PHYSICAL_TERRAIN_DEBRIS.get();
+      combatSpectacleIntensity = COMBAT_SPECTACLE_INTENSITY.get();
+      protectCombatFooting = PROTECT_COMBAT_FOOTING.get();
+      maxCinematicChainImpacts = MAX_CINEMATIC_CHAIN_IMPACTS.get();
       arbitratedCombatAiEnabled = ARBITRATED_COMBAT_AI_ENABLED.get();
       legacyAiEntityTypes = LEGACY_AI_ENTITY_STRINGS.get().stream().map(ResourceLocation::parse).collect(Collectors.toUnmodifiableSet());
       items = ((List<? extends String>)ITEM_STRINGS.get())

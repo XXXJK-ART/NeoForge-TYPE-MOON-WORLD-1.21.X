@@ -186,6 +186,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_GANDER_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM);
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
+                        output.accept(ModItems.UNKNOWN_MAGIC_PAGE);
+                        output.accept(ModItems.MAGIC_WASTE_PAPER);
+                        output.accept(ModItems.MAGIC_BOOK_PROJECTION);
+                        output.accept(ModItems.MAGIC_PAGE_PROJECTION);
+                        output.accept(ModItems.MAGIC_BOOK_STRUCTURAL_ANALYSIS);
+                        output.accept(ModItems.MAGIC_PAGE_STRUCTURAL_ANALYSIS);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_PAGE_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_BOOK_HEALING);
@@ -263,6 +269,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.CHISEL);
                         output.accept(ModItems.MAGIC_CREST);
                         output.accept(ModBlocks.GEM_CARVING_TABLE);
+                        output.accept(ModBlocks.MAGIC_RESEARCH_TABLE);
+                        output.accept(ModBlocks.MAGIC_COPYING_TABLE);
                         output.accept(ModItems.MANA_SURVEY_BASE);
                         output.accept(ModItems.MANA_SURVEY_POINTER);
                         output.accept(ModItems.MANA_SURVEY_COMPASS);

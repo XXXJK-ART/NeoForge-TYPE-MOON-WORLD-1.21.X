@@ -53,10 +53,19 @@ public class NeroChaosEntity extends DeadApostleEntity {
    private static final String TAG_PENDING_BEAST_REVIVES = "NeroChaosPendingBeastRevives";
    private static final String TAG_NEXT_BEAST_REVIVE = "NeroChaosNextBeastRevive";
    private static final String TAG_CROWD_AOE_COOLDOWN = "NeroChaosCrowdAoeCooldown";
+   private static final String TAG_BODY_STRIKE_COOLDOWN = "NeroChaosBodyStrikeCooldown";
    private static final int CROWD_AOE_MIN_ENEMIES = 4;
    private static final double CROWD_AOE_RADIUS = 6.25;
    private static final long CROWD_AOE_COOLDOWN_TICKS = 100L;
    private static final float CROWD_AOE_DAMAGE = 24.0F;
+   private static final long BODY_STRIKE_COOLDOWN_TICKS = 14L;
+   private static final float BODY_STRIKE_DAMAGE = 14.0F;
+   private static final float BODY_STRIKE_CHAOS_DAMAGE = 18.0F;
+   private static final long DEVOUR_DURATION_TICKS = 20L;
+   private static final float DEVOUR_START_RATIO = 0.42F;
+   private static final float DEVOUR_START_MIN_HEALTH = 12.0F;
+   private static final float DEVOUR_FINISH_RATIO = 0.18F;
+   private static final float DEVOUR_FINISH_BUFFER = 80.0F;
    private static final EntityDataAccessor<Integer> REMAINING_LIVES =
       SynchedEntityData.defineId(NeroChaosEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Boolean> CHAOS_FORM =
@@ -115,11 +124,13 @@ public class NeroChaosEntity extends DeadApostleEntity {
          setTarget(null);
       }
       if (DeadApostleCombatSystem.tick(this)) return;
-      if (tickDevour(now)) return;
+      boolean devouring = tickDevour(now);
       tickChaosEnergy(now);
-      // The chaos form must not leave Nero fighting alone if his combat beasts were lost.
-      tickBeastRelease(now);
-      tickCrowdAoe(now);
+      if (!devouring) {
+         // The chaos form must not leave Nero fighting alone if his combat beasts were lost.
+         tickBeastRelease(now);
+         tickCrowdAoe(now);
+      }
    }
 
    public String getCombatProfileId() {
@@ -500,8 +511,19 @@ public class NeroChaosEntity extends DeadApostleEntity {
          getLookControl().setLookAt(prey, 35.0F, 35.0F);
          swing(InteractionHand.MAIN_HAND);
          prey.invulnerableTime = 0;
-         prey.hurt(damageSources().mobAttack(this), 1.5F);
+         boolean finishing = now + 1L >= until
+            || prey.getHealth() <= Math.max(6.0F, prey.getMaxHealth() * DEVOUR_FINISH_RATIO);
+         float damage = finishing
+            ? Math.max(prey.getHealth() + DEVOUR_FINISH_BUFFER, prey.getMaxHealth() * 3.0F)
+            : 1.5F;
+         prey.hurt(damageSources().mobAttack(this), damage);
          prey.setDeltaMovement(Vec3.ZERO);
+         if (finishing && prey.isAlive()) {
+            prey.setInvulnerable(false);
+            prey.invulnerableTime = 0;
+            prey.setHealth(0.0F);
+            prey.die(damageSources().genericKill());
+         }
          if (!prey.isAlive()) {
             heal(50.0F);
             data.remove(TAG_DEVOUR_UNTIL);
@@ -512,12 +534,42 @@ public class NeroChaosEntity extends DeadApostleEntity {
       }
       if (now < data.getLong(TAG_DEVOUR_COOLDOWN)) return false;
       LivingEntity target = getTarget();
-      if (target != null && isValidPrey(target) && distanceToSqr(target) <= 3.0 * 3.0) {
+      if (target != null && isValidPrey(target)
+         && distanceToSqr(target) <= 3.0 * 3.0
+         && shouldBeginDevour(target)) {
          data.putUUID(TAG_DEVOUR_TARGET, target.getUUID());
-         data.putLong(TAG_DEVOUR_UNTIL, now + 20L);
+         data.putLong(TAG_DEVOUR_UNTIL, now + DEVOUR_DURATION_TICKS);
          return true;
       }
       return false;
+   }
+
+   public boolean tryBodyStrike(LivingEntity target, long now) {
+      if (target == null || !target.isAlive()) return false;
+      var data = getPersistentData();
+      if (now < data.getLong(TAG_BODY_STRIKE_COOLDOWN)) return false;
+      if (distanceToSqr(target) > 6.0 * 6.0) return false;
+      swing(InteractionHand.MAIN_HAND);
+      target.invulnerableTime = 0;
+      float damage = isChaosForm() ? BODY_STRIKE_CHAOS_DAMAGE : BODY_STRIKE_DAMAGE;
+      boolean hit = target.hurt(damageSources().mobAttack(this), damage);
+      if (hit) {
+         Vec3 push = target.position().subtract(position()).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() < 1.0E-6) push = getLookAngle().multiply(1.0, 0.0, 1.0);
+         push = push.normalize();
+         target.setDeltaMovement(target.getDeltaMovement().add(push.x * 0.45, 0.12, push.z * 0.45));
+         target.hurtMarked = true;
+         if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY() + getBbHeight() * 0.48, getZ(),
+               4, 0.35, 0.2, 0.35, 0.0);
+            serverLevel.sendParticles(ParticleTypes.CRIT, getX(), getY() + getBbHeight() * 0.45, getZ(),
+               8, 0.2, 0.2, 0.2, 0.04);
+            serverLevel.playSound(null, blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG,
+               SoundSource.HOSTILE, 0.85F, isChaosForm() ? 0.8F : 0.95F);
+         }
+      }
+      data.putLong(TAG_BODY_STRIKE_COOLDOWN, now + (isChaosForm() ? BODY_STRIKE_COOLDOWN_TICKS - 2L : BODY_STRIKE_COOLDOWN_TICKS));
+      return hit;
    }
 
    private boolean isValidPrey(LivingEntity prey) {
@@ -526,6 +578,18 @@ public class NeroChaosEntity extends DeadApostleEntity {
          && !(prey instanceof DeadApostleEntity)
          && !NeroChaosBeastLogic.isBeast(prey)
          && !isAlliedTo(prey);
+   }
+
+   private boolean shouldBeginDevour(LivingEntity prey) {
+      float maxHealth = Math.max(1.0F, prey.getMaxHealth());
+      float threshold = Math.max(DEVOUR_START_MIN_HEALTH, maxHealth * DEVOUR_START_RATIO);
+      if (isChaosForm()) {
+         threshold = Math.max(threshold, maxHealth * 0.55F);
+      }
+      if (prey instanceof Player) {
+         threshold *= 0.92F;
+      }
+      return prey.getHealth() <= threshold;
    }
 
    private void ensureNeroScale() {
@@ -569,11 +633,16 @@ public class NeroChaosEntity extends DeadApostleEntity {
          if (tryDodgeIncomingProjectile()) return;
          nero.getLookControl().setLookAt(target, 35.0F, 35.0F);
          double distanceSqr = nero.distanceToSqr(target);
+         long now = nero.level().getGameTime();
+         if (distanceSqr <= 36.0 && nero.tryBodyStrike(target, now)) {
+            nero.getNavigation().stop();
+            return;
+         }
          if (distanceSqr > 16.0) {
             nero.getNavigation().moveTo(target, nero.isChaosForm() ? 1.35 : 1.05);
          } else {
             nero.getNavigation().stop();
-            nero.getMoveControl().strafe(0.16F, 0.45F);
+            nero.getMoveControl().strafe(0.18F, distanceSqr < 9.0 ? 0.65F : 0.42F);
          }
       }
 

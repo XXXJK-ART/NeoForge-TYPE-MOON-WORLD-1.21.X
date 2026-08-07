@@ -202,7 +202,6 @@ public final class MasterCardProfile {
             }
          });
          case "emiya_kiritsugu" -> new Profile(masterId, "kiritsugu", 280.0, 5.0, 12, Attributes.FIRE_EARTH, vars -> {
-            learn(vars, "time_alter");
             vars.proficiency_time_alter = Math.max(vars.proficiency_time_alter, 70.0);
             learn(vars, "reinforcement");
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, 40.0);

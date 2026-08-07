@@ -542,7 +542,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          return false;
       }
       if (isNpActive()) {
-         amount *= 0.05F;
+         amount *= 0.10F;
       }
       boolean hurt = super.hurt(source, amount);
       if (hurt && !isAlive()) {

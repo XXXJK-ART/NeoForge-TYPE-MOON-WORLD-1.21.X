@@ -63,7 +63,7 @@ public final class MagicTimeAlter {
          ? "message.typemoonworld.magic.time_alter.accel"
          : "message.typemoonworld.magic.time_alter.stagnate"), true);
       if (!fromCrest) {
-         vars.proficiency_time_alter = Math.min(100.0, vars.proficiency_time_alter + (mode == MODE_ACCEL ? 0.16 : 0.18));
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "time_alter", mode == MODE_ACCEL ? 0.16 : 0.18);
          vars.syncProficiency(player);
       }
       return true;

@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MuramasaRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
@@ -172,7 +173,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
          }
 
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         boolean paid = useDuration > 100
+         boolean paid = currentCharge >= SPECIAL_CHARGE_PERCENT
             || consumePlayerMana(player, vars, getManaCostPerTick());
          if (!paid) {
             player.releaseUsingItem();
@@ -238,8 +239,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
          }
 
          if (charge >= SPECIAL_CHARGE_PERCENT && player instanceof ServerPlayer serverPlayer && !hasDivinity(serverPlayer)) {
-            level.explode(null, player.getX(), player.getY(), player.getZ(), 10.0F, true, ExplosionInteraction.TNT);
-            forceTsumukariDeath(serverPlayer, level);
+            scheduleTsumukariDissolution(serverPlayer, level);
          }
       }
    }
@@ -308,21 +308,21 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
       level.playSound(null, player.getX(), player.getY(), player.getZ(),
          SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + percent / 100.0F);
       if (delayedDissolution) {
-         forceTsumukariDeath(player, level);
+         scheduleTsumukariDissolution(player, level);
       }
    }
 
-   private static void forceTsumukariDeath(ServerPlayer player, Level level) {
+   private static void scheduleTsumukariDissolution(ServerPlayer player, Level level) {
       if (!(level instanceof ServerLevel serverLevel) || player == null || !player.isAlive()) {
          return;
       }
-      serverLevel.sendParticles(ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1.0, player.getZ(),
-         4, 0.6, 0.8, 0.6, 0.0);
+      MuramasaDissolutionService.schedule(player, 20);
+      serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 1.0, player.getZ(),
+         36, 0.6, 0.8, 0.6, 0.04);
       serverLevel.sendParticles(ParticleTypes.LAVA, player.getX(), player.getY() + 0.8, player.getZ(),
-         40, 1.0, 0.8, 1.0, 0.04);
-      if (!player.isCreative()) {
-         player.kill();
-      }
+         24, 0.8, 0.7, 0.8, 0.02);
+      level.playSound(null, player.getX(), player.getY(), player.getZ(),
+         SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundSource.PLAYERS, 0.8F, 0.65F);
    }
 
    private static boolean isMuramasaCard(ServerPlayer player) {

@@ -20,8 +20,8 @@ public class NeroChaosHoundEntity extends Wolf implements NeroChaosBeastLogic.Ne
    public static AttributeSupplier.Builder createAttributes() {
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 80.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.34)
-         .add(Attributes.ATTACK_DAMAGE, 10.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.39)
+         .add(Attributes.ATTACK_DAMAGE, 14.0)
          .add(Attributes.FOLLOW_RANGE, 48.0);
    }
 

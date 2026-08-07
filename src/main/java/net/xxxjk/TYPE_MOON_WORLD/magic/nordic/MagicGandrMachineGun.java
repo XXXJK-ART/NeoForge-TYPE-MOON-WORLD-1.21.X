@@ -181,7 +181,7 @@ public final class MagicGandrMachineGun {
                         } else {
                            vars.magic_cooldown = BARRAGE_INTERVAL_TICKS;
                            if (!crestCast) {
-                              vars.proficiency_gander = Math.min(100.0, vars.proficiency_gander + getBarrageShotCount(effectiveProficiency) * 0.02);
+                              net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gander", getBarrageShotCount(effectiveProficiency) * 0.02);
                            }
 
                            syncBurstState(player, vars, now, !crestCast);
@@ -196,7 +196,7 @@ public final class MagicGandrMachineGun {
                         } else {
                            vars.magic_cooldown = BURST_INTERVAL_TICKS;
                            if (!crestCast) {
-                              vars.proficiency_gander = Math.min(100.0, vars.proficiency_gander + 0.05);
+                              net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gander", 0.05);
                            }
 
                            syncBurstState(player, vars, now, !crestCast);
