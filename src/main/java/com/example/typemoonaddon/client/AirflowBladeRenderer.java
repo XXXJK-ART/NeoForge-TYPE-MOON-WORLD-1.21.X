@@ -16,6 +16,8 @@ import net.minecraft.util.Mth;
 public final class AirflowBladeRenderer extends EntityRenderer<AirflowBladeEntity> {
     private static final ResourceLocation BEACON_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png");
+    private static final RenderType AIRFLOW_RENDER_TYPE =
+            RenderType.entityTranslucentEmissive(BEACON_TEXTURE);
 
     public AirflowBladeRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -31,23 +33,31 @@ public final class AirflowBladeRenderer extends EntityRenderer<AirflowBladeEntit
             MultiBufferSource buffers,
             int packedLight
     ) {
-        VertexConsumer translucent = buffers.getBuffer(RenderType.entityTranslucentEmissive(BEACON_TEXTURE));
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-        float time = entity.tickCount + partialTick;
-        float pulse = 0.75F + 0.25F * Mth.sin(time * 0.55F);
+        try (AddonRenderBuffers renderBuffers = AddonRenderBuffers.fixed(AIRFLOW_RENDER_TYPE, RenderType.lines())) {
+            MultiBufferSource.BufferSource localBuffers = renderBuffers.source();
+            VertexConsumer translucent = localBuffers.getBuffer(AIRFLOW_RENDER_TYPE);
+            VertexConsumer lines = localBuffers.getBuffer(RenderType.lines());
+            float time = entity.tickCount + partialTick;
+            float pulse = 0.75F + 0.25F * Mth.sin(time * 0.55F);
 
-        poseStack.pushPose();
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entity.getYRot()));
-        poseStack.mulPose(Axis.XP.rotationDegrees(entity.getXRot()));
-        if (entity.mode() == AirflowBladeEntity.BLADE_MODE) {
-            poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(time * 0.34F) * 3.5F));
-            drawBlade(poseStack.last(), translucent, lines, time, pulse);
-        } else {
-            float charge = 1.05F + entity.charge() * 0.9F;
-            poseStack.scale(charge, charge, charge);
-            drawCannon(poseStack.last(), translucent, lines, time, pulse);
+            poseStack.pushPose();
+            try {
+                poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entity.getYRot()));
+                poseStack.mulPose(Axis.XP.rotationDegrees(entity.getXRot()));
+                if (entity.mode() == AirflowBladeEntity.BLADE_MODE) {
+                    poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(time * 0.34F) * 3.5F));
+                    drawBlade(poseStack.last(), translucent, lines, time, pulse);
+                } else {
+                    float charge = 1.05F + entity.charge() * 0.9F;
+                    poseStack.scale(charge, charge, charge);
+                    drawCannon(poseStack.last(), translucent, lines, time, pulse);
+                }
+                localBuffers.endBatch(AIRFLOW_RENDER_TYPE);
+                localBuffers.endBatch(RenderType.lines());
+            } finally {
+                poseStack.popPose();
+            }
         }
-        poseStack.popPose();
     }
 
     private static void drawBlade(

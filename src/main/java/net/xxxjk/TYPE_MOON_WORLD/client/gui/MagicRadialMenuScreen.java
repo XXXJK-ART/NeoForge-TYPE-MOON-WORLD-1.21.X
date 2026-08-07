@@ -54,7 +54,6 @@ public class MagicRadialMenuScreen extends Screen {
    }
 
    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
       if (!this.availableMagics.isEmpty()) {
          int centerX = this.width / 2;
          int centerY = (int)(this.height * 0.45);

@@ -81,7 +81,6 @@ public class MagicWheelSwitchScreen extends Screen {
          this.selectedWheel = (int)(angleDeg / angleStep);
       }
 
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.setShader(GameRenderer::getPositionColorShader);

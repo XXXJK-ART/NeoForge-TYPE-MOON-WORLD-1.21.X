@@ -8,5 +8,8 @@
   "wheel_selectable": true,
   "crest_allowed": false,
   "npc_allowed": false,
-  "knowledge_only": false
+  "knowledge_only": false,
+  "required_attributes": [
+    "typemoonworld:imaginary_number"
+  ]
 }

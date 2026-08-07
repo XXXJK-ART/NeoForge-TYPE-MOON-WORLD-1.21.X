@@ -31,6 +31,7 @@ public final class MagicAnalysisService {
          if (previous == tick) continue;
          LAST_CAST.put(castKey, tick);
          double proficiency = MagicProficiencyService.get(vars, "magic_analysis");
+         if (!MagicLearningStrategy.learningRequirementsMet(vars, id)) continue;
          if (MagicLearningStrategy.isDivine(id) && proficiency < 100.0) continue;
          int complexity = MagicLearningStrategy.complexity(id);
          if (MagicLearningStrategy.verses(id) > MagicLearningStrategy.analysisVerseLimit(proficiency)) continue;

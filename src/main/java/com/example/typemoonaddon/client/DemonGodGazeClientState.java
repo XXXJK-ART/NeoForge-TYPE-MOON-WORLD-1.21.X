@@ -125,19 +125,23 @@ public final class DemonGodGazeClientState {
         float partialTick = event.getPartialTick().getGameTimeDeltaTicks();
         Vec3 camera = event.getCamera().getPosition();
         PoseStack poseStack = event.getPoseStack();
-        poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
-        BufferSource buffers = minecraft.renderBuffers().bufferSource();
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-        VertexConsumer glow = buffers.getBuffer(GLOW_RENDER_TYPE);
+        try (AddonRenderBuffers renderBuffers = AddonRenderBuffers.fixed(RenderType.lines(), GLOW_RENDER_TYPE)) {
+            BufferSource buffers = renderBuffers.source();
+            VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+            VertexConsumer glow = buffers.getBuffer(GLOW_RENDER_TYPE);
 
-        for (CastVisual cast : CASTS.values()) {
-            renderCast(minecraft.level, cast, poseStack, lines, glow, camera, partialTick);
+            poseStack.pushPose();
+            try {
+                poseStack.translate(-camera.x, -camera.y, -camera.z);
+                for (CastVisual cast : CASTS.values()) {
+                    renderCast(minecraft.level, cast, poseStack, lines, glow, camera, partialTick);
+                }
+                buffers.endBatch(RenderType.lines());
+                buffers.endBatch(GLOW_RENDER_TYPE);
+            } finally {
+                poseStack.popPose();
+            }
         }
-
-        buffers.endBatch(RenderType.lines());
-        buffers.endBatch(GLOW_RENDER_TYPE);
-        poseStack.popPose();
     }
 
     private static void renderCast(

@@ -132,18 +132,23 @@ public final class AddonSpellClientState {
         float time = clientTick + partialTick;
         Vec3 camera = event.getCamera().getPosition();
         PoseStack poseStack = event.getPoseStack();
-        BufferSource buffers = minecraft.renderBuffers().bufferSource();
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-        VertexConsumer glow = buffers.getBuffer(GLOW_RENDER_TYPE);
+        try (AddonRenderBuffers renderBuffers = AddonRenderBuffers.fixed(RenderType.lines(), GLOW_RENDER_TYPE)) {
+            BufferSource buffers = renderBuffers.source();
+            VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+            VertexConsumer glow = buffers.getBuffer(GLOW_RENDER_TYPE);
 
-        poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
-        for (SpellVisual visual : VISUALS.values()) {
-            renderVisual(minecraft.level, visual, poseStack, lines, glow, camera, partialTick, time);
+            poseStack.pushPose();
+            try {
+                poseStack.translate(-camera.x, -camera.y, -camera.z);
+                for (SpellVisual visual : VISUALS.values()) {
+                    renderVisual(minecraft.level, visual, poseStack, lines, glow, camera, partialTick, time);
+                }
+                buffers.endBatch(RenderType.lines());
+                buffers.endBatch(GLOW_RENDER_TYPE);
+            } finally {
+                poseStack.popPose();
+            }
         }
-        buffers.endBatch(RenderType.lines());
-        buffers.endBatch(GLOW_RENDER_TYPE);
-        poseStack.popPose();
     }
 
     private static void renderVisual(

@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardUnlimitedMode;
@@ -714,6 +715,7 @@ public class TypeMoonCommands {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
             }
+            MagicProficiencyService.set(vars, m, 100.0);
          }
 
          // Keep the newly introduced analysis magic part of the MAX preset even if

@@ -24,6 +24,8 @@ public final class StorageVisualRenderer extends EntityRenderer<StorageVisualEnt
     private static final float CONTAINMENT_MARGIN = 1.24F;
     private static final ResourceLocation BEACON_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png");
+    private static final RenderType STORAGE_RENDER_TYPE =
+            RenderType.entityTranslucentEmissive(BEACON_TEXTURE);
 
     public StorageVisualRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -52,33 +54,44 @@ public final class StorageVisualRenderer extends EntityRenderer<StorageVisualEnt
         float alpha = entity.isCollapsing()
                 ? 0.22F * entity.collapseScale(partialTick)
                 : (entity.tickCount < 12 ? 0.16F : 0.21F) + pulse * 0.045F;
-        VertexConsumer beam = buffers.getBuffer(RenderType.entityTranslucentEmissive(BEACON_TEXTURE));
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+        try (AddonRenderBuffers renderBuffers = AddonRenderBuffers.fixed(STORAGE_RENDER_TYPE, RenderType.lines())) {
+            MultiBufferSource.BufferSource localBuffers = renderBuffers.source();
+            VertexConsumer beam = localBuffers.getBuffer(STORAGE_RENDER_TYPE);
+            VertexConsumer lines = localBuffers.getBuffer(RenderType.lines());
 
-        poseStack.pushPose();
-        poseStack.scale(scale, scale, scale);
-        poseStack.mulPose(Axis.YP.rotationDegrees(entity.rotationDegrees(partialTick)));
+            poseStack.pushPose();
+            try {
+                poseStack.scale(scale, scale, scale);
+                poseStack.mulPose(Axis.YP.rotationDegrees(entity.rotationDegrees(partialTick)));
 
-        PoseStack.Pose pose = poseStack.last();
-        drawBox(pose, beam, 1.5F, 1.5F, 1.5F, 0.18F, 0.82F, 1.0F, alpha);
-        drawBox(pose, beam, 1.445F, 1.445F, 1.445F, 0.62F, 0.24F, 1.0F, alpha * 0.56F);
-        drawBox(pose, beam, 0.15F + pulse * 0.035F, 1.72F, 0.15F,
-                0.42F, 0.72F, 1.0F, 0.075F + pulse * 0.035F);
+                PoseStack.Pose pose = poseStack.last();
+                drawBox(pose, beam, 1.5F, 1.5F, 1.5F, 0.18F, 0.82F, 1.0F, alpha);
+                drawBox(pose, beam, 1.445F, 1.445F, 1.445F, 0.62F, 0.24F, 1.0F, alpha * 0.56F);
+                drawBox(pose, beam, 0.15F + pulse * 0.035F, 1.72F, 0.15F,
+                        0.42F, 0.72F, 1.0F, 0.075F + pulse * 0.035F);
 
-        LevelRenderer.renderLineBox(poseStack, lines, box(1.515D),
-                0.58F + pulse * 0.34F, 1.0F, 0.98F, alpha);
-        LevelRenderer.renderLineBox(poseStack, lines, box(1.475D),
-                0.28F, 0.72F + pulse * 0.25F, 1.0F, alpha * 0.68F);
-        LevelRenderer.renderLineBox(poseStack, lines, box(1.415D),
-                0.78F, 0.34F + pulse * 0.34F, 1.0F, alpha * 0.76F);
-        drawFaceLattice(pose, lines, pulse);
-        drawCornerStars(pose, lines, pulse);
-        poseStack.popPose();
+                LevelRenderer.renderLineBox(poseStack, lines, box(1.515D),
+                        0.58F + pulse * 0.34F, 1.0F, 0.98F, alpha);
+                LevelRenderer.renderLineBox(poseStack, lines, box(1.475D),
+                        0.28F, 0.72F + pulse * 0.25F, 1.0F, alpha * 0.68F);
+                LevelRenderer.renderLineBox(poseStack, lines, box(1.415D),
+                        0.78F, 0.34F + pulse * 0.34F, 1.0F, alpha * 0.76F);
+                drawFaceLattice(pose, lines, pulse);
+                drawCornerStars(pose, lines, pulse);
+            } finally {
+                poseStack.popPose();
+            }
 
-        poseStack.pushPose();
-        poseStack.scale(scale, scale, scale);
-        drawOrbitSystem(poseStack, lines, time, pulse);
-        poseStack.popPose();
+            poseStack.pushPose();
+            try {
+                poseStack.scale(scale, scale, scale);
+                drawOrbitSystem(poseStack, lines, time, pulse);
+                localBuffers.endBatch(STORAGE_RENDER_TYPE);
+                localBuffers.endBatch(RenderType.lines());
+            } finally {
+                poseStack.popPose();
+            }
+        }
     }
 
     /** Sizes the prism from the synchronized target bounds, with bounded safety margins. */

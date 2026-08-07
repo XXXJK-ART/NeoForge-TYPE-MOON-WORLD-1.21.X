@@ -57,7 +57,7 @@
         "segments": 220
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#28E9FFFFFF" },
+        { "t": 0.0, "color": "#28E9FFFF" },
         { "t": 0.18, "color": "#E8FFFFFF" },
         { "t": 0.62, "color": "#D84BC7F2" },
         { "t": 1.0, "color": "#00000000" }

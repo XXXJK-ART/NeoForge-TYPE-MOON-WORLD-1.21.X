@@ -62,7 +62,9 @@ public record VFXVanillaParticleDefinition(ParticleOptions options, int count, V
          case "heart" -> ParticleTypes.HEART;
          case "happy_villager" -> ParticleTypes.HAPPY_VILLAGER;
          case "witch" -> ParticleTypes.WITCH;
+         case "portal" -> ParticleTypes.PORTAL;
          case "reverse_portal" -> ParticleTypes.REVERSE_PORTAL;
+         case "electric_spark" -> ParticleTypes.ELECTRIC_SPARK;
          case "totem_of_undying" -> ParticleTypes.TOTEM_OF_UNDYING;
          case "enchanted_hit_small" -> ParticleTypes.ENCHANTED_HIT;
          default -> throw new IllegalArgumentException("Unknown vanilla particle type: " + name);

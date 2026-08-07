@@ -19,7 +19,7 @@
         { "t": 1.0, "scale": [0.08, 0.08, 0.08] }
       ],
       "color_over_life": [
-        { "t": 0.0, "color": "#D9D7F5FFFF" },
+        { "t": 0.0, "color": "#D9D7F5FF" },
         { "t": 0.3, "color": "#A06CFFFF" },
         { "t": 1.0, "color": "#00000000" }
       ],

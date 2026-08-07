@@ -5,7 +5,6 @@ import com.example.typemoonaddon.registry.AddonMenus;
 import com.example.typemoonaddon.registry.AddonMobEffects;
 import com.example.typemoonaddon.registry.AddonEntities;
 import com.example.typemoonaddon.registry.AddonSounds;
-import com.example.typemoonaddon.config.AddonCommandConfig;
 import com.example.typemoonaddon.detection.DetectionAttachments;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceAttachments;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceConfig;
@@ -35,8 +34,7 @@ public final class TypeMoonAddon {
         KimarisAttachments.register(modEventBus);
         DetectionAttachments.register(modEventBus);
         ImaginarySpaceAttachments.register(modEventBus);
-        modContainer.registerConfig(ModConfig.Type.COMMON, ImaginarySpaceConfig.SPEC);
-        modContainer.registerConfig(ModConfig.Type.COMMON, AddonCommandConfig.SPEC, "typemoonworld-admin.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, ImaginarySpaceConfig.SPEC, "typemoonworld-imaginary-space.toml");
         modEventBus.addListener(this::addCreativeTabContents);
         LOGGER.info("Integrated Type Moon addon systems initialized");
     }

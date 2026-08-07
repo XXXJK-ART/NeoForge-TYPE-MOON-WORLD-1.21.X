@@ -16,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -93,6 +94,7 @@ public final class MasterCardProfile {
       vars.player_mana_egenerated_every_moment = profile.regenAmount();
       vars.player_restore_magic_moment = profile.regenIntervalTicks();
       profile.applyMagic(vars);
+      grantMasterDetection(vars);
       TYPE_MOON_WORLD.queueServerWork(2, () -> {
          TypeMoonWorldModVariables.PlayerVariables delayedVars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (delayedVars.master_active && delayedVars.master_card_active && profile.id().equals(delayedVars.master_card_id)) {
@@ -451,6 +453,11 @@ public final class MasterCardProfile {
       if (!vars.learned_magics.contains(magicId)) {
          vars.learned_magics.add(magicId);
       }
+   }
+
+   private static void grantMasterDetection(TypeMoonWorldModVariables.PlayerVariables vars) {
+      learn(vars, "detection");
+      MagicProficiencyService.set(vars, "detection", Math.max(MagicProficiencyService.get(vars, "detection"), 90.0));
    }
 
    private static void learnBajiquan(TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {

@@ -192,6 +192,8 @@ public final class NpcMagicCastBridge {
       "magic_bullet",
       "suggestion_magic",
       "binding_magic",
+      "airflow_blade",
+      "detection",
       "fire_magic",
       "water_magic",
       "wind_magic",

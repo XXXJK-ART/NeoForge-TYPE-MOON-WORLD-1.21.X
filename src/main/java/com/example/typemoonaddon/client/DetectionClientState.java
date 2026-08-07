@@ -157,20 +157,24 @@ public final class DetectionClientState {
         float partialTick = event.getPartialTick().getGameTimeDeltaTicks();
         PoseStack poseStack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
-        poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
-        BufferSource buffers = minecraft.renderBuffers().bufferSource();
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-        VertexConsumer glow = buffers.getBuffer(EYE_GLOW_RENDER_TYPE);
+        try (AddonRenderBuffers renderBuffers = AddonRenderBuffers.fixed(RenderType.lines(), EYE_GLOW_RENDER_TYPE)) {
+            BufferSource buffers = renderBuffers.source();
+            VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+            VertexConsumer glow = buffers.getBuffer(EYE_GLOW_RENDER_TYPE);
 
-        renderEyeVisuals(minecraft, poseStack, lines, glow, partialTick);
-        if (privateActive) {
-            renderPrivateScanMarkers(minecraft, poseStack, lines, camera, partialTick);
+            poseStack.pushPose();
+            try {
+                poseStack.translate(-camera.x, -camera.y, -camera.z);
+                renderEyeVisuals(minecraft, poseStack, lines, glow, partialTick);
+                if (privateActive) {
+                    renderPrivateScanMarkers(minecraft, poseStack, lines, camera, partialTick);
+                }
+                buffers.endBatch(RenderType.lines());
+                buffers.endBatch(EYE_GLOW_RENDER_TYPE);
+            } finally {
+                poseStack.popPose();
+            }
         }
-
-        buffers.endBatch(RenderType.lines());
-        buffers.endBatch(EYE_GLOW_RENDER_TYPE);
-        poseStack.popPose();
     }
 
     @SubscribeEvent

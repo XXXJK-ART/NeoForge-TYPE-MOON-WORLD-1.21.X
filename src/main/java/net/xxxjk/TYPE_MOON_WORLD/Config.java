@@ -108,6 +108,10 @@ public class Config {
 
    @SubscribeEvent
    static void onLoad(ModConfigEvent event) {
+      if (event.getConfig().getSpec() != SPEC) {
+         return;
+      }
+
       logDirtBlock = (Boolean)LOG_DIRT_BLOCK.get();
       magicNumber = (Integer)MAGIC_NUMBER.get();
       magicNumberIntroduction = (String)MAGIC_NUMBER_INTRODUCTION.get();

@@ -7,6 +7,6 @@
   "learnable": true,
   "wheel_selectable": true,
   "crest_allowed": false,
-  "npc_allowed": false,
+  "npc_allowed": true,
   "knowledge_only": false
 }

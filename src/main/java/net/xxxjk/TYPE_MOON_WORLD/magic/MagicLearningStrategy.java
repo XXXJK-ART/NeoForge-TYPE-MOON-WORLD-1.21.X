@@ -54,22 +54,22 @@ public final class MagicLearningStrategy {
       ,Map.entry("emerald_winter_river", new Rule(55, true, false, false, false, false, false))
       ,Map.entry("topaz_reinforcement", new Rule(55, true, false, false, false, false, false))
       ,Map.entry("cyan_wind", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("absorption", new Rule(70, true, false, false, false, false, false))
-      ,Map.entry("airflow_blade", new Rule(20, true, false, false, false, false, false))
-      ,Map.entry("andrasias", new Rule(82, true, false, false, false, false, false))
-      ,Map.entry("andrephius", new Rule(88, true, false, false, false, false, false))
-      ,Map.entry("antores", new Rule(90, true, false, false, false, false, true))
-      ,Map.entry("demon_god_gaze", new Rule(92, true, false, false, false, false, true))
-      ,Map.entry("detection", new Rule(10, true, false, false, false, false, false))
-      ,Map.entry("imaginary_displacement", new Rule(78, true, false, false, false, false, false))
-      ,Map.entry("imaginary_dive", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("imaginary_space", new Rule(85, true, false, false, false, false, false))
-      ,Map.entry("kimaris", new Rule(75, true, false, false, false, false, false))
-      ,Map.entry("nega_summon", new Rule(95, true, false, false, false, false, true))
-      ,Map.entry("orias", new Rule(80, true, false, false, false, false, false))
-      ,Map.entry("storage", new Rule(60, true, false, false, false, false, false))
-      ,Map.entry("storm", new Rule(72, true, false, false, false, false, false))
-      ,Map.entry("zagan", new Rule(78, true, false, false, false, false, false))
+      ,Map.entry("absorption", new Rule(70, true, true, true, true, false, false))
+      ,Map.entry("airflow_blade", new Rule(20, true, true, true, true, false, false))
+      ,Map.entry("andrasias", new Rule(82, true, true, true, true, false, false))
+      ,Map.entry("andrephius", new Rule(88, true, true, true, true, false, false))
+      ,Map.entry("antores", new Rule(90, true, true, true, true, false, true))
+      ,Map.entry("demon_god_gaze", new Rule(92, true, true, true, true, false, true))
+      ,Map.entry("detection", new Rule(10, true, true, true, true, false, false))
+      ,Map.entry("imaginary_displacement", new Rule(78, true, true, true, true, false, false))
+      ,Map.entry("imaginary_dive", new Rule(55, true, true, true, true, false, false))
+      ,Map.entry("imaginary_space", new Rule(85, true, true, true, true, false, false))
+      ,Map.entry("kimaris", new Rule(75, true, true, true, true, false, false))
+      ,Map.entry("nega_summon", new Rule(95, true, true, true, true, false, true))
+      ,Map.entry("orias", new Rule(80, true, true, true, true, false, false))
+      ,Map.entry("storage", new Rule(60, true, true, true, true, false, false))
+      ,Map.entry("storm", new Rule(72, true, true, true, true, false, false))
+      ,Map.entry("zagan", new Rule(78, true, true, true, true, false, false))
    );
    private static final Set<String> DEFAULT_ANALYZABLE = Set.of("projection", "structural_analysis", "reinforcement", "gravity_magic", "gander", "healing_magic", "magic_bullet", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic", "spiritual_healing", "baptism_rite", "black_key_fire_engraving", "stigma");
    private static final Map<String, String> DISPLAY_ALIASES = Map.ofEntries(
@@ -106,9 +106,21 @@ public final class MagicLearningStrategy {
    public static boolean canResearch(String id) { return rule(id).research(); }
    public static boolean canCopy(String id) { return rule(id).copy(); }
    public static boolean requiresSword(String id) { return rule(id).sword(); }
+   public static boolean requiresImaginaryAttribute(String id) {
+      return "absorption".equals(id)
+         || "imaginary_displacement".equals(id)
+         || "imaginary_dive".equals(id)
+         || "imaginary_space".equals(id)
+         || "storage".equals(id);
+   }
    public static boolean isDivine(String id) { return rule(id).divine() || complexity(id) >= 90; }
+   public static boolean learningRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
+      if (vars == null) return false;
+      return (!requiresSword(id) || vars.player_magic_attributes_sword)
+         && (!requiresImaginaryAttribute(id) || vars.player_magic_attributes_imaginary_number);
+   }
    public static boolean materialAllowed(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
-      return materialAllowed(vars.player_magic_attributes_sword, id);
+      return canLearnFromMaterial(id) && learningRequirementsMet(vars, id);
    }
    public static boolean materialAllowed(boolean hasSwordAttribute, String id) {
       return canLearnFromMaterial(id) && (!requiresSword(id) || hasSwordAttribute);

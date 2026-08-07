@@ -21,8 +21,8 @@
         { "t": 1.0, "scale": [0.18, 0.18, 0.18], "easing": "ease_in_cubic" }
       ],
       "color_over_life": [
-        { "t": 0.0, "color": "#00B9E8FFFF" },
-        { "t": 0.12, "color": "#D9BDEBFFFF" },
+        { "t": 0.0, "color": "#00B9E8FF" },
+        { "t": 0.12, "color": "#D9BDEBFF" },
         { "t": 0.6, "color": "#A06CFFFF" },
         { "t": 1.0, "color": "#00000000" }
       ],
@@ -58,9 +58,9 @@
         { "t": 1.0, "scale": [0.65, 0.8, 0.65] }
       ],
       "color_over_life": [
-        { "t": 0.0, "color": "#00F0D8FFFF" },
-        { "t": 0.3, "color": "#886CB8FFFF" },
-        { "t": 0.8, "color": "#557B52D9FF" },
+        { "t": 0.0, "color": "#00F0D8FF" },
+        { "t": 0.3, "color": "#886CB8FF" },
+        { "t": 0.8, "color": "#557B52D9" },
         { "t": 1.0, "color": "#00000000" }
       ],
       "size_over_life": [

@@ -673,6 +673,70 @@ public class ModItems {
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "stigma"));
     public static final DeferredItem<Item> MAGIC_PAGE_STIGMA = ITEMS.register("magic_page_stigma",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "stigma"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ABSORPTION = ITEMS.register("magic_book_absorption",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "absorption"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ABSORPTION = ITEMS.register("magic_page_absorption",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "absorption"));
+    public static final DeferredItem<Item> MAGIC_BOOK_AIRFLOW_BLADE = ITEMS.register("magic_book_airflow_blade",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "airflow_blade"));
+    public static final DeferredItem<Item> MAGIC_PAGE_AIRFLOW_BLADE = ITEMS.register("magic_page_airflow_blade",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "airflow_blade"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ANDRASIAS = ITEMS.register("magic_book_andrasias",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "andrasias"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ANDRASIAS = ITEMS.register("magic_page_andrasias",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "andrasias"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ANDREPHIUS = ITEMS.register("magic_book_andrephius",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "andrephius"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ANDREPHIUS = ITEMS.register("magic_page_andrephius",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "andrephius"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ANTORES = ITEMS.register("magic_book_antores",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "antores"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ANTORES = ITEMS.register("magic_page_antores",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "antores"));
+    public static final DeferredItem<Item> MAGIC_BOOK_DEMON_GOD_GAZE = ITEMS.register("magic_book_demon_god_gaze",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "demon_god_gaze"));
+    public static final DeferredItem<Item> MAGIC_PAGE_DEMON_GOD_GAZE = ITEMS.register("magic_page_demon_god_gaze",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "demon_god_gaze"));
+    public static final DeferredItem<Item> MAGIC_BOOK_DETECTION = ITEMS.register("magic_book_detection",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "detection"));
+    public static final DeferredItem<Item> MAGIC_PAGE_DETECTION = ITEMS.register("magic_page_detection",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "detection"));
+    public static final DeferredItem<Item> MAGIC_BOOK_IMAGINARY_DISPLACEMENT = ITEMS.register("magic_book_imaginary_displacement",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "imaginary_displacement"));
+    public static final DeferredItem<Item> MAGIC_PAGE_IMAGINARY_DISPLACEMENT = ITEMS.register("magic_page_imaginary_displacement",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "imaginary_displacement"));
+    public static final DeferredItem<Item> MAGIC_BOOK_IMAGINARY_DIVE = ITEMS.register("magic_book_imaginary_dive",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "imaginary_dive"));
+    public static final DeferredItem<Item> MAGIC_PAGE_IMAGINARY_DIVE = ITEMS.register("magic_page_imaginary_dive",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "imaginary_dive"));
+    public static final DeferredItem<Item> MAGIC_BOOK_IMAGINARY_SPACE = ITEMS.register("magic_book_imaginary_space",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "imaginary_space"));
+    public static final DeferredItem<Item> MAGIC_PAGE_IMAGINARY_SPACE = ITEMS.register("magic_page_imaginary_space",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "imaginary_space"));
+    public static final DeferredItem<Item> MAGIC_BOOK_KIMARIS = ITEMS.register("magic_book_kimaris",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "kimaris"));
+    public static final DeferredItem<Item> MAGIC_PAGE_KIMARIS = ITEMS.register("magic_page_kimaris",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "kimaris"));
+    public static final DeferredItem<Item> MAGIC_BOOK_NEGA_SUMMON = ITEMS.register("magic_book_nega_summon",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "nega_summon"));
+    public static final DeferredItem<Item> MAGIC_PAGE_NEGA_SUMMON = ITEMS.register("magic_page_nega_summon",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "nega_summon"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ORIAS = ITEMS.register("magic_book_orias",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "orias"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ORIAS = ITEMS.register("magic_page_orias",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "orias"));
+    public static final DeferredItem<Item> MAGIC_BOOK_STORAGE = ITEMS.register("magic_book_storage",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "storage"));
+    public static final DeferredItem<Item> MAGIC_PAGE_STORAGE = ITEMS.register("magic_page_storage",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "storage"));
+    public static final DeferredItem<Item> MAGIC_BOOK_STORM = ITEMS.register("magic_book_storm",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "storm"));
+    public static final DeferredItem<Item> MAGIC_PAGE_STORM = ITEMS.register("magic_page_storm",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "storm"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ZAGAN = ITEMS.register("magic_book_zagan",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "zagan"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ZAGAN = ITEMS.register("magic_page_zagan",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "zagan"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
