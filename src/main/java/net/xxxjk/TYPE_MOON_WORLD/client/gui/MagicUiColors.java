@@ -7,11 +7,15 @@ public final class MagicUiColors {
    public static final int CREST = 0xFFE8505C;
    public static final int CHURCH = 0xFFF0C63C;
    public static final int MARTIAL = 0xFF2EB872;
+   public static final int TALENT = 0xFFB66CFF;
 
    private MagicUiColors() {
    }
 
    public static int colorFor(String magicId, boolean crestSource) {
+      if (MagicDisplayMetadata.isTalent(magicId)) {
+         return TALENT;
+      }
       if (crestSource) {
          return CREST;
       }

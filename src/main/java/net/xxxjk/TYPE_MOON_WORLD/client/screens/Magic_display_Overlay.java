@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.GuiUtils;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicUiColors;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 @EventBusSubscriber({Dist.CLIENT})
 @SuppressWarnings("null")
@@ -33,7 +34,10 @@ public class Magic_display_Overlay {
         if (entity == null) return;
         TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         if (vars.servant_card_transformed) return;
-        if (!vars.is_magus) return;
+        String selectedId = vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()
+                ? vars.selected_magics.get(vars.current_magic_index) : "";
+        boolean selectedTalent = TalentService.isTalent(selectedId) && TalentService.owns(vars, selectedId);
+        if (!vars.is_magus && !selectedTalent) return;
 
         try {
             RenderSystem.disableDepthTest();
@@ -55,38 +59,40 @@ public class Magic_display_Overlay {
             int barX = 10;
             int barY = h - 20;
 
-            GuiUtils.renderHudPanel(event.getGuiGraphics(), barX - 3, barY - 3, barWidth + 6, barHeight + 6, GuiUtils.ARCANE_CYAN);
-            event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, GuiUtils.ARCANE_BACKGROUND);
+            if (vars.is_magus) {
+                GuiUtils.renderHudPanel(event.getGuiGraphics(), barX - 3, barY - 3, barWidth + 6, barHeight + 6, GuiUtils.ARCANE_CYAN);
+                event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, GuiUtils.ARCANE_BACKGROUND);
 
-            int startColor = 0xFF00E5FF;
-            int endColor = 0xFF2979FF;
-            if (currentMana <= maxMana * 0.2) {
-                startColor = 0xFFFF4000;
-                endColor = 0xFFFF0000;
-            } else if (currentMana > maxMana) {
-                startColor = 0xFFFF00FF;
-                endColor = 0xFF9D00FF;
+                int startColor = 0xFF00E5FF;
+                int endColor = 0xFF2979FF;
+                if (currentMana <= maxMana * 0.2) {
+                    startColor = 0xFFFF4000;
+                    endColor = 0xFFFF0000;
+                } else if (currentMana > maxMana) {
+                    startColor = 0xFFFF00FF;
+                    endColor = 0xFF9D00FF;
+                }
+
+                if (maxMana > 0) {
+                    double ratio = Math.min(1.0, Math.max(0.0, currentMana / maxMana));
+                    int fillWidth = (int) (barWidth * ratio);
+                    event.getGuiGraphics().fillGradient(barX, barY, barX + fillWidth, barY + barHeight, startColor, endColor);
+                }
+
+                event.getGuiGraphics().renderOutline(barX - 1, barY - 1, barWidth + 2, barHeight + 2, GuiUtils.ARCANE_BORDER);
+
+                String manaText = (int) currentMana + " / " + (int) maxMana;
+                int textWidth = minecraft.font.width(manaText);
+                int textX = barX + (barWidth - textWidth) / 2;
+                int textY = barY + (barHeight - 8) / 2 + 1;
+                event.getGuiGraphics().drawString(minecraft.font, manaText, textX, textY, 0xFFFFFFFF, true);
+
+                int iconX = barX - 4;
+                int iconY = barY - 3;
+                event.getGuiGraphics().blit(MANA_ICON, iconX, iconY, 0, 0, 16, 16, 16, 16);
             }
 
-            if (maxMana > 0) {
-                double ratio = Math.min(1.0, Math.max(0.0, currentMana / maxMana));
-                int fillWidth = (int) (barWidth * ratio);
-                event.getGuiGraphics().fillGradient(barX, barY, barX + fillWidth, barY + barHeight, startColor, endColor);
-            }
-
-            event.getGuiGraphics().renderOutline(barX - 1, barY - 1, barWidth + 2, barHeight + 2, GuiUtils.ARCANE_BORDER);
-
-            String manaText = (int) currentMana + " / " + (int) maxMana;
-            int textWidth = minecraft.font.width(manaText);
-            int textX = barX + (barWidth - textWidth) / 2;
-            int textY = barY + (barHeight - 8) / 2 + 1;
-            event.getGuiGraphics().drawString(minecraft.font, manaText, textX, textY, 0xFFFFFFFF, true);
-
-            int iconX = barX - 4;
-            int iconY = barY - 3;
-            event.getGuiGraphics().blit(MANA_ICON, iconX, iconY, 0, 0, 16, 16, 16, 16);
-
-            if (vars.is_magic_circuit_open) {
+            if (selectedTalent || vars.is_magus && vars.is_magic_circuit_open) {
                 net.minecraft.network.chat.MutableComponent magicName = Component.translatable("gui.typemoonworld.mode.none");
                 int magicColor = 0xFF00FFFF;
 
@@ -248,9 +254,11 @@ public class Magic_display_Overlay {
                     magicColor = MagicUiColors.colorFor(magicId, vars.isCurrentSelectionFromCrest(magicId));
                 }
 
-                Component labelStr = Component.translatable("gui.typemoonworld.overlay.current_magic");
+                Component labelStr = Component.translatable(TalentService.isTalent(selectedId)
+                        ? "gui.typemoonworld.overlay.current_talent"
+                        : "gui.typemoonworld.overlay.current_magic");
                 int magicTextX = barX;
-                int magicTextY = barY - 12;
+                int magicTextY = vars.is_magus ? barY - 12 : h - 20;
                 int maxNameWidth = Math.max(24, guiWidth - magicTextX - minecraft.font.width(labelStr) - 14);
                 String clippedName = minecraft.font.plainSubstrByWidth(magicName.getString(), maxNameWidth);
                 Component displayMagicName = Component.literal(clippedName);

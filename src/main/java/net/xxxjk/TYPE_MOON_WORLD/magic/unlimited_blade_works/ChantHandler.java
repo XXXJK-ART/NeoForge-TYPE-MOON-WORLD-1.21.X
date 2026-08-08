@@ -99,6 +99,7 @@ public class ChantHandler {
    private static final Map<UUID, Boolean> WAS_CHANTING = new ConcurrentHashMap<>();
    private static final Map<UUID, List<ChantHandler.RefillEntry>> REFILL_QUEUES = new ConcurrentHashMap<>();
    private static final Map<UUID, UUID> ACTIVE_UBW_RIPPLES = new ConcurrentHashMap<>();
+   private static final Map<UUID, Integer> ACTIVE_UBW_START_TICKS = new ConcurrentHashMap<>();
 
    @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
@@ -127,6 +128,7 @@ public class ChantHandler {
       ACTIVE_UBW_ENTITIES.remove(uuid);
       ACTIVE_ENTITY_POSITIONS.remove(uuid);
       REFILL_QUEUES.remove(uuid);
+      ACTIVE_UBW_START_TICKS.remove(uuid);
       discardUbwRipple(server == null ? null : server.overworld(), uuid);
       WAS_CHANTING.remove(uuid);
       UBWInstanceManager.scheduleDeleteInstance(server, uuid);
@@ -322,20 +324,27 @@ public class ChantHandler {
             }
 
             if (isOwner && player.tickCount % 20 == 0) {
-               double cost = 10.0;
-               if (vars.servant_card_transformed && ServantCardManaService.consume(player, vars, cost)) {
-                  if (player.tickCount % 100 == 0) {
-                     checkAndRefillSwords(player, vars);
-                  }
-               } else if (!vars.servant_card_transformed && vars.player_mana >= cost) {
+               int serverTick = player.getServer().getTickCount();
+               int startTick = ACTIVE_UBW_START_TICKS.computeIfAbsent(player.getUUID(), ignored -> serverTick);
+               long activeTicks = Math.max(0L, (long)serverTick - startTick);
+               double cost = UbwManaRules.upkeepCost(vars.servant_card_transformed, activeTicks);
+               boolean paid;
+               if (cost <= 0.0D) {
+                  paid = true;
+               } else if (vars.servant_card_transformed) {
+                  paid = ServantCardManaService.consume(player, vars, cost);
+               } else if (vars.player_mana >= cost) {
                   vars.player_mana -= cost;
                   vars.syncMana(player);
-                  if (player.tickCount % 100 == 0) {
-                     checkAndRefillSwords(player, vars);
-                  }
+                  paid = true;
                } else {
+                  paid = false;
+               }
+               if (!paid) {
                   player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.mana_depleted"), true);
                   returnFromUBW(player, vars);
+               } else if (player.tickCount % 100 == 0) {
+                  checkAndRefillSwords(player, vars);
                }
             }
 
@@ -817,7 +826,7 @@ public class ChantHandler {
 
    private static void processChantStep(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       int progress = vars.ubw_chant_progress;
-      double cost = 50.0;
+      double cost = UbwManaRules.openingPayment(vars.servant_card_transformed);
       String chantText = "";
       boolean emiyaServantCardChant = isEmiyaServantCardChant(vars);
       if (progress == 1) {
@@ -977,6 +986,7 @@ public class ChantHandler {
       vars.ubw_chant_progress = 0;
       vars.ubw_chant_timer = 0;
       vars.is_in_ubw = true;
+      ACTIVE_UBW_START_TICKS.put(player.getUUID(), player.getServer().getTickCount());
       vars.ubw_return_x = player.getX();
       vars.ubw_return_y = player.getY();
       vars.ubw_return_z = player.getZ();
@@ -1187,6 +1197,7 @@ public class ChantHandler {
             vars.is_in_ubw = false;
             vars.syncPlayerVariables(player);
             UBW_LOCATIONS.remove(player.getUUID());
+            ACTIVE_UBW_START_TICKS.remove(player.getUUID());
             UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
          }
       }
@@ -1211,6 +1222,7 @@ public class ChantHandler {
       UBW_LOCATIONS.remove(player.getUUID());
       ACTIVE_UBW_ENTITIES.remove(player.getUUID());
       ACTIVE_ENTITY_POSITIONS.remove(player.getUUID());
+      ACTIVE_UBW_START_TICKS.remove(player.getUUID());
       player.teleportTo(returnLevel, vars.ubw_return_x, vars.ubw_return_y, vars.ubw_return_z, player.getYRot(), player.getXRot());
       UBWInstanceManager.scheduleDeleteInstance(player.getServer(), player.getUUID());
    }

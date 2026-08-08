@@ -5,11 +5,16 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 public final class MagicLearningService {
    private MagicLearningService() {}
 
    public static boolean learnFromMaterial(ServerPlayer player, String id, double random) {
+      if (TalentService.isTalent(id)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.talent.acquisition_restricted"), true);
+         return false;
+      }
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!MagicLearningStrategy.materialAllowed(vars, id)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
@@ -29,6 +34,7 @@ public final class MagicLearningService {
 
    /** Grants another entry from a multi-magic teaching item after its shared roll succeeds. */
    public static boolean grantFromMaterial(ServerPlayer player, String id) {
+      if (TalentService.isTalent(id)) return false;
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!MagicLearningStrategy.materialAllowed(vars, id) || vars.learned_magics.contains(id)) return false;
       vars.learned_magics.add(id);

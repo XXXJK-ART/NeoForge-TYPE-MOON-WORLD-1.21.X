@@ -566,11 +566,13 @@ public final class KendoCombatService {
 
    public static void addProficiency(ServerPlayer player, KendoSchool school, double amount) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double totalBefore = MartialPassiveProgressionService.total(vars);
       double before = school.proficiency(vars);
       double cap = school.masterDefeated(vars) ? 100.0 : school.preMasterCap();
       double value = Mth.clamp(Math.round((before + amount) * 100.0) / 100.0, 0.0, cap);
       if (school == KendoSchool.HOKUSHIN) vars.hokushin_proficiency = value;
       else vars.tennen_proficiency = value;
+      MartialPassiveProgressionService.afterNaturalGain(player, totalBefore);
       if ((int)(before * 20.0) != (int)(value * 20.0)) vars.syncPlayerVariables(player);
    }
 }

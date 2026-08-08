@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
@@ -32,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
@@ -41,6 +43,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.Basic_information_back_player_self;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
@@ -89,6 +94,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    NeonButton imagebutton_basic_attributes;
    NeonButton imagebutton_magical_attributes;
    NeonButton imagebutton_magical_properties;
+   NeonButton imagebutton_passives;
    NeonButton tabSelfKnowledge;
    NeonButton tabCrestKnowledge;
    NeonButton filterButton;
@@ -112,6 +118,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    int draggingFromWheelSlot = -1;
    Magical_attributes_Screen.PresetDialogState presetDialogState;
    float presetDialogScrollOffs;
+   int passiveStartRow;
 
    public Magical_attributes_Screen(MagicalattributesMenu container, Inventory inventory, Component text) {
       super(container, inventory, text);
@@ -194,6 +201,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("ganryu", "key.typemoonworld.magic.ganryu.short", "martial", 0xFF7893A8);
       this.addMagic("hokushin_ittoryu", "key.typemoonworld.magic.hokushin_ittoryu.short", "martial", 0xFFB06A4C);
       this.addMagic("tennen_rishin_ryu", "key.typemoonworld.magic.tennen_rishin_ryu.short", "martial", 0xFF4C8AB0);
+      this.addMagic(TalentService.MONSTROUS_STRENGTH, "magic.typemoonworld.monstrous_strength.name", "talent", MagicUiColors.TALENT);
+      this.addMagic(TalentService.CLAIRVOYANCE, "magic.typemoonworld.clairvoyance.name", "talent", MagicUiColors.TALENT);
    }
 
    private void addMagic(String id, String nameKey, String category, int color) {
@@ -203,12 +212,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private static boolean hasLearnedMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      return !"reinforcement".equals(magicId)
-         ? vars.learned_magics.contains(magicId)
-         : vars.learned_magics.contains("reinforcement")
-            || vars.learned_magics.contains("reinforcement_self")
-            || vars.learned_magics.contains("reinforcement_other")
-            || vars.learned_magics.contains("reinforcement_item");
+      return vars != null && vars.hasLearnedSelfMagic(magicId);
    }
 
    private void rebuildSourceMagics() {
@@ -321,6 +325,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.other";
       } else if ("martial".equals(category)) {
          return "gui.typemoonworld.category.martial";
+      } else if ("talent".equals(category)) {
+         return "gui.typemoonworld.category.talent";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -337,7 +343,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
          "gui.typemoonworld.category.nordic"
-         ,"gui.typemoonworld.category.martial"
+         ,"gui.typemoonworld.category.martial",
+         "gui.typemoonworld.category.talent"
       };
       int maxCategoryWidth = 0;
 
@@ -406,14 +413,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("special".equals(current)) {
          return "other";
       } else {
-         return "other".equals(current) ? "nordic" : "nordic".equals(current) ? "martial" : "all";
+         return "other".equals(current) ? "nordic" : "nordic".equals(current) ? "martial" : "martial".equals(current) ? "talent" : "all";
       }
    }
 
    private String getNextCategory(String current) {
       String next = this.nextCategoryRaw(current);
 
-      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 9; safety++) {
+      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 10; safety++) {
          next = this.nextCategoryRaw(next);
       }
 
@@ -423,9 +430,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    public void init() {
       super.init();
       int tabY = this.topPos + 6;
-      int tabWidth = 78;
+      int tabWidth = 70;
       int tabHeight = 16;
-      int tabX = this.leftPos + this.imageWidth - tabWidth * 3 - 14;
+      int tabX = this.leftPos + this.imageWidth - tabWidth * 4 - 16;
       this.imagebutton_basic_attributes = new NeonButton(
          tabX, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {
             PacketDistributor.sendToServer(new Magical_attributes_Button_Message(0, this.x, this.y, this.z), new CustomPacketPayload[0]);
@@ -454,6 +461,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          }
       ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_properties);
+      this.imagebutton_passives = new NeonButton(
+         tabX + (tabWidth + 2) * 3, tabY, tabWidth, tabHeight, Component.translatable("gui.typemoonworld.tab.passives"), e -> {
+            this.pageMode = 2;
+            this.passiveStartRow = 0;
+            ((MagicalattributesMenu)this.menu).setPage(2);
+            PacketDistributor.sendToServer(new PageChangeMessage(2), new CustomPacketPayload[0]);
+            this.updateVisibility();
+         }
+      ).setArcaneStyle(true).setSelectedColor(MagicUiColors.TALENT);
+      this.addRenderableWidget(this.imagebutton_passives);
       int sourceTabWidth = 78;
       int sourceTabHeight = 14;
       int sourceTabGap = 2;
@@ -579,6 +596,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          this.imagebutton_magical_properties.setSelected(this.pageMode == 1);
       }
 
+      if (this.imagebutton_passives != null) {
+         this.imagebutton_passives.visible = true;
+         this.imagebutton_passives.setSelected(this.pageMode == 2);
+      }
+
       if (this.imagebutton_basic_attributes != null) {
          this.imagebutton_basic_attributes.visible = true;
          this.imagebutton_basic_attributes.setSelected(false);
@@ -651,6 +673,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          if (this.presetDialogState == null) {
             this.renderKnowledgeHintTooltip(guiGraphics, mouseX, mouseY);
          }
+      } else if (this.pageMode == 2) {
+         this.renderPassiveList(guiGraphics, mouseX, mouseY);
       }
 
       if (this.presetDialogState == null) {
@@ -749,6 +773,62 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
           guiGraphics.fill(scrollBarX, listY, scrollBarX + 4, listY + scrollBarHeight, 0xA00C1116);
           guiGraphics.fill(scrollBarX, barTop, scrollBarX + 4, barTop + barHeight, GuiUtils.ARCANE_CYAN);
       }
+   }
+
+   private void renderPassiveList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+      TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
+      List<Map.Entry<String, PassiveRank>> passives = vars.passive_ranks.entrySet().stream()
+         .sorted(Map.Entry.comparingByKey()).toList();
+      int listX = this.leftPos + 118;
+      int listY = this.topPos + 54;
+      int listWidth = 282;
+      int rowHeight = 27;
+      int visibleRows = 5;
+      int maxStart = Math.max(0, passives.size() - visibleRows);
+      this.passiveStartRow = Mth.clamp(this.passiveStartRow, 0, maxStart);
+
+      for (int row = 0; row < visibleRows; row++) {
+         int index = this.passiveStartRow + row;
+         if (index >= passives.size()) break;
+         Map.Entry<String, PassiveRank> entry = passives.get(index);
+         int rowY = listY + row * rowHeight;
+         boolean hovered = mouseX >= listX && mouseX < listX + listWidth && mouseY >= rowY && mouseY < rowY + rowHeight - 2;
+         guiGraphics.fill(listX, rowY, listX + listWidth, rowY + rowHeight - 2, hovered ? 0xF028343E : GuiUtils.ARCANE_PANEL_ALT);
+         guiGraphics.renderOutline(listX, rowY, listWidth, rowHeight - 2, MagicUiColors.TALENT);
+         guiGraphics.fill(listX + 1, rowY + 1, listX + 4, rowY + rowHeight - 3, MagicUiColors.TALENT);
+         Component name = Component.translatable("passive.typemoonworld." + entry.getKey() + ".name");
+         guiGraphics.drawString(this.font, name, listX + 8, rowY + 4, GuiUtils.ARCANE_TEXT, false);
+         guiGraphics.drawString(this.font, entry.getValue().name(), listX + listWidth - 15, rowY + 4, MagicUiColors.TALENT, false);
+         Component detail = this.passiveValueText(entry.getKey(), entry.getValue());
+         guiGraphics.drawString(this.font, this.clampTextToWidth(detail.getString(), listWidth - 16), listX + 8, rowY + 14, GuiUtils.ARCANE_TEXT_MUTED, false);
+      }
+
+      if (passives.size() > visibleRows) {
+         int trackX = listX + listWidth + 3;
+         int trackHeight = visibleRows * rowHeight - 2;
+         int barHeight = Math.max(20, trackHeight * visibleRows / passives.size());
+         int barY = listY + (maxStart == 0 ? 0 : (trackHeight - barHeight) * this.passiveStartRow / maxStart);
+         guiGraphics.fill(trackX, listY, trackX + 4, listY + trackHeight, 0xA00C1116);
+         guiGraphics.fill(trackX, barY, trackX + 4, barY + barHeight, MagicUiColors.TALENT);
+      }
+
+      String total = String.format(Locale.ROOT, "%.1f%%", PassiveService.dodgeChance(vars) * 100.0);
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.passive.total_dodge", total), listX, this.topPos + 196, GuiUtils.ARCANE_TEXT_MUTED, false);
+   }
+
+   private Component passiveValueText(String id, PassiveRank rank) {
+      return switch (id) {
+         case PassiveService.DIVINITY -> Component.translatable("passive.typemoonworld.divinity.value", (int)rank.healthBonus(), (int)rank.attackBonus());
+         case PassiveService.CLAIRVOYANCE -> Component.translatable("passive.typemoonworld.clairvoyance.value", (int)rank.clairvoyanceProficiency(), (int)rank.maxZoom());
+         case PassiveService.MIND_EYE_TRUE -> Component.translatable("passive.typemoonworld.mind_eye_true.value", this.formatPercent(rank.dodgeChance()));
+         case PassiveService.MIND_EYE_FALSE -> Component.translatable("passive.typemoonworld.mind_eye_false.value", this.formatPercent(rank.dodgeChance()));
+         case PassiveService.INSTINCT -> Component.translatable("passive.typemoonworld.instinct.value", this.formatPercent(rank.dodgeChance()));
+         default -> Component.literal(rank.name());
+      };
+   }
+
+   private String formatPercent(double chance) {
+      return String.format(Locale.ROOT, "%.1f%%", chance * 100.0);
    }
 
    private void renderWheelSlots(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -1253,6 +1333,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
       String normalized = normalizeMagicIdForDisplay(magicId);
 
+      if (TalentService.isTalent(normalized)) return MagicProficiencyService.get(vars, normalized);
+
       return switch (normalized) {
          case "structural_analysis" -> vars.proficiency_structural_analysis;
          case "projection" -> vars.proficiency_projection;
@@ -1330,12 +1412,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             int slotY = y + MagicalattributesMenu.HOTBAR_Y - 1;
             GuiUtils.renderArcaneSlot(guiGraphics, slotX, slotY, MagicalattributesMenu.SLOT_PIXEL_SIZE, GuiUtils.ARCANE_GOLD, false);
          }
-      } else {
-         GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 58, 188, 142, GuiUtils.ARCANE_CYAN);
+       } else if (this.pageMode == 1) {
+          GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 58, 188, 142, GuiUtils.ARCANE_CYAN);
          GuiUtils.renderArcanePanel(guiGraphics, x + 306, y + 58, 104, 142, GuiUtils.ARCANE_GOLD);
          guiGraphics.fill(x + 396, y + 208, x + 408, y + 222, GuiUtils.ARCANE_PANEL_ALT);
-         guiGraphics.renderOutline(x + 396, y + 208, 12, 14, GuiUtils.ARCANE_BORDER);
-      }
+          guiGraphics.renderOutline(x + 396, y + 208, 12, 14, GuiUtils.ARCANE_BORDER);
+       } else {
+          GuiUtils.renderArcanePanel(guiGraphics, x + 112, y + 36, 298, 184, MagicUiColors.TALENT);
+       }
 
       RenderSystem.disableBlend();
    }
@@ -1369,7 +1453,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             guiGraphics.drawCenteredString(this.font, levelText, 341, rowY + 2, GuiUtils.ARCANE_TEXT);
          }
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.inventory"), 120, 137, GuiUtils.ARCANE_GOLD, false);
-      } else {
+       } else if (this.pageMode == 1) {
          TypeMoonWorldModVariables.PlayerVariables vars = this.getVars();
          guiGraphics.drawString(
             this.font,
@@ -1381,8 +1465,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          );
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.magic_library"), 118, 64, GuiUtils.ARCANE_CYAN, false);
          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.magic_knowledge.wheel_slots"), 312, 64, GuiUtils.ARCANE_GOLD, false);
-         guiGraphics.drawCenteredString(this.font, "i", 402, 211, GuiUtils.ARCANE_TEXT_MUTED);
-      }
+          guiGraphics.drawCenteredString(this.font, "i", 402, 211, GuiUtils.ARCANE_TEXT_MUTED);
+       } else {
+          guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.passives"), 118, 42, MagicUiColors.TALENT, false);
+          GuiUtils.renderSectionHeader(guiGraphics, 118, 42, 282, MagicUiColors.TALENT);
+       }
    }
 
    public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -1507,6 +1594,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+      if (this.pageMode == 2) {
+         int maxStart = Math.max(0, this.getVars().passive_ranks.size() - 5);
+         if (maxStart > 0) {
+            this.passiveStartRow = Mth.clamp(this.passiveStartRow + (deltaY < 0.0 ? 1 : -1), 0, maxStart);
+            return true;
+         }
+      }
       if (this.pageMode == 1) {
          if (this.presetDialogState != null && this.scrollPresetDialog(mouseX, mouseY, deltaY)) {
             return true;

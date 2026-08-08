@@ -39,6 +39,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
    NeonButton imagebutton_basic_attributes;
    NeonButton imagebutton_magical_attributes;
    NeonButton imagebutton_magical_properties;
+   NeonButton imagebutton_passives;
 
    public Basic_information_Screen(BasicInformationMenu container, Inventory inventory, Component text) {
       super(container, inventory, text);
@@ -354,9 +355,9 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
    public void init() {
       super.init();
       int btnY = this.topPos + 6;
-      int btnWidth = 78;
+      int btnWidth = 70;
       int btnHeight = 16;
-      int startX = this.leftPos + this.imageWidth - btnWidth * 3 - 14;
+      int startX = this.leftPos + this.imageWidth - btnWidth * 4 - 16;
       this.imagebutton_basic_attributes = new NeonButton(
          startX, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {}
       ).setArcaneStyle(true).setSelected(true);
@@ -375,6 +376,18 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          }
       ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_properties);
+      this.imagebutton_passives = new NeonButton(
+         startX + (btnWidth + 2) * 3,
+         btnY,
+         btnWidth,
+         btnHeight,
+         Component.translatable("gui.typemoonworld.tab.passives"),
+         e -> {
+            PacketDistributor.sendToServer(new Basic_information_Button_Message(2, this.x, this.y, this.z), new CustomPacketPayload[0]);
+            Basic_information_Button_Message.handleButtonAction(this.entity, 2, this.x, this.y, this.z);
+         }
+      ).setArcaneStyle(true).setSelectedColor(MagicUiColors.TALENT);
+      this.addRenderableWidget(this.imagebutton_passives);
    }
 
    private Component buildBaseAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {

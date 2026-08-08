@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(
@@ -286,7 +287,7 @@ public class TypeMoonWorldModKeyMappings {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
-                  if (vars.is_magus && vars.is_magic_circuit_open) {
+                  if ((vars.is_magus && vars.is_magic_circuit_open) || TalentService.hasAny(vars)) {
                      PacketDistributor.sendToServer(new CycleMagicMessage(scrollDelta > 0.0), new CustomPacketPayload[0]);
                      event.setCanceled(true);
                   }
@@ -423,8 +424,7 @@ public class TypeMoonWorldModKeyMappings {
                if (!isWheelSwitchDown) {
                   isWheelSwitchDown = true;
                   if (!suppressScreens
-                     && vars.is_magus
-                     && vars.is_magic_circuit_open
+                     && ((vars.is_magus && vars.is_magic_circuit_open) || TalentService.hasAny(vars))
                      && !(Minecraft.getInstance().screen instanceof MagicWheelSwitchScreen)) {
                      Minecraft.getInstance().setScreen(new MagicWheelSwitchScreen(vars.active_wheel_index));
                   }
@@ -437,8 +437,7 @@ public class TypeMoonWorldModKeyMappings {
             if (TypeMoonWorldModKeyMappings.CYCLE_MAGIC.isDown()) {
                if (!isCycleMagicDown) {
                   isCycleMagicDown = true;
-                  if (vars.is_magus
-                     && vars.is_magic_circuit_open
+                  if (((vars.is_magus && vars.is_magic_circuit_open) || TalentService.hasAny(vars))
                      && !vars.selected_magics.isEmpty()
                      && !suppressScreens
                      && !(Minecraft.getInstance().screen instanceof MagicRadialMenuScreen)) {
@@ -502,6 +501,15 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         String currentSelection = PlayerMagicSelectionService.getCurrentMagicId(vars);
+         if (TalentService.isTalent(currentSelection) && TalentService.owns(vars, currentSelection)) {
+            if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick()) triggerCast(player, 0, 0);
+            castPressStartMs = -1L;
+            castLongTriggered = false;
+            machineGunCastKeyDown = false;
+            ganderCastKeyDown = false;
+            return;
+         }
          if (isClientBajiquanActive(player, vars)) {
             if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick()) {
                PacketDistributor.sendToServer(new BajiquanInputMessage(BajiquanCombatService.INPUT_CIRCLE_REALM, false, false));
@@ -639,7 +647,7 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static void handleNumpadWheelQuickSwitch(TypeMoonWorldModVariables.PlayerVariables vars) {
-         if (vars.is_magus && vars.is_magic_circuit_open) {
+         if ((vars.is_magus && vars.is_magic_circuit_open) || TalentService.hasAny(vars)) {
             if (Minecraft.getInstance().screen == null) {
                long window = Minecraft.getInstance().getWindow().getWindow();
                int[] keys = new int[]{320, 321, 322, 323, 324, 325, 326, 327, 328, 329};

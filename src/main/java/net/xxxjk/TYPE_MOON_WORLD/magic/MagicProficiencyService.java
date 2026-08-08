@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 
 import net.minecraft.world.entity.Entity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 /** Applies diminishing returns to every proficiency increase, including batch operations. */
 public final class MagicProficiencyService {
@@ -9,6 +10,7 @@ public final class MagicProficiencyService {
 
    public static double get(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null || id == null) return 0.0;
+      if (TalentService.isTalent(id)) return TalentService.proficiency(vars, id);
       return switch (MagicLearningStrategy.normalizeDisplayId(id)) {
          case "magic_analysis" -> vars.proficiency_magic_analysis;
          case "structural_analysis" -> vars.proficiency_structural_analysis;
@@ -37,6 +39,7 @@ public final class MagicProficiencyService {
 
    public static double add(TypeMoonWorldModVariables.PlayerVariables vars, String id, double baseGain) {
       if (vars == null || id == null || baseGain <= 0.0) return get(vars, id);
+      if (TalentService.isTalent(id)) return get(vars, id);
       double current = get(vars, id);
       double value = calculateValue(id, current, baseGain);
       set(vars, id, value);
@@ -52,6 +55,7 @@ public final class MagicProficiencyService {
    }
 
    public static void set(TypeMoonWorldModVariables.PlayerVariables vars, String id, double value) {
+      if (TalentService.isTalent(id)) return;
       value = Math.max(0.0, Math.min(100.0, Math.round(value * 100.0) / 100.0));
       switch (MagicLearningStrategy.normalizeDisplayId(id)) {
          case "magic_analysis" -> vars.proficiency_magic_analysis = value;

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 public final class MagicClassification {
    private static final Map<String, MagicClassification.ManaCostType> MAGIC_COST_TYPES = Map.ofEntries(
@@ -66,7 +67,7 @@ public final class MagicClassification {
    }
 
    public static boolean isKnownMagic(String magicId) {
-      return magicId != null && (MAGIC_COST_TYPES.containsKey(magicId) || MagicDefinitionRegistry.contains(magicId));
+      return magicId != null && (TalentService.isTalent(magicId) || MAGIC_COST_TYPES.containsKey(magicId) || MagicDefinitionRegistry.contains(magicId));
    }
 
    public static MagicClassification.ManaCostType getManaCostType(String magicId) {
@@ -75,6 +76,7 @@ public final class MagicClassification {
 
    public static Set<String> getAllMagicIds() {
       java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(ALL_MAGIC_IDS);
+      ids.addAll(TalentService.IDS);
       ids.addAll(MagicDefinitionRegistry.ids());
       return java.util.Collections.unmodifiableSet(ids);
    }

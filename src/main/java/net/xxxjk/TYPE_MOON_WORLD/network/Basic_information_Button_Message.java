@@ -50,7 +50,7 @@ public record Basic_information_Button_Message(int buttonID, int x, int y, int z
       Level world = entity.getCommandSenderWorld();
       BlockPos pos = BlockPos.containing(x, y, z);
       if (world.isLoaded(pos)) {
-         if (!world.isClientSide() && (buttonID == 0 || buttonID == 1)) {
+         if (!world.isClientSide() && (buttonID == 0 || buttonID == 1 || buttonID == 2)) {
             To_magical_attributes.execute(world, x, y, z, entity, buttonID);
          }
       }

@@ -37,7 +37,8 @@ public class UbwControlledSwordEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> STATE = SynchedEntityData.defineId(
       UbwControlledSwordEntity.class, EntityDataSerializers.INT);
    private Vec3 waypoint = Vec3.ZERO;
-   private Vec3 attackDirection = Vec3.ZERO;
+   private Vec3 attackTarget = Vec3.ZERO;
+   private UUID attackTargetId;
    private UUID controllerId;
 
    public UbwControlledSwordEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
@@ -74,11 +75,12 @@ public class UbwControlledSwordEntity extends ThrowableItemProjectile {
          && (controlState() == STATE_RISING || controlState() == STATE_WAITING);
    }
 
-   public void release(Vec3 firstWaypoint, Vec3 secondWaypoint, Vec3 direction) {
-      if (direction == null || direction.lengthSqr() < 1.0E-6D) {
+   public void release(Vec3 firstWaypoint, Vec3 secondWaypoint, Vec3 target, UUID targetId) {
+      if (target == null) {
          return;
       }
-      this.attackDirection = direction.normalize();
+      this.attackTarget = target;
+      this.attackTargetId = targetId;
       if (firstWaypoint != null && secondWaypoint != null) {
          this.waypoint = firstWaypoint;
          this.entityData.set(STATE, STATE_REPOSITION_UP);
@@ -134,9 +136,24 @@ public class UbwControlledSwordEntity extends ThrowableItemProjectile {
    }
 
    private void beginAttack() {
+      Vec3 direction = resolveAttackTarget().subtract(this.position());
+      if (direction.lengthSqr() < 1.0E-6D) {
+         this.discard();
+         return;
+      }
       this.entityData.set(STATE, STATE_ATTACKING);
       this.setNoGravity(true);
-      this.setDeltaMovement(this.attackDirection.normalize().scale(ATTACK_SPEED));
+      this.setDeltaMovement(direction.normalize().scale(ATTACK_SPEED));
+   }
+
+   private Vec3 resolveAttackTarget() {
+      if (this.attackTargetId != null && this.level() instanceof ServerLevel level) {
+         Entity target = level.getEntity(this.attackTargetId);
+         if (target != null && target.isAlive() && !target.isRemoved()) {
+            this.attackTarget = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
+         }
+      }
+      return this.attackTarget;
    }
 
    protected void updateRotation() {
@@ -179,7 +196,10 @@ public class UbwControlledSwordEntity extends ThrowableItemProjectile {
       super.addAdditionalSaveData(tag);
       tag.putInt("ControlState", controlState());
       putVec(tag, "Waypoint", this.waypoint);
-      putVec(tag, "Attack", this.attackDirection);
+      putVec(tag, "AttackTarget", this.attackTarget);
+      if (this.attackTargetId != null) {
+         tag.putUUID("AttackTargetId", this.attackTargetId);
+      }
       if (this.controllerId != null) {
          tag.putUUID("Controller", this.controllerId);
       }
@@ -190,7 +210,8 @@ public class UbwControlledSwordEntity extends ThrowableItemProjectile {
       super.readAdditionalSaveData(tag);
       this.entityData.set(STATE, tag.getInt("ControlState"));
       this.waypoint = getVec(tag, "Waypoint");
-      this.attackDirection = getVec(tag, "Attack");
+      this.attackTarget = getVec(tag, "AttackTarget");
+      this.attackTargetId = tag.hasUUID("AttackTargetId") ? tag.getUUID("AttackTargetId") : null;
       this.controllerId = tag.hasUUID("Controller") ? tag.getUUID("Controller") : null;
       this.setNoGravity(true);
    }

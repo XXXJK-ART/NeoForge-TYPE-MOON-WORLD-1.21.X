@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 public final class MagicDisplayMetadata {
    public static final String CATEGORY_ALL = "all";
@@ -15,6 +16,7 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_OTHER = "other";
    public static final String CATEGORY_NORDIC = "nordic";
    public static final String CATEGORY_MARTIAL = "martial";
+   public static final String CATEGORY_TALENT = "talent";
    private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite", "black_key_fire_engraving", "stigma");
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
       "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
@@ -31,8 +33,12 @@ public final class MagicDisplayMetadata {
       return "bajiquan".equals(magicId) || "ganryu".equals(magicId) || "hokushin_ittoryu".equals(magicId) || "tennen_rishin_ryu".equals(magicId);
    }
 
+   public static boolean isTalent(String magicId) {
+      return TalentService.isTalent(magicId);
+   }
+
    public static boolean canEnterMagicCrest(String magicId) {
-      return magicId != null && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
+      return magicId != null && !isTalent(magicId) && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
    }
 
    public static boolean isSpecialMagic(String magicId) {
@@ -42,6 +48,8 @@ public final class MagicDisplayMetadata {
    public static String categoryOf(String magicId) {
       if (magicId == null || magicId.isEmpty()) {
          return CATEGORY_OTHER;
+      } else if (isTalent(magicId)) {
+         return CATEGORY_TALENT;
       } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
          || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
          return CATEGORY_JEWEL;

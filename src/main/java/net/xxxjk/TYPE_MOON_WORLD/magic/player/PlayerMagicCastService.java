@@ -18,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicCastContext;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -40,21 +41,8 @@ public final class PlayerMagicCastService {
       );
       vars.ensureMagicSystemInitialized();
       vars.rebuildSelectedMagicsFromActiveWheel();
-      if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
-         displayClientMessage(entity, "message.typemoonworld.origin_bullet.sealed");
-         return;
-      }
-      if (!vars.is_magic_circuit_open) {
-         displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
-         return;
-      }
-
       if (vars.selected_magics.isEmpty()) {
          displayClientMessage(entity, "message.typemoonworld.magic.no_magic_selected");
-         return;
-      }
-
-      if (vars.magic_cooldown > 0.0) {
          return;
       }
 
@@ -77,6 +65,21 @@ public final class PlayerMagicCastService {
 
          return;
       }
+
+      if (entity instanceof net.minecraft.server.level.ServerPlayer player && TalentService.isTalent(entry.magicId)) {
+         TalentService.cast(player, vars, entry.magicId);
+         return;
+      }
+
+      if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
+         displayClientMessage(entity, "message.typemoonworld.origin_bullet.sealed");
+         return;
+      }
+      if (!vars.is_magic_circuit_open) {
+         displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
+         return;
+      }
+      if (vars.magic_cooldown > 0.0) return;
 
       var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
       if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, entry.magicId)) {

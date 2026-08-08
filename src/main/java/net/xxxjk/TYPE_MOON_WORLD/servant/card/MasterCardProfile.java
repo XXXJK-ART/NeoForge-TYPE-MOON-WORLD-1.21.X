@@ -225,6 +225,7 @@ public final class MasterCardProfile {
             learn(vars, "unlimited_blade_works");
             vars.proficiency_unlimited_blade_works = Math.max(vars.proficiency_unlimited_blade_works, 50.0);
             vars.has_unlimited_blade_works = true;
+            learn(vars, "ubw_sword_control");
             learn(vars, "sword_barrel_full_open");
             vars.proficiency_sword_barrel_full_open = Math.max(vars.proficiency_sword_barrel_full_open, 10.0);
             addAnalyzedItem(vars, new ItemStack(Items.IRON_SWORD));

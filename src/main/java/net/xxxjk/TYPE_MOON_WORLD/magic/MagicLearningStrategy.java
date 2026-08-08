@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 /** Central rules for magic complexity and acquisition. Values are intentionally stable for saves. */
 public final class MagicLearningStrategy {
@@ -102,10 +103,10 @@ public final class MagicLearningStrategy {
       if ("magic_analysis".equals(id)) return 200 + (int)Math.round((100.0 - Math.max(0.0, Math.min(100.0, proficiency))) * 4.0);
       return 200 + complexity(id) * 4;
    }
-   public static boolean canAnalyze(String id) { return rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id)); }
-   public static boolean canLearnFromMaterial(String id) { return rule(id).material(); }
-   public static boolean canResearch(String id) { return rule(id).research(); }
-   public static boolean canCopy(String id) { return rule(id).copy(); }
+   public static boolean canAnalyze(String id) { return !TalentService.isTalent(id) && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id)); }
+   public static boolean canLearnFromMaterial(String id) { return !TalentService.isTalent(id) && rule(id).material(); }
+   public static boolean canResearch(String id) { return !TalentService.isTalent(id) && rule(id).research(); }
+   public static boolean canCopy(String id) { return !TalentService.isTalent(id) && rule(id).copy(); }
    public static boolean requiresSword(String id) { return rule(id).sword(); }
    public static boolean requiresImaginaryAttribute(String id) {
       return "absorption".equals(id)

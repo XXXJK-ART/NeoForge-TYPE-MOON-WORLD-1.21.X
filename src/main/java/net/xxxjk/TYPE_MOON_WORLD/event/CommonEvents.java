@@ -121,6 +121,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
@@ -160,7 +162,7 @@ public class CommonEvents {
          event.setCanceled(true);
       }
    }
-
+   
    @SubscribeEvent
    public static void onServantCardFall(LivingFallEvent event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) {
@@ -352,6 +354,8 @@ public class CommonEvents {
             }
          }
          if (player instanceof ServerPlayer serverPlayer) {
+            TalentService.tick(serverPlayer);
+            PassiveService.tick(serverPlayer);
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
@@ -533,6 +537,13 @@ public class CommonEvents {
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
             if (event.getEntity() instanceof ServerPlayer player) {
+               if (!fanaticDefensePiercing
+                  && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
+                  && PassiveService.tryDodge(player, event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  return;
+               }
                if (!fanaticDefensePiercing && RubyStaffItem.tryAbsorbShield(player, event)) {
                   return;
                }
@@ -791,6 +802,12 @@ public class CommonEvents {
 
    @SubscribeEvent
    public static void onMobEffectRemoved(Remove event) {
+      if (event.getEntity() instanceof ServerPlayer player
+         && event.getEffect() == ModMobEffects.MONSTROUS_STRENGTH
+         && TalentService.shouldPreventRemoval(player)) {
+         event.setCanceled(true);
+         return;
+      }
       restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
       clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
    }
@@ -940,6 +957,11 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onMobEffectExpired(Expired event) {
       if (event.getEffectInstance() != null) {
+         if (event.getEntity() instanceof ServerPlayer player
+            && event.getEffectInstance().getEffect() == ModMobEffects.MONSTROUS_STRENGTH) {
+            player.getPersistentData().remove(TalentService.STRENGTH_UNTIL_TAG);
+            player.getPersistentData().remove(TalentService.STRENGTH_AMPLIFIER_TAG);
+         }
          restorePetrifiedMobState(event.getEntity(), event.getEffectInstance().getEffect().value());
          clearBasicMagecraftEffectTags(event.getEntity(), event.getEffectInstance().getEffect().value());
       }
@@ -1315,6 +1337,7 @@ public class CommonEvents {
 
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (!event.isCanceled()) TalentService.clearActiveState(player);
             // Contract loss is committed only after every higher-priority death
             // handler has had a chance to cancel the event (revive/protection).
             if (!event.isCanceled() && vars.servant_card_transformed) {

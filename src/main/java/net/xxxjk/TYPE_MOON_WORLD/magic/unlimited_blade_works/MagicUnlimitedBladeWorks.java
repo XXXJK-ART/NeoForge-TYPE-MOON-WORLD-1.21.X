@@ -20,7 +20,7 @@ public class MagicUnlimitedBladeWorks {
             } else {
                boolean isInUBWDimension = UBWInstanceManager.isUbwDimension(player.level());
                if (!vars.is_in_ubw && !isInUBWDimension) {
-                  double initialCost = 50.0;
+                  double initialCost = UbwManaRules.openingPayment(false);
                   if (ManaHelper.consumeManaOrHealth(player, initialCost)) {
                      vars.is_chanting_ubw = true;
                      vars.ubw_chant_progress = 1;

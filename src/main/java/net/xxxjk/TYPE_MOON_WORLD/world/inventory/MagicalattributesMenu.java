@@ -148,7 +148,7 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
    }
 
    public void setPage(int page) {
-      this.pageMode = page == 1 ? 1 : 0;
+      this.pageMode = Math.max(0, Math.min(2, page));
    }
 
    public void clicked(int slotId, int dragType, @NotNull ClickType clickType, @NotNull Player player) {

@@ -68,6 +68,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ClairvoyanceStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionItemMessage;
@@ -275,6 +276,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardFlightMessage.TYPE, ServantCardFlightMessage.STREAM_CODEC, ServantCardFlightMessage::handleData);
       registrar.playToServer(SetTimeAlterMultiplierMessage.TYPE, SetTimeAlterMultiplierMessage.STREAM_CODEC, SetTimeAlterMultiplierMessage::handleData);
       registrar.playToClient(TimeAlterVisualStateMessage.TYPE, TimeAlterVisualStateMessage.STREAM_CODEC, TimeAlterVisualStateMessage::handleData);
+      registrar.playToClient(ClairvoyanceStateMessage.TYPE, ClairvoyanceStateMessage.STREAM_CODEC, ClairvoyanceStateMessage::handleData);
       registrar.playToServer(ServantCardHoldActionMessage.TYPE, ServantCardHoldActionMessage.STREAM_CODEC, ServantCardHoldActionMessage::handleData);
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);

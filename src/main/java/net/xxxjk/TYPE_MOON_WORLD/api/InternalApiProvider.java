@@ -361,19 +361,26 @@ public final class InternalApiProvider implements ApiProvider {
          if (entity == null) throw new IllegalArgumentException("entity");
          var vars = entity.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
          return new MagicKnowledge() {
-            @Override public boolean isLearned(ResourceLocation magicId) { return magicId != null && vars.hasLearnedSelfMagic(magicId.toString()); }
-            @Override public boolean learn(ResourceLocation magicId) {
-               if (magicId == null || !MagicDefinitionRegistry.contains(magicId.toString()) || vars.learned_magics.contains(magicId.toString())) return false;
-               vars.learned_magics.add(magicId.toString());
-               vars.syncPlayerVariables(entity);
-               return true;
-            }
-            @Override public double proficiency(ResourceLocation magicId) {
-               return magicId == null ? 0.0 : vars.magic_proficiencies.getOrDefault(magicId.toString(), 0.0);
-            }
-            @Override public void setProficiency(ResourceLocation magicId, double value) {
-               if (magicId == null) return;
-               vars.magic_proficiencies.put(magicId.toString(), Math.max(0.0, Math.min(100.0, value)));
+             @Override public boolean isLearned(ResourceLocation magicId) { return magicId != null && vars.hasLearnedSelfMagic(magicId.toString()); }
+             @Override public boolean learn(ResourceLocation magicId) {
+                if (magicId == null
+                   || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())
+                   || !MagicDefinitionRegistry.contains(magicId.toString())
+                   || vars.learned_magics.contains(magicId.toString())) return false;
+                vars.learned_magics.add(magicId.toString());
+                vars.syncPlayerVariables(entity);
+                return true;
+             }
+             @Override public double proficiency(ResourceLocation magicId) {
+                if (magicId == null) return 0.0;
+                if (net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) {
+                   return net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.proficiency(vars, magicId.toString());
+                }
+                return vars.magic_proficiencies.getOrDefault(magicId.toString(), 0.0);
+             }
+             @Override public void setProficiency(ResourceLocation magicId, double value) {
+                if (magicId == null || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) return;
+                vars.magic_proficiencies.put(magicId.toString(), Math.max(0.0, Math.min(100.0, value)));
                vars.syncPlayerVariables(entity);
             }
          };

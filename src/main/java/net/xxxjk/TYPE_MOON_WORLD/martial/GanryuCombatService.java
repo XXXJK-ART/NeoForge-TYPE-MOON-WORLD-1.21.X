@@ -493,6 +493,7 @@ public final class GanryuCombatService {
 
    public static void addProficiency(ServerPlayer player, double amount) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double totalBefore = MartialPassiveProgressionService.total(vars);
       double before = vars.ganryu_proficiency;
       vars.ganryu_proficiency = Mth.clamp(Math.round((before + amount) * 100.0) / 100.0, 0.0, 100.0);
       if (vars.ganryu_proficiency >= 50.0) vars.martial_ukemi_learned = true;
@@ -500,6 +501,7 @@ public final class GanryuCombatService {
       if (before < 100.0 && vars.ganryu_proficiency >= 100.0) {
          TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.GANRYU_SOUWA_PERFECT);
       }
+      MartialPassiveProgressionService.afterNaturalGain(player, totalBefore);
       if ((int)(before * 20.0) != (int)(vars.ganryu_proficiency * 20.0)) vars.syncPlayerVariables(player);
    }
 
