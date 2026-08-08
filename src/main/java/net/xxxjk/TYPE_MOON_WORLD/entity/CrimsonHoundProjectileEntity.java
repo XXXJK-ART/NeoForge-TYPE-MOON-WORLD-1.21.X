@@ -42,7 +42,7 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setTrackedTarget(LivingEntity target) {
-      this.entityData.set(TARGET_ID, target == null ? -1 : target.getId());
+      this.entityData.set(TARGET_ID, target == null || EntityUtils.isImmunePlayerTarget(target) ? -1 : target.getId());
    }
 
    @Override
@@ -66,7 +66,12 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
       }
 
       Entity targetEntity = this.level().getEntity(this.entityData.get(TARGET_ID));
-      boolean tracking = targetEntity instanceof LivingEntity livingTarget && livingTarget.isAlive();
+      boolean tracking = targetEntity instanceof LivingEntity livingTarget
+         && livingTarget.isAlive()
+         && !EntityUtils.isImmunePlayerTarget(livingTarget);
+      if (!tracking && targetEntity != null) {
+         this.entityData.set(TARGET_ID, -1);
+      }
       if (tracking) {
          LivingEntity target = (LivingEntity)targetEntity;
          Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0).subtract(this.position());
@@ -110,6 +115,10 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void hitTarget(LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         this.entityData.set(TARGET_ID, -1);
+         return;
+      }
       target.invulnerableTime = 0;
       target.hurt(this.damageSources().thrown(this, this.getOwner()), DIRECT_HIT_DAMAGE);
       target.invulnerableTime = 0;

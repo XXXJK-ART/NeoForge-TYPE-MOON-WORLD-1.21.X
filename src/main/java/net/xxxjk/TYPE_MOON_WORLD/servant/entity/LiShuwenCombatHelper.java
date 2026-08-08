@@ -351,6 +351,10 @@ public final class LiShuwenCombatHelper {
    }
 
    private static void resolveWuErDa(LiShuwenEntity entity, LivingEntity target, ServerLevel level) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         entity.setTarget(null);
+         return;
+      }
       applyArmorBreak(target, level.getGameTime() + 60L);
       boolean instantDeathTarget = isInstantDeathTarget(target);
       float chance = instantDeathChance(target);

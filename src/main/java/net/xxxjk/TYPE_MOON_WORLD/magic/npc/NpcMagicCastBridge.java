@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
+import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
+import com.example.typemoonaddon.detection.DetectionService;
+import com.example.typemoonaddon.magic.EntityDisplacementService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
@@ -987,6 +991,10 @@ public final class NpcMagicCastBridge {
          case "earth_magic":
             vars.proficiency_earth_magic = Math.max(vars.proficiency_earth_magic, p);
             break;
+         case "airflow_blade":
+         case "detection":
+            MagicProficiencyService.set(vars, magicId, Math.max(MagicProficiencyService.get(vars, magicId), p));
+            break;
          case "jewel_machine_gun":
          case "ruby_flame_sword":
          case "sapphire_winter_frost":
@@ -1276,13 +1284,17 @@ public final class NpcMagicCastBridge {
                   case "water_magic":
                   case "wind_magic":
                   case "earth_magic":
+                  case "detection":
                   case "sapphire_winter_frost":
                   case "emerald_winter_river":
                      hasControl = true;
-                     hasRanged = true;
+                     if (!"detection".equals(var8)) {
+                        hasRanged = true;
+                     }
                      break;
                   case "gander":
                   case "magic_bullet":
+                  case "airflow_blade":
                   case "fire_magic":
                   case "gandr_machine_gun":
                   case "jewel_random_shoot":
@@ -3151,6 +3163,14 @@ public final class NpcMagicCastBridge {
    private static boolean tryRetreatRecoveryOrEscapeMagic(
       MysticMagicianEntity npc, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime
    ) {
+      if (target != null && target.isAlive() && npc.distanceToSqr(target) <= 144.0
+         && hasCastableMagic(vars, "entity_displacement")
+         && gameTime >= getMagicCooldownUntil(npc, "entity_displacement")
+         && EntityDisplacementService.swapNpc(npc, target)) {
+         applyPostCastCooldown(npc, vars, "entity_displacement", new CompoundTag(), gameTime, 12);
+         return true;
+      }
+
       double maxHealth = Math.max(1.0, (double)npc.getMaxHealth());
       double ratio = npc.getHealth() / maxHealth;
       if (ratio <= 0.55 && !npc.hasEffect(MobEffects.REGENERATION) && consumeMana(vars, 25.0)) {
@@ -3668,6 +3688,7 @@ public final class NpcMagicCastBridge {
          return switch (magicId) {
             case "gander",
                "gandr_machine_gun",
+               "airflow_blade",
                "jewel_random_shoot",
                "jewel_machine_gun",
                "magic_bullet",
@@ -3702,6 +3723,8 @@ public final class NpcMagicCastBridge {
          case "healing_magic" -> 12.0 + proficiency * 0.08;
          case "spiritual_healing" -> 15.0;
          case "magic_bullet" -> 8.0 + proficiency * 0.06;
+         case "airflow_blade" -> AirflowBladeService.BLADE_MANA_COST;
+         case "detection" -> 6.0;
          case "suggestion_magic" -> 10.0 + proficiency * 0.08;
          case "binding_magic" -> 12.0 + proficiency * 0.08;
          case "fire_magic" -> 10.0 + proficiency * 0.12;
@@ -3807,6 +3830,38 @@ public final class NpcMagicCastBridge {
       }
       markCastingPose(caster, 8);
       return MagicMagicBullet.castDirect(caster, target, vars, proficiency);
+   }
+
+   static boolean castAirflowBlade(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!hasProjectilePath(caster, target, AirflowBladeService.BLADE_SPEED, 0.0)) {
+         repositionForClearShot(caster, target, 11.0, 1.12);
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("airflow_blade", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, 10);
+      Vec3 direction = getAimDirection(caster, target, AirflowBladeService.BLADE_SPEED, 0.0);
+      faceCasterToDirection(caster, direction);
+      return AirflowBladeService.castNpcBlade(caster, target, proficiency);
+   }
+
+   static boolean castDetection(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("detection", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, 8);
+      if (target != null && target.isAlive()) {
+         caster.lookAt(target, 45.0F, 45.0F);
+      }
+      return DetectionService.castNpcDetection(caster, target, proficiency);
    }
 
    static boolean castSuggestionMagic(
@@ -4607,6 +4662,7 @@ public final class NpcMagicCastBridge {
             case "reinforcement" -> vars.proficiency_reinforcement;
             case "healing_magic" -> vars.proficiency_healing_magic;
             case "magic_bullet" -> vars.proficiency_magic_bullet;
+            case "airflow_blade", "detection" -> MagicProficiencyService.get(vars, magicId);
             case "suggestion_magic" -> vars.proficiency_suggestion_magic;
             case "binding_magic" -> vars.proficiency_binding_magic;
             case "fire_magic" -> vars.proficiency_fire_magic;

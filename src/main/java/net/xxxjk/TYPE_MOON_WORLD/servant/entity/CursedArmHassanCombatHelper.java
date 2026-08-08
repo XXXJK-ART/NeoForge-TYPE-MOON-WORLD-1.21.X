@@ -246,6 +246,14 @@ public final class CursedArmHassanCombatHelper {
       long until = data.getLong(ZABANIYA_WINDUP_UNTIL);
       if (until <= 0L || now < until) {
          if (until > 0L && entity.level().getEntity(data.getInt(ZABANIYA_TARGET_ID)) instanceof LivingEntity target && target.isAlive()) {
+            if (EntityUtils.isImmunePlayerTarget(target)) {
+               data.remove(ZABANIYA_WINDUP_UNTIL);
+               data.remove(ZABANIYA_TARGET_ID);
+               entity.setZabaniyaTargetId(0);
+               entity.setNoBandages(false);
+               entity.setTarget(null);
+               return;
+            }
             entity.getLookControl().setLookAt(target, 45.0F, 45.0F);
          }
          return;
@@ -541,6 +549,10 @@ public final class CursedArmHassanCombatHelper {
    }
 
    private static void resolveZabaniya(CursedArmHassanEntity entity, LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         entity.setTarget(null);
+         return;
+      }
       if (isProtectedPigKind(target)) {
          entity.setTarget(null);
          return;

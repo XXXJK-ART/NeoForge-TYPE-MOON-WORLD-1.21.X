@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -61,6 +63,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private static final double BEAM_LENGTH = 150.0;
    private static final double BEAM_HALF_WIDTH = 12.0;
    private static final double BEAM_HALF_HEIGHT = 8.0;
+   private static final double BEAM_SWEEP_STEP_RADIANS = Math.toRadians(2.0);
    private UUID ownerUuid;
    private UUID trackedTargetUuid;
    private Vec3 direction = new Vec3(0, 0, 1);
@@ -76,6 +79,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private boolean duelFinale;
    private int stageTicks;
    private float clashDamageScale = 1.0F;
+   private Vec3 lastDamageDirection;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public GilgameshEaBeamEntity(EntityType<?> type, Level level) {
@@ -212,6 +216,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       this.entityData.set(POWER, Math.max(0.35F, Math.min(1.0F, scale)));
       setStage(Stage.BEAM);
       updateDirectionFromOwner(owner);
+      this.lastDamageDirection = this.direction;
       // EA is an anti-world attack: collapse UBW/Hajun before the first beam
       // frame, then move this invisible controller with its caster.
       if (collapseContainingBoundary(level, owner)) return;
@@ -255,25 +260,63 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
 
    private void applyBeamDamage(ServerLevel level, LivingEntity owner) {
       Vec3 start = beamStart();
-      Vec3 forward = this.direction;
-      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0, 0, 1) : new Vec3(0, 1, 0);
-      Vec3 right = forward.cross(worldUp).normalize();
-      Vec3 up = right.cross(forward).normalize();
-      AABB search = new AABB(start, getEndPos()).inflate(BEAM_HALF_WIDTH + 2, BEAM_HALF_HEIGHT + 2, BEAM_HALF_WIDTH + 2);
+      List<Vec3> sweepDirections = sweepDirections(this.lastDamageDirection, this.direction);
+      this.lastDamageDirection = this.direction;
+      AABB search = new AABB(start, start);
+      for (Vec3 forward : sweepDirections) {
+         Vec3 end = start.add(forward.scale(BEAM_LENGTH));
+         search = search.minmax(new AABB(end, end));
+      }
+      search = search.inflate(BEAM_HALF_WIDTH + 2, BEAM_HALF_HEIGHT + 2, BEAM_HALF_WIDTH + 2);
       float pulse = 5000.0F * getPowerScale() * clashDamageScale / BEAM_DAMAGE_PULSES;
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
          e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !GilgameshDuelState.areDuelPartners(owner, e) && !EntityUtils.isImmunePlayerTarget(e))) {
-         Vec3 rel = target.position().add(0, target.getBbHeight() * 0.5, 0).subtract(start);
-         double along = rel.dot(forward);
-         if (along < -3.0 || along > BEAM_LENGTH) continue;
-         double widthScale = Math.max(0.22, Math.sin(Math.PI * Math.max(0, along) / BEAM_LENGTH));
-         double allowedWidth = along < 0 ? 2.8 : BEAM_HALF_WIDTH * Math.pow(widthScale, 0.35);
-         if (Math.abs(rel.dot(right)) <= allowedWidth && Math.abs(rel.dot(up)) <= BEAM_HALF_HEIGHT) {
+         for (Vec3 forward : sweepDirections) {
+            if (!intersectsBeam(target.getBoundingBox(), start, forward)) continue;
             hurtWithoutIFrames(target, source, pulse);
             target.push(forward.x * 0.15, forward.y * 0.08, forward.z * 0.15);
+            break;
          }
       }
+   }
+
+   static List<Vec3> sweepDirections(Vec3 previous, Vec3 current) {
+      Vec3 to = normalized(current);
+      Vec3 from = previous == null ? to : normalized(previous);
+      double angle = Math.acos(Math.max(-1.0, Math.min(1.0, from.dot(to))));
+      int steps = Math.max(1, (int)Math.ceil(angle / BEAM_SWEEP_STEP_RADIANS));
+      List<Vec3> directions = new ArrayList<>(steps + 1);
+      for (int step = 0; step <= steps; step++) {
+         double progress = step / (double)steps;
+         Vec3 interpolated = from.scale(1.0 - progress).add(to.scale(progress));
+         directions.add(interpolated.lengthSqr() < 1.0E-6 ? to : interpolated.normalize());
+      }
+      return directions;
+   }
+
+   static boolean intersectsBeam(AABB targetBounds, Vec3 start, Vec3 forward) {
+      Vec3 direction = normalized(forward);
+      Vec3 worldUp = Math.abs(direction.y) > 0.95 ? new Vec3(0, 0, 1) : new Vec3(0, 1, 0);
+      Vec3 right = direction.cross(worldUp).normalize();
+      Vec3 up = right.cross(direction).normalize();
+      Vec3 center = targetBounds.getCenter();
+      Vec3 rel = center.subtract(start);
+      double halfX = targetBounds.getXsize() * 0.5;
+      double halfY = targetBounds.getYsize() * 0.5;
+      double halfZ = targetBounds.getZsize() * 0.5;
+      double alongRadius = projectedRadius(direction, halfX, halfY, halfZ);
+      double along = rel.dot(direction);
+      if (along + alongRadius < -3.0 || along - alongRadius > BEAM_LENGTH) return false;
+      double beamAlong = Math.max(0.0, Math.min(BEAM_LENGTH, along));
+      double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / BEAM_LENGTH));
+      double allowedWidth = along < 0.0 ? 2.8 : BEAM_HALF_WIDTH * Math.pow(widthScale, 0.35);
+      return Math.abs(rel.dot(right)) <= allowedWidth + projectedRadius(right, halfX, halfY, halfZ)
+         && Math.abs(rel.dot(up)) <= BEAM_HALF_HEIGHT + projectedRadius(up, halfX, halfY, halfZ);
+   }
+
+   private static double projectedRadius(Vec3 axis, double halfX, double halfY, double halfZ) {
+      return Math.abs(axis.x) * halfX + Math.abs(axis.y) * halfY + Math.abs(axis.z) * halfZ;
    }
 
    private void destroyBeamBlocks(ServerLevel level, LivingEntity owner) {
@@ -430,7 +473,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private LivingEntity getTrackedTarget(ServerLevel level) {
       if (trackedTargetUuid == null) return null;
       Entity target = level.getEntity(trackedTargetUuid);
-      return target instanceof LivingEntity living ? living : null;
+      return target instanceof LivingEntity living && !EntityUtils.isImmunePlayerTarget(living) ? living : null;
    }
 
    private boolean isDuelTarget(ServerLevel level, LivingEntity owner) {

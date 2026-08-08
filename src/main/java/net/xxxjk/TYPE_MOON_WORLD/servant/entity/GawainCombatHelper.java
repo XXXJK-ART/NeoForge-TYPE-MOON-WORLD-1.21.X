@@ -581,6 +581,9 @@ public final class GawainCombatHelper {
    }
 
    private static void applyFixedDamageRaw(GawainEntity entity, LivingEntity target, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float before = target.getHealth();
       DamageSource source = entity.damageSources().mobAttack(entity);
       target.invulnerableTime = 0;

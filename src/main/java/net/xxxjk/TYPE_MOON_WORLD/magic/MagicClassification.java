@@ -47,6 +47,7 @@ public final class MagicClassification {
       Map.entry("reinforcement_item", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("unlimited_blade_works", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("sword_barrel_full_open", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("ubw_sword_control", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("bajiquan", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("ganryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
       ,Map.entry("hokushin_ittoryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)

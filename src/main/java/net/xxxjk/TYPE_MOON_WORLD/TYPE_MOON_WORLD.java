@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationPointMessage;
@@ -262,6 +263,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(SaveStructuralSelectionMessage.TYPE, SaveStructuralSelectionMessage.STREAM_CODEC, SaveStructuralSelectionMessage::handleData);
       registrar.playToServer(SelectProjectionStructureMessage.TYPE, SelectProjectionStructureMessage.STREAM_CODEC, SelectProjectionStructureMessage::handleData);
       registrar.playToServer(DeleteProjectionStructureMessage.TYPE, DeleteProjectionStructureMessage.STREAM_CODEC, DeleteProjectionStructureMessage::handleData);
+      registrar.playToServer(DeleteProjectionItemMessage.TYPE, DeleteProjectionItemMessage.STREAM_CODEC, DeleteProjectionItemMessage::handleData);
       registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
       registrar.playToServer(MagicResearchMessage.TYPE, MagicResearchMessage.STREAM_CODEC, MagicResearchMessage::handleData);

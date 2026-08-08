@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanDeathShadowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ShadowHassanPursuitData extends SavedData {
    private static final String DATA_NAME = "typemoonworld_shadow_hassan";
@@ -172,6 +173,9 @@ public final class ShadowHassanPursuitData extends SavedData {
    }
 
    private static void killTarget(ServerLevel level, LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       target.getPersistentData().putBoolean("CausalSevered", true);
       target.getPersistentData().putInt("GodHandLives", 0);
       target.getPersistentData().remove("GodHandActive");

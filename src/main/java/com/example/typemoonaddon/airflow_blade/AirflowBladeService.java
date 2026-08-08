@@ -155,8 +155,13 @@ public final class AirflowBladeService {
                 PROJECTILES.remove(entry.getKey(), projectile);
                 continue;
             }
-            ServerPlayer owner = projectile.ownerId()
-                    .map(id -> server.getPlayerList().getPlayer(id)).orElse(null);
+            LivingEntity owner = projectile.ownerId()
+                    .map(level::getEntity)
+                    .filter(LivingEntity.class::isInstance)
+                    .map(LivingEntity.class::cast)
+                    .orElseGet(() -> projectile.ownerId()
+                            .map(id -> server.getPlayerList().getPlayer(id))
+                            .orElse(null));
             if (!isActiveOwner(owner, level)) {
                 projectile.discard();
                 PROJECTILES.remove(entry.getKey(), projectile);
@@ -166,6 +171,25 @@ public final class AirflowBladeService {
                 PROJECTILES.remove(entry.getKey(), projectile);
             }
         }
+    }
+
+    public static boolean castNpcBlade(LivingEntity caster, LivingEntity target, double proficiency) {
+        if (caster == null || target == null || !target.isAlive()
+                || caster.isRemoved() || !caster.isAlive()
+                || !(caster.level() instanceof ServerLevel)
+                || caster.level() != target.level()
+                || KimarisService.isFrozen(caster)
+                || EntityUtils.isPetrified(caster)
+                || !EntityUtils.isValidCombatTarget(caster, target)) {
+            return false;
+        }
+        Vec3 direction = aimDirection(caster, target, BLADE_SPEED, 0.0D);
+        if (direction.lengthSqr() < 1.0E-8D) {
+            return false;
+        }
+        double scale = 0.75D + Mth.clamp(proficiency, 0.0D, 100.0D) * 0.005D;
+        spawnProjectile(caster, MODE_BLADE, direction, 0.0F, (float)(BLADE_DAMAGE * scale), 0.0D);
+        return true;
     }
 
     public static void stop(Entity player) {
@@ -274,17 +298,30 @@ public final class AirflowBladeService {
         spawnProjectile(player, MODE_BLADE, lookDirection(player), 0.0F);
     }
 
-    private static void spawnProjectile(ServerPlayer owner, int mode, Vec3 direction, float charge) {
-        ServerLevel level = owner.serverLevel();
-        AirflowBladeEntity projectile = new AirflowBladeEntity(level);
-        Vec3 start = owner.getEyePosition(1.0F).add(direction.scale(0.65D));
-        projectile.setPos(start.x, start.y, start.z);
+    private static void spawnProjectile(LivingEntity owner, int mode, Vec3 direction, float charge) {
         float damage = mode == MODE_BLADE
                 ? BLADE_DAMAGE
                 : Mth.lerp(charge, CANNON_MIN_DAMAGE, CANNON_MAX_DAMAGE);
         double radius = mode == MODE_BLADE
                 ? 0.0D
                 : Mth.lerp(charge, CANNON_MIN_RADIUS, CANNON_MAX_RADIUS);
+        spawnProjectile(owner, mode, direction, charge, damage, radius);
+    }
+
+    private static void spawnProjectile(
+            LivingEntity owner,
+            int mode,
+            Vec3 direction,
+            float charge,
+            float damage,
+            double radius
+    ) {
+        if (!(owner.level() instanceof ServerLevel level)) {
+            return;
+        }
+        AirflowBladeEntity projectile = new AirflowBladeEntity(level);
+        Vec3 start = owner.getEyePosition(1.0F).add(direction.scale(0.65D));
+        projectile.setPos(start.x, start.y, start.z);
         projectile.configure(
                 mode,
                 owner.getUUID(),
@@ -306,7 +343,7 @@ public final class AirflowBladeService {
     }
 
     private static boolean tickProjectile(
-            ServerPlayer owner,
+            LivingEntity owner,
             AirflowBladeEntity projectile,
             ServerLevel level
     ) {
@@ -382,7 +419,7 @@ public final class AirflowBladeService {
     }
 
     private static void explode(
-            ServerPlayer owner,
+            LivingEntity owner,
             ServerLevel level,
             Vec3 center,
             AirflowBladeEntity projectile
@@ -416,14 +453,14 @@ public final class AirflowBladeService {
         }
     }
 
-    private static void damageSingle(ServerPlayer owner, LivingEntity target, float damage) {
+    private static void damageSingle(LivingEntity owner, LivingEntity target, float damage) {
         DamageSource source = owner.damageSources().source(DamageTypes.MAGIC, owner);
         int previousInvulnerability = target.invulnerableTime;
         target.invulnerableTime = 0;
         if (!target.hurt(source, damage)) {
             target.invulnerableTime = previousInvulnerability;
         }
-        EntityUtils.triggerSwarmAnger(owner.serverLevel(), owner, target);
+        EntityUtils.triggerSwarmAnger(owner.level(), owner, target);
     }
 
     private static boolean isValidCaster(ServerPlayer player, boolean requireCooldown) {
@@ -441,14 +478,38 @@ public final class AirflowBladeService {
                 && vars.magic_cooldown <= 0.0D));
     }
 
-    private static boolean isActiveOwner(ServerPlayer owner, ServerLevel level) {
-        return owner != null && isValidCaster(owner, false)
-                && owner.serverLevel() == level;
+    private static boolean isActiveOwner(LivingEntity owner, ServerLevel level) {
+        if (owner instanceof ServerPlayer player) {
+            return isValidCaster(player, false) && player.serverLevel() == level;
+        }
+        return owner != null
+                && owner.isAlive()
+                && !owner.isRemoved()
+                && owner.level() == level
+                && !KimarisService.isFrozen(owner)
+                && !EntityUtils.isPetrified(owner);
     }
 
     private static Vec3 lookDirection(ServerPlayer player) {
         Vec3 direction = player.getViewVector(1.0F);
         return direction.lengthSqr() > 1.0E-8D ? direction.normalize() : Vec3.ZERO;
+    }
+
+    private static Vec3 aimDirection(LivingEntity caster, LivingEntity target, double speed, double gravityPerTick) {
+        Vec3 eye = caster.getEyePosition(1.0F);
+        Vec3 targetEye = target.getEyePosition(1.0F);
+        Vec3 relative = targetEye.subtract(eye);
+        double travelTime = Mth.clamp(relative.length() / Math.max(0.1D, speed), 0.0D, 1.5D);
+        Vec3 predicted = targetEye.add(target.getDeltaMovement().scale(travelTime * 0.9D));
+        if (gravityPerTick > 0.0D) {
+            predicted = predicted.add(0.0D, 0.5D * gravityPerTick * travelTime * travelTime, 0.0D);
+        }
+        Vec3 direction = predicted.subtract(eye);
+        if (direction.lengthSqr() > 1.0E-8D) {
+            return direction.normalize();
+        }
+        Vec3 look = caster.getLookAngle();
+        return look.lengthSqr() > 1.0E-8D ? look.normalize() : Vec3.ZERO;
     }
 
     private static int mode(ServerPlayer player) {

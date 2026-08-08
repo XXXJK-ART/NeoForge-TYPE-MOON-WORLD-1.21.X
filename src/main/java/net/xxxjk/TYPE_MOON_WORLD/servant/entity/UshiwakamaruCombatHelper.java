@@ -538,14 +538,15 @@ public final class UshiwakamaruCombatHelper {
       java.util.UUID targetId = data.getUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET);
       LivingEntity stored = owner.getEightBoatTarget();
       if (stored != null && targetId.equals(stored.getUUID())) {
-         return stored.isAlive() && !stored.isRemoved();
+         return stored.isAlive() && !stored.isRemoved() && !EntityUtils.isImmunePlayerTarget(stored);
       }
       LivingEntity current = owner.getTarget();
       if (current != null && targetId.equals(current.getUUID())) {
-         return current.isAlive() && !current.isRemoved();
+         return current.isAlive() && !current.isRemoved() && !EntityUtils.isImmunePlayerTarget(current);
       }
       Entity target = level.getEntity(targetId);
-      return target instanceof LivingEntity living && living.isAlive() && !living.isRemoved();
+      return target instanceof LivingEntity living && living.isAlive() && !living.isRemoved()
+         && !EntityUtils.isImmunePlayerTarget(living);
    }
 
    private static void tickClone(UshiwakamaruRiderEntity clone, ServerLevel level) {

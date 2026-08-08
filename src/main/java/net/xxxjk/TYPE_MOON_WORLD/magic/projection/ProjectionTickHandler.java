@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.projection;
 
 import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,7 +77,7 @@ public class ProjectionTickHandler {
                      if (hasProjectedInput) {
                         ItemStack out = ((Slot)player.containerMenu.slots.get(2)).getItem();
                         if (!out.isEmpty()) {
-                           tagItemAsProjected(out, player);
+                           tagItemAsProjected(out, player, isInfiniteProjection(s0) || isInfiniteProjection(s1));
                         }
                      }
                   }
@@ -89,7 +91,7 @@ public class ProjectionTickHandler {
                      if (hasProjectedInput) {
                         ItemStack out = ((Slot)player.containerMenu.slots.get(3)).getItem();
                         if (!out.isEmpty()) {
-                           tagItemAsProjected(out, player);
+                           tagItemAsProjected(out, player, isInfiniteProjection(s0) || isInfiniteProjection(s1) || isInfiniteProjection(s2));
                         }
                      }
                   }
@@ -101,7 +103,7 @@ public class ProjectionTickHandler {
                      if (hasProjectedInput) {
                         ItemStack out = ((Slot)player.containerMenu.slots.get(1)).getItem();
                         if (!out.isEmpty()) {
-                           tagItemAsProjected(out, player);
+                           tagItemAsProjected(out, player, isInfiniteProjection(s0));
                         }
                      }
                   }
@@ -114,7 +116,7 @@ public class ProjectionTickHandler {
                      if (hasProjectedInput) {
                         ItemStack out = ((Slot)player.containerMenu.slots.get(2)).getItem();
                         if (!out.isEmpty()) {
-                           tagItemAsProjected(out, player);
+                           tagItemAsProjected(out, player, isInfiniteProjection(s0) || isInfiniteProjection(s1));
                         }
                      }
                   }
@@ -288,77 +290,36 @@ public class ProjectionTickHandler {
 
    @SubscribeEvent
    public static void onItemCrafted(ItemCraftedEvent event) {
-      boolean hasProjectedIngredient = false;
-
+      List<ItemStack> inputs = new ArrayList<>();
       for (int i = 0; i < event.getInventory().getContainerSize(); i++) {
          ItemStack stack = event.getInventory().getItem(i);
-         if (!stack.isEmpty() && stack.has(DataComponents.CUSTOM_DATA)) {
-            CustomData cd = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-            if (cd != null) {
-               CompoundTag tag = cd.copyTag();
-               if (tag.contains("is_projected") && !tag.contains("is_infinite_projection")) {
-                  hasProjectedIngredient = true;
-                  break;
-               }
-
-               if (tag.contains("is_infinite_projection")) {
-                  hasProjectedIngredient = true;
-                  break;
-               }
-            }
-         }
+         if (ProjectionDataHelper.isProjected(stack)) inputs.add(stack);
       }
-
-      if (hasProjectedIngredient) {
+      if (!inputs.isEmpty()) {
          ItemStack result = event.getCrafting();
-         if (!result.isEmpty()) {
-            tagItemAsProjected(result, event.getEntity());
-         }
+         ProjectionDataHelper.inheritFinite(result, inputs, event.getEntity().level().getGameTime());
       }
    }
 
    @SubscribeEvent
    public static void onAnvilRepair(AnvilRepairEvent event) {
-      boolean hasProjectedInput = false;
       ItemStack left = event.getLeft();
       ItemStack right = event.getRight();
-      if (!left.isEmpty() && left.has(DataComponents.CUSTOM_DATA)) {
-         CustomData cd = (CustomData)left.get(DataComponents.CUSTOM_DATA);
-         if (cd != null) {
-            CompoundTag tag = cd.copyTag();
-            if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
-               hasProjectedInput = true;
-            }
-         }
-      }
-
-      if (!hasProjectedInput && !right.isEmpty() && right.has(DataComponents.CUSTOM_DATA)) {
-         CustomData cd = (CustomData)right.get(DataComponents.CUSTOM_DATA);
-         if (cd != null) {
-            CompoundTag tag = cd.copyTag();
-            if (tag.contains("is_projected") || tag.contains("is_infinite_projection")) {
-               hasProjectedInput = true;
-            }
-         }
-      }
-
-      if (hasProjectedInput) {
-         ItemStack out = event.getOutput();
-         if (!out.isEmpty()) {
-            tagItemAsProjected(out, event.getEntity());
-         }
-      }
+      ProjectionDataHelper.inheritFinite(event.getOutput(), List.of(left, right), event.getEntity().level().getGameTime());
    }
 
-   private static void tagItemAsProjected(ItemStack stack, Player player) {
+   private static void tagItemAsProjected(ItemStack stack, Player player, boolean infiniteInput) {
       CompoundTag tag = new CompoundTag();
       tag.putBoolean("is_projected", true);
-      tag.putLong("projection_time", player.level().getGameTime());
+      long existingTime = ProjectionDataHelper.projectionTime(stack);
+      tag.putLong("projection_time", existingTime == Long.MIN_VALUE ? player.level().getGameTime() : existingTime);
+      if (infiniteInput) tag.putBoolean("is_infinite_projection", true);
       CustomData existing = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
       if (existing != null) {
          CompoundTag merged = existing.copyTag();
          merged.putBoolean("is_projected", true);
-         merged.putLong("projection_time", player.level().getGameTime());
+         merged.putLong("projection_time", existingTime == Long.MIN_VALUE ? player.level().getGameTime() : existingTime);
+         if (infiniteInput) merged.putBoolean("is_infinite_projection", true);
          stack.set(DataComponents.CUSTOM_DATA, CustomData.of(merged));
       } else {
          stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
@@ -368,7 +329,7 @@ public class ProjectionTickHandler {
          CustomData cd = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
          if (cd != null) {
             CompoundTag cur = cd.copyTag();
-            if (cur.contains("is_infinite_projection")) {
+            if (cur.contains("is_infinite_projection") && !infiniteInput) {
                cur.remove("is_infinite_projection");
                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(cur));
             }
@@ -377,6 +338,10 @@ public class ProjectionTickHandler {
 
       stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
       player.displayClientMessage(Component.translatable("message.typemoonworld.projection.tooltip").withStyle(ChatFormatting.AQUA), true);
+   }
+
+   private static boolean isInfiniteProjection(ItemStack stack) {
+      return ProjectionDataHelper.isProjected(stack) && ProjectionDataHelper.isInfinite(stack);
    }
 
    private static boolean isProjectedOrInfinite(ItemStack stack) {

@@ -29,6 +29,7 @@ import net.minecraft.world.item.TridentItem;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionItemMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SelectProjectionStructureMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
@@ -289,13 +290,27 @@ public class ProjectionPresetScreen extends Screen {
             int fullIndex = -1;
 
             for (int k = 0; k < vars.analyzed_items.size(); k++) {
-               if (ItemStack.isSameItemSameComponents(vars.analyzed_items.get(k), clickedItem)) {
+               if (vars.analyzed_items.get(k) == clickedItem) {
                   fullIndex = k;
                   break;
                }
             }
 
+            if (fullIndex == -1) {
+               for (int k = 0; k < vars.analyzed_items.size(); k++) {
+                  if (ItemStack.isSameItemSameComponents(vars.analyzed_items.get(k), clickedItem)) {
+                     fullIndex = k;
+                     break;
+                  }
+               }
+            }
+
             if (fullIndex != -1) {
+               if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                  PacketDistributor.sendToServer(new DeleteProjectionItemMessage(fullIndex, clickedItem.copy()), new CustomPacketPayload[0]);
+                  this.playClickSound();
+                  return true;
+               }
                PacketDistributor.sendToServer(new SelectProjectionItemMessage(fullIndex), new CustomPacketPayload[0]);
                this.playClickSound();
                return true;

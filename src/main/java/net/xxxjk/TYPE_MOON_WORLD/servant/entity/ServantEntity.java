@@ -69,6 +69,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -309,6 +310,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    public void tick() {
+      if (!this.level().isClientSide && EntityUtils.isImmunePlayerTarget(this.getTarget())) {
+         super.setTarget(null);
+      }
       super.tick();
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide && this.tickCount == 1) {
@@ -321,6 +325,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       ArtoriaPendragonCombatHelper.tickSharedBuffCleanup(this);
       GawainCombatHelper.tickSharedBuffCleanup(this);
       ServantSprintCollisionHelper.tickNpcSprintCollision(this);
+   }
+
+   @Override
+   public void setTarget(@Nullable LivingEntity target) {
+      super.setTarget(EntityUtils.isImmunePlayerTarget(target) ? null : target);
    }
 
    private void updateWalkAnimationState() {

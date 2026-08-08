@@ -105,6 +105,11 @@ public final class AddonNetwork {
                 DetectionEyeStatePayload::handle
         );
         registrar.playToClient(
+                EntityDisplacementTargetPayload.TYPE,
+                EntityDisplacementTargetPayload.STREAM_CODEC,
+                EntityDisplacementTargetPayload::handle
+        );
+        registrar.playToClient(
                 ImaginarySpaceStatePayload.TYPE,
                 ImaginarySpaceStatePayload.STREAM_CODEC,
                 ImaginarySpaceStatePayload::handle

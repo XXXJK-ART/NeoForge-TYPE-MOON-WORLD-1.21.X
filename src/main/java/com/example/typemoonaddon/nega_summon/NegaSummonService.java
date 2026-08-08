@@ -140,6 +140,9 @@ public final class NegaSummonService {
     }
 
     private static void forceDeath(LivingEntity target, DamageSource source) {
+        if (EntityUtils.isImmunePlayerTarget(target)) {
+            return;
+        }
         target.setInvulnerable(false);
         target.invulnerableTime = 0;
         target.hurtTime = 0;

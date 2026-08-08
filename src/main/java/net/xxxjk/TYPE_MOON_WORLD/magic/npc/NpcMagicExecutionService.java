@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
+import com.example.typemoonaddon.magic.EntityDisplacementService;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
@@ -61,6 +62,9 @@ public final class NpcMagicExecutionService {
          case "healing_magic" -> NpcMagicCastBridge.castHealingMagic(caster, target, vars, effectiveProficiency);
          case "spiritual_healing" -> NpcMagicCastBridge.castSpiritualHealing(caster, target, vars, effectiveProficiency);
          case "magic_bullet" -> NpcMagicCastBridge.castMagicBullet(caster, target, vars, effectiveProficiency);
+         case "airflow_blade" -> NpcMagicCastBridge.castAirflowBlade(caster, target, vars, effectiveProficiency);
+         case "detection" -> NpcMagicCastBridge.castDetection(caster, target, vars, effectiveProficiency);
+         case "entity_displacement" -> EntityDisplacementService.swapNpc(caster, target);
          case "suggestion_magic" -> NpcMagicCastBridge.castSuggestionMagic(caster, target, vars, effectiveProficiency);
          case "binding_magic" -> NpcMagicCastBridge.castBindingMagic(caster, target, vars, effectiveProficiency);
          case "fire_magic" -> NpcMagicCastBridge.castFireMagic(caster, target, vars, payload, effectiveProficiency);
@@ -77,6 +81,8 @@ public final class NpcMagicExecutionService {
    }
 
    public static int getGlobalCooldownAfterCast(String magicId, CompoundTag payload) {
+      if ("airflow_blade".equals(magicId)) return 14;
+      if ("detection".equals(magicId)) return 10;
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcGlobalCooldown());
       return switch (magicId) {
@@ -101,6 +107,8 @@ public final class NpcMagicExecutionService {
    }
 
    public static int getPerMagicCooldown(String magicId, CompoundTag payload) {
+      if ("airflow_blade".equals(magicId)) return 32;
+      if ("detection".equals(magicId)) return 180;
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcCooldown());
       return switch (magicId) {

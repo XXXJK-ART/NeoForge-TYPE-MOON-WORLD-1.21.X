@@ -39,6 +39,7 @@ public final class NpcMagicFilterService {
       "binding_magic",
       "airflow_blade",
       "detection",
+      "entity_displacement",
       "fire_magic",
       "water_magic",
       "wind_magic",

@@ -106,6 +106,8 @@ public class TypeMoonCommands {
       "broken_phantasm",
       "unlimited_blade_works",
       "sword_barrel_full_open",
+      "ubw_sword_control",
+      "entity_displacement",
       "reinforcement",
       "reinforcement_self",
       "reinforcement_other",

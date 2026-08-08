@@ -66,6 +66,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 /** Server-authoritative teleportation, instance generation, virtual state, and cleanup. */
@@ -914,6 +915,9 @@ public final class ImaginarySpaceService {
             LivingEntity target,
             ServerLevel imaginaryLevel
     ) {
+        if (EntityUtils.isImmunePlayerTarget(target)) {
+            return false;
+        }
         if (!target.canChangeDimensions(target.level(), imaginaryLevel)) {
             return false;
         }
@@ -1777,6 +1781,9 @@ public final class ImaginarySpaceService {
     }
 
     private static void startOuterGodEvent(ServerPlayer player, ImaginarySpaceData data) {
+        if (EntityUtils.isImmunePlayerTarget(player)) {
+            return;
+        }
         data.startOuterGodCountdown(OUTER_GOD_DELAY_TICKS);
         player.displayClientMessage(Component.translatable(
                 "message.typemoonworld.imaginary_space.outer_god")
@@ -1801,6 +1808,10 @@ public final class ImaginarySpaceService {
     }
 
     private static void killWithGenericSource(ServerPlayer player, ImaginarySpaceData data) {
+        if (EntityUtils.isImmunePlayerTarget(player)) {
+            data.clearOuterGodCountdown();
+            return;
+        }
         cleanupDetachedSession(player, data, false);
         player.setInvulnerable(false);
         player.invulnerableTime = 0;

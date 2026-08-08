@@ -73,6 +73,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwControlledSwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariWaveProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariLightColumnEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TypeMoonEffectShaders;
@@ -311,6 +312,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.UBW_CONTROLLED_SWORD.get(), UbwControlledSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_INTERCEPTOR_SWORD.get(), UBWInterceptorSwordRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), SwordBarrelBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 0.0F, 0.0F));

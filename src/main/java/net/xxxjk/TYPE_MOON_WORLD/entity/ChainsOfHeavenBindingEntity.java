@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimationController;
@@ -38,7 +39,7 @@ public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
    public ChainsOfHeavenBindingEntity(Level level, LivingEntity owner, LivingEntity target, int duration, boolean divineBind) {
       this(ModEntities.CHAINS_OF_HEAVEN_BINDING.get(), level);
       this.ownerUuid = owner == null ? null : owner.getUUID();
-      this.targetUuid = target == null ? null : target.getUUID();
+      this.targetUuid = target == null || EntityUtils.isImmunePlayerTarget(target) ? null : target.getUUID();
       this.entityData.set(DURATION, duration);
       this.entityData.set(DIVINE_BIND, divineBind);
       if (target != null) {
@@ -76,7 +77,7 @@ public class ChainsOfHeavenBindingEntity extends Entity implements GeoEntity {
       int duration = this.entityData.get(DURATION) - 1;
       this.entityData.set(DURATION, duration);
       LivingEntity target = getTargetLiving(level);
-      if (duration <= 0 || target == null || !target.isAlive()) {
+      if (duration <= 0 || target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          this.discard();
          return;
       }

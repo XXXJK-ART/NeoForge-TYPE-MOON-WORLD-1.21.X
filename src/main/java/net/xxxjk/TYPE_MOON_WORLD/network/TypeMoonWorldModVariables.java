@@ -2812,6 +2812,15 @@ public class TypeMoonWorldModVariables {
             && !this.learned_magics.contains("jewel_magic_shoot")) {
             this.learned_magics.add("jewel_magic_shoot");
          }
+         if (this.proficiency_unlimited_blade_works >= 10.0D
+            && this.learned_magics.contains("unlimited_blade_works")
+            && !this.learned_magics.contains("ubw_sword_control")) {
+            this.learned_magics.add("ubw_sword_control");
+            if (entity instanceof Player player && !player.level().isClientSide()) {
+               player.displayClientMessage(Component.translatable(
+                  "message.typemoonworld.unlimited_blade_works.sword_control.awakened"), false);
+            }
+         }
 
          this.ensureAdvancedJewelMagicPrerequisites("ruby_flame_sword", "ruby_throw");
          this.ensureAdvancedJewelMagicPrerequisites("sapphire_winter_frost", "sapphire_throw");
@@ -3479,6 +3488,15 @@ public class TypeMoonWorldModVariables {
       }
 
       private static void applyDeleteDelta(TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag tag) {
+         if (tag.contains("deleted_item_index")) {
+            int deletedItemIndex = tag.getInt("deleted_item_index");
+            if (deletedItemIndex >= 0 && deletedItemIndex < vars.analyzed_items.size()) {
+               vars.analyzed_items.remove(deletedItemIndex);
+            }
+         }
+         if (tag.getBoolean("clear_selected_item")) {
+            vars.projection_selected_item = ItemStack.EMPTY;
+         }
          String deletedId = tag.getString("deleted_structure_id");
          if (!deletedId.isEmpty()) {
             vars.removeStructureById(deletedId);

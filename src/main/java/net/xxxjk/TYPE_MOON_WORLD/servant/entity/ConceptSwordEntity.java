@@ -13,6 +13,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ConceptSwordEntity extends ThrowableItemProjectile {
    public final List<net.minecraft.world.phys.Vec3> tracePos = new LinkedList<>();
@@ -38,10 +39,16 @@ public final class ConceptSwordEntity extends ThrowableItemProjectile {
    }
 
    @Override
+   protected boolean canHitEntity(Entity entity) {
+      return !EntityUtils.isImmunePlayerTarget(entity) && super.canHitEntity(entity);
+   }
+
+   @Override
    protected void onHitEntity(EntityHitResult result) {
       super.onHitEntity(result);
       Entity owner = this.getOwner();
       if (result.getEntity() instanceof LivingEntity living && owner instanceof LivingEntity livingOwner
+         && !EntityUtils.isImmunePlayerTarget(living)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.arePaleRiderAllies(living, livingOwner)) {
          living.hurt(livingOwner.damageSources().source(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD, this, livingOwner), this.damage);
       }

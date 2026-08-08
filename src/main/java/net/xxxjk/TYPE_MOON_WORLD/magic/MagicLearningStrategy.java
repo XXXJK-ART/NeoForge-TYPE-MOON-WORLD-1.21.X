@@ -19,6 +19,7 @@ public final class MagicLearningStrategy {
       Map.entry("structural_analysis", new Rule(30, true, true, true, true, false, false)),
       Map.entry("unlimited_blade_works", new Rule(100, false, true, true, true, true, false)),
       Map.entry("sword_barrel_full_open", new Rule(85, false, true, true, true, true, false)),
+      Map.entry("ubw_sword_control", new Rule(60, false, false, false, false, true, false)),
       Map.entry("broken_phantasm", new Rule(75, false, true, true, true, true, false)),
       Map.entry("time_alter", new Rule(70, false, true, true, true, false, false)),
       Map.entry("reinforcement", new Rule(25, true, true, true, true, false, false)),

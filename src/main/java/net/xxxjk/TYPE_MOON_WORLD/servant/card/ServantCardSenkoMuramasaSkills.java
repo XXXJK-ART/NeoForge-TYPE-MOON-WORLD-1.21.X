@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenMuramasaForgeScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class ServantCardSenkoMuramasaSkills {
@@ -336,7 +337,7 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    private static void applyTrueDamage(ServerPlayer player, LivingEntity target, float amount) {
-      if (!target.isAlive()) return;
+      if (!target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) return;
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(player.damageSources().magic(), amount);

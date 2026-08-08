@@ -14,7 +14,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.AABB;
@@ -132,6 +134,68 @@ public final class DetectionService {
         }
     }
 
+    public static boolean castNpcDetection(LivingEntity caster, LivingEntity currentTarget, double proficiency) {
+        if (caster == null
+                || !caster.isAlive()
+                || caster.isRemoved()
+                || !(caster.level() instanceof ServerLevel level)
+                || KimarisService.isFrozen(caster)
+                || EntityUtils.isPetrified(caster)) {
+            return false;
+        }
+
+        broadcastEyeState(caster, true);
+        LivingEntity detected = findNpcDetectionTarget(caster, currentTarget, proficiency);
+        if (detected != null && caster instanceof Mob mob) {
+            mob.setTarget(detected);
+            mob.getLookControl().setLookAt(detected, 45.0F, 45.0F);
+        }
+        return true;
+    }
+
+    private static LivingEntity findNpcDetectionTarget(
+            LivingEntity caster,
+            LivingEntity currentTarget,
+            double proficiency
+    ) {
+        if (!(caster.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        Vec3 center = caster.getBoundingBox().getCenter();
+        double radius = Mth.clamp(24.0D + Mth.clamp(proficiency, 0.0D, 100.0D) * 0.72D, 24.0D, DETECTION_RADIUS);
+        double radiusSqr = radius * radius;
+        if (currentTarget != null
+                && isNpcDetectable(caster, currentTarget, center, radiusSqr)
+                && EntityUtils.isValidCombatTarget(caster, currentTarget)) {
+            return currentTarget;
+        }
+        AABB query = new AABB(center, center).inflate(radius);
+        return level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        query,
+                        target -> isNpcDetectable(caster, target, center, radiusSqr)
+                                && EntityUtils.isValidCombatTarget(caster, target))
+                .stream()
+                .min(Comparator.comparingDouble(target ->
+                        target.getBoundingBox().getCenter().distanceToSqr(center)))
+                .orElse(null);
+    }
+
+    private static boolean isNpcDetectable(
+            LivingEntity caster,
+            LivingEntity target,
+            Vec3 center,
+            double radiusSqr
+    ) {
+        return target != caster
+                && target != null
+                && target.isAlive()
+                && !target.isRemoved()
+                && !(target instanceof ArmorStand)
+                && target.level() == caster.level()
+                && target.getBoundingBox().getCenter().distanceToSqr(center) <= radiusSqr;
+    }
+
     private static void scanAndSync(ServerPlayer player, DetectionData data, long now) {
         ServerLevel level = player.serverLevel();
         Vec3 center = player.getBoundingBox().getCenter();
@@ -204,18 +268,21 @@ public final class DetectionService {
     }
 
     private static void broadcastEyeState(ServerPlayer caster, boolean active) {
+        broadcastEyeState((LivingEntity)caster, active);
+    }
+
+    private static void broadcastEyeState(LivingEntity caster, boolean active) {
         DetectionEyeStatePayload payload = new DetectionEyeStatePayload(
                 caster.getId(), active, active ? EYE_STATE_TTL_TICKS : 0);
-        ServerLevel level = caster.serverLevel();
-        PacketDistributor.sendToPlayersNear(
-                level,
-                caster,
-                caster.getX(),
-                caster.getY(),
-                caster.getZ(),
-                EYE_OBSERVER_RADIUS,
-                payload);
-        PacketDistributor.sendToPlayer(caster, payload);
+        if (!(caster.level() instanceof ServerLevel level)) {
+            return;
+        }
+        double radiusSqr = EYE_OBSERVER_RADIUS * EYE_OBSERVER_RADIUS;
+        for (ServerPlayer observer : level.players()) {
+            if (observer.distanceToSqr(caster) <= radiusSqr) {
+                PacketDistributor.sendToPlayer(observer, payload);
+            }
+        }
     }
 
     private static void sendEyeStateTo(ServerPlayer observer, ServerPlayer caster, boolean active) {

@@ -8,8 +8,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class TypeMoonAdvancementHelper {
+   private static final Set<String> MISSING_IDS_LOGGED = ConcurrentHashMap.newKeySet();
    public static final String MAGIC_APPRENTICE = "magic_apprentice";
    public static final String PRESET_MAGIC = "preset_magic";
    public static final String OUT = "out";
@@ -41,6 +45,9 @@ public final class TypeMoonAdvancementHelper {
 
       AdvancementHolder holder = player.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath("typemoonworld", idPath));
       if (holder == null) {
+         if (MISSING_IDS_LOGGED.add(idPath)) {
+            TYPE_MOON_WORLD.LOGGER.warn("Missing advancement resource typemoonworld:{}", idPath);
+         }
          return;
       }
 

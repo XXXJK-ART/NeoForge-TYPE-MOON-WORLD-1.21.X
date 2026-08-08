@@ -63,6 +63,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UbwControlledSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
@@ -435,6 +436,16 @@ public class ModEntities {
          .updateInterval(20)
          .build("expanding_ring_effect")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<UbwControlledSwordEntity>> UBW_CONTROLLED_SWORD = ENTITY_TYPES.register(
+      "ubw_controlled_sword",
+      () -> Builder.<UbwControlledSwordEntity>of(
+            (entityType, level) -> new UbwControlledSwordEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.3F, 0.3F)
+         .clientTrackingRange(8)
+         .updateInterval(1)
+         .build("ubw_controlled_sword")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<ProjectionCircuitEffectEntity>> PROJECTION_CIRCUIT_EFFECT = ENTITY_TYPES.register(
       "projection_circuit_effect",
       () -> Builder.<ProjectionCircuitEffectEntity>of((entityType, level) -> new ProjectionCircuitEffectEntity(entityType, level), MobCategory.MISC)
@@ -680,7 +691,7 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshGateWeaponProjectileEntity>> GILGAMESH_GATE_PROJECTILE = ENTITY_TYPES.register(
       "gilgamesh_gate_projectile",
       () -> Builder.<GilgameshGateWeaponProjectileEntity>of(GilgameshGateWeaponProjectileEntity::new, MobCategory.MISC)
-         .sized(0.5F, 0.5F).clientTrackingRange(96).updateInterval(1).build("gilgamesh_gate_projectile")
+         .sized(0.5F, 0.5F).clientTrackingRange(96).updateInterval(2).build("gilgamesh_gate_projectile")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshCrossSlashEntity>> GILGAMESH_CROSS_SLASH = ENTITY_TYPES.register(
       "gilgamesh_cross_slash",

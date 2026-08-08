@@ -1124,7 +1124,7 @@ public final class MuramasaCombatHelper {
    }
 
    private static void applyNoDefenseDamage(SenkoMuramasaEntity entity, LivingEntity target, float amount) {
-      if (amount <= 0.0F || !target.isAlive()) {
+      if (amount <= 0.0F || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       float before = target.getHealth();

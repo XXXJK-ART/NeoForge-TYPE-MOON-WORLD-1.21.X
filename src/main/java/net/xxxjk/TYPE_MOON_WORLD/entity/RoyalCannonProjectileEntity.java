@@ -25,6 +25,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.joml.Vector3f;
@@ -65,7 +66,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
    }
 
    public void setHomingTarget(LivingEntity target) {
-      this.homingTargetUuid = target == null ? null : target.getUUID();
+      this.homingTargetUuid = target == null || EntityUtils.isImmunePlayerTarget(target) ? null : target.getUUID();
    }
 
    public void setExplosive(float radius) {
@@ -258,6 +259,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
    private static boolean isValidVictim(LivingEntity owner, LivingEntity victim) {
       return owner != null && victim != null && victim.isAlive() && victim != owner
          && !victim.isAlliedTo(owner) && !owner.isAlliedTo(victim)
+         && !EntityUtils.isImmunePlayerTarget(victim)
          && !CasterGilgameshCombatHelper.isProtectedMasterTarget(owner, victim);
    }
 

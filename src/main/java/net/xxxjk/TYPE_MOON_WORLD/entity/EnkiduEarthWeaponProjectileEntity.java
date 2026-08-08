@@ -67,7 +67,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void configure(LivingEntity target, float homingStrength, boolean groundBorn, int weaponKind) {
-      this.entityData.set(TARGET_ID, target == null ? -1 : target.getId());
+      this.entityData.set(TARGET_ID, target == null || EntityUtils.isImmunePlayerTarget(target) ? -1 : target.getId());
       this.entityData.set(HOMING_STRENGTH, homingStrength);
       this.entityData.set(GROUND_BORN, groundBorn);
       this.entityData.set(WEAPON_KIND, weaponKind);
@@ -248,7 +248,8 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       int kind = this.entityData.get(WEAPON_KIND);
       Entity target = this.entityData.get(TARGET_ID) >= 0 ? this.level().getEntity(this.entityData.get(TARGET_ID)) : null;
       if (kind > 0) {
-         if (!(target instanceof LivingEntity living) || !living.isAlive()) {
+         if (!(target instanceof LivingEntity living) || !living.isAlive() || EntityUtils.isImmunePlayerTarget(living)) {
+            this.entityData.set(TARGET_ID, -1);
             this.discard();
             return;
          }
@@ -269,7 +270,8 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
       if (strength <= 0.0F) {
          return;
       }
-      if (!(target instanceof LivingEntity living) || !living.isAlive()) {
+      if (!(target instanceof LivingEntity living) || !living.isAlive() || EntityUtils.isImmunePlayerTarget(living)) {
+         this.entityData.set(TARGET_ID, -1);
          this.discard();
          return;
       }
@@ -289,7 +291,8 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
          return;
       }
       Entity targetEntity = this.entityData.get(TARGET_ID) >= 0 ? this.level().getEntity(this.entityData.get(TARGET_ID)) : null;
-      if (!(targetEntity instanceof LivingEntity target) || !target.isAlive()) {
+      if (!(targetEntity instanceof LivingEntity target) || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
+         this.entityData.set(TARGET_ID, -1);
          this.discard();
          return;
       }

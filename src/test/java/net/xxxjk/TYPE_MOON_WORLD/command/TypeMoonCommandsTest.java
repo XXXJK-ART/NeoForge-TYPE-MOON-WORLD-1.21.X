@@ -16,5 +16,7 @@ class TypeMoonCommandsTest {
 
       assertTrue(ids.contains("black_key_fire_engraving"));
       assertTrue(ids.contains("stigma"));
+      assertTrue(ids.contains("ubw_sword_control"));
+      assertTrue(ids.contains("entity_displacement"));
    }
 }

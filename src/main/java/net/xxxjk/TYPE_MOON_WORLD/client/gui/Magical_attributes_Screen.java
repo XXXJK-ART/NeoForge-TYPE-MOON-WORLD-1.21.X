@@ -155,6 +155,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("broken_phantasm", "key.typemoonworld.magic.broken_phantasm.short", "basic,unlimited_blade_works", -2193579);
       this.addMagic("unlimited_blade_works", "key.typemoonworld.magic.unlimited_blade_works.short", "unlimited_blade_works", -3125939);
       this.addMagic("sword_barrel_full_open", "key.typemoonworld.magic.sword_barrel_full_open.short", "unlimited_blade_works", -3125939);
+      this.addMagic("ubw_sword_control", "key.typemoonworld.magic.ubw_sword_control.short", "unlimited_blade_works", -3125939);
       this.addMagic("reinforcement", "key.typemoonworld.magic.reinforcement.short", "basic,reinforcement", -12602534);
       this.addMagic("healing_magic", "magic.typemoonworld.healing_magic.name", "basic", -3342388);
       this.addMagic("spiritual_healing", "magic.typemoonworld.spiritual_healing.name", "basic", -274950);
@@ -177,6 +178,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("demon_god_gaze", "key.typemoonworld.magic.demon_god_gaze.short", "special", -7798785);
       this.addMagic("detection", "key.typemoonworld.magic.detection.short", "basic", -3381556);
       this.addMagic("imaginary_displacement", "key.typemoonworld.magic.imaginary_displacement.short", "special", -10066432);
+      this.addMagic("entity_displacement", "key.typemoonworld.magic.entity_displacement.short", "special", -10066432);
       this.addMagic("imaginary_dive", "key.typemoonworld.magic.imaginary_dive.short", "special", -10066432);
       this.addMagic("imaginary_space", "key.typemoonworld.magic.imaginary_space.short", "special", -10066432);
       this.addMagic("kimaris", "key.typemoonworld.magic.kimaris.short", "elemental", -10040065);

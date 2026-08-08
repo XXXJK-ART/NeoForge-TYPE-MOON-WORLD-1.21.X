@@ -868,7 +868,7 @@ public final class EmiyaArcherCombatHelper {
       Vec3 center = entity.position().add(target.position()).scale(0.5);
       restoreFromOffscreenDuel(entity);
       restoreFromOffscreenDuel(target);
-      if (!entity.isAlive() || !target.isAlive()) {
+      if (!entity.isAlive() || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.2, center.z, 34, 1.8, 0.2, 1.8, 0.035);
@@ -1873,6 +1873,9 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void applyBorrowedGallatinFixedDamage(EmiyaArcherEntity entity, LivingEntity target, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(entity.damageSources().mobAttack(entity), damage);

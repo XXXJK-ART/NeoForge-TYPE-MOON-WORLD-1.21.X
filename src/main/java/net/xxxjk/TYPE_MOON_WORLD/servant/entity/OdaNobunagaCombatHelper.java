@@ -1636,7 +1636,7 @@ public final class OdaNobunagaCombatHelper {
       Vec3 center = entity.position().add(target.position()).scale(0.5);
       restoreFromHajunDuel(entity);
       restoreFromHajunDuel(target);
-      if (!entity.isAlive() || !target.isAlive()) {
+      if (!entity.isAlive() || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y + 0.2, center.z, 34, 1.8, 0.2, 1.8, 0.035);

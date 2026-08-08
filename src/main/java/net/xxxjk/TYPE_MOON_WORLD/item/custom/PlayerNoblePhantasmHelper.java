@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.ProjectionDataHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
@@ -560,6 +561,7 @@ public final class PlayerNoblePhantasmHelper {
          return;
       }
       ItemStack paired = new ItemStack(otherKanshouBakuyaItem(projectionId));
+      copyProjectionComponents(player.getItemInHand(hand), paired);
       markUbwProjection(paired);
       player.setItemInHand(otherHand, paired);
       if (player.level() instanceof ServerLevel level) {
@@ -689,8 +691,26 @@ public final class PlayerNoblePhantasmHelper {
       ItemStack evolved = new ItemStack(ganJiang
          ? overedge ? ModItems.GAN_JIANG_OVEREDGE.get() : ModItems.GAN_JIANG.get()
          : overedge ? ModItems.MO_YE_OVEREDGE.get() : ModItems.MO_YE.get());
+      copyProjectionComponents(current, evolved);
       markUbwProjection(evolved);
       player.setItemInHand(hand, evolved);
+   }
+
+   private static void copyProjectionComponents(ItemStack source, ItemStack destination) {
+      if (source == null || destination == null || source.isEmpty()) return;
+      copyComponent(source, destination, DataComponents.CUSTOM_NAME);
+      copyComponent(source, destination, DataComponents.LORE);
+      copyComponent(source, destination, DataComponents.ENCHANTMENTS);
+      copyComponent(source, destination, DataComponents.ATTRIBUTE_MODIFIERS);
+      copyComponent(source, destination, DataComponents.DAMAGE);
+      copyComponent(source, destination, DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
+      ProjectionDataHelper.inherit(source, destination, 0L);
+   }
+
+   private static <T> void copyComponent(ItemStack source, ItemStack destination,
+      net.minecraft.core.component.DataComponentType<T> type) {
+      T value = source.get(type);
+      if (value != null) destination.set(type, value);
    }
 
    private static void throwKanshouBakuya(ServerPlayer player, InteractionHand hand) {
@@ -781,6 +801,9 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void resolveGaeBulgHit(ServerPlayer player, LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_player")) {
          return;
       }
@@ -964,6 +987,9 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void applyFixedDamage(ServerPlayer player, LivingEntity target, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float before = target.getHealth();
       DamageSource source = player.damageSources().playerAttack(player);
       target.invulnerableTime = 0;

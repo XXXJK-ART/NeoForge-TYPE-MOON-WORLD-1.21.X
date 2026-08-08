@@ -9,6 +9,7 @@ com.example.typemoonaddon.magic.AntoresMagicEntrypoint
 com.example.typemoonaddon.magic.ZaganMagicEntrypoint
 com.example.typemoonaddon.magic.AndrasiasMagicEntrypoint
 com.example.typemoonaddon.magic.DetectionMagicEntrypoint
+com.example.typemoonaddon.magic.EntityDisplacementMagicEntrypoint
 com.example.typemoonaddon.magic.DemonGodGazeMagicEntrypoint
 com.example.typemoonaddon.magic.NegaSummonMagicEntrypoint
 com.example.typemoonaddon.magic.ImaginarySpaceMagicEntrypoint

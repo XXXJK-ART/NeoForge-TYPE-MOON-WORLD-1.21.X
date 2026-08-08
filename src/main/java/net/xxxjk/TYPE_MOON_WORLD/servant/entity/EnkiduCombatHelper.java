@@ -2542,6 +2542,9 @@ public final class EnkiduCombatHelper {
    }
 
    private static void applyNoDefenseDamage(EnkiduEntity entity, LivingEntity target, float amount) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
       target.removeEffect(MobEffects.ABSORPTION);
       target.setAbsorptionAmount(0.0F);

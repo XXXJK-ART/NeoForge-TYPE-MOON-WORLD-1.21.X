@@ -164,6 +164,11 @@ public final class VFXRenderManager {
       if (mc.level == null || mc.player == null) {
          return;
       }
+      // VFX continue ticking server-side while a GUI is open, but there is no
+      // useful reason to rasterize their full particle graph behind the GUI.
+      if (mc.screen != null) {
+         return;
+      }
       PoseStack poseStack = event.getPoseStack();
       Vec3 camera = event.getCamera().getPosition();
       poseStack.pushPose();

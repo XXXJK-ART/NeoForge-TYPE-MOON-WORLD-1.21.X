@@ -113,7 +113,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setTrackedTarget(LivingEntity target) {
-      this.entityData.set(TARGET_ID, target == null ? -1 : target.getId());
+      this.entityData.set(TARGET_ID, target == null || EntityUtils.isImmunePlayerTarget(target) ? -1 : target.getId());
    }
 
    private LivingEntity getTrackedTarget() {
@@ -518,6 +518,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(source, damage);
@@ -560,6 +563,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void applyDeathThorn(LivingEntity target, DamageSource source) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(source, lethalDamage);

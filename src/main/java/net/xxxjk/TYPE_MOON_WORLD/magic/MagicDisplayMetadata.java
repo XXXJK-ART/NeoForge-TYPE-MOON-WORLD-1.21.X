@@ -45,7 +45,8 @@ public final class MagicDisplayMetadata {
       } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
          || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
          return CATEGORY_JEWEL;
-      } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "broken_phantasm".equals(magicId)) {
+      } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "broken_phantasm".equals(magicId)
+         || "ubw_sword_control".equals(magicId)) {
          return CATEGORY_UBW;
       } else if ("gander".equals(magicId) || "gandr_machine_gun".equals(magicId)) {
          return CATEGORY_NORDIC;
