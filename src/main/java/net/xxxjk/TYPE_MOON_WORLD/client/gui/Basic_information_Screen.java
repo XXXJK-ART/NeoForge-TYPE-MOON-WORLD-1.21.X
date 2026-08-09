@@ -71,7 +71,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
 
    @Override
    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderScreenBaseBackdrop(guiGraphics, this.width, this.height);
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {

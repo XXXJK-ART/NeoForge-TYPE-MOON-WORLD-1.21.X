@@ -20,10 +20,12 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.api.MasterProfileApiRegistry;
 import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.typemoonworld.api.event.MasterProfileEvent;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.neoforged.neoforge.common.NeoForge;
 
 public final class MasterCardProfile {
@@ -77,6 +79,8 @@ public final class MasterCardProfile {
          held.shrink(1);
       }
       saveOriginalStateAndClearPlayer(player, vars, profile.id());
+      TalentService.suspendActiveEffects(player);
+      PassiveService.suspendEffects(player);
       BodyTrainingService.clear(player, vars);
       resetToProfileState(vars);
       // MasterStateManager synchronizes immediately; apply the target attributes first so
@@ -144,6 +148,8 @@ public final class MasterCardProfile {
          vars.master_card_saved_inventory = new CompoundTag();
          MasterServantLinkService.clearContractTags(player);
       }
+      PassiveService.resumeEffects(player);
+      TalentService.resumeActiveEffects(player);
       give(player, createCardStack(cardId));
       clearMasterCardTags(player);
       return true;

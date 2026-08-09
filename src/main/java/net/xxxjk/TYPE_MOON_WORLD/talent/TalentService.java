@@ -16,6 +16,8 @@ public final class TalentService {
    public static final Set<String> IDS = Set.of(MONSTROUS_STRENGTH, CLAIRVOYANCE);
    public static final String STRENGTH_UNTIL_TAG = "TypeMoonMonstrousStrengthUntil";
    public static final String STRENGTH_AMPLIFIER_TAG = "TypeMoonMonstrousStrengthAmplifier";
+   public static final String STRENGTH_SUSPENDED_REMAINING_TAG = "TypeMoonMonstrousStrengthSuspendedRemaining";
+   private static final String EFFECTS_SUSPENDED_TAG = "TypeMoonTalentEffectsSuspended";
 
    private TalentService() {
    }
@@ -66,7 +68,7 @@ public final class TalentService {
    }
 
    public static boolean cast(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, String id) {
-      if (player == null || vars == null || !owns(vars, id)) return false;
+      if (player == null || vars == null || PassiveService.effectsSuppressed(vars) || !owns(vars, id)) return false;
       if (MONSTROUS_STRENGTH.equals(id)) {
          double proficiency = proficiency(vars, id);
          int level = monstrousStrengthLevel(proficiency);
@@ -87,6 +89,15 @@ public final class TalentService {
    }
 
    public static void tick(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (PassiveService.effectsSuppressed(vars)) {
+         suspendActiveEffects(player);
+         return;
+      }
+      if (player.getPersistentData().getBoolean(EFFECTS_SUSPENDED_TAG)) {
+         resumeActiveEffects(player);
+         return;
+      }
       long until = player.getPersistentData().getLong(STRENGTH_UNTIL_TAG);
       long now = player.level().getGameTime();
       if (until <= now) {
@@ -101,13 +112,49 @@ public final class TalentService {
    }
 
    public static boolean shouldPreventRemoval(ServerPlayer player) {
-      return player != null && player.getPersistentData().getLong(STRENGTH_UNTIL_TAG) > player.level().getGameTime();
+      if (player == null) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return !PassiveService.effectsSuppressed(vars)
+         && player.getPersistentData().getLong(STRENGTH_UNTIL_TAG) > player.level().getGameTime();
+   }
+
+   public static void suspendActiveEffects(ServerPlayer player) {
+      if (player == null) return;
+      var data = player.getPersistentData();
+      if (data.getBoolean(EFFECTS_SUSPENDED_TAG)) return;
+      data.putBoolean(EFFECTS_SUSPENDED_TAG, true);
+      long remaining = data.getLong(STRENGTH_UNTIL_TAG) - player.level().getGameTime();
+      if (remaining > 0L) {
+         data.putLong(STRENGTH_SUSPENDED_REMAINING_TAG, remaining);
+      } else {
+         data.remove(STRENGTH_SUSPENDED_REMAINING_TAG);
+         data.remove(STRENGTH_AMPLIFIER_TAG);
+      }
+      data.remove(STRENGTH_UNTIL_TAG);
+      player.removeEffect(ModMobEffects.MONSTROUS_STRENGTH);
+      resetClairvoyance(player);
+   }
+
+   public static void resumeActiveEffects(ServerPlayer player) {
+      if (player == null) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (PassiveService.effectsSuppressed(vars)) return;
+      var data = player.getPersistentData();
+      data.remove(EFFECTS_SUSPENDED_TAG);
+      long remaining = data.getLong(STRENGTH_SUSPENDED_REMAINING_TAG);
+      data.remove(STRENGTH_SUSPENDED_REMAINING_TAG);
+      if (remaining > 0L) {
+         data.putLong(STRENGTH_UNTIL_TAG, player.level().getGameTime() + remaining);
+      }
+      tick(player);
    }
 
    public static void clearMonstrousStrength(ServerPlayer player) {
       if (player == null) return;
       player.getPersistentData().remove(STRENGTH_UNTIL_TAG);
       player.getPersistentData().remove(STRENGTH_AMPLIFIER_TAG);
+      player.getPersistentData().remove(STRENGTH_SUSPENDED_REMAINING_TAG);
+      player.getPersistentData().remove(EFFECTS_SUSPENDED_TAG);
       player.removeEffect(ModMobEffects.MONSTROUS_STRENGTH);
    }
 

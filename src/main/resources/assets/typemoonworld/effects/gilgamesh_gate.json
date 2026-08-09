@@ -1,42 +1,145 @@
 {
-  "duration": 2.0,
-  "notes": "Upright golden Gate of Babylon portal. No environment or screen effects.",
+  "duration": 1.15,
+  "notes": "Original data-driven Gate of Babylon accent: double gold rings, a short central swirl, and restrained vanilla sparkles.",
   "emitters": [
     {
       "start_time": 0.0,
-      "end_time": 2.0,
-      "rate": 420,
-      "particle_lifetime": 0.5,
-      "size_variance": 0.06,
+      "end_time": 0.72,
+      "rate": 520,
+      "particle_lifetime": 0.48,
+      "size_variance": 0.05,
       "lifetime_variance": 0.08,
       "position_variance": 0.01,
       "velocity": [0.0, 0.0, 0.0],
-      "velocity_variance": 0.01,
+      "velocity_variance": 0.012,
       "max_vanilla_particles_per_tick": 3,
-      "component": { "type": "circle", "radius": 1.0, "segments": 96 },
+      "component": { "type": "circle", "radius": 1.0, "segments": 112 },
       "color_over_life": [
-        { "t": 0.0, "color": "#33FFD700" },
-        { "t": 0.3, "color": "#FFFFD700" },
-        { "t": 0.72, "color": "#FFFFF2A8" },
+        { "t": 0.0, "color": "#22FFD26A" },
+        { "t": 0.28, "color": "#FFFFD76D" },
+        { "t": 0.68, "color": "#FFFFF4B0" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
-        { "t": 0.0, "size": 0.025 },
-        { "t": 0.42, "size": 0.14 },
-        { "t": 1.0, "size": 0.025 }
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.42, "size": 0.125 },
+        { "t": 1.0, "size": 0.022 }
       ],
       "transform_over_life": [
         { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.12, 0.12, 0.12], "easing": "ease_out_cubic" },
-        { "t": 0.5, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.45, 1.45, 1.45], "easing": "ease_out_back" },
-        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.08, 0.08, 0.08], "easing": "ease_in_cubic" }
+        { "t": 0.42, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.5, 1.5, 1.5], "easing": "ease_out_back" },
+        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.16, 0.16, 0.16], "easing": "ease_in_cubic" }
       ],
       "blend": "ADDITIVE",
-      "particle_role": "GILGAMESH_UPRIGHT_GOLD_GATE",
+      "particle_role": "GILGAMESH_GATE_OUTER_RING",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "end_rod", "count": 1, "spread": [0.5, 0.5, 0.08], "speed": 0.012, "chance": 0.32 },
-        { "type": "enchanted_hit", "count": 1, "spread": [0.7, 0.7, 0.08], "speed": 0.018, "chance": 0.42 }
+        { "type": "end_rod", "count": 1, "spread": [0.5, 0.5, 0.08], "speed": 0.012, "chance": 0.26 },
+        { "type": "enchanted_hit", "count": 1, "spread": [0.7, 0.7, 0.08], "speed": 0.018, "chance": 0.34 }
       ]
+    },
+    {
+      "start_time": 0.04,
+      "end_time": 0.58,
+      "rate": 360,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.04,
+      "lifetime_variance": 0.07,
+      "position_variance": 0.008,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.01,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "circle", "radius": 0.58, "segments": 84 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFE18A" },
+        { "t": 0.3, "color": "#DDFFE18A" },
+        { "t": 0.72, "color": "#FFFFF6C2" },
+        { "t": 1.0, "color": "#00FFE18A" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.016 },
+        { "t": 0.52, "size": 0.09 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.2, 0.2, 0.2], "easing": "ease_out_cubic" },
+        { "t": 0.5, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.22, 1.22, 1.22], "easing": "ease_out_cubic" },
+        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.12, 0.12, 0.12], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_GATE_INNER_RING",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.7,
+      "rate": 760,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.055,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.012,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.12 + 0.78 * t) * cos(t * tau * 3.35 + time * 7.5)",
+        "expr_y": "0.0",
+        "expr_z": "(0.12 + 0.78 * t) * sin(t * tau * 3.35 + time * 7.5)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 132
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.25, "color": "#AAFFF2B0" },
+        { "t": 0.65, "color": "#CCFFD45A" },
+        { "t": 1.0, "color": "#00FFD45A" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.016 },
+        { "t": 0.5, "size": 0.07 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.32, 0.32, 0.32], "easing": "ease_out_cubic" },
+        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.0, 1.0, 1.0], "easing": "ease_in_out_sine" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_GATE_CENTER_SWIRL",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 0.4,
+      "rate": 220,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.035,
+      "lifetime_variance": 0.05,
+      "position_variance": 0.006,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.006,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "line", "start": [0.0, 0.0, -0.5], "end": [0.0, 0.0, 0.5], "segments": 36 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.24, "color": "#FFFFFFFF" },
+        { "t": 0.72, "color": "#CCFFE18A" },
+        { "t": 1.0, "color": "#00FFE18A" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.45, "size": 0.06 },
+        { "t": 1.0, "size": 0.014 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.3, 0.3, 0.3], "easing": "ease_out_cubic" },
+        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.15, 1.15, 1.15], "easing": "ease_out_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "GILGAMESH_GATE_WEAPON_FLASH",
+      "enable_trail": true
     }
   ]
 }

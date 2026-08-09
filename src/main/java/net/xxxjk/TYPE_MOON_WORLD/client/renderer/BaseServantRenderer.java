@@ -3,12 +3,15 @@ package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
+import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
@@ -89,6 +92,12 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
    @Override
    public Color getRenderColor(T animatable, float partialTick, int packedLight) {
       if (!animatable.isSpiritualDissolving()) {
+         float manifest = animatable.getSpiritualManifestProgress(partialTick);
+         if (manifest < 1.0F) {
+            float eased = manifest * manifest * (3.0F - 2.0F * manifest);
+            int alpha = Math.max(0, Math.min(255, Math.round(eased * 255.0F)));
+            return Color.ofARGB(alpha, 235, 248, 255);
+         }
          return super.getRenderColor(animatable, partialTick, packedLight);
       }
 
@@ -96,5 +105,18 @@ public class BaseServantRenderer<T extends ServantEntity> extends GeoEntityRende
       float fade = progress < 0.55F ? 1.0F : Math.max(0.0F, 1.0F - (progress - 0.55F) / 0.45F);
       int alpha = Math.max(0, Math.min(255, Math.round(fade * 255.0F)));
       return Color.ofARGB(alpha, 255, 255, 255);
+   }
+
+   @Override
+   public RenderType getRenderType(
+      T animatable,
+      ResourceLocation texture,
+      @Nullable MultiBufferSource bufferSource,
+      float partialTick
+   ) {
+      if (ServantClipRenderHelper.shouldClip(animatable, partialTick)) {
+         return ServantClipRenderHelper.renderType(animatable, texture, partialTick);
+      }
+      return super.getRenderType(animatable, texture, bufferSource, partialTick);
    }
 }

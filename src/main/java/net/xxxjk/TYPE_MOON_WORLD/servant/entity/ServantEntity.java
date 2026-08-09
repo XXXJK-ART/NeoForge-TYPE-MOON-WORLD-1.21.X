@@ -81,6 +81,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final String ACTION_CONTROLLER = "action_controller";
+   private static final int SPIRITUAL_MANIFEST_DURATION = 24;
    private static final int SPIRITUAL_DISSOLVE_DURATION = 50;
    private static final int WALK_ANIMATION_GRACE_TICKS = 6;
    private static final double WALK_ANIMATION_DELTA_THRESHOLD = 1.0E-5;
@@ -122,6 +123,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    );
    private static final EntityDataAccessor<Boolean> SPIRITUAL_DISSOLVING = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.BOOLEAN
+   );
+   private static final EntityDataAccessor<Integer> SPIRITUAL_MANIFEST_TICKS = SynchedEntityData.defineId(
+      ServantEntity.class, EntityDataSerializers.INT
    );
 
    private final ServantAiEngine aiEngine = new ServantAiEngine();
@@ -212,6 +216,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       builder.define(FAVOR, 50.0F);
       builder.define(CURRENT_MP, 0.0F);
       builder.define(SPIRITUAL_DISSOLVING, false);
+      builder.define(SPIRITUAL_MANIFEST_TICKS, 0);
    }
 
    @Override
@@ -314,6 +319,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          super.setTarget(null);
       }
       super.tick();
+      if (!this.level().isClientSide && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
+         this.entityData.set(SPIRITUAL_MANIFEST_TICKS, this.entityData.get(SPIRITUAL_MANIFEST_TICKS) - 1);
+      }
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide && this.tickCount == 1) {
          this.equipNpcServantCardArmor(true);
@@ -595,6 +603,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.applyDefinitionAttributes(true);
          this.equipDefaultWeapon();
          this.equipNpcServantCardArmor(false);
+         this.entityData.set(SPIRITUAL_MANIFEST_TICKS, SPIRITUAL_MANIFEST_DURATION);
+         if (level instanceof ServerLevel serverLevel) {
+            VFXServerEffects.spawn(serverLevel, "servant_manifest", this.position(), 128.0);
+         }
       }
       return result;
    }
@@ -1121,6 +1133,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
 
       return Math.min(1.0F, (this.spiritualDissolveTicks + partialTick) / (float)SPIRITUAL_DISSOLVE_DURATION);
+   }
+
+   public float getSpiritualManifestProgress(float partialTick) {
+      int remaining = this.entityData.get(SPIRITUAL_MANIFEST_TICKS);
+      if (remaining <= 0 || this.isSpiritualDissolving()) {
+         return 1.0F;
+      }
+
+      float elapsed = SPIRITUAL_MANIFEST_DURATION - remaining + partialTick;
+      return Mth.clamp(elapsed / (float)SPIRITUAL_MANIFEST_DURATION, 0.0F, 1.0F);
    }
 
    // ======================== 姝讳骸鐗规晥 ========================

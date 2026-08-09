@@ -510,6 +510,7 @@ public final class MedusaCombatHelper {
       entity.triggerHorizontalSwingAnimation();
       if (entity.level() instanceof ServerLevel level) {
          spawnChainLine(level, entity.getEyePosition(), target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+         VFXServerEffects.spawn(level, "servant_medusa_snare", target.position(), 96.0);
          level.playSound(null, entity.blockPosition(), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 0.75F, 0.9F);
       }
       if (entity.getRandom().nextFloat() > CHAIN_SNARE_CATCH_CHANCE) {

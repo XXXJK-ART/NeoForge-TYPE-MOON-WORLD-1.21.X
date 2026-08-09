@@ -317,7 +317,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    }
 
    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderScreenBaseBackdrop(guiGraphics, this.width, this.height);
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {

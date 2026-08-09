@@ -373,6 +373,18 @@ public class TypeMoonWorldClientEvents {
          ),
          TypeMoonEffectShaders::setUbwAnalysisRipple
       );
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "babylon"), DefaultVertexFormat.POSITION_TEX_COLOR
+         ),
+         TypeMoonEffectShaders::setBabylonPortal
+      );
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "rendertype_servant_clipped"), DefaultVertexFormat.NEW_ENTITY
+         ),
+         TypeMoonEffectShaders::setClippedEntity
+      );
    }
 
    @SubscribeEvent

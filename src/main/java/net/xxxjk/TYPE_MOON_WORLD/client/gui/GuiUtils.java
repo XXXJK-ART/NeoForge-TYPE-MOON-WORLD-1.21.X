@@ -19,6 +19,9 @@ public class GuiUtils {
    public static final int ARCANE_TEXT_MUTED = 0xFF99A6B2;
 
    public static void renderScreenBackdrop(GuiGraphics guiGraphics, int width, int height) {
+   }
+
+   public static void renderScreenBaseBackdrop(GuiGraphics guiGraphics, int width, int height) {
       int baseWidth = Math.min(Math.max(420, width * 4 / 5), Math.max(1, width - 12));
       int baseHeight = Math.min(Math.max(230, height * 4 / 5), Math.max(1, height - 12));
       int baseX = (width - baseWidth) / 2;

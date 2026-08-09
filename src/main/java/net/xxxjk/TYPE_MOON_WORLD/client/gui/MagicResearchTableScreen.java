@@ -122,6 +122,6 @@ public class MagicResearchTableScreen extends AbstractContainerScreen<MagicResea
 
    @Override
    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-      GuiUtils.renderScreenBackdrop(g, width, height);
+      GuiUtils.renderScreenBaseBackdrop(g, width, height);
    }
 }

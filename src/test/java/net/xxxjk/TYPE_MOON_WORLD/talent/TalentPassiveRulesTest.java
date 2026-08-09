@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.talent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.martial.MartialPassiveProgressionService;
@@ -53,6 +54,14 @@ class TalentPassiveRulesTest {
       assertEquals(0.325, PassiveService.dodgeChance(PassiveRank.D, PassiveRank.B, null), 1.0E-9);
       assertEquals(0.575, PassiveService.dodgeChance(PassiveRank.D, PassiveRank.B, PassiveRank.C), 1.0E-9);
       assertEquals(0.80, PassiveService.dodgeChance(PassiveRank.A, PassiveRank.B, PassiveRank.A), 1.0E-9);
+   }
+
+   @Test
+   void servantAndMasterCardFormsBothSuppressPlayerEffects() {
+      assertFalse(PassiveService.effectsSuppressed(false, false));
+      assertTrue(PassiveService.effectsSuppressed(true, false));
+      assertTrue(PassiveService.effectsSuppressed(false, true));
+      assertTrue(PassiveService.effectsSuppressed(true, true));
    }
 
    @Test

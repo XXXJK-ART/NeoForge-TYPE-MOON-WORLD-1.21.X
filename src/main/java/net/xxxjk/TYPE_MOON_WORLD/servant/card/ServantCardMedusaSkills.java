@@ -902,6 +902,7 @@ public final class ServantCardMedusaSkills {
       target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 100, 1, false, true, true));
       if (player.level() instanceof ServerLevel level) {
          spawnLineParticles(level, player.getEyePosition(), target.position().add(0.0, target.getBbHeight() * 0.55, 0.0), ParticleTypes.CRIT);
+         VFXServerEffects.spawn(level, "servant_medusa_snare", target.position(), 96.0);
          level.playSound(null, target.blockPosition(), SoundEvents.CHAIN_PLACE, SoundSource.PLAYERS, 1.0F, 0.8F);
       }
    }

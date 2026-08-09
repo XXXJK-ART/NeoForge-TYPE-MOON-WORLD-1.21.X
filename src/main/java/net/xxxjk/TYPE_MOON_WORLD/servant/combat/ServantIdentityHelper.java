@@ -81,7 +81,7 @@ public final class ServantIdentityHelper {
    public static boolean hasTrait(LivingEntity entity, ServantTraitTag trait) {
       if (trait == ServantTraitTag.DIVINE && entity instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (PassiveService.has(vars, PassiveService.DIVINITY)) return true;
+         if (!PassiveService.effectsSuppressed(vars) && PassiveService.has(vars, PassiveService.DIVINITY)) return true;
       }
       return trait != null && traitsOf(entity).contains(trait);
    }

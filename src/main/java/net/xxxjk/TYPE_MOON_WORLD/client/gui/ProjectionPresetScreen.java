@@ -188,7 +188,7 @@ public class ProjectionPresetScreen extends Screen {
       int y = this.topPos;
       int w = this.imageWidth;
       int h = this.imageHeight;
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderScreenBaseBackdrop(guiGraphics, this.width, this.height);
       GuiUtils.renderArcaneWindow(guiGraphics, x, y, w, h, GuiUtils.ARCANE_CYAN);
       guiGraphics.drawCenteredString(this.font, this.title, x + w / 2, y + 9, GuiUtils.ARCANE_TEXT);
       for (int i = 0; i < this.filterButtons.size(); i++) {

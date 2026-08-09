@@ -11,6 +11,7 @@ import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 @EventBusSubscriber(value = Dist.CLIENT, modid = "typemoonworld")
@@ -71,7 +72,8 @@ public final class ClairvoyanceClientState {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!TalentService.CLAIRVOYANCE.equals(PlayerMagicSelectionService.getCurrentMagicId(vars))
+      if (PassiveService.effectsSuppressed(vars)
+         || !TalentService.CLAIRVOYANCE.equals(PlayerMagicSelectionService.getCurrentMagicId(vars))
          || !TalentService.owns(vars, TalentService.CLAIRVOYANCE)) {
          reset();
       }

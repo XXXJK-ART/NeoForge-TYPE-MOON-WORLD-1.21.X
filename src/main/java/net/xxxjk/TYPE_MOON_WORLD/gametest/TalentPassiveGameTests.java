@@ -91,4 +91,40 @@ public final class TalentPassiveGameTests {
       helper.assertTrue(dodged, "ordinary melee damage never entered the 80% passive dodge path");
       helper.succeed();
    }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   public static void cardFormSuspendsAndRestoresPlayerTalentsAndPassives(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double baseHealth = player.getAttributeValue(Attributes.MAX_HEALTH);
+      vars.talent_proficiencies.put(TalentService.MONSTROUS_STRENGTH, 40.0);
+      vars.passive_ranks.put(PassiveService.DIVINITY, PassiveRank.E);
+      vars.passive_ranks.put(PassiveService.CLAIRVOYANCE, PassiveRank.E);
+      vars.passive_ranks.put(PassiveService.MIND_EYE_TRUE, PassiveRank.A);
+      PassiveService.resumeEffects(player);
+      helper.assertTrue(TalentService.cast(player, vars, TalentService.MONSTROUS_STRENGTH), "talent cast failed before card transformation");
+      helper.assertTrue(player.hasEffect(MobEffects.NIGHT_VISION), "passive Clairvoyance did not grant night vision");
+
+      vars.servant_card_transformed = true;
+      TalentService.suspendActiveEffects(player);
+      PassiveService.suspendEffects(player);
+      helper.assertTrue(!player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH), "Monstrous Strength remained active in card form");
+      helper.assertTrue(!player.hasEffect(MobEffects.NIGHT_VISION), "passive Clairvoyance night vision remained active in card form");
+      helper.assertTrue(player.getPersistentData().getLong(TalentService.STRENGTH_SUSPENDED_REMAINING_TAG) > 0L,
+         "Monstrous Strength remaining duration was not frozen");
+      helper.assertTrue(player.getAttributeValue(Attributes.MAX_HEALTH) == baseHealth, "Divinity health remained active in card form");
+      helper.assertTrue(!ServantIdentityHelper.hasTrait(player, ServantTraitTag.DIVINE), "passive Divinity identity remained active in card form");
+      helper.assertTrue(PassiveService.dodgeChance(vars) == 0.0, "player passive dodge remained active in card form");
+      helper.assertTrue(!TalentService.cast(player, vars, TalentService.MONSTROUS_STRENGTH), "talent could be cast in card form");
+
+      vars.servant_card_transformed = false;
+      PassiveService.resumeEffects(player);
+      TalentService.resumeActiveEffects(player);
+      helper.assertTrue(player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH), "Monstrous Strength did not resume after card release");
+      helper.assertTrue(player.hasEffect(MobEffects.NIGHT_VISION), "passive Clairvoyance did not resume after card release");
+      helper.assertTrue(player.getAttributeValue(Attributes.MAX_HEALTH) == baseHealth + 10.0, "Divinity health did not resume after card release");
+      helper.assertTrue(ServantIdentityHelper.hasTrait(player, ServantTraitTag.DIVINE), "passive Divinity identity did not resume after card release");
+      helper.assertTrue(PassiveService.dodgeChance(vars) == 0.40, "player passive dodge did not resume after card release");
+      helper.succeed();
+   }
 }
