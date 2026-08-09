@@ -25,6 +25,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
@@ -81,8 +82,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final String ACTION_CONTROLLER = "action_controller";
-   private static final int SPIRITUAL_MANIFEST_DURATION = 24;
-   private static final int SPIRITUAL_DISSOLVE_DURATION = 50;
+   private static final int SPIRITUAL_MANIFEST_DURATION = 44;
+   private static final int SPIRITUAL_DISSOLVE_DURATION = 72;
    private static final int WALK_ANIMATION_GRACE_TICKS = 6;
    private static final double WALK_ANIMATION_DELTA_THRESHOLD = 1.0E-5;
    private static final String LAST_MANA_HEAL_TICK_TAG = "ServantLastManaHealTick";
@@ -152,6 +153,14 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private int spiritualDissolveTicks = 0;
    private int walkAnimationGraceTicks = 0;
    private long tacticalAiHandledTick = Long.MIN_VALUE;
+   private boolean spiritualLockActive;
+   private boolean applyingSpiritualLock;
+   private boolean spiritualLockPreviousNoGravity;
+   private double spiritualLockX;
+   private double spiritualLockY;
+   private double spiritualLockZ;
+   private float spiritualLockYRot;
+   private float spiritualLockXRot;
    @Nullable private UUID masterUuid;
    private String contractId = "";
    private ServantCommandMode commandMode = ServantCommandMode.FOLLOW;
@@ -318,9 +327,17 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       if (!this.level().isClientSide && EntityUtils.isImmunePlayerTarget(this.getTarget())) {
          super.setTarget(null);
       }
+      if (this.isSpiritualTransitionActive()) {
+         this.applySpiritualLock();
+      }
       super.tick();
       if (!this.level().isClientSide && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
          this.entityData.set(SPIRITUAL_MANIFEST_TICKS, this.entityData.get(SPIRITUAL_MANIFEST_TICKS) - 1);
+      }
+      if (this.isSpiritualTransitionActive()) {
+         this.applySpiritualLock();
+      } else {
+         this.releaseSpiritualLock();
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide && this.tickCount == 1) {
@@ -337,11 +354,73 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    public void setTarget(@Nullable LivingEntity target) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         super.setTarget(null);
+         return;
+      }
       super.setTarget(EntityUtils.isImmunePlayerTarget(target) ? null : target);
    }
 
+   @Override
+   public void travel(Vec3 travelVector) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         super.setDeltaMovement(Vec3.ZERO);
+         return;
+      }
+      super.travel(travelVector);
+   }
+
+   @Override
+   public void move(MoverType type, Vec3 pos) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         return;
+      }
+      super.move(type, pos);
+   }
+
+   @Override
+   public void setDeltaMovement(Vec3 deltaMovement) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         super.setDeltaMovement(Vec3.ZERO);
+         return;
+      }
+      super.setDeltaMovement(deltaMovement);
+   }
+
+   @Override
+   public void setNoGravity(boolean noGravity) {
+      if (this.shouldBlockSpiritualPoseMutation() && !noGravity) {
+         return;
+      }
+      super.setNoGravity(noGravity);
+   }
+
+   @Override
+   public void setYRot(float yRot) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         return;
+      }
+      super.setYRot(yRot);
+   }
+
+   @Override
+   public void setXRot(float xRot) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         return;
+      }
+      super.setXRot(xRot);
+   }
+
+   @Override
+   public void setYHeadRot(float rotation) {
+      if (this.shouldBlockSpiritualPoseMutation()) {
+         return;
+      }
+      super.setYHeadRot(rotation);
+   }
+
    private void updateWalkAnimationState() {
-      if (this.isSpiritualDissolving() || !this.isAlive()) {
+      if (this.isSpiritualTransitionActive() || !this.isAlive()) {
          this.walkAnimationGraceTicks = 0;
          return;
       }
@@ -364,6 +443,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    protected void customServerAiStep() {
       if (!this.level().isClientSide()) {
+         if (this.isSpiritualTransitionActive()) {
+            this.applySpiritualLock();
+            this.hurtTime = 0;
+            this.hurtDuration = 0;
+            return;
+         }
          net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantSpecialStateService.tickBeforeAi(this);
          if (this.hasEffect(ModMobEffects.PETRIFIED)) {
             this.getNavigation().stop();
@@ -372,9 +457,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
          if (this.isSpiritualDissolving()) {
-            this.getNavigation().stop();
-            this.setTarget(null);
-            this.setDeltaMovement(Vec3.ZERO);
+            this.applySpiritualLock();
             this.hurtTime = 0;
             this.hurtDuration = 0;
             return;
@@ -604,9 +687,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.equipDefaultWeapon();
          this.equipNpcServantCardArmor(false);
          this.entityData.set(SPIRITUAL_MANIFEST_TICKS, SPIRITUAL_MANIFEST_DURATION);
-         if (level instanceof ServerLevel serverLevel) {
-            VFXServerEffects.spawn(serverLevel, "servant_manifest", this.position(), 128.0);
-         }
+         this.applySpiritualLock();
       }
       return result;
    }
@@ -1147,6 +1228,99 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    // ======================== 姝讳骸鐗规晥 ========================
 
+   public boolean isSpiritualTransitionLocked() {
+      return this.isSpiritualTransitionActive();
+   }
+
+   private boolean isSpiritualTransitionActive() {
+      return this.isSpiritualDissolving() || this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0;
+   }
+
+   private boolean shouldBlockSpiritualPoseMutation() {
+      return this.spiritualLockActive && !this.applyingSpiritualLock && this.isSpiritualTransitionActive();
+   }
+
+   private void beginSpiritualLock() {
+      if (this.spiritualLockActive) {
+         return;
+      }
+      this.spiritualLockActive = true;
+      this.spiritualLockPreviousNoGravity = this.isNoGravity();
+      this.spiritualLockX = this.getX();
+      this.spiritualLockY = this.getY();
+      this.spiritualLockZ = this.getZ();
+      this.spiritualLockYRot = this.getYRot();
+      this.spiritualLockXRot = this.getXRot();
+   }
+
+   private void applySpiritualLock() {
+      this.beginSpiritualLock();
+      this.applyingSpiritualLock = true;
+      try {
+         this.getNavigation().stop();
+         super.setTarget(null);
+         super.setDeltaMovement(Vec3.ZERO);
+         this.xxa = 0.0F;
+         this.yya = 0.0F;
+         this.zza = 0.0F;
+         this.clearSpiritualActionState();
+         this.setJumping(false);
+         this.setPose(Pose.STANDING);
+         this.setNoGravity(true);
+         this.setPos(this.spiritualLockX, this.spiritualLockY, this.spiritualLockZ);
+         super.setYRot(this.spiritualLockYRot);
+         super.setXRot(this.spiritualLockXRot);
+         super.setYHeadRot(this.spiritualLockYRot);
+         this.yRotO = this.spiritualLockYRot;
+         this.xRotO = this.spiritualLockXRot;
+         this.yHeadRot = this.spiritualLockYRot;
+         this.yHeadRotO = this.spiritualLockYRot;
+         this.yBodyRot = this.spiritualLockYRot;
+         this.yBodyRotO = this.spiritualLockYRot;
+         this.hasImpulse = false;
+         this.hurtTime = 0;
+         this.hurtDuration = 0;
+      } finally {
+         this.applyingSpiritualLock = false;
+      }
+   }
+
+   private void clearSpiritualActionState() {
+      this.roarAnimationTicks = 0;
+      this.slamAnimationTicks = 0;
+      this.jumpAttackAnimationTicks = 0;
+      this.chargeAnimationTicks = 0;
+      this.sweepAnimationTicks = 0;
+      this.slashAnimationTicks = 0;
+      this.teleportAnimationTicks = 0;
+      this.stompAnimationTicks = 0;
+      this.uppercutAnimationTicks = 0;
+      this.horizontalSwingAnimationTicks = 0;
+      this.runeCastAnimationTicks = 0;
+      this.gaeBolgThrowAnimationTicks = 0;
+      this.attackSwingTicks = 0;
+      if (this.actionCtrl != null) {
+         this.actionCtrl.setAnimation(null);
+      }
+   }
+
+   private void releaseSpiritualLock() {
+      if (!this.spiritualLockActive) {
+         return;
+      }
+      this.applyingSpiritualLock = true;
+      try {
+         this.setNoGravity(this.spiritualLockPreviousNoGravity);
+         super.setDeltaMovement(Vec3.ZERO);
+         this.xxa = 0.0F;
+         this.yya = 0.0F;
+         this.zza = 0.0F;
+      } finally {
+         this.applyingSpiritualLock = false;
+         this.spiritualLockActive = false;
+      }
+   }
+
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource cause) {
       super.die(cause);
@@ -1154,6 +1328,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       ServantVoiceHelper.tryPlayFail(this);
       this.entityData.set(SPIRITUAL_DISSOLVING, true);
       this.spiritualDissolveTicks = 0;
+      this.applySpiritualLock();
       this.deathTime = 0;
       this.hurtTime = 0;
       this.hurtDuration = 0;
@@ -1210,6 +1385,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.getNavigation().stop();
       this.setTarget(null);
       this.spiritualDissolveTicks++;
+      this.applySpiritualLock();
 
       if (this.level() instanceof ServerLevel sl) {
          float progress = Math.min(1.0F, this.spiritualDissolveTicks / (float)SPIRITUAL_DISSOLVE_DURATION);
@@ -1404,6 +1580,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
       if (SPIRITUAL_DISSOLVING.equals(key) && this.isSpiritualDissolving()) {
          this.spiritualDissolveTicks = 0;
+         this.applySpiritualLock();
+      }
+      if (SPIRITUAL_MANIFEST_TICKS.equals(key) && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
+         this.applySpiritualLock();
       }
    }
 
@@ -1448,6 +1628,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       controllers.add(new AnimationController<>(this, "controller", 0, event -> {
          var animations = this.getAnimationSet();
          String animation = null;
+         if (this.isSpiritualTransitionLocked()) {
+            animation = animations.idleAnimation().orElse(null);
+            return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
+         }
          boolean moving = this.isWalkAnimationActive(event.isMoving());
          String override = this.getLoopAnimationOverride(animations, moving);
          if (override != null && !override.isBlank()) {
@@ -1462,7 +1646,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));
       // 鍔ㄤ綔鎺у埗鍣紙transition = 0锛屾壙杞芥妧鑳戒笌鏀诲嚮鍔ㄤ綔锛?
-      this.actionCtrl = new AnimationController<>(this, "action_controller", 0, event -> null);
+      this.actionCtrl = new AnimationController<>(this, "action_controller", 0,
+         event -> this.isSpiritualTransitionLocked() ? PlayState.STOP : PlayState.CONTINUE)
+         .receiveTriggeredAnimations();
       controllers.add(this.actionCtrl);
       for (var entry : this.getAnimationSet().actions().entrySet()) {
          String key = entry.getKey();

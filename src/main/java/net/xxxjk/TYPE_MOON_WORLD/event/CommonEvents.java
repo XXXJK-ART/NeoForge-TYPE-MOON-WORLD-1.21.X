@@ -10,8 +10,10 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -25,12 +27,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,11 +54,14 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
 import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -118,6 +126,7 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
 import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.DeadApostleCombatProfileLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
@@ -346,7 +355,7 @@ public class CommonEvents {
          if (player instanceof ServerPlayer analysisPlayer) {
             var analysisVars = analysisPlayer.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
             boolean activeMovementLock = net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.isActive(analysisVars)
-               && net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.get(analysisVars, "magic_analysis") < 75.0;
+               && net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService.effectiveMagicAnalysisProficiency(analysisVars) < 75.0;
             if (activeMovementLock || analysisVars.analysis_lock_ticks > 0) {
                analysisPlayer.setDeltaMovement(0.0, analysisPlayer.getDeltaMovement().y, 0.0);
                analysisPlayer.hurtMarked = true;
@@ -356,12 +365,14 @@ public class CommonEvents {
          if (player instanceof ServerPlayer serverPlayer) {
             TalentService.tick(serverPlayer);
             PassiveService.tick(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
             MagicGander.tick(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.tick(serverPlayer);
             if (serverPlayer.tickCount % 20 == 0) {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -954,6 +965,14 @@ public class CommonEvents {
    }
 
    @SubscribeEvent
+   public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
+         net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
+      }
+   }
+
+   @SubscribeEvent
    public static void onDefinitionSnapshotReload(OnDatapackSyncEvent event) {
       DefinitionSnapshotService.invalidate();
       event.getRelevantPlayers().forEach(DefinitionSnapshotService::send);
@@ -1347,6 +1366,8 @@ public class CommonEvents {
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             if (!event.isCanceled()) TalentService.clearActiveState(player);
+            if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
+            if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
             // Contract loss is committed only after every higher-priority death
             // handler has had a chance to cancel the event (revive/protection).
             if (!event.isCanceled() && vars.servant_card_transformed) {
@@ -1565,7 +1586,42 @@ public class CommonEvents {
             return;
          }
          event.getDrops().removeIf(drop -> ServantCardTransformManager.shouldDeleteBoundDrop(drop.getItem()));
+      } else if (event.getSource().getEntity() instanceof ServerPlayer player && !(event.getEntity() instanceof Player)) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double chance = AdvancedPassiveService.goldenDropChance(vars);
+         if (chance > 0.0 && player.getRandom().nextDouble() < chance) {
+            event.getDrops().add(new ItemEntity(player.level(), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), new ItemStack(Items.GOLD_INGOT)));
+         }
       }
+   }
+
+   @SubscribeEvent
+   public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
+      if (event.getEntity() instanceof Piglin piglin && event.getNewAboutToBeSetTarget() instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (AdvancedPassiveService.lootingBonus(vars) > 0 && piglin.getLastHurtByMob() != player) {
+            event.setCanceled(true);
+         }
+      }
+   }
+
+   @SubscribeEvent
+   public static void onBlockDrops(BlockDropsEvent event) {
+      if (!(event.getBreaker() instanceof ServerPlayer player) || player.isCreative()) return;
+      BlockState state = event.getState();
+      if (state == null || !isOreBlock(state)) return;
+      ItemStack tool = event.getTool();
+      if (!tool.isEmpty() && tool.getEnchantments().toString().contains("silk_touch")) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double chance = AdvancedPassiveService.goldenDropChance(vars);
+      if (chance > 0.0 && player.getRandom().nextDouble() < chance) {
+         event.getDrops().add(new ItemEntity(player.level(), event.getPos().getX() + 0.5, event.getPos().getY() + 0.5, event.getPos().getZ() + 0.5, new ItemStack(Items.GOLD_INGOT)));
+      }
+   }
+
+   private static boolean isOreBlock(BlockState state) {
+      ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+      return id != null && id.getPath().endsWith("_ore");
    }
 
    private static boolean blocksAttacks(LivingEntity entity) {

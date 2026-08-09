@@ -16,6 +16,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
@@ -28,7 +29,13 @@ public final class PassiveService {
    public static final String MIND_EYE_TRUE = "mind_eye_true";
    public static final String MIND_EYE_FALSE = "mind_eye_false";
    public static final String INSTINCT = "instinct";
-   public static final Set<String> IDS = Set.of(DIVINITY, CLAIRVOYANCE, MIND_EYE_TRUE, MIND_EYE_FALSE, INSTINCT);
+   public static final String HIGH_SPEED_INCANTATION = "high_speed_incantation";
+   public static final String HIGH_SPEED_DIVINE_WORDS = "high_speed_divine_words";
+   public static final String PARTITIONED_THOUGHT = "partitioned_thought";
+   public static final String GOLDEN_RULE = "golden_rule";
+   public static final Set<String> IDS = Set.of(
+      DIVINITY, CLAIRVOYANCE, MIND_EYE_TRUE, MIND_EYE_FALSE, INSTINCT,
+      HIGH_SPEED_INCANTATION, HIGH_SPEED_DIVINE_WORDS, PARTITIONED_THOUGHT, GOLDEN_RULE);
    private static final ResourceLocation DIVINITY_HEALTH_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "passive_divinity_health");
    private static final ResourceLocation DIVINITY_ATTACK_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "passive_divinity_attack");
    private static final String CLAIRVOYANCE_NIGHT_VISION_TAG = "TypeMoonPassiveClairvoyanceNightVision";
@@ -96,6 +103,9 @@ public final class PassiveService {
          return;
       }
       player.getPersistentData().remove(EFFECTS_SUSPENDED_TAG);
+      if (AdvancedPassiveService.ignoresOriginBulletSeal(player)) {
+         OriginBulletHelper.clearPlayerSeal(player);
+      }
       refreshClairvoyanceNightVision(player, vars);
       if (player.tickCount % 20 == 0) reconcileAttributes(player, vars);
    }

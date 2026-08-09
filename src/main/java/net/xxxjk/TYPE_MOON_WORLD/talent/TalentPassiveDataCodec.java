@@ -9,11 +9,16 @@ public final class TalentPassiveDataCodec {
    public static final String TALENTS_KEY = "talent_proficiencies";
    public static final String PASSIVES_KEY = "passive_ranks";
    public static final String THRESHOLD_KEY = "martial_passive_last_threshold";
+   public static final String MAGIC_THRESHOLD_KEY = "magic_passive_last_threshold";
 
    private TalentPassiveDataCodec() {
    }
 
    public static void save(CompoundTag root, Map<String, Double> talents, Map<String, PassiveRank> passives, int threshold) {
+      save(root, talents, passives, threshold, 290);
+   }
+
+   public static void save(CompoundTag root, Map<String, Double> talents, Map<String, PassiveRank> passives, int threshold, int magicThreshold) {
       CompoundTag talentTag = new CompoundTag();
       talents.forEach((id, value) -> {
          if (TalentService.isTalent(id)) talentTag.putDouble(id, clamp(value));
@@ -26,6 +31,7 @@ public final class TalentPassiveDataCodec {
       });
       root.put(PASSIVES_KEY, passiveTag);
       root.putInt(THRESHOLD_KEY, Math.max(140, threshold));
+      root.putInt(MAGIC_THRESHOLD_KEY, Math.max(290, magicThreshold));
    }
 
    public static int load(CompoundTag root, Map<String, Double> talents, Map<String, PassiveRank> passives, double totalMartial) {
@@ -49,6 +55,12 @@ public final class TalentPassiveDataCodec {
       return root.contains(THRESHOLD_KEY)
          ? Math.max(140, root.getInt(THRESHOLD_KEY))
          : totalMartial >= 150.0 ? (int)Math.floor(totalMartial / 10.0) * 10 : 140;
+   }
+
+   public static int loadMagicThreshold(CompoundTag root, double totalMagic) {
+      return root.contains(MAGIC_THRESHOLD_KEY)
+         ? Math.max(290, root.getInt(MAGIC_THRESHOLD_KEY))
+         : totalMagic >= 300.0 ? (int)Math.floor(totalMagic / 10.0) * 10 : 290;
    }
 
    private static double clamp(double value) {

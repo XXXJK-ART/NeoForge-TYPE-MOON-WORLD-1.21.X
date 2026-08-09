@@ -66,6 +66,8 @@ public final class PlayerNoblePhantasmHelper {
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
    private static final String EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonExcaliburMinChargePaid";
+   private static final String GOLDEN_EXCALIBUR_CHARGE_TAG = "TypeMoonGoldenExcaliburCharge";
+   private static final String GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonGoldenExcaliburMinChargePaid";
    private static final String ARTORIA_WIND_REVEAL_UNTIL_TAG = "ServantCardArtoriaWindRevealUntil";
    private static final String ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG = "ServantCardArtoriaExcaliburWindLockUntil";
    private static final String GALLATIN_CHARGE_TAG = "TypeMoonGallatinCharge";
@@ -81,6 +83,11 @@ public final class PlayerNoblePhantasmHelper {
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
    private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
    private static final int EXCALIBUR_PLAYER_COOLDOWN = 1200;
+   private static final int GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS = 10;
+   private static final int GOLDEN_EXCALIBUR_MAX_CHARGE_TICKS = 40;
+   private static final int GOLDEN_EXCALIBUR_RELEASE_TICKS = 30;
+   private static final int GOLDEN_EXCALIBUR_PLAYER_COOLDOWN = 400;
+   private static final double GOLDEN_EXCALIBUR_MANA_PER_TICK = 3.0;
    private static final int GALLATIN_MAX_CHARGE_TICKS = 100;
    private static final int GALLATIN_PLAYER_COOLDOWN = 1200;
    private static final int GAE_BULG_SINGLE_PLAYER_COOLDOWN = 600;
@@ -415,6 +422,48 @@ public final class PlayerNoblePhantasmHelper {
       addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
+   }
+
+   public static void startGoldenExcaliburCharge(ServerPlayer player) {
+      player.getPersistentData().putInt(GOLDEN_EXCALIBUR_CHARGE_TAG, 0);
+      player.getPersistentData().remove(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG);
+   }
+
+   public static void tickGoldenExcaliburCharge(Level level, LivingEntity living, int useTicks) {
+      if (!(living instanceof ServerPlayer player)) return;
+      int charged = Math.min(GOLDEN_EXCALIBUR_MAX_CHARGE_TICKS, useTicks);
+      player.getPersistentData().putInt(GOLDEN_EXCALIBUR_CHARGE_TAG, charged);
+      applyNoblePhantasmChargeSlow(player);
+      if (useTicks >= GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS && useTicks <= GOLDEN_EXCALIBUR_MAX_CHARGE_TICKS) {
+         double cost = player.getPersistentData().getBoolean(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG)
+            ? GOLDEN_EXCALIBUR_MANA_PER_TICK
+            : GOLDEN_EXCALIBUR_MANA_PER_TICK * GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS;
+         if (!consumeStrict(player, cost)) {
+            player.releaseUsingItem();
+         } else {
+            player.getPersistentData().putBoolean(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG, true);
+            if (level instanceof ServerLevel serverLevel && serverLevel.getGameTime() % 10L == 0L) {
+               serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 12, 0.45, 0.5, 0.45, 0.05);
+            }
+         }
+      }
+   }
+
+   public static void releaseGoldenExcalibur(ServerPlayer player) {
+      int charged = player.getPersistentData().getInt(GOLDEN_EXCALIBUR_CHARGE_TAG);
+      player.getPersistentData().remove(GOLDEN_EXCALIBUR_CHARGE_TAG);
+      player.getPersistentData().remove(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG);
+      if (!(player.level() instanceof ServerLevel level)) return;
+      if (charged < GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS) {
+         level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.45F, 1.65F);
+         return;
+      }
+      float powerScale = chargePower(charged, GOLDEN_EXCALIBUR_MAX_CHARGE_TICKS);
+      Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, GOLDEN_EXCALIBUR_RELEASE_TICKS, 0, powerScale, true);
+      level.addFreshEntity(beam);
+      addExcaliburCooldown(player, scaledCooldown(GOLDEN_EXCALIBUR_PLAYER_COOLDOWN, powerScale));
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.9F + powerScale, 1.35F);
    }
 
    public static void startGallatinCharge(ServerPlayer player) {

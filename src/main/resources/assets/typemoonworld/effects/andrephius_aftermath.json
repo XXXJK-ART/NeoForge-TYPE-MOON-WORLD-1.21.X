@@ -33,7 +33,7 @@
       "blend": "ADDITIVE",
       "particle_role": "ANDREPHIUS_AFTERMATH_SPHERE",
       "vanilla_particles": [
-        { "type": "electric_spark", "count": 2, "spread": [2.0, 1.0, 2.0], "offset": [0.0, 0.5, 0.0], "speed": 0.1, "chance": 0.3 }
+        { "type": "end_rod", "count": 2, "spread": [2.0, 1.0, 2.0], "offset": [0.0, 0.5, 0.0], "speed": 0.1, "chance": 0.3 }
       ]
     },
     {

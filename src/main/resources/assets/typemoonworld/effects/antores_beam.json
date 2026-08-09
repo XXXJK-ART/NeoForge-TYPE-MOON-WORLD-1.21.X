@@ -37,7 +37,7 @@
       "particle_role": "ANTORES_BLACK_TORRENT_CORE",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "electric_spark", "count": 1, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.2 }
+        { "type": "end_rod", "count": 1, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.2 }
       ]
     },
     {

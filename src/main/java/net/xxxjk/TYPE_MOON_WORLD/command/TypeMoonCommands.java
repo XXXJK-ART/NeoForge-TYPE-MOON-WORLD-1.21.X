@@ -747,7 +747,10 @@ public class TypeMoonCommands {
          vars.talent_proficiencies.clear();
          vars.passive_ranks.clear();
          vars.martial_passive_last_threshold = 140;
+         vars.magic_passive_last_threshold = 290;
          TalentService.clearActiveState(player);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
+         net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
          PassiveService.reconcileAttributes(player, vars);
          player.getPersistentData().putBoolean("TypeMoonNoCooldown", false);
          vars.syncPlayerVariables(player);
@@ -876,6 +879,7 @@ public class TypeMoonCommands {
          if (!vars.learned_magics.contains(MAGIC_ANALYSIS_MAGIC_ID)) {
             vars.learned_magics.add(MAGIC_ANALYSIS_MAGIC_ID);
          }
+         MagicProficiencyService.set(vars, MAGIC_ANALYSIS_MAGIC_ID, 100.0);
 
          if (!vars.learned_magics.contains("reinforcement")) {
             vars.learned_magics.add("reinforcement");

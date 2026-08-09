@@ -88,7 +88,7 @@
       "vanilla_particles": [
         { "type": "large_smoke", "count": 2, "spread": [30.0, 2.8, 30.0], "offset": [0.0, 27.0, 0.0], "speed": 0.018, "chance": 0.82 },
         { "type": "campfire_cosy_smoke", "count": 1, "spread": [27.0, 2.2, 27.0], "offset": [0.0, 28.0, 0.0], "speed": 0.012, "chance": 0.58 },
-        { "type": "electric_spark", "count": 1, "spread": [28.0, 2.0, 28.0], "offset": [0.0, 26.0, 0.0], "speed": 0.04, "chance": 0.22 }
+        { "type": "end_rod", "count": 1, "spread": [28.0, 2.0, 28.0], "offset": [0.0, 26.0, 0.0], "speed": 0.04, "chance": 0.22 }
       ]
     },
     {

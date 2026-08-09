@@ -15,7 +15,7 @@ public final class MagicLearningStrategy {
    private record Rule(int complexity, boolean analysis, boolean material, boolean research, boolean copy, boolean sword, boolean divine) {}
 
    private static final Map<String, Rule> RULES = Map.ofEntries(
-      Map.entry("magic_analysis", new Rule(55, false, false, true, false, false, false)),
+      Map.entry("magic_analysis", new Rule(55, false, true, true, true, false, false)),
       Map.entry("projection", new Rule(35, true, true, true, true, false, false)),
       Map.entry("structural_analysis", new Rule(30, true, true, true, true, false, false)),
       Map.entry("unlimited_blade_works", new Rule(100, false, true, true, true, true, false)),
@@ -38,6 +38,7 @@ public final class MagicLearningStrategy {
       Map.entry("baptism_rite", new Rule(65, true, true, true, true, false, false)),
       Map.entry("black_key_fire_engraving", new Rule(60, true, true, true, true, false, false)),
       Map.entry("stigma", new Rule(60, true, true, true, true, false, false))
+      ,Map.entry("mana_burst", new Rule(65, false, false, false, false, false, false))
       ,Map.entry("reinforcement_self", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_other", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_item", new Rule(25, true, true, true, true, false, false))
@@ -62,15 +63,15 @@ public final class MagicLearningStrategy {
       ,Map.entry("andrephius", new Rule(88, true, true, true, true, false, false))
       ,Map.entry("antores", new Rule(90, true, true, true, true, false, true))
       ,Map.entry("demon_god_gaze", new Rule(92, true, true, true, true, false, true))
-      ,Map.entry("detection", new Rule(10, true, true, true, true, false, false))
+      ,Map.entry("detection", new Rule(10, true, false, true, true, false, false))
       ,Map.entry("imaginary_displacement", new Rule(78, true, true, true, true, false, false))
       ,Map.entry("imaginary_dive", new Rule(55, true, true, true, true, false, false))
-      ,Map.entry("imaginary_space", new Rule(85, true, true, true, true, false, false))
+      ,Map.entry("imaginary_space", new Rule(85, true, true, false, true, false, false))
       ,Map.entry("kimaris", new Rule(75, true, true, true, true, false, false))
       ,Map.entry("nega_summon", new Rule(95, true, true, true, true, false, true))
       ,Map.entry("orias", new Rule(80, true, true, true, true, false, false))
       ,Map.entry("storage", new Rule(60, true, true, true, true, false, false))
-      ,Map.entry("storm", new Rule(72, true, true, true, true, false, false))
+      ,Map.entry("storm", new Rule(72, true, true, true, false, false, false))
       ,Map.entry("zagan", new Rule(78, true, true, true, true, false, false))
    );
    private static final Set<String> DEFAULT_ANALYZABLE = Set.of("projection", "structural_analysis", "reinforcement", "gravity_magic", "gander", "healing_magic", "magic_bullet", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic", "spiritual_healing", "baptism_rite", "black_key_fire_engraving", "stigma");

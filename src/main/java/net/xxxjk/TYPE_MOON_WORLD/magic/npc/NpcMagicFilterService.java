@@ -34,6 +34,7 @@ public final class NpcMagicFilterService {
       "jewel_machine_gun",
       "healing_magic",
       "spiritual_healing",
+      "magic_analysis",
       "magic_bullet",
       "suggestion_magic",
       "binding_magic",

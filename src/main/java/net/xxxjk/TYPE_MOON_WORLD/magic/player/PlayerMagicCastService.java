@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
@@ -19,6 +20,7 @@ import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicCastContext;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -71,7 +73,7 @@ public final class PlayerMagicCastService {
          return;
       }
 
-      if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
+      if (entity instanceof Player player && OriginBulletHelper.isSealed(player) && !AdvancedPassiveService.ignoresOriginBulletSeal(player)) {
          displayClientMessage(entity, "message.typemoonworld.origin_bullet.sealed");
          return;
       }
@@ -86,7 +88,8 @@ public final class PlayerMagicCastService {
          displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
          return;
       }
-      if (dynamicDefinition != null && vars.player_mana < dynamicDefinition.manaCost()) {
+      double dynamicCost = dynamicDefinition != null ? adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost()) : 0.0;
+      if (dynamicDefinition != null && vars.player_mana < dynamicCost) {
          displayClientMessage(entity, "message.typemoonworld.magic.insufficient_mana");
          return;
       }
@@ -107,9 +110,18 @@ public final class PlayerMagicCastService {
       if (publicMagicId != null && NeoForge.EVENT_BUS.post(new MagicCastEvent.Pre(publicMagicId, publicContext)).isCanceled()) {
          return;
       }
-      MagicExecutionResult result = MagicModularRegistry.execute(
-         new MagicExecutionContext(entity, vars, entry.magicId, "crest".equals(entry.sourceType))
-      );
+      MagicExecutionResult result;
+      if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer && !"crest".equals(entry.sourceType)) {
+         try (var ignored = WheelCastingModifierService.begin(serverPlayer, entry.magicId)) {
+            result = MagicModularRegistry.execute(
+               new MagicExecutionContext(entity, vars, entry.magicId, false)
+            );
+         }
+      } else {
+         result = MagicModularRegistry.execute(
+            new MagicExecutionContext(entity, vars, entry.magicId, "crest".equals(entry.sourceType))
+         );
+      }
       if (publicMagicId != null) {
          NeoForge.EVENT_BUS.post(new MagicCastEvent.Post(publicMagicId, publicContext,
             result.handled() ? new ExecutionResult(true, result.success(), result.manaCost(), result.cooldownTicks()) : ExecutionResult.NOT_HANDLED));
@@ -123,9 +135,11 @@ public final class PlayerMagicCastService {
       }
 
       if (result.manaCost() > 0.0) {
-         vars.player_mana = Math.max(0.0, vars.player_mana - result.manaCost());
+         double cost = adjustedWheelCost(entity, vars, entry, result.manaCost());
+         vars.player_mana = Math.max(0.0, vars.player_mana - cost);
       } else if (dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
-         vars.player_mana = Math.max(0.0, vars.player_mana - dynamicDefinition.manaCost());
+         double cost = adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost());
+         vars.player_mana = Math.max(0.0, vars.player_mana - cost);
       }
 
       applyPostCastState(entity, vars, entry.magicId);
@@ -160,6 +174,13 @@ public final class PlayerMagicCastService {
          cooldown = definition.cooldownTicks();
       }
       vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
+   }
+
+   private static double adjustedWheelCost(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry, double cost) {
+      if (cost <= 0.0 || !(entity instanceof Player) || entry == null || "crest".equals(entry.sourceType)) {
+         return cost;
+      }
+      return Math.max(0.0, cost * AdvancedPassiveService.manaMultiplier(vars));
    }
 
    private static boolean isLegacyJewelMagic(String magicId) {

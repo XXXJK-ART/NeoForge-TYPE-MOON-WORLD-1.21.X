@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 
 import net.minecraft.world.entity.Entity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 /** Applies diminishing returns to every proficiency increase, including batch operations. */
@@ -11,6 +13,11 @@ public final class MagicProficiencyService {
    public static double get(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null || id == null) return 0.0;
       if (TalentService.isTalent(id)) return TalentService.proficiency(vars, id);
+      return getRaw(vars, id);
+   }
+
+   public static double getRaw(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
+      if (vars == null || id == null) return 0.0;
       return switch (MagicLearningStrategy.normalizeDisplayId(id)) {
          case "magic_analysis" -> vars.proficiency_magic_analysis;
          case "structural_analysis" -> vars.proficiency_structural_analysis;
@@ -33,6 +40,7 @@ public final class MagicProficiencyService {
          case "time_alter" -> vars.proficiency_time_alter;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing;
          case "baptism_rite" -> vars.proficiency_baptism_rite;
+         case "mana_burst" -> vars.magic_proficiencies.getOrDefault("mana_burst", 0.0);
          default -> vars.magic_proficiencies.getOrDefault(id, 0.0);
       };
    }
@@ -42,7 +50,8 @@ public final class MagicProficiencyService {
       if (TalentService.isTalent(id)) return get(vars, id);
       double current = get(vars, id);
       double value = calculateValue(id, current, baseGain);
-      set(vars, id, value);
+      setInternal(vars, id, value);
+      MagicPassiveProgressionService.onNaturalGain(vars, id);
       return value;
    }
 
@@ -55,6 +64,11 @@ public final class MagicProficiencyService {
    }
 
    public static void set(TypeMoonWorldModVariables.PlayerVariables vars, String id, double value) {
+      setInternal(vars, id, value);
+      MagicPassiveProgressionService.rebase(vars);
+   }
+
+   private static void setInternal(TypeMoonWorldModVariables.PlayerVariables vars, String id, double value) {
       if (TalentService.isTalent(id)) return;
       value = Math.max(0.0, Math.min(100.0, Math.round(value * 100.0) / 100.0));
       switch (MagicLearningStrategy.normalizeDisplayId(id)) {
@@ -79,6 +93,7 @@ public final class MagicProficiencyService {
          case "time_alter" -> vars.proficiency_time_alter = value;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing = value;
          case "baptism_rite" -> vars.proficiency_baptism_rite = value;
+         case "mana_burst" -> vars.magic_proficiencies.put("mana_burst", value);
          default -> vars.magic_proficiencies.put(id, value);
       }
    }
@@ -86,8 +101,15 @@ public final class MagicProficiencyService {
    public static double add(Entity entity, String id, double baseGain) {
       if (entity == null) return 0.0;
       var vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      PassiveRank beforeRank = PassiveService.rank(vars, PassiveService.HIGH_SPEED_INCANTATION);
+      int beforeThreshold = vars.magic_passive_last_threshold;
       double result = add(vars, id, baseGain);
-      vars.syncProficiency(entity);
+      PassiveRank afterRank = PassiveService.rank(vars, PassiveService.HIGH_SPEED_INCANTATION);
+      if (beforeRank != afterRank || beforeThreshold != vars.magic_passive_last_threshold) {
+         vars.syncPlayerVariables(entity);
+      } else {
+         vars.syncProficiency(entity);
+      }
       return result;
    }
 }

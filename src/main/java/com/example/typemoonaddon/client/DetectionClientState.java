@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -20,7 +21,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -55,9 +55,14 @@ public final class DetectionClientState {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         if (!active) {
+            boolean wasActive = privateActive;
             privateActive = false;
             clearTargets(level);
-            startGuiPulse(true);
+            if (wasActive) {
+                startGuiPulse(true);
+            } else {
+                stopGuiPulse();
+            }
             return;
         }
 
@@ -86,25 +91,40 @@ public final class DetectionClientState {
         if (entityId <= 0) {
             return;
         }
+        Minecraft minecraft = Minecraft.getInstance();
+        Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(entityId);
+        UUID entityUuid = entity == null ? null : entity.getUUID();
         EyeVisual existing = EYE_VISUALS.get(entityId);
         if (active) {
+            if (!(entity instanceof LivingEntity living) || !living.isAlive() || entityUuid == null) {
+                EYE_VISUALS.remove(entityId);
+                return;
+            }
             if (existing == null || existing.isFading(clientTick)) {
-                EYE_VISUALS.put(entityId, new EyeVisual(clientTick, clientTick + Math.max(1, ttlTicks)));
+                EYE_VISUALS.put(entityId, new EyeVisual(entityUuid, clientTick, clientTick + Math.max(1, ttlTicks)));
+            } else if (!existing.matches(entityUuid)) {
+                EYE_VISUALS.put(entityId, new EyeVisual(entityUuid, clientTick, clientTick + Math.max(1, ttlTicks)));
             } else {
                 existing.refresh(clientTick + Math.max(1, ttlTicks));
             }
-        } else if (existing != null) {
+        } else if (existing != null && (entityUuid == null || existing.matches(entityUuid))) {
             existing.fadeOut(clientTick);
+        } else {
+            EYE_VISUALS.remove(entityId);
         }
 
-        Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null && minecraft.player.getId() == entityId) {
             if (active) {
                 localHeartbeatUntil = clientTick + Math.max(20, ttlTicks);
             } else {
+                boolean wasActive = privateActive;
                 privateActive = false;
                 clearTargets(minecraft.level);
-                startGuiPulse(true);
+                if (wasActive) {
+                    startGuiPulse(true);
+                } else {
+                    stopGuiPulse();
+                }
             }
         }
     }
@@ -130,6 +150,12 @@ public final class DetectionClientState {
 
         EYE_VISUALS.entrySet().removeIf(entry -> {
             EyeVisual visual = entry.getValue();
+            Entity entity = minecraft.level.getEntity(entry.getKey());
+            if (!(entity instanceof LivingEntity living)
+                    || !living.isAlive()
+                    || !visual.matches(entity.getUUID())) {
+                return true;
+            }
             if (visual.expired(clientTick)) {
                 visual.fadeOut(clientTick);
             }
@@ -212,24 +238,26 @@ public final class DetectionClientState {
     ) {
         for (Map.Entry<Integer, EyeVisual> entry : EYE_VISUALS.entrySet()) {
             Entity entity = minecraft.level.getEntity(entry.getKey());
-            if (!(entity instanceof Player player) || !player.isAlive()) {
-                continue;
-            }
-            if (player == minecraft.player && minecraft.options.getCameraType().isFirstPerson()) {
-                continue;
-            }
             EyeVisual visual = entry.getValue();
+            if (!(entity instanceof LivingEntity living)
+                    || !living.isAlive()
+                    || !visual.matches(entity.getUUID())) {
+                continue;
+            }
+            if (living == minecraft.player && minecraft.options.getCameraType().isFirstPerson()) {
+                continue;
+            }
             float alpha = visual.alpha(clientTick, partialTick);
             if (alpha <= 0.01F) {
                 continue;
             }
-            renderEyeRing(player, poseStack, lines, glow, partialTick,
+            renderEyeRing(living, poseStack, lines, glow, partialTick,
                     visual.scale(clientTick, partialTick), alpha);
         }
     }
 
     private static void renderEyeRing(
-            Player player,
+            LivingEntity living,
             PoseStack poseStack,
             VertexConsumer lines,
             VertexConsumer glow,
@@ -237,9 +265,9 @@ public final class DetectionClientState {
             float scale,
             float alpha
     ) {
-        Vec3 eye = player.getPosition(partialTick).add(0.0D, player.getEyeHeight() - 0.08D, 0.0D);
-        float yaw = Mth.rotLerp(partialTick, player.yHeadRotO, player.getYHeadRot());
-        float pitch = Mth.lerp(partialTick, player.xRotO, player.getXRot());
+        Vec3 eye = living.getPosition(partialTick).add(0.0D, living.getEyeHeight() - 0.08D, 0.0D);
+        float yaw = Mth.rotLerp(partialTick, living.yHeadRotO, living.getYHeadRot());
+        float pitch = Mth.lerp(partialTick, living.xRotO, living.getXRot());
         Vec3 forward = Vec3.directionFromRotation(pitch, yaw).normalize();
         Vec3 right = new Vec3(0.0D, 1.0D, 0.0D).cross(forward);
         if (right.lengthSqr() < 1.0E-6D) {
@@ -536,6 +564,12 @@ public final class DetectionClientState {
         guiClosing = closing;
     }
 
+    private static void stopGuiPulse() {
+        guiPulseStart = clientTick;
+        guiPulseEnd = clientTick;
+        guiClosing = false;
+    }
+
     private static void drawGuiEllipse(
             GuiGraphics gui,
             int centerX,
@@ -554,14 +588,20 @@ public final class DetectionClientState {
     }
 
     private static final class EyeVisual {
+        private final UUID entityUuid;
         private final int startedAt;
         private int expiresAt;
         private int fadeStartedAt = -1;
         private int fadeEndsAt = -1;
 
-        private EyeVisual(int startedAt, int expiresAt) {
+        private EyeVisual(UUID entityUuid, int startedAt, int expiresAt) {
+            this.entityUuid = entityUuid;
             this.startedAt = startedAt;
             this.expiresAt = expiresAt;
+        }
+
+        private boolean matches(UUID uuid) {
+            return entityUuid != null && entityUuid.equals(uuid);
         }
 
         private void refresh(int newExpiresAt) {

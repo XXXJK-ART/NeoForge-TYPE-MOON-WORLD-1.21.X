@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.Basic_information_back_player_self;
+import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
@@ -158,6 +159,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("jewel_random_shoot", "key.typemoonworld.magic.jewel_random_shoot.short", "jewel", -5197648);
       this.addMagic("jewel_machine_gun", "key.typemoonworld.magic.jewel_machine_gun.short", "jewel,nordic", -8727320);
       this.addMagic("projection", "key.typemoonworld.magic.projection.short", "basic,unlimited_blade_works", -11549464);
+      this.addMagic("magic_analysis", "key.typemoonworld.magic.magic_analysis.short", "basic", -7829368);
       this.addMagic("structural_analysis", "key.typemoonworld.magic.structural_analysis.short", "basic,unlimited_blade_works", -11549464);
       this.addMagic("broken_phantasm", "key.typemoonworld.magic.broken_phantasm.short", "basic,unlimited_blade_works", -2193579);
       this.addMagic("unlimited_blade_works", "key.typemoonworld.magic.unlimited_blade_works.short", "unlimited_blade_works", -3125939);
@@ -839,6 +841,19 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case PassiveService.MIND_EYE_TRUE -> Component.translatable("passive.typemoonworld.mind_eye_true.value", this.formatPercent(rank.dodgeChance()));
          case PassiveService.MIND_EYE_FALSE -> Component.translatable("passive.typemoonworld.mind_eye_false.value", this.formatPercent(rank.dodgeChance()));
          case PassiveService.INSTINCT -> Component.translatable("passive.typemoonworld.instinct.value", this.formatPercent(rank.dodgeChance()));
+         case PassiveService.HIGH_SPEED_INCANTATION -> Component.translatable("passive.typemoonworld.high_speed_incantation.value",
+            AdvancedPassiveService.formatPercent(AdvancedPassiveService.chantMultiplier(this.getVars())),
+            AdvancedPassiveService.formatPercent(AdvancedPassiveService.manaMultiplier(this.getVars())));
+         case PassiveService.HIGH_SPEED_DIVINE_WORDS -> Component.translatable("passive.typemoonworld.high_speed_divine_words.value",
+            AdvancedPassiveService.formatPercent(AdvancedPassiveService.chantMultiplier(this.getVars())),
+            AdvancedPassiveService.formatPercent(AdvancedPassiveService.manaMultiplier(this.getVars())));
+         case PassiveService.PARTITIONED_THOUGHT -> Component.translatable("passive.typemoonworld.partitioned_thought.value",
+            AdvancedPassiveService.partitionN(this.getVars()),
+            AdvancedPassiveService.analysisWorkPerTick(this.getVars()),
+            String.format(Locale.ROOT, "%.2f", AdvancedPassiveService.effectiveMagicAnalysisProficiency(this.getVars())));
+         case PassiveService.GOLDEN_RULE -> Component.translatable("passive.typemoonworld.golden_rule.value",
+            AdvancedPassiveService.lootingBonus(this.getVars()),
+            this.formatPercent(AdvancedPassiveService.goldenDropChance(this.getVars())));
          default -> Component.literal(rank.name());
       };
    }

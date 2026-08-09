@@ -52,6 +52,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
@@ -250,6 +251,7 @@ public class TypeMoonWorldModVariables {
          clone.talent_proficiencies = new HashMap<>(original.talent_proficiencies);
          clone.passive_ranks = new HashMap<>(original.passive_ranks);
          clone.martial_passive_last_threshold = original.martial_passive_last_threshold;
+         clone.magic_passive_last_threshold = original.magic_passive_last_threshold;
          clone.analyzed_items = new ArrayList<>();
 
          for (ItemStack stack : original.analyzed_items) {
@@ -1038,6 +1040,7 @@ public class TypeMoonWorldModVariables {
       public Map<String, Double> talent_proficiencies = new HashMap<>();
       public Map<String, PassiveRank> passive_ranks = new HashMap<>();
       public int martial_passive_last_threshold = 140;
+      public int magic_passive_last_threshold = 290;
       public boolean is_chanting_ubw = false;
       public int ubw_chant_progress = 0;
       public int ubw_chant_timer = 0;
@@ -1282,7 +1285,8 @@ public class TypeMoonWorldModVariables {
             || "gandr_machine_gun".equals(magicId)
             || "projection".equals(magicId)
             || "healing_magic".equals(magicId)
-            || "time_alter".equals(magicId);
+            || "time_alter".equals(magicId)
+            || "mana_burst".equals(magicId);
       }
 
       private static String canonicalSelfKnowledgeMagicId(String magicId) {
@@ -1324,6 +1328,9 @@ public class TypeMoonWorldModVariables {
             payload.putBoolean("projection_lock_empty", true);
          } else if ("time_alter".equals(crestEntry.magicId)) {
             payload.putInt("time_alter_multiplier", 4);
+         } else if ("mana_burst".equals(crestEntry.magicId)) {
+            payload.putInt("mana_burst_mode", Math.floorMod(seed, 3));
+            payload.putInt("mana_burst_level", 1 + Math.floorMod(seed / 3, 5));
          }
 
          payload.putBoolean("preset_locked", true);
@@ -1700,6 +1707,13 @@ public class TypeMoonWorldModVariables {
                            this.projection_selected_structure_id = "";
                         });
                      }
+                  }
+               } else if ("mana_burst".equals(current.magicId)) {
+                  if (payload.contains("mana_burst_mode")) {
+                     payload.putInt("mana_burst_mode", Mth.clamp(payload.getInt("mana_burst_mode"), 0, 2));
+                  }
+                  if (payload.contains("mana_burst_level")) {
+                     payload.putInt("mana_burst_level", Mth.clamp(payload.getInt("mana_burst_level"), 1, 5));
                   }
                } else {
                   if ("gandr_machine_gun".equals(current.magicId) && payload.contains("gandr_machine_gun_mode")) {
@@ -2293,7 +2307,7 @@ public class TypeMoonWorldModVariables {
             dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
          }
          nbt.put("magic_proficiencies", dynamicProficiency);
-         TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold);
+         TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold, this.magic_passive_last_threshold);
          if (!this.projection_selected_item.isEmpty()) {
             nbt.put("projection_selected_item", this.projection_selected_item.save(lookupProvider));
          }
@@ -2705,6 +2719,8 @@ public class TypeMoonWorldModVariables {
          double totalMartial = this.bajiquan_proficiency + this.ganryu_proficiency + this.hokushin_proficiency + this.tennen_proficiency;
          this.martial_passive_last_threshold = TalentPassiveDataCodec.load(
             nbt, this.talent_proficiencies, this.passive_ranks, totalMartial);
+         this.magic_passive_last_threshold = TalentPassiveDataCodec.loadMagicThreshold(
+            nbt, MagicPassiveProgressionService.totalMagicProficiency(this));
 
          this.projection_selected_item = ItemStack.EMPTY;
          if (nbt.contains("projection_selected_item")) {

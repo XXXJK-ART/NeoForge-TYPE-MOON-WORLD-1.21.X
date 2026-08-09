@@ -192,6 +192,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_PROJECTION);
                         output.accept(ModItems.MAGIC_BOOK_STRUCTURAL_ANALYSIS);
                         output.accept(ModItems.MAGIC_PAGE_STRUCTURAL_ANALYSIS);
+                        output.accept(ModItems.MAGIC_BOOK_MAGIC_ANALYSIS);
+                        output.accept(ModItems.MAGIC_PAGE_MAGIC_ANALYSIS);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_PAGE_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_BOOK_HEALING);
@@ -216,6 +218,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
                         output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
                         output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
+                        output.accept(ModItems.PARTITIONED_THOUGHT_FRAGMENT);
                         output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING);
                         output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING);
                         output.accept(ModItems.MAGIC_BOOK_STIGMA);

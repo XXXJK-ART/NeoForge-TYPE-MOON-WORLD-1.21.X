@@ -33,7 +33,7 @@
       "blend": "ADDITIVE",
       "particle_role": "ANDREPHIUS_CHARGE_RING",
       "vanilla_particles": [
-        { "type": "electric_spark", "count": 1, "spread": [0.7, 0.25, 0.7], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.4 }
+        { "type": "end_rod", "count": 1, "spread": [0.7, 0.25, 0.7], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.4 }
       ]
     },
     {

@@ -43,6 +43,7 @@ public class WanderingTraderTradesHandler {
       new MagicTradeEntry("magic_page_binding", 45),
       new MagicTradeEntry("magic_page_suggestion", 45),
       new MagicTradeEntry("magic_page_spiritual_healing", 50),
+      new MagicTradeEntry("magic_page_magic_analysis", 55),
       new MagicTradeEntry("magic_page_imaginary_dive", 55),
       new MagicTradeEntry("magic_page_black_key_fire_engraving", 60),
       new MagicTradeEntry("magic_page_stigma", 60),

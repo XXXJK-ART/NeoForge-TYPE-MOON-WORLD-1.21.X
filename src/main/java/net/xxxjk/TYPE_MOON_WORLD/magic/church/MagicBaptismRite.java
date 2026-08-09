@@ -17,6 +17,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.BasicMagecraftHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing;
+import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -52,7 +53,7 @@ public final class MagicBaptismRite {
       }
 
       UUID targetId = target.getUUID();
-      int chantTicks = chantTicks(proficiency);
+      int chantTicks = WheelCastingModifierService.adjustChantTicks(player, chantTicks(proficiency));
       BaptismRiteEventHandler.start(player, targetId, proficiency, chantTicks);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.start", target.getDisplayName()), true);
       net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "baptism_rite", 0.16);

@@ -5,12 +5,14 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.client.model.ServantCardArmorModel;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -27,6 +29,16 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
    protected ServantCardArmorRenderer(GeoModel<ServantCardArmorItem> model) {
       super(model);
       withScale(0.95F, 0.95F);
+   }
+
+   @Override
+   public RenderType getRenderType(ServantCardArmorItem animatable, ResourceLocation texture,
+                                   @Nullable MultiBufferSource bufferSource, float partialTick) {
+      if (this.currentEntity instanceof ServantEntity servant
+         && ServantClipRenderHelper.shouldClip(servant, partialTick)) {
+         return ServantClipRenderHelper.renderType(servant, texture, partialTick);
+      }
+      return super.getRenderType(animatable, texture, bufferSource, partialTick);
    }
 
    @Override

@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public class ManaHelper {
@@ -20,6 +21,7 @@ public class ManaHelper {
    private static final double SPIRIT_VEIN_BLOCK_MANA = 90.0;
 
    public static boolean consumeManaOrHealth(ServerPlayer player, double amount) {
+      amount = WheelCastingModifierService.adjustManaCost(player, amount);
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;
@@ -51,6 +53,7 @@ public class ManaHelper {
    }
 
    public static boolean consumeManaWithInventoryOrHealth(ServerPlayer player, double amount) {
+      amount = WheelCastingModifierService.adjustManaCost(player, amount);
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;
@@ -71,6 +74,7 @@ public class ManaHelper {
    }
 
    public static boolean consumeOneTimeMagicCost(ServerPlayer player, double amount) {
+      amount = WheelCastingModifierService.adjustManaCost(player, amount);
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;
@@ -103,6 +107,7 @@ public class ManaHelper {
    }
 
    public static boolean consumeManaStrict(ServerPlayer player, double amount, boolean drainOnFail) {
+      amount = WheelCastingModifierService.adjustManaCost(player, amount);
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;

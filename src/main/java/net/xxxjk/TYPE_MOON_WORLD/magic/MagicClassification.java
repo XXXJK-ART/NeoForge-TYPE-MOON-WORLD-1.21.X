@@ -39,6 +39,7 @@ public final class MagicClassification {
       Map.entry("time_alter", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("spiritual_healing", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("baptism_rite", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("mana_burst", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("black_key_fire_engraving", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("stigma", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("gander", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),

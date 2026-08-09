@@ -20,6 +20,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemQuality;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomMagicScrollItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.PartitionedThoughtFragmentItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaItem;
@@ -567,6 +568,10 @@ public class ModItems {
             () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, false, (String)null, "structural_analysis"));
     public static final DeferredItem<Item> MAGIC_PAGE_STRUCTURAL_ANALYSIS = ITEMS.register("magic_page_structural_analysis",
             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "structural_analysis"));
+    public static final DeferredItem<Item> MAGIC_BOOK_MAGIC_ANALYSIS = ITEMS.register("magic_book_magic_analysis",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, false, (String)null, "magic_analysis"));
+    public static final DeferredItem<Item> MAGIC_PAGE_MAGIC_ANALYSIS = ITEMS.register("magic_page_magic_analysis",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "magic_analysis"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BROKEN_PHANTASM = ITEMS.register("magic_scroll_broken_phantasm",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.5, false, "projection", // Require Projection
@@ -665,6 +670,8 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "baptism_rite"));
+    public static final DeferredItem<Item> PARTITIONED_THOUGHT_FRAGMENT = ITEMS.register("partitioned_thought_fragment",
+            () -> new PartitionedThoughtFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_book_black_key_fire_engraving",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "black_key_fire_engraving"));
     public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_page_black_key_fire_engraving",

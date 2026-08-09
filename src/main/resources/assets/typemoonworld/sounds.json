@@ -1,25 +1,1385 @@
 {
-  "demon_god_gaze": {
+  "arash_voice_attack": {
     "sounds": [
       {
-        "name": "typemoonworld:demon_god_gaze",
+        "name": "typemoonworld:voice/arash/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/arash/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/arash/attack3",
         "stream": true
       }
     ]
   },
-  "imaginary_storage_start": {
+  "arash_voice_fail": {
     "sounds": [
       {
-        "name": "typemoonworld:imaginary_storage_start",
+        "name": "typemoonworld:voice/arash/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/arash/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "arash_voice_stella": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/arash/stella",
+        "stream": true
+      }
+    ]
+  },
+  "arash_voice_stella_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/arash/stella_short",
+        "stream": true
+      }
+    ]
+  },
+  "arash_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/arash/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/arash/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_excalibur": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/excalibur",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_excalibur_release": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/excalibur_release",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_excalibur_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/excalibur_short",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_invisible_air": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/invisible_air1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/invisible_air2",
+        "stream": true
+      }
+    ]
+  },
+  "artoria_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/victory2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/victory3",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/victory4",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_attack_1": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/attack1",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_attack_2": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_fail_1": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/fail1",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_fail_2": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_mongrel": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/mongrel",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/np",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_shot": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/shot",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "caster_gilgamesh_voice_victory_2": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/caster_gilgamesh/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "cu_chulainn_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cu_chulainn/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cu_chulainn/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cu_chulainn/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "cu_chulainn_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cu_chulainn/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cu_chulainn/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "cu_chulainn_voice_gae_bolg": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cu_chulainn/gae_bolg",
+        "stream": true
+      }
+    ]
+  },
+  "cu_chulainn_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cu_chulainn/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cu_chulainn/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "cursed_arm_hassan_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "cursed_arm_hassan_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "cursed_arm_hassan_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "cursed_arm_hassan_voice_zabaniya": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/zabaniya",
+        "stream": true
+      }
+    ]
+  },
+  "cursed_arm_hassan_voice_zabaniya_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/zabaniya_short",
+        "stream": true
+      }
+    ]
+  },
+  "cym_gem_biubiubiu": {
+    "sounds": [
+      {
+        "name": "typemoonworld:cym_gem_biubiubiu",
         "stream": false
       }
     ]
   },
-  "imaginary_storage_end": {
+  "cyq_gem_shoot_star": {
     "sounds": [
       {
-        "name": "typemoonworld:imaginary_storage_end",
+        "name": "typemoonworld:cyq_gem_shoot_star",
         "stream": false
+      }
+    ]
+  },
+  "emiya_archer_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/emiya_archer/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/emiya_archer/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/emiya_archer/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_projection": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/projection",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_rho_aias": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/rho_aias",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_spiral": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/spiral",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_twin_throw": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/twin_throw",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_ubw": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/ubw",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_ubw_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/ubw_short",
+        "stream": true
+      }
+    ]
+  },
+  "emiya_archer_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/emiya_archer/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/emiya_archer/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "enkidu_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/enkidu/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/enkidu/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "enkidu_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/enkidu/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/enkidu/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "enkidu_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/enkidu/np",
+        "stream": true
+      }
+    ]
+  },
+  "enkidu_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/enkidu/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/enkidu/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_computer_temperature": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/computer_temperature",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_encounter": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/encounter",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/fail",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_hair": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/hair",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_heartbeat": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/heartbeat",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_marrow": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/marrow",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_nerves": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/nerves",
+        "stream": true
+      }
+    ]
+  },
+  "fanatic_assassin_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/fanatic_assassin/victory",
+        "stream": true
+      }
+    ]
+  },
+  "gawain_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gawain/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gawain/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gawain/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "gawain_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gawain/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gawain/fail2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gawain/fail3",
+        "stream": true
+      }
+    ]
+  },
+  "gawain_voice_fire_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gawain/fire_attack",
+        "stream": true
+      }
+    ]
+  },
+  "gawain_voice_gallatin_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/gallatin_short",
+        "stream": true
+      }
+    ]
+  },
+  "gawain_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gawain/np",
+        "stream": true
+      }
+    ]
+  },
+  "gawain_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gawain/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gawain/victory2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gawain/victory3",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack3",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack4",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_attack_1": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack1",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_attack_2": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_attack_3": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_attack_4": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/attack4",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_ea": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/ea_full",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_ea_draw": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/ea_draw",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_ea_npc": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/ea_half",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_ea_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/ea_short",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_enkidu_duel": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/enkidu_duel",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gilgamesh/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_mongrel": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/mongrel",
+        "stream": true
+      }
+    ]
+  },
+  "gilgamesh_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/gilgamesh/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "heracles_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/heracles/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/heracles/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "heracles_voice_roar": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/heracles/roar1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/heracles/roar2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/heracles/roar3",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/heracles/roar4",
+        "stream": true
+      }
+    ]
+  },
+  "heracles_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/heracles/victory1",
+        "stream": true
+      }
+    ]
+  },
+  "iskandar_voice_ionioi_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/ionioi_hetairoi_short",
+        "stream": true
+      }
+    ]
+  },
+  "li_shuwen_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/li_shuwen/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/li_shuwen/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/li_shuwen/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "li_shuwen_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/li_shuwen/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/li_shuwen/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "li_shuwen_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/li_shuwen/np",
+        "stream": true
+      }
+    ]
+  },
+  "li_shuwen_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/li_shuwen/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/li_shuwen/victory2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/li_shuwen/victory3",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/li_shuwen/victory4",
+        "stream": true
+      }
+    ]
+  },
+  "li_shuwen_voice_wu_er_da_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/wu_er_da_short",
+        "stream": true
+      }
+    ]
+  },
+  "medea_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medea/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/medea/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "medea_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medea/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/medea/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "medea_voice_rule_breaker": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medea/rule_breaker",
+        "stream": true
+      }
+    ]
+  },
+  "medea_voice_rule_breaker_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/rule_breaker_short",
+        "stream": true
+      }
+    ]
+  },
+  "medea_voice_spell": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medea/spell",
+        "stream": true
+      }
+    ]
+  },
+  "medea_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medea/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/medea/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "medusa_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medusa/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/medusa/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "medusa_voice_bellerophon": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medusa/bellerophon",
+        "stream": true
+      }
+    ]
+  },
+  "medusa_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medusa/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/medusa/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "medusa_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medusa/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/medusa/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "nightingale_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/nightingale/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/nightingale/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/nightingale/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "nightingale_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/nightingale/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/nightingale/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "nightingale_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/nightingale/np",
+        "stream": true
+      }
+    ]
+  },
+  "nightingale_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/nightingale/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/nightingale/victory2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/nightingale/victory3",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/nightingale/victory4",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_hajun": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/hajun",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_hajun_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/hajun_short",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/np",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "okita_voice_np_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/okita_np_short",
+        "stream": true
+      }
+    ]
+  },
+  "pale_rider_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/pale_rider/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/pale_rider/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "pale_rider_voice_four_calamities": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/pale_rider/four_calamities",
+        "stream": true
+      }
+    ]
+  },
+  "paracelsus_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/paracelsus/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/paracelsus/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/paracelsus/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "paracelsus_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/paracelsus/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/paracelsus/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "paracelsus_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/paracelsus/np",
+        "stream": true
+      }
+    ]
+  },
+  "paracelsus_voice_np_short": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/short_np/paracelsus_np_short",
+        "stream": true
+      }
+    ]
+  },
+  "paracelsus_voice_spell": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/paracelsus/spell1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/paracelsus/spell2",
+        "stream": true
+      }
+    ]
+  },
+  "paracelsus_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/paracelsus/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/paracelsus/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "sasaki_kojiro_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "sasaki_kojiro_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "sasaki_kojiro_voice_tsurigameshi": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/tsurigameshi",
+        "stream": true
+      }
+    ]
+  },
+  "sasaki_kojiro_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/sasaki_kojiro/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "senko_muramasa_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/senko_muramasa/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/senko_muramasa/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "senko_muramasa_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/senko_muramasa/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "senko_muramasa_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/np",
+        "stream": true
+      }
+    ]
+  },
+  "senko_muramasa_voice_tsumukari": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/tsumukari",
+        "stream": true
+      }
+    ]
+  },
+  "senko_muramasa_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/senko_muramasa/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "shadow_hassan_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/shadow_hassan/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/shadow_hassan/attack2",
+        "stream": true
+      }
+    ]
+  },
+  "shadow_hassan_voice_command_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/shadow_hassan/command_attack",
+        "stream": true
+      }
+    ]
+  },
+  "shadow_hassan_voice_meditative_sensitivity": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/shadow_hassan/meditative_sensitivity",
+        "stream": true
+      }
+    ]
+  },
+  "shadow_hassan_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/shadow_hassan/victory",
+        "stream": true
+      }
+    ]
+  },
+  "ushiwakamaru_rider_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "ushiwakamaru_rider_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "ushiwakamaru_rider_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/np",
+        "stream": true
+      }
+    ]
+  },
+  "ushiwakamaru_rider_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/ushiwakamaru_rider/victory2",
+        "stream": true
+      }
+    ]
+  },
+  "zhao_yun_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/zhao_yun/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/zhao_yun/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "zhao_yun_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/zhao_yun/np",
+        "stream": true
+      }
+    ]
+  },
+  "zhao_yun_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/zhao_yun/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/zhao_yun/victory2",
+        "stream": true
       }
     ]
   }

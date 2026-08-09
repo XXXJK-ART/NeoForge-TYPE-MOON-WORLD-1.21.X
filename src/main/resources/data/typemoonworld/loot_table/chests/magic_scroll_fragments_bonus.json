@@ -121,6 +121,11 @@
                                       },
                                       {
                                           "weight":  5,
+                                          "name":  "typemoonworld:magic_page_magic_analysis",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
                                           "name":  "typemoonworld:magic_page_imaginary_dive",
                                           "type":  "minecraft:item"
                                       },
@@ -283,6 +288,11 @@
                                       {
                                           "weight":  8,
                                           "name":  "typemoonworld:magic_book_spiritual_healing",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_magic_analysis",
                                           "type":  "minecraft:item"
                                       },
                                       {

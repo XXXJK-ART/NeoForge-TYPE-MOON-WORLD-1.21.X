@@ -43,6 +43,10 @@ public enum PassiveRank {
       return this.dodgeChance;
    }
 
+   public int rankIndex() {
+      return this.ordinal();
+   }
+
    public PassiveRank next() {
       int next = this.ordinal() + 1;
       return next < values().length ? values()[next] : this;

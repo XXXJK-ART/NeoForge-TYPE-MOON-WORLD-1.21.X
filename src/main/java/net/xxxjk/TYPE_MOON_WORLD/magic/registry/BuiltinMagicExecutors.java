@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicFireElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicMagicBullet;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWaterElement;
@@ -109,6 +110,7 @@ public final class BuiltinMagicExecutors {
       registry.register("time_alter", ctx -> toResult(MagicTimeAlter.execute(ctx.entity())), "typemoonworld_core");
       registry.register("spiritual_healing", ctx -> toResult(MagicSpiritualHealing.execute(ctx.entity())), "typemoonworld_core");
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("mana_burst", ManaBurstService::execute, "typemoonworld_core");
       registry.register("black_key_fire_engraving", ctx -> toResult(MagicBlackKeyFireEngraving.execute(ctx.entity())), "typemoonworld_core");
       registry.register("stigma", ctx -> MagicExecutionResult.SUCCESS, "typemoonworld_core");
    }

@@ -35,13 +35,14 @@ void main() {
     float normalized = clamp((localY - ClipMinY) / max(0.001, ClipMaxY - ClipMinY), 0.0, 1.0);
     float heightFromFeet = 1.0 - normalized;
     float threshold = clamp(ClipThreshold, 0.0, 1.0);
-    float signedDistance = ClipMode < 0.5 ? threshold - heightFromFeet : heightFromFeet - threshold;
+    float edgeHeight = ClipMode < 0.5 ? 1.0 - threshold : threshold;
+    float signedDistance = heightFromFeet - edgeHeight;
     if (signedDistance < -ClipSoftness) {
         discard;
     }
 
     float maskAlpha = smoothstep(-ClipSoftness, ClipSoftness, signedDistance);
-    float edge = 1.0 - smoothstep(0.0, EdgeWidth, abs(heightFromFeet - threshold));
+    float edge = 1.0 - smoothstep(0.0, EdgeWidth, abs(heightFromFeet - edgeHeight));
 
     color *= vertexColor * ColorModulator;
     color.rgb = mix(overlayColor.rgb, color.rgb, overlayColor.a);
